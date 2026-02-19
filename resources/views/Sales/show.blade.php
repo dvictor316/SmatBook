@@ -1,0 +1,249 @@
+@extends('layout.mainlayout')
+
+@section('content')
+<style>
+    /* EXACT MEASUREMENTS FROM YOUR INDEX PAGE */
+    .pos-content-area {
+        margin-left: 250px; 
+        padding: 30px;
+        transition: all 0.3s ease-in-out;
+        background-color: #fdfaf0; 
+        min-height: 100vh;
+        margin-top: 60px;
+    }
+
+    body.mini-sidebar .pos-content-area { margin-left: 80px; }
+
+    @media (max-width: 1200px) {
+        .pos-content-area { margin-left: 0 !important; padding: 15px; }
+    }
+
+    /* Professional Header from Index */
+    .report-header {
+        border-left: 5px solid #d4af37;
+        padding-left: 15px;
+        margin-bottom: 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    /* THE INVOICE CONTAINER - Keeps it centered and prevents bulging */
+    .invoice-fit-container {
+        width: 100%;
+        max-width: 950px; 
+        margin: 0 auto; 
+    }
+
+    /* SLIM BLUE HEADER - Fixed Height & White Font */
+    .inv-header {
+        background-color: #0369a1; /* Your index blue */
+        padding: 8px 20px;
+        border-radius: 12px 12px 0 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 3px solid #d4af37;
+    }
+    
+    .inv-header h5, 
+    .inv-header .inv-date {
+        color: #ffffff !important; /* Strictly white */
+        margin-bottom: 0 !important;
+        font-weight: 700;
+        font-size: 0.9rem;
+    }
+
+    /* Card & Stats Styling */
+    .show-card { 
+        border: none; 
+        border-radius: 15px; 
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        background: #fff;
+    }
+    
+    .stat-box { 
+        padding: 15px; 
+        border: 1px solid rgba(212, 175, 55, 0.2); 
+        border-radius: 12px;
+        text-align: center;
+        background: #fff;
+    }
+    .stat-label { font-size: 10px; font-weight: 800; color: #996515; text-transform: uppercase; }
+    .stat-value { font-size: 1.1rem; font-weight: 700; color: #0369a1; }
+
+    .btn-gold {
+        background-color: #996515;
+        color: white;
+        border: none;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    .btn-gold:hover { background-color: #d4af37; color: white; }
+
+    /* Table consistency with Index */
+    .table thead th {
+        background-color: #0369a1; 
+        color: #ffffff;
+        text-transform: uppercase;
+        font-size: 11px;
+        padding: 12px;
+    }
+
+    @media print {
+        .no-print { display: none !important; }
+        .pos-content-area { margin: 0 !important; padding: 0 !important; background: white !important; }
+    }
+</style>
+
+<div class="pos-content-area">
+    <div class="invoice-fit-container">
+        
+        {{-- Show View Header --}}
+        <div class="report-header no-print">
+            <div>
+                <h3 class="fw-bold mb-0" style="color: #0369a1;">Sale Details</h3>
+                <p class="text-muted small mb-0">Invoice Information & Payment Tracking</p>
+            </div>
+            
+            <div class="d-flex gap-2">
+                <button onclick="window.print()" class="btn btn-sm btn-outline-primary px-3 shadow-sm">
+                    <i class="fas fa-print me-1"></i> Print
+                </button>
+                <button class="btn btn-gold btn-sm px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#addPaymentModal">
+                    <i class="fas fa-money-bill-wave me-1"></i> Record Pay
+                </button>
+                <a href="{{ route('sales.index') }}" class="btn btn-sm btn-outline-secondary px-3 shadow-sm">Back</a>
+            </div>
+        </div>
+
+        <div class="card show-card">
+            {{-- Slim Header with White Font --}}
+            <div class="inv-header">
+                <h5>INVOICE #{{ $sale->invoice_no }}</h5>
+                <span class="inv-date">Date: {{ $sale->created_at->format('M d, Y') }}</span>
+            </div>
+
+            <div class="card-body p-4">
+                @php 
+                    $historyPaid = $sale->payments->sum('amount');
+                    $displayBalance = $sale->total - $historyPaid;
+                @endphp
+
+                <div class="row g-3 mb-4">
+                    <div class="col-6 col-md-3">
+                        <div class="stat-box">
+                            <div class="stat-label">Customer</div>
+                            <div class="stat-value text-dark" style="font-size: 0.9rem;">{{ $sale->customer_name }}</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="stat-box">
+                            <div class="stat-label">Grand Total</div>
+                            <div class="stat-value">₦{{ number_format($sale->total, 2) }}</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="stat-box border-success" style="background-color: #f0fdf4;">
+                            <div class="stat-label text-success">Paid</div>
+                            <div class="stat-value text-success">₦{{ number_format($historyPaid, 2) }}</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="stat-box border-danger" style="background-color: #fef2f2;">
+                            <div class="stat-label text-danger">Balance</div>
+                            <div class="stat-value text-danger">₦{{ number_format($displayBalance, 2) }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-responsive mb-4 shadow-sm rounded">
+                    <table class="table table-bordered align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th class="ps-3">Item Name</th>
+                                <th class="text-center">Qty</th>
+                                <th class="text-end pe-3">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($sale->items as $item)
+                            <tr>
+                                <td class="ps-3 fw-bold text-dark">{{ $item->product->name }}</td>
+                                <td class="text-center">{{ $item->qty }}</td>
+                                <td class="text-end pe-3 fw-bold">₦{{ number_format($item->total_price, 2) }}</td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-7">
+                        <h6 class="fw-bold text-dark mb-3"><i class="fas fa-history me-2 text-warning"></i>Payment Logs</h6>
+                        <div class="ps-3 border-start border-3 border-info">
+                            @forelse($sale->payments as $payment)
+                            <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                                <div>
+                                    <span class="small fw-bold d-block">{{ $payment->created_at->format('d M, Y') }}</span>
+                                    <span class="badge bg-light text-muted border" style="font-size: 9px;">{{ strtoupper($payment->method) }}</span>
+                                </div>
+                                <div class="d-flex align-items-center gap-3">
+                                    <span class="text-success fw-bold">₦{{ number_format($payment->amount, 2) }}</span>
+                                    <form action="{{ route('payments.destroy', $payment->id) }}" method="POST" class="no-print">
+                                        @csrf @method('DELETE')
+                                        <button class="btn btn-link text-danger p-0" onclick="return confirm('Delete this log?')"><i class="fas fa-trash-alt fa-xs"></i></button>
+                                    </form>
+                                </div>
+                            </div>
+                            @empty
+                            <div class="alert alert-light py-2 small border">No history found.</div>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <span class="badge {{ $sale->payment_status == 'paid' ? 'bg-success' : 'bg-danger' }} px-3 py-2 text-uppercase shadow-sm">
+                        {{ $sale->payment_status }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addPaymentModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
+            <div class="modal-header bg-primary text-white py-2">
+                <h6 class="modal-title fw-bold">Record Payment</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ route('payments.store') }}" method="POST">
+                @csrf
+                <input type="hidden" name="sale_id" value="{{ $sale->id }}">
+                <div class="modal-body p-4 text-center">
+                    <small class="text-muted d-block fw-bold text-uppercase mb-1" style="font-size: 0.65rem;">Remaining Due</small>
+                    <h4 class="fw-bold text-danger mb-4">₦{{ number_format($displayBalance, 2) }}</h4>
+                    
+                    <div class="text-start mb-3">
+                        <label class="small fw-bold">Amount</label>
+                        <input type="number" name="amount" step="0.01" max="{{ $displayBalance }}" class="form-control" required>
+                    </div>
+                    <div class="text-start mb-4">
+                        <label class="small fw-bold">Method</label>
+                        <select name="method" class="form-select" required>
+                            <option value="cash">Cash</option>
+                            <option value="transfer">Transfer</option>
+                            <option value="pos">POS</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 fw-bold">Save Payment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endsection

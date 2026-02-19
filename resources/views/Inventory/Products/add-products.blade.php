@@ -1,0 +1,135 @@
+@extends('layout.mainlayout')
+@section('content')
+<div class="page-wrapper">
+    <div class="content container-fluid">
+        
+        {{-- Header with Export Actions --}}
+        <div class="page-header mb-4 no-print">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h4 class="fw-bold text-dark">Add New Product & Packaging Rules</h4>
+                </div>
+                <div class="col-auto">
+                    <div class="btn-group shadow-sm">
+                        <button onclick="window.print()" class="btn btn-white border btn-sm">
+                            <i class="feather-printer me-1"></i> Print
+                        </button>
+                        <button id="export_pdf" class="btn btn-white border text-danger btn-sm">
+                            <i class="feather-file-text me-1"></i> PDF
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Main Form --}}
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body">
+                <form action="{{ url('products/store') }}" method="POST">
+                    @csrf
+                    <div class="row">
+                        {{-- Basic Info --}}
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">Product Name</label>
+                            <input type="text" name="name" id="p_name" class="form-control" placeholder="e.g. Indomie Onion" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">SKU / Code</label>
+                            <input type="text" name="sku" id="p_sku" class="form-control" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold d-flex justify-content-between">
+                                Category
+                                <a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#add_category_modal" class="text-primary small">+ New</a>
+                            </label>
+                            <select name="category_id" class="form-control select2" required>
+                                <option value="">Select Category</option>
+                                @foreach($categories as $category)
+                                    <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <hr class="my-3 text-muted">
+                        <h5 class="mb-3 text-primary"><i class="feather-package me-2"></i>Packaging & Conversion Rules</h5>
+
+                        {{-- Conversion Logic --}}
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label fw-bold text-danger">Units per Carton</label>
+                            <input type="number" name="units_per_carton" id="upc" class="form-control bg-light-danger" value="0" min="0">
+                            <small class="text-muted">How many pieces in 1 Carton?</small>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label fw-bold text-warning">Units per Roll</label>
+                            <input type="number" name="units_per_roll" id="upr" class="form-control bg-light-warning" value="0" min="0">
+                            <small class="text-muted">Use 0 if this product is not sold in rolls.</small>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label fw-bold">Base Unit Name</label>
+                            <input type="text" name="base_unit_name" class="form-control" value="Pcs" placeholder="e.g. Pcs, Sachet, Bottle">
+                        </div>
+
+                        <hr class="my-3 text-muted">
+                        <h5 class="mb-3 text-success"><i class="feather-shopping-cart me-2"></i>Pricing & Initial Stock</h5>
+
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Initial Stock (Cartons)</label>
+                            <input type="number" name="stock_cartons" id="stock_cartons" class="form-control" value="0">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Purchase Price (Per Carton)</label>
+                            <input type="number" step="0.01" name="purchase_price" class="form-control" required>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Selling Price (Per Unit/Pc)</label>
+                            <input type="number" step="0.01" name="price" class="form-control" required>
+                        </div>
+                        
+                        {{-- Automated Calculation Preview --}}
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label fw-bold text-primary">Total Inventory (Pieces)</label>
+                            <div class="form-control bg-dark text-white fw-bold" id="total_pieces_preview">0</div>
+                            <input type="hidden" name="stock" id="final_stock_input" value="0">
+                        </div>
+                    </div>
+
+                    <div class="text-end no-print mt-3">
+                        <button type="submit" class="btn btn-primary btn-lg px-5 shadow">Save Product & Stock</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{{-- MODALS REMAIN THE SAME AS PER YOUR PREVIOUS CODE --}}
+
+<style>
+    .bg-light-danger { background-color: #fff5f5; border: 1px solid #feb2b2; }
+    .bg-light-warning { background-color: #fffaf0; border: 1px solid #fbd38d; }
+    @media print { .no-print, .sidebar, .header { display: none !important; } .page-wrapper { margin: 0 !important; } }
+</style>
+@endsection
+
+@push('scripts')
+<script>
+    $(document).ready(function() {
+        // Automatic Calculation Logic
+        function calculateTotalPieces() {
+            let cartons = parseFloat($('#stock_cartons').val()) || 0;
+            let upc = parseFloat($('#upc').val()) || 1; // Units Per Carton
+            
+            let total = cartons * upc;
+            
+            $('#total_pieces_preview').text(total.toLocaleString() + " Units");
+            $('#final_stock_input').val(total); // This is what gets saved to 'stock' column
+        }
+
+        // Trigger calculation on any input change
+        $('#stock_cartons, #upc').on('input', function() {
+            calculateTotalPieces();
+        });
+    });
+</script>
+@endpush

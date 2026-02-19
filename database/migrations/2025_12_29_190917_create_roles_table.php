@@ -1,0 +1,31 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+  public function up()
+{
+    Schema::create('roles', function (Blueprint $table) {
+        $table->id();
+        $table->string('name')->unique();
+        $table->string('description')->nullable(); 
+        $table->string('role_group')->default('Staff'); // e.g., Management, Operations, Executive
+        $table->boolean('is_system_role')->default(false); // Protects 'Admin' from being deleted
+        $table->timestamps();
+    });
+}
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('roles');
+    }
+};

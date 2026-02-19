@@ -1,0 +1,18 @@
+[
+    {
+        "Id": 1,
+        "UserName": "Victor Don",
+        "Email": "donvictorlive@gmail.com",
+        "Image": "avatar-01.jpg",
+        "RequisitionDate": "2025-12-25",
+        "DeleteRequestDate": "2025-12-30"
+    },
+    {
+        "Id": 2,
+        "UserName": "Admin User",
+        "Email": "admin@smatbook.com",
+        "Image": "avatar-02.jpg",
+        "RequisitionDate": "2025-12-28",
+        "DeleteRequestDate": "2025-12-30"
+    }
+]
