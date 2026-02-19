@@ -30,33 +30,30 @@
         --spa-muted: #64748b;
     }
 
-    /* 1. ABSOLUTE VIEWPORT CENTERING */
+    /* 1. VIEWPORT & CENTERING FIX */
     .smat-viewport {
-        position: relative;
-        inset: 0;
+        position: fixed;
+        top: 0;
+        left: 0;
         width: 100%;
-        min-height: 100vh;
-        height: auto;
-        padding: 16px 12px 20px;
+        height: 100vh;
+        padding: 20px 15px;
         background-color: var(--spa-bg);
-        z-index: 9999;
+        z-index: 900;
+        /* Flexbox for vertical centering */
         display: flex;
-        align-items: flex-start;
-        justify-content: center;
-        font-family: 'Plus Jakarta Sans', sans-serif;
-        overflow-y: auto;
-        overflow-x: hidden;
-        box-sizing: border-box;
+        flex-direction: column;
+        overflow-y: auto; /* Allows scrolling if card is taller than screen */
     }
 
-    /* Hard reset wrapper offsets so the login stays centered */
+    /* Hard reset wrapper overrides to prevent theme conflict */
     .main-wrapper.login-body {
         display: block !important;
-        width: 100vw !important;
-        height: 100vh !important;
-        min-height: 100vh !important;
+        width: 100% !important;
+        height: 100% !important;
         margin: 0 !important;
         padding: 0 !important;
+        overflow: hidden !important;
     }
 
     /* Hide standard layout noise */
@@ -67,10 +64,13 @@
 
     /* 2. SUBTLE MINIMALIST BUBBLES */
     .bubble-bg {
-        position: absolute;
+        position: fixed; /* Fixed so they don't scroll */
         width: 100%;
         height: 100%;
         z-index: -1;
+        top: 0;
+        left: 0;
+        pointer-events: none;
     }
 
     .bubble {
@@ -86,7 +86,7 @@
         66% { transform: translate(-20px, 20px) scale(0.95); }
     }
 
-    /* 3. COMPACT PROFESSIONAL CARD (860px) */
+    /* 3. COMPACT PROFESSIONAL CARD */
     .smat-card {
         background: var(--spa-surface);
         width: min(100%, 720px);
@@ -98,14 +98,16 @@
         display: flex;
         overflow: hidden;
         border: 1px solid var(--spa-border);
-        margin: 0 auto;
+        
+        /* KEY FIX: This centers it vertically but allows scrolling if needed */
+        margin: auto; 
     }
 
     /* Side Panel (Branding) */
     .smat-aside {
         width: 35%;
         background: var(--spa-aside);
-        padding: 14px 12px;
+        padding: 30px 24px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
@@ -134,7 +136,7 @@
     /* Main Panel (Login Form) */
     .smat-main {
         width: 65%;
-        padding: 14px 14px;
+        padding: 40px 32px;
         background: var(--spa-surface);
         display: flex;
         flex-direction: column;
@@ -147,7 +149,7 @@
         color: #1e3a8a;
         border-radius: 12px;
         padding: 10px 12px;
-        margin-bottom: 16px;
+        margin-bottom: 20px;
         font-size: 11px;
         line-height: 1.55;
     }
@@ -197,7 +199,7 @@
         box-shadow: 0 15px 30px rgba(37,99,235,0.28);
     }
 
-    .divider { position: relative; text-align: center; margin: 16px 0; border-top: 1px solid #f1f5f9; }
+    .divider { position: relative; text-align: center; margin: 24px 0; border-top: 1px solid #f1f5f9; }
     .divider span { 
         position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
         background: #fff; padding: 0 15px; font-size: 10px; color: #cbd5e1; font-weight: 800;
@@ -263,37 +265,20 @@
             flex-direction: column;
             width: min(100%, 600px);
             max-width: 600px;
-            min-height: 0;
             height: auto;
-            margin: 0 auto;
+            margin: 20px auto;
         }
-        .smat-aside, .smat-main { width: 100%; padding: 18px 14px; }
-        .smat-main { padding-top: 14px; }
+        .smat-aside, .smat-main { width: 100%; padding: 24px 20px; }
         .logo-img { height: 44px; }
-        .smat-viewport { position: relative; height: auto; min-height: 100vh; overflow-y: auto; }
+        /* Reset viewport for mobile scrolling */
+        .smat-viewport { display: block; overflow-y: auto; }
     }
 
     @media (max-width: 640px) {
-        .smat-card {
-            width: 100%;
-            border-radius: 12px;
-        }
-        .smat-aside, .smat-main { padding: 18px 16px; }
+        .smat-aside, .smat-main { padding: 20px 16px; }
         .bottom-actions { grid-template-columns: 1fr; }
         .btn-smat-navy { padding: 13px; font-size: 13px; }
         .btn-social { font-size: 12px; padding: 9px; }
-        .login-instruction-box { font-size: 11px; padding: 9px 10px; }
-    }
-
-    @media (max-height: 700px) {
-        .smat-viewport {
-            position: relative;
-            height: auto;
-            min-height: 100vh;
-            padding: 12px 0;
-            overflow-y: auto;
-        }
-        .smat-card { margin: 0 auto; }
     }
 </style>
 
