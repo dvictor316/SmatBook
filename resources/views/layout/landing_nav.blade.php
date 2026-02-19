@@ -929,26 +929,12 @@
 
         <ul class="nav-links" id="mainMenu">
             <li><a href="{{ url('/') }}" class="{{ Route::is('landing.index') ? 'active' : '' }}">Home</a></li>
-            <li><a href="{{ route('landing.about') }}" class="{{ Route::is('landing.about') ? 'active' : '' }}">About Us</a></li>
-            <li><a href="{{ route('landing.team') }}" class="{{ Route::is('landing.team') ? 'active' : '' }}">Other Projects</a></li>
-            <li><a href="{{ route('landing.contact') }}" class="{{ Route::is('landing.contact') ? 'active' : '' }}">Contact Us</a></li>
+            <li><a href="{{ route('landing.about') }}" class="{{ Route::is('landing.about') ? 'active' : '' }}">About</a></li>
+            <li><a href="{{ route('landing.team') }}" class="{{ Route::is('landing.team') ? 'active' : '' }}">Projects</a></li>
+            <li><a href="{{ route('landing.contact') }}" class="{{ Route::is('landing.contact') ? 'active' : '' }}">Contact</a></li>
             <li><a href="{{ url('/#licensing') }}">Licensing</a></li>
             <li><a href="{{ route('landing.policy') }}" class="{{ Route::is('landing.policy') ? 'active' : '' }}">Policy</a></li>
-            <li class="country-switcher">
-                <select class="country-select" id="countrySelectorGlobal" aria-label="Country and currency">
-                    <option value="NG">🇳🇬 Nigeria (NGN)</option>
-                    <option value="US">🇺🇸 United States (USD)</option>
-                    <option value="CN">🇨🇳 China (CNY)</option>
-                    <option value="GB">🇬🇧 United Kingdom (GBP)</option>
-                    <option value="EU">🇪🇺 Europe (EUR)</option>
-                    <option value="CA">🇨🇦 Canada (CAD)</option>
-                    <option value="IN">🇮🇳 India (INR)</option>
-                    <option value="AE">🇦🇪 UAE (AED)</option>
-                    <option value="ZA">🇿🇦 South Africa (ZAR)</option>
-                    <option value="KE">🇰🇪 Kenya (KES)</option>
-                    <option value="GH">🇬🇭 Ghana (GHS)</option>
-                </select>
-            </li>
+          
             <li><a href="{{ route('saas-login') }}" class="btn-portal">Client Portal</a></li>
         </ul>
     </div>

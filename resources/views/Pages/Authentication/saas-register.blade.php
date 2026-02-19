@@ -333,7 +333,7 @@
                 
                 <div class="bottom-link">
                     @if($isManager)
-                        Want a standard account? <a href="{{ route('saas-register') }}">Join as Customer</a>
+                        Want a standard account? <a href="{{ route('membership-plans') }}">Join as Customer</a>
                     @else
                         Interested in Partnering? <a href="{{ route('saas-register', ['type' => 'manager']) }}">Become a Manager</a>
                     @endif
