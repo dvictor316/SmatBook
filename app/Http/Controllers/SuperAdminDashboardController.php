@@ -652,21 +652,21 @@ class SuperAdminDashboardController extends Controller
         }
     }
 
-    public function pendingManagers()
-    {
-        $pending = DB::table('deployment_managers')
-            ->leftJoin('users', 'deployment_managers.user_id', '=', 'users.id')
-            ->select(
-                'deployment_managers.*',
-                DB::raw("COALESCE(users.email, '') as email"),
-                DB::raw("COALESCE(users.name, deployment_managers.business_name, 'N/A') as manager_name")
-            )
-            ->whereIn('deployment_managers.status', ['pending', 'pending_info'])
-            ->orderByDesc('deployment_managers.created_at')
-            ->get();
-        return view('superadmin.managers.pending', compact('pending'));
-    }
+public function pendingManagers()
+{
+    $pending = DB::table('deployment_managers')
+        ->leftJoin('users', 'deployment_managers.user_id', '=', 'users.id')
+        ->select(
+            'deployment_managers.*',
+            DB::raw("COALESCE(users.email, '') as email"),
+            DB::raw("COALESCE(users.name, deployment_managers.business_name, 'N/A') as manager_name")
+        )
+        ->whereIn('deployment_managers.status', ['pending', 'pending_info'])
+        ->orderByDesc('deployment_managers.created_at')
+        ->get();
 
+    return view('SuperAdmin.managers.pending', compact('pending'));  // ← fixed
+}
     public function approvedManagers(Request $request)
     {
         $query = DB::table('deployment_managers')
