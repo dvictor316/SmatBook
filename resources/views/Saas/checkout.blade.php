@@ -9,6 +9,18 @@
         --spa-primary-dark: #1d4ed8;
     }
 
+    html, body {
+        height: 100%;
+        overflow: hidden !important;
+    }
+
+    .main-wrapper {
+        margin: 0 !important;
+        padding: 0 !important;
+        height: 100% !important;
+        overflow: hidden !important;
+    }
+
     /* 1. ABSOLUTE VIEWPORT CENTERING */
     .smat-viewport {
         position: fixed; /* Changed from relative to fixed to guarantee full cover */
@@ -175,7 +187,7 @@
     @media (max-width: 991px) {
         .smat-card { flex-direction: column; width: 100%; height: auto; margin: 0 auto; min-height: 0; }
         .smat-aside, .smat-main { width: 100%; padding: 20px 16px; }
-        .smat-viewport { position: fixed; padding: 10px; overflow-y: auto; }
+        .smat-viewport { padding: 10px; }
         /* Add padding bottom to scroll past bottom content on mobile */
         .smat-main { padding-bottom: 50px; } 
     }

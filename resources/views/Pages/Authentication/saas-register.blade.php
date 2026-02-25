@@ -30,11 +30,25 @@
         --spa-muted: #64748b;
     }
 
+    html, body {
+        height: 100%;
+        overflow: hidden !important;
+    }
+
+    .main-wrapper,
+    .main-wrapper.login-body {
+        margin: 0 !important;
+        padding: 0 !important;
+        height: 100% !important;
+        overflow: hidden !important;
+    }
+
     .smat-viewport {
-        position: relative;
+        position: fixed;
+        top: 0;
+        left: 0;
         width: 100%;
-        min-height: 100vh;
-        height: auto;
+        height: 100vh;
         padding: 16px 12px 20px;
         background-color: var(--spa-bg);
         z-index: 9999;
@@ -210,7 +224,7 @@
     @media (max-width: 991px) {
         .smat-card { flex-direction: column; width: min(100%, 620px); height: auto; margin: 0 auto; min-height: 0; }
         .smat-aside, .smat-main { width: 100%; padding: 18px 14px; }
-        .smat-viewport { position: relative; height: auto; min-height: 100vh; overflow-y: auto; }
+        .smat-viewport { padding-bottom: 24px; }
     }
 </style>
 
@@ -338,7 +352,7 @@
                         Interested in Partnering? <a href="{{ route('saas-register', ['type' => 'manager']) }}">Become a Manager</a>
                     @endif
                     <br><br>
-                    Already verified? <a href="{{ route('saas-login') }}">Login to Dashboard</a>
+                    Already verified? <a href="{{ route('saas-login', ['plan' => strtolower((string) $lookupPlan), 'cycle' => strtolower((string) $finalCycle)]) }}">Login to Dashboard</a>
                 </div>
             </form>
         </div>
@@ -353,6 +367,20 @@
         el.classList.toggle('fa-eye', isPass);
         el.classList.toggle('fa-eye-slash', !isPass);
     }
+
+    // Keep session warm while user is filling long registration form.
+    (function keepSessionAlive() {
+        const ping = () => {
+            fetch("{{ route('session.ping') }}", {
+                method: 'GET',
+                credentials: 'same-origin',
+                cache: 'no-store',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            }).catch(() => {});
+        };
+        setTimeout(ping, 2000);
+        setInterval(ping, 120000);
+    })();
 </script>
 
 @endsection

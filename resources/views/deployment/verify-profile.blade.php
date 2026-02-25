@@ -103,5 +103,19 @@
     function printPage() {
         window.print();
     }
+
+    // Prevent session timeout while manager fills verification form.
+    (function keepSessionAlive() {
+        const ping = () => {
+            fetch("{{ route('session.ping') }}", {
+                method: 'GET',
+                credentials: 'same-origin',
+                cache: 'no-store',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            }).catch(() => {});
+        };
+        setTimeout(ping, 2000);
+        setInterval(ping, 120000);
+    })();
 </script>
 @endsection

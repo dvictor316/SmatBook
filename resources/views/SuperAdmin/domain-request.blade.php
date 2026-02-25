@@ -5,6 +5,18 @@
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 
+    html, body {
+        height: 100%;
+        overflow: hidden !important;
+    }
+
+    .main-wrapper {
+        margin: 0 !important;
+        padding: 0 !important;
+        height: 100% !important;
+        overflow: hidden !important;
+    }
+
     /* 1. FORCE THE PAGE TO THE ABSOLUTE CENTER */
     /* This "fixed" container ignores any margins/sidebars from your master layout */
     .master-provision-overlay {
@@ -19,7 +31,8 @@
         align-items: center;
         justify-content: center;
         font-family: 'Plus Jakarta Sans', sans-serif;
-        overflow: hidden;
+        overflow-y: auto;
+        overflow-x: hidden;
     }
 
     /* Hide standard layout UI */
@@ -171,7 +184,7 @@
     @media (max-width: 991px) {
         .smat-card { flex-direction: column; width: 95%; height: auto; margin: 20px 0; }
         .smat-aside, .smat-main { width: 100%; padding: 40px; }
-        .master-provision-overlay { position: absolute; height: auto; min-height: 100vh; overflow-y: auto; }
+        .master-provision-overlay { padding: 20px 12px; align-items: flex-start; }
     }
 </style>
 

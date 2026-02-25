@@ -84,6 +84,20 @@ class AuthController extends Controller
 
         $validated = $request->validate($rules);
 
+        // Early connectivity check to avoid vague catch-all error messages.
+        try {
+            DB::connection()->getPdo();
+        } catch (\Throwable $e) {
+            Log::error('Registration DB connectivity failure', [
+                'email' => $validated['email'] ?? null,
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()
+                ->withErrors(['error' => 'Registration service is temporarily unavailable. Please try again shortly.'])
+                ->withInput();
+        }
+
         try {
             return DB::transaction(function () use ($validated, $request) {
                 $role = $request->role ?? session('reg_role', 'admin');
@@ -116,34 +130,57 @@ class AuthController extends Controller
                     return redirect()->route('manager.verification.form');
                 }
 
-                $planName = session('selected_plan', $request->plan ?? 'Pro');
-                $planAmount = (float) ($request->amount ?? session('selected_amount', 7000));
+                $requestedPlan = strtolower((string) ($request->plan ?? session('selected_plan', 'pro')));
+                $requestedCycle = strtolower((string) ($request->billing_cycle ?? session('selected_cycle', 'monthly')));
+
+                $plan = Plan::query()
+                    ->whereRaw('LOWER(name) = ?', [$requestedPlan])
+                    ->whereRaw('LOWER(billing_cycle) = ?', [$requestedCycle])
+                    ->where('status', 'active')
+                    ->where('is_active', 1)
+                    ->first();
+
+                $planName = $plan?->name ?? ucfirst($requestedPlan ?: 'pro');
+                $planAmount = (float) ($request->amount ?? $plan?->price ?? session('selected_amount', 7000));
+                $planId = $plan?->id ?? session('selected_plan_id');
+                $billingCycle = ucfirst($request->billing_cycle ?? session('selected_cycle', 'Monthly'));
 
                 $subscription = Subscription::create([
                     'user_id' => $user->id,
-                    'plan_id' => session('selected_plan_id'),
+                    'plan_id' => $planId,
                     'plan' => $planName,
                     'plan_name' => $planName,
-                    'billing_cycle' => ucfirst($request->billing_cycle ?? session('selected_cycle', 'Monthly')),
+                    'billing_cycle' => $billingCycle,
                     'amount' => $planAmount,
                     'status' => 'Pending',
                     'payment_status' => 'unpaid',
                 ]);
 
-                DB::afterCommit(function () use ($user, $planName, $planAmount, $request) {
+                DB::afterCommit(function () use ($user, $planName, $planAmount, $billingCycle) {
                     SystemEventMailer::notifyRegistration($user, 'user', [
                         'plan' => $planName,
                         'amount' => (string) $planAmount,
-                        'billing_cycle' => ucfirst($request->billing_cycle ?? session('selected_cycle', 'Monthly')),
+                        'billing_cycle' => $billingCycle,
                     ]);
                 });
 
                 $this->clearRegistrationSession();
                 return redirect()->route('saas.setup', ['id' => $subscription->id]);
             });
-        } catch (\Exception $e) {
-            Log::error('Registration Failed: ' . $e->getMessage());
-            return back()->withErrors(['error' => 'Registration failed.'])->withInput();
+        } catch (\Throwable $e) {
+            Log::error('Registration failed', [
+                'email' => $validated['email'] ?? null,
+                'role' => $request->role ?? null,
+                'error' => $e->getMessage(),
+                'class' => get_class($e),
+            ]);
+
+            $message = str_contains(strtolower($e->getMessage()), 'duplicate')
+                || str_contains(strtolower($e->getMessage()), 'unique')
+                ? 'This email is already registered. Please log in instead.'
+                : 'Registration failed. Please try again.';
+
+            return back()->withErrors(['error' => $message])->withInput();
         }
     }
 

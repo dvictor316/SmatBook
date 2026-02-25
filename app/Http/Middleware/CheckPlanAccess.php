@@ -20,7 +20,7 @@ class CheckPlanAccess
 
         // Super admins / administrators bypass plan checks
         if (
-            in_array(strtolower((string) ($user->role ?? '')), ['super_admin', 'administrator'], true) ||
+            in_array(strtolower((string) ($user->role ?? '')), ['super_admin', 'superadmin', 'administrator', 'admin'], true) ||
             strtolower((string) ($user->email ?? '')) === 'donvictorlive@gmail.com'
         ) {
             return $next($request);

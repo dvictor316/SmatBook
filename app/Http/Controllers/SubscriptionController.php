@@ -1043,6 +1043,7 @@ class SubscriptionController extends Controller
             DB::commit();
 
             $this->sendWelcomeEmail($subscription->user, $subscription, $subscription->company);
+            $this->sendTransferDecisionEmail($subscription, 'approved', (string) ($updates['transfer_validation_note'] ?? 'Approved'));
 
             return back()->with('success', 'Bank transfer approved and subscription activated.');
         } catch (\Throwable $e) {
@@ -1083,8 +1084,57 @@ class SubscriptionController extends Controller
         }
 
         $subscription->update($updates);
+        $this->sendTransferDecisionEmail($subscription, 'rejected', (string) ($updates['transfer_validation_note'] ?? 'Rejected'));
 
         return back()->with('warning', 'Bank transfer rejected. Customer can resubmit transfer details.');
+    }
+
+    public function suspendTransfer(Request $request, $id)
+    {
+        abort_unless($this->isAdmin(), 403);
+
+        $request->validate([
+            'note' => 'nullable|string|max:255',
+        ]);
+
+        $subscription = Subscription::with(['user', 'company'])->findOrFail($id);
+        if (strtolower((string) $subscription->payment_gateway) !== 'bank_transfer') {
+            return back()->with('error', 'This subscription is not a bank transfer request.');
+        }
+
+        $updates = [
+            'status' => 'Suspended',
+            'transfer_validated_by' => auth()->id(),
+            'transfer_validated_at' => now(),
+            'transfer_validation_note' => trim((string) $request->input('note', 'Suspended by super admin')),
+        ];
+
+        if (strtolower((string) $subscription->payment_status) === 'pending_verification') {
+            $updates['payment_status'] = 'failed';
+        }
+
+        foreach (array_keys($updates) as $column) {
+            if (!Schema::hasColumn('subscriptions', $column)) {
+                unset($updates[$column]);
+            }
+        }
+
+        $subscription->update($updates);
+
+        if ($subscription->company) {
+            $subscription->company->update(['status' => 'suspended']);
+        }
+
+        if ($subscription->user) {
+            $subscription->user->update([
+                'status' => 'suspended',
+                'is_verified' => 0,
+            ]);
+        }
+
+        $this->sendTransferDecisionEmail($subscription, 'suspended', (string) ($updates['transfer_validation_note'] ?? 'Suspended'));
+
+        return back()->with('warning', 'Transfer user has been suspended successfully.');
     }
 
     private function sendWelcomeEmail($user, $subscription, $company): void
@@ -1120,6 +1170,51 @@ class SubscriptionController extends Controller
             ], fn($m) => $m->to($user->email, $user->name)->subject('Your SmatBook Login Credentials'));
         } catch (\Exception $e) {
             Log::error('Deployment welcome email failed', ['error' => $e->getMessage()]);
+        }
+    }
+
+    private function sendTransferDecisionEmail(Subscription $subscription, string $decision, string $note = ''): void
+    {
+        $user = $subscription->user;
+        if (!$user?->email) {
+            return;
+        }
+
+        $decision = strtolower(trim($decision));
+        $decisionLabel = ucfirst($decision);
+        $subject = "Bank Transfer {$decisionLabel}: " . ($subscription->plan_name ?? $subscription->plan ?? 'Subscription');
+
+        $message = match ($decision) {
+            'approved' => 'Your bank transfer has been approved and your subscription is now active.',
+            'rejected' => 'Your bank transfer was rejected. Please review and resubmit your payment details.',
+            'suspended' => 'Your account subscription has been suspended by the super admin.',
+            default => 'Your bank transfer status was updated.',
+        };
+
+        $details = [
+            'Name' => $user->name ?? 'User',
+            'Plan' => $subscription->plan_name ?? $subscription->plan ?? 'N/A',
+            'Amount' => '₦' . number_format((float) ($subscription->amount ?? 0), 2),
+            'Status' => strtoupper((string) ($subscription->status ?? '')),
+            'Payment Status' => strtoupper((string) ($subscription->payment_status ?? '')),
+            'Reference' => (string) ($subscription->transfer_reference ?: $subscription->transaction_reference ?: 'N/A'),
+            'Note' => $note !== '' ? $note : 'N/A',
+        ];
+
+        try {
+            Mail::send('emails.system-event', [
+                'title' => "Transfer {$decisionLabel}",
+                'intro' => $message,
+                'details' => $details,
+            ], function ($m) use ($user, $subject) {
+                $m->to($user->email, $user->name)->subject($subject);
+            });
+        } catch (\Throwable $e) {
+            Log::error('Transfer decision email failed', [
+                'subscription_id' => $subscription->id,
+                'decision' => $decision,
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 

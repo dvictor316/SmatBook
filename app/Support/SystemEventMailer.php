@@ -2,7 +2,6 @@
 
 namespace App\Support;
 
-use App\Models\DeploymentManager;
 use App\Models\EmailAuditLog;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -12,6 +11,8 @@ use Illuminate\Support\Facades\Schema;
 
 class SystemEventMailer
 {
+    private const ADMIN_INBOX = 'donvictorlive@gmail.com';
+
     public static function notifyRegistration(User $registrant, string $type = 'user', array $context = []): void
     {
         $label = $type === 'deployment_manager' ? 'Deployment Manager Registration' : 'User Registration';
@@ -30,7 +31,12 @@ class SystemEventMailer
             }
         }
 
-        $recipients = self::stakeholderEmails([$registrant->email]);
+        // Temporary routing policy:
+        // - User-originated registrations -> admin inbox only.
+        // - Deployment-manager registrations -> manager + admin inbox.
+        $recipients = $type === 'deployment_manager'
+            ? self::uniqueEmails([$registrant->email, self::adminInbox()])
+            : [self::adminInbox()];
         self::send($recipients, $subject, $label, 'A new account has been created on the platform.', $details);
     }
 
@@ -44,44 +50,20 @@ class SystemEventMailer
             'Time' => now()->toDateTimeString(),
         ];
 
-        $recipients = self::stakeholderEmails([$manager->email]);
+        // Approval belongs to the manager + admin inbox.
+        $recipients = self::uniqueEmails([$manager->email, self::adminInbox()]);
         self::send($recipients, $subject, 'Manager Approval', 'A deployment manager account has been approved.', $details);
     }
 
-    private static function stakeholderEmails(array $extras = []): array
+    private static function adminInbox(): string
     {
-        $adminEmails = User::query()
-            ->whereNotNull('email')
-            ->where('email', '!=', '')
-            ->where(function ($q) {
-                $q->whereRaw("LOWER(COALESCE(role, '')) IN ('super_admin','superadmin','administrator','admin')")
-                    ->orWhere('email', 'donvictorlive@gmail.com');
-            })
-            ->pluck('email')
-            ->all();
+        $configured = (string) config('mail.admin_inbox', self::ADMIN_INBOX);
+        return filter_var($configured, FILTER_VALIDATE_EMAIL) ? $configured : self::ADMIN_INBOX;
+    }
 
-        $managerEmails = User::query()
-            ->whereNotNull('email')
-            ->where('email', '!=', '')
-            ->whereRaw("LOWER(COALESCE(role, '')) = 'deployment_manager'")
-            ->pluck('email')
-            ->all();
-
-        if (Schema::hasTable('deployment_managers')) {
-            $dmUserIds = DeploymentManager::query()
-                ->whereIn('status', ['active', 'pending', 'pending_info'])
-                ->pluck('user_id')
-                ->all();
-
-            if (!empty($dmUserIds)) {
-                $managerEmails = array_merge(
-                    $managerEmails,
-                    User::query()->whereIn('id', $dmUserIds)->whereNotNull('email')->pluck('email')->all()
-                );
-            }
-        }
-
-        $emails = array_unique(array_filter(array_merge($adminEmails, $managerEmails, $extras), function ($email) {
+    private static function uniqueEmails(array $emails): array
+    {
+        $emails = array_unique(array_filter($emails, function ($email) {
             return is_string($email) && filter_var($email, FILTER_VALIDATE_EMAIL);
         }));
 

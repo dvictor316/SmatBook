@@ -106,6 +106,17 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Temporary Admin Inbox Override
+    |--------------------------------------------------------------------------
+    |
+    | During phased email rollout, user-originated system mails can be routed
+    | to a single admin inbox. Set MAIL_ADMIN_INBOX in .env to change target.
+    |
+    */
+    'admin_inbox' => env('MAIL_ADMIN_INBOX', 'donvictorlive@gmail.com'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Markdown Mail Settings
     |--------------------------------------------------------------------------
     |

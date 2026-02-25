@@ -63,6 +63,11 @@
         Deployment Managers
     </a>
 </li>
+                        <li>
+                            <a href="{{ route('super_admin.transfer_users.index', $routeParams) }}" class="{{ Request::is('superadmin/transfer-users*') ? 'active' : '' }}">
+                                Transfer Users
+                            </a>
+                        </li>
                         <li><a href="{{ route('super_admin.users.index', $routeParams) }}" class="{{ Request::is('superadmin/users-list*') ? 'active' : '' }}">Users</a></li>
                     </ul>
                 </li>

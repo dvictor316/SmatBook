@@ -758,6 +758,55 @@ public function pendingManagers()
         return view('superadmin.managers.approved', compact('managers'));
     }
 
+    public function transferUsers(Request $request)
+    {
+        $query = Subscription::query()
+            ->leftJoin('users', 'subscriptions.user_id', '=', 'users.id')
+            ->leftJoin('companies', 'subscriptions.company_id', '=', 'companies.id')
+            ->select(
+                'subscriptions.*',
+                DB::raw("COALESCE(users.name, subscriptions.subscriber_name, 'N/A') as customer_name"),
+                DB::raw("COALESCE(users.email, '') as customer_email"),
+                DB::raw("COALESCE(companies.name, companies.company_name, '') as company_name")
+            )
+            ->whereRaw("LOWER(COALESCE(subscriptions.payment_gateway, '')) = 'bank_transfer'")
+            ->where(function ($q) {
+                $q->whereNull('subscriptions.deployed_by')
+                    ->orWhere('subscriptions.deployed_by', 0);
+            });
+
+        if ($request->filled('search')) {
+            $search = '%' . trim((string) $request->search) . '%';
+            $query->where(function ($q) use ($search) {
+                $q->where('users.name', 'like', $search)
+                    ->orWhere('users.email', 'like', $search)
+                    ->orWhere('subscriptions.subscriber_name', 'like', $search)
+                    ->orWhere('subscriptions.transfer_reference', 'like', $search)
+                    ->orWhere('subscriptions.transaction_reference', 'like', $search);
+            });
+        }
+
+        if ($request->filled('status')) {
+            $status = strtolower(trim((string) $request->status));
+            if ($status === 'pending') {
+                $query->whereRaw("LOWER(COALESCE(subscriptions.payment_status, '')) = 'pending_verification'");
+            } elseif ($status === 'approved') {
+                $query->whereRaw("LOWER(COALESCE(subscriptions.status, '')) = 'active'");
+            } elseif ($status === 'rejected') {
+                $query->whereRaw("LOWER(COALESCE(subscriptions.payment_status, '')) = 'failed'");
+            } elseif ($status === 'suspended') {
+                $query->whereRaw("LOWER(COALESCE(subscriptions.status, '')) = 'suspended'");
+            }
+        }
+
+        $transferUsers = $query->orderByDesc('subscriptions.transfer_submitted_at')
+            ->orderByDesc('subscriptions.created_at')
+            ->paginate(15)
+            ->withQueryString();
+
+        return view('SuperAdmin.users.transfer', compact('transferUsers'));
+    }
+
     public function approveSubscription($id)
     {
         try {

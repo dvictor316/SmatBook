@@ -72,6 +72,12 @@ Route::get('/projects/master-jamb', [LandingController::class, 'projectMasterJam
 Route::get('/projects/payplus', [LandingController::class, 'projectPayplus'])->name('landing.projects.payplus');
 Route::get('/pricing', [SubscriptionController::class, 'plans'])->name('pricing');
 Route::get('/membership-plans', [SubscriptionController::class, 'plans'])->name('membership-plans');
+Route::get('/session/ping', function () {
+    return response()->json([
+        'ok' => true,
+        'ts' => now()->toIso8601String(),
+    ]);
+})->name('session.ping');
 
 /*
 |--------------------------------------------------------------------------
@@ -432,6 +438,14 @@ Route::middleware(['auth', 'role:super_admin,administrator'])->prefix('superadmi
         Route::post('/{id}/activate', [SuperAdminDashboardController::class, 'activateManager'])->name('activate');
         Route::post('/{id}/reject', [SuperAdminDashboardController::class, 'rejectManager'])->name('reject');
         Route::delete('/{id}', [SuperAdminDashboardController::class, 'deleteManager'])->name('delete');
+    });
+
+    // Direct transfer users (users not onboarded through a deployment manager)
+    Route::prefix('transfer-users')->name('transfer_users.')->group(function () {
+        Route::get('/', [SuperAdminDashboardController::class, 'transferUsers'])->name('index');
+        Route::post('/{id}/approve', [SubscriptionController::class, 'approveTransfer'])->name('approve');
+        Route::post('/{id}/reject', [SubscriptionController::class, 'rejectTransfer'])->name('reject');
+        Route::post('/{id}/suspend', [SubscriptionController::class, 'suspendTransfer'])->name('suspend');
     });
 
     Route::get('/settings', [DeploymentManagerController::class, 'settings'])->name('settings');
@@ -924,4 +938,22 @@ Route::fallback(function () {
         return response()->view('errors.404', [], 404);
     }
     return redirect()->route('login')->with('error', 'Page not found.');
+});
+
+// ── Payroll Routes ──────────────────────────────────────────
+Route::prefix('payroll')->name('payroll.')->middleware(['auth', 'plan.access:enterprise'])->group(function () {
+    Route::get('/',                     [App\Http\Controllers\PayrollController::class, 'index'])->name('index');
+    Route::get('/add-employee',         [App\Http\Controllers\PayrollController::class, 'create'])->name('create');
+    Route::post('/add-employee',        [App\Http\Controllers\PayrollController::class, 'store'])->name('store');
+    Route::get('/employee/{id}/edit',   [App\Http\Controllers\PayrollController::class, 'edit'])->name('edit');
+    Route::put('/employee/{id}',        [App\Http\Controllers\PayrollController::class, 'update'])->name('update');
+    Route::get('/run/new',              [App\Http\Controllers\PayrollController::class, 'runPage'])->name('run');
+    Route::get('/run/locked',           [App\Http\Controllers\PayrollController::class, 'lockedEmployees'])->name('run.locked');
+    Route::post('/run/process',         [App\Http\Controllers\PayrollController::class, 'process'])->name('process');
+    Route::get('/history/all',          [App\Http\Controllers\PayrollController::class, 'history'])->name('history');
+    Route::get('/export/csv',           [App\Http\Controllers\PayrollController::class, 'export'])->name('export');
+    Route::get('/{id}/slip',            [App\Http\Controllers\PayrollController::class, 'slip'])->name('slip');
+    Route::get('/{id}/slip/download',   [App\Http\Controllers\PayrollController::class, 'slipDownload'])->name('slip.download');
+    Route::get('/{id}',                 [App\Http\Controllers\PayrollController::class, 'show'])->name('show');
+    Route::post('/{id}/mark-paid',      [App\Http\Controllers\PayrollController::class, 'markPaid'])->name('mark-paid');
 });

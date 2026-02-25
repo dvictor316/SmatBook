@@ -14,7 +14,7 @@
     }
 
     $persistedPlan = request('plan', session('selected_plan', 'enterprise'));
-    $persistedCycle = request('billing_cycle', session('billing_cycle', 'monthly'));
+    $persistedCycle = request('billing_cycle', request('cycle', session('selected_cycle', session('billing_cycle', 'monthly'))));
 @endphp
 
 <style>
@@ -28,6 +28,11 @@
         --spa-primary-dark: #1d4ed8;
         --spa-text: #0f172a;
         --spa-muted: #64748b;
+    }
+
+    html, body {
+        height: 100%;
+        overflow: hidden !important;
     }
 
     /* 1. VIEWPORT & CENTERING FIX */
@@ -47,6 +52,7 @@
     }
 
     /* Hard reset wrapper overrides to prevent theme conflict */
+    .main-wrapper,
     .main-wrapper.login-body {
         display: block !important;
         width: 100% !important;
@@ -344,7 +350,7 @@
                 <div class="mb-4">
                     <div class="d-flex justify-content-between align-items-center mb-1">
                         <label class="label-caps m-0">Secure Passcode</label>
-                        <a href="{{ route('password.request') }}" class="text-decoration-none fw-bold" style="color: #2563eb; font-size: 10px; text-transform: uppercase;">Lost Key?</a>
+                        <a href="{{ route('password.request', ['plan' => $persistedPlan, 'cycle' => $persistedCycle]) }}" class="text-decoration-none fw-bold" style="color: #2563eb; font-size: 10px; text-transform: uppercase;">Lost Key?</a>
                     </div>
                     <div class="pass-container">
                         <input type="password" name="password" id="pass_input" class="form-control input-smat w-100" placeholder="••••••••" required>
@@ -374,7 +380,7 @@
                 <div class="bottom-link">
                     Choose your onboarding path
                     <div class="bottom-actions">
-                        <a href="{{ route('membership-plans') }}" class="bottom-action-link">Deploy Infrastructure</a>
+                        <a href="{{ route('saas-register', ['plan' => strtolower((string) $persistedPlan), 'cycle' => strtolower((string) $persistedCycle)]) }}" class="bottom-action-link">Deploy Infrastructure</a>
                         <a href="{{ route('saas-register', ['type' => 'manager']) }}" class="bottom-action-link">Become a Partner</a>
                     </div>
                 </div>
