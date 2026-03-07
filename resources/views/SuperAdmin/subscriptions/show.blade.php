@@ -39,7 +39,7 @@
                             <div class="col-sm-6">
                                 <h2 class="text-primary" style="font-weight: 800;">SMAT-BOOK</h2>
                                 <ul class="list-unstyled mt-2">
-                                    <li><strong>Smat-Book SaaS Platform</strong></li>
+                                    <li><strong>SmartProbook SaaS Platform</strong></li>
                                     <li>Onitsha, Anambra State, Nigeria</li>
                                     <li>Support: chat@smatbook.com</li>
                                 </ul>

@@ -21,6 +21,7 @@ class SuperAdminDashboardController extends Controller
     public function index()
     {
         $user = Auth::user();
+        Subscription::expireDueSubscriptions();
 
         // FIXED: More inclusive security check
         if (!$this->isSuperAdmin($user)) {
@@ -82,7 +83,7 @@ class SuperAdminDashboardController extends Controller
                                       ? Subscription::whereRaw('LOWER(status) IN (?, ?)', ['pending', 'awaiting payment'])->count()
                                       : 0,
                 'pending_managers' => Schema::hasTable('deployment_managers') 
-                                      ? DB::table('deployment_managers')->where('status', 'pending')->count() 
+                                      ? DB::table('deployment_managers')->whereIn('status', ['pending', 'pending_info'])->count() 
                                       : 0,
                 'active_managers'  => Schema::hasTable('deployment_managers') 
                                       ? DB::table('deployment_managers')->where('status', 'active')->count() 
@@ -91,6 +92,12 @@ class SuperAdminDashboardController extends Controller
                                       ? DB::table('deployment_managers')->where('status', 'suspended')->count() 
                                       : 0,
                 'total_stock_val'  => $stockValue,
+                'expiring_soon_subs' => Schema::hasTable('subscriptions')
+                                      ? Subscription::expiringSoon(7)->count()
+                                      : 0,
+                'expired_subs'       => Schema::hasTable('subscriptions')
+                                      ? Subscription::whereRaw("LOWER(COALESCE(status, '')) = 'expired'")->count()
+                                      : 0,
             ];
 
             $stats = $metrics;
@@ -403,19 +410,29 @@ class SuperAdminDashboardController extends Controller
                     });
             }
 
+            $expiringSubscriptions = collect();
+            if (Schema::hasTable('subscriptions')) {
+                $expiringSubscriptions = Subscription::with(['company', 'user'])
+                    ->expiringSoon(7)
+                    ->orderBy('end_date', 'asc')
+                    ->limit(10)
+                    ->get();
+            }
+
             // VIEW ATTRIBUTES
             $userRole    = $user->role;
             $permissions = ['view_reports', 'manage_users', 'manage_domains', 'super_access', 'verify_managers'];
             $domain      = env('SESSION_DOMAIN', 'Default System');
             $isDeploymentView = false;
-            $viewPath = 'superadmin.dashboard';
+            $viewPath = 'SuperAdmin.dashboard';
 
             return view($viewPath, compact(
                 'stats', 'metrics', 'revenueTrends', 'tenantGrowth', 'revenueByPlan', 
                 'recentTenants', 'platformActivity', 'planStats', 'countryData', 
                 'userRole', 'permissions', 'deployments', 'domain', 
                 'deploymentLimit', 'statusDistribution', 'isDeploymentView',
-                'chartSeries', 'activityHeatmap', 'systemHealth', 'managerPerformance'
+                'chartSeries', 'activityHeatmap', 'systemHealth', 'managerPerformance',
+                'expiringSubscriptions'
             ));
 
         } catch (\Exception $e) {
@@ -426,10 +443,11 @@ class SuperAdminDashboardController extends Controller
             $emptyMetrics = [
                 'total_companies' => 0, 'total_tenants' => 0, 'active_subs' => 0, 
                 'platform_revenue' => 0, 'total_users' => 0, 'pending_setups' => 0, 
-                'pending_managers' => 0, 'active_managers' => 0, 'total_stock_val' => 0
+                'pending_managers' => 0, 'active_managers' => 0, 'total_stock_val' => 0,
+                'expiring_soon_subs' => 0, 'expired_subs' => 0
             ];
 
-            return view('superadmin.dashboard', [
+            return view('SuperAdmin.dashboard', [
                 'stats' => $emptyMetrics,
                 'metrics' => $emptyMetrics,
                 'deploymentLimit' => 0,
@@ -454,7 +472,8 @@ class SuperAdminDashboardController extends Controller
                 'userRole' => $user->role,
                 'permissions' => [],
                 'isDeploymentView' => false,
-                'domain' => env('SESSION_DOMAIN', 'Error State')
+                'domain' => env('SESSION_DOMAIN', 'Error State'),
+                'expiringSubscriptions' => collect(),
             ])->with('error', 'System Error: ' . $e->getMessage());
         }
     }
@@ -618,6 +637,14 @@ class SuperAdminDashboardController extends Controller
         }
     }
 
+    /**
+     * Route alias used by /superadmin/managers/{id}/activate
+     */
+    public function activateManager($id)
+    {
+        return $this->reactivateManager($id);
+    }
+
     private function ensureManagerHasWorkspace($user) 
     {
         $hasCompany = Company::where('user_id', $user->id)->exists();
@@ -696,7 +723,7 @@ public function pendingManagers()
             ->paginate(15)
             ->withQueryString();
 
-        return view('superadmin.managers.approved', compact('managers'));
+        return view('SuperAdmin.managers.approved', compact('managers'));
     }
 
     public function listManagers(Request $request)
@@ -727,7 +754,7 @@ public function pendingManagers()
             ->paginate(15)
             ->withQueryString();
 
-        return view('superadmin.managers.approved', compact('managers'));
+        return view('SuperAdmin.managers.approved', compact('managers'));
     }
 
     public function suspendedManagers(Request $request)
@@ -755,7 +782,7 @@ public function pendingManagers()
             ->paginate(15)
             ->withQueryString();
 
-        return view('superadmin.managers.approved', compact('managers'));
+        return view('SuperAdmin.managers.approved', compact('managers'));
     }
 
     public function transferUsers(Request $request)

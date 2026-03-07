@@ -93,7 +93,7 @@
         <div style="clear: both;"></div>
 
         <div class="footer">
-            <p>Thank you for choosing Smat-Book. This is a computer-generated receipt and requires no signature.</p>
+            <p>Thank you for choosing SmartProbook. This is a computer-generated receipt and requires no signature.</p>
             <p>Support: chat@smatbook.com | Onitsha, Anambra State, Nigeria</p>
         </div>
     </div>

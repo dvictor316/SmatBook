@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SmatBook Intelligence | Membership Uplink</title>
+    <title>Smatprobook</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -147,8 +147,8 @@
     <nav class="spa-nav">
         <div class="container flex-between">
             <div style="display: flex; align-items: center; gap: 10px;">
-                <img src="{{ asset('assets/img/smat12.png') }}" alt="SmatBook Logo" style="height: 30px;">
-                <span style="font-weight: 800; color: var(--muji-blue-deep); font-size: 1.1rem; letter-spacing: -0.5px;">SMATBOOK</span>
+                <img src="{{ asset('assets/img/logo-placeholder.svg') }}" alt="SmartProbook Logo" style="height: 30px;">
+                <span style="font-weight: 800; color: var(--muji-blue-deep); font-size: 1.1rem; letter-spacing: -0.5px;">SMARTPROBOOK</span>
             </div>
             <a href="/" style="text-decoration: none; color: #64748b; font-weight: 600; font-size: 0.85rem; transition: 0.3s;">
                 <i class="fas fa-arrow-left me-2"></i> Exit Setup
@@ -250,9 +250,9 @@
 
     <footer style="padding: 60px 0; border-top: 1px solid var(--muji-border); text-align: center; background: var(--muji-blue-light);">
         <div class="container">
-            <p style="font-weight: 700; color: var(--muji-blue-deep); margin-bottom: 10px;">SMATBOOK INTELLIGENCE</p>
+            <p style="font-weight: 700; color: var(--muji-blue-deep); margin-bottom: 10px;">SMARTPROBOOK INTELLIGENCE</p>
             <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 20px;">Secure, AES-256 standard encrypted accounting deployment.</p>
-            <p style="font-size: 0.8rem; color: #94a3b8;">© 2026 SmatBook Enterprise. All rights reserved.</p>
+            <p style="font-size: 0.8rem; color: #94a3b8;">© 2026 SmartProbook Enterprise. All rights reserved.</p>
         </div>
     </footer>
 

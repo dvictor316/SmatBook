@@ -1,17 +1,55 @@
-@extends('layout.mainlayout')
+@extends('layout.mainlayout', ['hideNavbar' => true, 'hideSidebar' => true])
 
 @section('page-title', 'Payment Successful')
 
 @section('content')
 <style>
+    .main-wrapper,
+    .page-wrapper {
+        margin-left: 0 !important;
+        padding-left: 0 !important;
+        width: 100% !important;
+    }
+
+    .page-wrapper .content.container-fluid {
+        padding: 0 !important;
+        max-width: 100% !important;
+    }
+
+    #success-wrapper {
+        margin-left: 0 !important;
+        width: 100% !important;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px 14px;
+        background:
+            radial-gradient(circle at 8% 10%, rgba(37, 99, 235, 0.12), transparent 34%),
+            radial-gradient(circle at 92% 92%, rgba(16, 185, 129, 0.12), transparent 34%),
+            #f5f8ff;
+    }
+
+    #success-wrapper .row {
+        width: 100%;
+        margin: 0;
+        justify-content: center;
+    }
+
+    #success-wrapper .col-lg-7 {
+        width: 100%;
+        max-width: 760px;
+        padding: 0;
+    }
+
     .success-card {
-        background: var(--sb-surface);
+        background: #ffffff;
         border-radius: 20px;
-        border: 1px solid var(--sb-border);
-        box-shadow: 0 8px 32px rgba(0,0,0,0.06);
-        padding: 3rem 2.5rem;
+        border: 1px solid #dbe6ff;
+        box-shadow: 0 20px 50px rgba(15, 23, 42, 0.12);
+        padding: 2.4rem 2.1rem;
         text-align: center;
-        max-width: 620px;
+        max-width: 100%;
         margin: 0 auto;
     }
 
@@ -170,9 +208,35 @@
         font-size: 11px;
         flex-shrink: 0;
     }
+
+    @media (max-width: 768px) {
+        #success-wrapper {
+            padding: 16px 10px;
+        }
+
+        .success-card {
+            border-radius: 16px;
+            padding: 1.4rem 1rem;
+        }
+
+        .detail-grid {
+            grid-template-columns: 1fr;
+            gap: 0.7rem;
+        }
+
+        .action-buttons {
+            gap: 0.6rem;
+        }
+
+        .btn-primary-solid,
+        .btn-outline-soft {
+            width: 100%;
+            justify-content: center;
+        }
+    }
 </style>
 
-<div class="sb-shell" id="success-wrapper">
+<div id="success-wrapper">
     <div class="row justify-content-center">
         <div class="col-lg-7">
 
@@ -233,8 +297,16 @@
                             <div class="value text-success">₦{{ number_format($subscription->amount, 0) }}</div>
                         </div>
                         <div class="detail-item">
+                            <div class="label">Valid From</div>
+                            <div class="value">{{ $subscription->start_date ? \Carbon\Carbon::parse($subscription->start_date)->format('M d, Y') : 'Today' }}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="label">Valid Until</div>
+                            <div class="value">{{ $subscription->end_date ? \Carbon\Carbon::parse($subscription->end_date)->format('M d, Y') : '—' }}</div>
+                        </div>
+                        <div class="detail-item">
                             <div class="label">Transaction Ref</div>
-                            <div class="value">{{ $subscription->transaction_reference ?? 'Pending' }}</div>
+                            <div class="value">{{ $subscription->transaction_reference ?? 'Paid' }}</div>
                         </div>
                     </div>
 
@@ -247,7 +319,7 @@
                             <div class="fw-bold" style="font-size:22px;color:#059669">
                                 ₦{{ number_format($commission, 0) }}
                             </div>
-                            <div class="text-muted" style="font-size:12px">Pending — credited after verification</div>
+                            <div class="text-muted" style="font-size:12px">Credited automatically after successful payment</div>
                         </div>
                         <i class="fas fa-coins fa-2x text-success opacity-50"></i>
                     </div>
@@ -306,6 +378,12 @@
                             <div class="value text-success">₦{{ number_format($subscription->amount, 0) }}</div>
                         </div>
                         <div class="detail-item">
+                            <div class="label">Valid From</div>
+                            <div class="value">
+                                {{ $subscription->start_date ? \Carbon\Carbon::parse($subscription->start_date)->format('M d, Y') : 'Today' }}
+                            </div>
+                        </div>
+                        <div class="detail-item">
                             <div class="label">Valid Until</div>
                             <div class="value">
                                 {{ $subscription->end_date ? \Carbon\Carbon::parse($subscription->end_date)->format('M d, Y') : '—' }}
@@ -313,7 +391,7 @@
                         </div>
                         <div class="detail-item">
                             <div class="label">Transaction Ref</div>
-                            <div class="value">{{ $subscription->transaction_reference ?? 'Pending' }}</div>
+                            <div class="value">{{ $subscription->transaction_reference ?? 'Paid' }}</div>
                         </div>
                     </div>
                     @endif
@@ -327,7 +405,7 @@
                         <a href="javascript:void(0)" onclick="window.print()" class="btn-outline-soft">
                             <i class="fas fa-print"></i> Print Transaction
                         </a>
-                        <a href="{{ $returnUrl }}" class="btn-outline-soft">
+                        <a href="{{ $workspaceUrl ?: $returnUrl }}" class="btn-outline-soft" @if($workspaceUrl) target="_blank" @endif>
                             <i class="fas fa-home"></i> Go to Dashboard
                         </a>
                         @if(session('deployment_return_manager_id'))

@@ -384,7 +384,7 @@
     <div class="header-left">
         <a href="{{ url('/') }}" class="header-logo">
             {{-- CORRECTED: Using smat14.png as requested --}}
-            <img src="{{ asset('assets/img/smat14.png') }}" alt="Smat Book Logo">
+            <img src="{{ asset('assets/img/logo-placeholder.svg') }}" alt="SmartProbook Logo">
         </a>
     </div>
 

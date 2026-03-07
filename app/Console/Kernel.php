@@ -11,6 +11,8 @@ class Kernel extends ConsoleKernel
 {
     protected function schedule(Schedule $schedule)
     {
+        $schedule->command('subscriptions:expire-due')->hourly();
+
         $schedule->call(function () {
             $today = date('Y-m-d');
             $thisMonth = date('Y-m');

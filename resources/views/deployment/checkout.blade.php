@@ -4,6 +4,16 @@
 
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+    :root {
+        --spa-bg: #f7faff;
+        --spa-surface: #ffffff;
+        --spa-aside: #eef4ff;
+        --spa-border: #e2e8f0;
+        --spa-primary: #2563eb;
+        --spa-primary-dark: #1d4ed8;
+        --spa-text: #0f172a;
+        --spa-muted: #64748b;
+    }
 
     .smat-viewport {
         position: fixed;
@@ -11,7 +21,7 @@
         left: 0;
         width: 100vw;
         height: 100vh;
-        background-color: #fdfeff;
+        background-color: var(--spa-bg);
         z-index: 9999;
         display: flex;
         align-items: center;
@@ -46,7 +56,7 @@
     }
 
     .smat-card {
-        background: #ffffff;
+        background: var(--spa-surface);
         width: 90%;
         max-width: 900px; 
         min-height: 600px;
@@ -54,26 +64,26 @@
         box-shadow: 0 20px 60px rgba(15, 23, 42, 0.03);
         display: flex;
         overflow: hidden;
-        border: 1px solid #f1f5f9;
+        border: 1px solid var(--spa-border);
     }
 
     .smat-main {
         width: 60%;
         padding: 50px;
-        background: #ffffff;
+        background: var(--spa-surface);
         display: flex;
         flex-direction: column;
     }
 
     .form-title { 
         font-weight: 800; 
-        color: #0f172a; 
+        color: var(--spa-text); 
         font-size: 1.6rem; 
         margin-bottom: 5px; 
     }
     
     .form-subtitle { 
-        color: #64748b; 
+        color: var(--spa-muted); 
         font-size: 14px; 
         margin-bottom: 35px; 
     }
@@ -98,8 +108,8 @@
     }
 
     .payment-tile.selected {
-        border-color: #10b981;
-        background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+        border-color: var(--spa-primary);
+        background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
     }
 
     .tile-radio {
@@ -114,7 +124,7 @@
     }
 
     .payment-tile.selected .tile-radio {
-        border-color: #10b981;
+        border-color: var(--spa-primary);
     }
 
     .payment-tile.selected .tile-radio::after {
@@ -125,7 +135,7 @@
         transform: translate(-50%, -50%);
         width: 11px;
         height: 11px;
-        background: #10b981;
+        background: var(--spa-primary);
         border-radius: 50%;
     }
 
@@ -176,7 +186,7 @@
     }
 
     .tile-badge.recommended {
-        background: #10b981;
+        background: var(--spa-primary);
         color: white;
     }
 
@@ -193,12 +203,12 @@
     /* Summary sidebar */
     .smat-aside {
         width: 40%;
-        background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+        background: var(--spa-aside);
         padding: 50px 40px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        border-left: 1px solid #10b981;
+        border-left: 1px solid var(--spa-border);
     }
 
     .summary-title {
@@ -217,7 +227,7 @@
     }
 
     .summary-label {
-        color: #059669;
+        color: #1e3a8a;
         font-weight: 600;
     }
 
@@ -229,19 +239,19 @@
     .total-row {
         margin-top: 20px;
         padding-top: 20px;
-        border-top: 2px solid #10b981;
+        border-top: 2px solid #bfdbfe;
     }
 
     .total-label {
         font-size: 16px;
         font-weight: 800;
-        color: #059669;
+        color: var(--spa-primary-dark);
     }
 
     .total-value {
         font-size: 28px;
         font-weight: 900;
-        color: #10b981;
+        color: var(--spa-primary);
     }
 
     .commission-box {
@@ -252,7 +262,7 @@
     }
 
     .commission-label {
-        color: #059669;
+        color: var(--spa-primary-dark);
         font-size: 12px;
         font-weight: 700;
         margin-bottom: 10px;
@@ -264,13 +274,13 @@
     .commission-amount {
         font-size: 24px;
         font-weight: 900;
-        color: #10b981;
+        color: var(--spa-primary);
         margin-bottom: 4px;
     }
 
     .commission-note {
         font-size: 11px;
-        color: #059669;
+        color: var(--spa-primary-dark);
     }
 
     .btn-previous {
@@ -299,7 +309,7 @@
     .btn-process {
         width: 100%;
         padding: 18px;
-        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        background: linear-gradient(135deg, var(--spa-primary) 0%, var(--spa-primary-dark) 100%);
         color: white;
         border: none;
         border-radius: 12px;
@@ -315,7 +325,7 @@
 
     .btn-process:hover {
         transform: translateY(-2px);
-        box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3);
+        box-shadow: 0 10px 20px rgba(37, 99, 235, 0.3);
     }
 
     .btn-process:disabled {
@@ -350,7 +360,7 @@
         width: 50px; 
         height: 50px; 
         border: 4px solid #f1f5f9; 
-        border-top: 4px solid #10b981; 
+        border-top: 4px solid var(--spa-primary); 
         border-radius: 50%; 
         animation: spin 0.8s linear infinite; 
         margin: 0 auto 20px; 
@@ -531,7 +541,7 @@
 <div id="paymentModal">
     <div>
         <div class="spinner"></div>
-        <h5 id="modalTitle" style="font-weight: 700; color: #10b981; font-size: 1.1rem;">PROCESSING PAYMENT...</h5>
+        <h5 id="modalTitle" style="font-weight: 700; color: #2563eb; font-size: 1.1rem;">PROCESSING PAYMENT...</h5>
         <p id="modalSub" style="font-size: 0.85rem; color: #64748b; margin-top: 8px;">
             Please wait while we process your transaction
         </p>
@@ -544,6 +554,16 @@
 <script src="https://js.paystack.co/v1/inline.js"></script>
 <script src="https://checkout.flutterwave.com/v3.js"></script>
 <script>
+    const paystackPublicKey = @json(
+        trim((string) config('services.paystack.public_key'))
+            ?: trim((string) config('services.paystack.publicKey'))
+            ?: trim((string) \App\Models\Setting::getSensitive('paystack_key', \App\Models\Setting::get('paystack_key', '')))
+    );
+    const flutterwavePublicKey = @json(
+        trim((string) config('services.flutterwave.public_key'))
+            ?: trim((string) \App\Models\Setting::getSensitive('flutterwave_key', \App\Models\Setting::get('flutterwave_key', '')))
+    );
+
     let selectedGateway = 'paystack';
 
     function selectGateway(gateway) {
@@ -578,8 +598,14 @@
     });
 
     function payWithPaystack(subscription) {
+        if (!paystackPublicKey) {
+            alert('Paystack public key is missing. Update it in Payment Settings.');
+            document.getElementById('processBtn').disabled = false;
+            return;
+        }
+
         let handler = PaystackPop.setup({
-            key: '{{ config("services.paystack.public_key", "pk_test_xxxx") }}', 
+            key: paystackPublicKey,
             email: '{{ $subscription->user->email ?? auth()->user()->email }}',
             amount: {{ (int)(($subscription->amount ?? 0) * 100) }},
             currency: 'NGN',
@@ -597,8 +623,14 @@
     }
 
     function payWithFlutterwave(subscription) {
+        if (!flutterwavePublicKey) {
+            alert('Flutterwave public key is missing. Update it in Payment Settings.');
+            document.getElementById('processBtn').disabled = false;
+            return;
+        }
+
         FlutterwaveCheckout({
-            public_key: '{{ config("services.flutterwave.public_key", "FLWPUBK_TEST-xxxx") }}',
+            public_key: flutterwavePublicKey,
             tx_ref: 'DEP_FLW_' + Math.floor(Math.random() * 1000000000),
             amount: {{ $subscription->amount ?? 0 }},
             currency: "NGN",
@@ -618,7 +650,7 @@
                 document.getElementById('processBtn').disabled = false;
             },
             customizations: { 
-                title: "SmatBook Subscription", 
+                title: "SmartProbook Subscription", 
                 description: "Payment for {{ $subscription->plan ?? 'Plan' }}" 
             },
         });

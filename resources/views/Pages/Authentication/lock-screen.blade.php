@@ -14,7 +14,7 @@
     <div class="login-card-custom" style="background: #fff; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); overflow: hidden; max-width: 500px; width: 100%; border: 1px solid #eee;">
         <div class="p-5">
             <div class="text-center mb-4">
-                <img src="{{ URL::asset('/assets/img/smat14.png') }}" class="mb-4" style="max-height: 50px;" alt="Logo">
+                <img src="{{ URL::asset('/assets/img/logo-placeholder.svg') }}" class="mb-4" style="max-height: 50px;" alt="Logo">
                 
                 <div class="lock-user mb-4">
                     <div class="position-relative d-inline-block">

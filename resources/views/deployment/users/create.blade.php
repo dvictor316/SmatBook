@@ -687,7 +687,11 @@
                                 <div class="input-group">
                                     <input type="password" name="password" id="custPw"
                                         class="form-control @error('password') is-invalid @enderror"
-                                        placeholder="Min. 8 characters" minlength="8" required>
+                                        placeholder="Min. 8 characters"
+                                        minlength="8"
+                                        pattern="(?=.*[A-Za-z])(?=.*\d).{8,}"
+                                        title="Use at least 8 characters with letters and numbers."
+                                        required>
                                     <button class="btn btn-outline-secondary" type="button"
                                         onclick="togglePw('custPw', this)">
                                         <i class="fas fa-eye fa-sm"></i>
@@ -697,6 +701,7 @@
                                 @error('password')
                                     <div class="text-danger small mt-1 fw-semibold">{{ $message }}</div>
                                 @enderror
+                                <small class="text-muted d-block mt-1">Use letters and numbers (symbol optional).</small>
                             </div>
 
                             <div class="mb-3">

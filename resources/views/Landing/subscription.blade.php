@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Client Portal & Subscriptions | SmatBook Global</title>
+    <title>Smatprobook</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -68,8 +68,8 @@
 <nav>
     <div class="nav-container">
         <a href="{{ url('/') }}" class="logo-text d-flex align-items-center text-decoration-none">
-            <img src="{{ asset('assets/img/smat12.png') }}" class="brand-img me-2" alt="SmatBook" style="height: 40px;">
-            <div class="logo-text">SMAT<span>BOOK</span></div>
+            <img src="{{ asset('assets/img/logo-placeholder.svg') }}" class="brand-img me-2" alt="SmartProbook" style="height: 40px;">
+            <div class="logo-text">SMARTPRO<span>BOOK</span></div>
         </a>
         <ul class="nav-links" id="mainMenu">
             <li><a href="{{ url('/#home') }}">Home</a></li>
@@ -128,7 +128,7 @@
     <div class="container">
         <div class="row g-5">
             <div class="col-lg-4">
-                <a href="{{ url('/') }}" class="footer-logo">SMAT<span>BOOK</span></a>
+                <a href="{{ url('/') }}" class="footer-logo">SMARTPRO<span>BOOK</span></a>
                 <p>Engineered for excellence. The premier financial intelligence ecosystem for modern African enterprises.</p>
             </div>
             <div class="col-lg-3 offset-lg-1">
@@ -147,7 +147,7 @@
             </div>
         </div>
         <hr style="border-color: rgba(255,255,255,0.1); margin: 60px 0 30px;">
-        <p class="small text-center mb-0">&copy; 2026 SmatBook Global Infrastructure Inc. All Rights Reserved.</p>
+        <p class="small text-center mb-0">&copy; 2026 SmartProbook Global Infrastructure Inc. All Rights Reserved.</p>
     </div>
 </footer>
 

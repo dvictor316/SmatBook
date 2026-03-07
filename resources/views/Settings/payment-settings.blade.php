@@ -85,23 +85,131 @@
                             @csrf
                         <div class="payment-gateway-block">
                             <div class="payment-toggle">
-                                <h5 class="form-title">Stripe</h5>
+                                <h5 class="form-title d-flex align-items-center gap-2">
+                                    Stripe
+                                    @php
+                                        $stripeOk = (bool) ($stripeStatus['configured'] ?? false);
+                                        $stripeEnabled = (bool) ($stripeStatus['enabled'] ?? false);
+                                        $stripeMode = strtoupper((string) ($stripeStatus['mode'] ?? 'UNKNOWN'));
+                                        $stripeSource = (string) ($stripeStatus['source'] ?? 'none');
+                                    @endphp
+                                    <span class="badge {{ $stripeOk ? 'bg-success' : 'bg-danger' }}">
+                                        {{ $stripeOk ? 'Configured' : 'Invalid / Missing' }}
+                                    </span>
+                                    @if($stripeEnabled)
+                                        <span class="badge bg-primary">Enabled</span>
+                                    @else
+                                        <span class="badge bg-secondary">Disabled</span>
+                                    @endif
+                                </h5>
                                 <div class="status-toggle">
                                     <input id="stripe_toggle" class="check" type="checkbox" name="payment_stripe_enabled" value="1" {{ !empty($settings['payment_stripe_enabled']) ? 'checked' : '' }}>
                                     <label for="stripe_toggle" class="checktoggle checkbox-bg">checkbox</label>
                                 </div>
                             </div>
+                            <div class="mb-3 small {{ $stripeOk ? 'text-success' : 'text-danger' }}">
+                                <strong>Status:</strong> {{ $stripeOk ? 'Ready for checkout' : 'Please provide a valid Stripe secret key' }}
+                                <span class="text-muted ms-2">Source: {{ $stripeSource }} | Mode: {{ $stripeMode }}</span>
+                            </div>
                             <div class="row">
                                 <div class="col-lg-6 col-12">
                                     <div class="input-block mb-3">
                                         <label class="form-label">Stripe Key</label>
-                                        <input type="password" class="form-control" name="stripe_key" placeholder="Enter Stripe Key" value="{{ $settings['stripe_key'] ?? '' }}">
+                                        <input type="password" class="form-control" name="stripe_key" placeholder="{{ !empty($secretFlags['has_stripe_key']) ? 'Saved (leave blank to keep existing)' : 'Enter Stripe Key' }}" value="">
                                     </div>
                                 </div>
                                 <div class="col-lg-6 col-12">
                                     <div class="input-block mb-3">
                                         <label class="form-label">Stripe Secret</label>
-                                        <input type="password" class="form-control" name="stripe_secret" placeholder="Enter Stripe Secret" value="{{ $settings['stripe_secret'] ?? '' }}">
+                                        <input type="password" class="form-control" name="stripe_secret" placeholder="{{ !empty($secretFlags['has_stripe_secret']) ? 'Saved (leave blank to keep existing)' : 'Enter Stripe Secret' }}" value="">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="payment-gateway-block">
+                            <div class="payment-toggle">
+                                <h5 class="form-title d-flex align-items-center gap-2">
+                                    Paystack
+                                    @php
+                                        $paystackOk = (bool) ($paystackStatus['configured'] ?? false);
+                                        $paystackEnabled = (bool) ($paystackStatus['enabled'] ?? false);
+                                        $paystackMode = strtoupper((string) ($paystackStatus['mode'] ?? 'UNKNOWN'));
+                                        $paystackSource = (string) ($paystackStatus['source'] ?? 'none');
+                                    @endphp
+                                    <span class="badge {{ $paystackOk ? 'bg-success' : 'bg-danger' }}">
+                                        {{ $paystackOk ? 'Configured' : 'Invalid / Missing' }}
+                                    </span>
+                                    @if($paystackEnabled)
+                                        <span class="badge bg-primary">Enabled</span>
+                                    @else
+                                        <span class="badge bg-secondary">Disabled</span>
+                                    @endif
+                                </h5>
+                                <div class="status-toggle">
+                                    <input id="paystack_toggle" class="check" type="checkbox" name="payment_paystack_enabled" value="1" {{ !empty($settings['payment_paystack_enabled']) ? 'checked' : '' }}>
+                                    <label for="paystack_toggle" class="checktoggle checkbox-bg">checkbox</label>
+                                </div>
+                            </div>
+                            <div class="mb-3 small {{ $paystackOk ? 'text-success' : 'text-danger' }}">
+                                <strong>Status:</strong> {{ $paystackOk ? 'Ready for checkout' : 'Please provide a valid Paystack secret key' }}
+                                <span class="text-muted ms-2">Source: {{ $paystackSource }} | Mode: {{ $paystackMode }}</span>
+                            </div>
+                            <div class="row">
+                                <div class="col-lg-6 col-12">
+                                    <div class="input-block mb-3">
+                                        <label class="form-label">Paystack Public Key</label>
+                                        <input type="password" class="form-control" name="paystack_key" placeholder="{{ !empty($secretFlags['has_paystack_key']) ? 'Saved (leave blank to keep existing)' : 'Enter Paystack Public Key' }}" value="">
+                                    </div>
+                                </div>
+                                <div class="col-lg-6 col-12">
+                                    <div class="input-block mb-3">
+                                        <label class="form-label">Paystack Secret Key</label>
+                                        <input type="password" class="form-control" name="paystack_secret" placeholder="{{ !empty($secretFlags['has_paystack_secret']) ? 'Saved (leave blank to keep existing)' : 'Enter Paystack Secret Key' }}" value="">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="payment-gateway-block">
+                            <div class="payment-toggle">
+                                <h5 class="form-title d-flex align-items-center gap-2">
+                                    Flutterwave
+                                    @php
+                                        $flutterwaveOk = (bool) ($flutterwaveStatus['configured'] ?? false);
+                                        $flutterwaveEnabled = (bool) ($flutterwaveStatus['enabled'] ?? false);
+                                        $flutterwaveMode = strtoupper((string) ($flutterwaveStatus['mode'] ?? 'UNKNOWN'));
+                                        $flutterwaveSource = (string) ($flutterwaveStatus['source'] ?? 'none');
+                                    @endphp
+                                    <span class="badge {{ $flutterwaveOk ? 'bg-success' : 'bg-danger' }}">
+                                        {{ $flutterwaveOk ? 'Configured' : 'Invalid / Missing' }}
+                                    </span>
+                                    @if($flutterwaveEnabled)
+                                        <span class="badge bg-primary">Enabled</span>
+                                    @else
+                                        <span class="badge bg-secondary">Disabled</span>
+                                    @endif
+                                </h5>
+                                <div class="status-toggle">
+                                    <input id="flutterwave_toggle" class="check" type="checkbox" name="payment_flutterwave_enabled" value="1" {{ !empty($settings['payment_flutterwave_enabled']) ? 'checked' : '' }}>
+                                    <label for="flutterwave_toggle" class="checktoggle checkbox-bg">checkbox</label>
+                                </div>
+                            </div>
+                            <div class="mb-3 small {{ $flutterwaveOk ? 'text-success' : 'text-danger' }}">
+                                <strong>Status:</strong> {{ $flutterwaveOk ? 'Ready for checkout' : 'Please provide a valid Flutterwave secret key' }}
+                                <span class="text-muted ms-2">Source: {{ $flutterwaveSource }} | Mode: {{ $flutterwaveMode }}</span>
+                            </div>
+                            <div class="row">
+                                <div class="col-lg-6 col-12">
+                                    <div class="input-block mb-3">
+                                        <label class="form-label">Flutterwave Public Key</label>
+                                        <input type="password" class="form-control" name="flutterwave_key" placeholder="{{ !empty($secretFlags['has_flutterwave_key']) ? 'Saved (leave blank to keep existing)' : 'Enter Flutterwave Public Key' }}" value="">
+                                    </div>
+                                </div>
+                                <div class="col-lg-6 col-12">
+                                    <div class="input-block mb-3">
+                                        <label class="form-label">Flutterwave Secret Key</label>
+                                        <input type="password" class="form-control" name="flutterwave_secret" placeholder="{{ !empty($secretFlags['has_flutterwave_secret']) ? 'Saved (leave blank to keep existing)' : 'Enter Flutterwave Secret Key' }}" value="">
                                     </div>
                                 </div>
                             </div>
@@ -125,7 +233,7 @@
                                 <div class="col-lg-4 col-12">
                                     <div class="input-block mb-3">
                                         <label class="form-label">Secret Key</label>
-                                        <input type="password" class="form-control" name="paypal_secret" placeholder="Enter Paypal Secret" value="{{ $settings['paypal_secret'] ?? '' }}">
+                                        <input type="password" class="form-control" name="paypal_secret" placeholder="{{ !empty($secretFlags['has_paypal_secret']) ? 'Saved (leave blank to keep existing)' : 'Enter Paypal Secret' }}" value="">
                                     </div>
                                 </div>
                                 <div class="col-lg-4 col-12">
@@ -158,7 +266,7 @@
                                 <div class="col-lg-6 col-12">
                                     <div class="input-block mb-0">
                                         <label class="form-label">Key Secret</label>
-                                        <input type="password" class="form-control" name="razorpay_secret" placeholder="Enter Razorpay Secret" value="{{ $settings['razorpay_secret'] ?? '' }}">
+                                        <input type="password" class="form-control" name="razorpay_secret" placeholder="{{ !empty($secretFlags['has_razorpay_secret']) ? 'Saved (leave blank to keep existing)' : 'Enter Razorpay Secret' }}" value="">
                                     </div>
                                 </div>
                             </div>

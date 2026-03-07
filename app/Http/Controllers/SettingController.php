@@ -101,6 +101,8 @@ class SettingController extends Controller
             'mail_php_enabled',
             'mail_smtp_enabled',
             'payment_stripe_enabled',
+            'payment_paystack_enabled',
+            'payment_flutterwave_enabled',
             'payment_paypal_enabled',
             'payment_razorpay_enabled',
             'saas_email_verification',
@@ -119,8 +121,30 @@ class SettingController extends Controller
             }
         }
 
-        // 3. Dynamic Text Field Handler
+        // 3. Sensitive fields are encrypted and never echoed back in plain text.
+        $sensitiveFields = [
+            'stripe_key',
+            'stripe_secret',
+            'paystack_key',
+            'paystack_secret',
+            'flutterwave_key',
+            'flutterwave_secret',
+            'paypal_secret',
+            'razorpay_secret',
+        ];
+
+        foreach ($sensitiveFields as $sensitiveField) {
+            if ($request->has($sensitiveField)) {
+                Setting::putSensitive($sensitiveField, (string) $request->input($sensitiveField, ''));
+            }
+        }
+
+        // 4. Dynamic Text Field Handler
         $inputs = $request->except(array_merge(['_token'], $fileFields));
+        foreach ($sensitiveFields as $sensitiveField) {
+            unset($inputs[$sensitiveField]);
+        }
+
         foreach ($inputs as $key => $value) {
             Setting::updateOrCreate(
                 ['key' => $key],
@@ -149,7 +173,104 @@ class SettingController extends Controller
     public function company_settings() { return view('Settings.company-settings', ['settings' => $this->getSettings()]); }
     public function email_settings()   { return view('Settings.email-settings', ['settings' => $this->getSettings()]); }
     public function invoice_settings() { return view('Settings.invoice-settings', ['settings' => $this->getSettings()]); }
-    public function payment_settings() { return view('Settings.payment-settings', ['settings' => $this->getSettings()]); }
+    public function payment_settings()
+    {
+        $settings = $this->getSettings();
+        $secretFlags = [
+            'has_stripe_key' => (string) Setting::get('stripe_key', '') !== '',
+            'has_stripe_secret' => (string) Setting::get('stripe_secret', '') !== '',
+            'has_paystack_key' => (string) Setting::get('paystack_key', '') !== '',
+            'has_paystack_secret' => (string) Setting::get('paystack_secret', '') !== '',
+            'has_flutterwave_key' => (string) Setting::get('flutterwave_key', '') !== '',
+            'has_flutterwave_secret' => (string) Setting::get('flutterwave_secret', '') !== '',
+            'has_paypal_secret' => (string) Setting::get('paypal_secret', '') !== '',
+            'has_razorpay_secret' => (string) Setting::get('razorpay_secret', '') !== '',
+        ];
+
+        $envStripeSecret = trim((string) config('services.stripe.secret'));
+        $dbStripeSecret = trim((string) Setting::getSensitive('stripe_secret', ''));
+
+        $stripeSecret = $this->isUsableStripeSecret($envStripeSecret)
+            ? $envStripeSecret
+            : $dbStripeSecret;
+
+        $stripeSource = $this->isUsableStripeSecret($envStripeSecret)
+            ? '.env'
+            : ($this->isUsableStripeSecret($dbStripeSecret) ? 'settings' : 'none');
+
+        $stripeStatus = [
+            'enabled' => !empty($settings['payment_stripe_enabled']),
+            'configured' => $this->isUsableStripeSecret($stripeSecret),
+            'source' => $stripeSource,
+            'mode' => str_starts_with($stripeSecret, 'sk_live_') ? 'live' : (str_starts_with($stripeSecret, 'sk_test_') ? 'test' : 'unknown'),
+        ];
+
+        $envPaystackSecret = trim((string) config('services.paystack.secretKey'));
+        $dbPaystackSecret = trim((string) Setting::getSensitive('paystack_secret', ''));
+        $paystackSecret = $this->isUsableGenericKey($envPaystackSecret, 'sk_')
+            ? $envPaystackSecret
+            : $dbPaystackSecret;
+        $paystackSource = $this->isUsableGenericKey($envPaystackSecret, 'sk_')
+            ? '.env'
+            : ($this->isUsableGenericKey($dbPaystackSecret, 'sk_') ? 'settings' : 'none');
+        $paystackStatus = [
+            'enabled' => !empty($settings['payment_paystack_enabled']),
+            'configured' => $this->isUsableGenericKey($paystackSecret, 'sk_'),
+            'source' => $paystackSource,
+            'mode' => str_contains($paystackSecret, '_live_') ? 'live' : (str_contains($paystackSecret, '_test_') ? 'test' : 'unknown'),
+        ];
+
+        $envFlutterwaveSecret = trim((string) config('services.flutterwave.secret_key'));
+        $dbFlutterwaveSecret = trim((string) Setting::getSensitive('flutterwave_secret', ''));
+        $flutterwaveSecret = $this->isUsableGenericKey($envFlutterwaveSecret, 'FLWSECK_')
+            ? $envFlutterwaveSecret
+            : $dbFlutterwaveSecret;
+        $flutterwaveSource = $this->isUsableGenericKey($envFlutterwaveSecret, 'FLWSECK_')
+            ? '.env'
+            : ($this->isUsableGenericKey($dbFlutterwaveSecret, 'FLWSECK_') ? 'settings' : 'none');
+        $flutterwaveStatus = [
+            'enabled' => !empty($settings['payment_flutterwave_enabled']),
+            'configured' => $this->isUsableGenericKey($flutterwaveSecret, 'FLWSECK_'),
+            'source' => $flutterwaveSource,
+            'mode' => str_contains($flutterwaveSecret, '_LIVE-') ? 'live' : (str_contains($flutterwaveSecret, '_TEST-') ? 'test' : 'unknown'),
+        ];
+
+        return view('Settings.payment-settings', compact('settings', 'secretFlags', 'stripeStatus', 'paystackStatus', 'flutterwaveStatus'));
+    }
+
+    private function isUsableStripeSecret(string $secret): bool
+    {
+        if ($secret === '') {
+            return false;
+        }
+
+        if (!str_starts_with($secret, 'sk_')) {
+            return false;
+        }
+
+        if (str_contains(strtolower($secret), 'xxxx')) {
+            return false;
+        }
+
+        return strlen($secret) >= 20;
+    }
+
+    private function isUsableGenericKey(string $value, string $prefix): bool
+    {
+        if ($value === '') {
+            return false;
+        }
+
+        if (!str_starts_with($value, $prefix)) {
+            return false;
+        }
+
+        if (str_contains(strtolower($value), 'xxxx')) {
+            return false;
+        }
+
+        return strlen($value) >= 16;
+    }
     public function plan_billing()
     {
         $user = Auth::user();

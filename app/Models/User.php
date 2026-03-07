@@ -144,7 +144,7 @@ class User extends Authenticatable
 
     public function subscription(): HasOne
     {
-        return $this->hasOne(Subscription::class, 'user_id');
+        return $this->hasOne(Subscription::class, 'user_id')->latestOfMany('id');
     }
 
     /* =========================================================================

@@ -4,7 +4,7 @@
 <div class="container d-flex align-items-center justify-content-center" style="min-height: 80vh;">
     <div class="text-center" style="max-width: 500px;">
         {{-- Branding --}}
-        <img src="{{ asset('assets/img/smat14.png') }}" alt="SmatBook" style="height: 40px; margin-bottom: 30px;">
+        <img src="{{ asset('assets/img/logo-placeholder.svg') }}" alt="SmartProbook" style="height: 40px; margin-bottom: 30px;">
         
         {{-- Animated Icon --}}
         <div class="mb-4">
@@ -13,7 +13,7 @@
 
         <h3 class="fw-bold" style="color: #002347;">Institutional Review in Progress</h3>
         <p class="text-muted small">
-            Your request for a <strong>Custom SmatBook Node</strong> has been received. 
+            Your request for a <strong>Custom SmartProbook Node</strong> has been received. 
             Because this tier involves bespoke institutional features, our management team 
             is currently calculating your activation parameters.
         </p>

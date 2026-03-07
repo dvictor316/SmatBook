@@ -161,6 +161,16 @@ class HomeController extends Controller
             return redirect()->route('saas.checkout', $subscription->id);
         }
 
+        // Paid but expired
+        if ($subscription->isExpired()) {
+            Log::info('→ Expired subscription, redirecting to plans', [
+                'subscription_id' => $subscription->id,
+                'end_date' => (string) $subscription->end_date,
+            ]);
+            return redirect()->route('membership-plans')
+                ->with('error', 'Your subscription has expired. Please renew to continue.');
+        }
+
         // Paid but subscription not yet Active
         if ($subscription->status !== 'Active') {
             Log::info('→ Inactive subscription, redirecting to setup', [
@@ -237,12 +247,20 @@ class HomeController extends Controller
 
         $subscription = Subscription::where('user_id', $user->id)
             ->where('payment_status', 'paid')
-            ->where('status', 'Active')
             ->latest()
             ->first();
 
         if (!$subscription || !$company) {
             return redirect()->route('membership-plans');
+        }
+
+        if ($subscription->isExpired()) {
+            return redirect()->route('membership-plans')
+                ->with('error', 'Your subscription expired on ' . optional($subscription->end_date)->format('M d, Y') . '. Please renew.');
+        }
+
+        if (strtolower((string) $subscription->status) !== 'active') {
+            return redirect()->route('saas.setup', $subscription->id);
         }
 
         $planName = strtolower($subscription->plan ?? $subscription->plan_name ?? 'basic');

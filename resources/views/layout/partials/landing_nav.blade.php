@@ -1,9 +1,9 @@
 <nav style="position: fixed; width: 100%; top: 0; z-index: 9999; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(15px); border-bottom: 1px solid #e2e8f0; height: 90px; display: flex; align-items: center;">
     <div class="nav-container" style="max-width: 1400px; margin: 0 auto; width: 100%; padding: 0 40px; display: flex; justify-content: space-between; align-items: center;">
         <a href="{{ url('/') }}" class="logo-container d-flex align-items-center text-decoration-none">
-            <img src="{{ asset('assets/img/smat12.png') }}" class="brand-img me-2" alt="SmatBook" style="height: 40px; width: auto; object-fit: contain;"> 
+            <img src="{{ asset('assets/img/logo-placeholder.svg') }}" class="brand-img me-2" alt="SmartProbook" style="height: 40px; width: auto; object-fit: contain;"> 
             <div class="logo-text" style="font-size: 1.6rem; font-weight: 800; color: #020617; letter-spacing: -1px;">
-                SMAT<span style="color: #dc2626;">BOOK</span>
+                SMARTPRO<span style="color: #dc2626;">BOOK</span>
             </div>
         </a>
         

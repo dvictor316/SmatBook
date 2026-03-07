@@ -107,8 +107,10 @@
     <div class="row g-3 mb-4">
         @php
             $totalRevenue = $metrics['monthlyRevenue'] ?? 0;
-            $commissionRate = auth()->user()->deploymentProfile->commission_rate ?? 10;
-            $commissionEarned = ($totalRevenue * $commissionRate) / 100;
+            $commissionRate = (float) ($metrics['commissionRate'] ?? (\App\Http\Controllers\SuperAdmin\DeploymentManagerController::COMMISSION_RATE));
+            $commissionEarned = (float) ($metrics['totalCommissions'] ?? (($totalRevenue * $commissionRate) / 100));
+            $commissionPaid = (float) ($metrics['paidCommissions'] ?? 0);
+            $commissionPending = (float) ($metrics['pendingCommissions'] ?? 0);
             $pendingPayments = $metrics['pendingPayments'] ?? 0;
         @endphp
 
@@ -155,7 +157,8 @@
                     <div class="metric-icon" style="background: rgba(255,255,255,0.2); color: white;"><i class="fas fa-percentage"></i></div>
                 </div>
                 <div class="mt-3 small fw-bold text-white">
-                    <i class="fas fa-check-circle"></i> {{ number_format($commissionRate, 1) }}% Rate <span class="text-white-50 fw-normal ms-1">on all sales</span>
+                    <i class="fas fa-check-circle"></i> {{ number_format($commissionRate, 1) }}% Rate
+                    <span class="text-white-50 fw-normal ms-1">Paid: ₦{{ number_format($commissionPaid, 2) }}</span>
                 </div>
             </div>
         </div>
@@ -179,15 +182,15 @@
 
     {{-- Secondary Metrics Row --}}
     <div class="row g-3 mb-4">
-        {{-- Pending Payments --}}
+        {{-- Pending Commission --}}
         <div class="col-lg-3 col-md-6">
             <div class="glass-card p-4">
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h6 class="fw-bold mb-0 small text-uppercase text-muted">Pending Payments</h6>
-                    <span class="badge bg-warning">{{ $pendingPayments }}</span>
+                    <h6 class="fw-bold mb-0 small text-uppercase text-muted">Pending Commission</h6>
+                    <span class="badge bg-warning">{{ $commissionPending > 0 ? 'YES' : 'NO' }}</span>
                 </div>
-                <h4 class="fw-bold text-warning mb-0">₦{{ number_format($metrics['pendingPaymentsValue'] ?? 0, 2) }}</h4>
-                <small class="text-muted">Awaiting processing</small>
+                <h4 class="fw-bold text-warning mb-0">₦{{ number_format($commissionPending, 2) }}</h4>
+                <small class="text-muted">Deducts automatically after payout</small>
             </div>
         </div>
 
@@ -244,6 +247,39 @@
             <strong>Payment Action Required:</strong> {{ $pendingPayments }} {{ Str::plural('payment', $pendingPayments) }} pending verification. 
             <a href="{{ route('deployment.payments.pending') }}" class="alert-link ms-2 fw-bold">Review Payments →</a>
         </div>
+    </div>
+    @endif
+
+    @if(($metrics['expiringSoonSubscriptions'] ?? 0) > 0 || ($metrics['expiredSubscriptions'] ?? 0) > 0)
+    <div class="alert alert-warning border-0 shadow-sm mb-4">
+        <div class="d-flex align-items-start justify-content-between flex-wrap gap-2">
+            <div>
+                <strong><i class="fas fa-exclamation-triangle me-2"></i>Subscription Expiry Warning</strong>
+                <div class="small mt-1">
+                    {{ $metrics['expiringSoonSubscriptions'] ?? 0 }} due in 7 days,
+                    {{ $metrics['expiredSubscriptions'] ?? 0 }} already expired.
+                </div>
+            </div>
+            <a href="{{ route('deployment.subscription.overview') }}" class="btn btn-sm btn-outline-dark">Open Subscriptions</a>
+        </div>
+        @if(!empty($expiringSubscriptions) && $expiringSubscriptions->count() > 0)
+        <hr class="my-3">
+        <div class="row g-2">
+            @foreach($expiringSubscriptions as $expiringSub)
+            <div class="col-lg-6">
+                <div class="bg-white border rounded p-2 small d-flex justify-content-between align-items-center">
+                    <span>
+                        <i class="fas fa-bell text-warning me-1"></i>
+                        {{ $expiringSub->company->company_name ?? $expiringSub->user->name ?? 'Customer' }}
+                    </span>
+                    <span class="fw-bold text-danger">
+                        {{ \Carbon\Carbon::parse($expiringSub->end_date)->format('M d, Y') }}
+                    </span>
+                </div>
+            </div>
+            @endforeach
+        </div>
+        @endif
     </div>
     @endif
 

@@ -10,7 +10,7 @@
             <div class="col-lg-6 d-none d-lg-block" style="background: #3d5ee1; position: relative;">
                 <div class="h-100 d-flex flex-column align-items-center justify-content-center p-5 text-center text-white">
                     {{-- Logo on the left side banner --}}
-                    <img src="{{ asset('/assets/img/smat12.png') }}" class="img-fluid mb-4" alt="Smat-Book Branding" style="max-height: 300px; object-fit: contain;">
+                    <img src="{{ asset('/assets/img/logo-placeholder.svg') }}" class="img-fluid mb-4" alt="SmartProbook Branding" style="max-height: 300px; object-fit: contain;">
                     <h2 class="fw-bold">Almost there!</h2>
                     <p class="opacity-75">Secure your account by choosing a new, strong password. Make sure it's something you'll remember.</p>
                 </div>
@@ -20,7 +20,7 @@
             <div class="col-lg-6 p-4 p-md-5">
                 <div class="mb-4 text-center">
                     {{-- Logo above the form --}}
-                    <img src="{{ asset('/assets/img/smat12.png') }}" 
+                    <img src="{{ asset('/assets/img/logo-placeholder.svg') }}" 
                          class="mb-3" 
                          style="max-height: 50px; width: auto;" 
                          alt="Logo">

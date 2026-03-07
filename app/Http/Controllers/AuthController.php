@@ -73,7 +73,12 @@ class AuthController extends Controller
         $rules = [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => [
+                'required',
+                'string',
+                'confirmed',
+                \Illuminate\Validation\Rules\Password::min(8)->letters()->numbers(),
+            ],
             'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ];
 
@@ -82,7 +87,9 @@ class AuthController extends Controller
             $rules['billing_cycle'] = 'required|string';
         }
 
-        $validated = $request->validate($rules);
+        $validated = $request->validate($rules, [
+            'password.*' => 'Password must be at least 8 characters and include letters and numbers.',
+        ]);
 
         // Early connectivity check to avoid vague catch-all error messages.
         try {
@@ -234,6 +241,14 @@ class AuthController extends Controller
         Session::flush();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
+        $host = strtolower((string) $request->getHost());
+        $isLocalHost = in_array($host, ['localhost', '127.0.0.1'], true)
+            || app()->environment('local');
+
+        if ($isLocalHost) {
+            return redirect()->route('saas-login');
+        }
 
         $mainDomain = ltrim(config('session.domain', 'smatbook.com'), '.');
         $protocol = $request->secure() ? 'https://' : 'http://';

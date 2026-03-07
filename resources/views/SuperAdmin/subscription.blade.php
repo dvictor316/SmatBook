@@ -280,7 +280,7 @@ body.mini-sidebar .report-page-wrapper { margin-left: 80px; }
 
         {{-- Print Footer --}}
         <div class="d-none d-print-block p-4 text-center border-top">
-            <p class="small text-muted fw-bold">SmatBook Institutional Node Audit Summary • Generated: {{ date('d M Y H:i') }}</p>
+            <p class="small text-muted fw-bold">SmartProbook Institutional Node Audit Summary • Generated: {{ date('d M Y H:i') }}</p>
         </div>
     </div>
 </div>

@@ -36,7 +36,7 @@
 <header class="about-header">
     <div class="container text-center">
         <h6 class="section-label">Corporate Profile</h6>
-        <h1 class="section-title">SmatBook <span>Intelligence.</span></h1>
+        <h1 class="section-title">SmartProbook <span>Intelligence.</span></h1>
         <p class="section-subtitle">Our mission to redefine African corporate governance through mathematical precision and world-class financial infrastructure.</p>
     </div>
 </header>
@@ -51,7 +51,7 @@
             <div class="col-lg-6">
                 <div class="about-label">01. Our Mission</div>
                 <h2 class="about-title">Democratizing Financial <span>Sovereignty.</span></h2>
-                <p class="about-text">In an era where data is the new currency, SmatBook's mission extends beyond simple bookkeeping. We are dedicated to providing Small and Medium Enterprises (SMEs) with the same level of financial sophistication typically reserved for Fortune 500 companies.</p>
+                <p class="about-text">In an era where data is the new currency, SmartProbook's mission extends beyond simple bookkeeping. We are dedicated to providing Small and Medium Enterprises (SMEs) with the same level of financial sophistication typically reserved for Fortune 500 companies.</p>
                 <p class="about-text">By automating the most complex aspects of IFRS and GAAP compliance, we eliminate the "intelligence gap" that hinders African businesses from securing international investment. We empower founders to lead with confidence, knowing their financial bedrock is unshakable and verified by global standards.</p>
                 <a href="{{ route('landing.contact') }}" class="btn-main btn-blue">Learn More</a>
             </div>
@@ -75,7 +75,7 @@
             <div class="col-lg-6 order-lg-1">
                 <div class="about-label">02. Our Vision</div>
                 <h2 class="about-title">The Future of <span>African Governance.</span></h2>
-                <p class="about-text">Our vision is to become the primary digital infrastructure for corporate governance across the African continent. We foresee a 2030 where SmatBook is the standard—a "Financial Passport" that proves a company's transparency to banks, regulators, and stakeholders globally.</p>
+                <p class="about-text">Our vision is to become the primary digital infrastructure for corporate governance across the African continent. We foresee a 2030 where SmartProbook is the standard—a "Financial Passport" that proves a company's transparency to banks, regulators, and stakeholders globally.</p>
                 <p class="about-text">We are building a future where financial reporting is not a monthly chore but a real-time stream of intelligence. Through our "Network of Trust," we aim to connect thousands of verified businesses into a transparent ecosystem.</p>
                 <a href="{{ route('landing.policy') }}" class="btn-main btn-blue">Explore Vision</a>
             </div>
@@ -94,7 +94,7 @@
                 <div class="about-label">03. Our Values</div>
                 <h2 class="about-title">Rooted in <span>Integrity.</span></h2>
                 <p class="about-text"><strong>Integrity</strong> means our code has no "backdoors"—your data is private and immutable. <strong>Accuracy</strong> means we adhere to the Nigerian Financial Reporting Council's strictest guidelines, ensuring every calculation is verified to the last decimal.</p>
-                <p class="about-text">We value <strong>Innovation</strong> that serves a purpose. While others chase trends, we focus on the <strong>Ethics of Accounting</strong>. Every update to SmatBook is stress-tested against the IESBA Code of Ethics. We believe that by holding ourselves to the highest moral standards, we provide our users with a product that is not only functional but also fundamentally honorable.</p>
+                <p class="about-text">We value <strong>Innovation</strong> that serves a purpose. While others chase trends, we focus on the <strong>Ethics of Accounting</strong>. Every update to SmartProbook is stress-tested against the IESBA Code of Ethics. We believe that by holding ourselves to the highest moral standards, we provide our users with a product that is not only functional but also fundamentally honorable.</p>
                 <a href="{{ route('landing.team') }}" class="btn-main btn-blue">Our Values</a>
             </div>
         </div>

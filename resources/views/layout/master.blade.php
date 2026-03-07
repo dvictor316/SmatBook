@@ -10,7 +10,7 @@
             'password.request', 'password.reset', 'password.update',
             'saas.checkout', 'saas.setup', 'saas.success', 'saas.payment.success', 'saas.payment.cancel',
         ], true);
-        $seoTitle = $seoTitle ?? config('app.name') . ' Platform';
+        $seoTitle = 'Smatprobook';
     @endphp
     @include('layout.partials.seo-meta')
 
@@ -41,7 +41,7 @@
         $daysRemaining = $domainRecord ? now()->diffInDays($domainRecord->expiry_date, false) : 99;
     @endphp
 
-    <link rel="shortcut icon" href="{{ asset('assets/img/smat12.png') }}">
+    <link rel="shortcut icon" href="{{ asset('assets/img/logo-placeholder.svg') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/bootstrap.min.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/plugins/feather/feather.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/plugins/select2/css/select2.min.css') }}">
@@ -95,10 +95,10 @@
         <header class="header {{ Route::is('index-two') ? 'header-two' : 'header-one' }}">
             <div class="header-left">
                 <a href="{{ url('/') }}" class="logo">
-                    <img src="{{ asset('assets/img/smat14.png') }}" alt="Logo">
+                    <img src="{{ asset('assets/img/logo-placeholder.svg') }}" alt="Logo">
                 </a>
                 <a href="{{ url('/') }}" class="logo logo-small">
-                    <img src="{{ asset('assets/img/smat15.png') }}" alt="Logo">
+                    <img src="{{ asset('assets/img/logo-placeholder.svg') }}" alt="Logo">
                 </a>
             </div>
 

@@ -29,6 +29,19 @@
                     </a>
                 </li>
 
+                <li class="{{ Request::is('projects*') ? 'active' : '' }}">
+                    <a href="{{ route('projects.index') }}">
+                        <i class="fe fe-briefcase"></i>
+                        <span>Project Management</span>
+                    </a>
+                </li>
+                <li class="{{ Request::is('projects*') ? 'active' : '' }}">
+                    <a href="{{ route('projects.index') }}#tracking">
+                        <i class="fe fe-activity"></i>
+                        <span>Project Tracking</span>
+                    </a>
+                </li>
+
                 {{-- Applications --}}
                 <li class="submenu {{ Request::is('chat*', 'calendar*', 'inbox*', 'messages*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-grid"></i><span>Applications</span><span class="menu-arrow"></span></a>

@@ -90,7 +90,7 @@
             <button onclick="printReport()" class="btn btn-white shadow-sm border-0 px-4 py-2 btn-print-action" style="border-radius: 12px; font-weight: 800; color: var(--deep-sapphire);"> 
                 <i class="fas fa-file-pdf me-2 text-danger"></i> GENERATE MASTER REPORT 
             </button> 
-            <img src="{{ asset('assets/img/smat14.png') }}" style="height: 40px;" alt="Smat Logo"> 
+            <img src="{{ asset('assets/img/logo-placeholder.svg') }}" style="height: 40px;" alt="Smat Logo"> 
         </div> 
     </div>
 

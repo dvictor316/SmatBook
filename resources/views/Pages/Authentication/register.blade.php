@@ -68,9 +68,9 @@
 <div class="auth-container">
     <div class="loginbox">
         <div class="login-left-panel">
-            <img class="img-fluid mb-4" src="{{ asset('/assets/img/smat11.png') }}" alt="Smat-Book" style="max-height: 70px;">
+            <img class="img-fluid mb-4" src="{{ asset('/assets/img/logo-placeholder.svg') }}" alt="SmartProbook" style="max-height: 70px;">
             <h2 class="fw-bold">Scale Your Business</h2>
-            <p class="opacity-75">Join thousands of businesses managing their finances with Smat-Book's intelligent invoicing system.</p>
+            <p class="opacity-75">Join thousands of businesses managing their finances with SmartProbook's intelligent invoicing system.</p>
             <div class="mt-4">
                 <span class="badge bg-white text-primary px-3 py-2">14-Day Free Trial</span>
             </div>
@@ -105,13 +105,14 @@
 
                     <div class="col-md-6 mb-3">
                         <label class="form-label small fw-semibold">Password</label>
-                        <input type="password" name="password" class="form-control @error('password') is-invalid @enderror" placeholder="••••••••" required>
+                        <input type="password" name="password" class="form-control @error('password') is-invalid @enderror" placeholder="••••••••" minlength="8" pattern="(?=.*[A-Za-z])(?=.*\d).{8,}" title="Use at least 8 characters with letters and numbers." required>
+                        <small class="text-muted d-block mt-1">Use letters and numbers (symbol optional).</small>
                         @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
 
                     <div class="col-md-6 mb-4">
                         <label class="form-label small fw-semibold">Confirm Password</label>
-                        <input type="password" name="password_confirmation" class="form-control" placeholder="••••••••" required>
+                        <input type="password" name="password_confirmation" class="form-control" placeholder="••••••••" minlength="8" required>
                     </div>
 
                     <div class="col-md-12 mb-3">

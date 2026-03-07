@@ -136,7 +136,7 @@
                                         </li>
                                         <li class="feed-item">
                                             <div class="feed-date">{{ $user->created_at->format('M d, Y') }}</div>
-                                            <span class="feed-text">Welcome to Smat Book! Your account was successfully created.</span>
+                                            <span class="feed-text">Welcome to SmartProbook! Your account was successfully created.</span>
                                         </li>
                                     </ul>
                                 </div>

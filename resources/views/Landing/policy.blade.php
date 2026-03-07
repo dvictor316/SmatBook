@@ -371,7 +371,7 @@
 <section class="policy-header">
     <div class="container">
         <h6 class="policy-label">Service Agreement & Terms of Use</h6>
-        <h1 class="policy-title">SmatBook Global <span>Terms of Service.</span></h1>
+        <h1 class="policy-title">SmartProbook Global <span>Terms of Service.</span></h1>
         <p class="policy-date">Last Updated: January 2026 | Version 1.0</p>
     </div>
 </section>
@@ -399,14 +399,14 @@
 
             <!-- Section 1 -->
             <h2 id="section-1">1. License and Restrictions</h2>
-            <p>SmatBook Global Infrastructure Inc. ("SmatBook") grants you a personal, limited, non-exclusive, revocable, and non-transferable license to use our Software-as-a-Service (SaaS) platform, subject to the terms and conditions of this Agreement. You agree not to use, nor permit any third party to use, the Services in a manner that violates any applicable law, regulation, court order, or this Agreement.</p>
+            <p>SmartProbook Global Infrastructure Inc. ("SmartProbook") grants you a personal, limited, non-exclusive, revocable, and non-transferable license to use our Software-as-a-Service (SaaS) platform, subject to the terms and conditions of this Agreement. You agree not to use, nor permit any third party to use, the Services in a manner that violates any applicable law, regulation, court order, or this Agreement.</p>
             
             <h3>1.1 Usage Restrictions</h3>
             <p>You shall not:</p>
             <ul>
                 <li>Provide access to or give any part of the Services to any third party without written authorization;</li>
                 <li>Reproduce, modify, copy, sell, lease, or trade the Services or any components thereof;</li>
-                <li>Attempt to unauthorizedly access any other SmatBook systems not included in your subscription tier;</li>
+                <li>Attempt to unauthorizedly access any other SmartProbook systems not included in your subscription tier;</li>
                 <li>Engage in any form of reverse engineering, disassembly, or decompilation of the platform;</li>
                 <li>Use the Services for competitive analysis or development of competing products;</li>
                 <li>Circumvent security measures or attempt unauthorized system access.</li>
@@ -414,23 +414,23 @@
 
             <!-- Section 2 -->
             <h2 id="section-2">2. Your Content and Data</h2>
-            <p>You are solely responsible for all materials, data, financial information, and documents ("Content") uploaded, posted, or stored through your use of the Services. You grant SmatBook a worldwide, royalty-free, non-exclusive, revocable license to host, process, and use the Content only as necessary to provide you with the Services and comply with legal obligations.</p>
+            <p>You are solely responsible for all materials, data, financial information, and documents ("Content") uploaded, posted, or stored through your use of the Services. You grant SmartProbook a worldwide, royalty-free, non-exclusive, revocable license to host, process, and use the Content only as necessary to provide you with the Services and comply with legal obligations.</p>
             
             <h3>2.1 Data Ownership</h3>
-            <p>You retain all ownership rights to your Content. SmatBook does not claim ownership of your financial data, customer information, or proprietary business documents. You are responsible for maintaining accurate and lawful Content.</p>
+            <p>You retain all ownership rights to your Content. SmartProbook does not claim ownership of your financial data, customer information, or proprietary business documents. You are responsible for maintaining accurate and lawful Content.</p>
 
             <h3>2.2 Data Portability and Deletion</h3>
-            <p>At any time during your active subscription, you may export your Content in standard formats (CSV, PDF, JSON). Upon termination of service or request, SmatBook will maintain your data for a period of <strong>60 days</strong> to facilitate final extraction. After this period, all data will be permanently deleted from our production and backup servers through secure data destruction protocols compliant with <strong>NIST SP 800-88</strong> guidelines.</p>
+            <p>At any time during your active subscription, you may export your Content in standard formats (CSV, PDF, JSON). Upon termination of service or request, SmartProbook will maintain your data for a period of <strong>60 days</strong> to facilitate final extraction. After this period, all data will be permanently deleted from our production and backup servers through secure data destruction protocols compliant with <strong>NIST SP 800-88</strong> guidelines.</p>
 
             <h3>2.3 Data Backup & Recovery</h3>
-            <p>SmatBook maintains automated daily backups of all Content to ensure data integrity and disaster recovery. In the event of data loss due to system failure, SmatBook will restore your data from the most recent backup at no additional cost.</p>
+            <p>SmartProbook maintains automated daily backups of all Content to ensure data integrity and disaster recovery. In the event of data loss due to system failure, SmartProbook will restore your data from the most recent backup at no additional cost.</p>
 
             <!-- Section 3 -->
             <div class="disclaimer-box">
                 <h4>⚠️ Section 3. Professional Disclaimer & Limitation of Liability</h4>
-                <p><strong>SMATBOOK IS NOT A LICENSED ACCOUNTING FIRM, LAW FIRM, OR AUDITING ENTITY.</strong> SmatBook is a financial management software tool designed to automate bookkeeping and reporting. Use of the Services does <em>not</em> create an accountant-client, attorney-client, or auditor-client relationship. SmatBook employees are not qualified to provide professional tax, legal, or accounting advice.</p>
-                <p><strong>DISCLAIMER OF WARRANTIES:</strong> The Services are provided "AS-IS" and "AS-AVAILABLE." To the maximum extent permitted by Nigerian law, SmatBook, its affiliates, officers, directors, and third-party providers disclaim all warranties, express or implied, including warranties of merchantability, fitness for a particular purpose, and non-infringement.</p>
-                <p><strong>LIMITATION OF LIABILITY:</strong> SmatBook shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including but not limited to damages for loss of profits, goodwill, use, data, or other intangible losses arising from: (i) unauthorized access to or use of the Services; (ii) data corruption, security breaches, or loss of data; (iii) viruses, malware, spyware, or ransomware; (iv) third-party interference; or (v) any other cause beyond SmatBook's reasonable control. <strong>Total liability shall not exceed fees paid in the preceding 12 months.</strong></p>
+                <p><strong>SMARTPROBOOK IS NOT A LICENSED ACCOUNTING FIRM, LAW FIRM, OR AUDITING ENTITY.</strong> SmartProbook is a financial management software tool designed to automate bookkeeping and reporting. Use of the Services does <em>not</em> create an accountant-client, attorney-client, or auditor-client relationship. SmartProbook employees are not qualified to provide professional tax, legal, or accounting advice.</p>
+                <p><strong>DISCLAIMER OF WARRANTIES:</strong> The Services are provided "AS-IS" and "AS-AVAILABLE." To the maximum extent permitted by Nigerian law, SmartProbook, its affiliates, officers, directors, and third-party providers disclaim all warranties, express or implied, including warranties of merchantability, fitness for a particular purpose, and non-infringement.</p>
+                <p><strong>LIMITATION OF LIABILITY:</strong> SmartProbook shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including but not limited to damages for loss of profits, goodwill, use, data, or other intangible losses arising from: (i) unauthorized access to or use of the Services; (ii) data corruption, security breaches, or loss of data; (iii) viruses, malware, spyware, or ransomware; (iv) third-party interference; or (v) any other cause beyond SmartProbook's reasonable control. <strong>Total liability shall not exceed fees paid in the preceding 12 months.</strong></p>
             </div>
 
             <!-- Section 4 -->
@@ -447,34 +447,34 @@
             </ul>
 
             <h3>4.1 AML/CFT Compliance</h3>
-            <p>SmatBook reserves the right to suspend any account or block transactions suspected of violating Anti-Money Laundering (AML) or Counter-Financing of Terrorism (CFT) regulations. SmatBook may conduct periodic compliance audits and may require additional documentation or verification.</p>
+            <p>SmartProbook reserves the right to suspend any account or block transactions suspected of violating Anti-Money Laundering (AML) or Counter-Financing of Terrorism (CFT) regulations. SmartProbook may conduct periodic compliance audits and may require additional documentation or verification.</p>
 
             <!-- Section 5 -->
             <h2 id="section-5">5. Subscription, Fees, and Taxes</h2>
-            <p>Service rates and subscription tiers are established at the time of registration. SmatBook reserves the right to adjust pricing with <strong>30 days' advance written notice</strong> to affected users. Price changes will not apply retroactively to active subscriptions without consent.</p>
+            <p>Service rates and subscription tiers are established at the time of registration. SmartProbook reserves the right to adjust pricing with <strong>30 days' advance written notice</strong> to affected users. Price changes will not apply retroactively to active subscriptions without consent.</p>
 
             <h3>5.1 Billing and Payment</h3>
             <p>All fees are billed on the schedule selected (monthly, quarterly, or annually). Invoices will be sent via email. Payment must be received by the due date specified. Late payments may result in service suspension.</p>
 
             <h3>5.2 Taxes</h3>
-            <p>All quoted fees are exclusive of applicable taxes including but not limited to Value Added Tax (VAT), Withholding Tax, and other government levies. SmatBook will calculate and collect taxes as required by applicable jurisdiction. You are responsible for any additional taxes or assessments.</p>
+            <p>All quoted fees are exclusive of applicable taxes including but not limited to Value Added Tax (VAT), Withholding Tax, and other government levies. SmartProbook will calculate and collect taxes as required by applicable jurisdiction. You are responsible for any additional taxes or assessments.</p>
 
             <h3>5.3 Refunds</h3>
             <p>Annual and quarterly subscriptions are non-refundable except as required by law. Monthly subscriptions may be cancelled with 14 days' notice for a prorated refund of unused service days.</p>
 
             <!-- Section 6 -->
             <h2 id="section-6">6. Intellectual Property Rights</h2>
-            <p>All intellectual property rights, including patents, copyrights, trademarks, and trade secrets related to the SmatBook platform, software code, documentation, and all improvements remain the exclusive property of SmatBook Global Infrastructure Inc. You are granted a limited license to use these materials solely for operating your subscription account.</p>
+            <p>All intellectual property rights, including patents, copyrights, trademarks, and trade secrets related to the SmartProbook platform, software code, documentation, and all improvements remain the exclusive property of SmartProbook Global Infrastructure Inc. You are granted a limited license to use these materials solely for operating your subscription account.</p>
 
             <h3>6.1 User Feedback</h3>
-            <p>Any feedback, suggestions, or feature requests you provide to SmatBook may be used without compensation or attribution. You grant SmatBook a perpetual, royalty-free license to all such feedback.</p>
+            <p>Any feedback, suggestions, or feature requests you provide to SmartProbook may be used without compensation or attribution. You grant SmartProbook a perpetual, royalty-free license to all such feedback.</p>
 
             <!-- Section 7 -->
             <h2 id="section-7">7. Confidentiality & Data Security</h2>
-            <p>SmatBook implements industry-standard security measures including <strong>256-bit AES encryption</strong> for data in transit and at rest, regular security audits, and intrusion detection systems. However, no system is 100% secure. SmatBook cannot guarantee absolute security against all attacks.</p>
+            <p>SmartProbook implements industry-standard security measures including <strong>256-bit AES encryption</strong> for data in transit and at rest, regular security audits, and intrusion detection systems. However, no system is 100% secure. SmartProbook cannot guarantee absolute security against all attacks.</p>
 
             <h3>7.1 Data Privacy</h3>
-            <p>Your use of SmatBook is governed by our Privacy Policy, which details how we collect, use, and protect your personal and financial data. By using the Services, you consent to our Privacy Policy terms.</p>
+            <p>Your use of SmartProbook is governed by our Privacy Policy, which details how we collect, use, and protect your personal and financial data. By using the Services, you consent to our Privacy Policy terms.</p>
 
             <h3>7.2 Confidential Information</h3>
             <p>Each party agrees to maintain confidentiality of the other's proprietary information and trade secrets. This obligation survives termination of this Agreement for a period of <strong>three (3) years</strong>.</p>
@@ -491,7 +491,7 @@
             </ul>
 
             <h3>8.1 Suspension for Violation</h3>
-            <p>SmatBook may immediately suspend or terminate your account without notice if you violate this Agreement, engage in illegal activity, or pose a risk to SmatBook's systems or other users.</p>
+            <p>SmartProbook may immediately suspend or terminate your account without notice if you violate this Agreement, engage in illegal activity, or pose a risk to SmartProbook's systems or other users.</p>
 
             <!-- Section 9 -->
             <h2 id="section-9">9. Governing Law and Jurisdiction</h2>
@@ -507,17 +507,17 @@
             <p>For questions, concerns, or formal notice regarding these terms, please contact:</p>
 
             <div class="contact-box">
-                <p><strong>SmatBook Global Infrastructure Inc.</strong></p>
+                <p><strong>SmartProbook Global Infrastructure Inc.</strong></p>
                 <p>Enugu Tech Hub, Independence Layout<br>Enugu, Nigeria</p>
                 <p><strong>Email:</strong> <a href="mailto:legal@smatbook.com">legal@smatbook.com</a></p>
                 <p><strong>Compliance:</strong> <a href="mailto:compliance@smatbook.com">compliance@smatbook.com</a></p>
                 <p><strong>Support:</strong> <a href="mailto:support@smatbook.com">support@smatbook.com</a></p>
-                <p><strong>Phone:</strong> <a href="tel:+234800728626226">+234 (0) 800 SMAT BOOK</a></p>
+                <p><strong>Phone:</strong> <a href="tel:+234800728626226">+234 (0) 800 SMARTPROBOOK</a></p>
             </div>
 
             <div class="info-box" style="margin-top: 50px;">
                 <h4>✅ Acceptance of Terms</h4>
-                <p>By using SmatBook, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service in their entirety. If you do not agree to any portion of these terms, you may not use the Services.</p>
+                <p>By using SmartProbook, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service in their entirety. If you do not agree to any portion of these terms, you may not use the Services.</p>
                 <p><strong>Effective Date:</strong> January 1, 2026</p>
             </div>
 

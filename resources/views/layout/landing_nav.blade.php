@@ -6,10 +6,10 @@
     @php
         $seoNoIndex = false;
         $seoType = 'website';
-        $seoTitle = trim($__env->yieldContent('title')) !== '' ? $__env->yieldContent('title') : 'Intelligence & Corporate Governance | SmatBook Global';
+        $seoTitle = 'Smatprobook';
         $seoDescription = trim($__env->yieldContent('meta_description')) !== ''
             ? $__env->yieldContent('meta_description')
-            : 'SmatBook provides AI-powered accounting, enterprise reporting, global deployment workflows, and institutional-grade financial operations.';
+            : 'SmartProbook provides AI-powered accounting, enterprise reporting, global deployment workflows, and institutional-grade financial operations.';
     @endphp
     @include('layout.partials.seo-meta')
     
@@ -18,7 +18,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
 
     <style>
-        /* ===== SMATBOOK 2026: ENTERPRISE CORE STYLING ===== */
+        /* ===== SMARTPROBOOK 2026: ENTERPRISE CORE STYLING ===== */
         :root {
             --primary: #0062ff;      
             --primary-dark: #0046b8;
@@ -917,8 +917,8 @@
 <nav>
     <div class="nav-container">
         <a href="{{ url('/') }}" class="logo-container">
-            <img src="{{ asset('assets/img/smat12.png') }}" class="brand-img" alt="SmatBook"> 
-            <div class="logo-text">SMAT<span>BOOK</span></div>
+            <img src="{{ asset('assets/img/logo-placeholder.svg') }}" class="brand-img" alt="SmartProbook"> 
+            <div class="logo-text">SMARTPRO<span>BOOK</span></div>
         </a>
         
         <button class="hamburger" id="navTrigger" type="button" aria-label="Toggle navigation">
@@ -951,7 +951,7 @@
         <div class="footer-grid">
             <!-- Company Info -->
             <div class="footer-col">
-                <a href="{{ url('/') }}" class="footer-logo">SMAT<span>BOOK</span></a>
+                <a href="{{ url('/') }}" class="footer-logo">SMARTPRO<span>BOOK</span></a>
                 <p>Engineered for excellence. Registered under the laws of the Federal Republic of Nigeria. Global headquarters in Enugu Tech Hub.</p>
             </div>
 
@@ -1001,7 +1001,7 @@
 
         <!-- Footer Bottom -->
         <div class="footer-bottom">
-            <p>&copy; 2026 SmatBook Global Infrastructure Inc. All Rights Reserved.</p>
+            <p>&copy; 2026 SmartProbook Global Infrastructure Inc. All Rights Reserved.</p>
         </div>
     </div>
 </footer>

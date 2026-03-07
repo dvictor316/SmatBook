@@ -90,7 +90,7 @@
         background: var(--spa-surface);
         width: min(100%, 740px);
         max-width: 740px; 
-        min-height: 500px;
+        min-height: 450px;
         border-radius: 16px;
         box-shadow: 0 20px 60px rgba(15, 23, 42, 0.03);
         display: flex;
@@ -104,7 +104,8 @@
         padding: 30px 22px;
         display: flex;
         flex-direction: column;
-        justify-content: space-between;
+        justify-content: flex-start;
+        gap: 16px;
         border-right: 1px solid var(--spa-border);
     }
 
@@ -127,7 +128,11 @@
     .info-label { color: #94a3b8; font-size: 9px; text-transform: uppercase; font-weight: 700; }
     .info-value { color: #1e293b; font-weight: 700; }
 
-    .amount-display { margin-top: 20px; padding: 14px; background: #fff; border-radius: 14px; border: 1px solid #f1f5f9; }
+    .aside-meta {
+        margin-top: 2px;
+    }
+
+    .amount-display { margin-top: 10px; padding: 12px; background: #fff; border-radius: 14px; border: 1px solid #f1f5f9; }
     .amount-value { font-size: 1.45rem; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; }
 
     .smat-main {
@@ -140,7 +145,7 @@
     }
 
     .form-title { font-weight: 800; color: #0f172a; font-size: 1.35rem; margin-bottom: 4px; }
-    .form-subtitle { color: #64748b; font-size: 12px; margin-bottom: 20px; }
+    .form-subtitle { color: #64748b; font-size: 12px; margin-bottom: 14px; }
 
     .label-caps {
         font-size: 11px; font-weight: 700; text-transform: uppercase;
@@ -237,7 +242,7 @@
     <div class="smat-card">
         <div class="smat-aside">
             <div>
-                <img src="{{ asset('assets/img/smat15.png') }}" alt="SmatBook" class="logo-img">
+                <img src="{{ asset('assets/img/logo-placeholder.svg') }}" alt="SmartProbook" class="logo-img">
                 <br>
                 <span class="step-badge">Step 01: Enrollment</span>
                 <h2 class="fw-bold mt-4 mb-2" style="font-size: 1.5rem; color: #0f172a; line-height: 1.2;">
@@ -248,7 +253,7 @@
                 </p>
             </div>
 
-            <div>
+            <div class="aside-meta">
                 <div class="info-row">
                     <span class="info-label">Account Type</span>
                     <span class="info-value text-uppercase">{{ $isManager ? 'Deployment Manager' : 'Standard Admin' }}</span>
@@ -312,14 +317,15 @@
                     <div class="col-md-6">
                         <label class="label-caps">Master Passcode</label>
                         <div class="pass-container">
-                            <input type="password" name="password" id="p1" class="form-control input-smat w-100" placeholder="Min. 8 chars" required>
+                            <input type="password" name="password" id="p1" class="form-control input-smat w-100" placeholder="Min. 8 chars" minlength="8" pattern="(?=.*[A-Za-z])(?=.*\d).{8,}" title="Use at least 8 characters with letters and numbers." required>
                             <i class="far fa-eye toggle-eye" onclick="togglePass('p1', this)"></i>
                         </div>
+                        <small class="text-muted d-block mt-1" style="font-size:11px;">Use letters and numbers (symbol optional).</small>
                     </div>
                     <div class="col-md-6">
                         <label class="label-caps">Verify Passcode</label>
                         <div class="pass-container">
-                            <input type="password" name="password_confirmation" id="p2" class="form-control input-smat w-100" placeholder="Repeat" required>
+                            <input type="password" name="password_confirmation" id="p2" class="form-control input-smat w-100" placeholder="Repeat" minlength="8" required>
                             <i class="far fa-eye toggle-eye" onclick="togglePass('p2', this)"></i>
                         </div>
                     </div>

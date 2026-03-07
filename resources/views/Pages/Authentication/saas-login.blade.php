@@ -13,7 +13,7 @@
         $clientLogo = asset('storage/' . $currentCompany->logo);
     }
 
-    $persistedPlan = request('plan', session('selected_plan', 'enterprise'));
+    $persistedPlan = strtolower((string) request('plan', session('selected_plan', '')));
     $persistedCycle = request('billing_cycle', request('cycle', session('selected_cycle', session('billing_cycle', 'monthly'))));
 @endphp
 
@@ -302,7 +302,7 @@
         <!-- Sidebar Branding -->
         <div class="smat-aside">
             <div>
-                <img src="{{ asset('/assets/img/smat12.png') }}" alt="SmatBook" class="logo-img">
+                <img src="{{ asset('/assets/img/logo-placeholder.svg') }}" alt="SmartProbook" class="logo-img">
                 <br>
                 <div class="status-badge"><span class="status-dot"></span> Secure Node Active</div>
                 <h2 class="fw-bold mt-4 mb-2" style="font-size: 1.6rem; color: #0f172a; line-height: 1.2;">Authorized<br>Login</h2>
@@ -380,7 +380,7 @@
                 <div class="bottom-link">
                     Choose your onboarding path
                     <div class="bottom-actions">
-                        <a href="{{ route('saas-register', ['plan' => strtolower((string) $persistedPlan), 'cycle' => strtolower((string) $persistedCycle)]) }}" class="bottom-action-link">Deploy Infrastructure</a>
+                        <a href="{{ route('deploy.infrastructure') }}" class="bottom-action-link">Deploy Infrastructure</a>
                         <a href="{{ route('saas-register', ['type' => 'manager']) }}" class="bottom-action-link">Become a Partner</a>
                     </div>
                 </div>

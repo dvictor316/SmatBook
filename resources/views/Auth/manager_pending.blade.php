@@ -38,7 +38,7 @@
         <div class="row justify-content-center">
             <div class="col-md-8 col-lg-5">
                 <div class="text-center mb-4">
-                    <img src="{{ asset('assets/img/smat14.png') }}" alt="Logo" style="max-width: 180px;">
+                    <img src="{{ asset('assets/img/logo-placeholder.svg') }}" alt="Logo" style="max-width: 180px;">
                 </div>
 
                 <div class="card shadow-lg border-0">
@@ -50,7 +50,7 @@
                             <h3 class="font-weight-bold">Verification Pending</h3>
                             <p class="text-muted">
                                 Hello <strong>{{ auth()->user()->name }}</strong>, your Deployment Manager access for 
-                                <strong>{{ env('SESSION_DOMAIN', 'SmatBook') }}</strong> is currently being vetted.
+                                <strong>{{ env('SESSION_DOMAIN', 'SmartProbook') }}</strong> is currently being vetted.
                             </p>
                         </div>
 

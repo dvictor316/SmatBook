@@ -78,7 +78,7 @@ class PaymentController extends Controller
                 ],
                 'meta' => $meta,
                 'customizations' => [
-                    'title' => 'SmatBook Subscription',
+                    'title' => 'SmartProbook Subscription',
                     'logo' => asset('logo.png'),
                 ]
             ]);

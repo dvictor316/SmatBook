@@ -40,7 +40,7 @@
         now()->addMinutes(5),
         fn () => \App\Models\Setting::where('key', 'site_logo')->value('value')
     );
-    $headerLogoUrl = $headerLogoPath ? asset($headerLogoPath) : asset('assets/img/smat12.png');
+    $headerLogoUrl = $headerLogoPath ? asset($headerLogoPath) : asset('assets/img/logo-placeholder.svg');
 @endphp
 
 <style>

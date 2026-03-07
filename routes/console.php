@@ -19,6 +19,12 @@ Artisan::command('smat:fix', function () {
 
     // 1. Clear all caches (Safe: does not delete database rows)
     $this->call('optimize:clear');
+
+    // 1b. Rebuild package manifests to prevent "Target class [view] does not exist"
+    // on environments where chmod on temp cache files may fail intermittently.
+    @array_map('unlink', glob(base_path('bootstrap/cache/packages.php*')) ?: []);
+    @unlink(base_path('bootstrap/cache/services.php'));
+    $this->call('package:discover');
     
     // 2. Fix Storage Link
     if (!file_exists(public_path('storage'))) {

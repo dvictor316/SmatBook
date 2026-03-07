@@ -16,7 +16,7 @@
             @php
                 // Logic to fetch client logo based on domain or session
                 // Fallback to smat14 if no client logo is found
-                $clientLogo = isset($company) && $company->logo ? asset('storage/' . $company->logo) : URL::asset('/assets/img/smat14.png');
+                $clientLogo = isset($company) && $company->logo ? asset('storage/' . $company->logo) : URL::asset('/assets/img/logo-placeholder.svg');
             @endphp
             <img class="img-fluid logo-dark mb-2 logo-color" src="{{ $clientLogo }}" alt="Company Logo" style="max-height: 60px;">
         </div>
@@ -26,7 +26,7 @@
                 {{-- Left Side: Using smat15 as requested --}}
                 <div class="col-lg-6 d-none d-lg-block">
                     <div class="authentication-wrapper h-100" style="background: #3d5ee1; display: flex; align-items: center; justify-content: center; padding: 20px;">
-                        <img src="{{ URL::asset('/assets/img/smat15.png') }}" class="img-fluid" alt="Smat-Book Login Visual">
+                        <img src="{{ URL::asset('/assets/img/logo-placeholder.svg') }}" class="img-fluid" alt="SmartProbook Login Visual">
                     </div>
                 </div>
 

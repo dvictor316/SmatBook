@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\{Subscription, Plan, User, Company, DeploymentManager, Domain, Bank};
+use App\Models\{Subscription, Plan, User, Company, DeploymentManager, Domain, Bank, Setting};
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\{Auth, DB, Http, Log, Mail, Schema};
 use Carbon\Carbon;
+use Illuminate\Support\Str;
 
 class SubscriptionController extends Controller
 {
@@ -206,6 +207,7 @@ class SubscriptionController extends Controller
                 'isDeploymentCheckout'  => $isDeploymentCheckout,
                 'isManager'             => $isManager,
                 'bankAccounts'          => $bankAccounts,
+                'stripePublishableKey'  => $this->resolveStripePublishableKey(),
             ]);
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
@@ -221,7 +223,7 @@ class SubscriptionController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | PROCESS PAYMENT — gateway selector
+    | PROCESS PAYMENT — Stripe-only
     | Route: POST /saas/payment/process/{id}   name: saas.payment.process.checkout
     |--------------------------------------------------------------------------
     */
@@ -237,12 +239,16 @@ class SubscriptionController extends Controller
         $subscription = Subscription::findOrFail($id);
 
         $request->validate([
-            'gateway' => 'required|in:stripe',
+            'gateway' => 'required|in:stripe,paystack,flutterwave',
         ]);
 
         switch ($request->gateway) {
             case 'stripe':
-                return $this->initStripe($subscription);
+                return $this->initStripe($subscription, $request);
+            case 'paystack':
+                return $this->initPaystack($subscription);
+            case 'flutterwave':
+                return $this->initFlutterwave($subscription);
             default:
                 return redirect()->route('saas.checkout', $id)
                     ->with('error', 'Unsupported payment method selected.');
@@ -254,48 +260,109 @@ class SubscriptionController extends Controller
     | GATEWAY INITIATORS
     |--------------------------------------------------------------------------
     */
-    private function initStripe(Subscription $subscription)
+    private function initStripe(Subscription $subscription, Request $request)
     {
-        $secret = (string) config('services.stripe.secret');
-        if ($secret === '') {
-            return redirect()->route('saas.checkout', $subscription->id)
-                ->with('error', 'Stripe is not configured yet.');
+        $secretSource = 'none';
+        $secret = $this->resolveStripeSecret();
+        if ($secret !== '') {
+            $envSecret = trim((string) config('services.stripe.secret'));
+            if ($this->isUsableStripeSecret($envSecret)) {
+                $secretSource = '.env';
+            } else {
+                $dbSecret = trim((string) Setting::getSensitive('stripe_secret', ''));
+                $secretSource = $this->isUsableStripeSecret($dbSecret) ? 'settings' : 'unknown';
+            }
         }
+
+        Log::info('Stripe key resolution', [
+            'subscription_id' => $subscription->id,
+            'source' => $secretSource,
+            'mode' => str_starts_with($secret, 'sk_live_') ? 'live' : (str_starts_with($secret, 'sk_test_') ? 'test' : 'invalid'),
+            'usable' => $secret !== '',
+        ]);
+
+        if ($secret === '') {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'Stripe secret key is missing or invalid. Update it in Payment Settings.'
+                ], 422);
+            }
+
+            return redirect()->route('saas.checkout', $subscription->id)
+                ->with('error', 'Stripe secret key is missing or invalid. Update it in Payment Settings.');
+        }
+
+        $embedded = $request->boolean('embedded')
+            || strtolower((string) $request->input('ui_mode')) === 'embedded'
+            || $request->expectsJson();
 
         $amountKobo = max(1, (int) round(((float) $subscription->amount) * 100));
         $planName = (string) ($subscription->plan_name ?? $subscription->plan ?? 'Subscription');
-        $successUrl = route('saas.payment.callback', [
+        $returnUrl = route('saas.payment.callback', [
             'sub_id' => $subscription->id,
             'gateway' => 'stripe',
         ]) . '&reference={CHECKOUT_SESSION_ID}';
         $cancelUrl = route('saas.checkout', $subscription->id);
 
         try {
+            $payload = [
+                'mode' => 'payment',
+                'customer_email' => (string) optional(auth()->user())->email,
+                'line_items[0][price_data][currency]' => 'ngn',
+                'line_items[0][price_data][unit_amount]' => $amountKobo,
+                'line_items[0][price_data][product_data][name]' => 'SmartProbook ' . $planName,
+                'line_items[0][quantity]' => 1,
+                'metadata[subscription_id]' => (string) $subscription->id,
+                'metadata[user_id]' => (string) $subscription->user_id,
+            ];
+
+            if ($embedded) {
+                $payload['ui_mode'] = 'embedded';
+                $payload['return_url'] = $returnUrl;
+                $payload['redirect_on_completion'] = 'always';
+            } else {
+                $payload['success_url'] = $returnUrl;
+                $payload['cancel_url'] = $cancelUrl;
+            }
+
             $response = Http::asForm()
                 ->withToken($secret)
                 ->acceptJson()
-                ->post('https://api.stripe.com/v1/checkout/sessions', [
-                    'mode' => 'payment',
-                    'success_url' => $successUrl,
-                    'cancel_url' => $cancelUrl,
-                    'customer_email' => (string) optional(auth()->user())->email,
-                    'line_items[0][price_data][currency]' => 'ngn',
-                    'line_items[0][price_data][unit_amount]' => $amountKobo,
-                    'line_items[0][price_data][product_data][name]' => 'SmatBook ' . $planName,
-                    'line_items[0][quantity]' => 1,
-                    'metadata[subscription_id]' => (string) $subscription->id,
-                    'metadata[user_id]' => (string) $subscription->user_id,
-                ]);
+                ->post('https://api.stripe.com/v1/checkout/sessions', $payload);
 
             if (!$response->successful()) {
+                $stripeError = (string) data_get($response->json(), 'error.message', '');
                 Log::error('Stripe session init failed', [
                     'subscription_id' => $subscription->id,
                     'status' => $response->status(),
                     'body' => $response->body(),
                 ]);
 
-                return redirect()->route('saas.checkout', $subscription->id)
-                    ->with('error', 'Unable to initialize Stripe checkout right now.');
+                $message = $stripeError !== '' ? ('Stripe error: ' . $stripeError) : 'Unable to initialize Stripe checkout right now.';
+                if ($request->expectsJson()) {
+                    return response()->json(['message' => $message], 422);
+                }
+
+                return redirect()->route('saas.checkout', $subscription->id)->with('error', $message);
+            }
+
+            if ($embedded) {
+                $clientSecret = (string) $response->json('client_secret', '');
+                $sessionId = (string) $response->json('id', '');
+
+                if ($clientSecret === '' || $sessionId === '') {
+                    if ($request->expectsJson()) {
+                        return response()->json(['message' => 'Stripe embedded checkout token was not returned.'], 422);
+                    }
+
+                    return redirect()->route('saas.checkout', $subscription->id)
+                        ->with('error', 'Stripe embedded checkout token was not returned.');
+                }
+
+                return response()->json([
+                    'client_secret' => $clientSecret,
+                    'session_id' => $sessionId,
+                ]);
             }
 
             $url = (string) $response->json('url', '');
@@ -311,8 +378,132 @@ class SubscriptionController extends Controller
                 'error' => $e->getMessage(),
             ]);
 
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Stripe checkout is temporarily unavailable.'], 500);
+            }
+
             return redirect()->route('saas.checkout', $subscription->id)
                 ->with('error', 'Stripe checkout is temporarily unavailable.');
+        }
+    }
+
+    private function initPaystack(Subscription $subscription)
+    {
+        $secret = $this->resolvePaystackSecret();
+        if ($secret === '') {
+            return redirect()->route('saas.checkout', $subscription->id)
+                ->with('error', 'Paystack secret key is missing or invalid. Update it in Payment Settings.');
+        }
+
+        $amountKobo = max(1, (int) round(((float) $subscription->amount) * 100));
+        $callbackUrl = route('saas.payment.callback', [
+            'sub_id' => $subscription->id,
+            'gateway' => 'paystack',
+        ]);
+
+        try {
+            $response = Http::withToken($secret)
+                ->acceptJson()
+                ->post('https://api.paystack.co/transaction/initialize', [
+                    'email' => (string) optional(auth()->user())->email,
+                    'amount' => $amountKobo,
+                    'callback_url' => $callbackUrl,
+                    'metadata' => [
+                        'subscription_id' => (string) $subscription->id,
+                        'user_id' => (string) $subscription->user_id,
+                    ],
+                ]);
+
+            if (!$response->successful() || !(bool) $response->json('status')) {
+                Log::error('Paystack init failed', [
+                    'subscription_id' => $subscription->id,
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+
+                return redirect()->route('saas.checkout', $subscription->id)
+                    ->with('error', 'Unable to initialize Paystack right now.');
+            }
+
+            $url = (string) data_get($response->json(), 'data.authorization_url', '');
+            if ($url === '') {
+                return redirect()->route('saas.checkout', $subscription->id)
+                    ->with('error', 'Paystack checkout URL was not returned.');
+            }
+
+            return redirect()->away($url);
+        } catch (\Throwable $e) {
+            Log::error('Paystack init exception', [
+                'subscription_id' => $subscription->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return redirect()->route('saas.checkout', $subscription->id)
+                ->with('error', 'Paystack checkout is temporarily unavailable.');
+        }
+    }
+
+    private function initFlutterwave(Subscription $subscription)
+    {
+        $secret = $this->resolveFlutterwaveSecret();
+        if ($secret === '') {
+            return redirect()->route('saas.checkout', $subscription->id)
+                ->with('error', 'Flutterwave secret key is missing or invalid. Update it in Payment Settings.');
+        }
+
+        $txRef = 'SPB-FLW-' . $subscription->id . '-' . Str::upper(Str::random(10));
+        $callbackUrl = route('saas.payment.callback', [
+            'sub_id' => $subscription->id,
+            'gateway' => 'flutterwave',
+        ]);
+
+        try {
+            $response = Http::withToken($secret)
+                ->acceptJson()
+                ->post('https://api.flutterwave.com/v3/payments', [
+                    'tx_ref' => $txRef,
+                    'amount' => (float) $subscription->amount,
+                    'currency' => 'NGN',
+                    'redirect_url' => $callbackUrl,
+                    'customer' => [
+                        'email' => (string) optional(auth()->user())->email,
+                        'name' => (string) optional(auth()->user())->name,
+                    ],
+                    'meta' => [
+                        'subscription_id' => (string) $subscription->id,
+                        'user_id' => (string) $subscription->user_id,
+                    ],
+                    'customizations' => [
+                        'title' => 'SmartProbook Subscription',
+                    ],
+                ]);
+
+            if (!$response->successful() || strtolower((string) $response->json('status')) !== 'success') {
+                Log::error('Flutterwave init failed', [
+                    'subscription_id' => $subscription->id,
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+
+                return redirect()->route('saas.checkout', $subscription->id)
+                    ->with('error', 'Unable to initialize Flutterwave right now.');
+            }
+
+            $url = (string) data_get($response->json(), 'data.link', '');
+            if ($url === '') {
+                return redirect()->route('saas.checkout', $subscription->id)
+                    ->with('error', 'Flutterwave checkout URL was not returned.');
+            }
+
+            return redirect()->away($url);
+        } catch (\Throwable $e) {
+            Log::error('Flutterwave init exception', [
+                'subscription_id' => $subscription->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return redirect()->route('saas.checkout', $subscription->id)
+                ->with('error', 'Flutterwave checkout is temporarily unavailable.');
         }
     }
 
@@ -328,8 +519,12 @@ class SubscriptionController extends Controller
     public function handlePaymentCallback(Request $request)
     {
         $subId     = $request->sub_id    ?? $request->query('sub_id');
-        $reference = $request->reference ?? $request->query('reference');
         $gateway   = strtolower((string) ($request->gateway ?? $request->query('gateway') ?? 'stripe'));
+        $reference = (string) ($request->reference ?? $request->query('reference') ?? '');
+
+        if ($reference === '' && $gateway === 'flutterwave') {
+            $reference = (string) ($request->query('tx_ref') ?? $request->input('tx_ref') ?? '');
+        }
 
         if (!$subId) {
             return redirect()->route('membership-plans')
@@ -338,10 +533,12 @@ class SubscriptionController extends Controller
 
         $subscription = Subscription::with(['user', 'company'])->findOrFail($subId);
 
-        if (!$this->verifyPayment($reference, $gateway)) {
+        $verification = $this->verifyPayment($reference, $gateway, $request);
+        if (!(bool) ($verification['ok'] ?? false)) {
             return redirect()->route('saas.checkout', $subscription->id)
                 ->with('error', 'Payment verification failed. Please try again.');
         }
+        $reference = (string) ($verification['reference'] ?? $reference);
 
         // ── DEPLOYMENT DETECTION: session OR database ──
         $isDeploymentBySession = session()->has('checkout_from_deployment');
@@ -386,7 +583,7 @@ class SubscriptionController extends Controller
             ];
 
             if (Schema::hasColumn('subscriptions', 'payment_gateway')) {
-                $subscriptionUpdateData['payment_gateway'] = request('gateway', request()->query('gateway', 'paystack'));
+                $subscriptionUpdateData['payment_gateway'] = request('gateway', request()->query('gateway', 'stripe'));
             }
             if (Schema::hasColumn('subscriptions', 'payment_reference')) {
                 $subscriptionUpdateData['payment_reference'] = $reference;
@@ -458,7 +655,7 @@ class SubscriptionController extends Controller
             ];
 
             if (Schema::hasColumn('subscriptions', 'payment_gateway')) {
-                $subscriptionUpdateData['payment_gateway'] = request('gateway', request()->query('gateway', 'paystack'));
+                $subscriptionUpdateData['payment_gateway'] = request('gateway', request()->query('gateway', 'stripe'));
             }
             if (Schema::hasColumn('subscriptions', 'payment_reference')) {
                 $subscriptionUpdateData['payment_reference'] = $reference;
@@ -784,7 +981,7 @@ class SubscriptionController extends Controller
         $subscription = Subscription::with(['company', 'user'])->findOrFail($id);
         $pdf = Pdf::loadView('SuperAdmin.subscriptions.show_pdf', compact('subscription'));
         $pdf->setPaper('a4', 'portrait');
-        return $pdf->download('SmatBook_Receipt_' . $subscription->id . '.pdf');
+        return $pdf->download('SmartProbook_Receipt_' . $subscription->id . '.pdf');
     }
 
     public function printInvoice($id)
@@ -803,6 +1000,15 @@ class SubscriptionController extends Controller
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
+        $host = strtolower((string) $request->getHost());
+        $isLocalHost = in_array($host, ['localhost', '127.0.0.1'], true)
+            || app()->environment('local');
+
+        if ($isLocalHost) {
+            return redirect()->route('saas-login');
+        }
+
         $domain = env('SESSION_DOMAIN', 'smatbook.com');
         return redirect()->away('https://' . $domain . '/login');
     }
@@ -947,25 +1153,35 @@ class SubscriptionController extends Controller
         );
     }
 
-    private function verifyPayment(string $reference, string $gateway): bool
+    private function verifyPayment(string $reference, string $gateway, ?Request $request = null): array
     {
         $gateway = strtolower((string) $gateway);
         $reference = trim((string) $reference);
 
-        if ($reference === '') {
-            return false;
-        }
-
         if ($gateway === 'stripe') {
-            return $this->verifyStripePayment($reference);
+            if ($reference === '') {
+                return ['ok' => false, 'reference' => ''];
+            }
+            return ['ok' => $this->verifyStripePayment($reference), 'reference' => $reference];
         }
 
-        return false;
+        if ($gateway === 'paystack') {
+            if ($reference === '') {
+                return ['ok' => false, 'reference' => ''];
+            }
+            return ['ok' => $this->verifyPaystackPayment($reference), 'reference' => $reference];
+        }
+
+        if ($gateway === 'flutterwave') {
+            return $this->verifyFlutterwavePayment($reference, $request);
+        }
+
+        return ['ok' => false, 'reference' => $reference];
     }
 
     private function verifyStripePayment(string $reference): bool
     {
-        $secret = (string) config('services.stripe.secret');
+        $secret = $this->resolveStripeSecret();
         if ($secret === '') {
             return app()->environment(['local', 'testing']);
         }
@@ -985,6 +1201,182 @@ class SubscriptionController extends Controller
             Log::error('Stripe verify exception', ['error' => $e->getMessage()]);
             return false;
         }
+    }
+
+    private function verifyPaystackPayment(string $reference): bool
+    {
+        $secret = $this->resolvePaystackSecret();
+        if ($secret === '') {
+            return false;
+        }
+
+        try {
+            $response = Http::withToken($secret)
+                ->acceptJson()
+                ->get('https://api.paystack.co/transaction/verify/' . urlencode($reference));
+
+            if (!$response->successful() || !(bool) $response->json('status')) {
+                return false;
+            }
+
+            return strtolower((string) data_get($response->json(), 'data.status', '')) === 'success';
+        } catch (\Throwable $e) {
+            Log::error('Paystack verify exception', ['error' => $e->getMessage()]);
+            return false;
+        }
+    }
+
+    private function verifyFlutterwavePayment(string $reference, ?Request $request = null): array
+    {
+        $secret = $this->resolveFlutterwaveSecret();
+        if ($secret === '') {
+            return ['ok' => false, 'reference' => $reference];
+        }
+
+        $transactionId = (string) ($request?->query('transaction_id') ?? $request?->input('transaction_id') ?? '');
+        if ($transactionId === '') {
+            return ['ok' => false, 'reference' => $reference];
+        }
+
+        try {
+            $response = Http::withToken($secret)
+                ->acceptJson()
+                ->get('https://api.flutterwave.com/v3/transactions/' . urlencode($transactionId) . '/verify');
+
+            if (!$response->successful() || strtolower((string) $response->json('status')) !== 'success') {
+                return ['ok' => false, 'reference' => $reference];
+            }
+
+            $paymentState = strtolower((string) data_get($response->json(), 'data.status', ''));
+            $txRef = (string) data_get($response->json(), 'data.tx_ref', $reference);
+
+            return [
+                'ok' => $paymentState === 'successful',
+                'reference' => $txRef !== '' ? $txRef : $reference,
+            ];
+        } catch (\Throwable $e) {
+            Log::error('Flutterwave verify exception', ['error' => $e->getMessage()]);
+            return ['ok' => false, 'reference' => $reference];
+        }
+    }
+
+    private function resolveStripeSecret(): string
+    {
+        $secret = trim((string) config('services.stripe.secret'));
+        if ($secret === '') {
+            $secret = trim((string) env('STRIPE_SECRET_KEY', ''));
+        }
+        if ($this->isUsableStripeSecret($secret)) {
+            return $secret;
+        }
+
+        $stored = trim((string) Setting::getSensitive('stripe_secret', ''));
+        if ($this->isUsableStripeSecret($stored)) {
+            return $stored;
+        }
+
+        return '';
+    }
+
+    private function resolveStripePublishableKey(): string
+    {
+        $key = trim((string) config('services.stripe.key'));
+        if ($this->isUsableStripePublishableKey($key)) {
+            return $key;
+        }
+
+        $key = trim((string) env('STRIPE_PUBLISHABLE_KEY', ''));
+        if ($this->isUsableStripePublishableKey($key)) {
+            return $key;
+        }
+
+        $stored = trim((string) Setting::getSensitive('stripe_key', ''));
+        if ($this->isUsableStripePublishableKey($stored)) {
+            return $stored;
+        }
+
+        return '';
+    }
+
+    private function resolvePaystackSecret(): string
+    {
+        $secret = trim((string) config('services.paystack.secretKey'));
+        if ($this->isUsableGenericSecret($secret, 'sk_')) {
+            return $secret;
+        }
+
+        $stored = trim((string) Setting::getSensitive('paystack_secret', Setting::get('paystack_secret', '')));
+        if ($this->isUsableGenericSecret($stored, 'sk_')) {
+            return $stored;
+        }
+
+        return '';
+    }
+
+    private function resolveFlutterwaveSecret(): string
+    {
+        $secret = trim((string) config('services.flutterwave.secret_key'));
+        if ($this->isUsableGenericSecret($secret, 'FLWSECK_')) {
+            return $secret;
+        }
+
+        $stored = trim((string) Setting::getSensitive('flutterwave_secret', Setting::get('flutterwave_secret', '')));
+        if ($this->isUsableGenericSecret($stored, 'FLWSECK_')) {
+            return $stored;
+        }
+
+        return '';
+    }
+
+    private function isUsableStripeSecret(string $secret): bool
+    {
+        if ($secret === '') {
+            return false;
+        }
+
+        if (!str_starts_with($secret, 'sk_')) {
+            return false;
+        }
+
+        if (str_contains(strtolower($secret), 'xxxx')) {
+            return false;
+        }
+
+        return strlen($secret) >= 20;
+    }
+
+    private function isUsableStripePublishableKey(string $key): bool
+    {
+        if ($key === '') {
+            return false;
+        }
+
+        if (!str_starts_with($key, 'pk_')) {
+            return false;
+        }
+
+        if (str_contains(strtolower($key), 'xxxx')) {
+            return false;
+        }
+
+        return strlen($key) >= 20;
+    }
+
+    private function isUsableGenericSecret(string $value, string $prefix): bool
+    {
+        if ($value === '') {
+            return false;
+        }
+
+        if (!str_starts_with($value, $prefix)) {
+            return false;
+        }
+
+        if (str_contains(strtolower($value), 'xxxx')) {
+            return false;
+        }
+
+        return strlen($value) >= 16;
     }
 
     public function approveTransfer(Request $request, $id)
@@ -1155,7 +1547,7 @@ class SubscriptionController extends Controller
                 'userName'     => $user->name,
                 'workspaceUrl' => $url,
                 'planName'     => $subscription->plan_name ?? $subscription->plan,
-            ], fn($m) => $m->to($user->email, $user->name)->subject('Your SmatBook Workspace is Ready!'));
+            ], fn($m) => $m->to($user->email, $user->name)->subject('Your SmartProbook Workspace is Ready!'));
         } catch (\Exception $e) {
             Log::error('Welcome email failed', ['error' => $e->getMessage()]);
         }
@@ -1174,7 +1566,7 @@ class SubscriptionController extends Controller
                 'name'         => $user->name,
                 'workspaceUrl' => $url,
                 'companyName'  => $company?->company_name ?? $company?->name,
-            ], fn($m) => $m->to($user->email, $user->name)->subject('Your SmatBook Login Credentials'));
+            ], fn($m) => $m->to($user->email, $user->name)->subject('Your SmartProbook Login Credentials'));
         } catch (\Exception $e) {
             Log::error('Deployment welcome email failed', ['error' => $e->getMessage()]);
         }

@@ -74,7 +74,7 @@ class Company extends Model
      */
     public function subscription(): HasOne
     {
-        return $this->hasOne(Subscription::class, 'company_id');
+        return $this->hasOne(Subscription::class, 'company_id')->latestOfMany('id');
     }
 
     /**

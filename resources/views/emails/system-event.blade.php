@@ -22,7 +22,7 @@
                     @endforeach
                 </table>
             @endif
-            <p style="margin-bottom:0;margin-top:16px;">Regards,<br>{{ config('app.name', 'SmatBook') }}</p>
+            <p style="margin-bottom:0;margin-top:16px;">Regards,<br>{{ config('app.name', 'SmartProbook') }}</p>
         </div>
     </div>
 </body>

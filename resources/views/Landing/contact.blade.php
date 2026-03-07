@@ -41,7 +41,7 @@
                         <i class="fas fa-phone"></i>
                         <div>
                             <h6>Phone</h6>
-                            <a href="tel:+234800728626226">+234 (0) 800 SMAT BOOK</a>
+                            <a href="tel:+234800728626226">+234 (0) 800 SMARTPROBOOK</a>
                         </div>
                     </div>
                 </div>
@@ -81,7 +81,7 @@
 
                     <div class="form-group">
                         <label for="company_name">Company / Organization</label>
-                        <input type="text" id="company_name" name="company_name" class="form-input" placeholder="SmatBook Global" value="{{ old('company_name') }}">
+                        <input type="text" id="company_name" name="company_name" class="form-input" placeholder="SmartProbook Global" value="{{ old('company_name') }}">
                     </div>
 
                     <!-- Inquiry Department -->
@@ -105,7 +105,7 @@
                     <!-- Checkbox -->
                     <div class="form-checkbox">
                         <input type="checkbox" id="agreement" name="agreement" required>
-                        <label for="agreement">I agree to the SmatBook <a href="{{ route('landing.policy') }}">Corporate Policy</a> regarding data handling and communication.</label>
+                        <label for="agreement">I agree to the SmartProbook <a href="{{ route('landing.policy') }}">Corporate Policy</a> regarding data handling and communication.</label>
                     </div>
 
                     <!-- Submit Button -->

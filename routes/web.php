@@ -13,7 +13,7 @@ use App\Http\Controllers\{
     CustomAuthController, AnalyticsDashboardController, DomainController, PlanController,
     SuperAdminDashboardController, MessageController, CalendarController, EventController,
     NotificationController, ActivityLogController, BackupController, AuditController,
-    TaxCenterController, TaxFilingController, PeriodCloseController
+    TaxCenterController, TaxFilingController, PeriodCloseController, ProjectManagementController
     , AiQuickAgentController
 };
 use App\Http\Controllers\SuperAdmin\DeploymentManagerController;
@@ -72,6 +72,25 @@ Route::get('/projects/master-jamb', [LandingController::class, 'projectMasterJam
 Route::get('/projects/payplus', [LandingController::class, 'projectPayplus'])->name('landing.projects.payplus');
 Route::get('/pricing', [SubscriptionController::class, 'plans'])->name('pricing');
 Route::get('/membership-plans', [SubscriptionController::class, 'plans'])->name('membership-plans');
+Route::get('/deploy-infrastructure', function (\Illuminate\Http\Request $request) {
+    // Always start deployment from a clean state (no stale plan/checkout context).
+    $request->session()->forget([
+        'selected_plan_id',
+        'selected_plan',
+        'selected_cycle',
+        'selected_amount',
+        'billing_cycle',
+        'plan',
+        'reg_role',
+        'checkout_from_deployment',
+        'deployment_manager_id',
+        'deployment_customer_id',
+        'deployment_company_id',
+        'deployment_subscription_id',
+    ]);
+
+    return redirect()->route('membership-plans');
+})->name('deploy.infrastructure');
 Route::get('/session/ping', function () {
     return response()->json([
         'ok' => true,
@@ -189,6 +208,15 @@ Route::middleware(['auth'])->group(function () {
     });
 
     Route::get('/chat/{id}', [MessageController::class, 'show'])->name('messages.chat.show');
+
+    // Project Management
+    Route::controller(ProjectManagementController::class)->prefix('projects')->name('projects.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'storeProject')->name('store');
+        Route::patch('/{project}', 'updateProject')->name('update');
+        Route::post('/{project}/tasks', 'storeTask')->name('tasks.store');
+    });
+    Route::patch('/project-tasks/{task}', [ProjectManagementController::class, 'updateTask'])->name('projects.tasks.update');
 });
 
 // ============================================================
@@ -431,9 +459,10 @@ Route::middleware(['auth', 'role:super_admin,administrator'])->prefix('superadmi
     // Deployment Managers
     Route::prefix('managers')->name('managers.')->group(function () {
         Route::get('/list', [SuperAdminDashboardController::class, 'listManagers'])->name('list');
+        Route::get('/pending', [SuperAdminDashboardController::class, 'pendingManagers'])->name('pending');
         Route::get('/suspended', [SuperAdminDashboardController::class, 'suspendedManagers'])->name('suspended');
         Route::get('/approved', [SuperAdminDashboardController::class, 'approvedManagers'])->name('approved');
-        Route::post('/{id}/approve', [DeploymentManagerController::class, 'approveManager'])->name('approve');
+        Route::post('/{id}/approve', [SuperAdminDashboardController::class, 'approveManager'])->name('approve');
         Route::post('/{id}/suspend', [SuperAdminDashboardController::class, 'suspendManager'])->name('suspend');
         Route::post('/{id}/activate', [SuperAdminDashboardController::class, 'activateManager'])->name('activate');
         Route::post('/{id}/reject', [SuperAdminDashboardController::class, 'rejectManager'])->name('reject');
@@ -504,7 +533,7 @@ Route::middleware(['auth', 'subscription.active'])->group(function () {
         Route::post('/users/{id}/deactivate', [UserController::class, 'deactivate'])->name('users.deactivate');
         Route::get('/users/{id}/activity', [UserController::class, 'activityLog'])->name('users.activity');
     });
-    
+
     // Roles & Permissions (available to all subscribed plans)
     Route::controller(RoleController::class)->prefix('roles')->name('roles.')->group(function () {
         Route::get('/permission', 'index')->name('index');
@@ -912,6 +941,21 @@ if (app()->environment('local')) {
 
 Route::match(['get', 'post'], '/logout-emergency', function () {
     Auth::logout();
+    request()->session()->flush();
+    request()->session()->forget([
+        'selected_plan_id',
+        'selected_plan',
+        'selected_cycle',
+        'selected_amount',
+        'billing_cycle',
+        'plan',
+        'reg_role',
+        'checkout_from_deployment',
+        'deployment_manager_id',
+        'deployment_customer_id',
+        'deployment_company_id',
+        'deployment_subscription_id',
+    ]);
     request()->session()->invalidate();
     request()->session()->regenerateToken();
     return redirect('/saas-login');

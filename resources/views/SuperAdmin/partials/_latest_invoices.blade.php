@@ -81,7 +81,7 @@
                 @empty
                 <tr>
                     <td colspan="4" class="text-center py-5">
-                        <img src="{{ asset('assets/img/smat14.png') }}" style="height: 30px; opacity: 0.1;" class="mb-3">
+                        <img src="{{ asset('assets/img/logo-placeholder.svg') }}" style="height: 30px; opacity: 0.1;" class="mb-3">
                         <p class="text-muted small">No recent transactions detected for this node.</p>
                     </td>
                 </tr>

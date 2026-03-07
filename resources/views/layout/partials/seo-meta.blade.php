@@ -1,25 +1,21 @@
 @php
-    $siteName = config('app.name', 'SmatBook');
+    $siteName = config('app.name', 'Smatprobook');
 
-    $resolvedTitle = trim((string) ($seoTitle ?? $__env->yieldContent('title') ?? ''));
-    if ($resolvedTitle === '') {
-        $resolvedTitle = $siteName . ' | AI Accounting, ERP & Global Bookkeeping Platform';
-    } elseif (!str_contains($resolvedTitle, $siteName)) {
-        $resolvedTitle .= ' | ' . $siteName;
-    }
+    // User requested strict browser title branding.
+    $resolvedTitle = $siteName;
 
     $resolvedDescription = trim((string) ($seoDescription ?? $__env->yieldContent('meta_description') ?? ''));
     if ($resolvedDescription === '') {
-        $resolvedDescription = 'SmatBook is a global AI-powered accounting and ERP platform for businesses, institutions, and deployment partners.';
+        $resolvedDescription = 'SmartProbook is a global AI-powered accounting and ERP platform for businesses, institutions, and deployment partners.';
     }
 
     $resolvedKeywords = trim((string) ($seoKeywords ?? $__env->yieldContent('meta_keywords') ?? ''));
     if ($resolvedKeywords === '') {
-        $resolvedKeywords = 'SmatBook, accounting software, ERP, bookkeeping, invoicing, payments, multi-currency, finance platform';
+        $resolvedKeywords = 'SmartProbook, accounting software, ERP, bookkeeping, invoicing, payments, multi-currency, finance platform';
     }
 
     $resolvedType = trim((string) ($seoType ?? 'website'));
-    $resolvedImage = trim((string) ($seoImage ?? asset('assets/img/smat12.png')));
+    $resolvedImage = trim((string) ($seoImage ?? asset('assets/img/logo-placeholder.svg')));
     $resolvedUrl = url()->current();
 
     $resolvedNoIndex = (bool) ($seoNoIndex ?? false);
@@ -30,7 +26,7 @@
         '@type' => 'Organization',
         'name' => $siteName,
         'url' => config('app.url'),
-        'logo' => asset('assets/img/smat12.png'),
+        'logo' => asset('assets/img/logo-placeholder.svg'),
         'sameAs' => [],
     ];
 

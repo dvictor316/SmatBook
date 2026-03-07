@@ -2,7 +2,7 @@
     $logoPath = \App\Models\Setting::where('key', 'invoice_logo')->value('value')
         ?: \App\Models\Setting::where('key', 'site_logo')->value('value');
     $brandName = \App\Models\Setting::where('key', 'company_name')->value('value')
-        ?: (optional(auth()->user())->company->name ?? config('app.name', 'SMATBOOK'));
+        ?: (optional(auth()->user())->company->name ?? config('app.name', 'SMARTPROBOOK'));
     $brandEmail = \App\Models\Setting::where('key', 'company_email')->value('value') ?: 'support@smatbook.com';
     $brandPhone = \App\Models\Setting::where('key', 'company_phone')->value('value') ?: '+234-000-0000';
     $currency = \App\Models\Setting::where('key', 'pref_currency')->value('value') ?: 'NGN';

@@ -290,6 +290,95 @@
                             </div>
                         </div>
 
+                        {{-- ROW 2B: Extra KPI Density (reduce dead white space) --}}
+                        <div class="row mt-2">
+                            <div class="col-md-3 grid-margin stretch-card">
+                                <div class="card card-rounded bg-white shadow-sm border-left-primary">
+                                    <div class="card-body p-3">
+                                        <div class="d-flex align-items-center">
+                                            <i class="mdi mdi-cash-check fs-2 text-primary me-3"></i>
+                                            <div>
+                                                <h5 class="fw-bold mb-0 text-dark">{{ number_format($metrics['paid_subs'] ?? 0) }}</h5>
+                                                <small class="text-muted">Paid Subscriptions</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 grid-margin stretch-card">
+                                <div class="card card-rounded bg-white shadow-sm border-left-warning">
+                                    <div class="card-body p-3">
+                                        <div class="d-flex align-items-center">
+                                            <i class="mdi mdi-credit-card-outline fs-2 text-warning me-3"></i>
+                                            <div>
+                                                <h5 class="fw-bold mb-0 text-dark">{{ number_format($metrics['total_subs'] ?? 0) }}</h5>
+                                                <small class="text-muted">Total Subscriptions</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 grid-margin stretch-card">
+                                <div class="card card-rounded bg-white shadow-sm border-left-danger">
+                                    <div class="card-body p-3">
+                                        <div class="d-flex align-items-center">
+                                            <i class="mdi mdi-timer-sand fs-2 text-danger me-3"></i>
+                                            <div>
+                                                <h5 class="fw-bold mb-0 text-dark">{{ number_format($metrics['expiring_soon_subs'] ?? 0) }}</h5>
+                                                <small class="text-muted">Expiring in 7 Days</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 grid-margin stretch-card">
+                                <div class="card card-rounded bg-white shadow-sm border-left-secondary">
+                                    <div class="card-body p-3">
+                                        <div class="d-flex align-items-center">
+                                            <i class="mdi mdi-close-octagon-outline fs-2 text-secondary me-3"></i>
+                                            <div>
+                                                <h5 class="fw-bold mb-0 text-dark">{{ number_format($metrics['expired_subs'] ?? 0) }}</h5>
+                                                <small class="text-muted">Expired Subscriptions</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        @if(($metrics['expiring_soon_subs'] ?? 0) > 0 || ($metrics['expired_subs'] ?? 0) > 0)
+                        <div class="row mt-2">
+                            <div class="col-12 grid-margin stretch-card">
+                                <div class="card card-rounded shadow-sm border-0 bg-light-warning">
+                                    <div class="card-body p-3">
+                                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+                                            <div>
+                                                <h6 class="fw-bold mb-0 text-dark">
+                                                    <i class="mdi mdi-alert-outline me-1 text-warning"></i> Subscription Expiry Monitor
+                                                </h6>
+                                                <small class="text-muted">
+                                                    {{ $metrics['expiring_soon_subs'] ?? 0 }} expiring within 7 days, {{ $metrics['expired_subs'] ?? 0 }} expired.
+                                                </small>
+                                            </div>
+                                        </div>
+                                        @if(isset($expiringSubscriptions) && $expiringSubscriptions->count() > 0)
+                                        <div class="row g-2 mt-1">
+                                            @foreach($expiringSubscriptions->take(6) as $expiringSub)
+                                            <div class="col-md-6 col-lg-4">
+                                                <div class="bg-white border rounded p-2 small d-flex justify-content-between">
+                                                    <span>{{ $expiringSub->company->company_name ?? $expiringSub->user->name ?? 'Tenant' }}</span>
+                                                    <span class="fw-bold text-danger">{{ \Carbon\Carbon::parse($expiringSub->end_date)->format('M d, Y') }}</span>
+                                                </div>
+                                            </div>
+                                            @endforeach
+                                        </div>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+
                         {{-- ROW 3: Primary Analytics - Pie, Line, Bar Charts --}}
                         <div class="row mt-4">
                             {{-- Revenue by Plan - Pie Chart --}}
@@ -484,7 +573,7 @@
                                                             </div>
                                                         </td>
                                                         <td>
-                                                            @if($manager->status == 'pending')
+                                                            @if(in_array($manager->status, ['pending', 'pending_info']))
                                                                 <span class="badge badge-dot bg-warning me-1"></span> Pending
                                                             @elseif($manager->status == 'active')
                                                                 <span class="badge badge-dot bg-success me-1"></span> Active
@@ -493,7 +582,7 @@
                                                             @endif
                                                         </td>
                                                         <td class="text-center">
-                                                            @if($manager->status == 'pending')
+                                                            @if(in_array($manager->status, ['pending', 'pending_info']))
                                                                 <form action="{{ route('super_admin.managers.approve', $manager->id) }}" method="POST" class="d-inline">
                                                                     @csrf
                                                                     <button type="submit" class="btn btn-inverse-success btn-icon btn-sm" title="Approve"><i class="mdi mdi-check"></i></button>
@@ -821,7 +910,7 @@
     }
 
     function shareDashboard() {
-        const title = 'SmatBooks Master Dashboard';
+        const title = 'SmartProbook Master Dashboard';
         const text = 'Live platform analytics';
         const url = window.location.href;
 

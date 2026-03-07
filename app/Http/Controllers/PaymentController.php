@@ -264,7 +264,7 @@ class PaymentController extends Controller
 
             // 3. SECURE REDIRECT
             // Success message for the user
-            Session::flash('success', 'Node Activated. Welcome to SmatBook.');
+            Session::flash('success', 'Node Activated. Welcome to SmartProbook.');
             
             // FIXED: Using the named route 'user.dashboard' from your web.php
             return redirect()->route('user.dashboard');

@@ -2,6 +2,15 @@
 
 use Illuminate\Support\Str;
 
+$appHost = strtolower((string) parse_url((string) env('APP_URL', ''), PHP_URL_HOST));
+$requestHost = strtolower((string) ($_SERVER['HTTP_HOST'] ?? ''));
+$requestHost = explode(':', $requestHost)[0]; // strip :port for localhost:8000
+$appEnv = strtolower((string) env('APP_ENV', 'production'));
+
+$isLocalHost = in_array($appHost, ['localhost', '127.0.0.1'], true)
+    || in_array($requestHost, ['localhost', '127.0.0.1'], true)
+    || in_array($appEnv, ['local', 'development', 'testing'], true);
+
 return [
 
     /*
@@ -155,7 +164,7 @@ return [
     |
     */
 
-    'domain' => env('SESSION_DOMAIN', null),
+    'domain' => $isLocalHost ? null : env('SESSION_DOMAIN', null),
 
     /*
     |--------------------------------------------------------------------------
@@ -168,7 +177,7 @@ return [
     |
     */
 
-    'secure' => env('SESSION_SECURE_COOKIE'),
+    'secure' => $isLocalHost ? false : env('SESSION_SECURE_COOKIE'),
 
     /*
     |--------------------------------------------------------------------------

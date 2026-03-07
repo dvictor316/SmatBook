@@ -115,6 +115,15 @@ class Subscription extends Model
         return $query->where('status', 'Active');
     }
 
+    public function scopeExpiringSoon($query, int $days = 7)
+    {
+        return $query
+            ->whereRaw("LOWER(COALESCE(status, '')) IN ('active','trial')")
+            ->whereNotNull('end_date')
+            ->whereDate('end_date', '>=', now()->toDateString())
+            ->whereDate('end_date', '<=', now()->addDays($days)->toDateString());
+    }
+
     public function hasDomain(): bool
     {
         return !empty($this->domain_prefix) || ($this->company && !empty($this->company->subdomain));
@@ -154,10 +163,19 @@ class Subscription extends Model
 
     public function isExpired(): bool
     {
-        if ($this->status === 'Expired') return true;
+        if (strtolower((string) $this->status) === 'expired') {
+            return true;
+        }
 
-        if ($this->end_date && $this->end_date->isPast()) {
+        if (!$this->end_date) {
+            return false;
+        }
+
+        // end_date is stored as a date column, so we expire only after end of day.
+        $expired = Carbon::parse($this->end_date)->endOfDay()->lt(now());
+        if ($expired && in_array(strtolower((string) $this->status), ['active', 'trial'], true)) {
             $this->updateQuietly(['status' => 'Expired']);
+            $this->status = 'Expired';
             return true;
         }
 
@@ -175,7 +193,33 @@ class Subscription extends Model
     public function daysRemaining(): int
     {
         if ($this->isExpired() || !$this->end_date) return 0;
-        return (int) now()->diffInDays($this->end_date, false);
+        return (int) now()->diffInDays(Carbon::parse($this->end_date)->endOfDay(), false);
+    }
+
+    public function isExpiringSoon(int $days = 7): bool
+    {
+        if ($this->isExpired() || !$this->end_date) {
+            return false;
+        }
+
+        return $this->daysRemaining() <= $days;
+    }
+
+    public static function expireDueSubscriptions(?array $companyIds = null): int
+    {
+        $query = static::query()
+            ->whereRaw("LOWER(COALESCE(status, '')) IN ('active','trial')")
+            ->whereNotNull('end_date')
+            ->whereDate('end_date', '<', now()->toDateString());
+
+        if (!empty($companyIds)) {
+            $query->whereIn('company_id', $companyIds);
+        }
+
+        return (int) $query->update([
+            'status' => 'Expired',
+            'updated_at' => now(),
+        ]);
     }
 
     public function expiryMessage(): string

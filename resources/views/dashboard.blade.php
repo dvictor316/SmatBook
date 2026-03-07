@@ -4,6 +4,20 @@
 
 @section('content')
 <div class="container-fluid py-4">
+    @if(isset($subscription) && $subscription)
+        @php
+            $daysLeft = $subscription->daysRemaining();
+            $expiryDate = $subscription->end_date ? \Carbon\Carbon::parse($subscription->end_date)->format('M d, Y') : 'N/A';
+        @endphp
+        <div class="alert {{ $subscription->isExpired() ? 'alert-danger' : ($daysLeft <= 7 ? 'alert-warning' : 'alert-info') }} mb-3">
+            <strong><i class="fas fa-calendar-alt me-1"></i> Subscription Status:</strong>
+            @if($subscription->isExpired())
+                Expired on {{ $expiryDate }}. Please renew now.
+            @else
+                Active. Expires on {{ $expiryDate }} ({{ max(0, $daysLeft) }} days left).
+            @endif
+        </div>
+    @endif
     <div class="card border-0 shadow-sm">
         <div class="card-body">
             <h4 class="mb-2">Dashboard</h4>

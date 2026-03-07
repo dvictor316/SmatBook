@@ -1,7 +1,7 @@
 @php
     use Illuminate\Support\Facades\Route;
     $route = Route::currentRouteName();
-    $siteTitle = \App\Models\Setting::where('key', 'company_name')->value('value') ?: 'Smat Book';
+    $siteTitle = \App\Models\Setting::where('key', 'company_name')->value('value') ?: 'SmartProbook';
     $faviconPath = \App\Models\Setting::where('key', 'favicon')->value('value');
 
     // Initialize visibility variables to prevent "undefined" errors
@@ -117,12 +117,36 @@
         }
 
         .page-wrapper .content.container-fluid {
-            padding-top: 16px !important;
+            padding-top: 6px !important;
+            padding-left: 16px !important;
+            padding-right: 16px !important;
+        }
+
+        .btn {
+            border-radius: 10px !important;
+            font-weight: 700 !important;
+            transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
         }
 
         @media (max-width: 991.98px) {
             .page-wrapper {
                 margin-left: 0 !important;
+            }
+
+            .page-wrapper .content.container-fluid {
+                padding-top: 4px !important;
+                padding-left: 12px !important;
+                padding-right: 12px !important;
+            }
+        }
+
+        @media (max-width: 575.98px) {
+            .btn {
+                min-height: 40px;
             }
         }
     </style>
@@ -544,7 +568,7 @@
     {{-- PREFERENCE SCRIPT: PRINTING (As requested in profile) --}}
     <script>
         window.onbeforeprint = function() {
-            console.log("Preparing Smat-Book page for professional printing.");
+            console.log("Preparing SmartProbook page for professional printing.");
         };
     </script>
 

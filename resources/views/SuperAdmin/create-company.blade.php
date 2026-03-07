@@ -45,7 +45,7 @@
                                     <h5 class="text-primary mb-3">Identity & Domain</h5>
                                     <div class="form-group mb-3">
                                         <label>Company Name <span class="text-danger">*</span></label>
-                                        <input type="text" name="name" class="form-control" value="{{ old('name') }}" placeholder="e.g. SmatBook Ltd" required>
+                                        <input type="text" name="name" class="form-control" value="{{ old('name') }}" placeholder="e.g. SmartProbook Ltd" required>
                                     </div>
                                     <div class="form-group mb-3">
                                         <label>Subdomain (Tenant Prefix)</label>

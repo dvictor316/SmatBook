@@ -90,7 +90,7 @@
             <button onclick="printDashboard()" class="btn btn-outline-primary btn-sm rounded-pill px-3">
                 <i class="fas fa-print me-2"></i> Print Report
             </button>
-            <img src="{{ asset('assets/img/smat14.png') }}" style="height: 35px;">
+            <img src="{{ asset('assets/img/logo-placeholder.svg') }}" style="height: 35px;">
         </div>
     </div>
 

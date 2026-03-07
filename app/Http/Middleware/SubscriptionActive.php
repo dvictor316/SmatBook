@@ -37,8 +37,18 @@ class SubscriptionActive
         }
 
         // Enforcement Logic
-        if (!$user->subscription || $user->subscription->status !== 'Active') {
-            if ($user->subscription && strtolower($user->subscription->plan_name) === 'custom') {
+        $subscription = $user->subscription;
+        if ($subscription) {
+            $subscription->isExpired();
+        }
+
+        if (!$subscription || strtolower((string) $subscription->status) !== 'active') {
+            if ($subscription && strtolower((string) $subscription->status) === 'expired') {
+                return redirect()->route('membership-plans')
+                    ->with('error', 'Subscription expired. Please renew to continue.');
+            }
+
+            if ($subscription && strtolower($subscription->plan_name) === 'custom') {
                 return redirect()->route('management.review');
             }
             return redirect()->route('membership-plans');

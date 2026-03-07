@@ -4,7 +4,7 @@ namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\{Auth, DB, Hash, Mail, Log, Storage};
+use Illuminate\Support\Facades\{Auth, DB, Hash, Mail, Log, Storage, Schema};
 use Illuminate\Support\{Str, Carbon};
 use App\Models\{Company, User, Subscription, ActivityLog, DeploymentManager, DeploymentCompany, Plan};
 use App\Support\SystemEventMailer;
@@ -121,6 +121,10 @@ class DeploymentManagerController extends Controller
         $user = Auth::user();
 
         $this->ensureManagerHasWorkspace($user);
+        Subscription::expireDueSubscriptions($this->managedCompanyIds());
+
+        $managerProfile = DeploymentManager::where('user_id', Auth::id())->first();
+        $commissionRate = (float) ($managerProfile->commission_rate ?? self::COMMISSION_RATE);
 
         // Use created_at fallback because some rows may not have payment_date populated.
         $totalRevenue = $this->managedSubscriptions()
@@ -128,6 +132,32 @@ class DeploymentManagerController extends Controller
             ->whereYear('created_at', $now->year)
             ->whereMonth('created_at', $now->month)
             ->sum('amount');
+
+        $totalCommissions = 0.0;
+        $paidCommissions = 0.0;
+        $pendingCommissions = 0.0;
+
+        if (Schema::hasTable('deployment_commissions')) {
+            $amountColumn = Schema::hasColumn('deployment_commissions', 'commission_amount')
+                ? 'commission_amount'
+                : 'amount';
+
+            $commissionRows = DB::table('deployment_commissions')
+                ->where('manager_id', Auth::id())
+                ->select([$amountColumn . ' as amount', 'status'])
+                ->get();
+
+            $totalCommissions = (float) $commissionRows->sum('amount');
+            $paidCommissions = (float) $commissionRows
+                ->filter(fn ($row) => in_array(strtolower((string) ($row->status ?? '')), ['paid', 'credited']))
+                ->sum('amount');
+            $pendingCommissions = (float) $commissionRows
+                ->filter(fn ($row) => strtolower((string) ($row->status ?? '')) === 'pending')
+                ->sum('amount');
+        } else {
+            // Fallback for environments that do not have the commission ledger table yet.
+            $totalCommissions = ($totalRevenue * $commissionRate) / 100;
+        }
 
         $metrics = [
             'totalCompanies'         => $this->managedCompanies()->count(),
@@ -143,6 +173,16 @@ class DeploymentManagerController extends Controller
             'trialCount'             => $this->managedCompanies()->where('status', 'trial')->count(),
             'pendingPayments'        => $this->managedSubscriptions()->whereIn('payment_status', ['pending', 'unpaid'])->count(),
             'pendingPaymentsValue'   => $this->managedSubscriptions()->whereIn('payment_status', ['pending', 'unpaid'])->sum('amount'),
+            'commissionRate'         => $commissionRate,
+            'totalCommissions'       => $totalCommissions,
+            'paidCommissions'        => $paidCommissions,
+            'pendingCommissions'     => $pendingCommissions,
+            'expiringSoonSubscriptions' => $this->managedSubscriptions()
+                ->expiringSoon(7)
+                ->count(),
+            'expiredSubscriptions'   => $this->managedSubscriptions()
+                ->whereRaw("LOWER(COALESCE(status, '')) = 'expired'")
+                ->count(),
         ];
 
         $companies = $this->managedCompanies()->withCount('users')->latest()->get();
@@ -159,7 +199,14 @@ class DeploymentManagerController extends Controller
             ->limit(10)
             ->get();
 
-        return view('deployment.dashboard', compact('metrics', 'companies', 'recentSubscriptions', 'recentActivities'));
+        $expiringSubscriptions = $this->managedSubscriptions()
+            ->with(['company', 'user'])
+            ->expiringSoon(7)
+            ->orderBy('end_date', 'asc')
+            ->limit(8)
+            ->get();
+
+        return view('deployment.dashboard', compact('metrics', 'companies', 'recentSubscriptions', 'recentActivities', 'expiringSubscriptions'));
     }
 
     private function ensureManagerHasWorkspace($user) 
@@ -266,9 +313,16 @@ public function store(Request $request)
         'plan_price'      => 'required|numeric|min:0',
         'billing_cycle'   => 'required|in:monthly,yearly',
         'email'           => 'required|email|unique:users,email',
-        'password'        => 'required|string|min:8|confirmed',
+        'password'        => [
+            'required',
+            'string',
+            'confirmed',
+            \Illuminate\Validation\Rules\Password::min(8)->letters()->numbers(),
+        ],
         'name'            => 'required|string|max:255',
         'customer_phone'  => 'nullable|string|max:20',
+    ], [
+        'password.*' => 'Password must be at least 8 characters and include letters and numbers.',
     ]);
 
     // Server-side guard: never trust client-submitted plan values.
@@ -687,8 +741,8 @@ private function normalizeDeploymentPlanPayload(array $validated): array
                 'password' => $tempPassword,
                 'name' => $user->name,
                 'workspaceUrl' => $loginUrl,
-                'companyName' => $company?->company_name ?? $company?->name ?? 'SmatBook',
-            ], fn($m) => $m->to($user->email, $user->name)->subject('Your SmatBook Login Credentials'));
+                'companyName' => $company?->company_name ?? $company?->name ?? 'SmartProbook',
+            ], fn($m) => $m->to($user->email, $user->name)->subject('Your SmartProbook Login Credentials'));
         } catch (\Exception $e) {
             Log::error('Deployment user welcome email failed', ['error' => $e->getMessage(), 'user_id' => $user->id]);
         }

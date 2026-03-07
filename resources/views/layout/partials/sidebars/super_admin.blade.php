@@ -57,18 +57,8 @@
                         <li><a href="{{ route('super_admin.subscription', $routeParams) }}" class="{{ Request::is('superadmin/subscription*') ? 'active' : '' }}">Subscriptions</a></li>
                         <li><a href="{{ route('super_admin.packages.index', $routeParams) }}" class="{{ Request::is('superadmin/packages*') ? 'active' : '' }}">Packages</a></li>
                         <li><a href="{{ route('super_admin.domains.index', $routeParams) }}" class="{{ Request::is('superadmin/domains*') ? 'active' : '' }}">Domains</a></li>
-                        {{-- Corrected line for your sidebar --}}
-<li>
-    <a href="{{ route('deployment.users.index', $routeParams) }}" class="{{ Request::is('deployment/users*') ? 'active' : '' }}">
-        Deployment Managers
-    </a>
-</li>
-                        <li>
-                            <a href="{{ route('super_admin.transfer_users.index', $routeParams) }}" class="{{ Request::is('superadmin/transfer-users*') ? 'active' : '' }}">
-                                Transfer Users
-                            </a>
-                        </li>
-                        <li><a href="{{ route('super_admin.users.index', $routeParams) }}" class="{{ Request::is('superadmin/users-list*') ? 'active' : '' }}">Users</a></li>
+                        <li><a href="{{ route('projects.index') }}" class="{{ Request::is('projects*') ? 'active' : '' }}">Project Management</a></li>
+                        <li><a href="{{ route('projects.index') }}#tracking" class="{{ Request::is('projects*') ? 'active' : '' }}">Project Tracking</a></li>
                     </ul>
                 </li>
 
@@ -179,8 +169,8 @@
 
                 <li class="menu-title"><span>Management</span></li>
 
-                {{-- Users --}}
-                <li><a href="{{ route('users.index') }}"><i class="fe fe-user"></i><span>Users</span></a></li>
+                <li><a href="{{ route('projects.index') }}"><i class="fe fe-briefcase"></i><span>Project Management</span></a></li>
+                <li><a href="{{ route('projects.index') }}#tracking"><i class="fe fe-activity"></i><span>Project Tracking</span></a></li>
 
                 {{-- Roles & Permission --}}
                 <li><a href="{{ route('roles.index') }}"><i class="fe fe-shield"></i><span>Roles & Permission</span></a></li>
@@ -420,8 +410,8 @@
 
                 <li class="menu-title"><span>Management</span></li>
 
-                {{-- Users --}}
-                <li><a href="{{ route('users.index') }}"><i class="fe fe-user"></i><span>Users</span></a></li>
+                <li><a href="{{ route('projects.index') }}"><i class="fe fe-briefcase"></i><span>Project Management</span></a></li>
+                <li><a href="{{ route('projects.index') }}#tracking"><i class="fe fe-activity"></i><span>Project Tracking</span></a></li>
 
                 {{-- Roles & Permission --}}
                 <li><a href="{{ route('roles.index') }}"><i class="fe fe-shield"></i><span>Roles & Permission</span></a></li>

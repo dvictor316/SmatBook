@@ -468,7 +468,7 @@
     <div class="container">
         <h6 class="team-label">Platform Showcase</h6>
         <h1 class="team-title">Technical <span>Workspaces</span>.</h1>
-        <p class="team-subtitle">A visual walk-through of SmatBook modules used by deployment teams and enterprise finance operators.</p>
+        <p class="team-subtitle">A visual walk-through of SmartProbook modules used by deployment teams and enterprise finance operators.</p>
     </div>
 </section>
 
@@ -545,7 +545,7 @@
     <div class="container">
         <div style="text-align: center; margin-bottom: 60px;">
             <h2 style="font-size: 2.8rem; font-weight: 900; margin-bottom: 15px; color: #020617;">Complete Platform <span style="background: linear-gradient(135deg, #e63946 0%, #f4a460 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Gallery</span></h2>
-            <p style="color: #475569; font-size: 1.1rem;">Preview the major workspaces across the SmatBook application stack</p>
+            <p style="color: #475569; font-size: 1.1rem;">Preview the major workspaces across the SmartProbook application stack</p>
         </div>
 
         <div class="team-grid">

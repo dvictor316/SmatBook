@@ -203,7 +203,7 @@
         <!-- Sidebar Info -->
         <div class="smat-aside">
             <div>
-                <img src="{{ asset('assets/img/smat12.png') }}" alt="Logo" class="logo-img">
+                <img src="{{ asset('assets/img/logo-placeholder.svg') }}" alt="Logo" class="logo-img">
                 <br>
                 <div class="step-badge">Step 02: Provisioning</div>
                 <h2 class="fw-800 mt-4 mb-3" style="font-size: 1.9rem; color: #0f172a; line-height: 1.2;">Workspace<br>Initialization</h2>

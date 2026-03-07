@@ -554,7 +554,7 @@
                 <i class="fas fa-rocket"></i>
             </div>
             <div class="dm-brand-text">
-                <h1 class="dm-brand-title">SmatBook</h1>
+                <h1 class="dm-brand-title">SmartProbook</h1>
                 <p class="dm-brand-subtitle">Deployment Hub</p>
             </div>
         </a>

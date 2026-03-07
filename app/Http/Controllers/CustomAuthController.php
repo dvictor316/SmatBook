@@ -112,9 +112,16 @@ class CustomAuthController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => [
+                'required',
+                'string',
+                'confirmed',
+                \Illuminate\Validation\Rules\Password::min(8)->letters()->numbers(),
+            ],
             'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'terms' => 'accepted',
+        ], [
+            'password.*' => 'Password must be at least 8 characters and include letters and numbers.',
         ]);
 
         try {

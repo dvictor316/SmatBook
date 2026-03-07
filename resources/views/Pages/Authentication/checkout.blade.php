@@ -114,7 +114,7 @@
 <div class="landscape-card" data-aos="zoom-in">
     {{-- Left Side: Summary Panel --}}
     <div class="summary-side">
-        <img src="{{ asset('assets/img/smat14.png') }}" alt="Logo" height="35" class="mb-5 align-self-start">
+        <img src="{{ asset('assets/img/logo-placeholder.svg') }}" alt="Logo" height="35" class="mb-5 align-self-start">
         
         <span class="gold-label">Institutional Uplink</span>
         <h2 class="fw-bold mb-1 text-white">Finalize Setup</h2>
@@ -226,7 +226,7 @@
                 window.location.href = "{{ route('payment.callback') }}?transaction_id=" + data.transaction_id + "&gateway=flutterwave&sub_id={{ $subscription->id }}";
             },
             customizations: {
-                title: "SmatBook Intelligence",
+                title: "SmartProbook Intelligence",
                 description: "Uplink for {{ $subscription->plan_name ?? 'Institutional' }} Plan",
             },
         });

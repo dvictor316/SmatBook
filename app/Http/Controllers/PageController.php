@@ -28,6 +28,9 @@ class PageController extends Controller
         // This is the line that required the 'use App\Models\Estimate;' statement.
         $estimates = Estimate::with('customer')->latest()->take(5)->get(); 
         
+        // Fetch plans to avoid undefined variable error
+        $plans = \App\Models\Plan::all();
+
         // Fetch latest notifications for the authenticated user
         $notifications = DatabaseNotification::where('notifiable_id', Auth::id())
             // The notifiable_type should usually be dynamically resolved via the model's class name,
@@ -37,7 +40,7 @@ class PageController extends Controller
             ->take(5)
             ->get();
 
-        return view('superadmin.dashboard', compact('invoices', 'plans', 'estimates', 'notifications'));
+        return view('SuperAdmin.dashboard', compact('invoices', 'plans', 'estimates', 'notifications'));
     }
 
     
