@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\{Subscription, Plan, User, Company, DeploymentManager, Domain, Bank};
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\{Auth, DB, Log, Mail, Schema};
+use Illuminate\Support\Facades\{Auth, DB, Http, Log, Mail, Schema};
 use Carbon\Carbon;
 
 class SubscriptionController extends Controller
@@ -237,75 +237,16 @@ class SubscriptionController extends Controller
         $subscription = Subscription::findOrFail($id);
 
         $request->validate([
-            'gateway' => 'required|in:paystack,flutterwave,bank_transfer',
-            'bank_id' => 'nullable|integer',
-            'transfer_reference' => 'nullable|required_if:gateway,bank_transfer|string|max:100',
-            'transfer_payer_name' => 'nullable|required_if:gateway,bank_transfer|string|max:191',
-            'transfer_proof' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:4096',
+            'gateway' => 'required|in:stripe',
         ]);
 
-        if ($request->gateway === 'bank_transfer') {
-            Log::info('Bank transfer submit received', [
-                'subscription_id' => $subscription->id,
-                'actor_user_id'   => auth()->id(),
-                'bank_id'         => $request->input('bank_id'),
-                'reference'       => $request->input('transfer_reference'),
-            ]);
-        }
-
         switch ($request->gateway) {
-            case 'paystack':    return $this->initPaystack($subscription);
-            case 'flutterwave': return $this->initFlutterwave($subscription);
-            case 'bank_transfer':
-                return $this->submitBankTransfer($request, $subscription);
+            case 'stripe':
+                return $this->initStripe($subscription);
             default:
                 return redirect()->route('saas.checkout', $id)
                     ->with('error', 'Unsupported payment method selected.');
         }
-    }
-
-    private function submitBankTransfer(Request $request, Subscription $subscription)
-    {
-        $reference = strtoupper(trim((string) $request->transfer_reference));
-        $proofPath = null;
-
-        if ($request->hasFile('transfer_proof')) {
-            $proofPath = $request->file('transfer_proof')->store('transfers/proofs', 'public');
-        }
-
-        $update = [
-            'status'                => 'Pending',
-            'payment_status'        => 'pending_verification',
-            'payment_gateway'       => 'bank_transfer',
-            'payment_reference'     => $reference,
-            'transaction_reference' => $reference,
-            'transfer_reference'    => $reference,
-            'transfer_payer_name'   => trim((string) $request->transfer_payer_name),
-            'transfer_submitted_at' => now(),
-            'transfer_validated_by' => null,
-            'transfer_validated_at' => null,
-            'transfer_validation_note' => null,
-        ];
-
-        if ((int) $request->bank_id > 0) {
-            $update['transfer_bank_id'] = (int) $request->bank_id;
-        }
-
-        if ($proofPath) {
-            $update['transfer_proof'] = $proofPath;
-        }
-
-        // Backward-compatible guards for mixed schemas
-        foreach (array_keys($update) as $column) {
-            if (!Schema::hasColumn('subscriptions', $column)) {
-                unset($update[$column]);
-            }
-        }
-
-        $subscription->update($update);
-
-        return redirect()->route('saas.checkout', $subscription->id)
-            ->with('success', 'Bank transfer submitted. Awaiting super admin validation.');
     }
 
     /*
@@ -313,22 +254,66 @@ class SubscriptionController extends Controller
     | GATEWAY INITIATORS
     |--------------------------------------------------------------------------
     */
-    private function initPaystack($subscription)
+    private function initStripe(Subscription $subscription)
     {
-        return redirect()->route('saas.payment.callback', [
-            'sub_id'    => $subscription->id,
-            'reference' => 'PAYSTACK_' . time(),
-            'gateway'   => 'paystack',
-        ]);
-    }
+        $secret = (string) config('services.stripe.secret');
+        if ($secret === '') {
+            return redirect()->route('saas.checkout', $subscription->id)
+                ->with('error', 'Stripe is not configured yet.');
+        }
 
-    private function initFlutterwave($subscription)
-    {
-        return redirect()->route('saas.payment.callback', [
-            'sub_id'    => $subscription->id,
-            'reference' => 'FLW_' . time(),
-            'gateway'   => 'flutterwave',
-        ]);
+        $amountKobo = max(1, (int) round(((float) $subscription->amount) * 100));
+        $planName = (string) ($subscription->plan_name ?? $subscription->plan ?? 'Subscription');
+        $successUrl = route('saas.payment.callback', [
+            'sub_id' => $subscription->id,
+            'gateway' => 'stripe',
+        ]) . '&reference={CHECKOUT_SESSION_ID}';
+        $cancelUrl = route('saas.checkout', $subscription->id);
+
+        try {
+            $response = Http::asForm()
+                ->withToken($secret)
+                ->acceptJson()
+                ->post('https://api.stripe.com/v1/checkout/sessions', [
+                    'mode' => 'payment',
+                    'success_url' => $successUrl,
+                    'cancel_url' => $cancelUrl,
+                    'customer_email' => (string) optional(auth()->user())->email,
+                    'line_items[0][price_data][currency]' => 'ngn',
+                    'line_items[0][price_data][unit_amount]' => $amountKobo,
+                    'line_items[0][price_data][product_data][name]' => 'SmatBook ' . $planName,
+                    'line_items[0][quantity]' => 1,
+                    'metadata[subscription_id]' => (string) $subscription->id,
+                    'metadata[user_id]' => (string) $subscription->user_id,
+                ]);
+
+            if (!$response->successful()) {
+                Log::error('Stripe session init failed', [
+                    'subscription_id' => $subscription->id,
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+
+                return redirect()->route('saas.checkout', $subscription->id)
+                    ->with('error', 'Unable to initialize Stripe checkout right now.');
+            }
+
+            $url = (string) $response->json('url', '');
+            if ($url === '') {
+                return redirect()->route('saas.checkout', $subscription->id)
+                    ->with('error', 'Stripe checkout URL was not returned.');
+            }
+
+            return redirect()->away($url);
+        } catch (\Throwable $e) {
+            Log::error('Stripe session init exception', [
+                'subscription_id' => $subscription->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return redirect()->route('saas.checkout', $subscription->id)
+                ->with('error', 'Stripe checkout is temporarily unavailable.');
+        }
     }
 
     /*
@@ -344,7 +329,7 @@ class SubscriptionController extends Controller
     {
         $subId     = $request->sub_id    ?? $request->query('sub_id');
         $reference = $request->reference ?? $request->query('reference');
-        $gateway   = strtolower((string) ($request->gateway ?? $request->query('gateway') ?? 'paystack'));
+        $gateway   = strtolower((string) ($request->gateway ?? $request->query('gateway') ?? 'stripe'));
 
         if (!$subId) {
             return redirect()->route('membership-plans')
@@ -352,11 +337,6 @@ class SubscriptionController extends Controller
         }
 
         $subscription = Subscription::with(['user', 'company'])->findOrFail($subId);
-
-        if ($gateway === 'bank_transfer') {
-            return redirect()->route('saas.checkout', $subscription->id)
-                ->with('info', 'Bank transfer payments are validated by super admin before activation.');
-        }
 
         if (!$this->verifyPayment($reference, $gateway)) {
             return redirect()->route('saas.checkout', $subscription->id)
@@ -970,14 +950,41 @@ class SubscriptionController extends Controller
     private function verifyPayment(string $reference, string $gateway): bool
     {
         $gateway = strtolower((string) $gateway);
+        $reference = trim((string) $reference);
 
-        // Bank transfer must go through manual validation queue, never direct callback.
-        if ($gateway === 'bank_transfer') {
+        if ($reference === '') {
             return false;
         }
 
-        // For online gateways, require a non-empty reference.
-        return trim((string) $reference) !== '';
+        if ($gateway === 'stripe') {
+            return $this->verifyStripePayment($reference);
+        }
+
+        return false;
+    }
+
+    private function verifyStripePayment(string $reference): bool
+    {
+        $secret = (string) config('services.stripe.secret');
+        if ($secret === '') {
+            return app()->environment(['local', 'testing']);
+        }
+
+        try {
+            $response = Http::withToken($secret)
+                ->acceptJson()
+                ->get('https://api.stripe.com/v1/checkout/sessions/' . urlencode($reference));
+
+            if (!$response->successful()) return false;
+
+            $status = strtolower((string) $response->json('status', ''));
+            $paymentStatus = strtolower((string) $response->json('payment_status', ''));
+
+            return $status === 'complete' && $paymentStatus === 'paid';
+        } catch (\Throwable $e) {
+            Log::error('Stripe verify exception', ['error' => $e->getMessage()]);
+            return false;
+        }
     }
 
     public function approveTransfer(Request $request, $id)

@@ -43,6 +43,12 @@ return [
     'redirect'      => env('FACEBOOK_REDIRECT_URL'), // Changed from URI to URL to match your .env
 ],
 
+'stripe' => [
+    'model'  => App\Models\User::class,
+    'key'    => env('STRIPE_KEY'),
+    'secret' => env('STRIPE_SECRET'),
+],
+
 'paystack' => [
     'publicKey' => env('PAYSTACK_PUBLIC_KEY'),
     'secretKey' => env('PAYSTACK_SECRET_KEY'),
