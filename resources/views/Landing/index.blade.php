@@ -23,7 +23,7 @@
     --surface-3:   #edf2fb;
     --font-display:'Plus Jakarta Sans', sans-serif;
     --font-body:   'DM Sans', sans-serif;
-    --nav-h:       84px;
+    --nav-h:       68px;
     --announce-h:  38px;
     --radius-sm:   8px;
     --radius-md:   14px;
@@ -51,9 +51,16 @@ nav.sb-nav {
 nav.sb-nav.scrolled { background: rgba(255,255,255,0.98); box-shadow: 0 4px 24px rgba(0,35,71,0.10); }
 nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center; }
 .sb-brand { display: flex; align-items: center; gap: 8px; text-decoration: none; }
-.sb-brand img { height: 32px; }
-.sb-brand-text { font-size: 1.55rem; font-weight: 900; color: var(--navy); letter-spacing: -0.5px; }
-.sb-brand-text .b { color: #1c66e8; }
+.sb-brand img { height: 56px; }
+.spb-nav-wordmark{
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #0b2a63;
+    letter-spacing: -0.3px;
+    line-height: 1;
+    white-space: nowrap;
+}
+.spb-nav-wordmark .book{ color: #dc2626; }
 .sb-nav-link {
     font-weight: 700; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1px;
     color: var(--navy) !important; padding: 6px 14px; border-radius: var(--radius-sm);
@@ -159,8 +166,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 ══════════════════════════════════════════════════════════════ */
 .hero-wrap {
     position: relative; width: 100%;
-    /* FIX: sits right against banner with just 4px breathing room */
-    padding-top: calc(var(--nav-h) + var(--announce-h) + 4px);
+    padding-top: calc(var(--nav-h) + var(--announce-h) - 22px);
     background: linear-gradient(135deg, #000c1e 0%, #001240 30%, #061d6b 60%, #0a2fa8 100%);
     overflow: hidden;
     min-height: calc(100vh - var(--nav-h) - var(--announce-h));
@@ -193,8 +199,8 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 /* FIX: tighter top padding, centred row */
 .hero-content {
     position: relative; z-index: 2; flex: 1;
-    display: flex; align-items: center; justify-content: center;
-    padding: 28px 40px 32px; /* was 48px top */
+    display: flex; align-items: flex-start; justify-content: center;
+    padding: 0 40px 18px;
     max-width: 1400px; margin: 0 auto; width: 100%;
     gap: 0;
 }
@@ -219,6 +225,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
         0 0 0 52px rgba(243,206,132,0.03), 0 0 0 80px rgba(243,206,132,0.015),
         0 48px 120px rgba(0,4,30,0.85);
     animation: heroCircleGlow 5s ease-in-out infinite;
+    z-index: 4;
 }
 .hero-circle::before {
     content: ''; position: absolute; inset: 18px; border-radius: 50%;
@@ -297,8 +304,10 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 
 /* FIX: phone zone — wider margin, bigger phone */
 .hero-right {
-    flex: 0 0 auto; margin-left: clamp(40px,5vw,90px);
+    flex: 0 0 auto; margin-left: clamp(84px,8vw,150px);
     display: flex; align-items: center; justify-content: center; position: relative;
+    overflow: visible;
+    z-index: 18;
 }
 
 /* FIX: wider phone */
@@ -386,14 +395,28 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 .phone-badge {
     position: absolute; background: rgba(255,255,255,0.97); border-radius: 12px; padding: 9px 12px;
     box-shadow: 0 12px 32px rgba(0,0,0,0.28); display: flex; align-items: center; gap: 9px;
-    backdrop-filter: blur(8px); z-index: 10; white-space: nowrap;
+    backdrop-filter: blur(8px); z-index: 12; white-space: nowrap;
+    width: clamp(142px, 10.8vw, 166px);
+    max-width: 166px;
+    padding: 9px 10px;
+    border-radius: 16px;
+    pointer-events: none;
 }
-.phone-badge.pb-tl { top: 12%; left: -92px; animation: badgeFloat 4s ease-in-out infinite; }
-.phone-badge.pb-br { bottom: 22%; right: -84px; animation: badgeFloat 4s ease-in-out infinite 2s; }
-@keyframes badgeFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
-.pb-icon { width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.pb-main { font-family: var(--font-display); font-size: 13px; font-weight: 800; color: var(--navy); line-height: 1; }
-.pb-sub { font-size: 8.5px; color: var(--muted); font-weight: 600; margin-top: 2px; }
+.phone-badge.pb-1 { top: 20%; left: -170px; animation: badgeBlinkA 8s ease-in-out infinite; }
+.phone-badge.pb-2 { top: 35%; left: -170px; animation: badgeBlinkB 8.8s ease-in-out infinite .4s; }
+.phone-badge.pb-3 { top: 50%; left: -170px; animation: badgeBlinkC 9.4s ease-in-out infinite .8s; }
+.phone-badge.pb-4 { top: 65%; left: -170px; animation: badgeBlinkD 10s ease-in-out infinite 1.2s; }
+.phone-badge.pb-5 { top: 20%; right: -142px; animation: badgeBlinkB 8.4s ease-in-out infinite .2s; }
+.phone-badge.pb-6 { top: 35%; right: -142px; animation: badgeBlinkC 9.1s ease-in-out infinite .6s; }
+.phone-badge.pb-7 { top: 50%; right: -142px; animation: badgeBlinkD 9.7s ease-in-out infinite 1s; }
+.phone-badge.pb-8 { top: 65%; right: -142px; animation: badgeBlinkA 10.3s ease-in-out infinite 1.4s; }
+@keyframes badgeBlinkA { 0%,18%,100%{opacity:1} 28%,38%{opacity:.15} 48%{opacity:1} }
+@keyframes badgeBlinkB { 0%,22%,100%{opacity:1} 32%,44%{opacity:.2} 56%{opacity:1} }
+@keyframes badgeBlinkC { 0%,16%,100%{opacity:1} 26%,40%{opacity:.18} 52%{opacity:1} }
+@keyframes badgeBlinkD { 0%,20%,100%{opacity:1} 30%,42%{opacity:.12} 54%{opacity:1} }
+.pb-icon { width: 24px; height: 24px; border-radius: 7px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.pb-main { font-family: var(--font-display); font-size: 10px; font-weight: 800; color: var(--navy); line-height: 1; }
+.pb-sub { font-size: 7px; color: var(--muted); font-weight: 600; margin-top: 2px; }
 
 /* FX ticker */
 .hero-ticker {
@@ -576,46 +599,177 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 .footer-social:hover { background: var(--gold); color: #fff; transform: scale(1.1); }
 .map-wrap { border: 10px solid #fff; border-radius: var(--radius-md); box-shadow: var(--shadow-md); overflow: hidden; min-height: 480px; }
 
+/* Floating Support Widget */
+.spb-support {
+    position: fixed;
+    right: 20px;
+    bottom: 18px;
+    z-index: 10020;
+    font-family: var(--font-display);
+}
+.spb-support-bubble {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    border: none;
+    background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+    color: #ffffff;
+    box-shadow: 0 10px 28px rgba(185, 28, 28, 0.42);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    cursor: pointer;
+}
+.spb-support-floating {
+    position: absolute;
+    right: 0;
+    bottom: 78px;
+    width: min(320px, calc(100vw - 24px));
+    pointer-events: none;
+}
+.spb-float-msg {
+    background: #fff;
+    border: 1px solid #d3deeb;
+    color: #0b2a63;
+    border-radius: 14px;
+    padding: 12px 14px;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+    font-weight: 700;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity .35s ease, transform .35s ease;
+}
+.spb-float-msg + .spb-float-msg { margin-top: 10px; }
+.spb-float-msg.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+.spb-support-panel {
+    position: absolute;
+    right: 0;
+    bottom: 78px;
+    width: min(410px, calc(100vw - 24px));
+    background: #fff;
+    border: 1px solid #d3deeb;
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.18);
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(10px) scale(.98);
+    pointer-events: none;
+    transition: all .3s ease;
+    max-height: min(72vh, 460px);
+    overflow-y: auto;
+}
+.spb-support.open .spb-support-panel {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+}
+.spb-support.open .spb-support-floating { display: none; }
+.spb-panel-head {
+    background: #0b2a63;
+    color: #fff;
+    padding: 14px 16px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.spb-close-x {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: none;
+    background: #14d676;
+    color: #083f35;
+    font-weight: 900;
+}
+.spb-panel-body { padding: 14px 16px; }
+.spb-panel-note { color: #475569; margin-bottom: 12px; }
+.spb-support-btn {
+    width: 100%;
+    border: 1px solid #d3deeb;
+    border-radius: 10px;
+    background: #fff;
+    color: #0b2a63;
+    font-weight: 700;
+    padding: 11px 12px;
+    margin-bottom: 10px;
+}
+.spb-support-btn.primary {
+    background: #0ea05d;
+    color: #fff;
+    border-color: #0ea05d;
+}
+.spb-support-mini {
+    font-size: 12px;
+    color: #64748b;
+}
+.spb-panel-form {
+    border-top: 1px solid #e2e8f0;
+    margin-top: 12px;
+    padding-top: 12px;
+}
+.spb-panel-form input, .spb-panel-form textarea {
+    width: 100%;
+    border: 1px solid #d8e2f0;
+    border-radius: 10px;
+    padding: 9px 10px;
+    font-size: 13px;
+    margin-bottom: 8px;
+}
+.spb-panel-form textarea { min-height: 78px; resize: vertical; }
+@media (max-width: 575px) {
+    .spb-support { right: 8px; bottom: 12px; }
+    .spb-support-floating { width: min(300px, calc(100vw - 16px)); }
+    .spb-support-panel { right: 0; bottom: 76px; width: min(360px, calc(100vw - 16px)); }
+}
+
 /* ═══════════════════════════════════════════════════════════
    RESPONSIVE
 ═══════════════════════════════════════════════════════════ */
 @media (max-width: 1100px) {
-    .hero-right { margin-left: clamp(24px,3vw,48px); }
+    .hero-right { margin-left: clamp(42px,4vw,72px); }
     .hero-phone { width: clamp(220px,22vw,280px); }
 }
 @media (max-width: 991px) {
-    :root { --nav-h: 72px; --announce-h: 36px; }
+    :root { --nav-h: 64px; --announce-h: 34px; }
     .benefit-grid { grid-template-columns: repeat(2,1fr); }
-    .hero-content { flex-direction: column; padding: 24px 20px 28px; gap: 40px; }
+    .hero-content { flex-direction: column; align-items: center; padding: 24px 20px 28px; gap: 40px; }
     .hero-right { margin-left: 0; }
     .hero-circle { width: clamp(320px,82vw,460px) !important; height: clamp(320px,82vw,460px) !important; }
     .hero-phone { width: clamp(220px,50vw,300px); }
-    .phone-badge.pb-tl { left: -70px; }
-    .phone-badge.pb-br { right: -60px; }
-    #mujiNav { background: rgba(255,255,255,0.99) !important; border: 1px solid var(--border) !important; border-radius: var(--radius-lg) !important; padding: 14px 10px !important; margin-top: 10px !important; box-shadow: 0 12px 40px rgba(0,35,71,0.14) !important; backdrop-filter: blur(20px) !important; }
-    #mujiNav .nav-item { width: 100%; }
-    #mujiNav .sb-nav-link { display: flex; align-items: center; padding: 12px 16px !important; border-radius: var(--radius-sm) !important; font-size: 0.82rem !important; color: var(--navy) !important; }
+    .sb-brand img { height: 48px; }
+    .phone-badge { width: 152px; max-width: 152px; }
+    .phone-badge.pb-1, .phone-badge.pb-2, .phone-badge.pb-3, .phone-badge.pb-4 { left: -84px; }
+    .phone-badge.pb-5, .phone-badge.pb-6, .phone-badge.pb-7, .phone-badge.pb-8 { right: -70px; }
+    .phone-badge.pb-3, .phone-badge.pb-4, .phone-badge.pb-7, .phone-badge.pb-8 { display: none; }
+    #mujiNav {
+        position: fixed;
+        top: var(--nav-h);
+        left: -100%;
+        width: 100%;
+        height: calc(100vh - var(--nav-h));
+        background: #fff;
+        padding: 24px 16px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        transition: left .35s ease;
+        box-shadow: inset 0 2px 14px rgba(0,0,0,.04);
+        z-index: 9998;
+    }
+    #mujiNav.show {
+        left: 0 !important;
+        display: block !important;
+    }
+    #mujiNav .navbar-nav { align-items: stretch !important; gap: 0 !important; }
+    #mujiNav .nav-item { width: 100%; border-bottom: 1px solid #eef3fb; }
+    #mujiNav .nav-item:last-child { border-bottom: none; }
+    #mujiNav .sb-nav-link { display: flex; align-items: center; padding: 14px 12px !important; border-radius: var(--radius-sm) !important; font-size: 0.82rem !important; color: var(--navy) !important; width: 100%; }
     #mujiNav .sb-nav-link:hover { background: rgba(28,102,232,0.06) !important; color: #1c66e8 !important; }
-    #mujiNav 
-/* Hamburger toggle */
-.navbar-toggler {
-    border: none !important; outline: none !important; box-shadow: none !important;
-    padding: 8px 10px; border-radius: 8px;
-    background: transparent; cursor: pointer; transition: background 0.2s;
-    display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 0;
-}
-.navbar-toggler:hover { background: rgba(28,102,232,0.07); }
-.navbar-toggler:focus { outline: none !important; box-shadow: none !important; }
-.tog-bar {
-    display: block; width: 22px; height: 2px;
-    background: var(--navy); border-radius: 2px;
-    margin: 3px 0; transition: all 0.3s ease;
-}
-.navbar-toggler[aria-expanded="true"] .tog-bar:nth-child(1) { transform: translateY(8px) rotate(45deg); }
-.navbar-toggler[aria-expanded="true"] .tog-bar:nth-child(2) { opacity: 0; transform: scaleX(0); }
-.navbar-toggler[aria-expanded="true"] .tog-bar:nth-child(3) { transform: translateY(-8px) rotate(-45deg); }
-
-.btn-portal { width: 100%; justify-content: center; margin-top: 10px; }
+    #mujiNav .btn-portal { width: 100%; justify-content: center; margin-top: 12px; }
     #mujiNav .ms-lg-3 { margin-left: 0 !important; margin-top: 4px; }
 }
 @media (max-width: 768px) {
@@ -626,7 +780,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     .db-kpi-row .db-kpi:last-child { display: none; }
     .announce-label { font-size: 0 !important; padding: 0 12px !important; }
     .announce-msg { font-size: 0.65rem !important; }
-    .hero-circle { width: min(90vw,400px) !important; height: min(90vw,400px) !important; padding: min(44px,10%) !important; }
+    .hero-circle { width: min(90vw,400px) !important; height: min(90vw,400px) !important; padding: min(58px,14%) !important; }
     .hero-phone { width: clamp(230px,62vw,300px); } /* FIX: wider on mobile */
     .hero-h1 { font-size: clamp(1.3rem,5.5vw,1.9rem) !important; }
     .hero-body { font-size: clamp(11px,3.2vw,13px) !important; }
@@ -639,20 +793,26 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 }
 @media (max-width: 640px) {
     .hero-content { padding: 16px 16px 24px; gap: 28px; }
-    .hero-circle { width: min(90vw,340px) !important; height: min(90vw,340px) !important; padding: clamp(32px,8%,52px) !important; }
+    .hero-circle { width: min(90vw,340px) !important; height: min(90vw,340px) !important; padding: clamp(52px,16%,72px) !important; }
     .hero-phone { width: clamp(220px,72vw,280px); } /* FIX: fills more of screen on mobile */
-    .hero-h1 { font-size: clamp(1.1rem,5vw,1.55rem) !important; }
+    .hero-h1 { font-size: clamp(1rem,4.5vw,1.45rem) !important; }
     .hero-body { font-size: 11px !important; }
+    .hero-cta-stack { max-width: min(196px,56vw) !important; }
+    .hero-trust { display: none !important; }
+    .hero-eyebrow { margin-bottom: 10px !important; }
+    .hero-body { margin-bottom: 16px !important; }
     /* FIX: no gold border on small mobile */
     .benefit-card { border: 1px solid var(--border); box-shadow: none; }
     .benefit-card:hover { transform: none; box-shadow: none; }
 }
 @media (max-width: 480px) {
-    :root { --nav-h: 64px; --announce-h: 32px; }
+    :root { --nav-h: 60px; --announce-h: 32px; }
+    .sb-brand img { height: 36px; }
     .benefit-grid { grid-template-columns: 1fr; }
     .ticker-label { font-size: 0 !important; width: 34px; }
     .ticker-track-wrap { padding-left: 34px; }
     .benefit-belt { padding: 28px 12px 0; }
+    .spb-nav-wordmark { font-size: .84rem; letter-spacing: -0.2px; }
 }
 </style>
 
@@ -660,10 +820,10 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 <nav class="navbar navbar-expand-lg fixed-top sb-nav" id="mainNav">
     <div class="container">
         <a class="sb-brand navbar-brand" href="#home">
-            <img src="{{ asset('assets/img/smat12.png') }}" alt="SmatBook">
-            <span class="sb-brand-text">SMAT<span class="b">BOOK</span></span>
+            <img src="{{ asset('assets/img/logos.png') }}" alt="SmartProbook" style="height: 56px; width: auto;">
+            <span class="spb-nav-wordmark">SmartPro<span class="book">book</span></span>
         </a>
-        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#mujiNav" style="color:var(--navy);">
+        <button class="navbar-toggler border-0" type="button" aria-controls="mujiNav" aria-expanded="false" style="color:var(--navy);">
             <span class="tog-bar"></span><span class="tog-bar"></span><span class="tog-bar"></span>
         </button>
         <div class="collapse navbar-collapse" id="mujiNav">
@@ -688,7 +848,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 <div class="announce-bar" id="announceBar">
     <div class="announce-label"><span class="announce-dot"></span> 📡 LIVE UPDATES</div>
     <div class="announce-track" id="announceTrack">
-        <div class="announce-msg active" id="msg0"><i class="fas fa-star" style="color:var(--gold);font-size:.6rem;"></i> SmatBook v3.0 — Now with AI-powered payroll automation</div>
+        <div class="announce-msg active" id="msg0"><i class="fas fa-star" style="color:var(--gold);font-size:.6rem;"></i> SmartProbook v3.0 — Now with AI-powered payroll automation</div>
         <div class="announce-msg" id="msg1"><i class="fas fa-shield-alt" style="color:var(--gold);font-size:.6rem;"></i> ISO 27001 Certified · Your data is fully encrypted &amp; secured</div>
         <div class="announce-msg" id="msg2"><i class="fas fa-bolt" style="color:var(--gold);font-size:.6rem;"></i> New: One-click FIRS VAT report generation · Try it today</div>
         <div class="announce-msg" id="msg3"><i class="fas fa-users" style="color:var(--gold);font-size:.6rem;"></i> Trusted by 60,000+ businesses across Africa &amp; beyond</div>
@@ -704,7 +864,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
         <div class="hero-left">
             <div class="hero-circle">
                 <div class="hero-circle-orbit"></div>
-                <div class="hero-eyebrow">SMAT BOOK</div>
+                <div class="hero-eyebrow">SmartProbook</div>
                 <h1 class="hero-h1">Run Your Business.<br><span class="gold-text">Know Your Money.</span></h1>
                 <p class="hero-body">Accounting-first workflow for sales, invoices, expenses, payroll and tax — all in one platform.</p>
                 <div class="hero-cta-stack">
@@ -717,16 +877,39 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                 </div>
             </div>
         </div>
-
         {{-- PHONE --}}
         <div class="hero-right">
-            <div class="phone-badge pb-tl">
+            <div class="phone-badge pb-1">
                 <div class="pb-icon" style="background:#dcfce7;"><svg width="14" height="14" fill="none" stroke="#15803d" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></div>
                 <div><div class="pb-main">+24.8%</div><div class="pb-sub">Monthly Revenue</div></div>
             </div>
-            <div class="phone-badge pb-br">
+            <div class="phone-badge pb-2">
                 <div class="pb-icon" style="background:#eff6ff;"><svg width="14" height="14" fill="none" stroke="#1c66e8" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
                 <div><div class="pb-main">Real-time</div><div class="pb-sub">Live data sync</div></div>
+            </div>
+            <div class="phone-badge pb-3">
+                <div class="pb-icon" style="background:#ecfeff;"><svg width="14" height="14" fill="none" stroke="#0e7490" stroke-width="2.5" viewBox="0 0 24 24"><path d="M3 12h18"/><path d="M7 8l-4 4 4 4"/><path d="M17 8l4 4-4 4"/></svg></div>
+                <div><div class="pb-main">General Ledger</div><div class="pb-sub">Auto generated</div></div>
+            </div>
+            <div class="phone-badge pb-4">
+                <div class="pb-icon" style="background:#fef3c7;"><svg width="14" height="14" fill="none" stroke="#b45309" stroke-width="2.5" viewBox="0 0 24 24"><path d="M3 3h18v18H3z"/><path d="M7 8h10M7 12h10M7 16h6"/></svg></div>
+                <div><div class="pb-main">Profit & Loss</div><div class="pb-sub">Month-to-date</div></div>
+            </div>
+            <div class="phone-badge pb-5">
+                <div class="pb-icon" style="background:#fee2e2;"><svg width="14" height="14" fill="none" stroke="#b91c1c" stroke-width="2.5" viewBox="0 0 24 24"><path d="M4 19h16"/><path d="M7 15l3-4 3 2 4-6"/></svg></div>
+                <div><div class="pb-main">Cash Flow</div><div class="pb-sub">Forecast updated</div></div>
+            </div>
+            <div class="phone-badge pb-6">
+                <div class="pb-icon" style="background:#f3e8ff;"><svg width="14" height="14" fill="none" stroke="#7e22ce" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"/><path d="M5 21c1.5-3 4-5 7-5s5.5 2 7 5"/></svg></div>
+                <div><div class="pb-main">Payroll Reports</div><div class="pb-sub">Ready to export</div></div>
+            </div>
+            <div class="phone-badge pb-7">
+                <div class="pb-icon" style="background:#dcfce7;"><svg width="14" height="14" fill="none" stroke="#166534" stroke-width="2.5" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M3 12h18"/><path d="M3 18h18"/></svg></div>
+                <div><div class="pb-main">Balance Sheet</div><div class="pb-sub">Current period</div></div>
+            </div>
+            <div class="phone-badge pb-8">
+                <div class="pb-icon" style="background:#e0f2fe;"><svg width="14" height="14" fill="none" stroke="#0369a1" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-6"/></svg></div>
+                <div><div class="pb-main">Live Reports</div><div class="pb-sub">Updated hourly</div></div>
             </div>
             <div class="hero-phone">
                 <div class="phone-notch-bar">
@@ -738,7 +921,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                         <span class="phone-greeting">Good morning, Victor</span>
                         <span class="phone-live-badge"><span class="live-dot"></span> LIVE</span>
                     </div>
-                    <div class="phone-brand">SMAT<span>BOOK</span></div>
+                    <div class="phone-brand">SmartPro<span>book</span></div>
                     <div class="phone-balance-card">
                         <div class="pbc-label">Net Profit · Jan 2026</div>
                         <div class="pbc-value">₦2.8M</div>
@@ -855,7 +1038,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
         <div class="text-center mb-5">
             <span class="sb-eyebrow" style="justify-content:center;display:inline-flex;">Platform Features</span>
             <h2 class="sb-h1 text-center">Everything your business needs, <span class="accent">built in.</span></h2>
-            <p class="sb-lead text-center mx-auto">SmatBook is not just bookkeeping software. It's a complete business management system — from your first sale to your annual tax filing.</p>
+            <p class="sb-lead text-center mx-auto">SmartProbook is not just bookkeeping software. It's a complete business management system — from your first sale to your annual tax filing.</p>
         </div>
 
         {{-- Feature 1 --}}
@@ -871,7 +1054,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                         <div><div class="fb-val">Real-time</div><div class="fb-lbl">Live data sync</div></div>
                     </div>
                     <div class="db-frame">
-                        <div class="db-bar"><div class="db-dot db-dot-r"></div><div class="db-dot db-dot-y"></div><div class="db-dot db-dot-g"></div><span class="db-bar-title">SmatBook — Financial Command Center</span></div>
+                        <div class="db-bar"><div class="db-dot db-dot-r"></div><div class="db-dot db-dot-y"></div><div class="db-dot db-dot-g"></div><span class="db-bar-title">SmartProbook — Financial Command Center</span></div>
                         <div class="d-flex" style="min-height:340px;">
                             <div class="db-sidebar">
                                 <div class="db-icon on"><svg fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></div>
@@ -923,7 +1106,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
             <div class="col-lg-5">
                 <span class="sb-eyebrow">01 — Sales &amp; Revenue</span>
                 <h2 class="sb-h1">Know exactly <span class="accent">where every naira</span> is going</h2>
-                <p class="sb-lead">Get a live, bird's-eye view of your business finances. SmatBook's revenue dashboard gives you instant clarity on sales performance, outstanding invoices, and profit trends — all on one screen.</p>
+                <p class="sb-lead">Get a live, bird's-eye view of your business finances. SmartProbook's revenue dashboard gives you instant clarity on sales performance, outstanding invoices, and profit trends — all on one screen.</p>
                 <div class="d-flex flex-column gap-3 mt-4">
                     <div class="feat-card"><div class="d-flex align-items-start gap-3"><div class="feat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></div><div><h6>Live Revenue Tracking</h6><p>See your sales totals update in real time as transactions happen across your business locations.</p></div></div></div>
                     <div class="feat-card"><div class="d-flex align-items-start gap-3"><div class="feat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div><h6>Instant Invoice Management</h6><p>Generate, send, and track invoices automatically. Get notified the moment a client pays or a payment goes overdue.</p></div></div></div>
@@ -937,7 +1120,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
             <div class="col-lg-5">
                 <span class="sb-eyebrow">02 — Inventory Control</span>
                 <h2 class="sb-h1">Never run out of <span class="accent">stock again</span></h2>
-                <p class="sb-lead">SmatBook's inventory engine monitors every product in your store in real time. Set reorder thresholds, track expiry dates, and get alerts before stock runs dry.</p>
+                <p class="sb-lead">SmartProbook's inventory engine monitors every product in your store in real time. Set reorder thresholds, track expiry dates, and get alerts before stock runs dry.</p>
                 <div class="mt-4">
                     <div class="prog-row"><div class="prog-labels"><span>Stock Accuracy</span><span>98.4%</span></div><div class="prog-track"><div class="prog-fill" style="--w:98.4%;"></div></div></div>
                     <div class="prog-row"><div class="prog-labels"><span>Waste Reduction</span><span>76%</span></div><div class="prog-track"><div class="prog-fill" style="--w:76%;"></div></div></div>
@@ -945,7 +1128,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                 </div>
                 <div class="d-flex flex-column gap-3 mt-4">
                     <div class="feat-card"><div class="d-flex align-items-start gap-3"><div class="feat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg></div><div><h6>Smart Reorder Alerts</h6><p>Automated low-stock notifications so your team restocks before customers notice an empty shelf.</p></div></div></div>
-                    <div class="feat-card"><div class="d-flex align-items-start gap-3"><div class="feat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg></div><div><h6>Expiry Date Tracking</h6><p>Tag perishable items with expiry dates — SmatBook flags them before they become a liability.</p></div></div></div>
+                    <div class="feat-card"><div class="d-flex align-items-start gap-3"><div class="feat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg></div><div><h6>Expiry Date Tracking</h6><p>Tag perishable items with expiry dates — SmartProbook flags them before they become a liability.</p></div></div></div>
                 </div>
             </div>
             <div class="col-lg-7">
@@ -955,7 +1138,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                         <div><div class="fb-val">3 Items</div><div class="fb-lbl">Low stock alert</div></div>
                     </div>
                     <div class="db-frame db-frame-r">
-                        <div class="db-bar"><div class="db-dot db-dot-r"></div><div class="db-dot db-dot-y"></div><div class="db-dot db-dot-g"></div><span class="db-bar-title">SmatBook — Inventory Management</span></div>
+                        <div class="db-bar"><div class="db-dot db-dot-r"></div><div class="db-dot db-dot-y"></div><div class="db-dot db-dot-g"></div><span class="db-bar-title">SmartProbook — Inventory Management</span></div>
                         <div class="d-flex" style="min-height:360px;">
                             <div class="db-sidebar">
                                 <div class="db-icon"><svg fill="none" stroke="rgba(255,255,255,.45)" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></div>
@@ -1001,7 +1184,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                         <div><div class="fb-val">Auto</div><div class="fb-lbl">Bank reconciled</div></div>
                     </div>
                     <div class="db-frame">
-                        <div class="db-bar"><div class="db-dot db-dot-r"></div><div class="db-dot db-dot-y"></div><div class="db-dot db-dot-g"></div><span class="db-bar-title">SmatBook — Expenses &amp; Reports</span></div>
+                        <div class="db-bar"><div class="db-dot db-dot-r"></div><div class="db-dot db-dot-y"></div><div class="db-dot db-dot-g"></div><span class="db-bar-title">SmartProbook — Expenses &amp; Reports</span></div>
                         <div class="db-body">
                             <div class="db-head"><span class="db-title">P&amp;L + Reports</span><span class="db-badge" style="background:#f0fff4;color:#15803d;">✓ AUTO-GENERATED</span></div>
                             <div class="db-kpi-row">
@@ -1040,11 +1223,11 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
             <div class="col-lg-5">
                 <span class="sb-eyebrow">03 — Expenses &amp; Reports</span>
                 <h2 class="sb-h1 sb-h1-white">Board-ready reports <span class="accent">in one click</span></h2>
-                <p class="sb-lead sb-lead-white">Stop spending weekends building spreadsheets. SmatBook generates polished financial reports automatically — daily, weekly, monthly, or on demand.</p>
+                <p class="sb-lead sb-lead-white">Stop spending weekends building spreadsheets. SmartProbook generates polished financial reports automatically — daily, weekly, monthly, or on demand.</p>
                 <div class="d-flex flex-column gap-3 mt-4">
-                    <div class="feat-card-dark"><div class="d-flex align-items-start gap-3"><div class="feat-icon feat-icon-dark"><svg viewBox="0 0 24 24" fill="none" stroke="#c5a059" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></div><div><h6>Automatic Expense Categorization</h6><p>SmatBook learns your spending patterns and auto-tags expenses to the right accounts without manual entry.</p></div></div></div>
+                    <div class="feat-card-dark"><div class="d-flex align-items-start gap-3"><div class="feat-icon feat-icon-dark"><svg viewBox="0 0 24 24" fill="none" stroke="#c5a059" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></div><div><h6>Automatic Expense Categorization</h6><p>SmartProbook learns your spending patterns and auto-tags expenses to the right accounts without manual entry.</p></div></div></div>
                     <div class="feat-card-dark"><div class="d-flex align-items-start gap-3"><div class="feat-icon feat-icon-dark"><svg viewBox="0 0 24 24" fill="none" stroke="#c5a059" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></div><div><h6>One-Click Tax Reports</h6><p>Generate VAT, PAYE, and annual tax summaries in seconds — fully formatted for FIRS submission.</p></div></div></div>
-                    <div class="feat-card-dark"><div class="d-flex align-items-start gap-3"><div class="feat-icon feat-icon-dark"><svg viewBox="0 0 24 24" fill="none" stroke="#c5a059" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div><div><h6>Bank Reconciliation</h6><p>Import your bank statements and SmatBook matches every transaction automatically — zero manual reconciliation.</p></div></div></div>
+                    <div class="feat-card-dark"><div class="d-flex align-items-start gap-3"><div class="feat-icon feat-icon-dark"><svg viewBox="0 0 24 24" fill="none" stroke="#c5a059" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div><div><h6>Bank Reconciliation</h6><p>Import your bank statements and SmartProbook matches every transaction automatically — zero manual reconciliation.</p></div></div></div>
                 </div>
             </div>
         </div>
@@ -1057,7 +1240,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
         <div class="text-center mb-5">
             <span class="sb-eyebrow" style="justify-content:center;display:inline-flex;">Everything included</span>
             <h2 class="sb-h1 text-center">One platform. <span class="accent">Every function.</span></h2>
-            <p class="sb-lead text-center mx-auto">SmatBook brings together every tool your business needs to run — from staff management to customer records, POS to cloud backup.</p>
+            <p class="sb-lead text-center mx-auto">SmartProbook brings together every tool your business needs to run — from staff management to customer records, POS to cloud backup.</p>
         </div>
         <div class="row g-4">
             @php $strips=[['icon'=>'👥','bg'=>'#f0f4ff','title'=>'Staff & Payroll','desc'=>'Manage employee records, attendance, and process accurate payroll in minutes. Automatic PAYE deductions calculated for you.'],['icon'=>'🧾','bg'=>'#fef9c3','title'=>'Receipts & POS','desc'=>'Turn any device into a point-of-sale terminal. Print or email branded receipts instantly after every sale.'],['icon'=>'📊','bg'=>'#dcfce7','title'=>'Reports & Analytics','desc'=>'From daily sales summaries to quarterly board reports — generate any report with a single click, no accountant needed.'],['icon'=>'🤝','bg'=>'#ffe4e6','title'=>'Customer CRM','desc'=>'Build detailed customer profiles, track purchase history, and send targeted promotions to your best buyers.'],['icon'=>'🔐','bg'=>'#ede9fe','title'=>'Access Control','desc'=>'Create staff accounts with role-based permissions. Your cashier sees only the POS; your manager sees everything.'],['icon'=>'☁️','bg'=>'#f0fdf4','title'=>'Cloud Backup','desc'=>'Your data is encrypted and backed up automatically every hour. Access your books from any device, anywhere.']]; @endphp
@@ -1092,7 +1275,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
             <div class="col-lg-6">
                 <span class="sb-eyebrow">01 — Engine Depth</span>
                 <h2 class="sb-h1">Strategic <span class="accent">Liquidity</span> Ecosystem</h2>
-                <p class="sb-lead">SmatBook's proprietary Neural Forecasting Core (NFC) transcends legacy bookkeeping systems by analyzing over 600 unique financial variables in real-time. By mapping historical account volatility against current receivables, our engine provides surgical liquidity horizon with 98.4% predictive accuracy.</p>
+                <p class="sb-lead">SmartProbook's proprietary Neural Forecasting Core (NFC) transcends legacy bookkeeping systems by analyzing over 600 unique financial variables in real-time. By mapping historical account volatility against current receivables, our engine provides surgical liquidity horizon with 98.4% predictive accuracy.</p>
                 <div class="p-4 rounded mt-4" style="background:var(--gold-bg);border-left:4px solid var(--gold);"><p class="mb-0 fst-italic" style="font-size:13.5px;font-weight:700;color:var(--navy);">"We convert fragmented transaction streams into verified, high-definition foresight for the modern board."</p></div>
             </div>
         </div>
@@ -1101,7 +1284,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
             <div class="col-lg-6 order-lg-1">
                 <span class="sb-eyebrow">02 — Governance</span>
                 <h2 class="sb-h1">Institutional <span class="accent">Sovereignty</span> Protocols</h2>
-                <p class="sb-lead">Designed for organizations with complex hierarchical needs, SmatBook implements a "Cellular Governance" model that guarantees total transparency without compromising individual business unit security. Each subsidiary operates within a fortified node, feeding into a master dashboard while maintaining SOC2 Type II compliance.</p>
+                <p class="sb-lead">Designed for organizations with complex hierarchical needs, SmartProbook implements a "Cellular Governance" model that guarantees total transparency without compromising individual business unit security. Each subsidiary operates within a fortified node, feeding into a master dashboard while maintaining SOC2 Type II compliance.</p>
             </div>
         </div>
     </div>
@@ -1147,7 +1330,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
             @php $tests=[['name'=>'Chinedu Okafor','role'=>'CFO, Lagos Holdings','img'=>'https://images.unsplash.com/photo-1507591064344-4c6ce005b128?q=80&w=300&auto=format&fit=crop'],['name'=>'Amina Bello','role'=>'Finance Director, Abuja Group','img'=>'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?q=80&w=300&auto=format&fit=crop'],['name'=>'Michael Carter','role'=>'VP Finance, New York Capital','img'=>'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=300&auto=format&fit=crop'],['name'=>'Emily Johnson','role'=>'Controller, Austin Ventures','img'=>'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=300&auto=format&fit=crop'],['name'=>'Li Wei','role'=>'Treasury Lead, Shanghai Trade','img'=>'https://images.unsplash.com/photo-1521119989659-a83eee488004?q=80&w=300&auto=format&fit=crop'],['name'=>'Chen Ming','role'=>'Payments Director, Beijing Commerce','img'=>'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=300&auto=format&fit=crop']]; $repeat=array_merge($tests,$tests,$tests); @endphp
             @foreach($repeat as $t)
             <div class="testi-card">
-                <p style="font-size:0.88rem;color:rgba(255,255,255,0.88);font-style:italic;line-height:1.7;margin-bottom:22px;">"SmatBook's neural-ledgers have fundamentally changed how we manage our global hubs. Unmatched precision."</p>
+                <p style="font-size:0.88rem;color:rgba(255,255,255,0.88);font-style:italic;line-height:1.7;margin-bottom:22px;">"SmartProbook's neural-ledgers have fundamentally changed how we manage our global hubs. Unmatched precision."</p>
                 <div class="d-flex align-items-center gap-3">
                     <img src="{{ $t['img'] }}" class="testi-avatar" alt="{{ $t['name'] }}">
                     <div>
@@ -1185,6 +1368,42 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     </div>
 </section>
 
+{{-- Floating Support Widget --}}
+<div class="spb-support" id="spbSupportWidget">
+    <div class="spb-support-floating" id="spbSupportFloating">
+        <div class="spb-float-msg" id="spbMsgHello">👋 Hello!</div>
+        <div class="spb-float-msg" id="spbMsgPrompt">Want to talk to our support team?</div>
+    </div>
+
+    <div class="spb-support-panel" id="spbSupportPanel" aria-hidden="true">
+        <div class="spb-panel-head">
+            <span>Speak with SmartProbook Support</span>
+            <button type="button" class="spb-close-x" id="spbSupportClose">×</button>
+        </div>
+        <div class="spb-panel-body">
+            <p class="spb-panel-note mb-2">Send us a quick WhatsApp message now.</p>
+            <a class="spb-support-btn text-decoration-none text-center d-block" href="tel:08064646306">
+                Call: 08064646306
+            </a>
+            <a class="spb-support-btn text-decoration-none text-center d-block" href="mailto:donvictorlive@gmail.com">
+                Email support: donvictorlive@gmail.com
+            </a>
+            <div class="spb-support-mini">Quick WhatsApp form.</div>
+
+            <form class="spb-panel-form" id="spbWhatsappForm">
+                <input type="text" id="spbSupportName" placeholder="Your name" required>
+                <input type="text" id="spbSupportPhone" placeholder="Your phone" value="08064646306" required>
+                <textarea id="spbSupportMessage" required>I need help with SmartProbook.</textarea>
+                <button type="submit" class="spb-support-btn primary mb-0">Send on WhatsApp</button>
+            </form>
+        </div>
+    </div>
+
+    <button type="button" class="spb-support-bubble" id="spbSupportToggle" aria-label="Open support">
+        <i class="fas fa-comments"></i>
+    </button>
+</div>
+
 {{-- FOOTER --}}
 <footer class="sb-footer" id="contact">
     <div class="container" style="position:relative;z-index:1;">
@@ -1217,7 +1436,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
         </div>
         <div class="row g-4">
             <div class="col-lg-4">
-                <h3 style="font-family:var(--font-display);font-weight:900;color:var(--navy);letter-spacing:0.5px;margin-bottom:12px;">SMATBOOK</h3>
+                <h3 style="font-family:var(--font-display);font-weight:900;color:var(--navy);letter-spacing:0.5px;margin-bottom:12px;">SmartProbook</h3>
                 <p style="font-size:13px;color:var(--muted);max-width:300px;line-height:1.8;">Global Institutional Accounting Intelligence. Engineered for modern wealth governance.</p>
                 <div class="d-flex gap-3 mt-4">
                     <a href="{{ route('landing.about') }}" class="footer-social"><i class="fab fa-linkedin-in"></i></a>
@@ -1243,7 +1462,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
             </div>
         </div>
         <div class="mt-5 pt-4 text-center" style="border-top:1px solid var(--border);">
-            <p style="font-size:13px;color:var(--muted);margin:0;">© 2026 SmatBook Intelligence Enterprise. Licensed for Global Financial Governance.</p>
+            <p style="font-size:13px;color:var(--muted);margin:0;">© 2026 SmartProbook Intelligence Enterprise. Licensed for Global Financial Governance.</p>
         </div>
     </div>
 </footer>
@@ -1263,14 +1482,48 @@ document.addEventListener('DOMContentLoaded', function () {
     const nav = document.getElementById('mainNav');
     window.addEventListener('scroll', () => nav && nav.classList.toggle('scrolled', scrollY > 50));
 
+    const navToggler = document.querySelector('#mainNav .navbar-toggler');
+    const navCollapse = document.getElementById('mujiNav');
+    const bsCollapse = navCollapse ? bootstrap.Collapse.getOrCreateInstance(navCollapse, { toggle: false }) : null;
+
+    if (navToggler && navCollapse && bsCollapse) {
+        navToggler.addEventListener('click', function (e) {
+            e.stopPropagation();
+            navCollapse.classList.contains('show') ? bsCollapse.hide() : bsCollapse.show();
+        });
+
+        navCollapse.addEventListener('shown.bs.collapse', function () {
+            navToggler.classList.add('active');
+            navToggler.setAttribute('aria-expanded', 'true');
+            document.body.style.overflow = 'hidden';
+        });
+
+        navCollapse.addEventListener('hidden.bs.collapse', function () {
+            navToggler.classList.remove('active');
+            navToggler.setAttribute('aria-expanded', 'false');
+            document.body.style.overflow = '';
+        });
+
+        document.addEventListener('click', function (e) {
+            if (!navCollapse.classList.contains('show')) return;
+            if (e.target.closest('#mujiNav') || e.target.closest('#mainNav .navbar-toggler')) return;
+            bsCollapse.hide();
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && navCollapse.classList.contains('show')) {
+                bsCollapse.hide();
+            }
+        });
+    }
+
     document.querySelectorAll('a[href^="#"]').forEach(a => {
         a.addEventListener('click', e => {
             const t = document.querySelector(a.getAttribute('href'));
             if (!t) return;
             e.preventDefault();
             window.scrollTo({ top: t.offsetTop - 100, behavior: 'smooth' });
-            const nc = document.getElementById('mujiNav');
-            if (nc?.classList.contains('show')) bootstrap.Collapse.getInstance(nc)?.hide();
+            if (navCollapse?.classList.contains('show')) bsCollapse?.hide();
         });
     });
 
@@ -1337,6 +1590,69 @@ document.addEventListener('DOMContentLoaded', function () {
     };
     fetchFX();
     setInterval(fetchFX, 60000);
+
+    // Floating support widget behavior
+    const supportRoot = document.getElementById('spbSupportWidget');
+    const supportToggle = document.getElementById('spbSupportToggle');
+    const supportClose = document.getElementById('spbSupportClose');
+    const supportMsg1 = document.getElementById('spbMsgHello');
+    const supportMsg2 = document.getElementById('spbMsgPrompt');
+    const supportPhone = document.getElementById('spbSupportPhone');
+    const supportMessage = document.getElementById('spbSupportMessage');
+    const supportName = document.getElementById('spbSupportName');
+    const whatsappForm = document.getElementById('spbWhatsappForm');
+    const whatsappNumber = '2348064646306';
+    if (supportRoot && supportToggle) {
+        setTimeout(() => supportMsg1?.classList.add('show'), 900);
+        setTimeout(() => supportMsg2?.classList.add('show'), 2100);
+        setInterval(() => {
+            supportMsg1?.classList.toggle('show');
+            setTimeout(() => supportMsg2?.classList.toggle('show'), 450);
+        }, 9000);
+
+        const closeSupport = () => {
+            supportRoot.classList.remove('open');
+            supportToggle.setAttribute('aria-expanded', 'false');
+        };
+        const openSupport = () => {
+            supportRoot.classList.add('open');
+            supportToggle.setAttribute('aria-expanded', 'true');
+        };
+
+        supportToggle.addEventListener('click', function () {
+            supportRoot.classList.contains('open') ? closeSupport() : openSupport();
+        });
+        supportClose?.addEventListener('click', closeSupport);
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && supportRoot.classList.contains('open')) closeSupport();
+        });
+        document.addEventListener('click', function (e) {
+            if (!supportRoot.classList.contains('open')) return;
+            if (e.target.closest('#spbSupportWidget')) return;
+            closeSupport();
+        });
+
+        supportPhone?.addEventListener('input', function () {
+            if (!supportMessage) return;
+            if (supportMessage.value.trim() === '' || supportMessage.value.startsWith('Requesting support callback.')) {
+                supportMessage.value = 'I need help with SmartProbook. My phone: ' + (supportPhone.value || '08064646306');
+            }
+        });
+
+        whatsappForm?.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const name = (supportName?.value || '').trim();
+            const phone = (supportPhone?.value || '').trim();
+            const message = (supportMessage?.value || '').trim();
+            const text =
+`Hello SmartProbook Support,
+Name: ${name || 'N/A'}
+Phone: ${phone || 'N/A'}
+Message: ${message || 'I need assistance.'}`;
+            const url = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(text)}`;
+            window.open(url, '_blank', 'noopener');
+        });
+    }
 });
 </script>
 @endsection

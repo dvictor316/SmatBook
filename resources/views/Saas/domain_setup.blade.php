@@ -89,7 +89,7 @@
         border-right: 1px solid #f1f5f9;
     }
 
-    .logo-img { height: 38px; width: auto; margin-bottom: 20px; }
+    .logo-img { height: 76px; width: auto; margin-bottom: 20px; }
 
     .step-badge {
         display: inline-block;
@@ -181,7 +181,7 @@
         <!-- Summary Panel -->
         <div class="smat-aside">
             <div>
-                <img src="{{ asset('/assets/img/logo-placeholder.svg') }}" alt="SmartProbook" class="logo-img">
+                <img src="{{ asset('/assets/img/logos.png') }}" alt="SmartProbook" class="logo-img">
                 <br>
                 <span class="step-badge">Step 02: Identity</span>
                 <h2 class="fw-bold mt-4 mb-2" style="font-size: 1.5rem; color: #0f172a; line-height: 1.2;">Node<br>Configuration</h2>

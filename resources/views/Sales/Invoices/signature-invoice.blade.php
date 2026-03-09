@@ -28,7 +28,7 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="invoice-logo">
-                                        <img src="{{ asset('assets/img/logo-placeholder.svg') }}" alt="SmartProbook Logo" style="max-width: 150px;">
+                                        <img src="{{ asset('assets/img/logos.png') }}" alt="SmartProbook Logo" style="max-width: 150px;">
                                     </div>
                                 </div>
                                 <div class="col-md-6 text-end">

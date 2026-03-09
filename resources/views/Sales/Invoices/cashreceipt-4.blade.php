@@ -6,8 +6,8 @@
             <div class="receipt-seperator"></div>
             <div class="receipt-seperator"></div>
             <div class="company-logo">
-                <img class="logo-lightmode" src="{{ URL::asset('/assets/img/logo.png') }}" alt="Logo">
-                <img class="logo-darkmode" src="{{ URL::asset('/assets/img/logo-full-white.png') }}" alt="Logo">
+                <img class="logo-lightmode" src="{{ URL::asset('/assets/img/logos.png') }}" alt="Logo">
+                <img class="logo-darkmode" src="{{ URL::asset('/assets/img/logos.png') }}" alt="Logo">
             </div>
             <div class="receipt-seperator"></div>
             <div class="receipt-seperator"></div>

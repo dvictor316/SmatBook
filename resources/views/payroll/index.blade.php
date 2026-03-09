@@ -302,15 +302,23 @@
                 <p>Manage staff salaries, deductions, bonuses and payment runs</p>
             </div>
             <div class="d-flex gap-2 flex-wrap">
-                <a href="{{ route('payroll.create') }}" class="btn-gold">
+                <a href="{{ ($schemaReady ?? true) ? route('payroll.create') : 'javascript:void(0);' }}"
+                   class="btn-gold {{ ($schemaReady ?? true) ? '' : 'opacity-50 pe-none' }}">
                     <i class="fas fa-plus"></i> Add Employee
                 </a>
-                <a href="{{ route('payroll.run') }}" class="btn-blue">
+                <a href="{{ ($schemaReady ?? true) ? route('payroll.run') : 'javascript:void(0);' }}"
+                   class="btn-blue {{ ($schemaReady ?? true) ? '' : 'opacity-50 pe-none' }}">
                     <i class="fas fa-play-circle"></i> Run Payroll
                 </a>
             </div>
         </div>
     </div>
+
+    @if(!($schemaReady ?? true))
+        <div class="alert alert-warning border-0 shadow-sm mb-4">
+            <strong>Payroll setup incomplete:</strong> Some payroll tables are missing in the database. Run migrations, then refresh this page.
+        </div>
+    @endif
 
     {{-- KPI Row --}}
     <div class="row g-3 mb-4">
@@ -387,7 +395,8 @@
                     <span class="cycle-value" style="color:#4ade80; font-size:1rem;">₦{{ number_format($netPayable ?? 0) }}</span>
                 </div>
                 <div class="mt-4">
-                    <a href="{{ route('payroll.run') }}" class="btn-gold w-100 justify-content-center">
+                    <a href="{{ ($schemaReady ?? true) ? route('payroll.run') : 'javascript:void(0);' }}"
+                       class="btn-gold w-100 justify-content-center {{ ($schemaReady ?? true) ? '' : 'opacity-50 pe-none' }}">
                         <i class="fas fa-bolt"></i> Process Payroll Now
                     </a>
                 </div>

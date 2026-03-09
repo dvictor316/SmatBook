@@ -53,7 +53,7 @@ class SubscriptionController extends Controller
             'plan'           => strtolower($planModel->name ?? 'Standard'),
             'cycle'          => strtolower($subscription->billing_cycle),
             'selectedPrice'  => $subscription->amount,
-            'session_domain' => env('SESSION_DOMAIN', 'smatbook.com'),
+            'session_domain' => env('SESSION_DOMAIN', 'smatprobook.com'),
         ]);
     }
 
@@ -139,6 +139,19 @@ class SubscriptionController extends Controller
         $id = (int) $id;
 
         if (!$id) {
+            $fallbackId = (int) (
+                request()->query('sub_id')
+                ?: session('deployment_subscription_id')
+                ?: optional(Subscription::query()
+                    ->where('user_id', auth()->id())
+                    ->latest('id')
+                    ->first())->id
+            );
+
+            if ($fallbackId > 0) {
+                return redirect()->route('saas.checkout', $fallbackId);
+            }
+
             return redirect()->route('membership-plans')
                 ->with('error', 'Invalid subscription.');
         }
@@ -211,11 +224,26 @@ class SubscriptionController extends Controller
             ]);
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            $fallbackId = (int) optional(Subscription::query()
+                ->where('user_id', auth()->id())
+                ->latest('id')
+                ->first())->id;
+            if ($fallbackId > 0 && $fallbackId !== $id) {
+                return redirect()->route('saas.checkout', $fallbackId);
+            }
+
             return redirect()->route('membership-plans')
                 ->with('error', 'Subscription not found.');
         } catch (\Exception $e) {
             Log::error('Checkout error', ['id' => $id, 'error' => $e->getMessage()]);
-            // NEVER redirect to /home — it loops managers back to dashboard
+            $fallbackId = (int) optional(Subscription::query()
+                ->where('user_id', auth()->id())
+                ->latest('id')
+                ->first())->id;
+            if ($fallbackId > 0 && $fallbackId !== $id) {
+                return redirect()->route('saas.checkout', $fallbackId);
+            }
+
             return redirect()->route('membership-plans')
                 ->with('error', 'An error occurred. Please try again.');
         }
@@ -269,7 +297,7 @@ class SubscriptionController extends Controller
             if ($this->isUsableStripeSecret($envSecret)) {
                 $secretSource = '.env';
             } else {
-                $dbSecret = trim((string) Setting::getSensitive('stripe_secret', ''));
+                $dbSecret = trim((string) $this->getSensitiveSetting('stripe_secret', ''));
                 $secretSource = $this->isUsableStripeSecret($dbSecret) ? 'settings' : 'unknown';
             }
         }
@@ -282,6 +310,24 @@ class SubscriptionController extends Controller
         ]);
 
         if ($secret === '') {
+            if ($this->shouldSimulateGatewayInLocal()) {
+                $localReference = 'LOCAL-STRIPE-' . $subscription->id . '-' . Str::upper(Str::random(8));
+                $localCallback = route('saas.payment.callback', [
+                    'sub_id' => $subscription->id,
+                    'gateway' => 'stripe',
+                    'reference' => $localReference,
+                ]);
+
+                if ($request->expectsJson()) {
+                    return response()->json([
+                        'local_simulated' => true,
+                        'redirect_url' => $localCallback,
+                    ]);
+                }
+
+                return redirect()->away($localCallback);
+            }
+
             if ($request->expectsJson()) {
                 return response()->json([
                     'message' => 'Stripe secret key is missing or invalid. Update it in Payment Settings.'
@@ -391,6 +437,14 @@ class SubscriptionController extends Controller
     {
         $secret = $this->resolvePaystackSecret();
         if ($secret === '') {
+            if ($this->shouldSimulateGatewayInLocal()) {
+                return redirect()->route('saas.payment.callback', [
+                    'sub_id' => $subscription->id,
+                    'gateway' => 'paystack',
+                    'reference' => 'LOCAL-PAYSTACK-' . $subscription->id . '-' . Str::upper(Str::random(8)),
+                ]);
+            }
+
             return redirect()->route('saas.checkout', $subscription->id)
                 ->with('error', 'Paystack secret key is missing or invalid. Update it in Payment Settings.');
         }
@@ -447,6 +501,18 @@ class SubscriptionController extends Controller
     {
         $secret = $this->resolveFlutterwaveSecret();
         if ($secret === '') {
+            if ($this->shouldSimulateGatewayInLocal()) {
+                $txRef = 'LOCAL-FLW-' . $subscription->id . '-' . Str::upper(Str::random(8));
+
+                return redirect()->route('saas.payment.callback', [
+                    'sub_id' => $subscription->id,
+                    'gateway' => 'flutterwave',
+                    'reference' => $txRef,
+                    'tx_ref' => $txRef,
+                    'transaction_id' => $txRef,
+                ]);
+            }
+
             return redirect()->route('saas.checkout', $subscription->id)
                 ->with('error', 'Flutterwave secret key is missing or invalid. Update it in Payment Settings.');
         }
@@ -759,13 +825,11 @@ class SubscriptionController extends Controller
     public function success(Request $request, $id)
     {
         $subscription = Subscription::with(['user', 'company'])->findOrFail($id);
-        $domain       = env('SESSION_DOMAIN', 'smatbook.com');
+        $domain       = $this->resolveSessionDomain();
         $protocol     = request()->secure() ? 'https://' : 'http://';
         $prefix       = $subscription->domain_prefix ?? $subscription->company?->domain_prefix;
 
-        $workspaceUrl = $prefix
-            ? $protocol . $prefix . '.' . $domain
-            : $protocol . $domain . '/home';
+        $workspaceUrl = $this->buildTenantDashboardUrl($prefix, $domain, $protocol);
 
         if (app()->environment('local')) {
             session(['current_tenant_id' => $subscription->company_id]);
@@ -822,10 +886,10 @@ class SubscriptionController extends Controller
                     ->first();
         }
 
-        $domain       = env('SESSION_DOMAIN', 'smatbook.com');
+        $domain       = $this->resolveSessionDomain();
         $prefix       = $subscription?->domain_prefix
                         ?? $subscription?->company?->domain_prefix;
-        $workspaceUrl = $prefix ? 'https://' . $prefix . '.' . $domain : null;
+        $workspaceUrl = $this->buildTenantDashboardUrl($prefix, $domain, 'https://');
 
         return view('Saas.success', [
             'subscription' => $subscription,
@@ -1000,17 +1064,7 @@ class SubscriptionController extends Controller
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-
-        $host = strtolower((string) $request->getHost());
-        $isLocalHost = in_array($host, ['localhost', '127.0.0.1'], true)
-            || app()->environment('local');
-
-        if ($isLocalHost) {
-            return redirect()->route('saas-login');
-        }
-
-        $domain = env('SESSION_DOMAIN', 'smatbook.com');
-        return redirect()->away('https://' . $domain . '/login');
+        return redirect()->route('login');
     }
 
     /*
@@ -1183,7 +1237,7 @@ class SubscriptionController extends Controller
     {
         $secret = $this->resolveStripeSecret();
         if ($secret === '') {
-            return app()->environment(['local', 'testing']);
+            return $this->shouldSimulateGatewayInLocal();
         }
 
         try {
@@ -1207,7 +1261,7 @@ class SubscriptionController extends Controller
     {
         $secret = $this->resolvePaystackSecret();
         if ($secret === '') {
-            return false;
+            return $this->shouldSimulateGatewayInLocal();
         }
 
         try {
@@ -1230,7 +1284,10 @@ class SubscriptionController extends Controller
     {
         $secret = $this->resolveFlutterwaveSecret();
         if ($secret === '') {
-            return ['ok' => false, 'reference' => $reference];
+            return [
+                'ok' => $this->shouldSimulateGatewayInLocal(),
+                'reference' => $reference !== '' ? $reference : ('LOCAL-FLW-' . Str::upper(Str::random(8))),
+            ];
         }
 
         $transactionId = (string) ($request?->query('transaction_id') ?? $request?->input('transaction_id') ?? '');
@@ -1270,7 +1327,7 @@ class SubscriptionController extends Controller
             return $secret;
         }
 
-        $stored = trim((string) Setting::getSensitive('stripe_secret', ''));
+        $stored = trim((string) $this->getSensitiveSetting('stripe_secret', ''));
         if ($this->isUsableStripeSecret($stored)) {
             return $stored;
         }
@@ -1290,7 +1347,7 @@ class SubscriptionController extends Controller
             return $key;
         }
 
-        $stored = trim((string) Setting::getSensitive('stripe_key', ''));
+        $stored = trim((string) $this->getSensitiveSetting('stripe_key', ''));
         if ($this->isUsableStripePublishableKey($stored)) {
             return $stored;
         }
@@ -1305,7 +1362,7 @@ class SubscriptionController extends Controller
             return $secret;
         }
 
-        $stored = trim((string) Setting::getSensitive('paystack_secret', Setting::get('paystack_secret', '')));
+        $stored = trim((string) $this->getSensitiveSetting('paystack_secret', Setting::get('paystack_secret', '')));
         if ($this->isUsableGenericSecret($stored, 'sk_')) {
             return $stored;
         }
@@ -1320,7 +1377,7 @@ class SubscriptionController extends Controller
             return $secret;
         }
 
-        $stored = trim((string) Setting::getSensitive('flutterwave_secret', Setting::get('flutterwave_secret', '')));
+        $stored = trim((string) $this->getSensitiveSetting('flutterwave_secret', Setting::get('flutterwave_secret', '')));
         if ($this->isUsableGenericSecret($stored, 'FLWSECK_')) {
             return $stored;
         }
@@ -1377,6 +1434,24 @@ class SubscriptionController extends Controller
         }
 
         return strlen($value) >= 16;
+    }
+
+    private function getSensitiveSetting(string $key, $default = null)
+    {
+        if (method_exists(Setting::class, 'getSensitive')) {
+            return Setting::getSensitive($key, $default);
+        }
+
+        return Setting::get($key, $default);
+    }
+
+    private function shouldSimulateGatewayInLocal(): bool
+    {
+        if (!app()->environment(['local', 'testing'])) {
+            return false;
+        }
+
+        return filter_var((string) env('LOCAL_GATEWAY_SIMULATION', false), FILTER_VALIDATE_BOOL);
     }
 
     public function approveTransfer(Request $request, $id)
@@ -1540,7 +1615,7 @@ class SubscriptionController extends Controller
     {
         if (!$user?->email) return;
         try {
-            $domain = env('SESSION_DOMAIN', 'smatbook.com');
+            $domain = env('SESSION_DOMAIN', 'smatprobook.com');
             $prefix = $company?->domain_prefix ?? $subscription->domain_prefix;
             $url    = $prefix ? 'https://' . $prefix . '.' . $domain : 'https://' . $domain;
             Mail::send('emails.welcome', [
@@ -1557,7 +1632,7 @@ class SubscriptionController extends Controller
     {
         if (!$user?->email) return;
         try {
-            $domain = env('SESSION_DOMAIN', 'smatbook.com');
+            $domain = env('SESSION_DOMAIN', 'smatprobook.com');
             $prefix = $company?->domain_prefix;
             $url    = $prefix ? 'https://' . $prefix . '.' . $domain : 'https://' . $domain;
             Mail::send('emails.customer-welcome', [
@@ -1631,12 +1706,17 @@ class SubscriptionController extends Controller
                 ?? $subscription->company?->subdomain
             )
         );
+        $prefix = (string) preg_replace('/[^a-z0-9-]/', '', $prefix);
+
+        if ($prefix === '') {
+            $prefix = $this->generateWorkspacePrefix($subscription);
+        }
 
         if ($prefix === '') {
             return;
         }
 
-        $domain = ltrim((string) env('SESSION_DOMAIN', 'smatbook.com'), '.');
+        $domain = $this->resolveSessionDomain();
 
         $subscriptionUpdates = [];
         if (!$subscription->domain_prefix) {
@@ -1708,5 +1788,87 @@ class SubscriptionController extends Controller
 
             Domain::updateOrCreate($lookup, $domainPayload);
         }
+    }
+
+    private function generateWorkspacePrefix(Subscription $subscription): string
+    {
+        $rawName = (string) ($subscription->user?->name ?? $subscription->subscriber_name ?? 'user');
+        $base = Str::slug($rawName, '');
+        if ($base === '') {
+            $base = 'user';
+        }
+
+        $base = strtolower(substr($base, 0, 24));
+        $candidate = $base;
+        $suffix = 0;
+
+        while ($this->workspacePrefixExists($candidate, $subscription)) {
+            $suffix++;
+            $candidate = substr($base, 0, max(1, 24 - strlen((string) $suffix))) . $suffix;
+        }
+
+        return $candidate;
+    }
+
+    private function workspacePrefixExists(string $prefix, Subscription $subscription): bool
+    {
+        $existsInSubscriptions = Subscription::query()
+            ->where('domain_prefix', $prefix)
+            ->where('id', '!=', $subscription->id)
+            ->exists();
+        if ($existsInSubscriptions) {
+            return true;
+        }
+
+        $companyId = (int) ($subscription->company_id ?? 0);
+        if (Schema::hasTable('companies')) {
+            $hasDomainPrefix = Schema::hasColumn('companies', 'domain_prefix');
+            $hasSubdomain = Schema::hasColumn('companies', 'subdomain');
+
+            if ($hasDomainPrefix || $hasSubdomain) {
+                $existsInCompanies = Company::query()
+                    ->where(function ($q) use ($prefix, $hasDomainPrefix, $hasSubdomain) {
+                        if ($hasDomainPrefix) {
+                            $q->where('domain_prefix', $prefix);
+                        }
+                        if ($hasSubdomain) {
+                            $q->orWhere('subdomain', $prefix);
+                        }
+                    })
+                    ->when($companyId > 0, fn ($q) => $q->where('id', '!=', $companyId))
+                    ->exists();
+                if ($existsInCompanies) {
+                    return true;
+                }
+            }
+        }
+
+        if (Schema::hasTable('domains') && Schema::hasColumn('domains', 'domain_name')) {
+            return Domain::query()->where('domain_name', $prefix)->exists();
+        }
+
+        return false;
+    }
+
+    private function resolveSessionDomain(): string
+    {
+        $domain = strtolower(trim((string) env('SESSION_DOMAIN', 'smatprobook.com')));
+        $domain = trim($domain, ". \t\n\r\0\x0B");
+        if ($domain === '') {
+            $domain = 'smatprobook.com';
+        }
+
+        return $domain;
+    }
+
+    private function buildTenantDashboardUrl(?string $prefix, string $domain, string $protocol = 'https://'): ?string
+    {
+        $cleanPrefix = strtolower(trim((string) $prefix));
+        $cleanPrefix = (string) preg_replace('/[^a-z0-9-]/', '', $cleanPrefix);
+        if ($cleanPrefix === '') {
+            return null;
+        }
+
+        return rtrim($protocol, ':/') . '://' . $cleanPrefix . '.' . $domain;
     }
 }

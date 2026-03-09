@@ -80,6 +80,35 @@
             grid-template-columns: 1fr;
         }
     }
+
+    .pm-module {
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 14px;
+        background: #ffffff;
+        height: 100%;
+    }
+
+    .pm-module h6 {
+        font-weight: 800;
+        margin-bottom: 8px;
+        color: #0f172a;
+    }
+
+    .pm-module p {
+        color: #64748b;
+        font-size: 13px;
+        margin-bottom: 10px;
+    }
+
+    .pm-pill {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .4px;
+        padding: 4px 8px;
+        border-radius: 999px;
+    }
 </style>
 
 <div class="page-wrapper">
@@ -190,9 +219,10 @@
             </div>
 
             <div class="col-xl-5">
-                <div class="pm-card p-3 h-100" id="tracking">
+                <div class="pm-card p-3 h-100" id="profitability">
+                    <span id="tracking" style="position: relative; top: -96px;"></span>
                     <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h5 class="mb-0" style="font-weight:800;">Project Tracking</h5>
+                        <h5 class="mb-0" style="font-weight:800;">Project Profitability</h5>
                     </div>
 
                     @php
@@ -256,6 +286,78 @@
                         </form>
                     @endif
                 </div>
+            </div>
+        </div>
+
+        @php
+            $canPro = in_array(($planTier ?? 'basic'), ['professional', 'enterprise'], true) || ($isSuperAdmin ?? false);
+            $canEnterprise = (($planTier ?? 'basic') === 'enterprise') || ($isSuperAdmin ?? false);
+            $suiteModules = [
+                ['id' => 'reputation-management', 'title' => 'Reputation Management', 'desc' => 'Track client sentiment, feedback loops, and issue closure rates.', 'tier' => 'professional'],
+                ['id' => 'lead-management', 'title' => 'Lead Management', 'desc' => 'Capture, score, and move prospects across your conversion pipeline.', 'tier' => 'professional'],
+                ['id' => 'appointment-scheduling', 'title' => 'Appointment Scheduling', 'desc' => 'Centralized booking board for demos, onboarding, and review meetings.', 'tier' => 'professional'],
+                ['id' => 'contract-esignature', 'title' => 'Contract Upload & E-Signature', 'desc' => 'Store contracts and manage signature lifecycle from draft to signed.', 'tier' => 'enterprise'],
+                ['id' => 'proposals', 'title' => 'Proposals', 'desc' => 'Create commercial proposals, track approvals, and close faster.', 'tier' => 'enterprise'],
+                ['id' => 'ai-anomaly-detection', 'title' => 'AI-Powered Anomaly Detection', 'desc' => 'Flag unusual transaction, margin, and project-cost patterns early.', 'tier' => 'enterprise'],
+                ['id' => 'project-management-ai', 'title' => 'Project Management AI', 'desc' => 'AI-assisted milestone planning, risk scoring, and workload balancing.', 'tier' => 'enterprise'],
+            ];
+        @endphp
+
+        <div class="pm-card p-3 mt-3" id="modules">
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                <h5 class="mb-0" style="font-weight:800;">Business Modules</h5>
+                <small class="text-muted">Plan Matrix: Basic ₦3,000 • Pro ₦7,000 • Enterprise ₦15,000</small>
+            </div>
+            <div class="row g-3">
+                @foreach($suiteModules as $module)
+                    @php
+                        $enabled = $module['tier'] === 'professional' ? $canPro : $canEnterprise;
+                    @endphp
+                    <div class="col-md-6 col-xl-4">
+                        <div class="pm-module" id="{{ $module['id'] }}">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <h6 class="mb-0">{{ $module['title'] }}</h6>
+                                <span class="pm-pill {{ $module['tier'] === 'enterprise' ? 'bg-warning-subtle text-warning' : 'bg-info-subtle text-info' }}">
+                                    {{ $module['tier'] === 'enterprise' ? 'Enterprise' : 'Pro' }}
+                                </span>
+                            </div>
+                            <p>{{ $module['desc'] }}</p>
+                            @if($enabled)
+                                <button
+                                    class="btn btn-sm btn-outline-primary js-run-module"
+                                    type="button"
+                                    data-module-title="{{ $module['title'] }}"
+                                    data-module-id="{{ $module['id'] }}"
+                                    data-is-ai="{{ in_array($module['id'], ['ai-anomaly-detection', 'project-management-ai'], true) ? '1' : '0' }}"
+                                >
+                                    Run Module
+                                </button>
+                            @else
+                                <button class="btn btn-sm btn-outline-secondary" type="button" disabled>Upgrade Required</button>
+                            @endif
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="moduleAiModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="moduleAiModalTitle">AI Module Assistant</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted mb-2" id="moduleAiModalNote">Use AI assistant to run this module with guided actions.</p>
+                <label class="form-label small mb-1">Assistant Prompt</label>
+                <textarea id="moduleAiPrompt" class="form-control" rows="4" placeholder="Type what you need..."></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-light" type="button" data-bs-dismiss="modal">Close</button>
+                <button class="btn btn-primary" type="button" id="moduleAiOpenAssistant">Open AI Assistant</button>
             </div>
         </div>
     </div>
@@ -329,16 +431,81 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const selector = document.getElementById('taskProjectSelect');
-        if (!selector) return;
+        if (selector) {
+            selector.addEventListener('change', function () {
+                const form = selector.closest('form');
+                if (!form) return;
+                const actionTemplate = @json(route('projects.tasks.store', ['project' => '__PROJECT__']));
+                form.action = actionTemplate.replace('__PROJECT__', selector.value);
+            });
 
-        selector.addEventListener('change', function () {
-            const form = selector.closest('form');
-            if (!form) return;
-            const actionTemplate = @json(route('projects.tasks.store', ['project' => '__PROJECT__']));
-            form.action = actionTemplate.replace('__PROJECT__', selector.value);
-        });
+            selector.dispatchEvent(new Event('change'));
+        }
 
-        selector.dispatchEvent(new Event('change'));
+        const runButtons = document.querySelectorAll('.js-run-module');
+        const modalEl = document.getElementById('moduleAiModal');
+        const modalTitle = document.getElementById('moduleAiModalTitle');
+        const modalNote = document.getElementById('moduleAiModalNote');
+        const promptInput = document.getElementById('moduleAiPrompt');
+        const openAssistantBtn = document.getElementById('moduleAiOpenAssistant');
+        let activeModuleTitle = '';
+
+        if (runButtons.length && modalEl) {
+            const aiModal = (window.bootstrap && bootstrap.Modal)
+                ? bootstrap.Modal.getOrCreateInstance(modalEl)
+                : null;
+
+            runButtons.forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    const title = btn.getAttribute('data-module-title') || 'Module';
+                    const id = btn.getAttribute('data-module-id') || '';
+                    const isAi = btn.getAttribute('data-is-ai') === '1';
+                    activeModuleTitle = title;
+
+                    if (isAi) {
+                        modalTitle.textContent = title + ' Assistant';
+                        modalNote.textContent = 'AI will guide you through this module and generate actionable output.';
+                        promptInput.value = 'Run ' + title + ' for my current projects and highlight key risks and next actions.';
+                        if (aiModal) {
+                            aiModal.show();
+                        } else {
+                            alert('AI assistant modal is currently unavailable. Please refresh the page and try again.');
+                        }
+                        return;
+                    }
+
+                    const target = document.getElementById(id);
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                });
+            });
+        }
+
+        if (openAssistantBtn) {
+            openAssistantBtn.addEventListener('click', function () {
+                const prompt = (promptInput?.value || '').trim();
+                const trigger = document.getElementById('ai-agent-trigger');
+                const openAiBtn = document.getElementById('open-ai-chat-btn');
+                const aiInput = document.getElementById('ai-agent-input');
+                const aiSend = document.getElementById('ai-agent-send');
+
+                if (window.bootstrap && bootstrap.Modal && modalEl) {
+                    bootstrap.Modal.getOrCreateInstance(modalEl)?.hide();
+                }
+                trigger?.click();
+
+                setTimeout(function () {
+                    openAiBtn?.click();
+                }, 250);
+
+                setTimeout(function () {
+                    if (!aiInput || !aiSend) return;
+                    aiInput.value = prompt || ('Run ' + activeModuleTitle + ' for my workspace.');
+                    aiSend.click();
+                }, 850);
+            });
+        }
     });
 </script>
 @endpush

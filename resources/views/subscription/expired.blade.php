@@ -5,7 +5,7 @@
     <div class="account-content">
         <div class="container">
             <div class="account-logo text-center mb-4">
-                <a href="{{ url('/') }}"><img src="{{ asset('assets/images/logo.png') }}" alt="SmartProbook"></a>
+                <a href="{{ url('/') }}"><img src="{{ asset('assets/img/logos.png') }}" alt="SmartProbook"></a>
             </div>
             
             <div class="account-box shadow-lg border-0">

@@ -18,10 +18,29 @@ class ProjectManagementController extends Controller
     {
         $user = $request->user();
         $this->ensureProjectModuleAccess($request);
+        $planTier = $this->resolvePlanTier($user);
+        $isSuperAdmin = $this->isSuperAdmin($user);
+
+        if (!class_exists(\App\Models\Project::class) || !class_exists(\App\Models\ProjectTask::class)) {
+            return view('projects.index', [
+                'projects' => collect(),
+                'planTier' => $planTier,
+                'isSuperAdmin' => $isSuperAdmin,
+                'stats' => [
+                    'total' => 0,
+                    'in_progress' => 0,
+                    'completed' => 0,
+                    'budget' => 0,
+                    'spent' => 0,
+                ],
+            ])->with('error', 'Project module classes are not loaded. Run `composer dump-autoload` and refresh this page.');
+        }
 
         if (!Schema::hasTable('projects') || !Schema::hasTable('project_tasks')) {
             return view('projects.index', [
                 'projects' => collect(),
+                'planTier' => $planTier,
+                'isSuperAdmin' => $isSuperAdmin,
                 'stats' => [
                     'total' => 0,
                     'in_progress' => 0,
@@ -52,7 +71,7 @@ class ProjectManagementController extends Controller
             'spent' => $projects->sum('spent'),
         ];
 
-        return view('projects.index', compact('projects', 'stats'));
+        return view('projects.index', compact('projects', 'stats', 'planTier', 'isSuperAdmin'));
     }
 
     public function storeProject(Request $request): RedirectResponse
@@ -165,24 +184,46 @@ class ProjectManagementController extends Controller
     private function ensureProjectModuleAccess(Request $request): void
     {
         $user = $request->user();
-        $role = strtolower((string) ($user->role ?? ''));
-        $isSuperAdmin = in_array($role, ['super_admin', 'superadmin', 'admin'], true)
-            || strtolower((string) ($user->email ?? '')) === 'donvictorlive@gmail.com';
+        $isSuperAdmin = $this->isSuperAdmin($user);
 
         if ($isSuperAdmin) {
             return;
         }
 
+        $planTier = $this->resolvePlanTier($user);
+        abort_unless(in_array($planTier, ['professional', 'enterprise'], true), 403, 'Project module is available for Professional and Enterprise plans.');
+    }
+
+    private function isSuperAdmin($user): bool
+    {
+        $role = strtolower((string) ($user->role ?? ''));
+        return in_array($role, ['super_admin', 'superadmin', 'admin'], true)
+            || strtolower((string) ($user->email ?? '')) === 'donvictorlive@gmail.com';
+    }
+
+    private function resolvePlanTier($user): string
+    {
         $plan = null;
+
         if (!empty($user->company_id)) {
             $plan = Company::where('id', $user->company_id)->value('plan');
         }
+
         if (!$plan) {
             $plan = Subscription::where('user_id', $user->id)
                 ->latest('id')
                 ->value('plan');
         }
 
-        abort_unless(Str::lower((string) $plan) === 'enterprise', 403, 'Project module is available for Enterprise plan only.');
+        $normalized = Str::lower((string) $plan);
+
+        if (str_contains($normalized, 'enterprise')) {
+            return 'enterprise';
+        }
+        if (str_contains($normalized, 'pro') || str_contains($normalized, 'professional')) {
+            return 'professional';
+        }
+
+        return 'basic';
     }
 }

@@ -15,7 +15,7 @@
         transition: margin-left 0.3s ease, width 0.3s ease;
         width: 100%;
         overflow-x: hidden;
-        padding-top: 100px; 
+        padding-top: 16px; 
     }
 
     /* DESKTOP: Fixed 250px Sidebar Offset */
@@ -39,7 +39,7 @@
         #main-content-wrapper {
             margin-left: 0;
             width: 100%;
-            padding-top: 120px;
+            padding-top: 12px;
         }
     }
 
@@ -109,6 +109,42 @@
     .animate-pulse {
         animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
     }
+
+    /* Dashboard density improvements */
+    .dashboard-tight .row { --bs-gutter-y: 0.85rem; }
+    .dashboard-tight .grid-margin { margin-bottom: 0.85rem !important; }
+    .dashboard-tight .card { height: 100%; }
+    .dashboard-tight .card-subtitle { margin-bottom: 0.65rem !important; }
+    .live-badge-soft {
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: .4px;
+        text-transform: uppercase;
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: rgba(25, 135, 84, 0.12);
+        color: #198754;
+    }
+    .kpi-compact {
+        border: 1px solid #e5edf8;
+        border-radius: 12px;
+        background: #ffffff;
+        padding: 10px 12px;
+    }
+    .kpi-compact .label {
+        font-size: 10px;
+        font-weight: 700;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: .4px;
+        margin-bottom: 4px;
+    }
+    .kpi-compact .value {
+        font-weight: 800;
+        color: #0f172a;
+        font-size: 1rem;
+        line-height: 1.1;
+    }
 </style>
 
 {{-- WRAPPER START --}}
@@ -168,7 +204,7 @@
                     </div>
                 </div>
 
-                <div class="tab-content tab-content-basic">
+                <div class="tab-content tab-content-basic dashboard-tight">
                     <div class="tab-pane fade show active" id="overview" role="tabpanel">
 
                         {{-- ROW 1: Key Financial & User Metrics --}}
@@ -379,13 +415,77 @@
                         </div>
                         @endif
 
+                        {{-- ROW 2C: Plan-Based Module Matrix --}}
+                        <div class="row mt-2">
+                            <div class="col-12 grid-margin stretch-card">
+                                <div class="card card-rounded shadow-sm border-0">
+                                    <div class="card-body p-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                                            <div>
+                                                <h5 class="mb-0 fw-bold text-dark">Plan-Based Business Modules</h5>
+                                                <small class="text-muted">Basic ₦3,000 • Professional ₦7,000 • Enterprise ₦15,000</small>
+                                            </div>
+                                            <a href="{{ route('projects.index') }}" class="btn btn-sm btn-outline-primary">Open Project Workspace</a>
+                                        </div>
+
+                                        <div class="row g-2">
+                                            @foreach([
+                                                ['title' => 'Project Management', 'tier' => 'Pro', 'href' => route('projects.index')],
+                                                ['title' => 'Project Profitability', 'tier' => 'Pro', 'href' => route('projects.index') . '#profitability'],
+                                                ['title' => 'Reputation Management', 'tier' => 'Pro', 'href' => route('projects.index') . '#reputation-management'],
+                                                ['title' => 'Lead Management', 'tier' => 'Pro', 'href' => route('projects.index') . '#lead-management'],
+                                                ['title' => 'Appointment Scheduling', 'tier' => 'Pro', 'href' => route('projects.index') . '#appointment-scheduling'],
+                                                ['title' => 'Contract Upload & E-Signature', 'tier' => 'Enterprise', 'href' => route('projects.index') . '#contract-esignature'],
+                                                ['title' => 'Proposals', 'tier' => 'Enterprise', 'href' => route('projects.index') . '#proposals'],
+                                                ['title' => 'AI Anomaly Detection', 'tier' => 'Enterprise', 'href' => route('projects.index') . '#ai-anomaly-detection'],
+                                                ['title' => 'Project Management AI', 'tier' => 'Enterprise', 'href' => route('projects.index') . '#project-management-ai'],
+                                                ['title' => 'Payroll', 'tier' => 'Enterprise', 'href' => route('payroll.index')],
+                                            ] as $module)
+                                                <div class="col-md-6 col-xl-3">
+                                                    <a href="{{ $module['href'] }}" class="d-flex align-items-center justify-content-between p-2 rounded border bg-light text-decoration-none">
+                                                        <span class="small fw-semibold text-dark">{{ $module['title'] }}</span>
+                                                        <span class="badge {{ $module['tier'] === 'Enterprise' ? 'bg-warning text-dark' : 'bg-info text-dark' }}">{{ $module['tier'] }}</span>
+                                                    </a>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- ROW 2D: Live KPI Strip (fills chart whitespace) --}}
+                        <div class="row mt-2">
+                            @foreach([
+                                ['label' => 'Live MRR', 'value' => '₦' . number_format($metrics['platform_revenue'] ?? 0, 0)],
+                                ['label' => 'Active Nodes', 'value' => number_format($metrics['active_subs'] ?? 0)],
+                                ['label' => 'Pending KYC', 'value' => number_format($metrics['pending_managers'] ?? 0)],
+                                ['label' => 'Low Stock Alerts', 'value' => number_format($metrics['low_stock_items'] ?? 0)],
+                                ['label' => 'New Signups (30d)', 'value' => number_format($metrics['recent_signups'] ?? 0)],
+                                ['label' => 'Paid Subscriptions', 'value' => number_format($metrics['paid_subs'] ?? 0)],
+                            ] as $kpi)
+                                <div class="col-md-4 col-xl-2 grid-margin stretch-card">
+                                    <div class="kpi-compact w-100">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="label">{{ $kpi['label'] }}</div>
+                                            <span class="live-badge-soft animate-pulse">Live</span>
+                                        </div>
+                                        <div class="value">{{ $kpi['value'] }}</div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+
                         {{-- ROW 3: Primary Analytics - Pie, Line, Bar Charts --}}
                         <div class="row mt-4">
                             {{-- Revenue by Plan - Pie Chart --}}
                             <div class="col-lg-4 grid-margin stretch-card">
                                 <div class="card card-rounded shadow-sm">
                                     <div class="card-body">
-                                        <h4 class="card-title card-title-dash mb-3">Revenue by Plan</h4>
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <h4 class="card-title card-title-dash mb-0">Revenue by Plan</h4>
+                                            <span class="live-badge-soft">Live</span>
+                                        </div>
                                         <p class="card-subtitle card-subtitle-dash text-muted mb-4">Subscription distribution</p>
                                         <div class="chart-container">
                                             <canvas id="planStatsChart"></canvas>
@@ -398,7 +498,10 @@
                             <div class="col-lg-4 grid-margin stretch-card">
                                 <div class="card card-rounded shadow-sm">
                                     <div class="card-body">
-                                        <h4 class="card-title card-title-dash mb-3">User Traffic & Engagement</h4>
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <h4 class="card-title card-title-dash mb-0">User Traffic & Engagement</h4>
+                                            <span class="live-badge-soft">Live</span>
+                                        </div>
                                         <p class="card-subtitle card-subtitle-dash text-muted mb-4">New companies vs new users</p>
                                         <div class="chart-container">
                                             <canvas id="trafficLineChart"></canvas>
@@ -411,7 +514,10 @@
                             <div class="col-lg-4 grid-margin stretch-card">
                                 <div class="card card-rounded shadow-sm">
                                     <div class="card-body">
-                                        <h4 class="card-title card-title-dash mb-3">Monthly Sales Volume</h4>
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <h4 class="card-title card-title-dash mb-0">Monthly Sales Volume</h4>
+                                            <span class="live-badge-soft">Live</span>
+                                        </div>
                                         <p class="card-subtitle card-subtitle-dash text-muted mb-4">Paid subscriptions count per month</p>
                                         <div class="chart-container">
                                             <canvas id="salesBarChart"></canvas>

@@ -12,13 +12,15 @@
             : 'SmartProbook provides AI-powered accounting, enterprise reporting, global deployment workflows, and institutional-grade financial operations.';
     @endphp
     @include('layout.partials.seo-meta')
+    <link rel="icon" type="image/png" href="{{ asset('assets/img/logos.png') }}">
+    <link rel="shortcut icon" href="{{ asset('assets/img/logos.png') }}">
     
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
 
     <style>
-        /* ===== SMARTPROBOOK 2026: ENTERPRISE CORE STYLING ===== */
+        /* ===== SmartProbook 2026: ENTERPRISE CORE STYLING ===== */
         :root {
             --primary: #0062ff;      
             --primary-dark: #0046b8;
@@ -54,7 +56,7 @@
             color: var(--dark); 
             line-height: 1.8; 
             overflow-x: hidden;
-            padding-top: 85px;
+            padding-top: 68px;
         }
 
         /* ===== NAVIGATION ===== */
@@ -66,7 +68,7 @@
             background: rgba(255, 255, 255, 0.98); 
             backdrop-filter: blur(20px);
             border-bottom: 1px solid #e2e8f0; 
-            height: 85px; 
+            height: 68px; 
             display: flex; 
             align-items: center;
             box-shadow: 0 4px 20px rgba(0, 98, 255, 0.08);
@@ -90,19 +92,21 @@
             text-decoration: none; 
         }
 
-        .logo-text { 
-            font-size: 1.4rem; 
-            font-weight: 800; 
-            color: var(--dark); 
-            letter-spacing: -1px; 
+        .logo-text {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #0b2a63;
+            letter-spacing: -0.3px;
+            line-height: 1;
+            white-space: nowrap;
         }
 
-        .logo-text span { 
-            color: var(--primary); 
+        .logo-text span {
+            color: #dc2626;
         }
 
         .brand-img { 
-            height: 40px; 
+            height: 56px; 
             width: auto; 
         }
 
@@ -397,7 +401,7 @@
             border-color: rgba(230, 57, 70, 0.2); 
         }
 
-        .client-card img { 
+        .client-card img {
             height: 30px; 
             filter: brightness(0) invert(1); 
             margin-bottom: 25px; 
@@ -679,11 +683,11 @@
         /* ===== TABLET LAYOUT ===== */
         @media (max-width: 991px) {
             body {
-                padding-top: 75px;
+                padding-top: 64px;
             }
 
             nav {
-                height: 75px;
+                height: 64px;
             }
 
             .nav-container {
@@ -696,11 +700,11 @@
 
             .nav-links { 
                 position: fixed; 
-                top: 75px; 
+                top: 64px; 
                 left: -100%; 
                 width: 100%; 
                 max-width: 100%;
-                height: calc(100vh - 75px); 
+                height: calc(100vh - 64px); 
                 background: white; 
                 flex-direction: column; 
                 padding: 30px 20px; 
@@ -796,11 +800,11 @@
         /* ===== MOBILE LAYOUT ===== */
         @media (max-width: 480px) {
             body {
-                padding-top: 70px;
+                padding-top: 60px;
             }
 
             nav {
-                height: 70px;
+                height: 60px;
                 padding: 0 15px;
             }
 
@@ -809,12 +813,10 @@
             }
 
             .logo-text {
-                font-size: 1.1rem;
+                font-size: 0.9rem;
             }
 
-            .brand-img {
-                height: 32px;
-            }
+            .brand-img { height: 44px; }
 
             .hamburger span {
                 width: 26px;
@@ -822,8 +824,8 @@
             }
 
             .nav-links { 
-                top: 70px;
-                height: calc(100vh - 70px);
+                top: 60px;
+                height: calc(100vh - 60px);
                 padding: 20px 15px;
             }
 
@@ -884,12 +886,10 @@
         /* ===== SMALL PHONE ===== */
         @media (max-width: 360px) {
             .logo-text {
-                font-size: 1rem;
+                font-size: 0.82rem;
             }
 
-            .brand-img {
-                height: 28px;
-            }
+            .brand-img { height: 36px; }
 
             .hero-content h1 {
                 font-size: 1.2rem;
@@ -917,8 +917,8 @@
 <nav>
     <div class="nav-container">
         <a href="{{ url('/') }}" class="logo-container">
-            <img src="{{ asset('assets/img/logo-placeholder.svg') }}" class="brand-img" alt="SmartProbook"> 
-            <div class="logo-text">SMARTPRO<span>BOOK</span></div>
+            <img src="{{ asset('assets/img/logos.png') }}" class="brand-img" alt="SmartProbook"> 
+            <span class="logo-text">SmartPro<span>book</span></span>
         </a>
         
         <button class="hamburger" id="navTrigger" type="button" aria-label="Toggle navigation">

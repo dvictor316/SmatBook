@@ -4,10 +4,18 @@
 
 @section('content')
 <style>
+    .header,
+    .sidebar,
+    #toggle_btn,
+    #mobile_btn {
+        display: none !important;
+    }
+
     .main-wrapper,
     .page-wrapper {
         margin-left: 0 !important;
         padding-left: 0 !important;
+        padding-top: 0 !important;
         width: 100% !important;
     }
 
@@ -257,20 +265,20 @@
                 @if($isManager)
                     {{-- ── MANAGER VIEW ── --}}
                     <h3 class="fw-bold mb-1" style="color:#1f2937">Customer Deployed! 🎉</h3>
-                    <p class="text-muted mb-0">Payment confirmed. The workspace is live and ready to use.</p>
+                    <p class="text-muted mb-0">Payment confirmed. The dashboard is live and ready to use.</p>
 
                     @if($subscription)
                     <div class="steps-done mt-3">
                         <div class="step-done-item"><div class="dot">✓</div> Customer account created</div>
                         <div class="step-done-item"><div class="dot">✓</div> Subscription activated ({{ $subscription->plan ?? $subscription->plan_name }})</div>
-                        <div class="step-done-item"><div class="dot">✓</div> Workspace provisioned</div>
+                        <div class="step-done-item"><div class="dot">✓</div> Dashboard provisioned</div>
                         <div class="step-done-item"><div class="dot">✓</div> Commission recorded (35%)</div>
                     </div>
 
                     @if($workspaceUrl)
                     <div class="workspace-box">
                         <div class="text-muted small mb-2 fw-semibold">
-                            <i class="fas fa-globe me-1 text-primary"></i>Customer's Workspace URL
+                            <i class="fas fa-globe me-1 text-primary"></i>Customer Dashboard URL
                         </div>
                         <a href="{{ $workspaceUrl }}" class="workspace-url" target="_blank">
                             {{ $workspaceUrl }}
@@ -340,19 +348,19 @@
                 @else
                     {{-- ── CUSTOMER VIEW ── --}}
                     <h3 class="fw-bold mb-1" style="color:#1f2937">Payment Successful! 🎉</h3>
-                    <p class="text-muted mb-0">Your workspace is now active and ready to use.</p>
+                    <p class="text-muted mb-0">Your dashboard is now active and ready to use.</p>
 
                     @if($subscription)
                     <div class="steps-done mt-3">
                         <div class="step-done-item"><div class="dot">✓</div> Payment confirmed</div>
                         <div class="step-done-item"><div class="dot">✓</div> Subscription activated ({{ $subscription->plan ?? $subscription->plan_name }})</div>
-                        <div class="step-done-item"><div class="dot">✓</div> Your workspace is live</div>
+                        <div class="step-done-item"><div class="dot">✓</div> Your dashboard is live</div>
                     </div>
 
                     @if($workspaceUrl)
                     <div class="workspace-box">
                         <div class="text-muted small mb-2 fw-semibold">
-                            <i class="fas fa-globe me-1 text-primary"></i>Your Workspace
+                            <i class="fas fa-globe me-1 text-primary"></i>Your Dashboard URL
                         </div>
                         <a href="{{ $workspaceUrl }}" class="workspace-url" target="_blank">
                             {{ $workspaceUrl }}
@@ -399,14 +407,11 @@
                     <div class="action-buttons">
                         @if($workspaceUrl)
                         <a href="{{ $workspaceUrl }}" class="btn-primary-solid" target="_blank">
-                            <i class="fas fa-external-link-alt"></i> Open My Workspace
+                            <i class="fas fa-tachometer-alt"></i> Open Dashboard
                         </a>
                         @endif
                         <a href="javascript:void(0)" onclick="window.print()" class="btn-outline-soft">
                             <i class="fas fa-print"></i> Print Transaction
-                        </a>
-                        <a href="{{ $workspaceUrl ?: $returnUrl }}" class="btn-outline-soft" @if($workspaceUrl) target="_blank" @endif>
-                            <i class="fas fa-home"></i> Go to Dashboard
                         </a>
                         @if(session('deployment_return_manager_id'))
                         <a href="{{ route('saas.switch-back-manager') }}" class="btn-outline-soft">

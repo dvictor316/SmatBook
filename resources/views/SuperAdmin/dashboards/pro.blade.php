@@ -14,7 +14,7 @@
     .pos-content-area {
         margin-left: 250px; 
         padding: 40px; 
-        margin-top: 60px;
+        margin-top: 8px;
         background-color: var(--crystal-blue); 
         min-height: 100vh;
         position: relative;
@@ -90,6 +90,25 @@
         justify-content: center;
         margin-bottom: 15px;
     }
+    .live-chip {
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: .4px;
+        text-transform: uppercase;
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: rgba(25, 135, 84, 0.12);
+        color: #198754;
+    }
+    .mini-metric {
+        border: 1px solid #e5edf8;
+        border-radius: 12px;
+        background: #fff;
+        padding: 10px 12px;
+        height: 100%;
+    }
+    .mini-metric .label { font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 700; margin-bottom: 4px; }
+    .mini-metric .value { font-size: 1rem; font-weight: 800; color: #0f172a; line-height: 1.1; }
 </style>
 
 <div class="pos-content-area">
@@ -106,7 +125,7 @@
             <button onclick="printReport()" class="btn btn-white shadow-sm border-0 px-4 py-2" style="border-radius: 12px; font-weight: 700; color: var(--deep-sapphire);">
                 <i class="fas fa-print me-2 text-primary"></i> PRINT ANALYTICS
             </button>
-            <img src="{{ asset('assets/img/logo-placeholder.svg') }}" style="height: 40px;">
+            <img src="{{ asset('assets/img/logos.png') }}" style="height: 80px;">
         </div>
     </div>
 
@@ -160,8 +179,11 @@
             <div class="glass-card-pro p-4">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h5 class="fw-bold mb-0" style="color: var(--deep-sapphire);">Financial Growth Trend</h5>
-                    <div class="dropdown">
-                        <button class="btn btn-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">Last 30 Days</button>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="live-chip">Live</span>
+                        <div class="dropdown">
+                            <button class="btn btn-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">Last 30 Days</button>
+                        </div>
                     </div>
                 </div>
                 <div style="height: 350px;">
@@ -169,6 +191,26 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    {{-- Live Metrics Strip --}}
+    <div class="row g-3 mb-4">
+        @foreach([
+            ['label' => 'Profit Margin', 'value' => number_format($metrics['profitMargin'] ?? 0, 1) . '%'],
+            ['label' => 'Avg Order Value', 'value' => '₦' . number_format($metrics['avgOrderValue'] ?? 0, 0)],
+            ['label' => 'Expense Ratio', 'value' => number_format($metrics['expenseRatio'] ?? 0, 1) . '%'],
+            ['label' => 'Low Stock Alerts', 'value' => number_format($metrics['lowStockCount'] ?? 0)],
+        ] as $m)
+            <div class="col-sm-6 col-xl-3">
+                <div class="mini-metric">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="label">{{ $m['label'] }}</div>
+                        <span class="live-chip">Live</span>
+                    </div>
+                    <div class="value">{{ $m['value'] }}</div>
+                </div>
+            </div>
+        @endforeach
     </div>
 
     <div class="row g-4 mb-5">

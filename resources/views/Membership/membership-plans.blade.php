@@ -140,6 +140,112 @@
         }
         .spinner { width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid var(--muji-blue-accent); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        .flash-wrap { margin-top: 20px; }
+        .flash-msg {
+            margin: 0 auto 10px;
+            max-width: 760px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .flash-msg.success { background: #ecfdf3; color: #166534; border: 1px solid #86efac; }
+        .flash-msg.error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+
+        .custom-modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 6, 23, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 11000;
+            padding: 16px;
+        }
+        .custom-modal-backdrop.open { display: flex; }
+        .custom-modal {
+            width: min(760px, 100%);
+            background: #fff;
+            border-radius: 16px;
+            border: 1px solid var(--muji-border);
+            box-shadow: var(--shadow-premium);
+            overflow: hidden;
+        }
+        .custom-modal-head {
+            background: linear-gradient(135deg, #0f172a, #1e40af);
+            color: #fff;
+            padding: 16px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .custom-modal-head h5 { margin: 0; font-size: 1rem; font-weight: 800; letter-spacing: 0.2px; }
+        .custom-close {
+            border: 1px solid rgba(255,255,255,.3);
+            background: transparent;
+            color: #fff;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            font-size: 18px;
+            line-height: 1;
+            cursor: pointer;
+        }
+        .custom-modal-body { padding: 16px 18px 18px; }
+        .custom-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+        .custom-group label {
+            display: block;
+            font-size: 0.74rem;
+            font-weight: 700;
+            color: #334155;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+        }
+        .custom-input, .custom-select, .custom-textarea {
+            width: 100%;
+            border: 1px solid var(--muji-border);
+            border-radius: 10px;
+            padding: 10px 11px;
+            font-size: 0.9rem;
+            color: #0f172a;
+            background: #fff;
+        }
+        .custom-textarea { min-height: 110px; resize: vertical; }
+        .custom-summary {
+            margin-top: 12px;
+            padding: 12px;
+            border: 1px dashed #93c5fd;
+            border-radius: 10px;
+            background: #eff6ff;
+            font-size: 0.82rem;
+            color: #1e3a8a;
+            font-weight: 600;
+        }
+        .custom-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 14px;
+        }
+        .btn-modal {
+            border: none;
+            border-radius: 10px;
+            padding: 11px 14px;
+            font-size: 0.86rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .btn-cancel { background: #f1f5f9; color: #334155; }
+        .btn-send { background: #1d4ed8; color: #fff; flex: 1; }
+        .btn-send:disabled { opacity: .7; cursor: not-allowed; }
+        @media (max-width: 680px) {
+            .custom-grid { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
@@ -147,8 +253,8 @@
     <nav class="spa-nav">
         <div class="container flex-between">
             <div style="display: flex; align-items: center; gap: 10px;">
-                <img src="{{ asset('assets/img/logo-placeholder.svg') }}" alt="SmartProbook Logo" style="height: 30px;">
-                <span style="font-weight: 800; color: var(--muji-blue-deep); font-size: 1.1rem; letter-spacing: -0.5px;">SMARTPROBOOK</span>
+                <img src="{{ asset('assets/img/logos.png') }}" alt="SmartProbook Logo" style="height: 60px;">
+                <span style="font-weight: 800; color: var(--muji-blue-deep); font-size: 1.1rem; letter-spacing: -0.5px;">SmartProbook</span>
             </div>
             <a href="/" style="text-decoration: none; color: #64748b; font-weight: 600; font-size: 0.85rem; transition: 0.3s;">
                 <i class="fas fa-arrow-left me-2"></i> Exit Setup
@@ -161,6 +267,14 @@
             <span class="gold-label">Enterprise Solutions</span>
             <h1 class="hero-title">Select Your <span>Growth Infrastructure</span></h1>
             <p class="hero-subtitle">Professional accounting nodes designed for institutional precision and high-volume data management.</p>
+            <div class="flash-wrap">
+                @if(session('success'))
+                    <div class="flash-msg success">{{ session('success') }}</div>
+                @endif
+                @if(session('error'))
+                    <div class="flash-msg error">{{ session('error') }}</div>
+                @endif
+            </div>
             
             <div class="billing-toggle">
                 <span id="monthlyLabel" style="color: var(--muji-blue-accent)">Monthly</span>
@@ -242,7 +356,7 @@
                         <li><i class="fas fa-check-circle"></i> Biometric Security</li>
                         <li><i class="fas fa-check-circle"></i> Dedicated Tech Team</li>
                     </ul>
-                    <button onclick="handleSubscription('custom')" class="btn-uplink btn-outline">Consultation</button>
+                    <button onclick="handleSubscription('custom')" class="btn-uplink btn-outline">Request Custom Plan</button>
                 </div>
             </div>
         </div>
@@ -250,7 +364,7 @@
 
     <footer style="padding: 60px 0; border-top: 1px solid var(--muji-border); text-align: center; background: var(--muji-blue-light);">
         <div class="container">
-            <p style="font-weight: 700; color: var(--muji-blue-deep); margin-bottom: 10px;">SMARTPROBOOK INTELLIGENCE</p>
+            <p style="font-weight: 700; color: var(--muji-blue-deep); margin-bottom: 10px;">SmartProbook INTELLIGENCE</p>
             <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 20px;">Secure, AES-256 standard encrypted accounting deployment.</p>
             <p style="font-size: 0.8rem; color: #94a3b8;">© 2026 SmartProbook Enterprise. All rights reserved.</p>
         </div>
@@ -260,6 +374,56 @@
         <div style="text-align: center;">
             <div class="spinner"></div>
             <p id="loadingText" style="font-weight: 600; letter-spacing: 0.5px;">Establishing Encryption...</p>
+        </div>
+    </div>
+
+    <div class="custom-modal-backdrop" id="customPlanBackdrop" aria-hidden="true">
+        <div class="custom-modal" role="dialog" aria-modal="true" aria-labelledby="customPlanTitle">
+            <div class="custom-modal-head">
+                <h5 id="customPlanTitle">Custom Plan Consultation</h5>
+                <button type="button" class="custom-close" onclick="closeCustomPlanModal()" aria-label="Close">×</button>
+            </div>
+            <div class="custom-modal-body">
+                <form id="customPlanForm" action="{{ route('contact.store') }}" method="POST">
+                    @csrf
+                    <input type="hidden" name="department" value="Bespoke Plan Consultation">
+                    <input type="hidden" name="company_name" id="customCompanyHidden">
+                    <div class="custom-grid">
+                        <div class="custom-group">
+                            <label>Full Name</label>
+                            <input class="custom-input" type="text" name="fullname" id="customFullname" required>
+                        </div>
+                        <div class="custom-group">
+                            <label>Work Email</label>
+                            <input class="custom-input" type="email" name="email" id="customEmail" required>
+                        </div>
+                        <div class="custom-group">
+                            <label>Organization</label>
+                            <input class="custom-input" type="text" id="customCompany" placeholder="Company / Institution">
+                        </div>
+                        <div class="custom-group">
+                            <label>Team Size</label>
+                            <select class="custom-select" id="customTeamSize">
+                                <option value="1-25">1-25</option>
+                                <option value="26-100">26-100</option>
+                                <option value="101-500">101-500</option>
+                                <option value="500+">500+</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="custom-group" style="margin-top:10px;">
+                        <label>Requirements</label>
+                        <textarea class="custom-textarea" name="message" id="customMessage" required placeholder="Tell us your exact modules, integrations, compliance needs, and timeline."></textarea>
+                    </div>
+                    <div class="custom-summary" id="customSummary">
+                        Cycle: Monthly | Team: 1-25
+                    </div>
+                    <div class="custom-actions">
+                        <button type="button" class="btn-modal btn-cancel" onclick="closeCustomPlanModal()">Cancel</button>
+                        <button type="submit" class="btn-modal btn-send" id="customSubmitBtn">Send Request</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 <script>
@@ -298,7 +462,7 @@
 
     function handleSubscription(plan) {
         if (plan === 'custom') {
-            window.location.href = "mailto:support@smatbook.com?subject=Enterprise Consultation";
+            openCustomPlanModal();
             return;
         }
 
@@ -327,6 +491,55 @@
             window.location.href = `${registerUrl}?${queryParams.toString()}`;
         }, 800);
     }
+
+    function openCustomPlanModal() {
+        const backdrop = document.getElementById('customPlanBackdrop');
+        if (!backdrop) return;
+        backdrop.classList.add('open');
+        backdrop.setAttribute('aria-hidden', 'false');
+        updateCustomSummary();
+    }
+
+    function closeCustomPlanModal() {
+        const backdrop = document.getElementById('customPlanBackdrop');
+        if (!backdrop) return;
+        backdrop.classList.remove('open');
+        backdrop.setAttribute('aria-hidden', 'true');
+    }
+
+    function updateCustomSummary() {
+        const isAnnual = document.getElementById('billingSwitch')?.checked;
+        const cycle = isAnnual ? 'Yearly' : 'Monthly';
+        const team = document.getElementById('customTeamSize')?.value || '1-25';
+        const summary = document.getElementById('customSummary');
+        if (summary) {
+            summary.textContent = `Cycle: ${cycle} | Team: ${team} | Request type: Bespoke Plan Consultation`;
+        }
+    }
+
+    document.getElementById('customTeamSize')?.addEventListener('change', updateCustomSummary);
+    document.getElementById('billingSwitch')?.addEventListener('change', function () {
+        updateCustomSummary();
+    });
+
+    document.getElementById('customPlanBackdrop')?.addEventListener('click', function (e) {
+        if (e.target === this) closeCustomPlanModal();
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeCustomPlanModal();
+    });
+
+    document.getElementById('customPlanForm')?.addEventListener('submit', function () {
+        const submitBtn = document.getElementById('customSubmitBtn');
+        const company = document.getElementById('customCompany')?.value || '';
+        const companyHidden = document.getElementById('customCompanyHidden');
+        if (companyHidden) companyHidden.value = company;
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Sending Request...';
+        }
+    });
 </script>
 </body>
 </html>

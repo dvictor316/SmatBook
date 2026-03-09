@@ -8,6 +8,7 @@ use App\Models\Plan; // Added Plan model
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Schema;
 
 class LandingController extends Controller
 {
@@ -46,9 +47,14 @@ class LandingController extends Controller
         ]);
 
         try {
-            $settings = LandingSetting::first();
+            $settings = null;
+            if (Schema::hasTable('landing_settings')) {
+                $settings = LandingSetting::first();
+            }
+
             $recipients = array_values(array_filter(array_unique([
                 $settings?->contact_email,
+                env('MAIL_ADMIN_INBOX'),
                 config('mail.from.address'),
                 'donvictorlive@gmail.com',
             ]), fn ($email) => is_string($email) && filter_var($email, FILTER_VALIDATE_EMAIL)));
@@ -68,10 +74,20 @@ class LandingController extends Controller
                 $validated['message'],
             ]);
 
-            Mail::raw($body, function ($message) use ($recipients, $validated, $subject) {
+            $preferredMailer = strtolower((string) config('mail.default'));
+            $smtpReady = trim((string) config('mail.mailers.smtp.host')) !== ''
+                && trim((string) config('mail.mailers.smtp.username')) !== ''
+                && trim((string) config('mail.mailers.smtp.password')) !== '';
+            $deliveryMailer = ($preferredMailer === 'log' && $smtpReady) ? 'smtp' : $preferredMailer;
+
+            Mail::mailer($deliveryMailer)->raw($body, function ($message) use ($recipients, $validated, $subject) {
                 $message->to($recipients)->subject($subject);
                 $message->replyTo($validated['email'], $validated['fullname']);
             });
+
+            if ($deliveryMailer === 'log') {
+                return back()->with('success', 'Request received. Mailer is in LOG mode, so email was captured in logs. Set MAIL_MAILER=smtp with valid credentials for inbox delivery.');
+            }
 
             return back()->with('success', 'Message sent successfully. Our team will reach out shortly.');
         } catch (\Throwable $e) {
@@ -80,7 +96,7 @@ class LandingController extends Controller
                 'email' => $validated['email'] ?? null,
             ]);
 
-            return back()->with('error', 'We could not send your message at the moment. Please try again.')->withInput();
+            return back()->with('error', 'Request captured, but email delivery failed. Check MAIL settings and try again.')->withInput();
         }
     }
 

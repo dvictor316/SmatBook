@@ -3849,8 +3849,8 @@
                         <div class="text-center powered">
                             <h6 class="mt-4 mb-3">Powered By</h6>
                             <a href="#">
-                                <img class="logo-lightmode" src="{{ URL::asset('/assets/img/logo.png')}}" alt="Logo">
-                                <img class="logo-darkmode" src="{{ URL::asset('/assets/img/logo-white.png')}}" alt="Logo">
+                                <img class="logo-lightmode" src="{{ URL::asset('/assets/img/logos.png')}}" alt="Logo">
+                                <img class="logo-darkmode" src="{{ URL::asset('/assets/img/logos.png')}}" alt="Logo">
                             </a>
                         </div>
                     </div>
@@ -4762,8 +4762,8 @@
                         <div class="text-center powered">
                             <h6 class="mt-4 mb-3">Powered By</h6>
                             <a href="#">
-                                <img class="logo-lightmode" src="{{ URL::asset('/assets/img/logo.png')}}" alt="Logo">
-                                <img class="logo-darkmode" src="{{ URL::asset('/assets/img/logo-white.png')}}" alt="Logo">
+                                <img class="logo-lightmode" src="{{ URL::asset('/assets/img/logos.png')}}" alt="Logo">
+                                <img class="logo-darkmode" src="{{ URL::asset('/assets/img/logos.png')}}" alt="Logo">
                             </a>
                         </div>
                     </div>

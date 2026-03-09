@@ -41,7 +41,7 @@
                         <i class="fas fa-phone"></i>
                         <div>
                             <h6>Phone</h6>
-                            <a href="tel:+234800728626226">+234 (0) 800 SMARTPROBOOK</a>
+                            <a href="tel:+234800728626226">+234 (0) 800 SmartProbook</a>
                         </div>
                     </div>
                 </div>

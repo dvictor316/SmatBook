@@ -703,9 +703,9 @@ class CustomAuthController extends Controller
 {
     Auth::logout();
 
-    $request.session()->invalidate();
-    $request.session()->regenerateToken();
+    $request->session()->invalidate();
+    $request->session()->regenerateToken();
 
-    return redirect('/pages.Authentication.login')->with('success', 'You have been logged out successfully.');
+    return redirect()->route('login')->with('success', 'You have been logged out successfully.');
 }
 }

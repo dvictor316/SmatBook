@@ -155,9 +155,7 @@
     
     .tile-icon.paystack i { color: #00C3F7; font-size: 22px; }
     .tile-icon.flutterwave i { color: #F5A623; font-size: 22px; }
-    .tile-icon.opay i { color: #00B87C; font-size: 22px; }
-    .tile-icon.bank i { color: #64748b; font-size: 22px; }
-    .tile-icon.later i { color: #F59E0B; font-size: 22px; }
+    .tile-icon.stripe i { color: #635bff; font-size: 22px; }
 
     .tile-content {
         flex: 1;
@@ -404,7 +402,7 @@
             <h1 class="form-title">Payment Method</h1>
             <p class="form-subtitle">Choose your preferred payment gateway</p>
 
-            <form action="{{ route('deployment.process-payment') }}" method="POST" id="paymentForm">
+            <form action="{{ route('deployment.process-payment', $subscription->id) }}" method="POST" id="paymentForm">
                 @csrf
                 <input type="hidden" name="subscription_id" value="{{ $subscription->id }}">
                 <input type="hidden" name="gateway" id="selectedGateway" value="paystack">
@@ -435,41 +433,17 @@
                     <span class="tile-badge alternative">Alternative</span>
                 </div>
 
-                <!-- OPay -->
-                <div class="payment-tile" data-gateway="opay" onclick="selectGateway('opay')">
+                <!-- Stripe -->
+                <div class="payment-tile" data-gateway="stripe" onclick="selectGateway('stripe')">
                     <div class="tile-radio"></div>
-                    <div class="tile-icon opay">
-                        <i class="fas fa-mobile-alt"></i>
+                    <div class="tile-icon stripe">
+                        <i class="fab fa-stripe"></i>
                     </div>
                     <div class="tile-content">
-                        <span class="tile-name">OPay</span>
-                        <span class="tile-desc">Mobile Wallet, Bank Transfer</span>
+                        <span class="tile-name">Stripe</span>
+                        <span class="tile-desc">Global card checkout (test mode)</span>
                     </div>
-                </div>
-
-                <!-- Manual Bank Transfer -->
-                <div class="payment-tile" data-gateway="bank_transfer" onclick="selectGateway('bank_transfer')">
-                    <div class="tile-radio"></div>
-                    <div class="tile-icon bank">
-                        <i class="fas fa-building"></i>
-                    </div>
-                    <div class="tile-content">
-                        <span class="tile-name">Manual Bank Transfer</span>
-                        <span class="tile-desc">Direct bank deposit (pending verification)</span>
-                    </div>
-                </div>
-
-                <!-- Pay Later -->
-                <div class="payment-tile" data-gateway="pay_later" onclick="selectGateway('pay_later')">
-                    <div class="tile-radio"></div>
-                    <div class="tile-icon later">
-                        <i class="fas fa-clock"></i>
-                    </div>
-                    <div class="tile-content">
-                        <span class="tile-name">Pay Later (Invoice)</span>
-                        <span class="tile-desc">Send invoice to customer email</span>
-                    </div>
-                    <span class="tile-badge credit">Credit</span>
+                    <span class="tile-badge alternative">Alternative</span>
                 </div>
 
                 <div class="mt-auto pt-3">
@@ -563,6 +537,11 @@
         trim((string) config('services.flutterwave.public_key'))
             ?: trim((string) \App\Models\Setting::getSensitive('flutterwave_key', \App\Models\Setting::get('flutterwave_key', '')))
     );
+    const stripePublishableKey = @json(
+        trim((string) config('services.stripe.key'))
+            ?: trim((string) env('STRIPE_TEST_PUBLISHABLE_KEY', env('STRIPE_PUBLISHABLE_KEY', '')))
+            ?: trim((string) \App\Models\Setting::getSensitive('stripe_key', \App\Models\Setting::get('stripe_key', '')))
+    );
 
     let selectedGateway = 'paystack';
 
@@ -592,8 +571,18 @@
         } else if (selectedGateway === 'flutterwave') {
             modal.style.display = 'none';
             payWithFlutterwave(subscription);
-        } else {
+        } else if (selectedGateway === 'stripe') {
+            if (!stripePublishableKey) {
+                modal.style.display = 'none';
+                btn.disabled = false;
+                alert('Stripe test publishable key is missing. Add STRIPE_TEST_PUBLISHABLE_KEY in your .env file.');
+                return;
+            }
             this.submit();
+        } else {
+            modal.style.display = 'none';
+            btn.disabled = false;
+            alert('Please select Paystack, Flutterwave, or Stripe.');
         }
     });
 

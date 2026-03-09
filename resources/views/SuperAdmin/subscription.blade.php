@@ -25,7 +25,7 @@ body, .page-wrapper, .main-wrapper, .report-page-wrapper {
     margin-left: 250px; 
     padding: 25px; 
     min-height: 100vh; 
-    margin-top: 60px;
+    margin-top: 8px;
     font-family: 'Inter', system-ui, sans-serif;
     transition: all 0.3s ease;
 }

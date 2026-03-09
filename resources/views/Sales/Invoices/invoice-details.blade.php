@@ -7,7 +7,7 @@
             ?: \App\Models\Setting::where('key', 'site_logo')->value('value');
         $invoiceLogoUrl = $invoiceLogoPath ? asset($invoiceLogoPath) : null;
         $brandName = \App\Models\Setting::where('key', 'company_name')->value('value')
-            ?: (optional(auth()->user())->company->name ?? config('app.name', 'SMARTPROBOOK'));
+            ?: (optional(auth()->user())->company->name ?? config('app.name', 'SmartProbook'));
     @endphp
     <div class="page-wrapper">
         <div class="content container-fluid">

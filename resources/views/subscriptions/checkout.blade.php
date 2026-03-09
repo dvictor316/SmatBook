@@ -214,13 +214,13 @@
                         </div>
                     </label>
 
-                    <label class="payment-option" data-gateway="bank_transfer">
-                        <input type="radio" name="gateway" value="bank_transfer" class="payment-radio">
+                    <label class="payment-option" data-gateway="stripe">
+                        <input type="radio" name="gateway" value="stripe" class="payment-radio">
                         <div class="payment-info">
                             <div class="payment-name">
-                                <i class="fas fa-building me-2 text-warning"></i>Bank Transfer
+                                <i class="fab fa-stripe me-2 text-info"></i>Stripe
                             </div>
-                            <div class="payment-desc">Manual bank transfer (requires confirmation)</div>
+                            <div class="payment-desc">Global card checkout (real-time confirmation)</div>
                         </div>
                     </label>
                 </div>

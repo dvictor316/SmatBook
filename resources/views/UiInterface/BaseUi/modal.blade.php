@@ -238,7 +238,7 @@
                                                 <div class="auth-logo">
                                                     <a href="{{ url('/') }}" class="logo logo-dark">
                                                         <span class="logo-lg">
-                                                            <img src="{{ URL::asset('/assets/img/logo.png')}}" alt="Logo" height="42">
+                                                            <img src="{{ URL::asset('/assets/img/logos.png')}}" alt="Logo" height="42">
                                                         </span>
                                                     </a>
                                                 </div>
@@ -294,7 +294,7 @@
                                                 <div class="auth-logo">
                                                     <a href="{{ url('/') }}" class="logo logo-dark">
                                                         <span class="logo-lg">
-                                                            <img src="{{ URL::asset('/assets/img/logo.png')}}" alt="Logo" height="42">
+                                                            <img src="{{ URL::asset('/assets/img/logos.png')}}" alt="Logo" height="42">
                                                         </span>
                                                     </a>
                                                 </div>

@@ -82,12 +82,19 @@ class DeploymentManagerController extends Controller
         try {
             DB::transaction(function () use ($id) {
                 $manager = DeploymentManager::findOrFail($id);
-                
-                $manager->update([
+
+                $updatePayload = [
                     'status' => 'active',
-                    'approved_at' => now(),
-                    'commission_rate' => self::COMMISSION_RATE,
-                ]);
+                ];
+
+                if (Schema::hasColumn('deployment_managers', 'approved_at')) {
+                    $updatePayload['approved_at'] = now();
+                }
+                if (Schema::hasColumn('deployment_managers', 'commission_rate')) {
+                    $updatePayload['commission_rate'] = self::COMMISSION_RATE;
+                }
+
+                $manager->update($updatePayload);
 
                 $user = User::findOrFail($manager->user_id);
                 $user->update([
@@ -121,7 +128,7 @@ class DeploymentManagerController extends Controller
         $user = Auth::user();
 
         $this->ensureManagerHasWorkspace($user);
-        Subscription::expireDueSubscriptions($this->managedCompanyIds());
+        $this->expireDueManagedSubscriptions();
 
         $managerProfile = DeploymentManager::where('user_id', Auth::id())->first();
         $commissionRate = (float) ($managerProfile->commission_rate ?? self::COMMISSION_RATE);
@@ -177,9 +184,7 @@ class DeploymentManagerController extends Controller
             'totalCommissions'       => $totalCommissions,
             'paidCommissions'        => $paidCommissions,
             'pendingCommissions'     => $pendingCommissions,
-            'expiringSoonSubscriptions' => $this->managedSubscriptions()
-                ->expiringSoon(7)
-                ->count(),
+            'expiringSoonSubscriptions' => $this->expiringManagedSubscriptionsQuery(7)->count(),
             'expiredSubscriptions'   => $this->managedSubscriptions()
                 ->whereRaw("LOWER(COALESCE(status, '')) = 'expired'")
                 ->count(),
@@ -199,14 +204,46 @@ class DeploymentManagerController extends Controller
             ->limit(10)
             ->get();
 
-        $expiringSubscriptions = $this->managedSubscriptions()
+        $expiringSubscriptions = $this->expiringManagedSubscriptionsQuery(7)
             ->with(['company', 'user'])
-            ->expiringSoon(7)
             ->orderBy('end_date', 'asc')
             ->limit(8)
             ->get();
 
         return view('deployment.dashboard', compact('metrics', 'companies', 'recentSubscriptions', 'recentActivities', 'expiringSubscriptions'));
+    }
+
+    private function expireDueManagedSubscriptions(): void
+    {
+        $companyIds = $this->managedCompanyIds();
+        if (empty($companyIds)) {
+            return;
+        }
+
+        if (method_exists(Subscription::class, 'expireDueSubscriptions')) {
+            Subscription::expireDueSubscriptions($companyIds);
+            return;
+        }
+
+        // Backward-compatible fallback when an older Subscription model is loaded.
+        Subscription::query()
+            ->whereIn('company_id', $companyIds)
+            ->whereRaw("LOWER(COALESCE(status, '')) IN ('active','trial')")
+            ->whereNotNull('end_date')
+            ->whereDate('end_date', '<', now()->toDateString())
+            ->update([
+                'status' => 'Expired',
+                'updated_at' => now(),
+            ]);
+    }
+
+    private function expiringManagedSubscriptionsQuery(int $days = 7): \Illuminate\Database\Eloquent\Builder
+    {
+        return $this->managedSubscriptions()
+            ->whereRaw("LOWER(COALESCE(status, '')) IN ('active','trial')")
+            ->whereNotNull('end_date')
+            ->whereDate('end_date', '>=', now()->toDateString())
+            ->whereDate('end_date', '<=', now()->addDays($days)->toDateString());
     }
 
     private function ensureManagerHasWorkspace($user) 
@@ -303,10 +340,15 @@ class DeploymentManagerController extends Controller
 
 public function store(Request $request)
 {
+    $request->merge([
+        'phone' => $this->normalizePhoneForStorage($request->input('phone')),
+        'customer_phone' => $this->normalizePhoneForStorage($request->input('customer_phone')),
+    ]);
+
     $validated = $request->validate([
         'company_name'    => 'required|string|max:255',
         'subdomain'       => 'required|string|max:50|alpha_dash|unique:companies,domain_prefix',
-        'phone'           => 'nullable|string|max:20',
+        'phone'           => ['nullable', 'string', 'max:25', 'regex:/^\+?[0-9]{7,20}$/'],
         'industry'        => 'nullable|string|max:100',
         'plan_id'         => 'required|string',
         'plan_name'       => 'required|string',
@@ -320,9 +362,11 @@ public function store(Request $request)
             \Illuminate\Validation\Rules\Password::min(8)->letters()->numbers(),
         ],
         'name'            => 'required|string|max:255',
-        'customer_phone'  => 'nullable|string|max:20',
+        'customer_phone'  => ['nullable', 'string', 'max:25', 'regex:/^\+?[0-9]{7,20}$/'],
     ], [
         'password.*' => 'Password must be at least 8 characters and include letters and numbers.',
+        'phone.regex' => 'Company phone format is invalid. Use digits with optional leading +.',
+        'customer_phone.regex' => 'Customer phone format is invalid. Use digits with optional leading +.',
     ]);
 
     // Server-side guard: never trust client-submitted plan values.
@@ -465,6 +509,22 @@ public function store(Request $request)
     // ── Redirect directly to checkout — clean URL, no extra params ──
     return redirect()->route('saas.checkout', $result['subscription_id'])
         ->with('success', 'Customer account created. Continue checkout to activate workspace.');
+}
+
+private function normalizePhoneForStorage(?string $phone): ?string
+{
+    $raw = trim((string) $phone);
+    if ($raw === '') {
+        return null;
+    }
+
+    $hasPlus = str_starts_with($raw, '+');
+    $digitsOnly = preg_replace('/\D+/', '', $raw) ?? '';
+    if ($digitsOnly === '') {
+        return null;
+    }
+
+    return $hasPlus ? ('+' . $digitsOnly) : $digitsOnly;
 }
 
 private function normalizeDeploymentPlanPayload(array $validated): array

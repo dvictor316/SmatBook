@@ -20,7 +20,7 @@
     #deployment-wrapper {
         transition: margin-left 0.3s ease, padding-top 0.3s ease;
         padding: 1.5rem;
-        padding-top: 110px;
+        padding-top: 12px;
         min-height: 100vh;
         background: #f8fafc;
     }
@@ -33,7 +33,7 @@
     }
 
     @media (max-width: 991.98px) {
-        #deployment-wrapper { margin-left: 0; width: 100%; padding-top: 100px; }
+        #deployment-wrapper { margin-left: 0; width: 100%; padding-top: 10px; }
     }
 
     .glass-card {
@@ -75,7 +75,7 @@
     }
 
     @media (max-width: 576px) {
-        #deployment-wrapper { padding: 1rem; padding-top: 90px; }
+        #deployment-wrapper { padding: 1rem; padding-top: 8px; }
     }
 </style>
 

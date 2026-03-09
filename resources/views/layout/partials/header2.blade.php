@@ -14,16 +14,7 @@
     
     // 2. Profile Image & Avatar Fallback Logic
     $defaultAvatar = asset('assets/img/profiles/avatar-07.jpg');
-    $profileImagePath = $defaultAvatar;
-
-    if ($user && $user->profile_photo) {
-        if (filter_var($user->profile_photo, FILTER_VALIDATE_URL)) {
-            $profileImagePath = $user->profile_photo;
-        } else {
-            $storagePath = 'storage/' . $user->profile_photo;
-            $profileImagePath = file_exists(public_path($storagePath)) ? asset($storagePath) : $defaultAvatar;
-        }
-    }
+    $profileImagePath = $user?->avatar_url ?: $defaultAvatar;
 @endphp
 
 <style>
@@ -36,7 +27,7 @@
         padding: 0 20px; /* Adjusted padding */
         background: #fff;
         border-bottom: 1px solid #e2e8f0;
-        height: 70px;
+        height: 76px;
         position: sticky;
         top: 0;
         z-index: 1000;
@@ -47,9 +38,10 @@
     .header-left {
         display: flex;
         align-items: center;
-        justify-content: center;
+        justify-content: flex-start;
+        gap: 8px;
         width: 270px; /* Fixed to match your sidebar width request */
-        height: 70px;
+        height: 76px;
         padding: 0 15px;
         transition: all 0.2s ease-in-out;
         position: relative;
@@ -57,11 +49,20 @@
 
     /* Logo Image Styling */
     .header-logo img {
-        height: 40px; /* Slightly larger for visibility */
+        height: 52px;
         width: auto;
         max-width: 100%;
         transition: all 0.2s;
     }
+    .spb-wordmark {
+        font-size: 1.2rem;
+        font-weight: 800;
+        letter-spacing: -0.3px;
+        line-height: 1;
+        color: #0b2a63;
+        white-space: nowrap;
+    }
+    .spb-wordmark .book { color: #dc2626; }
 
     /* Toggle Button */
     .header-toggle {
@@ -114,7 +115,11 @@
     }
 
     body.sidebar-collapsed .header-logo img {
-        max-width: 50px; /* Shrink logo */
+        max-width: 100px;
+    }
+    body.sidebar-collapsed .spb-wordmark,
+    body.mini-sidebar .spb-wordmark {
+        display: none;
     }
 
     /* Animate Hamburger to X */
@@ -375,6 +380,10 @@
         .header-search-wrapper, .header-spacer, .user-info { display: none; }
         .mobile-search-btn { display: block; }
         .header-toggle { margin-left: 10px; }
+        .spb-wordmark {
+            font-size: 0.88rem;
+            letter-spacing: -0.2px;
+        }
     }
 </style>
 
@@ -383,9 +392,9 @@
     {{-- 1. Logo Section (Matches Sidebar Width) --}}
     <div class="header-left">
         <a href="{{ url('/') }}" class="header-logo">
-            {{-- CORRECTED: Using smat14.png as requested --}}
-            <img src="{{ asset('assets/img/logo-placeholder.svg') }}" alt="SmartProbook Logo">
+            <img src="{{ asset('assets/img/logos.png') }}" alt="SmartProbook Logo">
         </a>
+        <span class="spb-wordmark">SmartPro<span class="book">book</span></span>
     </div>
 
     {{-- 2. Toggle Button --}}

@@ -40,7 +40,7 @@
         })();
     </script>
 
-    <link rel="shortcut icon" href="{{ $faviconPath ? asset($faviconPath) : asset('assets/img/smat_logo.png') }}">
+    <link rel="shortcut icon" href="{{ asset('assets/img/logos.png') }}">
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.0/css/all.min.css" 
           integrity="sha512-Avb2QiuDEEvB4bZJYdft2mNjVShBftLdPG8FJ0V7irTLQ8Uo0qcPxh4Plq7G5tGm0rU+1SPhVotteLpBERwTkw==" 
@@ -106,7 +106,8 @@
             position: relative;
             margin-left: var(--sb-sidebar-w, 270px) !important;
             padding-top: 0 !important;
-            min-height: calc(100vh - var(--sb-header-h, 70px));
+            margin-top: 0 !important;
+            min-height: calc(100vh - var(--sb-header-h, 76px));
             transition: margin-left 0.3s ease;
         }
 
@@ -117,19 +118,23 @@
         }
 
         .page-wrapper .content.container-fluid {
-            padding-top: 6px !important;
-            padding-left: 16px !important;
-            padding-right: 16px !important;
+            padding-top: 0 !important;
+            padding-left: 12px !important;
+            padding-right: 12px !important;
         }
 
         .btn {
-            border-radius: 10px !important;
+            border-radius: 999px !important;
             font-weight: 700 !important;
-            transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+            letter-spacing: 0.01em;
+            box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease !important;
         }
 
         .btn:hover {
             transform: translateY(-1px);
+            filter: saturate(1.05);
+            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.14);
         }
 
         @media (max-width: 991.98px) {
@@ -138,9 +143,9 @@
             }
 
             .page-wrapper .content.container-fluid {
-                padding-top: 4px !important;
-                padding-left: 12px !important;
-                padding-right: 12px !important;
+                padding-top: 0 !important;
+                padding-left: 10px !important;
+                padding-right: 10px !important;
             }
         }
 

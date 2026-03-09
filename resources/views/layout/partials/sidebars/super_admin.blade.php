@@ -57,8 +57,21 @@
                         <li><a href="{{ route('super_admin.subscription', $routeParams) }}" class="{{ Request::is('superadmin/subscription*') ? 'active' : '' }}">Subscriptions</a></li>
                         <li><a href="{{ route('super_admin.packages.index', $routeParams) }}" class="{{ Request::is('superadmin/packages*') ? 'active' : '' }}">Packages</a></li>
                         <li><a href="{{ route('super_admin.domains.index', $routeParams) }}" class="{{ Request::is('superadmin/domains*') ? 'active' : '' }}">Domains</a></li>
+                        <li class="{{ Request::is('superadmin/managers*') ? 'active' : '' }}">
+                            <a href="{{ route('super_admin.managers.list', $routeParams) }}">Deployment Managers</a>
+                        </li>
+                        <li><a href="{{ route('super_admin.managers.pending', $routeParams) }}" class="{{ Request::is('superadmin/managers/pending') ? 'active' : '' }}">Manager Pending</a></li>
+                        <li><a href="{{ route('super_admin.managers.approved', $routeParams) }}" class="{{ Request::is('superadmin/managers/approved') ? 'active' : '' }}">Manager Approved</a></li>
+                        <li><a href="{{ route('super_admin.managers.suspended', $routeParams) }}" class="{{ Request::is('superadmin/managers/suspended') ? 'active' : '' }}">Manager Suspended</a></li>
                         <li><a href="{{ route('projects.index') }}" class="{{ Request::is('projects*') ? 'active' : '' }}">Project Management</a></li>
-                        <li><a href="{{ route('projects.index') }}#tracking" class="{{ Request::is('projects*') ? 'active' : '' }}">Project Tracking</a></li>
+                        <li><a href="{{ route('projects.index') }}#profitability" class="{{ Request::is('projects*') ? 'active' : '' }}">Project Profitability</a></li>
+                        <li><a href="{{ route('projects.index') }}#reputation-management" class="{{ Request::is('projects*') ? 'active' : '' }}">Reputation Management</a></li>
+                        <li><a href="{{ route('projects.index') }}#lead-management" class="{{ Request::is('projects*') ? 'active' : '' }}">Lead Management</a></li>
+                        <li><a href="{{ route('projects.index') }}#appointment-scheduling" class="{{ Request::is('projects*') ? 'active' : '' }}">Appointment Scheduling</a></li>
+                        <li><a href="{{ route('projects.index') }}#contract-esignature" class="{{ Request::is('projects*') ? 'active' : '' }}">Contract Upload & E-Signature</a></li>
+                        <li><a href="{{ route('projects.index') }}#proposals" class="{{ Request::is('projects*') ? 'active' : '' }}">Proposals</a></li>
+                        <li><a href="{{ route('projects.index') }}#ai-anomaly-detection" class="{{ Request::is('projects*') ? 'active' : '' }}">AI Anomaly Detection</a></li>
+                        <li><a href="{{ route('projects.index') }}#project-management-ai" class="{{ Request::is('projects*') ? 'active' : '' }}">Project Management AI</a></li>
                     </ul>
                 </li>
 
@@ -122,6 +135,7 @@
 
                 {{-- Payments --}}
                 <li><a href="{{ route('payments.index') }}"><i class="fe fe-credit-card"></i><span>Payments</span></a></li>
+                <li><a href="{{ route('payroll.index') }}"><i class="fe fe-dollar-sign"></i><span>Payroll</span></a></li>
 
                 @php
                     $planNameForTax = strtolower((string) (optional($user->company)->plan ?? 'basic'));
@@ -170,7 +184,14 @@
                 <li class="menu-title"><span>Management</span></li>
 
                 <li><a href="{{ route('projects.index') }}"><i class="fe fe-briefcase"></i><span>Project Management</span></a></li>
-                <li><a href="{{ route('projects.index') }}#tracking"><i class="fe fe-activity"></i><span>Project Tracking</span></a></li>
+                <li><a href="{{ route('projects.index') }}#profitability"><i class="fe fe-trending-up"></i><span>Project Profitability</span></a></li>
+                <li><a href="{{ route('projects.index') }}#reputation-management"><i class="fe fe-star"></i><span>Reputation Management</span></a></li>
+                <li><a href="{{ route('projects.index') }}#lead-management"><i class="fe fe-user-plus"></i><span>Lead Management</span></a></li>
+                <li><a href="{{ route('projects.index') }}#appointment-scheduling"><i class="fe fe-calendar"></i><span>Appointment Scheduling</span></a></li>
+                <li><a href="{{ route('projects.index') }}#contract-esignature"><i class="fe fe-file-text"></i><span>Contract Upload & E-Signature</span></a></li>
+                <li><a href="{{ route('projects.index') }}#proposals"><i class="fe fe-edit"></i><span>Proposals</span></a></li>
+                <li><a href="{{ route('projects.index') }}#ai-anomaly-detection"><i class="fe fe-cpu"></i><span>AI Anomaly Detection</span></a></li>
+                <li><a href="{{ route('projects.index') }}#project-management-ai"><i class="fe fe-zap"></i><span>Project Management AI</span></a></li>
 
                 {{-- Roles & Permission --}}
                 <li><a href="{{ route('roles.index') }}"><i class="fe fe-shield"></i><span>Roles & Permission</span></a></li>
@@ -411,7 +432,14 @@
                 <li class="menu-title"><span>Management</span></li>
 
                 <li><a href="{{ route('projects.index') }}"><i class="fe fe-briefcase"></i><span>Project Management</span></a></li>
-                <li><a href="{{ route('projects.index') }}#tracking"><i class="fe fe-activity"></i><span>Project Tracking</span></a></li>
+                <li><a href="{{ route('projects.index') }}#profitability"><i class="fe fe-trending-up"></i><span>Project Profitability</span></a></li>
+                <li><a href="{{ route('projects.index') }}#reputation-management"><i class="fe fe-star"></i><span>Reputation Management</span></a></li>
+                <li><a href="{{ route('projects.index') }}#lead-management"><i class="fe fe-user-plus"></i><span>Lead Management</span></a></li>
+                <li><a href="{{ route('projects.index') }}#appointment-scheduling"><i class="fe fe-calendar"></i><span>Appointment Scheduling</span></a></li>
+                <li><a href="{{ route('projects.index') }}#contract-esignature"><i class="fe fe-file-text"></i><span>Contract Upload & E-Signature</span></a></li>
+                <li><a href="{{ route('projects.index') }}#proposals"><i class="fe fe-edit"></i><span>Proposals</span></a></li>
+                <li><a href="{{ route('projects.index') }}#ai-anomaly-detection"><i class="fe fe-cpu"></i><span>AI Anomaly Detection</span></a></li>
+                <li><a href="{{ route('projects.index') }}#project-management-ai"><i class="fe fe-zap"></i><span>Project Management AI</span></a></li>
 
                 {{-- Roles & Permission --}}
                 <li><a href="{{ route('roles.index') }}"><i class="fe fe-shield"></i><span>Roles & Permission</span></a></li>

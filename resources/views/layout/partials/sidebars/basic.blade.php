@@ -162,6 +162,41 @@
             <span class="badge bg-warning">Enterprise</span>
         </a>
     </li>
+    <li>
+        <a href="javascript:void(0);" onclick="showUpgradeModal('Professional', 'Reputation Management')">
+            <i class="fe fe-lock"></i>
+            <span>Reputation Management</span>
+            <span class="badge bg-info">Pro</span>
+        </a>
+    </li>
+    <li>
+        <a href="javascript:void(0);" onclick="showUpgradeModal('Professional', 'Lead Management')">
+            <i class="fe fe-lock"></i>
+            <span>Lead Management</span>
+            <span class="badge bg-info">Pro</span>
+        </a>
+    </li>
+    <li>
+        <a href="javascript:void(0);" onclick="showUpgradeModal('Professional', 'Appointment Scheduling')">
+            <i class="fe fe-lock"></i>
+            <span>Appointment Scheduling</span>
+            <span class="badge bg-info">Pro</span>
+        </a>
+    </li>
+    <li>
+        <a href="javascript:void(0);" onclick="showUpgradeModal('Enterprise', 'Contract Upload & E-Signature')">
+            <i class="fe fe-lock"></i>
+            <span>Contract Upload & E-Signature</span>
+            <span class="badge bg-warning">Enterprise</span>
+        </a>
+    </li>
+    <li>
+        <a href="javascript:void(0);" onclick="showUpgradeModal('Enterprise', 'AI-Powered Anomaly Detection')">
+            <i class="fe fe-lock"></i>
+            <span>AI Anomaly Detection</span>
+            <span class="badge bg-warning">Enterprise</span>
+        </a>
+    </li>
 
     <li class="menu-title"><span>Settings</span></li>
     

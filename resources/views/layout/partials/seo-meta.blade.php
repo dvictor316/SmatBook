@@ -1,5 +1,5 @@
 @php
-    $siteName = config('app.name', 'Smatprobook');
+    $siteName = config('app.name', 'SmartProbook');
 
     // User requested strict browser title branding.
     $resolvedTitle = $siteName;
@@ -15,7 +15,7 @@
     }
 
     $resolvedType = trim((string) ($seoType ?? 'website'));
-    $resolvedImage = trim((string) ($seoImage ?? asset('assets/img/logo-placeholder.svg')));
+    $resolvedImage = trim((string) ($seoImage ?? asset('assets/img/logos.png')));
     $resolvedUrl = url()->current();
 
     $resolvedNoIndex = (bool) ($seoNoIndex ?? false);
@@ -26,7 +26,7 @@
         '@type' => 'Organization',
         'name' => $siteName,
         'url' => config('app.url'),
-        'logo' => asset('assets/img/logo-placeholder.svg'),
+        'logo' => asset('assets/img/logos.png'),
         'sameAs' => [],
     ];
 
@@ -61,6 +61,8 @@
 <meta name="twitter:title" content="{{ $resolvedTitle }}">
 <meta name="twitter:description" content="{{ $resolvedDescription }}">
 <meta name="twitter:image" content="{{ $resolvedImage }}">
+<link rel="icon" type="image/png" href="{{ asset('assets/img/logos.png') }}">
+<link rel="shortcut icon" href="{{ asset('assets/img/logos.png') }}">
 
 <script type="application/ld+json">{!! json_encode($organizationJsonLd, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE) !!}</script>
 <script type="application/ld+json">{!! json_encode($websiteJsonLd, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE) !!}</script>

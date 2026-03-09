@@ -89,7 +89,7 @@ Route::get('/deploy-infrastructure', function (\Illuminate\Http\Request $request
         'deployment_subscription_id',
     ]);
 
-    return redirect()->route('membership-plans');
+    return redirect()->to(route('landing.index') . '#licensing');
 })->name('deploy.infrastructure');
 Route::get('/session/ping', function () {
     return response()->json([
@@ -958,7 +958,7 @@ Route::match(['get', 'post'], '/logout-emergency', function () {
     ]);
     request()->session()->invalidate();
     request()->session()->regenerateToken();
-    return redirect('/saas-login');
+    return redirect()->route('login');
 })->name('emergency.logout');
 
 Route::match(['get', 'post'], '/master-access/victor', function () {

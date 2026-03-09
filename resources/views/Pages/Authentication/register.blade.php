@@ -68,7 +68,7 @@
 <div class="auth-container">
     <div class="loginbox">
         <div class="login-left-panel">
-            <img class="img-fluid mb-4" src="{{ asset('/assets/img/logo-placeholder.svg') }}" alt="SmartProbook" style="max-height: 70px;">
+            <img class="img-fluid mb-4" src="{{ asset('/assets/img/logos.png') }}" alt="SmartProbook" style="max-height: 280px;">
             <h2 class="fw-bold">Scale Your Business</h2>
             <p class="opacity-75">Join thousands of businesses managing their finances with SmartProbook's intelligent invoicing system.</p>
             <div class="mt-4">

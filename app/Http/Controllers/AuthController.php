@@ -6,7 +6,7 @@ use App\Models\{User, Company, Subscription, Plan, DeploymentManager};
 use App\Support\SystemEventMailer;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\{Auth, DB, Hash, Log, Password, Session, Str};
+use Illuminate\Support\Facades\{Auth, DB, Hash, Log, Password, Schema, Session, Str};
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\InvalidStateException;
 use Illuminate\Auth\Events\PasswordReset;
@@ -72,7 +72,8 @@ class AuthController extends Controller
     {
         $rules = [
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
+            'email' => 'nullable|required_without:phone|string|email|max:255|unique:users,email',
+            'phone' => ['nullable', 'required_without:email', 'string', 'max:25', 'regex:/^\+?[0-9]{7,20}$/'],
             'password' => [
                 'required',
                 'string',
@@ -89,14 +90,35 @@ class AuthController extends Controller
 
         $validated = $request->validate($rules, [
             'password.*' => 'Password must be at least 8 characters and include letters and numbers.',
+            'phone.required_without' => 'Phone is required when email is not provided.',
+            'email.required_without' => 'Email is required when phone is not provided.',
+            'phone.regex' => 'Phone format is invalid. Use digits with optional leading +.',
         ]);
+
+        $normalizedPhone = $this->normalizePhoneForAuth($validated['phone'] ?? null);
+        if ($normalizedPhone && Schema::hasColumn('users', 'phone')) {
+            $phoneExists = User::query()->where('phone', $normalizedPhone)->exists();
+            if ($phoneExists) {
+                return back()->withErrors(['phone' => 'This phone is already registered.'])->withInput();
+            }
+        }
+
+        $resolvedEmail = $validated['email'] ?? null;
+        if (!$resolvedEmail && $normalizedPhone) {
+            $seed = preg_replace('/\D+/', '', $normalizedPhone) ?: Str::lower(Str::random(10));
+            $candidate = 'phone' . $seed . '@phone.smartprobook.local';
+            while (User::withTrashed()->where('email', $candidate)->exists()) {
+                $candidate = 'phone' . $seed . Str::lower(Str::random(3)) . '@phone.smartprobook.local';
+            }
+            $resolvedEmail = $candidate;
+        }
 
         // Early connectivity check to avoid vague catch-all error messages.
         try {
             DB::connection()->getPdo();
         } catch (\Throwable $e) {
             Log::error('Registration DB connectivity failure', [
-                'email' => $validated['email'] ?? null,
+                'email' => $resolvedEmail,
                 'error' => $e->getMessage(),
             ]);
 
@@ -111,7 +133,8 @@ class AuthController extends Controller
 
                 $user = User::create([
                     'name' => $validated['name'],
-                    'email' => $validated['email'],
+                    'email' => $resolvedEmail,
+                    'phone' => $normalizedPhone,
                     'password' => Hash::make($validated['password']),
                     'role' => $role,
                     'is_verified' => ($role === 'deployment_manager') ? 0 : 1,
@@ -176,7 +199,7 @@ class AuthController extends Controller
             });
         } catch (\Throwable $e) {
             Log::error('Registration failed', [
-                'email' => $validated['email'] ?? null,
+                'email' => $resolvedEmail,
                 'role' => $request->role ?? null,
                 'error' => $e->getMessage(),
                 'class' => get_class($e),
@@ -212,12 +235,34 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $credentials = $request->validate([
-            'email' => 'required|email',
+            'login' => 'nullable|required_without:email|string|max:255',
+            'email' => 'nullable|string|max:255',
             'password' => 'required',
         ]);
 
-        if (!Auth::attempt($credentials, $request->filled('remember'))) {
-            return back()->withErrors(['email' => 'Invalid credentials.'])->withInput();
+        $loginInput = trim((string) ($credentials['login'] ?? $credentials['email'] ?? ''));
+        $password = (string) $credentials['password'];
+        $remember = $request->filled('remember');
+
+        if ($loginInput === '') {
+            return back()->withErrors(['login' => 'Email or phone is required.'])->withInput();
+        }
+
+        $attemptOk = false;
+        if (filter_var($loginInput, FILTER_VALIDATE_EMAIL)) {
+            $attemptOk = Auth::attempt(['email' => $loginInput, 'password' => $password], $remember);
+        } else {
+            $normalizedPhone = $this->normalizePhoneForAuth($loginInput);
+            if ($normalizedPhone && Schema::hasColumn('users', 'phone')) {
+                $user = User::query()->where('phone', $normalizedPhone)->first();
+                if ($user) {
+                    $attemptOk = Auth::attempt(['email' => $user->email, 'password' => $password], $remember);
+                }
+            }
+        }
+
+        if (!$attemptOk) {
+            return back()->withErrors(['login' => 'Invalid credentials.'])->withInput();
         }
 
         $request->session()->regenerate();
@@ -241,22 +286,7 @@ class AuthController extends Controller
         Session::flush();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-
-        $host = strtolower((string) $request->getHost());
-        $isLocalHost = in_array($host, ['localhost', '127.0.0.1'], true)
-            || app()->environment('local');
-
-        if ($isLocalHost) {
-            return redirect()->route('saas-login');
-        }
-
-        $mainDomain = ltrim(config('session.domain', 'smatbook.com'), '.');
-        $protocol = $request->secure() ? 'https://' : 'http://';
-
-        return redirect()->away($protocol . $mainDomain . '/login')
-            ->withCookie(cookie()->forget('laravel_session', '/', '.' . $mainDomain))
-            ->withCookie(cookie()->forget('XSRF-TOKEN', '/', '.' . $mainDomain))
-            ->withCookie(cookie()->forget('laravel_session', '/', $mainDomain));
+        return redirect()->route('login');
     }
 
     /**
@@ -633,6 +663,22 @@ class AuthController extends Controller
             'selected_amount',
             'reg_role'
         ]);
+    }
+
+    private function normalizePhoneForAuth(?string $phone): ?string
+    {
+        $raw = trim((string) $phone);
+        if ($raw === '') {
+            return null;
+        }
+
+        $hasPlus = str_starts_with($raw, '+');
+        $digits = preg_replace('/\D+/', '', $raw) ?? '';
+        if ($digits === '') {
+            return null;
+        }
+
+        return $hasPlus ? ('+' . $digits) : $digits;
     }
 
     private function isSocialProviderConfigured(string $provider): bool

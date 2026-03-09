@@ -3,7 +3,7 @@
 @section('content')
     <div class="receipt-pay-mail">
         <div class="company-logo">
-            <img src="{{ URL::asset('/assets/img/logo.png') }}" alt="Logo">
+            <img src="{{ URL::asset('/assets/img/logos.png') }}" alt="Logo">
         </div>
         <ul>
             <li><span>Hi Company Name,</span></li>

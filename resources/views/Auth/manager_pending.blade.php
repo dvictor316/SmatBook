@@ -38,7 +38,7 @@
         <div class="row justify-content-center">
             <div class="col-md-8 col-lg-5">
                 <div class="text-center mb-4">
-                    <img src="{{ asset('assets/img/logo-placeholder.svg') }}" alt="Logo" style="max-width: 180px;">
+                    <img src="{{ asset('assets/img/logos.png') }}" alt="Logo" style="max-width: 360px;">
                 </div>
 
                 <div class="card shadow-lg border-0">

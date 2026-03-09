@@ -18,29 +18,13 @@
     }
 
     $defaultAvatar    = asset('assets/img/profiles/avatar-07.jpg');
-    $profileImagePath = $defaultAvatar;
-
-    if ($user && $user->profile_photo) {
-        if (filter_var($user->profile_photo, FILTER_VALIDATE_URL)) {
-            $profileImagePath = $user->profile_photo;
-        } else {
-            $storagePath      = 'storage/' . $user->profile_photo;
-            $profileImagePath = file_exists(public_path($storagePath))
-                ? asset($storagePath)
-                : $defaultAvatar;
-        }
-    }
+    $profileImagePath = $user?->avatar_url ?: $defaultAvatar;
 
     $currentSubdomain = request()->route('subdomain')
         ?? optional($user?->company)->subdomain
         ?? 'admin';
     $routeParams = ['subdomain' => $currentSubdomain];
-    $headerLogoPath = \Illuminate\Support\Facades\Cache::remember(
-        'ui:header:site_logo',
-        now()->addMinutes(5),
-        fn () => \App\Models\Setting::where('key', 'site_logo')->value('value')
-    );
-    $headerLogoUrl = $headerLogoPath ? asset($headerLogoPath) : asset('assets/img/logo-placeholder.svg');
+    $headerLogoUrl = asset('assets/img/logos.png');
 @endphp
 
 <style>
@@ -53,7 +37,7 @@
         padding: 0 20px;
         background: #fff;
         border-bottom: 1px solid #e2e8f0;
-        height: 70px;
+        height: 76px;
         position: sticky;
         top: 0;
         z-index: 1040;
@@ -67,9 +51,19 @@
         width: 270px;
         flex-shrink: 0;
         order: 1;
+        gap: 8px;
     }
 
-    .header-logo img { height: 36px; width: auto; }
+    .header-logo img { height: 56px; width: auto; }
+    .spb-wordmark {
+        font-size: 1.2rem;
+        font-weight: 800;
+        letter-spacing: -0.3px;
+        line-height: 1;
+        color: #0b2a63;
+        white-space: nowrap;
+    }
+    .spb-wordmark .book { color: #dc2626; }
 
     /* ── Mobile Hamburger ── */
     #mobile_btn {
@@ -384,6 +378,20 @@
 
     /* Desktop collapsed state */
     body.sidebar-collapsed .header-logo { width: 80px; }
+    body.sidebar-collapsed .spb-wordmark,
+    body.mini-sidebar .spb-wordmark { display: none; }
+
+    @media (max-width: 991px) {
+        .header-logo img { height: 44px; }
+        .spb-wordmark {
+            font-size: 0.88rem;
+            letter-spacing: -0.2px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .spb-wordmark { display: none; }
+    }
 
     @media print { .header { display: none !important; } }
 </style>
@@ -407,6 +415,7 @@
         <a href="{{ route('super_admin.dashboard', $routeParams) }}">
             <img src="{{ $headerLogoUrl }}" alt="Logo">
         </a>
+        <span class="spb-wordmark">SmartPro<span class="book">book</span></span>
     </div>
 
     {{-- 3. Desktop Toggle --}}
@@ -472,7 +481,7 @@
                         Mark all as read
                     </a>
                 </div>
-                <div style="max-height:300px;overflow-y:auto">
+                <div style="max-height: 300px;overflow-y:auto">
                     @forelse($notifications as $notification)
                         @php $data = json_decode($notification->data, true); @endphp
                         <a href="#" class="dropdown-item p-3 border-bottom">

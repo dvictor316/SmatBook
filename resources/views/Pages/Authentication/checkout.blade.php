@@ -114,7 +114,7 @@
 <div class="landscape-card" data-aos="zoom-in">
     {{-- Left Side: Summary Panel --}}
     <div class="summary-side">
-        <img src="{{ asset('assets/img/logo-placeholder.svg') }}" alt="Logo" height="35" class="mb-5 align-self-start">
+        <img src="{{ asset('assets/img/logos.png') }}" alt="Logo" height="70" class="mb-5 align-self-start">
         
         <span class="gold-label">Institutional Uplink</span>
         <h2 class="fw-bold mb-1 text-white">Finalize Setup</h2>
@@ -176,6 +176,19 @@
             </div>
             <i class="fas fa-arrow-right text-muted small"></i>
         </div>
+
+        <div class="mb-3 mt-5"><small class="text-muted fw-bold text-uppercase" style="font-size: 0.65rem; letter-spacing: 1px;">Global Node: Stripe</small></div>
+
+        <div class="payment-tile" onclick="payWithStripe()">
+            <div class="d-flex align-items-center">
+                <i class="fab fa-stripe-s me-3" style="font-size: 22px; color:#635bff;"></i>
+                <div>
+                    <span class="fw-bold d-block" style="color: var(--muji-blue-deep);">Stripe Checkout</span>
+                    <small class="text-muted">Global cards (real-time confirmation)</small>
+                </div>
+            </div>
+            <i class="fas fa-arrow-right text-muted small"></i>
+        </div>
         
         <p class="text-center text-muted mt-5 mb-0" style="font-size: 0.7rem;">
             Securely initializing connection for <strong>{{ auth()->user()->email }}</strong>.
@@ -230,6 +243,27 @@
                 description: "Uplink for {{ $subscription->plan_name ?? 'Institutional' }} Plan",
             },
         });
+    }
+
+    function payWithStripe() {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = "{{ route('saas.payment.process.checkout', $subscription->id) }}";
+
+        const token = document.createElement('input');
+        token.type = 'hidden';
+        token.name = '_token';
+        token.value = "{{ csrf_token() }}";
+        form.appendChild(token);
+
+        const gateway = document.createElement('input');
+        gateway.type = 'hidden';
+        gateway.name = 'gateway';
+        gateway.value = 'stripe';
+        form.appendChild(gateway);
+
+        document.body.appendChild(form);
+        form.submit();
     }
 </script>
 @endpush

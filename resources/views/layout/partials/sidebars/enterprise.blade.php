@@ -36,9 +36,9 @@
                     </a>
                 </li>
                 <li class="{{ Request::is('projects*') ? 'active' : '' }}">
-                    <a href="{{ route('projects.index') }}#tracking">
-                        <i class="fe fe-activity"></i>
-                        <span>Project Tracking</span>
+                    <a href="{{ route('projects.index') }}#profitability">
+                        <i class="fe fe-trending-up"></i>
+                        <span>Project Profitability</span>
                     </a>
                 </li>
 
@@ -149,6 +149,7 @@
 
                 {{-- Payments --}}
                 <li><a href="{{ route('payments.index') }}"><i class="fe fe-credit-card"></i><span>Payments</span></a></li>
+                <li><a href="{{ route('payroll.index') }}"><i class="fe fe-dollar-sign"></i><span>Payroll</span></a></li>
 
                 {{-- Taxation --}}
                 <li class="submenu {{ Request::is('compliance/tax-center*', 'compliance/tax-filings*') ? 'active subdrop' : '' }}">
@@ -198,6 +199,15 @@
 
                 {{-- Users --}}
                 <li><a href="{{ route('users.index') }}"><i class="fe fe-user"></i><span>Users</span></a></li>
+                <li><a href="{{ route('projects.index') }}"><i class="fe fe-briefcase"></i><span>Project Management</span></a></li>
+                <li><a href="{{ route('projects.index') }}#profitability"><i class="fe fe-trending-up"></i><span>Project Profitability</span></a></li>
+                <li><a href="{{ route('projects.index') }}#reputation-management"><i class="fe fe-star"></i><span>Reputation Management</span></a></li>
+                <li><a href="{{ route('projects.index') }}#lead-management"><i class="fe fe-user-plus"></i><span>Lead Management</span></a></li>
+                <li><a href="{{ route('projects.index') }}#appointment-scheduling"><i class="fe fe-calendar"></i><span>Appointment Scheduling</span></a></li>
+                <li><a href="{{ route('projects.index') }}#contract-esignature"><i class="fe fe-file-text"></i><span>Contract Upload & E-Signature</span></a></li>
+                <li><a href="{{ route('projects.index') }}#proposals"><i class="fe fe-edit"></i><span>Proposals</span></a></li>
+                <li><a href="{{ route('projects.index') }}#ai-anomaly-detection"><i class="fe fe-cpu"></i><span>AI Anomaly Detection</span></a></li>
+                <li><a href="{{ route('projects.index') }}#project-management-ai"><i class="fe fe-zap"></i><span>Project Management AI</span></a></li>
 
                 {{-- Roles & Permission --}}
                 <li><a href="{{ route('roles.index') }}"><i class="fe fe-shield"></i><span>Roles & Permission</span></a></li>

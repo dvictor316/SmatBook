@@ -171,6 +171,30 @@
         padding: 8px 10px;
     }
 
+    .gateway-pill.gateway-stripe {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        letter-spacing: .2px;
+        color: #4338ca;
+        border-color: #c7d2fe;
+        background: linear-gradient(180deg, #eef2ff 0%, #ffffff 100%);
+    }
+
+    .gateway-pill.gateway-paystack {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        letter-spacing: .2px;
+        color: #0f766e;
+        border-color: #99f6e4;
+        background: linear-gradient(180deg, #ecfeff 0%, #ffffff 100%);
+    }
+
+    .gateway-pill.gateway-flutterwave {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        letter-spacing: .2px;
+        color: #b45309;
+        border-color: #fde68a;
+        background: linear-gradient(180deg, #fffbeb 0%, #ffffff 100%);
+    }
+
     .gateway-option input:checked + .gateway-pill {
         border-color: var(--spa-primary);
         color: #1d4ed8;
@@ -241,7 +265,7 @@
 <div class="payment-shell">
     <div class="payment-card">
         <aside class="payment-summary">
-            <img src="{{ asset('assets/img/logo-placeholder.svg') }}" alt="SmartProbook" style="height: 34px; width: auto;">
+            <img src="{{ asset('assets/img/logos.png') }}" alt="SmartProbook" style="height: 68px; width: auto;">
             <h2>Workspace Activation</h2>
             <p>Complete your payment to activate your workspace instantly.</p>
 
@@ -291,15 +315,15 @@
                         <div class="gateway-grid">
                             <label class="gateway-option">
                                 <input type="radio" name="gateway_option" value="stripe" checked>
-                                <span class="gateway-pill">Stripe</span>
+                                <span class="gateway-pill gateway-stripe">Stripe</span>
                             </label>
                             <label class="gateway-option">
                                 <input type="radio" name="gateway_option" value="paystack">
-                                <span class="gateway-pill">Paystack</span>
+                                <span class="gateway-pill gateway-paystack">Paystack</span>
                             </label>
                             <label class="gateway-option">
                                 <input type="radio" name="gateway_option" value="flutterwave">
-                                <span class="gateway-pill">Flutterwave</span>
+                                <span class="gateway-pill gateway-flutterwave">Flutterwave</span>
                             </label>
                         </div>
                     </div>
@@ -406,6 +430,10 @@
                 });
 
                 const payload = await response.json();
+                if (payload.redirect_url) {
+                    window.location.href = payload.redirect_url;
+                    return;
+                }
                 if (!response.ok || !payload.client_secret) {
                     throw new Error(payload.message || 'Unable to initialize Stripe checkout.');
                 }

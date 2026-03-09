@@ -37,7 +37,7 @@
                     <div class="card-body">
                         <div class="row mb-4">
                             <div class="col-sm-6">
-                                <h2 class="text-primary" style="font-weight: 800;">SMAT-BOOK</h2>
+                                <h2 class="text-primary" style="font-weight: 800;">SmartProbook</h2>
                                 <ul class="list-unstyled mt-2">
                                     <li><strong>SmartProbook SaaS Platform</strong></li>
                                     <li>Onitsha, Anambra State, Nigeria</li>

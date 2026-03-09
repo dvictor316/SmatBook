@@ -26,7 +26,7 @@
         <table class="header-table">
             <tr>
                 <td>
-                    <h1 class="text-primary" style="margin:0;">SMAT-BOOK</h1>
+                    <h1 class="text-primary" style="margin:0;">SmartProbook</h1>
                     <p style="margin:5px 0 0 0;">SaaS Subscription Management</p>
                 </td>
                 <td class="text-right">

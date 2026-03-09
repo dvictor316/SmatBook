@@ -15,7 +15,7 @@
                     <div class="card-body p-5">
                         <div class="text-center mb-4">
                             <div class="avatar avatar-xxl mb-3">
-                                <img src="{{ URL::asset('/assets/img/logo.png') }}" alt="Logo" class="img-fluid">
+                                <img src="{{ URL::asset('/assets/img/logos.png') }}" alt="Logo" class="img-fluid">
                             </div>
                             <h3 class="fw-bold">Finalize Workspace</h3>
                             <p class="text-muted">Enter your business details to activate your account.</p>

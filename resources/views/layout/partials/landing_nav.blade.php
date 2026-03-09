@@ -1,10 +1,32 @@
-<nav style="position: fixed; width: 100%; top: 0; z-index: 9999; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(15px); border-bottom: 1px solid #e2e8f0; height: 90px; display: flex; align-items: center;">
+<nav style="position: fixed; width: 100%; top: 0; z-index: 9999; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(15px); border-bottom: 1px solid #e2e8f0; height: 68px; display: flex; align-items: center;">
+    <style>
+        .brand-img {
+            height: 56px !important;
+            width: auto;
+            object-fit: contain;
+        }
+        .spb-nav-wordmark {
+            font-size: 1.2rem;
+            font-weight: 800;
+            letter-spacing: -0.3px;
+            color: #0b2a63;
+            line-height: 1;
+            white-space: nowrap;
+        }
+        .spb-nav-wordmark .book { color: #dc2626; }
+        @media (max-width: 991px) {
+            .brand-img { height: 44px !important; }
+            .spb-nav-wordmark { font-size: .84rem; }
+        }
+        @media (max-width: 480px) {
+            .brand-img { height: 36px !important; }
+            .spb-nav-wordmark { display: none; }
+        }
+    </style>
     <div class="nav-container" style="max-width: 1400px; margin: 0 auto; width: 100%; padding: 0 40px; display: flex; justify-content: space-between; align-items: center;">
         <a href="{{ url('/') }}" class="logo-container d-flex align-items-center text-decoration-none">
-            <img src="{{ asset('assets/img/logo-placeholder.svg') }}" class="brand-img me-2" alt="SmartProbook" style="height: 40px; width: auto; object-fit: contain;"> 
-            <div class="logo-text" style="font-size: 1.6rem; font-weight: 800; color: #020617; letter-spacing: -1px;">
-                SMARTPRO<span style="color: #dc2626;">BOOK</span>
-            </div>
+            <img src="{{ asset('assets/img/logos.png') }}" class="brand-img me-2" alt="SmartProbook"> 
+            <span class="spb-nav-wordmark">SmartPro<span class="book">book</span></span>
         </a>
         
         <div class="hamburger d-lg-none" id="navTrigger" style="cursor: pointer; display: flex; flex-direction: column; gap: 5px;">

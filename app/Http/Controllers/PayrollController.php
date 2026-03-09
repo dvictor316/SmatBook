@@ -17,6 +17,51 @@ class PayrollController extends Controller
      */
     public function index()
     {
+        $hasEmployeesTable = Schema::hasTable('employees');
+        $hasPayrollsTable = Schema::hasTable('payrolls');
+        $hasPayrollRunsTable = Schema::hasTable('payroll_runs');
+        $schemaReady = $hasEmployeesTable && $hasPayrollsTable && $hasPayrollRunsTable;
+
+        if (!$schemaReady) {
+            $payrolls = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 15, 1, [
+                'path' => request()->url(),
+                'query' => request()->query(),
+            ]);
+
+            $totalStaff = 0;
+            $activeStaff = 0;
+            $monthlyPayroll = 0;
+            $payrollChange = 0;
+            $paidCount = 0;
+            $paidAmount = 0;
+            $pendingCount = 0;
+            $pendingAmount = 0;
+            $totalBasic = 0;
+            $totalAllowances = 0;
+            $totalDeductions = 0;
+            $netPayable = 0;
+            $deptBreakdown = [];
+            $recentRuns = collect();
+            $deductionSummary = [];
+            $cycleProgress = min(100, round((Carbon::now()->day / Carbon::now()->daysInMonth) * 100));
+
+            $missing = collect([
+                'employees' => $hasEmployeesTable,
+                'payrolls' => $hasPayrollsTable,
+                'payroll_runs' => $hasPayrollRunsTable,
+            ])->filter(fn ($exists) => !$exists)->keys()->implode(', ');
+
+            session()->flash('error', 'Payroll schema is incomplete. Missing table(s): ' . $missing . '. Run database migrations to enable Payroll fully.');
+
+            return view('payroll.index', compact(
+                'payrolls','totalStaff','activeStaff','monthlyPayroll','payrollChange',
+                'paidCount','paidAmount','pendingCount','pendingAmount',
+                'totalBasic','totalAllowances','totalDeductions','netPayable',
+                'deptBreakdown','recentRuns','deductionSummary','cycleProgress','schemaReady'
+            ));
+        }
+
+        $schemaReady = true;
         $businessId = $this->currentBusinessId();
         $currentMonth = Carbon::now()->startOfMonth();
 
@@ -121,7 +166,7 @@ class PayrollController extends Controller
             'payrolls','totalStaff','activeStaff','monthlyPayroll','payrollChange',
             'paidCount','paidAmount','pendingCount','pendingAmount',
             'totalBasic','totalAllowances','totalDeductions','netPayable',
-            'deptBreakdown','recentRuns','deductionSummary','cycleProgress'
+            'deptBreakdown','recentRuns','deductionSummary','cycleProgress','schemaReady'
         ));
     }
 

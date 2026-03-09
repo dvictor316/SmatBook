@@ -86,7 +86,7 @@
             {{-- Left Side: Branding --}}
             <div class="col-lg-6 d-none d-lg-block branding-side">
                 <div class="h-100 d-flex flex-column align-items-center justify-content-center text-center text-white">
-                    <img src="{{ asset('/assets/img/logo-placeholder.svg') }}" class="img-fluid mb-4" alt="Branding" style="max-height: 220px; filter: brightness(0) invert(1);">
+                    <img src="{{ asset('/assets/img/logos.png') }}" class="img-fluid mb-4" alt="Branding" style="max-height: 440px; filter: brightness(0) invert(1);">
                     <h2 class="fw-bold">Don't Worry!</h2>
                     <p class="opacity-75">It happens to everyone. Enter your details and we'll help you regain access to your SmartProbook workspace in seconds.</p>
                 </div>
@@ -95,7 +95,7 @@
             {{-- Right Side: Form --}}
             <div class="col-lg-6 p-4 p-md-5">
                 <div class="text-center mb-5">
-                    <img src="{{ asset('/assets/img/logo-placeholder.svg') }}" class="mb-4 d-lg-none" style="max-height: 40px;" alt="Logo">
+                    <img src="{{ asset('/assets/img/logos.png') }}" class="mb-4 d-lg-none" style="max-height: 80px;" alt="Logo">
                     <h3 class="fw-bold text-dark">Password Recovery</h3>
                     <p class="text-muted">Enter email to receive reset link</p>
                 </div>

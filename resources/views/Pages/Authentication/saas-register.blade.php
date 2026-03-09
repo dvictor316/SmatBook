@@ -109,7 +109,7 @@
         border-right: 1px solid var(--spa-border);
     }
 
-    .logo-img { height: 34px; width: auto; margin-bottom: 12px; }
+    .logo-img { height: 136px; width: auto; margin-bottom: 12px; }
 
     .step-badge {
         display: inline-block;
@@ -242,7 +242,7 @@
     <div class="smat-card">
         <div class="smat-aside">
             <div>
-                <img src="{{ asset('assets/img/logo-placeholder.svg') }}" alt="SmartProbook" class="logo-img">
+                <img src="{{ asset('assets/img/logos.png') }}" alt="SmartProbook" class="logo-img">
                 <br>
                 <span class="step-badge">Step 01: Enrollment</span>
                 <h2 class="fw-bold mt-4 mb-2" style="font-size: 1.5rem; color: #0f172a; line-height: 1.2;">
@@ -303,9 +303,15 @@
                 </div>
 
                 <div class="mb-3">
-                    <label class="label-caps">Email Identifier</label>
+                    <label class="label-caps">Email (or use phone below)</label>
                     <input type="email" name="email" class="form-control input-smat w-100" 
-                           placeholder="admin@terminal.com" value="{{ old('email') }}" required>
+                           placeholder="admin@terminal.com" value="{{ old('email') }}">
+                </div>
+
+                <div class="mb-3">
+                    <label class="label-caps">Phone (or use email above)</label>
+                    <input type="text" name="phone" class="form-control input-smat w-100" 
+                           placeholder="+2348012345678" value="{{ old('phone') }}">
                 </div>
 
                 <div class="mb-3">

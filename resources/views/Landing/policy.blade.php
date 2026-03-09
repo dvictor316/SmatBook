@@ -428,7 +428,7 @@
             <!-- Section 3 -->
             <div class="disclaimer-box">
                 <h4>⚠️ Section 3. Professional Disclaimer & Limitation of Liability</h4>
-                <p><strong>SMARTPROBOOK IS NOT A LICENSED ACCOUNTING FIRM, LAW FIRM, OR AUDITING ENTITY.</strong> SmartProbook is a financial management software tool designed to automate bookkeeping and reporting. Use of the Services does <em>not</em> create an accountant-client, attorney-client, or auditor-client relationship. SmartProbook employees are not qualified to provide professional tax, legal, or accounting advice.</p>
+                <p><strong>SmartProbook IS NOT A LICENSED ACCOUNTING FIRM, LAW FIRM, OR AUDITING ENTITY.</strong> SmartProbook is a financial management software tool designed to automate bookkeeping and reporting. Use of the Services does <em>not</em> create an accountant-client, attorney-client, or auditor-client relationship. SmartProbook employees are not qualified to provide professional tax, legal, or accounting advice.</p>
                 <p><strong>DISCLAIMER OF WARRANTIES:</strong> The Services are provided "AS-IS" and "AS-AVAILABLE." To the maximum extent permitted by Nigerian law, SmartProbook, its affiliates, officers, directors, and third-party providers disclaim all warranties, express or implied, including warranties of merchantability, fitness for a particular purpose, and non-infringement.</p>
                 <p><strong>LIMITATION OF LIABILITY:</strong> SmartProbook shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including but not limited to damages for loss of profits, goodwill, use, data, or other intangible losses arising from: (i) unauthorized access to or use of the Services; (ii) data corruption, security breaches, or loss of data; (iii) viruses, malware, spyware, or ransomware; (iv) third-party interference; or (v) any other cause beyond SmartProbook's reasonable control. <strong>Total liability shall not exceed fees paid in the preceding 12 months.</strong></p>
             </div>
@@ -512,7 +512,7 @@
                 <p><strong>Email:</strong> <a href="mailto:legal@smatbook.com">legal@smatbook.com</a></p>
                 <p><strong>Compliance:</strong> <a href="mailto:compliance@smatbook.com">compliance@smatbook.com</a></p>
                 <p><strong>Support:</strong> <a href="mailto:support@smatbook.com">support@smatbook.com</a></p>
-                <p><strong>Phone:</strong> <a href="tel:+234800728626226">+234 (0) 800 SMARTPROBOOK</a></p>
+                <p><strong>Phone:</strong> <a href="tel:+234800728626226">+234 (0) 800 SmartProbook</a></p>
             </div>
 
             <div class="info-box" style="margin-top: 50px;">

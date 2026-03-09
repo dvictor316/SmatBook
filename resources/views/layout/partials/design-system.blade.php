@@ -4,7 +4,7 @@
         --sb-sidebar-deploy-w: 270px;
         --sb-sidebar-collapsed: 80px;
         --sb-sidebar-icon-collapsed: 70px;
-        --sb-header-h: 70px;
+        --sb-header-h: 76px;
         --sb-bg: #f8fafc;
         --sb-surface: #ffffff;
         --sb-border: #e2e8f0;
@@ -21,7 +21,7 @@
     .sb-shell {
         margin-left: var(--sb-sidebar-w);
         width: calc(100% - var(--sb-sidebar-w));
-        padding: 110px 2rem 3rem;
+        padding: 84px 1.25rem 1.5rem;
         min-height: 100vh;
         background: var(--sb-bg);
         transition: margin-left 0.3s, width 0.3s;
@@ -36,7 +36,7 @@
         .sb-shell {
             margin-left: 0;
             width: 100%;
-            padding-top: 90px;
+            padding-top: 78px;
         }
     }
 

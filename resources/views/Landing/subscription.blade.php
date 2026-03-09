@@ -29,7 +29,7 @@
         nav {
             position: fixed; width: 100%; top: 0; z-index: 9999;
             background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(15px);
-            border-bottom: 1px solid #e2e8f0; height: 90px; display: flex; align-items: center;
+            border-bottom: 1px solid #e2e8f0; height: 68px; display: flex; align-items: center;
         }
         .nav-container { max-width: 1400px; margin: 0 auto; width: 100%; padding: 0 40px; display: flex; justify-content: space-between; align-items: center; }
         .logo-text { font-size: 1.6rem; font-weight: 800; color: var(--dark-navy); text-decoration: none; letter-spacing: -1px; }
@@ -38,9 +38,10 @@
         .nav-links a { text-decoration: none; color: var(--dark-navy); font-weight: 700; font-size: 0.85rem; text-transform: uppercase; transition: 0.3s; }
         .nav-links a:hover { color: var(--executive-red); }
         .nav-links a.active { color: var(--gold) !important; }
+        .brand-img { height: 52px; width: auto; }
 
         /* --- HERO CAROUSEL --- */
-        .hero-carousel { margin-top: 90px; }
+        .hero-carousel { margin-top: 68px; }
         .carousel-item { height: 45vh; min-height: 400px; background-color: var(--dark-navy); }
         .carousel-item img { object-fit: cover; height: 100%; width: 100%; opacity: 0.4; }
         .carousel-caption { bottom: 20%; text-align: left; max-width: 850px; left: 10%; z-index: 10; }
@@ -60,16 +61,16 @@
         .footer-link { color: #94a3b8; text-decoration: none; transition: 0.3s; display: block; margin-bottom: 12px; font-weight: 500; }
         .footer-link:hover { color: var(--gold); transform: translateX(5px); }
 
-        @media (max-width: 991px) { .nav-links { display: none; } .carousel-caption h1 { font-size: 2.5rem; } }
+        @media (max-width: 991px) { .nav-links { display: none; } .carousel-caption h1 { font-size: 2.5rem; } .brand-img { height: 48px; } }
+        @media (max-width: 480px) { .brand-img { height: 44px; } }
     </style>
 </head>
 <body>
 
 <nav>
     <div class="nav-container">
-        <a href="{{ url('/') }}" class="logo-text d-flex align-items-center text-decoration-none">
-            <img src="{{ asset('assets/img/smartprobook-wordmark.svg') }}" class="brand-img me-2" alt="SmartProbook" style="height: 40px;">
-            <div class="logo-text">SMAT<span>BOOK</span></div>
+        <a href="{{ url('/') }}" class="d-flex align-items-center text-decoration-none">
+            <img src="{{ asset('assets/img/logos.png') }}" class="brand-img me-2" alt="SmartProbook">
         </a>
         <ul class="nav-links" id="mainMenu">
             <li><a href="{{ url('/#home') }}">Home</a></li>
@@ -128,7 +129,7 @@
     <div class="container">
         <div class="row g-5">
             <div class="col-lg-4">
-                <a href="{{ url('/') }}" class="footer-logo">SMAT<span>BOOK</span></a>
+                <a href="{{ url('/') }}" class="footer-logo">SmartPro<span>book</span></a>
                 <p>Engineered for excellence. The premier financial intelligence ecosystem for modern African enterprises.</p>
             </div>
             <div class="col-lg-3 offset-lg-1">

@@ -45,21 +45,21 @@ return [
 
 'stripe' => [
     'model'  => App\Models\User::class,
-    'key'    => env('STRIPE_KEY', env('STRIPE_PUBLISHABLE_KEY')),
-    'secret' => env('STRIPE_SECRET', env('STRIPE_SECRET_KEY')),
+    'key'    => env('STRIPE_TEST_PUBLISHABLE_KEY', env('STRIPE_KEY', env('STRIPE_PUBLISHABLE_KEY'))),
+    'secret' => env('STRIPE_TEST_SECRET_KEY', env('STRIPE_SECRET', env('STRIPE_SECRET_KEY'))),
 ],
 
 'paystack' => [
-    'publicKey' => env('PAYSTACK_PUBLIC_KEY'),
-    'secretKey' => env('PAYSTACK_SECRET_KEY'),
-    'public_key' => env('PAYSTACK_PUBLIC_KEY'),
-    'secret_key' => env('PAYSTACK_SECRET_KEY'),
+    'publicKey' => env('PAYSTACK_TEST_PUBLIC_KEY', env('PAYSTACK_PUBLIC_KEY')),
+    'secretKey' => env('PAYSTACK_TEST_SECRET_KEY', env('PAYSTACK_SECRET_KEY')),
+    'public_key' => env('PAYSTACK_TEST_PUBLIC_KEY', env('PAYSTACK_PUBLIC_KEY')),
+    'secret_key' => env('PAYSTACK_TEST_SECRET_KEY', env('PAYSTACK_SECRET_KEY')),
     'paymentUrl' => env('PAYSTACK_PAYMENT_URL'),
 ],
 
 'flutterwave' => [
-    'public_key' => env('FLUTTERWAVE_PUBLIC_KEY'),
-    'secret_key' => env('FLUTTERWAVE_SECRET_KEY'),
+    'public_key' => env('FLUTTERWAVE_TEST_PUBLIC_KEY', env('FLUTTERWAVE_PUBLIC_KEY')),
+    'secret_key' => env('FLUTTERWAVE_TEST_SECRET_KEY', env('FLUTTERWAVE_SECRET_KEY')),
 ],
 
 'opay' => [

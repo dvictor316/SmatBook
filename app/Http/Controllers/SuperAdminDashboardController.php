@@ -21,7 +21,18 @@ class SuperAdminDashboardController extends Controller
     public function index()
     {
         $user = Auth::user();
-        Subscription::expireDueSubscriptions();
+        if (method_exists(Subscription::class, 'expireDueSubscriptions')) {
+            Subscription::expireDueSubscriptions();
+        } else {
+            Subscription::query()
+                ->whereRaw("LOWER(COALESCE(status, '')) IN ('active','trial')")
+                ->whereNotNull('end_date')
+                ->whereDate('end_date', '<', now()->toDateString())
+                ->update([
+                    'status' => 'Expired',
+                    'updated_at' => now(),
+                ]);
+        }
 
         // FIXED: More inclusive security check
         if (!$this->isSuperAdmin($user)) {

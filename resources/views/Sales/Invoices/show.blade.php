@@ -12,7 +12,7 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="invoice-logo mb-3">
-                                        <img src="{{ asset('assets/img/logo-placeholder.svg') }}" alt="logo" style="max-width: 150px;">
+                                        <img src="{{ asset('assets/img/logos.png') }}" alt="logo" style="max-width: 150px;">
                                     </div>
                                     <div class="invoice-head">
                                         <h2 class="fw-bold text-primary" style="color: #4b308b !important;">Invoice</h2>

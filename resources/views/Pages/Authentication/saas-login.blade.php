@@ -120,7 +120,7 @@
         border-right: 1px solid var(--spa-border);
     }
 
-    .logo-img { height: 34px; width: auto; margin-bottom: 8px; }
+    .logo-img { height: 68px; width: auto; margin-bottom: 8px; }
 
     .status-badge {
         display: inline-flex;
@@ -275,7 +275,7 @@
             margin: 20px auto;
         }
         .smat-aside, .smat-main { width: 100%; padding: 24px 20px; }
-        .logo-img { height: 44px; }
+        .logo-img { height: 88px; }
         /* Reset viewport for mobile scrolling */
         .smat-viewport { display: block; overflow-y: auto; }
     }
@@ -302,7 +302,7 @@
         <!-- Sidebar Branding -->
         <div class="smat-aside">
             <div>
-                <img src="{{ asset('/assets/img/logo-placeholder.svg') }}" alt="SmartProbook" class="logo-img">
+                <img src="{{ asset('/assets/img/logos.png') }}" alt="SmartProbook" class="logo-img">
                 <br>
                 <div class="status-badge"><span class="status-dot"></span> Secure Node Active</div>
                 <h2 class="fw-bold mt-4 mb-2" style="font-size: 1.6rem; color: #0f172a; line-height: 1.2;">Authorized<br>Login</h2>
@@ -342,9 +342,9 @@
             <form action="{{ route('saas-login.post') }}" method="POST">
                 @csrf
                 <div class="mb-3">
-                    <label class="label-caps">Operator Email</label>
-                    <input type="email" name="email" class="form-control input-smat w-100" 
-                           placeholder="name@institution.com" value="{{ old('email') }}" required autofocus>
+                    <label class="label-caps">Email or Phone</label>
+                    <input type="text" name="login" class="form-control input-smat w-100" 
+                           placeholder="name@institution.com or +2348012345678" value="{{ old('login', old('email')) }}" required autofocus>
                 </div>
 
                 <div class="mb-4">
