@@ -22,13 +22,13 @@
     :root {
         --spa-bg: #eff5ff;
         --spa-surface: rgba(255, 255, 255, 0.95);
-        --spa-aside: linear-gradient(135deg, #1565f5 0%, #1f8fff 52%, #21b7ef 100%);
+        --spa-aside: linear-gradient(135deg, #0f5eff 0%, #1788ff 48%, #14bdf4 100%);
         --spa-border: #e2e8f0;
         --spa-primary: #2563eb;
         --spa-primary-dark: #1d4ed8;
         --spa-text: #0f172a;
         --spa-muted: #64748b;
-        --spa-gold: #f4d06f;
+        --spa-gold: #ffe08a;
     }
 
     html, body {
@@ -46,9 +46,9 @@
         min-height: 100vh;
         padding: 20px 15px 40px;
         background:
-            radial-gradient(circle at top left, rgba(37, 99, 235, 0.14), transparent 28%),
-            radial-gradient(circle at bottom right, rgba(15, 23, 42, 0.08), transparent 30%),
-            linear-gradient(180deg, #f5f8ff 0%, #ecf3ff 100%);
+            radial-gradient(circle at top left, rgba(20, 189, 244, 0.24), transparent 26%),
+            radial-gradient(circle at bottom right, rgba(15, 94, 255, 0.18), transparent 28%),
+            linear-gradient(180deg, #f4f8ff 0%, #e9f3ff 100%);
         z-index: 900;
         /* Flexbox for vertical centering */
         display: flex;
@@ -87,7 +87,9 @@
     .bubble {
         position: absolute;
         border-radius: 50%;
-        background: radial-gradient(circle, rgba(37, 168, 223, 0.14) 0%, rgba(37, 168, 223, 0) 72%);
+        background:
+            radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 38%),
+            radial-gradient(circle, rgba(20, 189, 244, 0.22) 0%, rgba(20, 189, 244, 0) 72%);
         animation: floatBubble 25s infinite ease-in-out;
     }
 
@@ -226,7 +228,7 @@
     }
     .aside-point i { color: #ffffff; margin-top: 2px; }
     .aside-point strong { display: block; color: #ffffff; font-size: 0.88rem; margin-bottom: 2px; }
-    .aside-point span { color: rgba(255, 255, 255, 0.82); font-size: 0.78rem; line-height: 1.55; }
+    .aside-point span { color: rgba(255, 250, 240, 0.92); font-size: 0.78rem; line-height: 1.55; }
 
     .side-footer-info { font-size: 10px; font-weight: 700; color: rgba(255, 255, 255, 0.56); text-transform: uppercase; letter-spacing: 1px; }
 
@@ -327,8 +329,8 @@
 
     /* Action Buttons */
     .btn-smat-navy {
-        background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 52%, #3b82f6 100%);
-        color: #fff; border: none; padding: 14px;
+        background: linear-gradient(135deg, #0f5eff 0%, #1788ff 48%, #14bdf4 100%);
+        color: var(--spa-gold); border: none; padding: 14px;
         border-radius: 16px; width: 100%; font-weight: 800; font-size: 13px;
         transition: 0.3s; margin-top: 10px; text-transform: uppercase; letter-spacing: 1px;
         box-shadow: 0 16px 30px rgba(37,99,235,0.24);
@@ -370,17 +372,17 @@
         border-radius: 14px;
         padding: 12px 14px;
         text-decoration: none;
-        color: #ffffff;
+        color: var(--spa-gold);
         font-size: 11px;
         font-weight: 800;
-        background: linear-gradient(135deg, #1565f5 0%, #1f8fff 52%, #21b7ef 100%);
-        box-shadow: 0 12px 26px rgba(37, 99, 235, 0.18);
+        background: linear-gradient(135deg, #0f5eff 0%, #1788ff 48%, #14bdf4 100%);
+        box-shadow: 0 14px 30px rgba(23, 136, 255, 0.22);
         transition: all 0.2s ease;
         text-align: center;
     }
     .bottom-action-link:hover {
         border-color: #93c5fd;
-        color: #ffffff;
+        color: var(--spa-gold);
         transform: translateY(-2px);
     }
 
