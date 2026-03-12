@@ -44,6 +44,7 @@ class AuthController extends Controller
 
         session([
             'selected_plan_id' => $planData->id ?? null,
+            'selected_plan_key' => $selectedCatalog['key'],
             'selected_plan' => $finalName,
             'selected_cycle' => $finalCycle,
             'selected_amount' => $finalPrice,
@@ -53,6 +54,7 @@ class AuthController extends Controller
         return view('Pages.Authentication.saas-register', [
             'company' => $this->getTenantDetails(),
             'selectedPlan' => $finalName,
+            'selectedPlanKey' => $selectedCatalog['key'],
             'billing_cycle' => $finalCycle,
             'plan_id' => $planData->id ?? null,
             'amount' => $finalPrice,
@@ -158,12 +160,18 @@ class AuthController extends Controller
                     return redirect()->route('manager.verification.form');
                 }
 
-                $requestedPlan = strtolower((string) ($request->plan ?? session('selected_plan', 'pro')));
+                $requestedPlan = strtolower((string) ($request->plan ?? session('selected_plan_key', 'pro')));
                 $requestedCycle = strtolower((string) ($request->billing_cycle ?? session('selected_cycle', 'monthly')));
                 $catalog = $this->registrationPlanCatalog();
                 $catalogEntry = $catalog[$requestedPlan] ?? null;
                 $planId = $request->plan_id ?? session('selected_plan_id');
                 $plan = $planId ? Plan::find((int) $planId) : null;
+
+                if (!$catalogEntry && !empty(session('selected_plan'))) {
+                    $catalogEntry = collect($catalog)->first(function (array $entry) {
+                        return strcasecmp($entry['label'], (string) session('selected_plan')) === 0;
+                    });
+                }
 
                 if (!$plan && $catalogEntry) {
                     $plan = Plan::findByCatalogName($catalogEntry['label'], $requestedCycle);
@@ -694,6 +702,7 @@ class AuthController extends Controller
     {
         session()->forget([
             'selected_plan_id',
+            'selected_plan_key',
             'selected_plan',
             'selected_cycle',
             'selected_amount',
@@ -705,26 +714,32 @@ class AuthController extends Controller
     {
         return [
             'basic-solo' => [
+                'key' => 'basic-solo',
                 'label' => 'Basic Solo',
                 'prices' => ['monthly' => 3000, 'yearly' => 30000],
             ],
             'basic' => [
+                'key' => 'basic',
                 'label' => 'Basic',
                 'prices' => ['monthly' => 5500, 'yearly' => 55000],
             ],
             'pro-solo' => [
+                'key' => 'pro-solo',
                 'label' => 'Professional Solo',
                 'prices' => ['monthly' => 7000, 'yearly' => 70000],
             ],
             'pro' => [
+                'key' => 'pro',
                 'label' => 'Professional',
                 'prices' => ['monthly' => 19500, 'yearly' => 195000],
             ],
             'enterprise-solo' => [
+                'key' => 'enterprise-solo',
                 'label' => 'Enterprise Solo',
                 'prices' => ['monthly' => 15000, 'yearly' => 150000],
             ],
             'enterprise' => [
+                'key' => 'enterprise',
                 'label' => 'Enterprise',
                 'prices' => ['monthly' => 28500, 'yearly' => 285000],
             ],

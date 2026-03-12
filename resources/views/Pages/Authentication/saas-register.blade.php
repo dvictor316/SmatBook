@@ -109,7 +109,34 @@
         border-right: 1px solid var(--spa-border);
     }
 
-    .logo-img { height: 136px; width: auto; margin-bottom: 12px; }
+    .brand-lockup {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        max-width: 100%;
+        margin-bottom: 8px;
+    }
+    .logo-img { height: 60px; width: auto; flex: 0 0 auto; }
+    .brand-text {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+    .brand-title {
+        font-size: 1.15rem;
+        font-weight: 900;
+        line-height: 1;
+        color: #0f172a;
+        letter-spacing: -0.03em;
+    }
+    .brand-subtitle {
+        margin-top: 4px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--spa-muted);
+    }
 
     .step-badge {
         display: inline-block;
@@ -230,6 +257,9 @@
         .smat-card { flex-direction: column; width: min(100%, 620px); height: auto; margin: 0 auto; min-height: 0; }
         .smat-aside, .smat-main { width: 100%; padding: 18px 14px; }
         .smat-viewport { padding-bottom: 24px; }
+        .logo-img { height: 48px; }
+        .brand-title { font-size: 1rem; }
+        .brand-subtitle { font-size: 0.65rem; }
     }
 </style>
 
@@ -239,14 +269,19 @@
         <div class="bubble" style="width: 300px; height: 300px; bottom: -50px; right: -50px; animation-delay: -5s;"></div>
     </div>
 
-    <div class="smat-card">
-        <div class="smat-aside">
-            <div>
-                <img src="{{ asset('assets/img/logos.png') }}" alt="SmartProbook" class="logo-img">
-                <br>
-                <span class="step-badge">Step 01: Enrollment</span>
-                <h2 class="fw-bold mt-4 mb-2" style="font-size: 1.5rem; color: #0f172a; line-height: 1.2;">
-                    {{ $isManager ? 'Deployment' : 'Administrator' }}<br>Registration
+        <div class="smat-card">
+            <div class="smat-aside">
+                <div>
+                    <div class="brand-lockup">
+                        <img src="{{ asset('assets/img/logos.png') }}" alt="SmartProbook" class="logo-img">
+                        <div class="brand-text">
+                            <span class="brand-title">SmartProbook</span>
+                            <span class="brand-subtitle">Business Cloud Suite</span>
+                        </div>
+                    </div>
+                    <span class="step-badge">Step 01: Enrollment</span>
+                    <h2 class="fw-bold mt-4 mb-2" style="font-size: 1.5rem; color: #0f172a; line-height: 1.2;">
+                        {{ $isManager ? 'Deployment' : 'Administrator' }}<br>Registration
                 </h2>
                 <p class="small text-muted">
                     {{ $isManager ? 'Initialize your management node to deploy and monitor institutional clients.' : 'Begin your deployment by securing your institutional admin identity.' }}
@@ -292,9 +327,10 @@
             <form action="{{ route('saas-register.post') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <input type="hidden" name="role" value="{{ $isManager ? 'deployment_manager' : 'admin' }}">
-                <input type="hidden" name="plan" value="{{ strtolower($lookupPlan) }}">
+                <input type="hidden" name="plan" value="{{ $selectedPlanKey ?? session('selected_plan_key', strtolower($lookupPlan)) }}">
                 <input type="hidden" name="billing_cycle" value="{{ strtolower($finalCycle) }}">
                 <input type="hidden" name="amount" value="{{ $displayPrice }}">
+                <input type="hidden" name="plan_id" value="{{ $plan_id ?? session('selected_plan_id') }}">
 
                 <div class="mb-3">
                     <label class="label-caps">{{ $isManager ? 'Partner Name' : 'Full Name / Entity' }}</label>

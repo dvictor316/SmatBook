@@ -120,7 +120,34 @@
         border-right: 1px solid var(--spa-border);
     }
 
-    .logo-img { height: 68px; width: auto; margin-bottom: 8px; }
+    .brand-lockup {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        max-width: 100%;
+        margin-bottom: 10px;
+    }
+    .logo-img { height: 52px; width: auto; flex: 0 0 auto; }
+    .brand-text {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+    .brand-title {
+        font-size: 1.1rem;
+        font-weight: 900;
+        line-height: 1;
+        color: #0f172a;
+        letter-spacing: -0.03em;
+    }
+    .brand-subtitle {
+        margin-top: 4px;
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--spa-muted);
+    }
 
     .status-badge {
         display: inline-flex;
@@ -275,7 +302,9 @@
             margin: 20px auto;
         }
         .smat-aside, .smat-main { width: 100%; padding: 24px 20px; }
-        .logo-img { height: 88px; }
+        .logo-img { height: 44px; }
+        .brand-title { font-size: 1rem; }
+        .brand-subtitle { font-size: 0.62rem; }
         /* Reset viewport for mobile scrolling */
         .smat-viewport { display: block; overflow-y: auto; }
     }
@@ -302,8 +331,13 @@
         <!-- Sidebar Branding -->
         <div class="smat-aside">
             <div>
-                <img src="{{ asset('/assets/img/logos.png') }}" alt="SmartProbook" class="logo-img">
-                <br>
+                <div class="brand-lockup">
+                    <img src="{{ asset('/assets/img/logos.png') }}" alt="SmartProbook" class="logo-img">
+                    <div class="brand-text">
+                        <span class="brand-title">SmartProbook</span>
+                        <span class="brand-subtitle">Business Cloud Suite</span>
+                    </div>
+                </div>
                 <div class="status-badge"><span class="status-dot"></span> Secure Node Active</div>
                 <h2 class="fw-bold mt-4 mb-2" style="font-size: 1.6rem; color: #0f172a; line-height: 1.2;">Authorized<br>Login</h2>
                 <p class="small text-muted">Connect to your accounting nodes via secure encrypted uplink.</p>
