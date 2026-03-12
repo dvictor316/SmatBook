@@ -22,7 +22,7 @@
     :root {
         --spa-bg: #eff5ff;
         --spa-surface: rgba(255, 255, 255, 0.95);
-        --spa-aside: linear-gradient(135deg, #1f73ea 0%, #25a8df 100%);
+        --spa-aside: linear-gradient(135deg, #1565f5 0%, #1f8fff 52%, #21b7ef 100%);
         --spa-border: #e2e8f0;
         --spa-primary: #2563eb;
         --spa-primary-dark: #1d4ed8;
@@ -126,15 +126,31 @@
         background: radial-gradient(circle, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 72%);
         pointer-events: none;
     }
+    .smat-aside::after {
+        content: '';
+        position: absolute;
+        inset: 18px 18px auto auto;
+        width: 118px;
+        height: 118px;
+        border-radius: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        opacity: 0.8;
+        transform: rotate(10deg);
+        pointer-events: none;
+    }
 
     .logo-img { height: 52px; width: auto; flex: 0 0 auto; filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.18)); }
     .brand-lockup {
         display: flex;
         align-items: center;
-        gap: 8px;
-        margin-bottom: 6px;
+        gap: 12px;
+        margin-bottom: 8px;
         width: fit-content;
         max-width: 100%;
+        padding: 10px 14px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.97);
+        box-shadow: 0 18px 40px rgba(7, 27, 77, 0.18);
     }
     .brand-panel {
         display: flex;
@@ -146,14 +162,14 @@
         font-weight: 900;
         line-height: 1;
         white-space: nowrap;
-        color: #ffffff;
+        color: #0b2b6d;
     }
     .brand-tagline {
         margin-top: 4px;
         font-size: 0.7rem;
         letter-spacing: 0.14em;
         text-transform: uppercase;
-        color: rgba(255, 255, 255, 0.7);
+        color: #2563eb;
         font-weight: 700;
     }
 
@@ -180,7 +196,7 @@
     }
 
     .aside-copy {
-        color: rgba(255, 255, 255, 0.76);
+        color: rgba(255, 255, 255, 0.92);
         font-size: 0.94rem;
         line-height: 1.75;
         margin: 0;
@@ -216,7 +232,7 @@
     }
     .aside-point i { color: #ffffff; margin-top: 2px; }
     .aside-point strong { display: block; color: #ffffff; font-size: 0.88rem; margin-bottom: 2px; }
-    .aside-point span { color: rgba(255, 255, 255, 0.68); font-size: 0.78rem; line-height: 1.55; }
+    .aside-point span { color: rgba(255, 255, 255, 0.82); font-size: 0.78rem; line-height: 1.55; }
 
     .smat-main {
         width: 60%;
@@ -323,6 +339,31 @@
 
     .bottom-link { margin-top: 18px; text-align: center; font-size: 12px; color: #64748b; }
     .bottom-link a { color: var(--spa-primary); text-decoration: none; font-weight: 800; }
+    .bottom-actions {
+        margin-top: 14px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+    .bottom-action-link {
+        border: 1px solid #dbe5f2;
+        border-radius: 14px;
+        padding: 12px 14px;
+        text-decoration: none;
+        color: #ffffff !important;
+        font-size: 11px;
+        font-weight: 800;
+        background: linear-gradient(135deg, #1565f5 0%, #1f8fff 52%, #21b7ef 100%);
+        box-shadow: 0 12px 26px rgba(37, 99, 235, 0.18);
+        transition: all 0.2s ease;
+        text-align: center;
+        display: block;
+    }
+    .bottom-action-link:hover {
+        border-color: #93c5fd;
+        color: #ffffff !important;
+        transform: translateY(-2px);
+    }
 
     .divider {
         position: relative;
@@ -376,6 +417,7 @@
         .smat-card { border-radius: 20px; }
         .smat-aside, .smat-main { padding: 18px 14px; }
         .form-shell { padding: 18px 16px; border-radius: 18px; }
+        .bottom-actions { grid-template-columns: 1fr; }
     }
 </style>
 
@@ -533,12 +575,12 @@
                 @endif
                 
                 <div class="bottom-link">
-                    @if($isManager)
-                        Want a standard account? <a href="{{ route('membership-plans') }}">Join as Customer</a>
-                    @else
-                        Interested in Partnering? <a href="{{ route('saas-register', ['type' => 'manager']) }}">Become a Manager</a>
-                    @endif
-                    <br><br>
+                    Choose your onboarding path
+                    <div class="bottom-actions">
+                        <a href="{{ route('membership-plans') }}" class="bottom-action-link">Buy a Plan</a>
+                        <a href="{{ route('saas-register', ['type' => 'manager']) }}" class="bottom-action-link">Become a Partner</a>
+                    </div>
+                    <br>
                     Already verified? <a href="{{ route('saas-login', ['plan' => strtolower((string) $lookupPlan), 'cycle' => strtolower((string) $finalCycle)]) }}">Login to Dashboard</a>
                 </div>
             </form>

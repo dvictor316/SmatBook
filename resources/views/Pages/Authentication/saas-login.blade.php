@@ -22,7 +22,7 @@
     :root {
         --spa-bg: #eff5ff;
         --spa-surface: rgba(255, 255, 255, 0.95);
-        --spa-aside: linear-gradient(135deg, #1f73ea 0%, #25a8df 100%);
+        --spa-aside: linear-gradient(135deg, #1565f5 0%, #1f8fff 52%, #21b7ef 100%);
         --spa-border: #e2e8f0;
         --spa-primary: #2563eb;
         --spa-primary-dark: #1d4ed8;
@@ -137,15 +137,31 @@
         background: radial-gradient(circle, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 72%);
         pointer-events: none;
     }
+    .smat-aside::after {
+        content: '';
+        position: absolute;
+        inset: 18px 18px auto auto;
+        width: 118px;
+        height: 118px;
+        border-radius: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        opacity: 0.8;
+        transform: rotate(10deg);
+        pointer-events: none;
+    }
 
     .logo-img { height: 52px; width: auto; flex: 0 0 auto; filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.18)); }
     .brand-lockup {
         display: flex;
         align-items: center;
-        gap: 8px;
-        margin-bottom: 6px;
+        gap: 12px;
+        margin-bottom: 8px;
         width: fit-content;
         max-width: 100%;
+        padding: 10px 14px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.97);
+        box-shadow: 0 18px 40px rgba(7, 27, 77, 0.18);
     }
     .brand-panel {
         display: flex;
@@ -157,14 +173,14 @@
         font-weight: 900;
         line-height: 1;
         white-space: nowrap;
-        color: #ffffff;
+        color: #0b2b6d;
     }
     .brand-tagline {
         margin-top: 4px;
         font-size: 0.7rem;
         letter-spacing: 0.14em;
         text-transform: uppercase;
-        color: rgba(255, 255, 255, 0.7);
+        color: #2563eb;
         font-weight: 700;
     }
 
@@ -191,7 +207,7 @@
         letter-spacing: -0.03em;
     }
     .aside-copy {
-        color: rgba(255, 255, 255, 0.76);
+        color: rgba(255, 255, 255, 0.92);
         font-size: 0.94rem;
         line-height: 1.75;
         margin: 0;
@@ -209,7 +225,7 @@
     }
     .aside-point i { color: #ffffff; margin-top: 2px; }
     .aside-point strong { display: block; color: #ffffff; font-size: 0.88rem; margin-bottom: 2px; }
-    .aside-point span { color: rgba(255, 255, 255, 0.68); font-size: 0.78rem; line-height: 1.55; }
+    .aside-point span { color: rgba(255, 255, 255, 0.82); font-size: 0.78rem; line-height: 1.55; }
 
     .side-footer-info { font-size: 10px; font-weight: 700; color: rgba(255, 255, 255, 0.56); text-transform: uppercase; letter-spacing: 1px; }
 
@@ -350,19 +366,21 @@
     }
     .bottom-action-link {
         border: 1px solid #dbe5f2;
-        border-radius: 12px;
-        padding: 11px 12px;
+        border-radius: 14px;
+        padding: 12px 14px;
         text-decoration: none;
-        color: #334155;
+        color: #ffffff;
         font-size: 11px;
-        font-weight: 700;
-        background: #f8fbff;
+        font-weight: 800;
+        background: linear-gradient(135deg, #1565f5 0%, #1f8fff 52%, #21b7ef 100%);
+        box-shadow: 0 12px 26px rgba(37, 99, 235, 0.18);
         transition: all 0.2s ease;
+        text-align: center;
     }
     .bottom-action-link:hover {
-        border-color: #bfd6ff;
-        color: #0f172a;
-        transform: translateY(-1px);
+        border-color: #93c5fd;
+        color: #ffffff;
+        transform: translateY(-2px);
     }
 
     .auth-alert {
@@ -522,7 +540,7 @@
                 <div class="bottom-link">
                     Choose your onboarding path
                     <div class="bottom-actions">
-                        <a href="{{ route('deploy.infrastructure') }}" class="bottom-action-link">Deploy Infrastructure</a>
+                        <a href="{{ route('membership-plans') }}" class="bottom-action-link">Buy a Plan</a>
                         <a href="{{ route('saas-register', ['type' => 'manager']) }}" class="bottom-action-link">Become a Partner</a>
                     </div>
                 </div>
