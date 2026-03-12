@@ -256,7 +256,7 @@
                 <img src="{{ asset('assets/img/logos.png') }}" alt="SmartProbook Logo" style="height: 60px;">
                 <span style="font-weight: 800; color: var(--muji-blue-deep); font-size: 1.1rem; letter-spacing: -0.5px;">SmartProbook</span>
             </div>
-            <a href="/" style="text-decoration: none; color: #64748b; font-weight: 600; font-size: 0.85rem; transition: 0.3s;">
+            <a href="{{ url()->previous() !== url()->current() ? url()->previous() : url('/') }}" onclick="return exitSetup(event)" style="text-decoration: none; color: #64748b; font-weight: 600; font-size: 0.85rem; transition: 0.3s;">
                 <i class="fas fa-arrow-left me-2"></i> Exit Setup
             </a>
         </div>
@@ -492,9 +492,15 @@
         document.getElementById('period-enterprise-solo').innerText = smallText;
     }
 
+    let isNavigatingToPlan = false;
+
     function handleSubscription(plan) {
         if (plan === 'custom') {
             openCustomPlanModal();
+            return;
+        }
+
+        if (isNavigatingToPlan) {
             return;
         }
 
@@ -505,23 +511,35 @@
         // We provide both to be 100% safe.
         const cycleValue = isAnnual ? 'yearly' : 'monthly'; 
 
-        if (modal) modal.style.display = 'flex';
+        isNavigatingToPlan = true;
+
+        if (modal) {
+            modal.style.display = 'flex';
+        }
         document.getElementById('loadingText').innerText = `Syncing ${plan.toUpperCase()} Node...`;
 
-        setTimeout(() => {
-            /**
-             * REDIRECT LOGIC
-             * Ensures smatbook.com/register?plan=pro&cycle=yearly
-             * This hits SubscriptionController@showRegister
-             */
-            const queryParams = new URLSearchParams({ 
-                plan: plan, 
-                cycle: cycleValue,
-                billing_cycle: cycleValue // Double-mapped for compatibility
-            });
+        /**
+         * REDIRECT LOGIC
+         * Ensures smatbook.com/register?plan=pro&cycle=yearly
+         * This hits SubscriptionController@showRegister
+         */
+        const queryParams = new URLSearchParams({ 
+            plan: plan, 
+            cycle: cycleValue,
+            billing_cycle: cycleValue // Double-mapped for compatibility
+        });
 
-            window.location.href = `${registerUrl}?${queryParams.toString()}`;
-        }, 800);
+        window.location.assign(`${registerUrl}?${queryParams.toString()}`);
+    }
+
+    function exitSetup(event) {
+        if (window.history.length > 1 && document.referrer && document.referrer !== window.location.href) {
+            event.preventDefault();
+            window.history.back();
+            return false;
+        }
+
+        return true;
     }
 
     function openCustomPlanModal() {
