@@ -102,16 +102,16 @@
 
     /* 3. COMPACT PROFESSIONAL CARD */
     .smat-card {
-        background: var(--spa-surface);
+        background: linear-gradient(150deg, #0c1f8d 0%, #0a1980 38%, #143ac0 100%);
         width: min(100%, 940px);
         max-width: 940px;
         min-height: 0;
         height: auto;
         border-radius: 24px;
-        box-shadow: 0 30px 90px rgba(15, 23, 42, 0.12), 0 10px 24px rgba(37, 99, 235, 0.08);
+        box-shadow: 0 34px 95px rgba(2, 12, 66, 0.35), 0 14px 30px rgba(23, 136, 255, 0.14);
         display: flex;
         overflow: hidden;
-        border: 1px solid rgba(255, 255, 255, 0.8);
+        border: 1px solid rgba(255, 224, 138, 0.22);
         
         /* KEY FIX: This centers it vertically but allows scrolling if needed */
         margin: auto auto 24px;
@@ -237,10 +237,15 @@
     .smat-main {
         width: 62%;
         padding: 34px 34px 30px;
-        background: var(--spa-surface);
+        background:
+            radial-gradient(circle at top right, rgba(255, 255, 255, 0.1), transparent 28%),
+            radial-gradient(circle at bottom left, rgba(40, 195, 243, 0.12), transparent 34%),
+            linear-gradient(180deg, #122a9f 0%, #0b1d7c 100%);
         display: flex;
         flex-direction: column;
         justify-content: center;
+        color: #ffffff;
+        position: relative;
     }
     .panel-kicker {
         display: inline-flex;
@@ -249,9 +254,9 @@
         align-self: flex-start;
         padding: 6px 12px;
         border-radius: 999px;
-        background: #eff6ff;
-        color: var(--spa-primary);
-        border: 1px solid #dbeafe;
+        background: rgba(255, 224, 138, 0.12);
+        color: var(--spa-gold);
+        border: 1px solid rgba(255, 224, 138, 0.28);
         font-size: 0.72rem;
         font-weight: 800;
         letter-spacing: 0.08em;
@@ -263,21 +268,22 @@
         width: 7px;
         height: 7px;
         border-radius: 50%;
-        background: var(--spa-primary);
-        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+        background: var(--spa-gold);
+        box-shadow: 0 0 0 4px rgba(255, 224, 138, 0.12);
     }
     .form-shell {
-        border: 1px solid #e5edf8;
+        border: 1px solid rgba(255, 255, 255, 0.12);
         border-radius: 22px;
-        background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%);
         padding: 22px 22px 20px;
-        box-shadow: 0 18px 38px rgba(15, 23, 42, 0.05);
+        box-shadow: 0 18px 38px rgba(2, 12, 66, 0.2);
+        backdrop-filter: blur(12px);
     }
 
     .login-instruction-box {
-        border: 1px solid #dbeafe;
-        background: #eff6ff;
-        color: #1e3a8a;
+        border: 1px solid rgba(255, 224, 138, 0.24);
+        background: rgba(255, 224, 138, 0.1);
+        color: #fff8e8;
         border-radius: 14px;
         padding: 12px 14px;
         margin-bottom: 18px;
@@ -285,12 +291,12 @@
         line-height: 1.55;
     }
     .login-instruction-box strong {
-        color: var(--spa-primary-dark);
+        color: var(--spa-gold);
     }
 
     .uplink-badge {
-        font-size: 10px; background: #f0f7ff; color: #3b82f6; 
-        padding: 9px 12px; border-radius: 12px; border: 1px solid #dbeafe;
+        font-size: 10px; background: rgba(255, 255, 255, 0.12); color: #ffffff;
+        padding: 9px 12px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.18);
         margin-bottom: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px;
     }
 
@@ -308,7 +314,7 @@
     /* Input Styles */
     .label-caps {
         font-size: 11px; font-weight: 700; text-transform: uppercase;
-        color: #94a3b8; margin-bottom: 6px; display: block; letter-spacing: 0.5px;
+        color: rgba(255, 255, 255, 0.72); margin-bottom: 6px; display: block; letter-spacing: 0.6px;
     }
 
     .input-smat {
@@ -318,7 +324,7 @@
 
     .input-smat:focus {
         background: #fff; border-color: #3b82f6;
-        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.06); outline: none;
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.16); outline: none;
         transform: translateY(-1px);
     }
 
@@ -342,10 +348,10 @@
         box-shadow: 0 15px 30px rgba(37,99,235,0.28);
     }
 
-    .divider { position: relative; text-align: center; margin: 24px 0; border-top: 1px solid #f1f5f9; }
+    .divider { position: relative; text-align: center; margin: 24px 0; border-top: 1px solid rgba(255, 255, 255, 0.16); }
     .divider span { 
         position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-        background: #fff; padding: 0 15px; font-size: 10px; color: #cbd5e1; font-weight: 800;
+        background: #10258f; padding: 0 15px; font-size: 10px; color: rgba(255, 255, 255, 0.6); font-weight: 800;
     }
 
     .btn-social {
@@ -359,9 +365,9 @@
         margin-top: 25px;
         text-align: center;
         font-size: 13px;
-        color: #64748b;
+        color: rgba(255, 255, 255, 0.72);
     }
-    .bottom-link a { color: var(--spa-primary); text-decoration: none; font-weight: 800; }
+    .bottom-link a { color: var(--spa-gold); text-decoration: none; font-weight: 800; }
     .bottom-actions {
         margin-top: 14px;
         display: grid;
