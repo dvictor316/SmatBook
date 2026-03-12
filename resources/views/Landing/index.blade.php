@@ -344,10 +344,10 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 .cb-right.cb-6, .cb-right.cb-7 { left: calc(100% - 8px); }
 
 /* Equal vertical spacing from top to bottom */
-.cb-1, .cb-5 { top: 18.5%; }
-.cb-2, .cb-6 { top: 39.5%; }
-.cb-3, .cb-7 { top: 60.5%; }
-.cb-4, .cb-8 { top: 81.5%; }
+.cb-1, .cb-5 { top: 21%; }
+.cb-2, .cb-6 { top: 40%; }
+.cb-3, .cb-7 { top: 59%; }
+.cb-4, .cb-8 { top: 78%; }
 
 /* Unique Blink Animations */
 .cb-1 { animation: badgeBlinkA 8s ease-in-out infinite; }
