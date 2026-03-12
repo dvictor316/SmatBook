@@ -258,7 +258,7 @@
         padding: 6px 12px;
         border-radius: 999px;
         background: #eff6ff;
-        color: var(--spa-primary);
+        color: #173b92;
         border: 1px solid #dbeafe;
         font-size: 0.72rem;
         font-weight: 800;
@@ -271,7 +271,7 @@
         width: 7px;
         height: 7px;
         border-radius: 50%;
-        background: var(--spa-primary);
+        background: #173b92;
         box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
     }
     .form-title { font-weight: 800; color: #0f172a; font-size: 1.7rem; margin-bottom: 6px; letter-spacing: -0.03em; }
@@ -291,12 +291,12 @@
         border-radius: 14px;
         background: #f8fbff;
         border: 1px solid #e0ecff;
-        color: #1e3a8a;
+        color: #173b92;
         font-size: 0.82rem;
         line-height: 1.6;
         margin-bottom: 18px;
     }
-    .info-banner i { color: var(--spa-primary); }
+    .info-banner i { color: #173b92; }
     .field-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -305,7 +305,7 @@
 
     .label-caps {
         font-size: 11px; font-weight: 700; text-transform: uppercase;
-        color: #94a3b8; margin-bottom: 6px; display: block; letter-spacing: 0.6px;
+        color: #173b92; margin-bottom: 6px; display: block; letter-spacing: 0.6px;
     }
 
     .input-smat {

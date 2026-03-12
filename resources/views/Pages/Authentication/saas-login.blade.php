@@ -252,7 +252,7 @@
         padding: 6px 12px;
         border-radius: 999px;
         background: #eff6ff;
-        color: var(--spa-primary);
+        color: #173b92;
         border: 1px solid #dbeafe;
         font-size: 0.72rem;
         font-weight: 800;
@@ -265,7 +265,7 @@
         width: 7px;
         height: 7px;
         border-radius: 50%;
-        background: var(--spa-primary);
+        background: #173b92;
         box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
     }
     .form-shell {
@@ -279,7 +279,7 @@
     .login-instruction-box {
         border: 1px solid #dbeafe;
         background: #eff6ff;
-        color: #1e3a8a;
+        color: #173b92;
         border-radius: 14px;
         padding: 12px 14px;
         margin-bottom: 18px;
@@ -287,11 +287,11 @@
         line-height: 1.55;
     }
     .login-instruction-box strong {
-        color: var(--spa-primary-dark);
+        color: #0f2f80;
     }
 
     .uplink-badge {
-        font-size: 10px; background: #f0f7ff; color: #3b82f6;
+        font-size: 10px; background: #f0f7ff; color: #173b92;
         padding: 9px 12px; border-radius: 12px; border: 1px solid #dbeafe;
         margin-bottom: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px;
     }
@@ -310,7 +310,7 @@
     /* Input Styles */
     .label-caps {
         font-size: 11px; font-weight: 700; text-transform: uppercase;
-        color: #94a3b8; margin-bottom: 6px; display: block; letter-spacing: 0.6px;
+        color: #173b92; margin-bottom: 6px; display: block; letter-spacing: 0.6px;
     }
 
     .input-smat {
@@ -520,7 +520,7 @@
                 <div class="mb-4">
                     <div class="d-flex justify-content-between align-items-center mb-1">
                         <label class="label-caps m-0">Secure Passcode</label>
-                        <a href="{{ route('password.request', ['plan' => $persistedPlan, 'cycle' => $persistedCycle]) }}" class="text-decoration-none fw-bold" style="color: #2563eb; font-size: 10px; text-transform: uppercase;">Lost Key?</a>
+                        <a href="{{ route('password.request', ['plan' => $persistedPlan, 'cycle' => $persistedCycle]) }}" class="text-decoration-none fw-bold" style="color: #dc2626; font-size: 10px; text-transform: uppercase;">Lost Key?</a>
                     </div>
                     <div class="pass-container">
                         <input type="password" name="password" id="pass_input" class="form-control input-smat w-100" placeholder="••••••••" required>
