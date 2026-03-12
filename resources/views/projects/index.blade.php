@@ -87,6 +87,12 @@
         padding: 14px;
         background: #ffffff;
         height: 100%;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    .pm-module:hover {
+        transform: translateY(-2px);
+        border-color: #bfdbfe;
+        box-shadow: 0 16px 34px rgba(37, 99, 235, 0.08);
     }
 
     .pm-module h6 {
@@ -108,6 +114,47 @@
         letter-spacing: .4px;
         padding: 4px 8px;
         border-radius: 999px;
+    }
+    .pm-module-action {
+        min-width: 146px;
+        border-radius: 999px;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.2s ease;
+    }
+    .pm-module-action .pm-module-spinner {
+        display: none;
+    }
+    .pm-module-action.is-running {
+        background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+        border-color: #2563eb;
+        color: #ffffff;
+        box-shadow: 0 12px 26px rgba(37, 99, 235, 0.22);
+        transform: translateY(-1px);
+    }
+    .pm-module-action.is-running .pm-module-spinner {
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        border: 2px solid rgba(255, 255, 255, 0.35);
+        border-top-color: #ffffff;
+        animation: pmSpin 0.8s linear infinite;
+    }
+    .pm-module-action.is-running .pm-module-label {
+        opacity: 0.95;
+    }
+    .pm-module.is-focused {
+        border-color: #60a5fa;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14), 0 16px 32px rgba(15, 23, 42, 0.10);
+        transform: translateY(-2px);
+    }
+    @keyframes pmSpin {
+        to { transform: rotate(360deg); }
     }
 
     .pm-section-nav {
@@ -387,14 +434,15 @@
                             <p>{{ $module['desc'] }}</p>
                             @if($enabled)
                                 <button
-                                    class="btn btn-sm btn-outline-primary js-run-module"
+                                    class="btn btn-sm btn-outline-primary js-run-module pm-module-action"
                                     type="button"
                                     data-module-title="{{ $module['title'] }}"
                                     data-module-id="{{ $module['id'] }}"
                                     data-module-mode="{{ $module['mode'] }}"
                                     data-is-ai="{{ in_array($module['id'], ['ai-anomaly-detection', 'project-management-ai'], true) ? '1' : '0' }}"
                                 >
-                                    Run Module
+                                    <span class="pm-module-spinner" aria-hidden="true"></span>
+                                    <span class="pm-module-label">Run Module</span>
                                 </button>
                             @else
                                 <button class="btn btn-sm btn-outline-secondary" type="button" disabled>Upgrade Required</button>
@@ -534,32 +582,41 @@
 
         function setModuleFocus(moduleId) {
             document.querySelectorAll('.pm-module').forEach(function (card) {
-                card.classList.remove('ring', 'ring-primary', 'shadow');
-                card.style.transition = '';
-            });
+                card.classList.remove('is-focused');
+                });
 
             const target = document.getElementById(moduleId);
             if (!target) return null;
 
             target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            target.classList.add('shadow');
-            target.style.transition = 'box-shadow 0.3s ease, transform 0.3s ease';
-            target.style.boxShadow = '0 0 0 3px rgba(37,99,235,0.15), 0 16px 32px rgba(15,23,42,0.10)';
-            target.style.transform = 'translateY(-2px)';
+            target.classList.add('is-focused');
 
             setTimeout(function () {
-                target.style.boxShadow = '';
-                target.style.transform = '';
+                target.classList.remove('is-focused');
             }, 1800);
 
             return target;
         }
 
-        function launchModule(moduleId, moduleTitle, isAi, mode) {
+        function setButtonRunning(button, isRunning, nextLabel) {
+            if (!button) return;
+            const label = button.querySelector('.pm-module-label');
+            button.classList.toggle('is-running', isRunning);
+            button.disabled = !!isRunning;
+            if (label && nextLabel) {
+                label.textContent = nextLabel;
+            }
+        }
+
+        function launchModule(button, moduleId, moduleTitle, isAi, mode) {
             activeModuleTitle = moduleTitle || 'Module';
+            setButtonRunning(button, true, 'Launching...');
             setModuleFocus(moduleId);
 
             if (moduleId === 'project-management') {
+                setTimeout(function () {
+                    setButtonRunning(button, false, 'Run Module');
+                }, 700);
                 if (projectModal) {
                     projectModal.show();
                 }
@@ -575,11 +632,15 @@
                         taskSelect.focus();
                     }, 450);
                 }
+                setTimeout(function () {
+                    setButtonRunning(button, false, 'Run Module');
+                }, 900);
                 return;
             }
 
             if (mode === 'assistant' || isAi) {
                 if (!aiModal) {
+                    setButtonRunning(button, false, 'Run Module');
                     alert('Module assistant is currently unavailable. Please refresh the page and try again.');
                     return;
                 }
@@ -589,9 +650,16 @@
                     ? 'AI will guide you through this module and generate actionable output.'
                     : 'Use the guided assistant to launch this module, prepare actions, and move faster.';
                 promptInput.value = modulePrompts[moduleId] || ('Run ' + (moduleTitle || 'this module') + ' for my current projects and suggest the next actions.');
+                setTimeout(function () {
+                    setButtonRunning(button, false, 'Open Assistant');
+                }, 250);
                 aiModal.show();
                 return;
             }
+
+            setTimeout(function () {
+                setButtonRunning(button, false, 'Run Module');
+            }, 900);
         }
 
         if (runButtons.length) {
@@ -601,7 +669,7 @@
                     const id = btn.getAttribute('data-module-id') || '';
                     const mode = btn.getAttribute('data-module-mode') || 'assistant';
                     const isAi = btn.getAttribute('data-is-ai') === '1';
-                    launchModule(id, title, isAi, mode);
+                    launchModule(btn, id, title, isAi, mode);
                 });
             });
         }

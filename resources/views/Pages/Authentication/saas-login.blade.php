@@ -22,7 +22,7 @@
     :root {
         --spa-bg: #eff5ff;
         --spa-surface: rgba(255, 255, 255, 0.95);
-        --spa-aside: linear-gradient(145deg, #1d6dff 0%, #1f8fff 45%, #28c3f3 100%);
+        --spa-aside: linear-gradient(145deg, #2348c7 0%, #1b2fb5 38%, #0a148a 100%);
         --spa-border: #e2e8f0;
         --spa-primary: #2563eb;
         --spa-primary-dark: #1d4ed8;
