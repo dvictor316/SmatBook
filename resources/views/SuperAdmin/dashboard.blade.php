@@ -3,6 +3,9 @@
 @section('title', 'Super Admin Command Center')
 
 @section('content')
+@php
+    $recentUsers = $recentUsers ?? collect();
+@endphp
 
 {{-- 
     CUSTOM STYLES FOR SIDEBAR AWARENESS & LAYOUT FIXES
@@ -1714,7 +1717,7 @@
                                             <div class="col-sm-6">
                                                 <div class="summary-fill">
                                                     <div class="label">Recent Users</div>
-                                                    <div class="value">{{ number_format($recentUsers->count() ?? 0) }}</div>
+                                                    <div class="value">{{ number_format($recentUsers->count()) }}</div>
                                                 </div>
                                             </div>
                                             <div class="col-sm-6">
@@ -1879,7 +1882,7 @@
                                         <div class="dashboard-side-fill">
                                             <div class="summary-fill">
                                                 <div class="label">Recent Users</div>
-                                                <div class="value">{{ number_format($recentUsers->count() ?? 0) }}</div>
+                                                <div class="value">{{ number_format($recentUsers->count()) }}</div>
                                             </div>
                                             <div class="summary-fill">
                                                 <div class="label">Recent Companies</div>
