@@ -1,3 +1,6 @@
+
+
+
 @extends('layout.landing_nav')
 
 @section('content')
@@ -51,7 +54,8 @@ nav.sb-nav {
 nav.sb-nav.scrolled { background: rgba(255,255,255,0.98); box-shadow: 0 4px 24px rgba(0,35,71,0.10); }
 nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center; }
 .sb-brand { display: flex; align-items: center; gap: 8px; text-decoration: none; }
-.sb-brand img { height: 56px; }
+.sb-brand img { width: auto; display: block; }
+.sb-brand-logo { height: 68px; }
 .spb-nav-wordmark{
     font-size: 1.2rem;
     font-weight: 800;
@@ -100,6 +104,10 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     display: inline-flex; align-items: center; gap: 8px;
 }
 .btn-portal:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(17,112,236,0.35); color: #fff !important; }
+
+@media (max-width: 767.98px) {
+    .sb-brand-logo { height: 58px; }
+}
 
 /* ── BUTTONS ── */
 .btn-red {
@@ -196,7 +204,6 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     bottom: -100px; right: 0; z-index: 0; pointer-events: none;
 }
 
-/* FIX: tighter top padding, centred row */
 .hero-content {
     position: relative; z-index: 2; flex: 1;
     display: flex; align-items: flex-start; justify-content: center;
@@ -209,6 +216,13 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 .hero-left { flex: 0 0 auto; display: flex; align-items: center; justify-content: center; }
 
 /* THE CIRCLE */
+.hero-circle-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
 .hero-circle {
     width: clamp(380px, 42vw, 580px);
     height: clamp(380px, 42vw, 580px);
@@ -302,7 +316,60 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 .trust-dot { width: 6px; height: 6px; border-radius: 50%; background: #22c55e; animation: blink 1.5s infinite; }
 .trust-text { font-size: clamp(9px,0.72vw,11px); color: rgba(255,255,255,0.55); font-weight: 600; }
 
-/* FIX: phone zone — wider margin, bigger phone */
+/* ── FLOATING CIRCLE BADGES (FLANKING THE CIRCLE) ── */
+.circle-badge {
+    position: absolute;
+    background: rgba(255,255,255,0.97);
+    border-radius: 16px;
+    padding: 9px 12px;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.28);
+    display: flex; align-items: center; gap: 9px;
+    backdrop-filter: blur(8px);
+    z-index: 25;
+    white-space: nowrap;
+    width: clamp(142px, 10.8vw, 166px);
+    max-width: 166px;
+    pointer-events: none;
+    transform: translateY(-50%);
+}
+
+/* Left & Right Flanking Base Positioning */
+.cb-left { right: calc(100% - 34px); }
+.cb-right { left: calc(100% - 34px); }
+
+/* Stagger X positions so each badge hugs the circle edge */
+.cb-left.cb-1, .cb-left.cb-4 { right: calc(100% - 12px); }
+.cb-left.cb-2, .cb-left.cb-3 { right: calc(100% - 28px); }
+.cb-right.cb-5, .cb-right.cb-8 { left: calc(100% - 12px); }
+.cb-right.cb-6, .cb-right.cb-7 { left: calc(100% - 28px); }
+
+/* 4 badges per side, distributed on the circle edge */
+.cb-1, .cb-5 { top: 18%; }
+.cb-2, .cb-6 { top: 38%; }
+.cb-3, .cb-7 { top: 62%; }
+.cb-4, .cb-8 { top: 82%; }
+
+/* Unique Blink Animations */
+.cb-1 { animation: badgeBlinkA 8s ease-in-out infinite; }
+.cb-2 { animation: badgeBlinkB 8.8s ease-in-out infinite .4s; }
+.cb-3 { animation: badgeBlinkC 9.4s ease-in-out infinite .8s; }
+.cb-4 { animation: badgeBlinkD 10s ease-in-out infinite 1.2s; }
+.cb-5 { animation: badgeBlinkB 8.4s ease-in-out infinite .2s; }
+.cb-6 { animation: badgeBlinkC 9.1s ease-in-out infinite .6s; }
+.cb-7 { animation: badgeBlinkD 9.7s ease-in-out infinite 1s; }
+.cb-8 { animation: badgeBlinkA 10.3s ease-in-out infinite 1.4s; }
+
+@keyframes badgeBlinkA { 0%,18%,100%{opacity:1} 28%,38%{opacity:.15} 48%{opacity:1} }
+@keyframes badgeBlinkB { 0%,22%,100%{opacity:1} 32%,44%{opacity:.2} 56%{opacity:1} }
+@keyframes badgeBlinkC { 0%,16%,100%{opacity:1} 26%,40%{opacity:.18} 52%{opacity:1} }
+@keyframes badgeBlinkD { 0%,20%,100%{opacity:1} 30%,42%{opacity:.12} 54%{opacity:1} }
+
+.pb-icon { width: 24px; height: 24px; border-radius: 7px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.pb-main { font-family: var(--font-display); font-size: 10px; font-weight: 800; color: var(--navy); line-height: 1; }
+.pb-sub { font-size: 7px; color: var(--muted); font-weight: 600; margin-top: 2px; }
+
+
+/* phone zone */
 .hero-right {
     flex: 0 0 auto; margin-left: clamp(84px,8vw,150px);
     display: flex; align-items: center; justify-content: center; position: relative;
@@ -310,9 +377,8 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     z-index: 18;
 }
 
-/* FIX: wider phone */
 .hero-phone {
-    width: clamp(240px, 24vw, 320px); /* was 200-280, now 240-320 */
+    width: clamp(240px, 24vw, 320px);
     border-radius: 36px; background: #08091a;
     border: 2.5px solid rgba(255,255,255,0.14);
     box-shadow: 0 32px 80px rgba(0,0,0,0.70), 0 0 0 1px rgba(255,255,255,0.06),
@@ -391,33 +457,6 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 .pbn-item.active .pbn-label { color: var(--gold-bright); }
 .pbn-item.active svg { stroke: var(--gold-bright) !important; }
 
-/* floating badges */
-.phone-badge {
-    position: absolute; background: rgba(255,255,255,0.97); border-radius: 12px; padding: 9px 12px;
-    box-shadow: 0 12px 32px rgba(0,0,0,0.28); display: flex; align-items: center; gap: 9px;
-    backdrop-filter: blur(8px); z-index: 12; white-space: nowrap;
-    width: clamp(142px, 10.8vw, 166px);
-    max-width: 166px;
-    padding: 9px 10px;
-    border-radius: 16px;
-    pointer-events: none;
-}
-.phone-badge.pb-1 { top: 20%; left: -170px; animation: badgeBlinkA 8s ease-in-out infinite; }
-.phone-badge.pb-2 { top: 35%; left: -170px; animation: badgeBlinkB 8.8s ease-in-out infinite .4s; }
-.phone-badge.pb-3 { top: 50%; left: -170px; animation: badgeBlinkC 9.4s ease-in-out infinite .8s; }
-.phone-badge.pb-4 { top: 65%; left: -170px; animation: badgeBlinkD 10s ease-in-out infinite 1.2s; }
-.phone-badge.pb-5 { top: 20%; right: -142px; animation: badgeBlinkB 8.4s ease-in-out infinite .2s; }
-.phone-badge.pb-6 { top: 35%; right: -142px; animation: badgeBlinkC 9.1s ease-in-out infinite .6s; }
-.phone-badge.pb-7 { top: 50%; right: -142px; animation: badgeBlinkD 9.7s ease-in-out infinite 1s; }
-.phone-badge.pb-8 { top: 65%; right: -142px; animation: badgeBlinkA 10.3s ease-in-out infinite 1.4s; }
-@keyframes badgeBlinkA { 0%,18%,100%{opacity:1} 28%,38%{opacity:.15} 48%{opacity:1} }
-@keyframes badgeBlinkB { 0%,22%,100%{opacity:1} 32%,44%{opacity:.2} 56%{opacity:1} }
-@keyframes badgeBlinkC { 0%,16%,100%{opacity:1} 26%,40%{opacity:.18} 52%{opacity:1} }
-@keyframes badgeBlinkD { 0%,20%,100%{opacity:1} 30%,42%{opacity:.12} 54%{opacity:1} }
-.pb-icon { width: 24px; height: 24px; border-radius: 7px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.pb-main { font-family: var(--font-display); font-size: 10px; font-weight: 800; color: var(--navy); line-height: 1; }
-.pb-sub { font-size: 7px; color: var(--muted); font-weight: 600; margin-top: 2px; }
-
 /* FX ticker */
 .hero-ticker {
     position: relative; z-index: 3; background: rgba(0,0,0,0.42);
@@ -436,11 +475,8 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 .ticker-track:hover { animation-play-state: paused; }
 @keyframes tickerScroll { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
 
-/* ═══════════════════════════════════════════════════════════
-   FIX: BENEFIT BELT — gap above + no gold border on mobile
-═══════════════════════════════════════════════════════════ */
 .benefit-belt {
-    padding: 40px 18px 0; /* FIX: 40px top gap from ticker */
+    padding: 40px 18px 0;
     background: #fff;
 }
 .benefit-grid {
@@ -505,6 +541,213 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 .db-pill.paid    { background: #dcfce7; color: #15803d; }
 .db-pill.pending { background: #fef9c3; color: #854d0e; }
 .db-pill.due     { background: #fee2e2; color: #991b1b; }
+
+.gadget-stage {
+    position: relative;
+    background: linear-gradient(145deg, rgba(255,255,255,0.96), rgba(241,246,253,0.96));
+    border: 1px solid rgba(0,35,71,0.08);
+    border-radius: 30px;
+    padding: 24px 18px 18px;
+    box-shadow: 0 30px 70px rgba(0,35,71,0.14);
+    overflow: hidden;
+}
+.gadget-stage::before {
+    content: '';
+    position: absolute;
+    inset: 12px;
+    border: 1px solid rgba(0,35,71,0.06);
+    border-radius: 24px;
+    pointer-events: none;
+}
+.gadget-grid {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 1.3fr 0.95fr;
+    gap: 14px;
+}
+.gadget-stack {
+    display: grid;
+    gap: 14px;
+}
+.gadget-card {
+    background: rgba(255,255,255,0.97);
+    border: 1px solid rgba(214,224,236,0.95);
+    border-radius: 22px;
+    padding: 16px;
+    box-shadow: 0 16px 34px rgba(15,23,42,0.08);
+}
+.gadget-topline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+.gadget-title {
+    font-family: var(--font-display);
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--navy);
+}
+.gadget-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 11px;
+    border-radius: 999px;
+    background: rgba(0,35,71,0.06);
+    color: var(--navy);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+.gadget-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #22c55e;
+    box-shadow: 0 0 0 4px rgba(34,197,94,0.16);
+}
+.gadget-card.accent-gold {
+    background: linear-gradient(180deg, #fffdf7, #fff7e8);
+}
+.gadget-card.accent-mint {
+    background: linear-gradient(180deg, #f6fffb, #ebfbf4);
+}
+.gadget-card.accent-rose {
+    background: linear-gradient(180deg, #fff8f8, #fff0f1);
+}
+.gadget-card.accent-blue {
+    background: linear-gradient(180deg, #f8fbff, #edf4ff);
+}
+.gadget-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+.gadget-stat {
+    background: rgba(240,244,252,0.92);
+    border: 1px solid rgba(219,228,239,0.95);
+    border-radius: 16px;
+    padding: 12px;
+}
+.gadget-stat-label {
+    font-size: 9px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #718096;
+    margin-bottom: 6px;
+}
+.gadget-stat-value {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 800;
+    line-height: 1.05;
+    color: var(--navy);
+}
+.gadget-stat-meta {
+    margin-top: 5px;
+    font-size: 9px;
+    font-weight: 700;
+    color: #16a34a;
+}
+.gadget-stat-meta.neg { color: #ef4444; }
+.gadget-mini-list {
+    display: grid;
+    gap: 10px;
+}
+.gadget-mini-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(226,232,240,0.85);
+}
+.gadget-mini-row:last-child {
+    padding-bottom: 0;
+    border-bottom: none;
+}
+.gadget-mini-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+}
+.gadget-mini-value {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--navy);
+}
+.gadget-bars {
+    display: grid;
+    gap: 10px;
+}
+.gadget-bar-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #475569;
+}
+.gadget-bar-track {
+    height: 9px;
+    border-radius: 999px;
+    background: #e9eef5;
+    overflow: hidden;
+}
+.gadget-bar-fill {
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--navy), var(--gold));
+}
+.gadget-donut {
+    min-height: 154px;
+    display: grid;
+    place-items: center;
+}
+.gadget-donut svg {
+    width: 126px;
+    height: 126px;
+}
+.gadget-orbit {
+    position: absolute;
+    right: -8px;
+    bottom: -18px;
+    width: 146px;
+    padding: 12px 14px;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.95);
+    border: 1px solid rgba(0,35,71,0.08);
+    box-shadow: 0 18px 34px rgba(15,23,42,0.14);
+    transform: rotate(-8deg);
+    z-index: 2;
+}
+.gadget-orbit .label {
+    font-size: 9px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #64748b;
+}
+.gadget-orbit .value {
+    margin-top: 4px;
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 900;
+    color: var(--navy);
+}
+.gadget-orbit .meta {
+    margin-top: 4px;
+    font-size: 9px;
+    color: #16a34a;
+    font-weight: 700;
+}
 
 /* Feature cards */
 .feat-card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px 16px; transition: all 0.3s; position: relative; overflow: hidden; }
@@ -741,11 +984,8 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     .hero-right { margin-left: 0; }
     .hero-circle { width: clamp(320px,82vw,460px) !important; height: clamp(320px,82vw,460px) !important; }
     .hero-phone { width: clamp(220px,50vw,300px); }
-    .sb-brand img { height: 48px; }
-    .phone-badge { width: 152px; max-width: 152px; }
-    .phone-badge.pb-1, .phone-badge.pb-2, .phone-badge.pb-3, .phone-badge.pb-4 { left: -84px; }
-    .phone-badge.pb-5, .phone-badge.pb-6, .phone-badge.pb-7, .phone-badge.pb-8 { right: -70px; }
-    .phone-badge.pb-3, .phone-badge.pb-4, .phone-badge.pb-7, .phone-badge.pb-8 { display: none; }
+    .sb-brand img { height: 52px; }
+    
     #mujiNav {
         position: fixed;
         top: var(--nav-h);
@@ -778,36 +1018,40 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     .db-chart-2col { grid-template-columns: 1fr; }
     .db-kpi-row { grid-template-columns: repeat(2,1fr); }
     .db-kpi-row .db-kpi:last-child { display: none; }
+    .gadget-grid { grid-template-columns: 1fr; }
+    .gadget-orbit { position: static; transform: none; width: 100%; margin-top: 14px; }
     .announce-label { font-size: 0 !important; padding: 0 12px !important; }
     .announce-msg { font-size: 0.65rem !important; }
     .hero-circle { width: min(90vw,400px) !important; height: min(90vw,400px) !important; padding: min(58px,14%) !important; }
-    .hero-phone { width: clamp(230px,62vw,300px); } /* FIX: wider on mobile */
+    .hero-phone { width: clamp(230px,62vw,300px); }
     .hero-h1 { font-size: clamp(1.3rem,5.5vw,1.9rem) !important; }
     .hero-body { font-size: clamp(11px,3.2vw,13px) !important; }
     .hero-btn-red, .hero-btn-ghost { padding: 13px 24px !important; font-size: clamp(0.70rem,3vw,0.80rem) !important; }
     .hero-cta-stack { max-width: min(240px,62vw) !important; gap: 10px !important; }
-    .phone-badge { display: none !important; } /* hide on tablet */
-    /* FIX: remove gold border from benefit cards on mobile */
+    
+    .circle-badge { display: none !important; } /* Hide flanking badges on mobile */
+    
     .benefit-card { border-color: var(--border); background: #fff; }
     .benefit-belt { padding: 32px 12px 0; }
 }
 @media (max-width: 640px) {
     .hero-content { padding: 16px 16px 24px; gap: 28px; }
     .hero-circle { width: min(90vw,340px) !important; height: min(90vw,340px) !important; padding: clamp(52px,16%,72px) !important; }
-    .hero-phone { width: clamp(220px,72vw,280px); } /* FIX: fills more of screen on mobile */
+    .hero-phone { width: clamp(220px,72vw,280px); }
     .hero-h1 { font-size: clamp(1rem,4.5vw,1.45rem) !important; }
     .hero-body { font-size: 11px !important; }
     .hero-cta-stack { max-width: min(196px,56vw) !important; }
     .hero-trust { display: none !important; }
     .hero-eyebrow { margin-bottom: 10px !important; }
     .hero-body { margin-bottom: 16px !important; }
-    /* FIX: no gold border on small mobile */
+    .gadget-stage { padding: 20px 14px 14px; border-radius: 24px; }
+    .gadget-stat-grid { grid-template-columns: 1fr; }
     .benefit-card { border: 1px solid var(--border); box-shadow: none; }
     .benefit-card:hover { transform: none; box-shadow: none; }
 }
 @media (max-width: 480px) {
     :root { --nav-h: 60px; --announce-h: 32px; }
-    .sb-brand img { height: 36px; }
+    .sb-brand img { height: 44px; }
     .benefit-grid { grid-template-columns: 1fr; }
     .ticker-label { font-size: 0 !important; width: 34px; }
     .ticker-track-wrap { padding-left: 34px; }
@@ -820,7 +1064,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 <nav class="navbar navbar-expand-lg fixed-top sb-nav" id="mainNav">
     <div class="container">
         <a class="sb-brand navbar-brand" href="#home">
-            <img src="{{ asset('assets/img/logos.png') }}" alt="SmartProbook" style="height: 56px; width: auto;">
+            <img src="{{ asset('assets/img/logos.png') }}" alt="SmartProbook" class="sb-brand-logo">
             <span class="spb-nav-wordmark">SmartPro<span class="book">book</span></span>
         </a>
         <button class="navbar-toggler border-0" type="button" aria-controls="mujiNav" aria-expanded="false" style="color:var(--navy);">
@@ -835,7 +1079,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                 <li class="nav-item"><a class="sb-nav-link" href="{{ route('landing.index') }}#licensing">Licensing</a></li>
                 <li class="nav-item"><a class="sb-nav-link {{ request()->routeIs('landing.policy') ? 'active' : '' }}" href="{{ route('landing.policy') }}">Policy</a></li>
                 <li class="nav-item ms-lg-3">
-                    <a class="btn-portal" href="{{ route('saas-login') }}">
+                    <a class="btn-portal" href="{{ route('login', ['portal' => 1]) }}">
                         <i class="fas fa-lock" style="font-size:.75rem;"></i> CLIENT PORTAL
                     </a>
                 </li>
@@ -860,57 +1104,67 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     <div class="hero-orb2"></div>
     <div class="hero-content">
 
-        {{-- CIRCLE --}}
+        {{-- CIRCLE WITH FLANKING BADGES --}}
         <div class="hero-left">
-            <div class="hero-circle">
-                <div class="hero-circle-orbit"></div>
-                <div class="hero-eyebrow">SmartProbook</div>
-                <h1 class="hero-h1">Run Your Business.<br><span class="gold-text">Know Your Money.</span></h1>
-                <p class="hero-body">Accounting-first workflow for sales, invoices, expenses, payroll and tax — all in one platform.</p>
-                <div class="hero-cta-stack">
-                    <a href="#licensing" class="hero-btn-red"><i class="fas fa-shopping-cart" style="font-size:.75rem;"></i> Start Today</a>
-                    <a href="{{ route('saas-register', ['type'=>'manager']) }}" class="hero-btn-ghost"><i class="fas fa-handshake" style="font-size:.75rem;"></i> Become a Partner</a>
+            <div class="hero-circle-wrapper">
+                
+                {{-- 4 Left Badges --}}
+                <div class="circle-badge cb-left cb-1">
+                    <div class="pb-icon" style="background:#fee2e2;"><svg width="14" height="14" fill="none" stroke="#b91c1c" stroke-width="2.5" viewBox="0 0 24 24"><path d="M4 19h16"/><path d="M7 15l3-4 3 2 4-6"/></svg></div>
+                    <div><div class="pb-main">Cash Flow</div><div class="pb-sub">Forecast updated</div></div>
                 </div>
-                <div class="hero-trust">
-                    <div class="trust-dot"></div>
-                    <span class="trust-text">Trusted by 60,000+ businesses across Africa</span>
+                <div class="circle-badge cb-left cb-2">
+                    <div class="pb-icon" style="background:#f3e8ff;"><svg width="14" height="14" fill="none" stroke="#7e22ce" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"/><path d="M5 21c1.5-3 4-5 7-5s5.5 2 7 5"/></svg></div>
+                    <div><div class="pb-main">Payroll Reports</div><div class="pb-sub">Ready to export</div></div>
                 </div>
+                <div class="circle-badge cb-left cb-3">
+                    <div class="pb-icon" style="background:#dcfce7;"><svg width="14" height="14" fill="none" stroke="#166534" stroke-width="2.5" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M3 12h18"/><path d="M3 18h18"/></svg></div>
+                    <div><div class="pb-main">Balance Sheet</div><div class="pb-sub">Current period</div></div>
+                </div>
+                <div class="circle-badge cb-left cb-4">
+                    <div class="pb-icon" style="background:#e0f2fe;"><svg width="14" height="14" fill="none" stroke="#0369a1" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-6"/></svg></div>
+                    <div><div class="pb-main">Live Reports</div><div class="pb-sub">Updated hourly</div></div>
+                </div>
+
+                {{-- The Circle --}}
+                <div class="hero-circle">
+                    <div class="hero-circle-orbit"></div>
+                    <div class="hero-eyebrow">SmartProbook</div>
+                    <h1 class="hero-h1">Run Your Business.<br><span class="gold-text">Know Your Money.</span></h1>
+                    <p class="hero-body">Accounting-first workflow for sales, invoices, expenses, payroll and tax — all in one platform.</p>
+                    <div class="hero-cta-stack">
+                        <a href="#licensing" class="hero-btn-red"><i class="fas fa-shopping-cart" style="font-size:.75rem;"></i> Start Today</a>
+                        <a href="{{ route('saas-register', ['type'=>'manager']) }}" class="hero-btn-ghost"><i class="fas fa-handshake" style="font-size:.75rem;"></i> Become a Partner</a>
+                    </div>
+                    <div class="hero-trust">
+                        <div class="trust-dot"></div>
+                        <span class="trust-text">Trusted by 60,000+ businesses across Africa</span>
+                    </div>
+                </div>
+
+                {{-- 4 Right Badges --}}
+                <div class="circle-badge cb-right cb-5">
+                    <div class="pb-icon" style="background:#dcfce7;"><svg width="14" height="14" fill="none" stroke="#15803d" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></div>
+                    <div><div class="pb-main">+24.8%</div><div class="pb-sub">Monthly Revenue</div></div>
+                </div>
+                <div class="circle-badge cb-right cb-6">
+                    <div class="pb-icon" style="background:#eff6ff;"><svg width="14" height="14" fill="none" stroke="#1c66e8" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+                    <div><div class="pb-main">Real-time</div><div class="pb-sub">Live data sync</div></div>
+                </div>
+                <div class="circle-badge cb-right cb-7">
+                    <div class="pb-icon" style="background:#ecfeff;"><svg width="14" height="14" fill="none" stroke="#0e7490" stroke-width="2.5" viewBox="0 0 24 24"><path d="M3 12h18"/><path d="M7 8l-4 4 4 4"/><path d="M17 8l4 4-4 4"/></svg></div>
+                    <div><div class="pb-main">General Ledger</div><div class="pb-sub">Auto generated</div></div>
+                </div>
+                <div class="circle-badge cb-right cb-8">
+                    <div class="pb-icon" style="background:#fef3c7;"><svg width="14" height="14" fill="none" stroke="#b45309" stroke-width="2.5" viewBox="0 0 24 24"><path d="M3 3h18v18H3z"/><path d="M7 8h10M7 12h10M7 16h6"/></svg></div>
+                    <div><div class="pb-main">Profit & Loss</div><div class="pb-sub">Month-to-date</div></div>
+                </div>
+
             </div>
         </div>
+
         {{-- PHONE --}}
         <div class="hero-right">
-            <div class="phone-badge pb-1">
-                <div class="pb-icon" style="background:#dcfce7;"><svg width="14" height="14" fill="none" stroke="#15803d" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></div>
-                <div><div class="pb-main">+24.8%</div><div class="pb-sub">Monthly Revenue</div></div>
-            </div>
-            <div class="phone-badge pb-2">
-                <div class="pb-icon" style="background:#eff6ff;"><svg width="14" height="14" fill="none" stroke="#1c66e8" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
-                <div><div class="pb-main">Real-time</div><div class="pb-sub">Live data sync</div></div>
-            </div>
-            <div class="phone-badge pb-3">
-                <div class="pb-icon" style="background:#ecfeff;"><svg width="14" height="14" fill="none" stroke="#0e7490" stroke-width="2.5" viewBox="0 0 24 24"><path d="M3 12h18"/><path d="M7 8l-4 4 4 4"/><path d="M17 8l4 4-4 4"/></svg></div>
-                <div><div class="pb-main">General Ledger</div><div class="pb-sub">Auto generated</div></div>
-            </div>
-            <div class="phone-badge pb-4">
-                <div class="pb-icon" style="background:#fef3c7;"><svg width="14" height="14" fill="none" stroke="#b45309" stroke-width="2.5" viewBox="0 0 24 24"><path d="M3 3h18v18H3z"/><path d="M7 8h10M7 12h10M7 16h6"/></svg></div>
-                <div><div class="pb-main">Profit & Loss</div><div class="pb-sub">Month-to-date</div></div>
-            </div>
-            <div class="phone-badge pb-5">
-                <div class="pb-icon" style="background:#fee2e2;"><svg width="14" height="14" fill="none" stroke="#b91c1c" stroke-width="2.5" viewBox="0 0 24 24"><path d="M4 19h16"/><path d="M7 15l3-4 3 2 4-6"/></svg></div>
-                <div><div class="pb-main">Cash Flow</div><div class="pb-sub">Forecast updated</div></div>
-            </div>
-            <div class="phone-badge pb-6">
-                <div class="pb-icon" style="background:#f3e8ff;"><svg width="14" height="14" fill="none" stroke="#7e22ce" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"/><path d="M5 21c1.5-3 4-5 7-5s5.5 2 7 5"/></svg></div>
-                <div><div class="pb-main">Payroll Reports</div><div class="pb-sub">Ready to export</div></div>
-            </div>
-            <div class="phone-badge pb-7">
-                <div class="pb-icon" style="background:#dcfce7;"><svg width="14" height="14" fill="none" stroke="#166534" stroke-width="2.5" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M3 12h18"/><path d="M3 18h18"/></svg></div>
-                <div><div class="pb-main">Balance Sheet</div><div class="pb-sub">Current period</div></div>
-            </div>
-            <div class="phone-badge pb-8">
-                <div class="pb-icon" style="background:#e0f2fe;"><svg width="14" height="14" fill="none" stroke="#0369a1" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-6"/></svg></div>
-                <div><div class="pb-main">Live Reports</div><div class="pb-sub">Updated hourly</div></div>
-            </div>
             <div class="hero-phone">
                 <div class="phone-notch-bar">
                     <div class="notch-cam"></div>
@@ -998,7 +1252,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     </div>
 </section>
 
-{{-- BENEFIT CARDS — FIX: 40px gap above --}}
+{{-- BENEFIT CARDS --}}
 <section class="benefit-belt">
     <div class="benefit-grid">
         <article class="benefit-card">
@@ -1053,36 +1307,55 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                         <div class="fb-icon" style="background:#fef9c3;"><svg width="16" height="16" fill="none" stroke="#b45309" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
                         <div><div class="fb-val">Real-time</div><div class="fb-lbl">Live data sync</div></div>
                     </div>
-                    <div class="db-frame">
-                        <div class="db-bar"><div class="db-dot db-dot-r"></div><div class="db-dot db-dot-y"></div><div class="db-dot db-dot-g"></div><span class="db-bar-title">SmartProbook — Financial Command Center</span></div>
-                        <div class="d-flex" style="min-height:340px;">
-                            <div class="db-sidebar">
-                                <div class="db-icon on"><svg fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></div>
-                                <div class="db-icon"><svg fill="none" stroke="rgba(255,255,255,.45)" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
-                                <div class="db-icon"><svg fill="none" stroke="rgba(255,255,255,.45)" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg></div>
-                            </div>
-                            <div class="db-body">
-                                <div class="db-head"><span class="db-title">Financial Overview</span><span class="db-badge">LIVE · {{ date('M Y') }}</span></div>
-                                <div class="db-kpi-row">
-                                    <div class="db-kpi"><div class="db-kpi-lbl">Total Revenue</div><div class="db-kpi-val">₦4.2M</div><div class="db-kpi-sub">↑ 18.4% this month</div></div>
-                                    <div class="db-kpi"><div class="db-kpi-lbl">Total Sales</div><div class="db-kpi-val">1,248</div><div class="db-kpi-sub">↑ 12.1% vs last</div></div>
-                                    <div class="db-kpi"><div class="db-kpi-lbl">Outstanding</div><div class="db-kpi-val">₦380K</div><div class="db-kpi-sub neg">3 invoices due</div></div>
-                                </div>
-                                <div class="db-chart-2col">
-                                    <div class="db-chart-box">
-                                        <div class="db-chart-lbl">Monthly Revenue Trend</div>
-                                        <svg viewBox="0 0 280 90" style="width:100%;">
-                                            <defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#002347" stop-opacity=".14"/><stop offset="100%" stop-color="#002347" stop-opacity="0"/></linearGradient></defs>
-                                            <line x1="0" y1="20" x2="280" y2="20" stroke="#f0f4f8" stroke-width="1"/><line x1="0" y1="50" x2="280" y2="50" stroke="#f0f4f8" stroke-width="1"/><line x1="0" y1="75" x2="280" y2="75" stroke="#f0f4f8" stroke-width="1"/>
-                                            <path d="M0,70 L35,55 L70,45 L105,50 L140,35 L175,40 L210,25 L245,30 L280,18 L280,90 L0,90 Z" fill="url(#ag)"/>
-                                            <polyline points="0,70 35,55 70,45 105,50 140,35 175,40 210,25 245,30 280,18" fill="none" stroke="#002347" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                            <circle cx="280" cy="18" r="4" fill="#c5a059" stroke="#fff" stroke-width="2"/>
-                                            <text x="0" y="88" font-size="7" fill="#8a92a0">Jul</text><text x="68" y="88" font-size="7" fill="#8a92a0">Sep</text><text x="138" y="88" font-size="7" fill="#8a92a0">Nov</text><text x="208" y="88" font-size="7" fill="#8a92a0">Jan</text><text x="258" y="88" font-size="7" fill="#c5a059">Feb</text>
-                                        </svg>
+                    <div class="gadget-stage">
+                        <div class="gadget-grid">
+                            <div class="gadget-stack">
+                                <div class="gadget-card accent-blue">
+                                    <div class="gadget-topline">
+                                        <span class="gadget-chip"><span class="gadget-dot"></span> Live ledger</span>
+                                        <span class="gadget-title">Financial Command Center</span>
                                     </div>
-                                    <div class="db-chart-box">
-                                        <div class="db-chart-lbl">Revenue Split</div>
-                                        <svg viewBox="0 0 100 100" style="width:100%;max-height:100px;">
+                                    <div class="gadget-stat-grid">
+                                        <div class="gadget-stat">
+                                            <div class="gadget-stat-label">Total Revenue</div>
+                                            <div class="gadget-stat-value">₦4.2M</div>
+                                            <div class="gadget-stat-meta">↑ 18.4% this month</div>
+                                        </div>
+                                        <div class="gadget-stat">
+                                            <div class="gadget-stat-label">Total Sales</div>
+                                            <div class="gadget-stat-value">1,248</div>
+                                            <div class="gadget-stat-meta">↑ 12.1% vs last</div>
+                                        </div>
+                                        <div class="gadget-stat">
+                                            <div class="gadget-stat-label">Outstanding</div>
+                                            <div class="gadget-stat-value">₦380K</div>
+                                            <div class="gadget-stat-meta neg">3 invoices due</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="gadget-card">
+                                    <div class="gadget-topline">
+                                        <span class="gadget-title">Monthly revenue trend</span>
+                                        <span class="gadget-chip">LIVE · {{ date('M Y') }}</span>
+                                    </div>
+                                    <svg viewBox="0 0 280 90" style="width:100%;">
+                                        <defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#002347" stop-opacity=".14"/><stop offset="100%" stop-color="#002347" stop-opacity="0"/></linearGradient></defs>
+                                        <line x1="0" y1="20" x2="280" y2="20" stroke="#f0f4f8" stroke-width="1"/><line x1="0" y1="50" x2="280" y2="50" stroke="#f0f4f8" stroke-width="1"/><line x1="0" y1="75" x2="280" y2="75" stroke="#f0f4f8" stroke-width="1"/>
+                                        <path d="M0,70 L35,55 L70,45 L105,50 L140,35 L175,40 L210,25 L245,30 L280,18 L280,90 L0,90 Z" fill="url(#ag)"/>
+                                        <polyline points="0,70 35,55 70,45 105,50 140,35 175,40 210,25 245,30 280,18" fill="none" stroke="#002347" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <circle cx="280" cy="18" r="4" fill="#c5a059" stroke="#fff" stroke-width="2"/>
+                                        <text x="0" y="88" font-size="7" fill="#8a92a0">Jul</text><text x="68" y="88" font-size="7" fill="#8a92a0">Sep</text><text x="138" y="88" font-size="7" fill="#8a92a0">Nov</text><text x="208" y="88" font-size="7" fill="#8a92a0">Jan</text><text x="258" y="88" font-size="7" fill="#c5a059">Feb</text>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="gadget-stack">
+                                <div class="gadget-card">
+                                    <div class="gadget-topline">
+                                        <span class="gadget-title">Revenue split</span>
+                                        <span class="gadget-chip">Sales mix</span>
+                                    </div>
+                                    <div class="gadget-donut">
+                                        <svg viewBox="0 0 100 100">
                                             <circle cx="50" cy="50" r="36" fill="none" stroke="#f0f4f8" stroke-width="16"/>
                                             <circle cx="50" cy="50" r="36" fill="none" stroke="#002347" stroke-width="16" stroke-dasharray="113 113" stroke-dashoffset="28" transform="rotate(-90 50 50)"/>
                                             <circle cx="50" cy="50" r="36" fill="none" stroke="#c5a059" stroke-width="16" stroke-dasharray="45 181" stroke-dashoffset="-85" transform="rotate(-90 50 50)"/>
@@ -1092,13 +1365,23 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                                         </svg>
                                     </div>
                                 </div>
-                                <table class="db-table">
-                                    <tr><th>Customer</th><th>Amount</th><th>Status</th></tr>
-                                    <tr><td>Adaobi Nwosu</td><td>₦85,000</td><td><span class="db-pill paid">Paid</span></td></tr>
-                                    <tr><td>TechBridge Ltd</td><td>₦240,000</td><td><span class="db-pill pending">Pending</span></td></tr>
-                                    <tr><td>Kalu Stores</td><td>₦62,500</td><td><span class="db-pill paid">Paid</span></td></tr>
-                                </table>
+                                <div class="gadget-card">
+                                    <div class="gadget-topline">
+                                        <span class="gadget-title">Priority invoices</span>
+                                        <span class="gadget-chip">Collections</span>
+                                    </div>
+                                    <div class="gadget-mini-list">
+                                        <div class="gadget-mini-row"><span class="gadget-mini-label">Adaobi Nwosu</span><span class="gadget-mini-value">₦85,000</span></div>
+                                        <div class="gadget-mini-row"><span class="gadget-mini-label">TechBridge Ltd</span><span class="gadget-mini-value">₦240,000</span></div>
+                                        <div class="gadget-mini-row"><span class="gadget-mini-label">Kalu Stores</span><span class="gadget-mini-value">₦62,500</span></div>
+                                    </div>
+                                </div>
                             </div>
+                        </div>
+                        <div class="gadget-orbit">
+                            <div class="label">Clearance rate</div>
+                            <div class="value">91%</div>
+                            <div class="meta">2.4 days avg payment cycle</div>
                         </div>
                     </div>
                 </div>
@@ -1137,34 +1420,77 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                         <div class="fb-icon" style="background:#fee2e2;"><svg width="16" height="16" fill="none" stroke="#dc2626" stroke-width="2.5" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
                         <div><div class="fb-val">3 Items</div><div class="fb-lbl">Low stock alert</div></div>
                     </div>
-                    <div class="db-frame db-frame-r">
-                        <div class="db-bar"><div class="db-dot db-dot-r"></div><div class="db-dot db-dot-y"></div><div class="db-dot db-dot-g"></div><span class="db-bar-title">SmartProbook — Inventory Management</span></div>
-                        <div class="d-flex" style="min-height:360px;">
-                            <div class="db-sidebar">
-                                <div class="db-icon"><svg fill="none" stroke="rgba(255,255,255,.45)" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></div>
-                                <div class="db-icon on"><svg fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg></div>
-                            </div>
-                            <div class="db-body">
-                                <div class="db-head"><span class="db-title">Inventory Overview</span><span class="db-badge">482 SKUs</span></div>
-                                <div class="db-kpi-row">
-                                    <div class="db-kpi"><div class="db-kpi-lbl">Total SKUs</div><div class="db-kpi-val">482</div><div class="db-kpi-sub">↑ 12 added today</div></div>
-                                    <div class="db-kpi"><div class="db-kpi-lbl">Stock Value</div><div class="db-kpi-val">₦2.1M</div><div class="db-kpi-sub">↑ 5.4% this week</div></div>
-                                    <div class="db-kpi"><div class="db-kpi-lbl">Low Stock</div><div class="db-kpi-val" style="color:#ef4444;">3</div><div class="db-kpi-sub neg">Needs restocking</div></div>
+                    <div class="gadget-stage">
+                        <div class="gadget-grid">
+                            <div class="gadget-stack">
+                                <div class="gadget-card accent-mint">
+                                    <div class="gadget-topline">
+                                        <span class="gadget-chip"><span class="gadget-dot"></span> Inventory pulse</span>
+                                        <span class="gadget-title">482 SKUs</span>
+                                    </div>
+                                    <div class="gadget-stat-grid">
+                                        <div class="gadget-stat">
+                                            <div class="gadget-stat-label">Total SKUs</div>
+                                            <div class="gadget-stat-value">482</div>
+                                            <div class="gadget-stat-meta">↑ 12 added today</div>
+                                        </div>
+                                        <div class="gadget-stat">
+                                            <div class="gadget-stat-label">Stock Value</div>
+                                            <div class="gadget-stat-value">₦2.1M</div>
+                                            <div class="gadget-stat-meta">↑ 5.4% this week</div>
+                                        </div>
+                                        <div class="gadget-stat">
+                                            <div class="gadget-stat-label">Low Stock</div>
+                                            <div class="gadget-stat-value" style="color:#ef4444;">3</div>
+                                            <div class="gadget-stat-meta neg">Needs restocking</div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="db-chart-box" style="margin-bottom:10px;">
-                                    <div class="db-chart-lbl">Top Products — Stock Levels</div>
-                                    @php $products=[['Paracetamol 500mg',87,'#002347'],['Vitamin C Tabs',62,'#c5a059'],['Amoxicillin 250mg',18,'#ef4444'],['Ibuprofen 400mg',74,'#002347'],['Zinc Sulphate',9,'#ef4444']]; @endphp
-                                    @foreach($products as $p)
-                                    <div style="margin-bottom:7px;"><div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:3px;font-weight:600;color:#3d4a5c;"><span>{{ $p[0] }}</span><span>{{ $p[1] }} units</span></div><div style="height:6px;background:#f0f4f8;border-radius:99px;overflow:hidden;"><div style="width:{{ $p[1] }}%;height:100%;background:{{ $p[2] }};border-radius:99px;"></div></div></div>
-                                    @endforeach
+                                <div class="gadget-card">
+                                    <div class="gadget-topline">
+                                        <span class="gadget-title">Top products</span>
+                                        <span class="gadget-chip">Stock levels</span>
+                                    </div>
+                                    @php $products=[['Paracetamol 500mg',87],['Vitamin C Tabs',62],['Amoxicillin 250mg',18],['Ibuprofen 400mg',74],['Zinc Sulphate',9]]; @endphp
+                                    <div class="gadget-bars">
+                                        @foreach($products as $p)
+                                            <div>
+                                                <div class="gadget-bar-label"><span>{{ $p[0] }}</span><span>{{ $p[1] }} units</span></div>
+                                                <div class="gadget-bar-track"><div class="gadget-bar-fill" style="width:{{ $p[1] }}%;"></div></div>
+                                            </div>
+                                        @endforeach
+                                    </div>
                                 </div>
-                                <table class="db-table">
-                                    <tr><th>Product</th><th>Category</th><th>Qty</th><th>Status</th></tr>
-                                    <tr><td>Paracetamol 500mg</td><td>Pharma</td><td>87</td><td><span class="db-pill paid">OK</span></td></tr>
-                                    <tr><td>Zinc Sulphate</td><td>Vitamins</td><td>9</td><td><span class="db-pill due">Low</span></td></tr>
-                                    <tr><td>Vitamin C Tabs</td><td>Vitamins</td><td>62</td><td><span class="db-pill paid">OK</span></td></tr>
-                                </table>
                             </div>
+                            <div class="gadget-stack">
+                                <div class="gadget-card">
+                                    <div class="gadget-topline">
+                                        <span class="gadget-title">Restock queue</span>
+                                        <span class="gadget-chip">Urgent</span>
+                                    </div>
+                                    <div class="gadget-mini-list">
+                                        <div class="gadget-mini-row"><span class="gadget-mini-label">Paracetamol 500mg</span><span class="gadget-mini-value">87</span></div>
+                                        <div class="gadget-mini-row"><span class="gadget-mini-label">Zinc Sulphate</span><span class="gadget-mini-value" style="color:#ef4444;">9</span></div>
+                                        <div class="gadget-mini-row"><span class="gadget-mini-label">Vitamin C Tabs</span><span class="gadget-mini-value">62</span></div>
+                                    </div>
+                                </div>
+                                <div class="gadget-card">
+                                    <div class="gadget-topline">
+                                        <span class="gadget-title">Automation health</span>
+                                        <span class="gadget-chip">Realtime</span>
+                                    </div>
+                                    <div class="gadget-mini-list">
+                                        <div class="gadget-mini-row"><span class="gadget-mini-label">Stock Accuracy</span><span class="gadget-mini-value">98.4%</span></div>
+                                        <div class="gadget-mini-row"><span class="gadget-mini-label">Waste Reduction</span><span class="gadget-mini-value">76%</span></div>
+                                        <div class="gadget-mini-row"><span class="gadget-mini-label">Reorder Automation</span><span class="gadget-mini-value">89%</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="gadget-orbit">
+                            <div class="label">Critical items</div>
+                            <div class="value">03</div>
+                            <div class="meta">Auto-alerted to manager</div>
                         </div>
                     </div>
                 </div>
@@ -1183,39 +1509,83 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                         <div class="fb-icon" style="background:#ede9fe;"><svg width="16" height="16" fill="none" stroke="#7c3aed" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
                         <div><div class="fb-val">Auto</div><div class="fb-lbl">Bank reconciled</div></div>
                     </div>
-                    <div class="db-frame">
-                        <div class="db-bar"><div class="db-dot db-dot-r"></div><div class="db-dot db-dot-y"></div><div class="db-dot db-dot-g"></div><span class="db-bar-title">SmartProbook — Expenses &amp; Reports</span></div>
-                        <div class="db-body">
-                            <div class="db-head"><span class="db-title">P&amp;L + Reports</span><span class="db-badge" style="background:#f0fff4;color:#15803d;">✓ AUTO-GENERATED</span></div>
-                            <div class="db-kpi-row">
-                                <div class="db-kpi"><div class="db-kpi-lbl">Total Expenses</div><div class="db-kpi-val">₦1.4M</div><div class="db-kpi-sub neg">↑ 6.2% vs last</div></div>
-                                <div class="db-kpi"><div class="db-kpi-lbl">Net Profit</div><div class="db-kpi-val">₦2.8M</div><div class="db-kpi-sub">↑ 22.4% margin</div></div>
-                                <div class="db-kpi"><div class="db-kpi-lbl">Reports Ready</div><div class="db-kpi-val">6</div><div class="db-kpi-sub">For this month</div></div>
+                    <div class="gadget-stage">
+                        <div class="gadget-grid">
+                            <div class="gadget-stack">
+                                <div class="gadget-card accent-rose">
+                                    <div class="gadget-topline">
+                                        <span class="gadget-chip"><span class="gadget-dot"></span> Auto generated</span>
+                                        <span class="gadget-title">P&amp;L + Reports</span>
+                                    </div>
+                                    <div class="gadget-stat-grid">
+                                        <div class="gadget-stat">
+                                            <div class="gadget-stat-label">Total Expenses</div>
+                                            <div class="gadget-stat-value">₦1.4M</div>
+                                            <div class="gadget-stat-meta neg">↑ 6.2% vs last</div>
+                                        </div>
+                                        <div class="gadget-stat">
+                                            <div class="gadget-stat-label">Net Profit</div>
+                                            <div class="gadget-stat-value">₦2.8M</div>
+                                            <div class="gadget-stat-meta">↑ 22.4% margin</div>
+                                        </div>
+                                        <div class="gadget-stat">
+                                            <div class="gadget-stat-label">Reports Ready</div>
+                                            <div class="gadget-stat-value">6</div>
+                                            <div class="gadget-stat-meta">For this month</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="gadget-card accent-blue">
+                                    <div class="gadget-topline">
+                                        <span class="gadget-title">Revenue vs expenses</span>
+                                        <span class="gadget-chip">12 month view</span>
+                                    </div>
+                                    <svg viewBox="0 0 500 100" style="width:100%;">
+                                        <defs>
+                                            <linearGradient id="r2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#002347" stop-opacity=".18"/><stop offset="100%" stop-color="#002347" stop-opacity="0"/></linearGradient>
+                                            <linearGradient id="e2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#c5a059" stop-opacity=".14"/><stop offset="100%" stop-color="#c5a059" stop-opacity="0"/></linearGradient>
+                                        </defs>
+                                        @foreach([15,40,65,90] as $gy)<line x1="0" y1="{{ $gy }}" x2="500" y2="{{ $gy }}" stroke="#f0f4f8" stroke-width="1"/>@endforeach
+                                        <path d="M0,80 L42,65 L84,58 L126,62 L168,50 L210,45 L252,48 L294,35 L336,38 L378,28 L420,25 L462,18 L500,12 L500,100 L0,100 Z" fill="url(#r2)"/>
+                                        <polyline points="0,80 42,65 84,58 126,62 168,50 210,45 252,48 294,35 336,38 378,28 420,25 462,18 500,12" fill="none" stroke="#002347" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <path d="M0,95 L42,90 L84,85 L126,92 L168,82 L210,78 L252,84 L294,75 L336,79 L378,70 L420,67 L462,62 L500,58 L500,100 L0,100 Z" fill="url(#e2)"/>
+                                        <polyline points="0,95 42,90 84,85 126,92 168,82 210,78 252,84 294,75 336,79 378,70 420,67 462,62 500,58" fill="none" stroke="#c5a059" stroke-width="2" stroke-dasharray="6,3" stroke-linecap="round" stroke-linejoin="round"/>
+                                        @php $months=['M','A','M','J','J','A','S','O','N','D','J','F']; @endphp
+                                        @foreach($months as $mi=>$ml)<text x="{{ $mi*42+4 }}" y="98" font-size="8" fill="#8a92a0">{{ $ml }}</text>@endforeach
+                                        <rect x="370" y="5" width="8" height="3" fill="#002347" rx="1"/><text x="381" y="9" font-size="8" fill="#3d4a5c">Revenue</text>
+                                        <rect x="370" y="14" width="8" height="2" fill="#c5a059" rx="1"/><text x="381" y="18" font-size="8" fill="#3d4a5c">Expenses</text>
+                                    </svg>
+                                </div>
                             </div>
-                            <div class="db-chart-box" style="margin-bottom:12px;">
-                                <div class="db-chart-lbl">Revenue vs Expenses — 12 Month View</div>
-                                <svg viewBox="0 0 500 100" style="width:100%;">
-                                    <defs>
-                                        <linearGradient id="r2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#002347" stop-opacity=".18"/><stop offset="100%" stop-color="#002347" stop-opacity="0"/></linearGradient>
-                                        <linearGradient id="e2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#c5a059" stop-opacity=".14"/><stop offset="100%" stop-color="#c5a059" stop-opacity="0"/></linearGradient>
-                                    </defs>
-                                    @foreach([15,40,65,90] as $gy)<line x1="0" y1="{{ $gy }}" x2="500" y2="{{ $gy }}" stroke="#f0f4f8" stroke-width="1"/>@endforeach
-                                    <path d="M0,80 L42,65 L84,58 L126,62 L168,50 L210,45 L252,48 L294,35 L336,38 L378,28 L420,25 L462,18 L500,12 L500,100 L0,100 Z" fill="url(#r2)"/>
-                                    <polyline points="0,80 42,65 84,58 126,62 168,50 210,45 252,48 294,35 336,38 378,28 420,25 462,18 500,12" fill="none" stroke="#002347" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                    <path d="M0,95 L42,90 L84,85 L126,92 L168,82 L210,78 L252,84 L294,75 L336,79 L378,70 L420,67 L462,62 L500,58 L500,100 L0,100 Z" fill="url(#e2)"/>
-                                    <polyline points="0,95 42,90 84,85 126,92 168,82 210,78 252,84 294,75 336,79 378,70 420,67 462,62 500,58" fill="none" stroke="#c5a059" stroke-width="2" stroke-dasharray="6,3" stroke-linecap="round" stroke-linejoin="round"/>
-                                    @php $months=['M','A','M','J','J','A','S','O','N','D','J','F']; @endphp
-                                    @foreach($months as $mi=>$ml)<text x="{{ $mi*42+4 }}" y="98" font-size="8" fill="#8a92a0">{{ $ml }}</text>@endforeach
-                                    <rect x="370" y="5" width="8" height="3" fill="#002347" rx="1"/><text x="381" y="9" font-size="8" fill="#3d4a5c">Revenue</text>
-                                    <rect x="370" y="14" width="8" height="2" fill="#c5a059" rx="1"/><text x="381" y="18" font-size="8" fill="#3d4a5c">Expenses</text>
-                                </svg>
+                            <div class="gadget-stack">
+                                <div class="gadget-card accent-gold">
+                                    <div class="gadget-topline">
+                                        <span class="gadget-title">Export queue</span>
+                                        <span class="gadget-chip">Ready now</span>
+                                    </div>
+                                    <div class="gadget-mini-list">
+                                        <div class="gadget-mini-row"><span class="gadget-mini-label">Monthly P&amp;L</span><span class="gadget-mini-value">PDF</span></div>
+                                        <div class="gadget-mini-row"><span class="gadget-mini-label">VAT Summary</span><span class="gadget-mini-value">XLSX</span></div>
+                                        <div class="gadget-mini-row"><span class="gadget-mini-label">Payroll Sheet</span><span class="gadget-mini-value">PDF</span></div>
+                                    </div>
+                                </div>
+                                <div class="gadget-card accent-mint">
+                                    <div class="gadget-topline">
+                                        <span class="gadget-title">Report cadence</span>
+                                        <span class="gadget-chip">Automation</span>
+                                    </div>
+                                    <div class="gadget-mini-list">
+                                        <div class="gadget-mini-row"><span class="gadget-mini-label">Daily close packs</span><span class="gadget-mini-value">07:00</span></div>
+                                        <div class="gadget-mini-row"><span class="gadget-mini-label">Weekly board digest</span><span class="gadget-mini-value">Fri</span></div>
+                                        <div class="gadget-mini-row"><span class="gadget-mini-label">Tax filing prep</span><span class="gadget-mini-value">Ready</span></div>
+                                    </div>
+                                </div>
                             </div>
-                            <table class="db-table">
-                                <tr><th>Report</th><th>Period</th><th>Status</th></tr>
-                                <tr><td>Monthly P&L</td><td>Jan 2026</td><td><span class="db-pill paid">PDF Ready</span></td></tr>
-                                <tr><td>VAT Summary</td><td>Q4 2025</td><td><span class="db-pill paid">XLSX Ready</span></td></tr>
-                                <tr><td>Payroll Sheet</td><td>Jan 2026</td><td><span class="db-pill paid">PDF Ready</span></td></tr>
-                            </table>
+                        </div>
+                        <div class="gadget-orbit">
+                            <div class="label">Delivery speed</div>
+                            <div class="value">1 click</div>
+                            <div class="meta">Exports ready in seconds</div>
                         </div>
                     </div>
                 </div>
@@ -1545,7 +1915,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const countryMap = {NG:{c:'NGN',l:'en-NG'},US:{c:'USD',l:'en-US'},CN:{c:'CNY',l:'zh-CN'},GB:{c:'GBP',l:'en-GB'},EU:{c:'EUR',l:'en-IE'},CA:{c:'CAD',l:'en-CA'},IN:{c:'INR',l:'en-IN'},AE:{c:'AED',l:'en-AE'},ZA:{c:'ZAR',l:'en-ZA'},KE:{c:'KES',l:'en-KE'},GH:{c:'GHS',l:'en-GH'}};
     const fallback = {NGN:1,USD:0.00067,CNY:0.0048,GBP:0.00053,EUR:0.00062,CAD:0.00091,INR:0.056,AED:0.00246,ZAR:0.0125,KES:0.086,GHS:0.0105};
-    const euCodes = ['FR','DE','ES','IT','PT','NL','BE','AT','IE','FI','SE','DK','PL','CZ','GR','RO','HU'];
+    const euCodes =['FR','DE','ES','IT','PT','NL','BE','AT','IE','FI','SE','DK','PL','CZ','GR','RO','HU'];
     const norm = c => { const s=String(c||'').toUpperCase(); if(euCodes.includes(s)) return 'EU'; return countryMap[s]?s:'NG'; };
     const fetchRates = async () => {
         const k='sb_rates_v1',kt=k+'_t',cached=sessionStorage.getItem(k),ts=+sessionStorage.getItem(kt)||0;
