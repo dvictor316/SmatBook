@@ -124,8 +124,8 @@
         }
         .btn-uplink:hover { background: var(--muji-blue-accent); transform: scale(1.02); }
         
-        .btn-outline { background: #f1f5f9; color: var(--muji-blue-deep); }
-        .btn-outline:hover { background: #e2e8f0; color: var(--muji-blue-deep); }
+        .btn-outline { background: var(--muji-blue-accent); color: #fff; }
+        .btn-outline:hover { background: #1d4ed8; color: #fff; }
 
         .plan-card.featured .btn-uplink { background: var(--muji-blue-accent); box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3); }
 
