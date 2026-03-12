@@ -22,7 +22,7 @@
     :root {
         --spa-bg: #eff5ff;
         --spa-surface: rgba(255, 255, 255, 0.95);
-        --spa-aside: linear-gradient(180deg, #071b4d 0%, #0b2a74 58%, #123da4 100%);
+        --spa-aside: linear-gradient(135deg, #1f73ea 0%, #25a8df 100%);
         --spa-border: #e2e8f0;
         --spa-primary: #2563eb;
         --spa-primary-dark: #1d4ed8;
@@ -80,7 +80,7 @@
     .bubble {
         position: absolute;
         border-radius: 50%;
-        background: radial-gradient(circle, rgba(59, 130, 246, 0.12) 0%, rgba(59, 130, 246, 0) 72%);
+        background: radial-gradient(circle, rgba(37, 168, 223, 0.14) 0%, rgba(37, 168, 223, 0) 72%);
         animation: floatBubble 25s infinite ease-in-out;
     }
 
@@ -123,7 +123,7 @@
         width: 260px;
         height: 260px;
         border-radius: 50%;
-        background: radial-gradient(circle, rgba(244, 208, 111, 0.24) 0%, rgba(244, 208, 111, 0) 72%);
+        background: radial-gradient(circle, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 72%);
         pointer-events: none;
     }
 
@@ -161,8 +161,8 @@
         display: inline-block;
         padding: 6px 12px;
         background: rgba(255, 255, 255, 0.1);
-        color: #fff6d3;
-        border: 1px solid rgba(244, 208, 111, 0.38);
+        color: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.32);
         border-radius: 100px;
         font-size: 10px;
         font-weight: 800;
@@ -214,7 +214,7 @@
         background: rgba(255, 255, 255, 0.08);
         border: 1px solid rgba(255, 255, 255, 0.1);
     }
-    .aside-point i { color: var(--spa-gold); margin-top: 2px; }
+    .aside-point i { color: #ffffff; margin-top: 2px; }
     .aside-point strong { display: block; color: #ffffff; font-size: 0.88rem; margin-bottom: 2px; }
     .aside-point span { color: rgba(255, 255, 255, 0.68); font-size: 0.78rem; line-height: 1.55; }
 
