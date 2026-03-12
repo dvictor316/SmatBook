@@ -343,11 +343,11 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 .cb-right.cb-5, .cb-right.cb-8 { left: calc(100% - 12px); }
 .cb-right.cb-6, .cb-right.cb-7 { left: calc(100% - 28px); }
 
-/* 4 badges per side, distributed on the circle edge */
-.cb-1, .cb-5 { top: 18%; }
-.cb-2, .cb-6 { top: 38%; }
-.cb-3, .cb-7 { top: 62%; }
-.cb-4, .cb-8 { top: 82%; }
+/* 4 badges per side, distributed with tighter vertical spacing */
+.cb-1, .cb-5 { top: 24%; }
+.cb-2, .cb-6 { top: 41%; }
+.cb-3, .cb-7 { top: 59%; }
+.cb-4, .cb-8 { top: 76%; }
 
 /* Unique Blink Animations */
 .cb-1 { animation: badgeBlinkA 8s ease-in-out infinite; }
