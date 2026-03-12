@@ -334,12 +334,14 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 }
 
 /* Left & Right Flanking Base Positioning */
-.cb-left { right: calc(100% - 10px); }
-.cb-right { left: calc(100% - 10px); }
+.cb-left { right: calc(100% - 24px); }
+.cb-right { left: calc(100% - 24px); }
 
-/* Keep every badge touching the same gold ring */
-.cb-left.cb-1, .cb-left.cb-2, .cb-left.cb-3, .cb-left.cb-4 { right: calc(100% - 10px); }
-.cb-right.cb-5, .cb-right.cb-6, .cb-right.cb-7, .cb-right.cb-8 { left: calc(100% - 10px); }
+/* Arc the badges so they follow the circle instead of standing straight */
+.cb-left.cb-1, .cb-left.cb-4 { right: calc(100% - 42px); }
+.cb-left.cb-2, .cb-left.cb-3 { right: calc(100% - 8px); }
+.cb-right.cb-5, .cb-right.cb-8 { left: calc(100% - 42px); }
+.cb-right.cb-6, .cb-right.cb-7 { left: calc(100% - 8px); }
 
 /* Equal vertical spacing from top to bottom */
 .cb-1, .cb-5 { top: 18.5%; }
