@@ -22,7 +22,7 @@
     :root {
         --spa-bg: #eff5ff;
         --spa-surface: rgba(255, 255, 255, 0.95);
-        --spa-aside: linear-gradient(135deg, #0f5eff 0%, #1788ff 48%, #14bdf4 100%);
+        --spa-aside: linear-gradient(145deg, #1d6dff 0%, #1f8fff 45%, #28c3f3 100%);
         --spa-border: #e2e8f0;
         --spa-primary: #2563eb;
         --spa-primary-dark: #1d4ed8;
@@ -46,9 +46,9 @@
         min-height: 100vh;
         padding: 20px 15px 40px;
         background:
-            radial-gradient(circle at top left, rgba(20, 189, 244, 0.24), transparent 26%),
-            radial-gradient(circle at bottom right, rgba(15, 94, 255, 0.18), transparent 28%),
-            linear-gradient(180deg, #f4f8ff 0%, #e9f3ff 100%);
+            radial-gradient(circle at top left, rgba(40, 195, 243, 0.28), transparent 24%),
+            radial-gradient(circle at bottom right, rgba(29, 109, 255, 0.2), transparent 28%),
+            linear-gradient(180deg, #f4f9ff 0%, #e8f2ff 100%);
         z-index: 900;
         /* Flexbox for vertical centering */
         display: flex;
@@ -88,8 +88,9 @@
         position: absolute;
         border-radius: 50%;
         background:
-            radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 38%),
-            radial-gradient(circle, rgba(20, 189, 244, 0.22) 0%, rgba(20, 189, 244, 0) 72%);
+            radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0) 38%),
+            radial-gradient(circle at 70% 65%, rgba(29, 109, 255, 0.16) 0%, rgba(29, 109, 255, 0) 44%),
+            radial-gradient(circle, rgba(40, 195, 243, 0.22) 0%, rgba(40, 195, 243, 0) 72%);
         animation: floatBubble 25s infinite ease-in-out;
     }
 
@@ -329,7 +330,7 @@
 
     /* Action Buttons */
     .btn-smat-navy {
-        background: linear-gradient(135deg, #0f5eff 0%, #1788ff 48%, #14bdf4 100%);
+        background: linear-gradient(145deg, #1d6dff 0%, #1f8fff 45%, #28c3f3 100%);
         color: var(--spa-gold); border: none; padding: 14px;
         border-radius: 16px; width: 100%; font-weight: 800; font-size: 13px;
         transition: 0.3s; margin-top: 10px; text-transform: uppercase; letter-spacing: 1px;
@@ -375,10 +376,14 @@
         color: var(--spa-gold);
         font-size: 11px;
         font-weight: 800;
-        background: linear-gradient(135deg, #0f5eff 0%, #1788ff 48%, #14bdf4 100%);
+        background: linear-gradient(145deg, #1d6dff 0%, #1f8fff 45%, #28c3f3 100%);
         box-shadow: 0 14px 30px rgba(23, 136, 255, 0.22);
         transition: all 0.2s ease;
         text-align: center;
+    }
+    .bottom-link .bottom-action-link,
+    .bottom-link .bottom-action-link:visited {
+        color: var(--spa-gold) !important;
     }
     .bottom-action-link:hover {
         border-color: #93c5fd;
