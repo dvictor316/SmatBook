@@ -334,20 +334,18 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 }
 
 /* Left & Right Flanking Base Positioning */
-.cb-left { right: calc(100% - 24px); }
-.cb-right { left: calc(100% - 24px); }
+.cb-left { right: calc(100% - 18px); }
+.cb-right { left: calc(100% - 18px); }
 
-/* Arc the badges so their inner edges trace the gold circle */
-.cb-left.cb-1, .cb-left.cb-4 { right: calc(100% - 42px); }
-.cb-left.cb-2, .cb-left.cb-3 { right: calc(100% - 10px); }
-.cb-right.cb-5, .cb-right.cb-8 { left: calc(100% - 42px); }
-.cb-right.cb-6, .cb-right.cb-7 { left: calc(100% - 10px); }
+/* Keep every badge touching the same gold ring */
+.cb-left.cb-1, .cb-left.cb-2, .cb-left.cb-3, .cb-left.cb-4 { right: calc(100% - 18px); }
+.cb-right.cb-5, .cb-right.cb-6, .cb-right.cb-7, .cb-right.cb-8 { left: calc(100% - 18px); }
 
-/* 4 badges per side, distributed to form a cleaner curve */
-.cb-1, .cb-5 { top: 19%; }
-.cb-2, .cb-6 { top: 37%; }
-.cb-3, .cb-7 { top: 63%; }
-.cb-4, .cb-8 { top: 81%; }
+/* Equal vertical spacing from top to bottom */
+.cb-1, .cb-5 { top: 20%; }
+.cb-2, .cb-6 { top: 40%; }
+.cb-3, .cb-7 { top: 60%; }
+.cb-4, .cb-8 { top: 80%; }
 
 /* Unique Blink Animations */
 .cb-1 { animation: badgeBlinkA 8s ease-in-out infinite; }
