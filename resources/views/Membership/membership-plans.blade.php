@@ -108,8 +108,11 @@
         .plan-name { font-weight: 700; color: var(--muji-blue-deep); font-size: 1.25rem; margin-bottom: 8px; }
         .plan-desc { font-size: 0.9rem; color: #64748b; margin-bottom: 30px; line-height: 1.4; height: 40px; }
         
-        .price-display { font-size: 2.25rem; font-weight: 800; color: var(--muji-blue-deep); margin-bottom: 30px; letter-spacing: -1px; }
+        .price-display { font-size: 2.25rem; font-weight: 800; color: var(--muji-blue-deep); margin-bottom: 12px; letter-spacing: -1px; }
         .price-display small { font-size: 0.9rem; color: #64748b; font-weight: 500; letter-spacing: 0; }
+        .price-secondary { font-size: 1.05rem; font-weight: 800; color: var(--muji-gold); margin: -2px 0 24px; line-height: 1.4; }
+        .price-secondary strong { color: var(--muji-gold); font-weight: 800; }
+        .price-secondary span { color: var(--muji-gold); }
 
         .feature-list { list-style: none; margin-bottom: 40px; flex-grow: 1; }
         .feature-list li { padding: 10px 0; font-size: 0.85rem; display: flex; align-items: center; gap: 12px; color: #475569; }
@@ -295,9 +298,9 @@
                     <h3 class="plan-name">Basic Core</h3>
                     <p class="plan-desc">Perfect for small start-up workflows and agile teams.</p>
                     <div class="price-display">
-                        <span id="price-basic">₦5,500</span><small id="period-basic">/mo</small>
+                        <span id="price-basic-solo">₦3,000</span><small id="period-basic-solo">/mo</small>
                     </div>
-                    <p class="plan-desc" style="height:auto; margin-top:-14px; margin-bottom:18px;">Solo option: <strong id="price-basic-solo">₦3,000</strong><span id="period-basic-solo">/mo</span> for 1 user.</p>
+                    <p class="price-secondary">2 users: <strong id="price-basic">₦5,500</strong><span id="period-basic">/mo</span></p>
                     <ul class="feature-list">
                         <li><i class="fas fa-check-circle"></i> 2 User Seats</li>
                         <li><i class="fas fa-check-circle"></i> Cloud Ledger Core</li>
@@ -317,9 +320,9 @@
                     <h3 class="plan-name">Pro Engine</h3>
                     <p class="plan-desc">Advanced features for growing institutional entities.</p>
                     <div class="price-display">
-                        <span id="price-pro">₦19,500</span><small id="period-pro">/mo</small>
+                        <span id="price-pro-solo">₦7,000</span><small id="period-pro-solo">/mo</small>
                     </div>
-                    <p class="plan-desc" style="height:auto; margin-top:-14px; margin-bottom:18px;">Solo option: <strong id="price-pro-solo">₦7,000</strong><span id="period-pro-solo">/mo</span> for 1 user.</p>
+                    <p class="price-secondary">3 users: <strong id="price-pro">₦19,500</strong><span id="period-pro">/mo</span></p>
                     <ul class="feature-list">
                         <li><i class="fas fa-check-circle"></i> 3 User Seats</li>
                         <li><i class="fas fa-check-circle"></i> Neural Forecasting</li>
@@ -338,9 +341,9 @@
                     <h3 class="plan-name">Institutional</h3>
                     <p class="plan-desc">The standard for large corporations and high-node networks.</p>
                     <div class="price-display">
-                        <span id="price-enterprise">₦28,500</span><small id="period-enterprise">/mo</small>
+                        <span id="price-enterprise-solo">₦15,000</span><small id="period-enterprise-solo">/mo</small>
                     </div>
-                    <p class="plan-desc" style="height:auto; margin-top:-14px; margin-bottom:18px;">Solo option: <strong id="price-enterprise-solo">₦15,000</strong><span id="period-enterprise-solo">/mo</span> for 1 user.</p>
+                    <p class="price-secondary">Unlimited users: <strong id="price-enterprise">₦28,500</strong><span id="period-enterprise">/mo</span></p>
                     <ul class="feature-list">
                         <li><i class="fas fa-check-circle"></i> Unlimited User Seats</li>
                         <li><i class="fas fa-check-circle"></i> Private Instance</li>
