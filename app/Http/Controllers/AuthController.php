@@ -44,7 +44,6 @@ class AuthController extends Controller
 
         session([
             'selected_plan_id' => $planData->id ?? null,
-            'selected_plan_key' => $selectedCatalog['key'],
             'selected_plan' => $finalName,
             'selected_cycle' => $finalCycle,
             'selected_amount' => $finalPrice,
@@ -54,7 +53,6 @@ class AuthController extends Controller
         return view('Pages.Authentication.saas-register', [
             'company' => $this->getTenantDetails(),
             'selectedPlan' => $finalName,
-            'selectedPlanKey' => $selectedCatalog['key'],
             'billing_cycle' => $finalCycle,
             'plan_id' => $planData->id ?? null,
             'amount' => $finalPrice,
@@ -160,18 +158,12 @@ class AuthController extends Controller
                     return redirect()->route('manager.verification.form');
                 }
 
-                $requestedPlan = strtolower((string) ($request->plan ?? session('selected_plan_key', 'pro')));
+                $requestedPlan = strtolower((string) ($request->plan ?? session('selected_plan', 'pro')));
                 $requestedCycle = strtolower((string) ($request->billing_cycle ?? session('selected_cycle', 'monthly')));
                 $catalog = $this->registrationPlanCatalog();
                 $catalogEntry = $catalog[$requestedPlan] ?? null;
                 $planId = $request->plan_id ?? session('selected_plan_id');
                 $plan = $planId ? Plan::find((int) $planId) : null;
-
-                if (!$catalogEntry && !empty(session('selected_plan'))) {
-                    $catalogEntry = collect($catalog)->first(function (array $entry) {
-                        return strcasecmp($entry['label'], (string) session('selected_plan')) === 0;
-                    });
-                }
 
                 if (!$plan && $catalogEntry) {
                     $plan = Plan::findByCatalogName($catalogEntry['label'], $requestedCycle);
@@ -428,7 +420,7 @@ class AuthController extends Controller
     |--------------------------------------------------------------------------
     */
 
-    public function redirectToProvider($provider = 'google')
+    public function redirectToProvider(Request $request, $provider = 'google')
     {
         $provider = strtolower((string) $provider);
 
@@ -441,6 +433,7 @@ class AuthController extends Controller
         }
 
         try {
+            $this->rememberSocialContext($request, $provider);
             $redirectUrl = $this->socialCallbackUrl($provider);
             Log::info('Social redirect init', [
                 'provider' => $provider,
@@ -461,16 +454,17 @@ class AuthController extends Controller
         }
     }
 
-    public function handleProviderCallback($provider = 'google')
+    public function handleProviderCallback(Request $request, $provider = 'google')
     {
         $provider = strtolower((string) $provider);
+        $socialContext = $this->pullSocialContext($request, $provider);
 
         if (!in_array($provider, ['google', 'facebook'], true)) {
             return redirect()->route('saas-login')->with('error', 'Unsupported login provider.');
         }
 
-        if (request()->has('error')) {
-            $reason = (string) (request('error_description') ?: request('error'));
+        if ($request->has('error')) {
+            $reason = (string) ($request->input('error_description') ?: $request->input('error'));
             return redirect()->route('saas-login')
                 ->with('error', ucfirst($provider) . ' login was cancelled or failed. ' . $reason);
         }
@@ -547,6 +541,11 @@ class AuthController extends Controller
             });
         }
 
+        $subscription = $this->ensureSocialRegistrationSubscription($user, $socialContext);
+        if ($subscription) {
+            return redirect()->route('saas.setup', ['id' => $subscription->id]);
+        }
+
         return redirect()->route('home');
     }
 
@@ -568,6 +567,126 @@ class AuthController extends Controller
         }
 
         return rtrim((string) config('app.url'), '/') . '/auth/' . $provider . '/callback';
+    }
+
+    private function rememberSocialContext(Request $request, string $provider): void
+    {
+        $intent = strtolower((string) $request->query('intent', 'login'));
+        $cycle = strtolower((string) $request->query('cycle', session('selected_cycle', session('billing_cycle', 'monthly'))));
+        $planInput = (string) $request->query('plan', session('selected_plan', ''));
+        $catalog = $this->registrationPlanCatalog();
+        $planKey = $this->resolveRegistrationPlanKey($planInput, $catalog);
+        $entry = $planKey ? ($catalog[$planKey] ?? null) : null;
+        $planId = $request->query('plan_id', session('selected_plan_id'));
+        $amount = $request->query('amount', session('selected_amount'));
+
+        if ($entry && in_array($cycle, ['monthly', 'yearly'], true)) {
+            $plan = $planId ? Plan::find((int) $planId) : null;
+            if (!$plan) {
+                $plan = Plan::findByCatalogName($entry['label'], $cycle);
+                $planId = $plan?->id;
+            }
+
+            $amount = $plan?->price ?? ($entry['prices'][$cycle] ?? $amount);
+
+            session([
+                'selected_plan_id' => $planId,
+                'selected_plan' => $entry['label'],
+                'selected_cycle' => ucfirst($cycle),
+                'selected_amount' => $amount,
+                'billing_cycle' => ucfirst($cycle),
+                'reg_role' => 'admin',
+            ]);
+        }
+
+        session([
+            'social_auth_context' => [
+                'provider' => $provider,
+                'intent' => in_array($intent, ['login', 'register'], true) ? $intent : 'login',
+                'plan' => $planKey,
+                'cycle' => $cycle,
+                'plan_id' => $planId ? (int) $planId : null,
+                'amount' => $amount !== null ? (float) $amount : null,
+            ],
+        ]);
+    }
+
+    private function pullSocialContext(Request $request, string $provider): array
+    {
+        $context = (array) session()->pull('social_auth_context', []);
+
+        if (($context['provider'] ?? null) !== $provider) {
+            $context = [];
+        }
+
+        $intent = strtolower((string) ($context['intent'] ?? $request->query('intent', 'login')));
+        $cycle = strtolower((string) ($context['cycle'] ?? $request->query('cycle', session('selected_cycle', 'monthly'))));
+        $catalog = $this->registrationPlanCatalog();
+        $planKey = $this->resolveRegistrationPlanKey(
+            (string) ($context['plan'] ?? $request->query('plan', session('selected_plan', ''))),
+            $catalog
+        );
+
+        return [
+            'intent' => in_array($intent, ['login', 'register'], true) ? $intent : 'login',
+            'plan' => $planKey,
+            'cycle' => in_array($cycle, ['monthly', 'yearly'], true) ? $cycle : 'monthly',
+            'plan_id' => isset($context['plan_id']) ? (int) $context['plan_id'] : (session('selected_plan_id') ?: null),
+            'amount' => isset($context['amount']) ? (float) $context['amount'] : (session('selected_amount') ?: null),
+        ];
+    }
+
+    private function ensureSocialRegistrationSubscription(User $user, array $context): ?Subscription
+    {
+        if (($context['intent'] ?? 'login') !== 'register') {
+            return null;
+        }
+
+        $existingSubscription = Subscription::query()
+            ->where('user_id', $user->id)
+            ->latest('id')
+            ->first();
+
+        if ($existingSubscription) {
+            return null;
+        }
+
+        $catalog = $this->registrationPlanCatalog();
+        $planKey = $this->resolveRegistrationPlanKey((string) ($context['plan'] ?? ''), $catalog);
+        $cycle = strtolower((string) ($context['cycle'] ?? 'monthly'));
+
+        if (!$planKey || !isset($catalog[$planKey]) || !in_array($cycle, ['monthly', 'yearly'], true)) {
+            return null;
+        }
+
+        $entry = $catalog[$planKey];
+        $plan = !empty($context['plan_id'])
+            ? Plan::find((int) $context['plan_id'])
+            : Plan::findByCatalogName($entry['label'], $cycle);
+
+        $amount = (float) ($plan?->price ?? ($entry['prices'][$cycle] ?? 0));
+        $billingCycle = ucfirst($cycle);
+        $planName = $plan?->name ?? $entry['label'];
+
+        session([
+            'selected_plan_id' => $plan?->id,
+            'selected_plan' => $planName,
+            'selected_cycle' => $billingCycle,
+            'selected_amount' => $amount,
+            'billing_cycle' => $billingCycle,
+            'reg_role' => 'admin',
+        ]);
+
+        return Subscription::create($this->filterPayloadForTable('subscriptions', [
+            'user_id' => $user->id,
+            'plan_id' => $plan?->id,
+            'plan' => $planName,
+            'plan_name' => $planName,
+            'billing_cycle' => $billingCycle,
+            'amount' => $amount,
+            'status' => 'Pending',
+            'payment_status' => 'unpaid',
+        ]));
     }
 
     /*
@@ -702,7 +821,6 @@ class AuthController extends Controller
     {
         session()->forget([
             'selected_plan_id',
-            'selected_plan_key',
             'selected_plan',
             'selected_cycle',
             'selected_amount',
@@ -714,36 +832,80 @@ class AuthController extends Controller
     {
         return [
             'basic-solo' => [
-                'key' => 'basic-solo',
                 'label' => 'Basic Solo',
                 'prices' => ['monthly' => 3000, 'yearly' => 30000],
             ],
             'basic' => [
-                'key' => 'basic',
                 'label' => 'Basic',
                 'prices' => ['monthly' => 5500, 'yearly' => 55000],
             ],
             'pro-solo' => [
-                'key' => 'pro-solo',
                 'label' => 'Professional Solo',
                 'prices' => ['monthly' => 7000, 'yearly' => 70000],
             ],
             'pro' => [
-                'key' => 'pro',
                 'label' => 'Professional',
                 'prices' => ['monthly' => 19500, 'yearly' => 195000],
             ],
             'enterprise-solo' => [
-                'key' => 'enterprise-solo',
                 'label' => 'Enterprise Solo',
                 'prices' => ['monthly' => 15000, 'yearly' => 150000],
             ],
             'enterprise' => [
-                'key' => 'enterprise',
                 'label' => 'Enterprise',
                 'prices' => ['monthly' => 28500, 'yearly' => 285000],
             ],
         ];
+    }
+
+    private function resolveRegistrationPlanKey(?string $requestedPlan, ?array $catalog = null): ?string
+    {
+        $catalog ??= $this->registrationPlanCatalog();
+        $normalized = strtolower(trim((string) $requestedPlan));
+
+        if ($normalized === '') {
+            return null;
+        }
+
+        if (isset($catalog[$normalized])) {
+            return $normalized;
+        }
+
+        $aliases = [
+            'basic solo' => 'basic-solo',
+            'basic-solo-monthly' => 'basic-solo',
+            'basic-solo-yearly' => 'basic-solo',
+            'basic-monthly' => 'basic',
+            'basic-yearly' => 'basic',
+            'professional solo' => 'pro-solo',
+            'pro solo' => 'pro-solo',
+            'professional-solo' => 'pro-solo',
+            'professional-solo-monthly' => 'pro-solo',
+            'professional-solo-yearly' => 'pro-solo',
+            'pro-solo-monthly' => 'pro-solo',
+            'pro-solo-yearly' => 'pro-solo',
+            'professional' => 'pro',
+            'pro-monthly' => 'pro',
+            'pro-yearly' => 'pro',
+            'professional-monthly' => 'pro',
+            'professional-yearly' => 'pro',
+            'enterprise solo' => 'enterprise-solo',
+            'enterprise-solo-monthly' => 'enterprise-solo',
+            'enterprise-solo-yearly' => 'enterprise-solo',
+            'partner' => null,
+        ];
+
+        if (array_key_exists($normalized, $aliases)) {
+            return $aliases[$normalized];
+        }
+
+        foreach ($catalog as $key => $entry) {
+            if (strtolower((string) $entry['label']) === $normalized) {
+                return $key;
+            }
+        }
+
+        return null;
     }
 
     private function normalizePhoneForAuth(?string $phone): ?string

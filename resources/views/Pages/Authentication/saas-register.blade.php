@@ -15,6 +15,22 @@
     
     // Display Price Logic: Ensure the controller's $amount takes precedence.
     $displayPrice = $isManager ? 0 : ($amount ?? session('selected_amount', 0));
+    $googleAuthUrl = route('social.login', [
+        'provider' => 'google',
+        'intent' => 'register',
+        'plan' => strtolower((string) $lookupPlan),
+        'cycle' => strtolower((string) $finalCycle),
+        'plan_id' => $plan_id ?? session('selected_plan_id'),
+        'amount' => $displayPrice,
+    ]);
+    $facebookAuthUrl = route('social.login', [
+        'provider' => 'facebook',
+        'intent' => 'register',
+        'plan' => strtolower((string) $lookupPlan),
+        'cycle' => strtolower((string) $finalCycle),
+        'plan_id' => $plan_id ?? session('selected_plan_id'),
+        'amount' => $displayPrice,
+    ]);
 @endphp
 
 <style>
@@ -326,16 +342,17 @@
     }
 
     .btn-smat-red {
-        background: linear-gradient(145deg, #163a9a 0%, #102c7a 58%, #091b56 100%);
+        background: linear-gradient(145deg, #2348c7 0%, #1b2fb5 38%, #0a148a 100%);
         color: var(--spa-gold); border: none; padding: 14px;
         border-radius: 16px; width: 100%; font-weight: 800; font-size: 13px;
-        box-shadow: 0 16px 30px rgba(9, 27, 86, 0.28); transition: 0.3s;
+        box-shadow: 0 16px 30px rgba(10, 20, 138, 0.28); transition: 0.3s;
         margin-top: 10px; text-transform: uppercase; letter-spacing: 1px;
+        border: 1px solid rgba(255, 224, 138, 0.18);
     }
 
     .btn-smat-red:hover {
-        transform: translateY(-2px); box-shadow: 0 18px 34px rgba(9, 27, 86, 0.34); color: #fff4c8;
-        background: linear-gradient(145deg, #102c7a 0%, #091b56 100%);
+        transform: translateY(-2px); box-shadow: 0 18px 34px rgba(10, 20, 138, 0.34); color: #fff4c8;
+        background: linear-gradient(145deg, #294fd3 0%, #2038c6 42%, #0e1a99 100%);
     }
 
     .error-pill {
@@ -360,11 +377,12 @@
         color: var(--spa-gold) !important;
         font-size: 11px;
         font-weight: 800;
-        background: linear-gradient(145deg, #163a9a 0%, #102c7a 58%, #091b56 100%);
-        box-shadow: 0 14px 30px rgba(9, 27, 86, 0.26);
+        background: linear-gradient(145deg, #2348c7 0%, #1b2fb5 38%, #0a148a 100%);
+        box-shadow: 0 14px 30px rgba(10, 20, 138, 0.26);
         transition: all 0.2s ease;
         text-align: center;
         display: block;
+        border-color: rgba(255, 224, 138, 0.22);
     }
     .bottom-link .bottom-action-link,
     .bottom-link .bottom-action-link:visited {
@@ -395,23 +413,41 @@
         text-transform: uppercase;
     }
     .btn-social {
-        background: #fff;
-        border: 1px solid #dbe5f2;
+        background: linear-gradient(145deg, #2348c7 0%, #1b2fb5 38%, #0a148a 100%);
+        border: 1px solid rgba(255, 224, 138, 0.22);
         padding: 11px;
-        border-radius: 12px;
+        border-radius: 14px;
         display: flex;
         align-items: center;
         justify-content: center;
+        gap: 10px;
         font-size: 13px;
-        font-weight: 700;
-        color: #1e293b;
+        font-weight: 800;
+        color: #f8fbff;
         text-decoration: none;
         transition: 0.2s;
+        box-shadow: 0 14px 28px rgba(10, 20, 138, 0.18);
     }
     .btn-social:hover {
-        background: #f8fbff;
-        border-color: #bfd6ff;
+        background: linear-gradient(145deg, #294fd3 0%, #2038c6 42%, #0e1a99 100%);
+        border-color: rgba(255, 224, 138, 0.42);
+        color: #fff4c8;
         transform: translateY(-1px);
+    }
+    .social-mark {
+        width: 28px;
+        height: 28px;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.96);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        flex: 0 0 28px;
+    }
+    .social-mark.facebook {
+        color: #1877f2;
+        font-size: 15px;
     }
 
     @media (max-width: 991px) {
@@ -574,13 +610,19 @@
                     <div class="divider"><span>or sign up with</span></div>
                     <div class="row g-2">
                         <div class="col-6">
-                            <a href="{{ route('social.login', 'google') }}" class="btn-social">
-                                <i class="fab fa-google me-2 text-danger"></i> Google
+                            <a href="{{ $googleAuthUrl }}" class="btn-social">
+                                <span class="social-mark">
+                                    <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google" width="16" height="16">
+                                </span>
+                                <span>Google</span>
                             </a>
                         </div>
                         <div class="col-6">
-                            <a href="{{ route('social.login', 'facebook') }}" class="btn-social">
-                                <i class="fab fa-facebook-f me-2 text-primary"></i> Facebook
+                            <a href="{{ $facebookAuthUrl }}" class="btn-social">
+                                <span class="social-mark facebook">
+                                    <i class="fab fa-facebook-f"></i>
+                                </span>
+                                <span>Facebook</span>
                             </a>
                         </div>
                     </div>
