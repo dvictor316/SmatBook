@@ -407,6 +407,11 @@
                                 @enderror
                             </div>
 
+                            @php
+                                $workspaceDomain = preg_replace('#^https?://#', '', trim((string) config('app.domain', env('SESSION_DOMAIN', 'smartprobook.com'))));
+                                $workspaceDomain = preg_replace('/^\.+/', '', $workspaceDomain ?? '');
+                            @endphp
+
                             <div class="mb-3">
                                 <label class="form-label">Workspace Subdomain <span class="text-danger">*</span></label>
                                 <div class="input-group">
@@ -416,7 +421,7 @@
                                         value="{{ old('subdomain') }}"
                                         pattern="[a-z0-9\-]+" required>
                                     <span class="input-group-text bg-light fw-semibold text-muted small">
-                                        .{{ config('session.domain', 'smatbook.com') }}
+                                        .{{ $workspaceDomain }}
                                     </span>
                                 </div>
                                 <small class="text-muted">Lowercase letters, numbers and hyphens only.</small>
@@ -427,10 +432,11 @@
 
                             <div class="row g-3 mb-2">
                                 <div class="col-md-6">
-                                    <label class="form-label">Company Phone</label>
-                                    <input type="tel" name="phone" class="form-control"
-                                        placeholder="+234 800 123 4567"
-                                        value="{{ old('phone') }}">
+                                    <label class="form-label">Company Email <span class="text-danger">*</span></label>
+                                    <input type="email" name="company_email" id="companyEmail" class="form-control"
+                                        placeholder="company@business.com"
+                                        value="{{ old('company_email', old('email')) }}" required>
+                                    <small class="text-muted">Used as the primary workspace contact.</small>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Industry</label>
@@ -498,15 +504,15 @@
                             {{-- MONTHLY --}}
                             <div id="wrapMonthly" class="plans-wrap active">
                                 <div class="row g-4">
-                                    <div class="col-md-4">
-                                        <div class="plan-card" data-pid="basic-monthly"
-                                             onclick="pickPlan('basic-monthly','Basic',3000,'monthly')">
+                                    <div class="col-lg-4 col-md-6">
+                                        <div class="plan-card" data-pid="basic-solo-monthly"
+                                             onclick="pickPlan('basic-solo-monthly','Basic Solo',3000,'monthly')">
                                             <div class="plan-tick"><i class="fas fa-check"></i></div>
-                                            <div class="plan-tier">Basic</div>
+                                            <div class="plan-tier">Basic Solo</div>
                                             <div class="plan-amount">₦3,000 <small>/mo</small></div>
                                             <div class="plan-cycle">Billed monthly · Earn ₦1,050</div>
                                             <ul class="plan-features">
-                                                <li><i class="fas fa-check-circle"></i> Up to 10 users</li>
+                                                <li><i class="fas fa-check-circle"></i> 1 user</li>
                                                 <li><i class="fas fa-check-circle"></i> 5 GB storage</li>
                                                 <li><i class="fas fa-check-circle"></i> Invoicing & POS</li>
                                                 <li><i class="fas fa-check-circle"></i> Basic reports</li>
@@ -514,16 +520,31 @@
                                             </ul>
                                         </div>
                                     </div>
-                                    <div class="col-md-4">
-                                        <div class="plan-card" data-pid="professional-monthly"
-                                             onclick="pickPlan('professional-monthly','Professional',7000,'monthly')">
+                                    <div class="col-lg-4 col-md-6">
+                                        <div class="plan-card" data-pid="basic-monthly"
+                                             onclick="pickPlan('basic-monthly','Basic',5500,'monthly')">
                                             <div class="plan-tick"><i class="fas fa-check"></i></div>
-                                            <span class="plan-pill pill-popular">Most Popular</span>
-                                            <div class="plan-tier">Professional</div>
+                                            <div class="plan-tier">Basic</div>
+                                            <div class="plan-amount">₦5,500 <small>/mo</small></div>
+                                            <div class="plan-cycle">Billed monthly · Earn ₦1,925</div>
+                                            <ul class="plan-features">
+                                                <li><i class="fas fa-check-circle"></i> Up to 2 users</li>
+                                                <li><i class="fas fa-check-circle"></i> 5 GB storage</li>
+                                                <li><i class="fas fa-check-circle"></i> Invoicing & POS</li>
+                                                <li><i class="fas fa-check-circle"></i> Basic reports</li>
+                                                <li><i class="fas fa-check-circle"></i> Email support</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4 col-md-6">
+                                        <div class="plan-card" data-pid="professional-solo-monthly"
+                                             onclick="pickPlan('professional-solo-monthly','Professional Solo',7000,'monthly')">
+                                            <div class="plan-tick"><i class="fas fa-check"></i></div>
+                                            <div class="plan-tier">Professional Solo</div>
                                             <div class="plan-amount">₦7,000 <small>/mo</small></div>
                                             <div class="plan-cycle">Billed monthly · Earn ₦2,450</div>
                                             <ul class="plan-features">
-                                                <li><i class="fas fa-check-circle"></i> Up to 50 users</li>
+                                                <li><i class="fas fa-check-circle"></i> 1 user</li>
                                                 <li><i class="fas fa-check-circle"></i> 50 GB storage</li>
                                                 <li><i class="fas fa-check-circle"></i> Full inventory</li>
                                                 <li><i class="fas fa-check-circle"></i> Purchases & orders</li>
@@ -531,14 +552,47 @@
                                             </ul>
                                         </div>
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-lg-4 col-md-6">
+                                        <div class="plan-card" data-pid="professional-monthly"
+                                             onclick="pickPlan('professional-monthly','Professional',19500,'monthly')">
+                                            <div class="plan-tick"><i class="fas fa-check"></i></div>
+                                            <span class="plan-pill pill-popular">Most Popular</span>
+                                            <div class="plan-tier">Professional</div>
+                                            <div class="plan-amount">₦19,500 <small>/mo</small></div>
+                                            <div class="plan-cycle">Billed monthly · Earn ₦6,825</div>
+                                            <ul class="plan-features">
+                                                <li><i class="fas fa-check-circle"></i> Up to 3 users</li>
+                                                <li><i class="fas fa-check-circle"></i> 50 GB storage</li>
+                                                <li><i class="fas fa-check-circle"></i> Full inventory</li>
+                                                <li><i class="fas fa-check-circle"></i> Purchases & orders</li>
+                                                <li><i class="fas fa-check-circle"></i> Priority support</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4 col-md-6">
+                                        <div class="plan-card" data-pid="enterprise-solo-monthly"
+                                             onclick="pickPlan('enterprise-solo-monthly','Enterprise Solo',15000,'monthly')">
+                                            <div class="plan-tick"><i class="fas fa-check"></i></div>
+                                            <div class="plan-tier">Enterprise Solo</div>
+                                            <div class="plan-amount">₦15,000 <small>/mo</small></div>
+                                            <div class="plan-cycle">Billed monthly · Earn ₦5,250</div>
+                                            <ul class="plan-features">
+                                                <li><i class="fas fa-check-circle"></i> 1 user</li>
+                                                <li><i class="fas fa-check-circle"></i> 500 GB storage</li>
+                                                <li><i class="fas fa-check-circle"></i> Full ERP suite</li>
+                                                <li><i class="fas fa-check-circle"></i> P&L & balance sheet</li>
+                                                <li><i class="fas fa-check-circle"></i> Dedicated support</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4 col-md-6">
                                         <div class="plan-card" data-pid="enterprise-monthly"
-                                             onclick="pickPlan('enterprise-monthly','Enterprise',15000,'monthly')">
+                                             onclick="pickPlan('enterprise-monthly','Enterprise',28500,'monthly')">
                                             <div class="plan-tick"><i class="fas fa-check"></i></div>
                                             <span class="plan-pill pill-recommended">Best Value</span>
                                             <div class="plan-tier">Enterprise</div>
-                                            <div class="plan-amount">₦15,000 <small>/mo</small></div>
-                                            <div class="plan-cycle">Billed monthly · Earn ₦5,250</div>
+                                            <div class="plan-amount">₦28,500 <small>/mo</small></div>
+                                            <div class="plan-cycle">Billed monthly · Earn ₦9,975</div>
                                             <ul class="plan-features">
                                                 <li><i class="fas fa-check-circle"></i> Unlimited users</li>
                                                 <li><i class="fas fa-check-circle"></i> 500 GB storage</li>
@@ -554,15 +608,15 @@
                             {{-- YEARLY --}}
                             <div id="wrapYearly" class="plans-wrap">
                                 <div class="row g-4">
-                                    <div class="col-md-4">
-                                        <div class="plan-card" data-pid="basic-yearly"
-                                             onclick="pickPlan('basic-yearly','Basic',30000,'yearly')">
+                                    <div class="col-lg-4 col-md-6">
+                                        <div class="plan-card" data-pid="basic-solo-yearly"
+                                             onclick="pickPlan('basic-solo-yearly','Basic Solo',30000,'yearly')">
                                             <div class="plan-tick"><i class="fas fa-check"></i></div>
-                                            <div class="plan-tier">Basic</div>
+                                            <div class="plan-tier">Basic Solo</div>
                                             <div class="plan-amount">₦30,000 <small>/yr</small></div>
                                             <div class="plan-cycle">Save ₦6,000 · Earn ₦10,500</div>
                                             <ul class="plan-features">
-                                                <li><i class="fas fa-check-circle"></i> Up to 10 users</li>
+                                                <li><i class="fas fa-check-circle"></i> 1 user</li>
                                                 <li><i class="fas fa-check-circle"></i> 5 GB storage</li>
                                                 <li><i class="fas fa-check-circle"></i> Invoicing & POS</li>
                                                 <li><i class="fas fa-check-circle"></i> Basic reports</li>
@@ -570,16 +624,31 @@
                                             </ul>
                                         </div>
                                     </div>
-                                    <div class="col-md-4">
-                                        <div class="plan-card" data-pid="professional-yearly"
-                                             onclick="pickPlan('professional-yearly','Professional',70000,'yearly')">
+                                    <div class="col-lg-4 col-md-6">
+                                        <div class="plan-card" data-pid="basic-yearly"
+                                             onclick="pickPlan('basic-yearly','Basic',55000,'yearly')">
                                             <div class="plan-tick"><i class="fas fa-check"></i></div>
-                                            <span class="plan-pill pill-popular">Most Popular</span>
-                                            <div class="plan-tier">Professional</div>
+                                            <div class="plan-tier">Basic</div>
+                                            <div class="plan-amount">₦55,000 <small>/yr</small></div>
+                                            <div class="plan-cycle">Save ₦11,000 · Earn ₦19,250</div>
+                                            <ul class="plan-features">
+                                                <li><i class="fas fa-check-circle"></i> Up to 2 users</li>
+                                                <li><i class="fas fa-check-circle"></i> 5 GB storage</li>
+                                                <li><i class="fas fa-check-circle"></i> Invoicing & POS</li>
+                                                <li><i class="fas fa-check-circle"></i> Basic reports</li>
+                                                <li><i class="fas fa-check-circle"></i> Email support</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4 col-md-6">
+                                        <div class="plan-card" data-pid="professional-solo-yearly"
+                                             onclick="pickPlan('professional-solo-yearly','Professional Solo',70000,'yearly')">
+                                            <div class="plan-tick"><i class="fas fa-check"></i></div>
+                                            <div class="plan-tier">Professional Solo</div>
                                             <div class="plan-amount">₦70,000 <small>/yr</small></div>
                                             <div class="plan-cycle">Save ₦14,000 · Earn ₦24,500</div>
                                             <ul class="plan-features">
-                                                <li><i class="fas fa-check-circle"></i> Up to 50 users</li>
+                                                <li><i class="fas fa-check-circle"></i> 1 user</li>
                                                 <li><i class="fas fa-check-circle"></i> 50 GB storage</li>
                                                 <li><i class="fas fa-check-circle"></i> Full inventory</li>
                                                 <li><i class="fas fa-check-circle"></i> Purchases & orders</li>
@@ -587,14 +656,47 @@
                                             </ul>
                                         </div>
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-lg-4 col-md-6">
+                                        <div class="plan-card" data-pid="professional-yearly"
+                                             onclick="pickPlan('professional-yearly','Professional',195000,'yearly')">
+                                            <div class="plan-tick"><i class="fas fa-check"></i></div>
+                                            <span class="plan-pill pill-popular">Most Popular</span>
+                                            <div class="plan-tier">Professional</div>
+                                            <div class="plan-amount">₦195,000 <small>/yr</small></div>
+                                            <div class="plan-cycle">Save ₦39,000 · Earn ₦68,250</div>
+                                            <ul class="plan-features">
+                                                <li><i class="fas fa-check-circle"></i> Up to 3 users</li>
+                                                <li><i class="fas fa-check-circle"></i> 50 GB storage</li>
+                                                <li><i class="fas fa-check-circle"></i> Full inventory</li>
+                                                <li><i class="fas fa-check-circle"></i> Purchases & orders</li>
+                                                <li><i class="fas fa-check-circle"></i> Priority support</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4 col-md-6">
+                                        <div class="plan-card" data-pid="enterprise-solo-yearly"
+                                             onclick="pickPlan('enterprise-solo-yearly','Enterprise Solo',150000,'yearly')">
+                                            <div class="plan-tick"><i class="fas fa-check"></i></div>
+                                            <div class="plan-tier">Enterprise Solo</div>
+                                            <div class="plan-amount">₦150,000 <small>/yr</small></div>
+                                            <div class="plan-cycle">Save ₦30,000 · Earn ₦52,500</div>
+                                            <ul class="plan-features">
+                                                <li><i class="fas fa-check-circle"></i> 1 user</li>
+                                                <li><i class="fas fa-check-circle"></i> 500 GB storage</li>
+                                                <li><i class="fas fa-check-circle"></i> Full ERP suite</li>
+                                                <li><i class="fas fa-check-circle"></i> P&L & balance sheet</li>
+                                                <li><i class="fas fa-check-circle"></i> Dedicated support</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4 col-md-6">
                                         <div class="plan-card" data-pid="enterprise-yearly"
-                                             onclick="pickPlan('enterprise-yearly','Enterprise',150000,'yearly')">
+                                             onclick="pickPlan('enterprise-yearly','Enterprise',285000,'yearly')">
                                             <div class="plan-tick"><i class="fas fa-check"></i></div>
                                             <span class="plan-pill pill-recommended">Best Value</span>
                                             <div class="plan-tier">Enterprise</div>
-                                            <div class="plan-amount">₦150,000 <small>/yr</small></div>
-                                            <div class="plan-cycle">Save ₦30,000 · Earn ₦52,500</div>
+                                            <div class="plan-amount">₦285,000 <small>/yr</small></div>
+                                            <div class="plan-cycle">Save ₦57,000 · Earn ₦99,750</div>
                                             <ul class="plan-features">
                                                 <li><i class="fas fa-check-circle"></i> Unlimited users</li>
                                                 <li><i class="fas fa-check-circle"></i> 500 GB storage</li>
@@ -687,11 +789,7 @@
                                 <div class="input-group">
                                     <input type="password" name="password" id="custPw"
                                         class="form-control @error('password') is-invalid @enderror"
-                                        placeholder="Min. 8 characters"
-                                        minlength="8"
-                                        pattern="(?=.*[A-Za-z])(?=.*\d).{8,}"
-                                        title="Use at least 8 characters with letters and numbers."
-                                        required>
+                                        placeholder="Min. 8 characters" minlength="8" required>
                                     <button class="btn btn-outline-secondary" type="button"
                                         onclick="togglePw('custPw', this)">
                                         <i class="fas fa-eye fa-sm"></i>
@@ -701,7 +799,6 @@
                                 @error('password')
                                     <div class="text-danger small mt-1 fw-semibold">{{ $message }}</div>
                                 @enderror
-                                <small class="text-muted d-block mt-1">Use letters and numbers (symbol optional).</small>
                             </div>
 
                             <div class="mb-3">
@@ -814,11 +911,17 @@
 
 <script>
 /* ── State ───────────────────────────────── */
-const DOMAIN = '{{ config("session.domain", "smatbook.com") }}';
+const DOMAIN = '{{ ltrim(config("app.domain", "smartprobook.com"), ".") }}';
 let plan = { id: null, name: null, price: 0, cycle: 'monthly' };
 
 /* ── Helpers ─────────────────────────────── */
 const fmt = n => Number(n).toLocaleString('en-NG');
+const getSelectedPlanState = () => ({
+    id: document.getElementById('planId').value.trim(),
+    name: document.getElementById('planName').value.trim(),
+    price: Number(document.getElementById('planPrice').value || 0),
+    cycle: document.getElementById('planCycle').value.trim() || 'monthly',
+});
 
 const slug = s => s.toLowerCase()
     .replace(/[^a-z0-9\s-]/g, '')
@@ -832,6 +935,15 @@ document.getElementById('companyName').addEventListener('input', e => {
 });
 document.getElementById('subdomainPrefix').addEventListener('input', e => {
     e.target.value = slug(e.target.value);
+});
+document.getElementById('companyEmail').addEventListener('input', function (e) {
+    const loginEmail = document.getElementById('custEmail');
+    if (loginEmail && !loginEmail.dataset.userEdited) {
+        loginEmail.value = e.target.value.trim();
+    }
+});
+document.getElementById('custEmail').addEventListener('input', function () {
+    this.dataset.userEdited = this.value.trim() !== '' ? '1' : '';
 });
 
 /* ── Billing cycle ───────────────────────── */
@@ -856,7 +968,10 @@ window.setCycle = function(cycle) {
 window.pickPlan = function(id, name, price, cycle) {
     plan = { id, name, price, cycle };
     document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
-    document.querySelector(`[data-pid="${id}"]`).classList.add('selected');
+    const selectedCard = document.querySelector(`[data-pid="${id}"]`);
+    if (selectedCard) {
+        selectedCard.classList.add('selected');
+    }
     document.getElementById('planId').value    = id;
     document.getElementById('planName').value  = name;
     document.getElementById('planPrice').value = price;
@@ -871,14 +986,21 @@ window.toStep = function(n) {
     if (n === 2) {
         const co = document.getElementById('companyName').value.trim();
         const sd = document.getElementById('subdomainPrefix').value.trim();
+        const ce = document.getElementById('companyEmail').value.trim();
         if (!co)  { alert('Please enter the company name.'); return; }
         if (!sd)  { alert('Please enter a subdomain.'); return; }
+        if (!ce)  { alert('Please enter the company email.'); return; }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ce)) {
+            alert('Please enter a valid company email address.'); return;
+        }
         if (!/^[a-z0-9-]+$/.test(sd)) {
             alert('Subdomain: lowercase letters, numbers and hyphens only.'); return;
         }
     }
     if (n === 3) {
-        if (!plan.id) { alert('Please select a subscription plan.'); return; }
+        const selectedPlan = getSelectedPlanState();
+        if (!selectedPlan.id) { alert('Please select a subscription plan.'); return; }
+        plan = selectedPlan;
         updateSummary();
     }
 
@@ -896,6 +1018,10 @@ window.toStep = function(n) {
 
 /* ── Summary ─────────────────────────────── */
 function updateSummary() {
+    const selectedPlan = getSelectedPlanState();
+    if (selectedPlan.id) {
+        plan = selectedPlan;
+    }
     const co = document.getElementById('companyName').value.trim()    || '—';
     const sd = document.getElementById('subdomainPrefix').value.trim() || '—';
     document.getElementById('sumCompany').textContent  = co;
@@ -945,12 +1071,13 @@ document.getElementById('custPwConf').addEventListener('input', function() {
 document.getElementById('regForm').addEventListener('submit', function(e) {
     const pw   = document.getElementById('custPw').value;
     const conf = document.getElementById('custPwConf').value;
+    const selectedPlan = getSelectedPlanState();
     if (pw !== conf) {
         e.preventDefault();
         alert('Passwords do not match.');
         return;
     }
-    if (!document.getElementById('planId').value) {
+    if (!selectedPlan.id) {
         e.preventDefault();
         alert('Please select a plan.');
         toStep(2);
@@ -965,9 +1092,15 @@ document.getElementById('regForm').addEventListener('submit', function(e) {
 
 /* ── Restore state after validation error ── */
 @if($errors->any())
-    toStep(3);
+    updateSummary();
+    toStep('{{ old('email') || old('name') || old('password') ? 3 : (old('plan_id') ? 2 : 1) }}');
 @endif
 @if(old('plan_id'))
+    document.getElementById('planId').value = '{{ old("plan_id") }}';
+    document.getElementById('planName').value = '{{ old("plan_name") }}';
+    document.getElementById('planPrice').value = '{{ old("plan_price",0) }}';
+    document.getElementById('planCycle').value = '{{ old("billing_cycle","monthly") }}';
+    setCycle('{{ old("billing_cycle","monthly") }}');
     pickPlan('{{ old("plan_id") }}','{{ old("plan_name") }}',{{ (int)old("plan_price",0) }},'{{ old("billing_cycle","monthly") }}');
 @endif
 </script>

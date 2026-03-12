@@ -101,7 +101,7 @@ class AppServiceProvider extends ServiceProvider
                 if (!$resolvedUser) {
                     $resolvedAuthUser = Auth::user();
                     // Resolve once per request even though composer runs for each partial.
-                    $resolvedSubscription = Subscription::where('user_id', $resolvedAuthUser->id)->latest()->first();
+                    $resolvedSubscription = Subscription::resolveCurrentForUser($resolvedAuthUser);
                     $resolvedUser = true;
                 }
 

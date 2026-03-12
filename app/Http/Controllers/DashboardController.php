@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\{Product, Expense, Sale, Company, Subscription, User};
+use App\Models\{Product, Expense, Sale, Company, Subscription, User, Plan};
 use Illuminate\Support\Facades\{DB, Auth, Schema, Cache, Log};
 use Illuminate\Database\QueryException;
 use Carbon\Carbon;
@@ -17,10 +17,15 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
         $currentHost = $request->getHost();
-        $mainDomain = ltrim(config('app.domain', 'smatbook.com'), '.');
+        $mainDomain = ltrim(config('app.domain', 'smartprobook.com'), '.');
+        $centralHosts = [
+            $mainDomain,
+            'localhost',
+            '127.0.0.1',
+        ];
 
         // 1. TENANT IDENTIFICATION VIA SUBDOMAIN
-        $subdomain = ($currentHost === $mainDomain) ? null : explode('.', $currentHost)[0];
+        $subdomain = in_array($currentHost, $centralHosts, true) ? null : explode('.', $currentHost)[0];
 
         if ($subdomain) {
             $subscription = Subscription::where('domain_prefix', $subdomain)->first();
@@ -67,8 +72,13 @@ class DashboardController extends Controller
             $totalInvoices = $this->getTotalInvoices($company);
             $activeCustomers = $this->getActiveCustomers($company);
             $lowStockCount = $this->getLowStockCount($company);
+            $pendingBalance = $this->getPendingBalance($company);
+            $itemsSold = $this->getItemsSold($company);
+            $todayOrders = $this->getTodayOrders($company);
+            $paymentStatus = $this->getPaymentStatusCounts($company);
             $avgOrderValue = $totalInvoices > 0 ? ($totalSales / $totalInvoices) : 0;
             $profitMargin = $totalSales > 0 ? (($totalProfit / $totalSales) * 100) : 0;
+            $expenseRatio = $totalSales > 0 ? (($totalExpenses / $totalSales) * 100) : 0;
 
             return [
                 'todayRevenue'    => $todayRevenue,
@@ -80,8 +90,15 @@ class DashboardController extends Controller
                 'totalInvoices'   => $totalInvoices, // alias used by basic dashboard
                 'activeCustomers' => $activeCustomers, // alias used by basic dashboard
                 'lowStockCount'   => $lowStockCount,
+                'pendingBalance'  => $pendingBalance,
+                'itemsSoldToday'  => $itemsSold,
+                'totalOrders'     => $todayOrders,
                 'avgOrderValue'   => $avgOrderValue,
                 'profitMargin'    => $profitMargin,
+                'expenseRatio'    => $expenseRatio,
+                'paidInvoices'    => $paymentStatus['paid'],
+                'partialInvoices' => $paymentStatus['partial'],
+                'unpaidInvoices'  => $paymentStatus['unpaid'],
                 'revenueProgress' => 1000000,
                 // FIX: Initialize Heatmap data to prevent undefined variable error
                 'countryHeatMap'  => $this->getHeatMapData($company),
@@ -95,6 +112,10 @@ class DashboardController extends Controller
         $salesCountByMonth = $this->getSalesCountByMonth($company);
         $topCustomers = $this->getTopCustomers($company);
 
+        $currentSubscription = Subscription::resolveCurrentForUser($user);
+        $seatLimit = $currentSubscription?->resolvedUserLimit();
+        $seatCount = $company?->users()->count() ?? ($user->company_id ? User::where('company_id', $user->company_id)->count() : 1);
+
         $data = [
             'company'          => $company,
             'metrics'          => $metrics,
@@ -107,8 +128,11 @@ class DashboardController extends Controller
             'latestInvoices'   => $this->getLatestInvoices($company),
             'lowStockProducts' => $this->getLowStockProducts($company),
             'activities'       => $this->getRecentActivity($company),
+            'dashboardHealth'  => $this->getDashboardHealth($metrics),
             'userRole'         => $userRole,
             'permissions'      => $permissions,
+            'currentSubscription' => $currentSubscription,
+            'subscriptionStatus' => $this->subscriptionStatusPayload($currentSubscription, $seatCount, $seatLimit),
             // FIX: Added '?? []' to handle missing keys in old cache
             'countryHeatMap'   => $metrics['countryHeatMap'] ?? [], 
         ];
@@ -118,31 +142,14 @@ class DashboardController extends Controller
             return view('SuperAdmin.dashboards.enterprise', $data);
         }
 
-        $activeSubscription = Subscription::query()
-            ->where(function ($q) use ($company, $user) {
-                if ($company?->id && Schema::hasColumn('subscriptions', 'company_id')) {
-                    $q->where('company_id', $company->id);
-                }
-                $q->orWhere('user_id', $user->id);
-            })
-            ->where('payment_status', 'paid')
-            ->where('status', 'Active')
-            ->latest('paid_at')
-            ->latest('id')
-            ->first();
-
-        $plan = strtolower(
-            $activeSubscription?->plan_name
-            ?? $activeSubscription?->plan
+        $plan = Plan::normalizeTier(
+            $currentSubscription?->plan_name
+            ?? $currentSubscription?->plan
             ?? ($company->plan ?? 'basic')
         );
 
-        if ($plan === 'professional') {
-            $plan = 'pro';
-        }
-
         return match($plan) {
-            'pro'        => view('SuperAdmin.dashboards.pro', $data),
+            'professional' => view('SuperAdmin.dashboards.pro', $data),
             'enterprise' => view('SuperAdmin.dashboards.enterprise', $data),
             default      => view('SuperAdmin.dashboards.basic', $data),
         };
@@ -158,6 +165,42 @@ class DashboardController extends Controller
             'USA'     => 0,
             'UK'      => 0
         ];
+    }
+
+    private function subscriptionStatusPayload(?Subscription $subscription, int $seatCount, ?int $seatLimit): ?array
+    {
+        if (!$subscription || !$subscription->end_date) {
+            return null;
+        }
+
+        $usage = $seatLimit === null
+            ? "Users in workspace: {$seatCount} (unlimited on current plan)."
+            : "Users in workspace: {$seatCount}/{$seatLimit}.";
+
+        if ($subscription->isExpired()) {
+            $date = optional($subscription->end_date)->format('M d, Y');
+
+            return [
+                'state' => 'expired',
+                'title' => 'Plan expired: workspace access is locked.',
+                'message' => "Your {$subscription->planLabel()} plan expired on {$date}. Renew to resume using the app modules.",
+                'usage' => $usage,
+            ];
+        }
+
+        if ($subscription->isExpiringSoon(7)) {
+            $days = max(0, $subscription->daysRemaining());
+            $date = optional($subscription->end_date)->format('M d, Y');
+
+            return [
+                'state' => 'warning',
+                'title' => $days === 0 ? 'Plan expires today.' : "Plan expires in {$days} day" . ($days === 1 ? '' : 's') . '.',
+                'message' => "Your {$subscription->planLabel()} plan will expire on {$date}. Renew now to avoid workspace interruption.",
+                'usage' => $usage,
+            ];
+        }
+
+        return null;
     }
 
     /* --- REST OF SCOPED HELPERS (Kept from your original logic) --- */
@@ -205,10 +248,36 @@ class DashboardController extends Controller
 
     private function getTopProducts($company) {
         if (!Schema::hasTable('products') || !Schema::hasTable('sale_items')) return collect();
-        return $this->scopeByCompany(Product::query(), 'products', $company, 'products.company_id')
-            ->join('sale_items', 'products.id', '=', 'sale_items.product_id')
-            ->select('products.id', 'products.name', DB::raw('SUM(sale_items.quantity) as total_qty'))
-            ->groupBy('products.id', 'products.name')->orderBy('total_qty', 'desc')->take(5)->get();
+        $salesTableHasCompany = Schema::hasColumn('sales', 'company_id');
+        $salesTableHasUser = Schema::hasColumn('sales', 'user_id');
+        $companyUserIds = $this->companyUserIds($company);
+
+        return DB::table('sale_items')
+            ->join('products', 'products.id', '=', 'sale_items.product_id')
+            ->join('sales', 'sales.id', '=', 'sale_items.sale_id')
+            ->when($company?->id, function ($query) use ($company, $salesTableHasCompany, $salesTableHasUser, $companyUserIds) {
+                if ($salesTableHasCompany) {
+                    $query->where(function ($nested) use ($company, $salesTableHasUser, $companyUserIds) {
+                        $nested->where('sales.company_id', $company->id);
+                        if ($salesTableHasUser) {
+                            $nested->orWhere(function ($legacy) use ($companyUserIds) {
+                                $legacy->whereNull('sales.company_id')
+                                    ->whereIn('sales.user_id', $companyUserIds);
+                            });
+                        }
+                    });
+                    return;
+                }
+
+                if ($salesTableHasUser) {
+                    $query->whereIn('sales.user_id', $companyUserIds);
+                }
+            })
+            ->select('products.id', 'products.name', DB::raw('SUM(COALESCE(sale_items.qty, 0)) as total_qty'))
+            ->groupBy('products.id', 'products.name')
+            ->orderByDesc('total_qty')
+            ->limit(5)
+            ->get();
     }
 
     private function getLowStockProducts($company) {
@@ -255,7 +324,7 @@ class DashboardController extends Controller
     private function getLatestInvoices($company) {
         if (!Schema::hasTable('sales')) return collect();
         return $this->scopeByCompany(Sale::query(), 'sales', $company)
-            ->select('id', 'order_number', 'customer_name', 'total', 'created_at')
+            ->select('id', 'order_number', 'invoice_no', 'customer_name', 'total', 'balance', 'payment_status', 'created_at')
             ->orderByDesc('created_at')
             ->limit(10)
             ->get();
@@ -267,7 +336,19 @@ class DashboardController extends Controller
             ->latest()
             ->limit(8)
             ->get()
-            ->map(fn($s) => (object)['id' => $s->id, 'description' => "Order #{$s->order_number} confirmed", 'created_at' => $s->created_at]);
+            ->map(function ($sale) {
+                $customer = $sale->customer_name ?: 'Walk-in customer';
+                $ref = $sale->invoice_no ?: $sale->order_number ?: ('Sale #' . $sale->id);
+                $status = strtoupper((string) ($sale->payment_status ?: 'paid'));
+
+                return (object) [
+                    'id' => $sale->id,
+                    'description' => "{$ref} for {$customer} marked {$status}",
+                    'created_at' => $sale->created_at,
+                    'amount' => (float) ($sale->total ?? 0),
+                    'status' => strtolower((string) ($sale->payment_status ?? 'paid')),
+                ];
+            });
     }
 
     private function getMonthlyExpensesData($company) {
@@ -325,6 +406,86 @@ class DashboardController extends Controller
             ->orderByDesc('total_spend')
             ->limit(5)
             ->get();
+    }
+
+    private function getPendingBalance($company): float
+    {
+        if (!Schema::hasTable('sales')) return 0;
+
+        return (float) ($this->scopeByCompany(Sale::query(), 'sales', $company)
+            ->where('balance', '>', 0)
+            ->sum('balance') ?? 0);
+    }
+
+    private function getItemsSold($company): int
+    {
+        if (!Schema::hasTable('sale_items') || !Schema::hasTable('sales')) return 0;
+
+        $salesTableHasCompany = Schema::hasColumn('sales', 'company_id');
+        $salesTableHasUser = Schema::hasColumn('sales', 'user_id');
+        $companyUserIds = $this->companyUserIds($company);
+
+        $query = DB::table('sale_items')
+            ->join('sales', 'sales.id', '=', 'sale_items.sale_id')
+            ->whereDate('sales.created_at', Carbon::today());
+
+        if ($company?->id) {
+            if ($salesTableHasCompany) {
+                $query->where(function ($nested) use ($company, $salesTableHasUser, $companyUserIds) {
+                    $nested->where('sales.company_id', $company->id);
+                    if ($salesTableHasUser) {
+                        $nested->orWhere(function ($legacy) use ($companyUserIds) {
+                            $legacy->whereNull('sales.company_id')
+                                ->whereIn('sales.user_id', $companyUserIds);
+                        });
+                    }
+                });
+            } elseif ($salesTableHasUser) {
+                $query->whereIn('sales.user_id', $companyUserIds);
+            }
+        }
+
+        return (int) ($query->sum('sale_items.qty') ?? 0);
+    }
+
+    private function getTodayOrders($company): int
+    {
+        if (!Schema::hasTable('sales')) return 0;
+
+        return (int) ($this->scopeByCompany(Sale::query(), 'sales', $company)
+            ->whereDate('created_at', Carbon::today())
+            ->count() ?? 0);
+    }
+
+    private function getPaymentStatusCounts($company): array
+    {
+        if (!Schema::hasTable('sales')) {
+            return ['paid' => 0, 'partial' => 0, 'unpaid' => 0];
+        }
+
+        $statusData = $this->scopeByCompany(Sale::query(), 'sales', $company)
+            ->select('payment_status', DB::raw('COUNT(*) as total'))
+            ->groupBy('payment_status')
+            ->pluck('total', 'payment_status');
+
+        return [
+            'paid' => (int) ($statusData->get('paid') ?? 0),
+            'partial' => (int) ($statusData->get('partial') ?? 0),
+            'unpaid' => (int) (($statusData->get('unpaid') ?? 0) + ($statusData->get('pending') ?? 0)),
+        ];
+    }
+
+    private function getDashboardHealth(array $metrics): array
+    {
+        $profitMargin = (float) ($metrics['profitMargin'] ?? 0);
+        $lowStock = (int) ($metrics['lowStockCount'] ?? 0);
+        $pendingBalance = (float) ($metrics['pendingBalance'] ?? 0);
+
+        return [
+            'cashflow' => $pendingBalance > 0 ? 'Attention needed' : 'Healthy',
+            'inventory' => $lowStock > 0 ? 'Restock soon' : 'Healthy',
+            'margin' => $profitMargin >= 20 ? 'Strong' : ($profitMargin > 0 ? 'Stable' : 'Thin'),
+        ];
     }
 
     private function scopeByCompany($query, string $table, $company, ?string $column = null)

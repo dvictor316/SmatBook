@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Subscription;
 use App\Models\User;
 use App\Models\DeploymentManager;
 use Illuminate\Http\Request;
@@ -53,8 +54,27 @@ class UserController extends Controller
             'email'    => 'required|email|unique:users,email',
             'role'     => 'required',
             'password' => 'required|min:6',
-            'profile_photo' => 'nullable|image|max:2048'
+            'profile_photo' => 'nullable|file|mimetypes:image/*|max:2048'
         ]);
+
+        $actor = Auth::user();
+        $companyId = $actor?->company_id;
+
+        if ($companyId && !$this->isCentralAdmin($actor)) {
+            $subscription = Subscription::resolveCurrentForUser($actor);
+            $userLimit = $subscription?->resolvedUserLimit();
+            $currentUsers = User::query()
+                ->where('company_id', $companyId)
+                ->count();
+
+            if ($userLimit !== null && $currentUsers >= $userLimit) {
+                $planLabel = $subscription ? $subscription->planLabel() : 'current';
+
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', "Your {$planLabel} plan allows {$userLimit} users only. Renew or upgrade to add more users.");
+            }
+        }
 
         $user = new User();
         $user->name = $request->name;
@@ -63,6 +83,7 @@ class UserController extends Controller
         $user->password = Hash::make($request->password);
         $user->status = 'active';
         $user->is_verified = 1;
+        $user->company_id = $this->isCentralAdmin($actor) ? null : $companyId;
 
         if ($request->hasFile('profile_photo')) {
             $user->profile_photo = $request->file('profile_photo')->store('profiles', 'public');
@@ -104,7 +125,7 @@ class UserController extends Controller
             'name'  => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
             'role'  => 'required',
-            'profile_photo' => 'nullable|image|max:2048'
+            'profile_photo' => 'nullable|file|mimetypes:image/*|max:2048'
         ]);
         
         $user->name = $request->name;
@@ -288,8 +309,8 @@ class UserController extends Controller
         $user = Auth::user();
 
         $request->validate([
-            'profile_photo' => 'nullable|image|max:2048',
-            'cover_photo'   => 'nullable|image|max:5120'
+            'profile_photo' => 'nullable|file|mimetypes:image/*|max:2048',
+            'cover_photo'   => 'nullable|file|mimetypes:image/*|max:5120'
         ]);
 
         if ($request->hasFile('profile_photo')) {
@@ -383,5 +404,15 @@ class UserController extends Controller
         }
 
         return 'users.index';
+    }
+
+    private function isCentralAdmin(?User $user): bool
+    {
+        if (!$user) {
+            return false;
+        }
+
+        return in_array(strtolower((string) $user->role), ['super_admin', 'superadmin'], true)
+            || strtolower((string) $user->email) === 'donvictorlive@gmail.com';
     }
 }

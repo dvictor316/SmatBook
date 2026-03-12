@@ -44,6 +44,18 @@ class CheckPlanAccess
     {
         $value = strtolower(trim($plan));
 
+        if (str_contains($value, 'professional') || $value === 'pro' || str_contains($value, 'pro ')) {
+            return 'professional';
+        }
+
+        if (str_contains($value, 'enterprise')) {
+            return 'enterprise';
+        }
+
+        if (str_contains($value, 'basic')) {
+            return 'basic';
+        }
+
         return match ($value) {
             'pro', 'professional' => 'professional',
             'enterprise' => 'enterprise',

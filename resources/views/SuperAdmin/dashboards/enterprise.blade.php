@@ -82,7 +82,53 @@
         height: 100%;
     }
     .mini-metric .label { font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 700; margin-bottom: 4px; }
-    .mini-metric .value { font-size: 1rem; font-weight: 800; color: #0f172a; line-height: 1.1; }
+    .mini-metric .value { font-size: 0.88rem; font-weight: 800; color: #0f172a; line-height: 1.1; }
+    .metric-glass h4 { font-size: 1.2rem; line-height: 1.1; letter-spacing: -0.02em; }
+    .activity-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 0;
+        border-bottom: 1px solid #eef4fb;
+    }
+    .activity-row:last-child { border-bottom: none; }
+    .insight-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 16px;
+    }
+    .insight-card {
+        border: 1px solid #e6eef9;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.92);
+        padding: 14px;
+    }
+    .insight-card .label {
+        font-size: 10px;
+        color: #64748b;
+        text-transform: uppercase;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        margin-bottom: 5px;
+    }
+    .insight-card .value {
+        font-size: 0.9rem;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1.1;
+    }
+    .insight-card .note {
+        margin-top: 6px;
+        font-size: 0.77rem;
+        color: #64748b;
+    }
+
+    @media (max-width: 991.98px) {
+        .insight-grid {
+            grid-template-columns: 1fr;
+        }
+    }
 
     /* Print Logic */
     @media print {
@@ -93,6 +139,22 @@
 </style>
 
 <div class="pos-content-area"> 
+    @include('SuperAdmin.partials._subscription_status_banner')
+
+    @php
+        $salesRows = collect($monthlySalesData ?? []);
+        $expenseRows = collect($monthlyExpenseData ?? []);
+        $profitRows = collect($monthlyProfitData ?? []);
+        $salesTotals = $salesRows->pluck('total_sales')->map(fn ($value) => (float) $value);
+        $expenseTotals = $expenseRows->pluck('total_expenses')->map(fn ($value) => (float) $value);
+        $profitTotals = $profitRows->pluck('total_profit')->map(fn ($value) => (float) $value);
+        $bestMonthIndex = $salesTotals->count() ? $salesTotals->search($salesTotals->max()) : null;
+        $bestMonthLabel = ($bestMonthIndex !== false && $bestMonthIndex !== null) ? ($salesRows[$bestMonthIndex]->month ?? 'N/A') : 'N/A';
+        $salesRunRate = $salesTotals->count() ? ($salesTotals->sum() / max($salesTotals->count(), 1)) : 0;
+        $expenseRunRate = $expenseTotals->count() ? ($expenseTotals->sum() / max($expenseTotals->count(), 1)) : 0;
+        $profitRunRate = $profitTotals->count() ? ($profitTotals->sum() / max($profitTotals->count(), 1)) : 0;
+    @endphp
+
     {{-- 1. Master Header --}} 
     <div class="enterprise-header"> 
         <div> 
@@ -150,6 +212,23 @@
                 </div>
                 <div style="min-height: 400px;">
                     @include('SuperAdmin.partials._monthly_sales_chart')
+                </div>
+                <div class="insight-grid">
+                    <div class="insight-card">
+                        <div class="label">Best Month</div>
+                        <div class="value">{{ $bestMonthLabel }}</div>
+                        <div class="note">Highest revenue month in the current trend window.</div>
+                    </div>
+                    <div class="insight-card">
+                        <div class="label">Revenue Run Rate</div>
+                        <div class="value">₦{{ number_format($salesRunRate, 2) }}</div>
+                        <div class="note">Average monthly revenue represented on the chart.</div>
+                    </div>
+                    <div class="insight-card">
+                        <div class="label">Profit Run Rate</div>
+                        <div class="value">₦{{ number_format($profitRunRate, 2) }}</div>
+                        <div class="note">Average monthly profit after expenses.</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -244,6 +323,53 @@
                             @endforelse
                         </tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-xl-12">
+            <div class="card enterprise-card p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="fw-bold mb-0" style="color: var(--deep-sapphire);">
+                        <i class="fas fa-stream me-2 opacity-50 text-info"></i> Operations Feed
+                    </h5>
+                    <span class="text-muted small">{{ count($activities ?? []) }} live events</span>
+                </div>
+                <div class="row g-4">
+                    <div class="col-lg-5">
+                        <div class="d-grid gap-3">
+                            <div class="mini-metric">
+                                <div class="label">Cashflow Health</div>
+                                <div class="value">{{ $dashboardHealth['cashflow'] ?? 'Healthy' }}</div>
+                            </div>
+                            <div class="mini-metric">
+                                <div class="label">Inventory Health</div>
+                                <div class="value">{{ $dashboardHealth['inventory'] ?? 'Healthy' }}</div>
+                            </div>
+                            <div class="mini-metric">
+                                <div class="label">Margin Outlook</div>
+                                <div class="value">{{ $dashboardHealth['margin'] ?? 'Stable' }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-7">
+                        @forelse(($activities ?? collect())->take(6) as $activity)
+                            <div class="activity-row">
+                                <div>
+                                    <div class="fw-bold small text-dark">{{ $activity->description }}</div>
+                                    <div class="text-muted small">{{ optional($activity->created_at)->diffForHumans() }}</div>
+                                </div>
+                                <div class="text-end">
+                                    <div class="small fw-bold" style="color: var(--deep-sapphire);">₦{{ number_format((float) ($activity->amount ?? 0), 2) }}</div>
+                                    <div class="text-muted small text-uppercase">{{ $activity->status ?? 'paid' }}</div>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="text-center text-muted py-4 small">No recent activity yet.</div>
+                        @endforelse
+                    </div>
                 </div>
             </div>
         </div>

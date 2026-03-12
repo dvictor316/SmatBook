@@ -295,16 +295,20 @@
                     <h3 class="plan-name">Basic Core</h3>
                     <p class="plan-desc">Perfect for small start-up workflows and agile teams.</p>
                     <div class="price-display">
-                        <span id="price-basic">₦3,000</span><small id="period-basic">/mo</small>
+                        <span id="price-basic">₦5,500</span><small id="period-basic">/mo</small>
                     </div>
+                    <p class="plan-desc" style="height:auto; margin-top:-14px; margin-bottom:18px;">Solo option: <strong id="price-basic-solo">₦3,000</strong><span id="period-basic-solo">/mo</span> for 1 user.</p>
                     <ul class="feature-list">
-                        <li><i class="fas fa-check-circle"></i> 5 Executive Seats</li>
+                        <li><i class="fas fa-check-circle"></i> 2 User Seats</li>
                         <li><i class="fas fa-check-circle"></i> Cloud Ledger Core</li>
                         <li><i class="fas fa-check-circle"></i> Basic Reporting</li>
                         <li><i class="fas fa-check-circle"></i> Sales Tracking</li>
                         <li class="unavailable"><i class="fas fa-times-circle"></i> Custom Subdomains</li>
                     </ul>
-                    <button onclick="handleSubscription('basic')" class="btn-uplink btn-outline">Start Trial</button>
+                    <div style="display:grid; gap:10px;">
+                        <button onclick="handleSubscription('basic-solo')" class="btn-uplink btn-outline">Start 1 User</button>
+                        <button onclick="handleSubscription('basic')" class="btn-uplink">Start 2 Users</button>
+                    </div>
                 </div>
 
                 <!-- Pro -->
@@ -313,16 +317,20 @@
                     <h3 class="plan-name">Pro Engine</h3>
                     <p class="plan-desc">Advanced features for growing institutional entities.</p>
                     <div class="price-display">
-                        <span id="price-pro">₦7,000</span><small id="period-pro">/mo</small>
+                        <span id="price-pro">₦19,500</span><small id="period-pro">/mo</small>
                     </div>
+                    <p class="plan-desc" style="height:auto; margin-top:-14px; margin-bottom:18px;">Solo option: <strong id="price-pro-solo">₦7,000</strong><span id="period-pro-solo">/mo</span> for 1 user.</p>
                     <ul class="feature-list">
-                        <li><i class="fas fa-check-circle"></i> 25 Executive Seats</li>
+                        <li><i class="fas fa-check-circle"></i> 3 User Seats</li>
                         <li><i class="fas fa-check-circle"></i> Neural Forecasting</li>
                         <li><i class="fas fa-check-circle"></i> Multi-Currency Support</li>
                         <li><i class="fas fa-check-circle"></i> Advanced Inventory</li>
                         <li><i class="fas fa-check-circle"></i> Priority API Access</li>
                     </ul>
-                    <button onclick="handleSubscription('pro')" class="btn-uplink">Initialize Uplink</button>
+                    <div style="display:grid; gap:10px;">
+                        <button onclick="handleSubscription('pro-solo')" class="btn-uplink btn-outline">Start 1 User</button>
+                        <button onclick="handleSubscription('pro')" class="btn-uplink">Start 3 Users</button>
+                    </div>
                 </div>
 
                 <!-- Enterprise -->
@@ -330,16 +338,20 @@
                     <h3 class="plan-name">Institutional</h3>
                     <p class="plan-desc">The standard for large corporations and high-node networks.</p>
                     <div class="price-display">
-                        <span id="price-enterprise">₦15,000</span><small id="period-enterprise">/mo</small>
+                        <span id="price-enterprise">₦28,500</span><small id="period-enterprise">/mo</small>
                     </div>
+                    <p class="plan-desc" style="height:auto; margin-top:-14px; margin-bottom:18px;">Solo option: <strong id="price-enterprise-solo">₦15,000</strong><span id="period-enterprise-solo">/mo</span> for 1 user.</p>
                     <ul class="feature-list">
-                        <li><i class="fas fa-check-circle"></i> Unlimited Nodes</li>
+                        <li><i class="fas fa-check-circle"></i> Unlimited User Seats</li>
                         <li><i class="fas fa-check-circle"></i> Private Instance</li>
                         <li><i class="fas fa-check-circle"></i> Dedicated Subdomain</li>
                         <li><i class="fas fa-check-circle"></i> Advanced Audit Logs</li>
                         <li><i class="fas fa-check-circle"></i> 24/7 Success Manager</li>
                     </ul>
-                    <button onclick="handleSubscription('enterprise')" class="btn-uplink btn-outline">Deploy Now</button>
+                    <div style="display:grid; gap:10px;">
+                        <button onclick="handleSubscription('enterprise-solo')" class="btn-uplink btn-outline">Start 1 User</button>
+                        <button onclick="handleSubscription('enterprise')" class="btn-uplink">Deploy Unlimited</button>
+                    </div>
                 </div>
 
                 <!-- Bespoke -->
@@ -437,8 +449,22 @@
     const registerUrl = "{{ route('saas-register-initial') }}";
     
     const prices = {
-        monthly: { basic: '₦3,000', pro: '₦7,000', enterprise: '₦15,000' },
-        annual: { basic: '₦30,000', pro: '₦70,000', enterprise: '₦150,000' } // Adjusted Pro to 70k to match Controller Matrix
+        monthly: {
+            basic: '₦5,500',
+            basicSolo: '₦3,000',
+            pro: '₦19,500',
+            proSolo: '₦7,000',
+            enterprise: '₦28,500',
+            enterpriseSolo: '₦15,000'
+        },
+        annual: {
+            basic: '₦55,000',
+            basicSolo: '₦30,000',
+            pro: '₦195,000',
+            proSolo: '₦70,000',
+            enterprise: '₦285,000',
+            enterpriseSolo: '₦150,000'
+        }
     };
 
     function togglePricing() {
@@ -452,12 +478,18 @@
 
         // Update Text
         document.getElementById('price-basic').innerText = prices[period].basic;
+        document.getElementById('price-basic-solo').innerText = prices[period].basicSolo;
         document.getElementById('price-pro').innerText = prices[period].pro;
+        document.getElementById('price-pro-solo').innerText = prices[period].proSolo;
         document.getElementById('price-enterprise').innerText = prices[period].enterprise;
+        document.getElementById('price-enterprise-solo').innerText = prices[period].enterpriseSolo;
         
         document.getElementById('period-basic').innerText = smallText;
+        document.getElementById('period-basic-solo').innerText = smallText;
         document.getElementById('period-pro').innerText = smallText;
+        document.getElementById('period-pro-solo').innerText = smallText;
         document.getElementById('period-enterprise').innerText = smallText;
+        document.getElementById('period-enterprise-solo').innerText = smallText;
     }
 
     function handleSubscription(plan) {

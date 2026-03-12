@@ -11,14 +11,20 @@ class PlanSeeder extends Seeder
     {
         $plans = [
             // Monthly Plans
-            ['name' => 'Basic Monthly', 'price' => 6000, 'billing_cycle' => 'monthly', 'recommended' => 0],
-            ['name' => 'Pro Monthly', 'price' => 15000, 'billing_cycle' => 'monthly', 'recommended' => 1],
-            ['name' => 'Enterprise Monthly', 'price' => 35000, 'billing_cycle' => 'monthly', 'recommended' => 0],
+            ['name' => 'Basic Solo Monthly', 'price' => 3000, 'billing_cycle' => 'monthly', 'recommended' => 0, 'user_limit' => 1],
+            ['name' => 'Basic Monthly', 'price' => 5500, 'billing_cycle' => 'monthly', 'recommended' => 0, 'user_limit' => 2],
+            ['name' => 'Pro Solo Monthly', 'price' => 7000, 'billing_cycle' => 'monthly', 'recommended' => 0, 'user_limit' => 1],
+            ['name' => 'Pro Monthly', 'price' => 19500, 'billing_cycle' => 'monthly', 'recommended' => 1, 'user_limit' => 3],
+            ['name' => 'Enterprise Solo Monthly', 'price' => 15000, 'billing_cycle' => 'monthly', 'recommended' => 0, 'user_limit' => 1],
+            ['name' => 'Enterprise Monthly', 'price' => 28500, 'billing_cycle' => 'monthly', 'recommended' => 0, 'user_limit' => null],
             
             // Yearly Plans
-            ['name' => 'Basic Yearly', 'price' => 60000, 'billing_cycle' => 'yearly', 'recommended' => 0],
-            ['name' => 'Pro Yearly', 'price' => 150000, 'billing_cycle' => 'yearly', 'recommended' => 0],
-            ['name' => 'Enterprise Yearly', 'price' => 350000, 'billing_cycle' => 'yearly', 'recommended' => 0],
+            ['name' => 'Basic Solo Yearly', 'price' => 30000, 'billing_cycle' => 'yearly', 'recommended' => 0, 'user_limit' => 1],
+            ['name' => 'Basic Yearly', 'price' => 55000, 'billing_cycle' => 'yearly', 'recommended' => 0, 'user_limit' => 2],
+            ['name' => 'Pro Solo Yearly', 'price' => 70000, 'billing_cycle' => 'yearly', 'recommended' => 0, 'user_limit' => 1],
+            ['name' => 'Pro Yearly', 'price' => 195000, 'billing_cycle' => 'yearly', 'recommended' => 0, 'user_limit' => 3],
+            ['name' => 'Enterprise Solo Yearly', 'price' => 150000, 'billing_cycle' => 'yearly', 'recommended' => 0, 'user_limit' => 1],
+            ['name' => 'Enterprise Yearly', 'price' => 285000, 'billing_cycle' => 'yearly', 'recommended' => 0, 'user_limit' => null],
         ];
 
         foreach ($plans as $plan) {
@@ -29,6 +35,7 @@ class PlanSeeder extends Seeder
                     'recommended' => $plan['recommended'],
                     'is_active' => 1,
                     'status' => 'active',
+                    'user_limit' => $plan['user_limit'],
                 ]
             );
         }

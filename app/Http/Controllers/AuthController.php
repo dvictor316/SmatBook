@@ -28,25 +28,17 @@ class AuthController extends Controller
         $isManager = $request->query('type') === 'manager';
         $planParam = strtolower($request->query('plan', 'pro'));
         $cycleParam = strtolower($request->query('cycle', 'monthly'));
-
-        $planData = Plan::whereRaw('LOWER(name) = ?', [$planParam])
-            ->whereRaw('LOWER(billing_cycle) = ?', [$cycleParam])
-            ->where('status', 'active')
-            ->where('is_active', 1)
-            ->first();
-
-        $fallbackPrices = [
-            'monthly' => ['basic' => 3000, 'pro' => 7000, 'enterprise' => 15000],
-            'yearly' => ['basic' => 30000, 'pro' => 70000, 'enterprise' => 150000]
-        ];
+        $catalog = $this->registrationPlanCatalog();
+        $selectedCatalog = $catalog[$planParam] ?? $catalog['pro'];
+        $planData = Plan::findByCatalogName($selectedCatalog['label'], $cycleParam);
 
         if ($isManager) {
             $finalPrice = 0.00;
             $finalName = 'Partner';
             $finalCycle = 'N/A';
         } else {
-            $finalPrice = $planData ? $planData->price : ($fallbackPrices[$cycleParam][$planParam] ?? 7000);
-            $finalName = $planData ? $planData->name : ucfirst($planParam);
+            $finalPrice = $planData ? $planData->price : $selectedCatalog['prices'][$cycleParam];
+            $finalName = $selectedCatalog['label'];
             $finalCycle = $planData ? $planData->billing_cycle : ucfirst($cycleParam);
         }
 
@@ -70,6 +62,8 @@ class AuthController extends Controller
 
     public function register(Request $request)
     {
+        $requestedRole = $request->role ?? session('reg_role', 'admin');
+
         $rules = [
             'name' => 'required|string|max:255',
             'email' => 'nullable|required_without:phone|string|email|max:255|unique:users,email',
@@ -80,10 +74,14 @@ class AuthController extends Controller
                 'confirmed',
                 \Illuminate\Validation\Rules\Password::min(8)->letters()->numbers(),
             ],
-            'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'profile_photo' => 'nullable|file|mimetypes:image/*|max:2048',
         ];
 
-        if ($request->role !== 'deployment_manager') {
+        if ($requestedRole === 'deployment_manager') {
+            // Deployment managers must use a real email so notifications and approval updates reach them.
+            $rules['email'] = 'required|string|email|max:255|unique:users,email';
+            $rules['phone'] = ['nullable', 'string', 'max:25', 'regex:/^\+?[0-9]{7,20}$/'];
+        } else {
             $rules['plan'] = 'required|string';
             $rules['billing_cycle'] = 'required|string';
         }
@@ -128,19 +126,19 @@ class AuthController extends Controller
         }
 
         try {
-            return DB::transaction(function () use ($validated, $request) {
+            return DB::transaction(function () use ($validated, $request, $resolvedEmail, $normalizedPhone) {
                 $role = $request->role ?? session('reg_role', 'admin');
 
-                $user = User::create([
+                $user = User::create($this->filterPayloadForTable('users', [
                     'name' => $validated['name'],
                     'email' => $resolvedEmail,
                     'phone' => $normalizedPhone,
                     'password' => Hash::make($validated['password']),
                     'role' => $role,
                     'is_verified' => ($role === 'deployment_manager') ? 0 : 1,
-                ]);
+                ]));
 
-                if ($request->hasFile('profile_photo')) {
+                if ($request->hasFile('profile_photo') && Schema::hasColumn('users', 'profile_photo')) {
                     $user->profile_photo = $request->file('profile_photo')->store('users/profiles', 'public');
                     $user->save();
                 }
@@ -162,20 +160,25 @@ class AuthController extends Controller
 
                 $requestedPlan = strtolower((string) ($request->plan ?? session('selected_plan', 'pro')));
                 $requestedCycle = strtolower((string) ($request->billing_cycle ?? session('selected_cycle', 'monthly')));
+                $catalog = $this->registrationPlanCatalog();
+                $catalogEntry = $catalog[$requestedPlan] ?? null;
+                $planId = $request->plan_id ?? session('selected_plan_id');
+                $plan = $planId ? Plan::find((int) $planId) : null;
 
-                $plan = Plan::query()
-                    ->whereRaw('LOWER(name) = ?', [$requestedPlan])
-                    ->whereRaw('LOWER(billing_cycle) = ?', [$requestedCycle])
-                    ->where('status', 'active')
-                    ->where('is_active', 1)
-                    ->first();
+                if (!$plan && $catalogEntry) {
+                    $plan = Plan::findByCatalogName($catalogEntry['label'], $requestedCycle);
+                }
 
-                $planName = $plan?->name ?? ucfirst($requestedPlan ?: 'pro');
-                $planAmount = (float) ($request->amount ?? $plan?->price ?? session('selected_amount', 7000));
-                $planId = $plan?->id ?? session('selected_plan_id');
+                if (!$plan && !empty(session('selected_plan'))) {
+                    $plan = Plan::findByCatalogName((string) session('selected_plan'), $requestedCycle);
+                }
+
+                $planName = $catalogEntry['label'] ?? $plan?->name ?? ucfirst($requestedPlan ?: 'pro');
+                $planAmount = (float) ($request->amount ?? $plan?->price ?? session('selected_amount', 19500));
+                $planId = $plan?->id ?? $planId;
                 $billingCycle = ucfirst($request->billing_cycle ?? session('selected_cycle', 'Monthly'));
 
-                $subscription = Subscription::create([
+                $subscription = Subscription::create($this->filterPayloadForTable('subscriptions', [
                     'user_id' => $user->id,
                     'plan_id' => $planId,
                     'plan' => $planName,
@@ -184,7 +187,7 @@ class AuthController extends Controller
                     'amount' => $planAmount,
                     'status' => 'Pending',
                     'payment_status' => 'unpaid',
-                ]);
+                ]));
 
                 DB::afterCommit(function () use ($user, $planName, $planAmount, $billingCycle) {
                     SystemEventMailer::notifyRegistration($user, 'user', [
@@ -222,6 +225,12 @@ class AuthController extends Controller
 
     public function showLogin()
     {
+        if (request()->boolean('portal') && Auth::check()) {
+            Auth::logout();
+            request()->session()->invalidate();
+            request()->session()->regenerateToken();
+        }
+
         if (Auth::check()) {
             return $this->handlePostLoginRedirect();
         }
@@ -283,10 +292,32 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         Auth::logout();
+        $request->session()->forget([
+            'url.intended',
+            'current_tenant_id',
+            'current_tenant_name',
+            'selected_plan_id',
+            'selected_plan',
+            'selected_cycle',
+            'selected_amount',
+            'billing_cycle',
+            'plan',
+            'reg_role',
+            'checkout_from_deployment',
+            'deployment_manager_id',
+            'deployment_customer_id',
+            'deployment_company_id',
+            'deployment_subscription_id',
+            'deployment_manager_email',
+            'deployment_commission_rate',
+            'deployment_plan_name',
+            'impersonator_user_id',
+            'is_impersonating',
+        ]);
         Session::flush();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        return redirect()->route('login');
+        return redirect()->to('/login')->with('success', 'Logged out successfully. You can now sign in with another account.');
     }
 
     /**
@@ -628,8 +659,13 @@ class AuthController extends Controller
 
     private function isSuperAdmin($user): bool
     {
-        return in_array(strtolower($user->role), ['superadmin', 'super_admin']) 
-            || $user->email === 'donvictorlive@gmail.com';
+        $role = strtolower((string) ($user->role ?? ''));
+
+        if (strtolower((string) ($user->email ?? '')) === 'donvictorlive@gmail.com') {
+            return true;
+        }
+
+        return in_array($role, ['superadmin', 'super_admin'], true);
     }
 
     private function isDeploymentManager($user): bool
@@ -665,6 +701,36 @@ class AuthController extends Controller
         ]);
     }
 
+    private function registrationPlanCatalog(): array
+    {
+        return [
+            'basic-solo' => [
+                'label' => 'Basic Solo',
+                'prices' => ['monthly' => 3000, 'yearly' => 30000],
+            ],
+            'basic' => [
+                'label' => 'Basic',
+                'prices' => ['monthly' => 5500, 'yearly' => 55000],
+            ],
+            'pro-solo' => [
+                'label' => 'Professional Solo',
+                'prices' => ['monthly' => 7000, 'yearly' => 70000],
+            ],
+            'pro' => [
+                'label' => 'Professional',
+                'prices' => ['monthly' => 19500, 'yearly' => 195000],
+            ],
+            'enterprise-solo' => [
+                'label' => 'Enterprise Solo',
+                'prices' => ['monthly' => 15000, 'yearly' => 150000],
+            ],
+            'enterprise' => [
+                'label' => 'Enterprise',
+                'prices' => ['monthly' => 28500, 'yearly' => 285000],
+            ],
+        ];
+    }
+
     private function normalizePhoneForAuth(?string $phone): ?string
     {
         $raw = trim((string) $phone);
@@ -679,6 +745,17 @@ class AuthController extends Controller
         }
 
         return $hasPlus ? ('+' . $digits) : $digits;
+    }
+
+    private function filterPayloadForTable(string $table, array $payload): array
+    {
+        if (!Schema::hasTable($table)) {
+            return $payload;
+        }
+
+        return collect($payload)
+            ->filter(fn ($_value, $column) => Schema::hasColumn($table, (string) $column))
+            ->all();
     }
 
     private function isSocialProviderConfigured(string $provider): bool

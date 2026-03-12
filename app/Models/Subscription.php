@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Carbon\Carbon;
 use App\Support\GeoCurrency;
+use App\Models\Plan;
 
 class Subscription extends Model
 {
@@ -115,15 +116,6 @@ class Subscription extends Model
         return $query->where('status', 'Active');
     }
 
-    public function scopeExpiringSoon($query, int $days = 7)
-    {
-        return $query
-            ->whereRaw("LOWER(COALESCE(status, '')) IN ('active','trial')")
-            ->whereNotNull('end_date')
-            ->whereDate('end_date', '>=', now()->toDateString())
-            ->whereDate('end_date', '<=', now()->addDays($days)->toDateString());
-    }
-
     public function hasDomain(): bool
     {
         return !empty($this->domain_prefix) || ($this->company && !empty($this->company->subdomain));
@@ -134,7 +126,7 @@ class Subscription extends Model
      */
     public function getWorkspaceUrlAttribute(): string
     {
-        $base = env('SESSION_DOMAIN', 'smatbook.com');
+        $base = env('SESSION_DOMAIN', 'smartprobook.com');
         $prefix = $this->domain_prefix ?? ($this->company ? $this->company->subdomain : null);
         
         return $prefix ? "https://{$prefix}." . ltrim($base, '.') : '#';
@@ -167,15 +159,8 @@ class Subscription extends Model
             return true;
         }
 
-        if (!$this->end_date) {
-            return false;
-        }
-
-        // end_date is stored as a date column, so we expire only after end of day.
-        $expired = Carbon::parse($this->end_date)->endOfDay()->lt(now());
-        if ($expired && in_array(strtolower((string) $this->status), ['active', 'trial'], true)) {
+        if ($this->end_date && $this->end_date->copy()->endOfDay()->isPast()) {
             $this->updateQuietly(['status' => 'Expired']);
-            $this->status = 'Expired';
             return true;
         }
 
@@ -193,7 +178,7 @@ class Subscription extends Model
     public function daysRemaining(): int
     {
         if ($this->isExpired() || !$this->end_date) return 0;
-        return (int) now()->diffInDays(Carbon::parse($this->end_date)->endOfDay(), false);
+        return (int) now()->diffInDays($this->end_date, false);
     }
 
     public function isExpiringSoon(int $days = 7): bool
@@ -205,21 +190,22 @@ class Subscription extends Model
         return $this->daysRemaining() <= $days;
     }
 
-    public static function expireDueSubscriptions(?array $companyIds = null): int
+    public function planLabel(): string
     {
-        $query = static::query()
-            ->whereRaw("LOWER(COALESCE(status, '')) IN ('active','trial')")
-            ->whereNotNull('end_date')
-            ->whereDate('end_date', '<', now()->toDateString());
+        return (string) ($this->plan_name ?: $this->plan ?: optional($this->company)->plan ?: 'Basic');
+    }
 
-        if (!empty($companyIds)) {
-            $query->whereIn('company_id', $companyIds);
+    public function resolvedUserLimit(): ?int
+    {
+        if ($this->relationLoaded('plan_relationship') && $this->plan_relationship) {
+            return $this->plan_relationship->resolvedUserLimit();
         }
 
-        return (int) $query->update([
-            'status' => 'Expired',
-            'updated_at' => now(),
-        ]);
+        if ($this->plan_id && $plan = Plan::find($this->plan_id)) {
+            return $plan->resolvedUserLimit();
+        }
+
+        return Plan::defaultUserLimitForName($this->planLabel());
     }
 
     public function expiryMessage(): string
@@ -251,5 +237,39 @@ class Subscription extends Model
                 $subscription->isExpired();
             }
         });
+    }
+
+    public static function resolveCurrentForUser($user): ?self
+    {
+        if (!$user) {
+            return null;
+        }
+
+        $subscription = static::query()
+            ->with('plan_relationship')
+            ->where(function ($query) use ($user) {
+                if (!empty($user->company_id)) {
+                    $query->where('company_id', $user->company_id);
+                }
+
+                $query->orWhere('user_id', $user->id);
+            })
+            ->orderByRaw("
+                CASE
+                    WHEN LOWER(COALESCE(status, '')) IN ('active', 'trial') THEN 0
+                    WHEN LOWER(COALESCE(status, '')) = 'expired' THEN 1
+                    ELSE 2
+                END
+            ")
+            ->orderByDesc('end_date')
+            ->orderByDesc('id')
+            ->first();
+
+        if ($subscription && in_array(strtolower((string) $subscription->status), ['active', 'trial'], true)) {
+            $subscription->isExpired();
+            $subscription->refresh();
+        }
+
+        return $subscription;
     }
 }

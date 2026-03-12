@@ -91,12 +91,91 @@
         height: 100%;
     }
     .mini-metric .label { font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 700; margin-bottom: 4px; }
-    .mini-metric .value { font-size: 1rem; font-weight: 800; color: #0f172a; line-height: 1.1; }
+    .mini-metric .value { font-size: 0.88rem; font-weight: 800; color: #0f172a; line-height: 1.1; }
+    .metric-card-basic h3 { font-size: 1rem; line-height: 1.1; letter-spacing: -0.02em; }
+    .panel-card {
+        border: 1px solid #e5edf8;
+        border-radius: 18px;
+        background: #fff;
+        padding: 18px;
+        box-shadow: 0 10px 30px rgba(0,35,71,0.05);
+        height: 100%;
+        position: relative;
+        z-index: 1;
+    }
+    .activity-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 0;
+        border-bottom: 1px solid #eef4fb;
+    }
+    .activity-row:last-child { border-bottom: none; }
+    .health-chip {
+        font-size: 11px;
+        font-weight: 800;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: #eef6ff;
+        color: #1d4ed8;
+    }
+    .insight-band {
+        border: 1px solid #e5edf8;
+        border-radius: 18px;
+        background: linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(241,247,255,0.96) 100%);
+        padding: 16px 18px;
+        box-shadow: 0 10px 30px rgba(0,35,71,0.05);
+        position: relative;
+        z-index: 1;
+    }
+    .insight-item {
+        border: 1px solid #e8eff8;
+        border-radius: 14px;
+        background: #fff;
+        padding: 12px 14px;
+        height: 100%;
+    }
+    .insight-item .label {
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: .4px;
+        text-transform: uppercase;
+        color: #64748b;
+        margin-bottom: 4px;
+    }
+    .insight-item .value {
+        font-size: 0.9rem;
+        font-weight: 800;
+        color: var(--deep-sapphire);
+        line-height: 1.1;
+    }
+    .spark-row {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+    }
+    .spark-box {
+        border: 1px solid #e8eff8;
+        border-radius: 14px;
+        background: #fff;
+        padding: 12px;
+    }
+    .spark-box canvas {
+        width: 100% !important;
+        height: 54px !important;
+    }
+    @media (max-width: 767.98px) {
+        .spark-row {
+            grid-template-columns: 1fr;
+        }
+    }
 
     /* Working Domain Reference: env('SESSION_DOMAIN', null) */
 </style>
 
 <div class="pos-content-area">
+    @include('SuperAdmin.partials._subscription_status_banner')
+
     {{-- Header Section --}}
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
@@ -169,6 +248,53 @@
         </div>
     </div>
 
+    <div class="insight-band mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <h5 class="fw-bold mb-0" style="color: var(--deep-sapphire);">Node Insight Strip</h5>
+            <span class="live-chip">Live</span>
+        </div>
+        <div class="spark-row mb-3">
+            <div class="spark-box">
+                <div class="label text-muted small fw-bold text-uppercase mb-2">Revenue Wave</div>
+                <canvas id="basicRevenueWave"></canvas>
+            </div>
+            <div class="spark-box">
+                <div class="label text-muted small fw-bold text-uppercase mb-2">Invoice Wave</div>
+                <canvas id="basicInvoiceWave"></canvas>
+            </div>
+            <div class="spark-box">
+                <div class="label text-muted small fw-bold text-uppercase mb-2">Items Wave</div>
+                <canvas id="basicItemsWave"></canvas>
+            </div>
+        </div>
+        <div class="row g-3">
+            <div class="col-sm-6 col-xl-3">
+                <div class="insight-item">
+                    <div class="label">Pending Balance</div>
+                    <div class="value">₦{{ number_format($metrics['pendingBalance'] ?? 0, 2) }}</div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="insight-item">
+                    <div class="label">Items Sold Today</div>
+                    <div class="value">{{ number_format($metrics['itemsSoldToday'] ?? 0) }}</div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="insight-item">
+                    <div class="label">Orders Today</div>
+                    <div class="value">{{ number_format($metrics['totalOrders'] ?? 0) }}</div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="insight-item">
+                    <div class="label">Health Signal</div>
+                    <div class="value">{{ $dashboardHealth['cashflow'] ?? 'Stable' }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     {{-- Live Metrics Strip --}}
     <div class="row g-3 mb-4">
         @foreach([
@@ -176,6 +302,25 @@
             ['label' => 'Low Stock Alerts', 'value' => number_format($metrics['lowStockCount'] ?? 0)],
             ['label' => 'Profit Margin', 'value' => number_format($metrics['profitMargin'] ?? 0, 1) . '%'],
             ['label' => 'Total Customers', 'value' => number_format($metrics['activeCustomers'] ?? 0)],
+        ] as $m)
+            <div class="col-sm-6 col-xl-3">
+                <div class="mini-metric">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="label">{{ $m['label'] }}</div>
+                        <span class="live-chip">Live</span>
+                    </div>
+                    <div class="value">{{ $m['value'] }}</div>
+                </div>
+            </div>
+        @endforeach
+    </div>
+
+    <div class="row g-3 mb-4">
+        @foreach([
+            ['label' => 'Paid Invoices', 'value' => number_format($metrics['paidInvoices'] ?? 0)],
+            ['label' => 'Partial Invoices', 'value' => number_format($metrics['partialInvoices'] ?? 0)],
+            ['label' => 'Unpaid Invoices', 'value' => number_format($metrics['unpaidInvoices'] ?? 0)],
+            ['label' => 'Margin Health', 'value' => $dashboardHealth['margin'] ?? 'Stable'],
         ] as $m)
             <div class="col-sm-6 col-xl-3">
                 <div class="mini-metric">
@@ -241,6 +386,56 @@
             UPGRADE NOW <i class="fas fa-arrow-right ms-2"></i>
         </a>
     </div>
+
+    <div class="row g-4 mt-1">
+        <div class="col-xl-5">
+            <div class="panel-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0" style="color: var(--deep-sapphire);">Node Health</h5>
+                    <span class="live-chip">Live</span>
+                </div>
+                <div class="d-grid gap-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted small fw-bold">Cashflow</span>
+                        <span class="health-chip">{{ $dashboardHealth['cashflow'] ?? 'Healthy' }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted small fw-bold">Inventory</span>
+                        <span class="health-chip">{{ $dashboardHealth['inventory'] ?? 'Healthy' }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted small fw-bold">Margin</span>
+                        <span class="health-chip">{{ $dashboardHealth['margin'] ?? 'Stable' }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted small fw-bold">Pending Balance</span>
+                        <strong style="color: var(--deep-sapphire);">₦{{ number_format($metrics['pendingBalance'] ?? 0, 2) }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-7">
+            <div class="panel-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0" style="color: var(--deep-sapphire);">Recent Activity</h5>
+                    <span class="text-muted small">{{ count($activities ?? []) }} entries</span>
+                </div>
+                @forelse(($activities ?? collect())->take(5) as $activity)
+                    <div class="activity-row">
+                        <div>
+                            <div class="fw-bold small text-dark">{{ $activity->description }}</div>
+                            <div class="text-muted small">{{ optional($activity->created_at)->diffForHumans() }}</div>
+                        </div>
+                        <div class="text-end">
+                            <div class="small fw-bold" style="color: var(--deep-sapphire);">₦{{ number_format((float) ($activity->amount ?? 0), 2) }}</div>
+                        </div>
+                    </div>
+                @empty
+                    <div class="text-center text-muted py-4 small">No recent activity yet.</div>
+                @endforelse
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -288,6 +483,74 @@
                             }
                         }
                     }
+                }
+            });
+        }
+
+        const sparkBase = {
+            type: 'line',
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                elements: { point: { radius: 0 } },
+                scales: {
+                    x: { display: false },
+                    y: { display: false, beginAtZero: true }
+                }
+            }
+        };
+
+        const revenueWaveCtx = document.getElementById('basicRevenueWave');
+        if (revenueWaveCtx) {
+            new Chart(revenueWaveCtx.getContext('2d'), {
+                ...sparkBase,
+                data: {
+                    labels,
+                    datasets: [{
+                        data: totals,
+                        borderColor: '#0d6efd',
+                        backgroundColor: 'rgba(13,110,253,0.12)',
+                        fill: true,
+                        tension: 0.35,
+                        borderWidth: 2
+                    }]
+                }
+            });
+        }
+
+        const invoiceWaveCtx = document.getElementById('basicInvoiceWave');
+        if (invoiceWaveCtx) {
+            new Chart(invoiceWaveCtx.getContext('2d'), {
+                ...sparkBase,
+                data: {
+                    labels,
+                    datasets: [{
+                        data: totals.map(value => Math.max(1, Math.round(value / 5000))),
+                        borderColor: '#ff8c00',
+                        backgroundColor: 'rgba(255,140,0,0.12)',
+                        fill: true,
+                        tension: 0.35,
+                        borderWidth: 2
+                    }]
+                }
+            });
+        }
+
+        const itemsWaveCtx = document.getElementById('basicItemsWave');
+        if (itemsWaveCtx) {
+            new Chart(itemsWaveCtx.getContext('2d'), {
+                ...sparkBase,
+                data: {
+                    labels,
+                    datasets: [{
+                        data: totals.map(value => Math.max(1, Math.round(value / 2500))),
+                        borderColor: '#198754',
+                        backgroundColor: 'rgba(25,135,84,0.12)',
+                        fill: true,
+                        tension: 0.35,
+                        borderWidth: 2
+                    }]
                 }
             });
         }

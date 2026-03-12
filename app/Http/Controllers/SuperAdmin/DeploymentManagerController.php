@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\{Auth, DB, Hash, Mail, Log, Storage, Schema};
 use Illuminate\Support\{Str, Carbon};
+use Illuminate\Validation\Rule;
 use App\Models\{Company, User, Subscription, ActivityLog, DeploymentManager, DeploymentCompany, Plan};
 use App\Support\SystemEventMailer;
 
@@ -345,9 +346,16 @@ public function store(Request $request)
         'customer_phone' => $this->normalizePhoneForStorage($request->input('customer_phone')),
     ]);
 
+    $subdomainRules = ['required', 'string', 'max:50', 'alpha_dash'];
+    $companySlugColumn = $this->resolveCompanySlugColumn();
+    if ($companySlugColumn !== null) {
+        $subdomainRules[] = Rule::unique('companies', $companySlugColumn);
+    }
+
     $validated = $request->validate([
         'company_name'    => 'required|string|max:255',
-        'subdomain'       => 'required|string|max:50|alpha_dash|unique:companies,domain_prefix',
+        'subdomain'       => $subdomainRules,
+        'company_email'   => 'nullable|email|max:255',
         'phone'           => ['nullable', 'string', 'max:25', 'regex:/^\+?[0-9]{7,20}$/'],
         'industry'        => 'nullable|string|max:100',
         'plan_id'         => 'required|string',
@@ -372,6 +380,7 @@ public function store(Request $request)
     // Server-side guard: never trust client-submitted plan values.
     // Canonicalize plan fields from allowed map / DB, and reject tampered payloads.
     $validated = $this->normalizeDeploymentPlanPayload($validated);
+    $validated['company_email'] = $validated['company_email'] ?? $validated['email'];
 
     $manager = auth()->user();
 
@@ -381,7 +390,7 @@ public function store(Request $request)
         $result = DB::transaction(function () use ($validated, $manager) {
 
             // 1. Create customer user
-            $customer = User::create([
+            $customer = User::create($this->filterPayloadForTable('users', [
                 'name'              => $validated['name'],
                 'email'             => $validated['email'],
                 'password'          => Hash::make($validated['password']),
@@ -390,14 +399,16 @@ public function store(Request $request)
                 'status'            => 'pending',
                 'phone'             => $validated['customer_phone'] ?? null,
                 'email_verified_at' => null,
-            ]);
+            ]));
 
             // 2. Create company
-            $company = Company::create([
+            $company = Company::create($this->filterPayloadForTable('companies', array_merge([
                 'domain_prefix' => $validated['subdomain'],
+                'subdomain'     => $validated['subdomain'],
+                'domain'        => $validated['subdomain'],
                 'company_name'  => $validated['company_name'],
                 'name'          => $validated['company_name'],
-                'email'         => $validated['email'],
+                'email'         => $validated['company_email'],
                 'phone'         => $validated['phone'] ?? null,
                 'industry'      => $validated['industry'] ?? null,
                 'status'        => 'pending',
@@ -405,14 +416,14 @@ public function store(Request $request)
                 'user_id'       => $customer->id,
                 'owner_id'      => $customer->id,
                 'deployed_by'   => $manager->id,
-            ]);
+            ], $this->companySubscriptionColumnsPayload($validated))));
 
             // 3. Link customer → company
-            $customer->update(['company_id' => $company->id]);
+            $customer->update($this->filterPayloadForTable('users', ['company_id' => $company->id]));
 
             // 4. Create subscription
             // deployed_by is stored in DB — used as fallback if session is lost
-            $subscription = Subscription::create([
+            $subscription = Subscription::create($this->filterPayloadForTable('subscriptions', [
                 'user_id'         => $customer->id,
                 'company_id'      => $company->id,
                 'domain_prefix'   => $validated['subdomain'],
@@ -425,7 +436,7 @@ public function store(Request $request)
                 'status'          => 'Pending',
                 'payment_status'  => 'pending',
                 'deployed_by'     => $manager->id,  // KEY: stored in DB for fallback
-            ]);
+            ]));
 
             DB::afterCommit(function () use ($customer, $validated, $manager) {
                 SystemEventMailer::notifyRegistration($customer, 'user', [
@@ -527,6 +538,45 @@ private function normalizePhoneForStorage(?string $phone): ?string
     return $hasPlus ? ('+' . $digitsOnly) : $digitsOnly;
 }
 
+private function resolveCompanySlugColumn(): ?string
+{
+    foreach (['domain_prefix', 'subdomain', 'domain'] as $column) {
+        if (Schema::hasColumn('companies', $column)) {
+            return $column;
+        }
+    }
+
+    return null;
+}
+
+private function companySubscriptionColumnsPayload(array $validated): array
+{
+    $payload = [];
+
+    if (Schema::hasColumn('companies', 'subscription_start')) {
+        $payload['subscription_start'] = now();
+    }
+
+    if (Schema::hasColumn('companies', 'subscription_end')) {
+        $payload['subscription_end'] = strtolower((string) $validated['billing_cycle']) === 'yearly'
+            ? now()->addYear()
+            : now()->addMonth();
+    }
+
+    return $payload;
+}
+
+private function filterPayloadForTable(string $table, array $payload): array
+{
+    if (!Schema::hasTable($table)) {
+        return $payload;
+    }
+
+    return collect($payload)
+        ->filter(fn ($_value, $column) => Schema::hasColumn($table, (string) $column))
+        ->all();
+}
+
 private function normalizeDeploymentPlanPayload(array $validated): array
 {
     $submittedPlanId = strtolower(trim((string) ($validated['plan_id'] ?? '')));
@@ -535,12 +585,18 @@ private function normalizeDeploymentPlanPayload(array $validated): array
     $submittedPrice  = (float) ($validated['plan_price'] ?? 0);
 
     $allowedPlans = [
-        'basic-monthly' => ['name' => 'Basic',        'price' => 3000.0,   'billing_cycle' => 'monthly'],
-        'professional-monthly' => ['name' => 'Professional', 'price' => 7000.0,   'billing_cycle' => 'monthly'],
-        'enterprise-monthly' => ['name' => 'Enterprise',   'price' => 15000.0,  'billing_cycle' => 'monthly'],
-        'basic-yearly' => ['name' => 'Basic',        'price' => 30000.0,  'billing_cycle' => 'yearly'],
-        'professional-yearly' => ['name' => 'Professional', 'price' => 70000.0,  'billing_cycle' => 'yearly'],
-        'enterprise-yearly' => ['name' => 'Enterprise',   'price' => 150000.0, 'billing_cycle' => 'yearly'],
+        'basic-solo-monthly' => ['name' => 'Basic Solo', 'price' => 3000.0, 'billing_cycle' => 'monthly'],
+        'basic-monthly' => ['name' => 'Basic',        'price' => 5500.0,   'billing_cycle' => 'monthly'],
+        'professional-solo-monthly' => ['name' => 'Professional Solo', 'price' => 7000.0, 'billing_cycle' => 'monthly'],
+        'professional-monthly' => ['name' => 'Professional', 'price' => 19500.0,   'billing_cycle' => 'monthly'],
+        'enterprise-solo-monthly' => ['name' => 'Enterprise Solo', 'price' => 15000.0, 'billing_cycle' => 'monthly'],
+        'enterprise-monthly' => ['name' => 'Enterprise',   'price' => 28500.0,  'billing_cycle' => 'monthly'],
+        'basic-solo-yearly' => ['name' => 'Basic Solo', 'price' => 30000.0, 'billing_cycle' => 'yearly'],
+        'basic-yearly' => ['name' => 'Basic',        'price' => 55000.0,  'billing_cycle' => 'yearly'],
+        'professional-solo-yearly' => ['name' => 'Professional Solo', 'price' => 70000.0, 'billing_cycle' => 'yearly'],
+        'professional-yearly' => ['name' => 'Professional', 'price' => 195000.0,  'billing_cycle' => 'yearly'],
+        'enterprise-solo-yearly' => ['name' => 'Enterprise Solo', 'price' => 150000.0, 'billing_cycle' => 'yearly'],
+        'enterprise-yearly' => ['name' => 'Enterprise',   'price' => 285000.0, 'billing_cycle' => 'yearly'],
     ];
 
     // Preferred path: known UI plan ids.
@@ -559,6 +615,7 @@ private function normalizeDeploymentPlanPayload(array $validated): array
         $validated['plan_name'] = $canon['name'];
         $validated['plan_price'] = $canon['price'];
         $validated['billing_cycle'] = $canon['billing_cycle'];
+        $validated['plan_id'] = $this->resolvePlanIdFromCatalog($canon['name'], $canon['billing_cycle']);
         return $validated;
     }
 
@@ -583,6 +640,7 @@ private function normalizeDeploymentPlanPayload(array $validated): array
             $validated['plan_name'] = $dbName;
             $validated['plan_price'] = $dbPrice;
             $validated['billing_cycle'] = $dbCycle;
+            $validated['plan_id'] = (int) $plan->id;
             return $validated;
         }
     }
@@ -590,6 +648,13 @@ private function normalizeDeploymentPlanPayload(array $validated): array
     throw \Illuminate\Validation\ValidationException::withMessages([
         'plan_id' => ['Unsupported plan selected. Please choose a valid plan.'],
     ]);
+}
+
+private function resolvePlanIdFromCatalog(string $planName, string $billingCycle): ?int
+{
+    $plan = Plan::findByCatalogName($planName, $billingCycle);
+
+    return $plan?->id ? (int) $plan->id : null;
 }
 
 

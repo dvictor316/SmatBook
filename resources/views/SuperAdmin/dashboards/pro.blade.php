@@ -108,10 +108,77 @@
         height: 100%;
     }
     .mini-metric .label { font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 700; margin-bottom: 4px; }
-    .mini-metric .value { font-size: 1rem; font-weight: 800; color: #0f172a; line-height: 1.1; }
+    .mini-metric .value { font-size: 0.88rem; font-weight: 800; color: #0f172a; line-height: 1.1; }
+    .glass-card-pro h3 { font-size: 0.96rem; line-height: 1.1; letter-spacing: -0.02em; }
+    .panel-card {
+        border: 1px solid #e5edf8;
+        border-radius: 18px;
+        background: #fff;
+        padding: 18px;
+        box-shadow: 0 10px 30px rgba(0,35,71,0.05);
+        height: 100%;
+    }
+    .activity-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 0;
+        border-bottom: 1px solid #eef4fb;
+    }
+    .activity-row:last-child { border-bottom: none; }
+    .insight-band {
+        border: 1px solid #e5edf8;
+        border-radius: 18px;
+        background: linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(241,247,255,0.96) 100%);
+        padding: 16px 18px;
+        box-shadow: 0 10px 30px rgba(0,35,71,0.05);
+    }
+    .insight-item {
+        border: 1px solid #e8eff8;
+        border-radius: 14px;
+        background: #fff;
+        padding: 12px 14px;
+        height: 100%;
+    }
+    .insight-item .label {
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: .4px;
+        text-transform: uppercase;
+        color: #64748b;
+        margin-bottom: 4px;
+    }
+    .insight-item .value {
+        font-size: 0.9rem;
+        font-weight: 800;
+        color: var(--deep-sapphire);
+        line-height: 1.1;
+    }
+    .spark-row {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+    }
+    .spark-box {
+        border: 1px solid #e8eff8;
+        border-radius: 14px;
+        background: #fff;
+        padding: 12px;
+    }
+    .spark-box canvas {
+        width: 100% !important;
+        height: 54px !important;
+    }
+    @media (max-width: 767.98px) {
+        .spark-row {
+            grid-template-columns: 1fr;
+        }
+    }
 </style>
 
 <div class="pos-content-area">
+    @include('SuperAdmin.partials._subscription_status_banner')
+
     {{-- Header Section --}}
     <div class="d-flex justify-content-between align-items-center mb-5">
         <div class="pro-header">
@@ -188,6 +255,53 @@
                 </div>
                 <div style="height: 350px;">
                     @include('SuperAdmin.partials._monthly_sales_chart')
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="insight-band mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <h5 class="fw-bold mb-0" style="color: var(--deep-sapphire);">Profitability Insight Strip</h5>
+            <span class="live-chip">Live</span>
+        </div>
+        <div class="spark-row mb-3">
+            <div class="spark-box">
+                <div class="label text-muted small fw-bold text-uppercase mb-2">Revenue Wave</div>
+                <canvas id="proRevenueWave"></canvas>
+            </div>
+            <div class="spark-box">
+                <div class="label text-muted small fw-bold text-uppercase mb-2">Expense Wave</div>
+                <canvas id="proExpenseWave"></canvas>
+            </div>
+            <div class="spark-box">
+                <div class="label text-muted small fw-bold text-uppercase mb-2">Profit Wave</div>
+                <canvas id="proProfitWave"></canvas>
+            </div>
+        </div>
+        <div class="row g-3">
+            <div class="col-sm-6 col-xl-3">
+                <div class="insight-item">
+                    <div class="label">Pending Balance</div>
+                    <div class="value">₦{{ number_format($metrics['pendingBalance'] ?? 0, 2) }}</div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="insight-item">
+                    <div class="label">Items Sold Today</div>
+                    <div class="value">{{ number_format($metrics['itemsSoldToday'] ?? 0) }}</div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="insight-item">
+                    <div class="label">Paid vs Partial</div>
+                    <div class="value">{{ number_format($metrics['paidInvoices'] ?? 0) }} / {{ number_format($metrics['partialInvoices'] ?? 0) }}</div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="insight-item">
+                    <div class="label">Margin Signal</div>
+                    <div class="value">{{ $dashboardHealth['margin'] ?? 'Stable' }}</div>
                 </div>
             </div>
         </div>
@@ -287,6 +401,66 @@
                         UPGRADE TO ENTERPRISE <i class="fas fa-rocket ms-2"></i>
                     </a>
                 </div>
+                <div class="row g-2 w-100 mt-4">
+                    <div class="col-6">
+                        <div class="insight-item text-start">
+                            <div class="label">Orders Today</div>
+                            <div class="value">{{ number_format($metrics['totalOrders'] ?? 0) }}</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="insight-item text-start">
+                            <div class="label">Low Stock</div>
+                            <div class="value">{{ number_format($metrics['lowStockCount'] ?? 0) }}</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="insight-item text-start">
+                            <div class="label">Expense Ratio</div>
+                            <div class="value">{{ number_format($metrics['expenseRatio'] ?? 0, 1) }}%</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="insight-item text-start">
+                            <div class="label">Cashflow Signal</div>
+                            <div class="value">{{ $dashboardHealth['cashflow'] ?? 'Healthy' }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mt-1">
+        <div class="col-xl-5">
+            <div class="panel-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0" style="color: var(--deep-sapphire);">Inventory Alerts</h5>
+                    <span class="live-chip">Live</span>
+                </div>
+                @include('SuperAdmin.partials._low_stock')
+            </div>
+        </div>
+        <div class="col-xl-7">
+            <div class="panel-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0" style="color: var(--deep-sapphire);">Recent Activity</h5>
+                    <span class="text-muted small">{{ count($activities ?? []) }} entries</span>
+                </div>
+                @forelse(($activities ?? collect())->take(6) as $activity)
+                    <div class="activity-row">
+                        <div>
+                            <div class="fw-bold small text-dark">{{ $activity->description }}</div>
+                            <div class="text-muted small">{{ optional($activity->created_at)->diffForHumans() }}</div>
+                        </div>
+                        <div class="text-end">
+                            <div class="small fw-bold text-primary">₦{{ number_format((float) ($activity->amount ?? 0), 2) }}</div>
+                            <div class="text-muted small text-uppercase">{{ $activity->status ?? 'paid' }}</div>
+                        </div>
+                    </div>
+                @empty
+                    <div class="text-center text-muted py-4 small">No recent activity yet.</div>
+                @endforelse
             </div>
         </div>
     </div>
@@ -360,6 +534,74 @@
                 }
             }
         });
+
+        const sparkBase = {
+            type: 'line',
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                elements: { point: { radius: 0 } },
+                scales: {
+                    x: { display: false },
+                    y: { display: false, beginAtZero: true }
+                }
+            }
+        };
+
+        const revenueWaveCtx = document.getElementById('proRevenueWave');
+        if (revenueWaveCtx) {
+            new Chart(revenueWaveCtx.getContext('2d'), {
+                ...sparkBase,
+                data: {
+                    labels,
+                    datasets: [{
+                        data: salesSeries,
+                        borderColor: '#16a34a',
+                        backgroundColor: 'rgba(22,163,74,0.12)',
+                        fill: true,
+                        tension: 0.3,
+                        borderWidth: 2
+                    }]
+                }
+            });
+        }
+
+        const expenseWaveCtx = document.getElementById('proExpenseWave');
+        if (expenseWaveCtx) {
+            new Chart(expenseWaveCtx.getContext('2d'), {
+                ...sparkBase,
+                data: {
+                    labels,
+                    datasets: [{
+                        data: expenseSeries,
+                        borderColor: '#dc2626',
+                        backgroundColor: 'rgba(220,38,38,0.12)',
+                        fill: true,
+                        tension: 0.3,
+                        borderWidth: 2
+                    }]
+                }
+            });
+        }
+
+        const profitWaveCtx = document.getElementById('proProfitWave');
+        if (profitWaveCtx) {
+            new Chart(profitWaveCtx.getContext('2d'), {
+                ...sparkBase,
+                data: {
+                    labels,
+                    datasets: [{
+                        data: profitSeries,
+                        borderColor: '#4338ca',
+                        backgroundColor: 'rgba(67,56,202,0.12)',
+                        fill: true,
+                        tension: 0.3,
+                        borderWidth: 2
+                    }]
+                }
+            });
+        }
     });
 </script>
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Subscription;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -25,30 +26,40 @@ class SubscriptionActive
             'management.review',
             'membership-plans',
             'logout',
+            'emergency.logout',
+            'user.dashboard',
+            'tenant.dashboard',
+            'plan-billing',
         ];
 
-        if ($request->routeIs($allowedRoutes)) {
+        if ($request->routeIs($allowedRoutes) || $request->routeIs('payment.*')) {
             return $next($request);
         }
 
-        // Admin Override
-        if ($user->email === 'donvictorlive@gmail.com') {
+        if (
+            in_array(strtolower((string) ($user->role ?? '')), ['super_admin', 'superadmin'], true) ||
+            strtolower((string) ($user->email ?? '')) === 'donvictorlive@gmail.com'
+        ) {
             return $next($request);
         }
 
-        // Enforcement Logic
-        $subscription = $user->subscription;
-        if ($subscription) {
-            $subscription->isExpired();
+        $subscription = Subscription::resolveCurrentForUser($user);
+
+        if (!$subscription) {
+            return redirect()->route('membership-plans');
         }
 
-        if (!$subscription || strtolower((string) $subscription->status) !== 'active') {
-            if ($subscription && strtolower((string) $subscription->status) === 'expired') {
-                return redirect()->route('membership-plans')
-                    ->with('error', 'Subscription expired. Please renew to continue.');
-            }
+        if (strtolower((string) $subscription->plan_name) === 'custom' && !$subscription->isValid()) {
+            return redirect()->route('management.review');
+        }
 
-            if ($subscription && strtolower($subscription->plan_name) === 'custom') {
+        if ($subscription->isExpired()) {
+            return redirect()->route('user.dashboard')
+                ->with('error', 'Your subscription has expired. Renew your plan to restore full access.');
+        }
+
+        if (!$subscription->isValid()) {
+            if (strtolower((string) $subscription->plan_name) === 'custom') {
                 return redirect()->route('management.review');
             }
             return redirect()->route('membership-plans');
