@@ -221,7 +221,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 10;
+    z-index: 30;
 }
 .hero-circle {
     width: clamp(380px, 42vw, 580px);
@@ -325,7 +325,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     box-shadow: 0 12px 32px rgba(0,0,0,0.28);
     display: flex; align-items: center; gap: 9px;
     backdrop-filter: blur(8px);
-    z-index: 25;
+    z-index: 48;
     white-space: nowrap;
     width: clamp(142px, 10.8vw, 166px);
     max-width: 166px;
@@ -334,18 +334,18 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 }
 
 /* Left & Right Flanking Base Positioning */
-.cb-left { right: calc(100% - 18px); }
-.cb-right { left: calc(100% - 18px); }
+.cb-left { right: calc(100% - 10px); }
+.cb-right { left: calc(100% - 10px); }
 
 /* Keep every badge touching the same gold ring */
-.cb-left.cb-1, .cb-left.cb-2, .cb-left.cb-3, .cb-left.cb-4 { right: calc(100% - 18px); }
-.cb-right.cb-5, .cb-right.cb-6, .cb-right.cb-7, .cb-right.cb-8 { left: calc(100% - 18px); }
+.cb-left.cb-1, .cb-left.cb-2, .cb-left.cb-3, .cb-left.cb-4 { right: calc(100% - 10px); }
+.cb-right.cb-5, .cb-right.cb-6, .cb-right.cb-7, .cb-right.cb-8 { left: calc(100% - 10px); }
 
 /* Equal vertical spacing from top to bottom */
-.cb-1, .cb-5 { top: 20%; }
-.cb-2, .cb-6 { top: 40%; }
-.cb-3, .cb-7 { top: 60%; }
-.cb-4, .cb-8 { top: 80%; }
+.cb-1, .cb-5 { top: 18.5%; }
+.cb-2, .cb-6 { top: 39.5%; }
+.cb-3, .cb-7 { top: 60.5%; }
+.cb-4, .cb-8 { top: 81.5%; }
 
 /* Unique Blink Animations */
 .cb-1 { animation: badgeBlinkA 8s ease-in-out infinite; }
@@ -369,10 +369,10 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 
 /* phone zone */
 .hero-right {
-    flex: 0 0 auto; margin-left: clamp(84px,8vw,150px);
+    flex: 0 0 auto; margin-left: clamp(128px,11vw,210px);
     display: flex; align-items: center; justify-content: center; position: relative;
     overflow: visible;
-    z-index: 18;
+    z-index: 12;
 }
 
 .hero-phone {
@@ -382,7 +382,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     box-shadow: 0 32px 80px rgba(0,0,0,0.70), 0 0 0 1px rgba(255,255,255,0.06),
                 inset 0 0 30px rgba(255,255,255,0.02);
     overflow: hidden; position: relative;
-    animation: phoneFloat 5s ease-in-out infinite; z-index: 2;
+    animation: phoneFloat 5s ease-in-out infinite; z-index: 1;
 }
 @keyframes phoneFloat { 0%,100%{transform:translateY(0) rotate(1.5deg)} 50%{transform:translateY(-18px) rotate(1.5deg)} }
 
@@ -972,7 +972,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
    RESPONSIVE
 ═══════════════════════════════════════════════════════════ */
 @media (max-width: 1100px) {
-    .hero-right { margin-left: clamp(42px,4vw,72px); }
+    .hero-right { margin-left: clamp(88px,7vw,128px); }
     .hero-phone { width: clamp(220px,22vw,280px); }
 }
 @media (max-width: 991px) {
