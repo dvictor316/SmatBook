@@ -32,18 +32,19 @@
     }
 
     html, body {
-        height: 100%;
-        overflow: hidden !important;
+        min-height: 100%;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
     }
 
     /* 1. VIEWPORT & CENTERING FIX */
     .smat-viewport {
-        position: fixed;
+        position: relative;
         top: 0;
         left: 0;
         width: 100%;
-        height: 100vh;
-        padding: 20px 15px;
+        min-height: 100vh;
+        padding: 20px 15px 40px;
         background:
             radial-gradient(circle at top left, rgba(37, 99, 235, 0.14), transparent 28%),
             radial-gradient(circle at bottom right, rgba(15, 23, 42, 0.08), transparent 30%),
@@ -60,10 +61,10 @@
     .main-wrapper.login-body {
         display: block !important;
         width: 100% !important;
-        height: 100% !important;
+        min-height: 100% !important;
         margin: 0 !important;
         padding: 0 !important;
-        overflow: hidden !important;
+        overflow: visible !important;
     }
 
     /* Hide standard layout noise */
@@ -110,7 +111,7 @@
         border: 1px solid rgba(255, 255, 255, 0.8);
         
         /* KEY FIX: This centers it vertically but allows scrolling if needed */
-        margin: auto;
+        margin: auto auto 24px;
         backdrop-filter: blur(18px);
     }
 

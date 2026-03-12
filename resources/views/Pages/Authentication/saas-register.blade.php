@@ -32,25 +32,26 @@
     }
 
     html, body {
-        height: 100%;
-        overflow: hidden !important;
+        min-height: 100%;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
     }
 
     .main-wrapper,
     .main-wrapper.login-body {
         margin: 0 !important;
         padding: 0 !important;
-        height: 100% !important;
-        overflow: hidden !important;
+        min-height: 100% !important;
+        overflow: visible !important;
     }
 
     .smat-viewport {
-        position: fixed;
+        position: relative;
         top: 0;
         left: 0;
         width: 100%;
-        height: 100vh;
-        padding: 16px 12px 20px;
+        min-height: 100vh;
+        padding: 16px 12px 40px;
         background:
             radial-gradient(circle at top left, rgba(37, 99, 235, 0.14), transparent 28%),
             radial-gradient(circle at bottom right, rgba(15, 23, 42, 0.08), transparent 30%),
@@ -101,6 +102,7 @@
         overflow: hidden;
         border: 1px solid rgba(255, 255, 255, 0.8);
         backdrop-filter: blur(18px);
+        margin-bottom: 24px;
     }
 
     .smat-aside {
