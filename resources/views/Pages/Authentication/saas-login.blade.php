@@ -20,14 +20,15 @@
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
     :root {
-        --spa-bg: #f7faff;
-        --spa-surface: #ffffff;
-        --spa-aside: #eef4ff;
+        --spa-bg: #eff5ff;
+        --spa-surface: rgba(255, 255, 255, 0.95);
+        --spa-aside: linear-gradient(180deg, #071b4d 0%, #0b2a74 58%, #123da4 100%);
         --spa-border: #e2e8f0;
         --spa-primary: #2563eb;
         --spa-primary-dark: #1d4ed8;
         --spa-text: #0f172a;
         --spa-muted: #64748b;
+        --spa-gold: #f4d06f;
     }
 
     html, body {
@@ -43,7 +44,10 @@
         width: 100%;
         height: 100vh;
         padding: 20px 15px;
-        background-color: var(--spa-bg);
+        background:
+            radial-gradient(circle at top left, rgba(37, 99, 235, 0.14), transparent 28%),
+            radial-gradient(circle at bottom right, rgba(15, 23, 42, 0.08), transparent 30%),
+            linear-gradient(180deg, #f5f8ff 0%, #ecf3ff 100%);
         z-index: 900;
         /* Flexbox for vertical centering */
         display: flex;
@@ -82,7 +86,7 @@
     .bubble {
         position: absolute;
         border-radius: 50%;
-        background: radial-gradient(circle, rgba(59, 130, 246, 0.04) 0%, rgba(59, 130, 246, 0) 70%);
+        background: radial-gradient(circle, rgba(59, 130, 246, 0.12) 0%, rgba(59, 130, 246, 0) 72%);
         animation: floatBubble 25s infinite ease-in-out;
     }
 
@@ -95,95 +99,169 @@
     /* 3. COMPACT PROFESSIONAL CARD */
     .smat-card {
         background: var(--spa-surface);
-        width: min(100%, 720px);
-        max-width: 720px;
+        width: min(100%, 940px);
+        max-width: 940px;
         min-height: 0;
         height: auto;
-        border-radius: 14px;
-        box-shadow: 0 26px 70px rgba(15, 23, 42, 0.12), 0 8px 22px rgba(15, 23, 42, 0.08);
+        border-radius: 24px;
+        box-shadow: 0 30px 90px rgba(15, 23, 42, 0.12), 0 10px 24px rgba(37, 99, 235, 0.08);
         display: flex;
         overflow: hidden;
-        border: 1px solid var(--spa-border);
+        border: 1px solid rgba(255, 255, 255, 0.8);
         
         /* KEY FIX: This centers it vertically but allows scrolling if needed */
-        margin: auto; 
+        margin: auto;
+        backdrop-filter: blur(18px);
     }
 
     /* Side Panel (Branding) */
     .smat-aside {
-        width: 35%;
+        width: 38%;
         background: var(--spa-aside);
-        padding: 30px 24px;
+        padding: 32px 26px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        border-right: 1px solid var(--spa-border);
+        overflow: hidden;
+        color: #fff;
+        position: relative;
+    }
+    .smat-aside::before {
+        content: '';
+        position: absolute;
+        right: -70px;
+        bottom: -90px;
+        width: 260px;
+        height: 260px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(244, 208, 111, 0.24) 0%, rgba(244, 208, 111, 0) 72%);
+        pointer-events: none;
     }
 
+    .logo-img { height: 52px; width: auto; flex: 0 0 auto; filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.18)); }
     .brand-lockup {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
+        margin-bottom: 6px;
+        width: fit-content;
         max-width: 100%;
-        margin-bottom: 10px;
     }
-    .logo-img { height: 52px; width: auto; flex: 0 0 auto; }
-    .brand-text {
+    .brand-panel {
         display: flex;
         flex-direction: column;
         min-width: 0;
     }
-    .brand-title {
-        font-size: 1.1rem;
+    .brand-name {
+        font-size: clamp(1.08rem, 1.35vw, 1.35rem);
         font-weight: 900;
         line-height: 1;
-        color: #0f172a;
-        letter-spacing: -0.03em;
+        white-space: nowrap;
+        color: #ffffff;
     }
-    .brand-subtitle {
+    .brand-tagline {
         margin-top: 4px;
-        font-size: 0.68rem;
-        font-weight: 700;
-        letter-spacing: 0.12em;
+        font-size: 0.7rem;
+        letter-spacing: 0.14em;
         text-transform: uppercase;
-        color: var(--spa-muted);
+        color: rgba(255, 255, 255, 0.7);
+        font-weight: 700;
     }
 
     .status-badge {
         display: inline-flex;
         align-items: center;
-        padding: 5px 12px;
-        background: #ffffff;
-        color: var(--spa-primary);
-        border: 1px solid #dbeafe;
+        padding: 6px 12px;
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff6d3;
+        border: 1px solid rgba(244, 208, 111, 0.38);
         border-radius: 100px;
         font-size: 10px;
         font-weight: 800;
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
-    .status-dot { height: 6px; width: 6px; background: var(--spa-primary); border-radius: 50%; margin-right: 8px; box-shadow: 0 0 8px rgba(37,99,235,0.45); }
+    .status-dot { height: 6px; width: 6px; background: var(--spa-gold); border-radius: 50%; margin-right: 8px; box-shadow: 0 0 8px rgba(244,208,111,0.45); }
+    .aside-title {
+        margin: 18px 0 10px;
+        font-size: 1.72rem;
+        line-height: 1.14;
+        color: #ffffff;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+    }
+    .aside-copy {
+        color: rgba(255, 255, 255, 0.76);
+        font-size: 0.94rem;
+        line-height: 1.75;
+        margin: 0;
+        max-width: 28ch;
+    }
+    .aside-points { display: grid; gap: 10px; margin-top: 18px; }
+    .aside-point {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 12px 13px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .aside-point i { color: var(--spa-gold); margin-top: 2px; }
+    .aside-point strong { display: block; color: #ffffff; font-size: 0.88rem; margin-bottom: 2px; }
+    .aside-point span { color: rgba(255, 255, 255, 0.68); font-size: 0.78rem; line-height: 1.55; }
 
-    .side-footer-info { font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
+    .side-footer-info { font-size: 10px; font-weight: 700; color: rgba(255, 255, 255, 0.56); text-transform: uppercase; letter-spacing: 1px; }
 
     /* Main Panel (Login Form) */
     .smat-main {
-        width: 65%;
-        padding: 40px 32px;
+        width: 62%;
+        padding: 34px 34px 30px;
         background: var(--spa-surface);
         display: flex;
         flex-direction: column;
         justify-content: center;
+    }
+    .panel-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        align-self: flex-start;
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: #eff6ff;
+        color: var(--spa-primary);
+        border: 1px solid #dbeafe;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 14px;
+    }
+    .panel-kicker::before {
+        content: '';
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--spa-primary);
+        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+    }
+    .form-shell {
+        border: 1px solid #e5edf8;
+        border-radius: 22px;
+        background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+        padding: 22px 22px 20px;
+        box-shadow: 0 18px 38px rgba(15, 23, 42, 0.05);
     }
 
     .login-instruction-box {
         border: 1px solid #dbeafe;
         background: #eff6ff;
         color: #1e3a8a;
-        border-radius: 12px;
-        padding: 10px 12px;
-        margin-bottom: 20px;
-        font-size: 11px;
+        border-radius: 14px;
+        padding: 12px 14px;
+        margin-bottom: 18px;
+        font-size: 12px;
         line-height: 1.55;
     }
     .login-instruction-box strong {
@@ -192,8 +270,19 @@
 
     .uplink-badge {
         font-size: 10px; background: #f0f7ff; color: #3b82f6; 
-        padding: 8px 12px; border-radius: 10px; border: 1px solid #dbeafe;
-        margin-bottom: 20px; font-weight: 700; display: flex; align-items: center; gap: 8px;
+        padding: 9px 12px; border-radius: 12px; border: 1px solid #dbeafe;
+        margin-bottom: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px;
+    }
+
+    .logout-success {
+        border: 1px solid #bbf7d0;
+        background: #f0fdf4;
+        color: #166534;
+        border-radius: 12px;
+        padding: 10px 12px;
+        margin-bottom: 16px;
+        font-size: 12px;
+        font-weight: 700;
     }
 
     /* Input Styles */
@@ -203,13 +292,14 @@
     }
 
     .input-smat {
-        padding: 12px 16px; border-radius: 12px; border: 1px solid #e2e8f0;
+        padding: 13px 16px; border-radius: 14px; border: 1px solid #dbe5f2;
         background: #fcfdfe; font-size: 13px; transition: all 0.2s; font-weight: 500;
     }
 
     .input-smat:focus {
         background: #fff; border-color: #3b82f6;
-        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.04); outline: none;
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.06); outline: none;
+        transform: translateY(-1px);
     }
 
     .pass-container { position: relative; }
@@ -220,11 +310,11 @@
 
     /* Action Buttons */
     .btn-smat-navy {
-        background: var(--spa-primary);
-        color: #fff; border: none; padding: 12px;
-        border-radius: 12px; width: 100%; font-weight: 700; font-size: 13px;
+        background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 52%, #3b82f6 100%);
+        color: #fff; border: none; padding: 14px;
+        border-radius: 16px; width: 100%; font-weight: 800; font-size: 13px;
         transition: 0.3s; margin-top: 10px; text-transform: uppercase; letter-spacing: 1px;
-        box-shadow: 0 10px 25px rgba(37,99,235,0.2);
+        box-shadow: 0 16px 30px rgba(37,99,235,0.24);
     }
     .btn-smat-navy:hover {
         background: var(--spa-primary-dark);
@@ -239,11 +329,11 @@
     }
 
     .btn-social {
-        background: #fff; border: 1px solid #e2e8f0; padding: 10px; border-radius: 12px;
+        background: #fff; border: 1px solid #dbe5f2; padding: 11px; border-radius: 12px;
         display: flex; align-items: center; justify-content: center; font-size: 13px;
         font-weight: 700; color: #1e293b; text-decoration: none; transition: 0.2s;
     }
-    .btn-social:hover { background: #f8fafc; border-color: #cbd5e1; }
+    .btn-social:hover { background: #f8fbff; border-color: #bfd6ff; transform: translateY(-1px); }
 
     .bottom-link {
         margin-top: 25px;
@@ -259,18 +349,18 @@
         gap: 10px;
     }
     .bottom-action-link {
-        border: 1px solid #e2e8f0;
-        border-radius: 10px;
-        padding: 9px 10px;
+        border: 1px solid #dbe5f2;
+        border-radius: 12px;
+        padding: 11px 12px;
         text-decoration: none;
         color: #334155;
         font-size: 11px;
         font-weight: 700;
-        background: #f8fafc;
+        background: #f8fbff;
         transition: all 0.2s ease;
     }
     .bottom-action-link:hover {
-        border-color: #cbd5e1;
+        border-color: #bfd6ff;
         color: #0f172a;
         transform: translateY(-1px);
     }
@@ -296,24 +386,25 @@
     @media (max-width: 991px) {
         .smat-card {
             flex-direction: column;
-            width: min(100%, 600px);
-            max-width: 600px;
+            width: min(100%, 680px);
+            max-width: 680px;
             height: auto;
             margin: 20px auto;
         }
-        .smat-aside, .smat-main { width: 100%; padding: 24px 20px; }
-        .logo-img { height: 44px; }
-        .brand-title { font-size: 1rem; }
-        .brand-subtitle { font-size: 0.62rem; }
+        .smat-aside, .smat-main { width: 100%; padding: 22px 18px; }
+        .logo-img { height: 46px; }
+        .brand-lockup { gap: 7px; margin-bottom: 6px; }
+        .brand-name { font-size: 1.1rem; }
         /* Reset viewport for mobile scrolling */
         .smat-viewport { display: block; overflow-y: auto; }
     }
 
     @media (max-width: 640px) {
-        .smat-aside, .smat-main { padding: 20px 16px; }
+        .smat-aside, .smat-main { padding: 18px 14px; }
         .bottom-actions { grid-template-columns: 1fr; }
         .btn-smat-navy { padding: 13px; font-size: 13px; }
         .btn-social { font-size: 12px; padding: 9px; }
+        .form-shell { padding: 18px 16px; border-radius: 18px; }
     }
 </style>
 
@@ -333,14 +424,30 @@
             <div>
                 <div class="brand-lockup">
                     <img src="{{ asset('/assets/img/logos.png') }}" alt="SmartProbook" class="logo-img">
-                    <div class="brand-text">
-                        <span class="brand-title">SmartProbook</span>
-                        <span class="brand-subtitle">Business Cloud Suite</span>
+                    <div class="brand-panel">
+                        <span class="brand-name">SmartProbook</span>
+                        <span class="brand-tagline">Secure Business Stack</span>
                     </div>
                 </div>
                 <div class="status-badge"><span class="status-dot"></span> Secure Node Active</div>
-                <h2 class="fw-bold mt-4 mb-2" style="font-size: 1.6rem; color: #0f172a; line-height: 1.2;">Authorized<br>Login</h2>
-                <p class="small text-muted">Connect to your accounting nodes via secure encrypted uplink.</p>
+                <h2 class="aside-title">Authorized<br>Login</h2>
+                <p class="aside-copy">Connect to your accounting nodes through a cleaner, secure sign-in channel built for finance teams.</p>
+                <div class="aside-points">
+                    <div class="aside-point">
+                        <i class="fas fa-lock"></i>
+                        <div>
+                            <strong>Protected session access</strong>
+                            <span>Sign in with your admin email or phone and continue exactly where your workspace left off.</span>
+                        </div>
+                    </div>
+                    <div class="aside-point">
+                        <i class="fas fa-wave-square"></i>
+                        <div>
+                            <strong>Live node continuity</strong>
+                            <span>Your selected plan context and billing cycle stay attached through the login flow.</span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="side-footer-info">
@@ -350,31 +457,32 @@
 
         <!-- Login Form Panel -->
         <div class="smat-main">
-            <div class="login-instruction-box">
-                <strong>Get Started:</strong> Sign in or create account.
-            </div>
-
-            @if($persistedPlan !== 'enterprise' || $persistedCycle !== 'monthly')
-                <div class="uplink-badge">
-                    <i class="fas fa-microchip"></i> 
-                    <span>UPLINK: <strong>{{ strtoupper($persistedPlan) }} NODE</strong> DETECTED</span>
-                </div>
-            @endif
-
-            @if(session('success'))
-                <div class="auth-alert auth-alert-success">
-                    <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
-                </div>
-            @endif
-
-            @if($errors->any())
-                <div class="auth-alert auth-alert-error">
-                    <i class="fas fa-exclamation-triangle me-2"></i>{{ $errors->first() }}
-                </div>
-            @endif
-
-            <form action="{{ route('saas-login.post') }}" method="POST">
+            <span class="panel-kicker">Protected access</span>
+            <form action="{{ route('saas-login.post') }}" method="POST" class="form-shell">
                 @csrf
+                <div class="login-instruction-box">
+                    <strong>Get Started:</strong> Sign in or create account.
+                </div>
+
+                @if($persistedPlan !== 'enterprise' || $persistedCycle !== 'monthly')
+                    <div class="uplink-badge">
+                        <i class="fas fa-microchip"></i>
+                        <span>UPLINK: <strong>{{ strtoupper($persistedPlan) }} NODE</strong> DETECTED</span>
+                    </div>
+                @endif
+
+                @if(session('success'))
+                    <div class="auth-alert auth-alert-success">
+                        <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
+                    </div>
+                @endif
+
+                @if($errors->any())
+                    <div class="auth-alert auth-alert-error">
+                        <i class="fas fa-exclamation-triangle me-2"></i>{{ $errors->first() }}
+                    </div>
+                @endif
+
                 <div class="mb-3">
                     <label class="label-caps">Email or Phone</label>
                     <input type="text" name="login" class="form-control input-smat w-100" 

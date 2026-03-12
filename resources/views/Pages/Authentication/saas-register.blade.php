@@ -20,14 +20,15 @@
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
     :root {
-        --spa-bg: #f7faff;
-        --spa-surface: #ffffff;
-        --spa-aside: #eef4ff;
+        --spa-bg: #eff5ff;
+        --spa-surface: rgba(255, 255, 255, 0.95);
+        --spa-aside: linear-gradient(180deg, #071b4d 0%, #0b2a74 58%, #123da4 100%);
         --spa-border: #e2e8f0;
         --spa-primary: #2563eb;
         --spa-primary-dark: #1d4ed8;
         --spa-text: #0f172a;
         --spa-muted: #64748b;
+        --spa-gold: #f4d06f;
     }
 
     html, body {
@@ -50,7 +51,10 @@
         width: 100%;
         height: 100vh;
         padding: 16px 12px 20px;
-        background-color: var(--spa-bg);
+        background:
+            radial-gradient(circle at top left, rgba(37, 99, 235, 0.14), transparent 28%),
+            radial-gradient(circle at bottom right, rgba(15, 23, 42, 0.08), transparent 30%),
+            linear-gradient(180deg, #f5f8ff 0%, #ecf3ff 100%);
         z-index: 9999;
         display: flex;
         align-items: flex-start;
@@ -76,7 +80,7 @@
     .bubble {
         position: absolute;
         border-radius: 50%;
-        background: radial-gradient(circle, rgba(59, 130, 246, 0.04) 0%, rgba(59, 130, 246, 0) 70%);
+        background: radial-gradient(circle, rgba(59, 130, 246, 0.12) 0%, rgba(59, 130, 246, 0) 72%);
         animation: floatBubble 25s infinite ease-in-out;
     }
 
@@ -88,62 +92,77 @@
 
     .smat-card {
         background: var(--spa-surface);
-        width: min(100%, 740px);
-        max-width: 740px; 
-        min-height: 450px;
-        border-radius: 16px;
-        box-shadow: 0 20px 60px rgba(15, 23, 42, 0.03);
+        width: min(100%, 980px);
+        max-width: 980px;
+        min-height: 560px;
+        border-radius: 24px;
+        box-shadow: 0 30px 90px rgba(15, 23, 42, 0.12), 0 10px 24px rgba(37, 99, 235, 0.08);
         display: flex;
         overflow: hidden;
-        border: 1px solid var(--spa-border);
+        border: 1px solid rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(18px);
     }
 
     .smat-aside {
-        width: 35%;
+        width: 40%;
         background: var(--spa-aside);
-        padding: 30px 22px;
+        padding: 32px 26px;
         display: flex;
         flex-direction: column;
         justify-content: flex-start;
-        gap: 16px;
-        border-right: 1px solid var(--spa-border);
+        gap: 18px;
+        overflow: hidden;
+        color: #fff;
+        position: relative;
+    }
+    .smat-aside::before {
+        content: '';
+        position: absolute;
+        right: -70px;
+        bottom: -90px;
+        width: 260px;
+        height: 260px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(244, 208, 111, 0.24) 0%, rgba(244, 208, 111, 0) 72%);
+        pointer-events: none;
     }
 
+    .logo-img { height: 52px; width: auto; flex: 0 0 auto; filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.18)); }
     .brand-lockup {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
+        margin-bottom: 6px;
+        width: fit-content;
         max-width: 100%;
-        margin-bottom: 8px;
     }
-    .logo-img { height: 60px; width: auto; flex: 0 0 auto; }
-    .brand-text {
+    .brand-panel {
         display: flex;
         flex-direction: column;
         min-width: 0;
     }
-    .brand-title {
-        font-size: 1.15rem;
+    .brand-name {
+        font-size: clamp(1.08rem, 1.45vw, 1.4rem);
         font-weight: 900;
         line-height: 1;
-        color: #0f172a;
-        letter-spacing: -0.03em;
+        white-space: nowrap;
+        color: #ffffff;
     }
-    .brand-subtitle {
+    .brand-tagline {
         margin-top: 4px;
-        font-size: 0.72rem;
-        font-weight: 700;
-        letter-spacing: 0.12em;
+        font-size: 0.7rem;
+        letter-spacing: 0.14em;
         text-transform: uppercase;
-        color: var(--spa-muted);
+        color: rgba(255, 255, 255, 0.7);
+        font-weight: 700;
     }
 
     .step-badge {
         display: inline-block;
-        padding: 5px 12px;
-        background: #ffffff;
-        color: var(--spa-primary);
-        border: 1px solid #dbeafe;
+        padding: 6px 12px;
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff6d3;
+        border: 1px solid rgba(244, 208, 111, 0.38);
         border-radius: 100px;
         font-size: 10px;
         font-weight: 800;
@@ -151,28 +170,115 @@
         letter-spacing: 0.5px;
     }
 
-    .info-row { display: flex; justify-content: space-between; font-size: 11px; padding: 8px 0; border-bottom: 1px solid #f1f5f9; }
-    .info-label { color: #94a3b8; font-size: 9px; text-transform: uppercase; font-weight: 700; }
-    .info-value { color: #1e293b; font-weight: 700; }
+    .aside-title {
+        margin: 18px 0 10px;
+        font-size: 1.72rem;
+        line-height: 1.14;
+        color: #ffffff;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+    }
+
+    .aside-copy {
+        color: rgba(255, 255, 255, 0.76);
+        font-size: 0.94rem;
+        line-height: 1.75;
+        margin: 0;
+        max-width: 28ch;
+    }
+
+    .info-row { display: flex; justify-content: space-between; font-size: 11px; padding: 10px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+    .info-label { color: rgba(255, 255, 255, 0.58); font-size: 9px; text-transform: uppercase; font-weight: 700; }
+    .info-value { color: #ffffff; font-weight: 700; }
 
     .aside-meta {
         margin-top: 2px;
     }
 
-    .amount-display { margin-top: 10px; padding: 12px; background: #fff; border-radius: 14px; border: 1px solid #f1f5f9; }
-    .amount-value { font-size: 1.45rem; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; }
+    .amount-display {
+        margin-top: 14px;
+        padding: 16px;
+        background: rgba(255, 255, 255, 0.12);
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    }
+    .amount-value { font-size: 1.6rem; font-weight: 800; color: #ffffff; letter-spacing: -0.04em; }
+    .aside-points { margin-top: 18px; display: grid; gap: 10px; }
+    .aside-point {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        padding: 12px 13px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .aside-point i { color: var(--spa-gold); margin-top: 2px; }
+    .aside-point strong { display: block; color: #ffffff; font-size: 0.88rem; margin-bottom: 2px; }
+    .aside-point span { color: rgba(255, 255, 255, 0.68); font-size: 0.78rem; line-height: 1.55; }
 
     .smat-main {
-        width: 65%;
-        padding: 26px 24px;
+        width: 60%;
+        padding: 34px 34px 30px;
         background: #ffffff;
         display: flex;
         flex-direction: column;
         justify-content: center;
     }
 
-    .form-title { font-weight: 800; color: #0f172a; font-size: 1.35rem; margin-bottom: 4px; }
-    .form-subtitle { color: #64748b; font-size: 12px; margin-bottom: 14px; }
+    .panel-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        align-self: flex-start;
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: #eff6ff;
+        color: var(--spa-primary);
+        border: 1px solid #dbeafe;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 14px;
+    }
+    .panel-kicker::before {
+        content: '';
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--spa-primary);
+        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+    }
+    .form-title { font-weight: 800; color: #0f172a; font-size: 1.7rem; margin-bottom: 6px; letter-spacing: -0.03em; }
+    .form-subtitle { color: #64748b; font-size: 0.95rem; margin-bottom: 18px; line-height: 1.7; max-width: 44ch; }
+    .form-shell {
+        border: 1px solid #e5edf8;
+        border-radius: 22px;
+        background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+        padding: 22px 22px 20px;
+        box-shadow: 0 18px 38px rgba(15, 23, 42, 0.05);
+    }
+    .info-banner {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 14px;
+        border-radius: 14px;
+        background: #f8fbff;
+        border: 1px solid #e0ecff;
+        color: #1e3a8a;
+        font-size: 0.82rem;
+        line-height: 1.6;
+        margin-bottom: 18px;
+    }
+    .info-banner i { color: var(--spa-primary); }
+    .field-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+    }
 
     .label-caps {
         font-size: 11px; font-weight: 700; text-transform: uppercase;
@@ -180,13 +286,14 @@
     }
 
     .input-smat {
-        padding: 12px 16px; border-radius: 12px; border: 1px solid #e2e8f0;
+        padding: 13px 16px; border-radius: 14px; border: 1px solid #dbe5f2;
         background: #fcfdfe; font-size: 13px; transition: all 0.2s; font-weight: 500;
     }
 
     .input-smat:focus {
         background: #fff; border-color: var(--spa-primary);
         box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.08); outline: none;
+        transform: translateY(-1px);
     }
 
     .pass-container { position: relative; }
@@ -196,9 +303,10 @@
     }
 
     .btn-smat-red {
-        background: var(--spa-primary); color: #fff; border: none; padding: 12px;
-        border-radius: 12px; width: 100%; font-weight: 700; font-size: 13px;
-        box-shadow: 0 10px 25px rgba(37, 99, 235, 0.2); transition: 0.3s;
+        background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 52%, #3b82f6 100%);
+        color: #fff; border: none; padding: 14px;
+        border-radius: 16px; width: 100%; font-weight: 800; font-size: 13px;
+        box-shadow: 0 16px 30px rgba(37, 99, 235, 0.24); transition: 0.3s;
         margin-top: 10px; text-transform: uppercase; letter-spacing: 1px;
     }
 
@@ -219,7 +327,7 @@
     .divider {
         position: relative;
         text-align: center;
-        margin: 18px 0;
+        margin: 22px 0;
         border-top: 1px solid #f1f5f9;
     }
     .divider span {
@@ -236,8 +344,8 @@
     }
     .btn-social {
         background: #fff;
-        border: 1px solid #e2e8f0;
-        padding: 10px;
+        border: 1px solid #dbe5f2;
+        padding: 11px;
         border-radius: 12px;
         display: flex;
         align-items: center;
@@ -249,17 +357,25 @@
         transition: 0.2s;
     }
     .btn-social:hover {
-        background: #f8fafc;
-        border-color: #cbd5e1;
+        background: #f8fbff;
+        border-color: #bfd6ff;
+        transform: translateY(-1px);
     }
 
     @media (max-width: 991px) {
-        .smat-card { flex-direction: column; width: min(100%, 620px); height: auto; margin: 0 auto; min-height: 0; }
-        .smat-aside, .smat-main { width: 100%; padding: 18px 14px; }
+        .smat-card { flex-direction: column; width: min(100%, 680px); height: auto; margin: 0 auto; min-height: 0; }
+        .smat-aside, .smat-main { width: 100%; padding: 22px 18px; }
         .smat-viewport { padding-bottom: 24px; }
-        .logo-img { height: 48px; }
-        .brand-title { font-size: 1rem; }
-        .brand-subtitle { font-size: 0.65rem; }
+        .logo-img { height: 46px; }
+        .brand-lockup { gap: 7px; margin-bottom: 6px; }
+        .brand-name { font-size: 1.12rem; }
+        .field-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 640px) {
+        .smat-card { border-radius: 20px; }
+        .smat-aside, .smat-main { padding: 18px 14px; }
+        .form-shell { padding: 18px 16px; border-radius: 18px; }
     }
 </style>
 
@@ -269,21 +385,21 @@
         <div class="bubble" style="width: 300px; height: 300px; bottom: -50px; right: -50px; animation-delay: -5s;"></div>
     </div>
 
-        <div class="smat-card">
-            <div class="smat-aside">
-                <div>
-                    <div class="brand-lockup">
-                        <img src="{{ asset('assets/img/logos.png') }}" alt="SmartProbook" class="logo-img">
-                        <div class="brand-text">
-                            <span class="brand-title">SmartProbook</span>
-                            <span class="brand-subtitle">Business Cloud Suite</span>
-                        </div>
+    <div class="smat-card">
+        <div class="smat-aside">
+            <div>
+                <div class="brand-lockup">
+                    <img src="{{ asset('assets/img/logos.png') }}" alt="SmartProbook" class="logo-img">
+                    <div class="brand-panel">
+                        <span class="brand-name">SmartProbook</span>
+                        <span class="brand-tagline">Secure Business Stack</span>
                     </div>
-                    <span class="step-badge">Step 01: Enrollment</span>
-                    <h2 class="fw-bold mt-4 mb-2" style="font-size: 1.5rem; color: #0f172a; line-height: 1.2;">
-                        {{ $isManager ? 'Deployment' : 'Administrator' }}<br>Registration
+                </div>
+                <span class="step-badge">Step 01: Enrollment</span>
+                <h2 class="aside-title">
+                    {{ $isManager ? 'Deployment' : 'Administrator' }}<br>Registration
                 </h2>
-                <p class="small text-muted">
+                <p class="aside-copy">
                     {{ $isManager ? 'Initialize your management node to deploy and monitor institutional clients.' : 'Begin your deployment by securing your institutional admin identity.' }}
                 </p>
             </div>
@@ -309,10 +425,27 @@
                         @endif
                     </div>
                 </div>
+                <div class="aside-points">
+                    <div class="aside-point">
+                        <i class="fas fa-shield-check"></i>
+                        <div>
+                            <strong>Identity-first onboarding</strong>
+                            <span>Every registration is tied to a verified admin or deployment manager profile.</span>
+                        </div>
+                    </div>
+                    <div class="aside-point">
+                        <i class="fas fa-layer-group"></i>
+                        <div>
+                            <strong>Plan-aware provisioning</strong>
+                            <span>Your selected plan and cycle are preserved before the account is activated.</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
         <div class="smat-main">
+            <span class="panel-kicker">Protected onboarding</span>
             <h1 class="form-title">Create Account</h1>
             <p class="form-subtitle">Enter your details to initialize this {{ $isManager ? 'management' : 'terminal' }} node.</p>
 
@@ -324,35 +457,41 @@
                 </div>
             @endif
 
-            <form action="{{ route('saas-register.post') }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ route('saas-register.post') }}" method="POST" enctype="multipart/form-data" class="form-shell">
                 @csrf
                 <input type="hidden" name="role" value="{{ $isManager ? 'deployment_manager' : 'admin' }}">
-                <input type="hidden" name="plan" value="{{ $selectedPlanKey ?? session('selected_plan_key', strtolower($lookupPlan)) }}">
+                <input type="hidden" name="plan" value="{{ strtolower($lookupPlan) }}">
                 <input type="hidden" name="billing_cycle" value="{{ strtolower($finalCycle) }}">
                 <input type="hidden" name="amount" value="{{ $displayPrice }}">
-                <input type="hidden" name="plan_id" value="{{ $plan_id ?? session('selected_plan_id') }}">
 
-                <div class="mb-3">
-                    <label class="label-caps">{{ $isManager ? 'Partner Name' : 'Full Name / Entity' }}</label>
-                    <input type="text" name="name" class="form-control input-smat w-100" 
-                           placeholder="{{ $isManager ? 'Management Entity' : 'Institutional Name' }}" value="{{ old('name') }}" required autofocus>
+                <div class="info-banner">
+                    <i class="fas fa-sparkles"></i>
+                    <span>{{ $isManager ? 'Partner registrations activate a deployment workspace with oversight tools.' : 'Your registration prepares a secure admin workspace aligned to the selected billing plan.' }}</span>
                 </div>
 
-                <div class="mb-3">
-                    <label class="label-caps">Email (or use phone below)</label>
-                    <input type="email" name="email" class="form-control input-smat w-100" 
-                           placeholder="admin@terminal.com" value="{{ old('email') }}">
+                <div class="field-grid mb-3">
+                    <div>
+                        <label class="label-caps">{{ $isManager ? 'Partner Name' : 'Full Name / Entity' }}</label>
+                        <input type="text" name="name" class="form-control input-smat w-100"
+                               placeholder="{{ $isManager ? 'Management Entity' : 'Institutional Name' }}" value="{{ old('name') }}" required autofocus>
+                    </div>
+                    <div>
+                        <label class="label-caps">Profile Photo (Optional)</label>
+                        <input type="file" name="profile_photo" class="form-control input-smat w-100" accept="image/*">
+                    </div>
                 </div>
 
-                <div class="mb-3">
-                    <label class="label-caps">Phone (or use email above)</label>
-                    <input type="text" name="phone" class="form-control input-smat w-100" 
-                           placeholder="+2348012345678" value="{{ old('phone') }}">
-                </div>
-
-                <div class="mb-3">
-                    <label class="label-caps">Profile Photo (Optional)</label>
-                    <input type="file" name="profile_photo" class="form-control input-smat w-100" accept="image/*">
+                <div class="field-grid mb-3">
+                    <div>
+                        <label class="label-caps">Email (or use phone below)</label>
+                        <input type="email" name="email" class="form-control input-smat w-100"
+                               placeholder="admin@terminal.com" value="{{ old('email') }}">
+                    </div>
+                    <div>
+                        <label class="label-caps">Phone (or use email above)</label>
+                        <input type="text" name="phone" class="form-control input-smat w-100"
+                               placeholder="+2348012345678" value="{{ old('phone') }}">
+                    </div>
                 </div>
 
                 <div class="row g-2 mb-4">
