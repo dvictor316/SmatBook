@@ -109,6 +109,43 @@
         padding: 4px 8px;
         border-radius: 999px;
     }
+
+    .pm-section-nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin: 0 0 14px;
+    }
+
+    .pm-section-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 14px;
+        border-radius: 999px;
+        border: 1px solid #dbe3ef;
+        background: #fff;
+        color: #334155;
+        font-size: 12px;
+        font-weight: 700;
+        line-height: 1.2;
+        text-decoration: none;
+        white-space: normal;
+        transition: all 0.2s ease;
+    }
+
+    .pm-section-chip:hover {
+        border-color: #93c5fd;
+        background: #eff6ff;
+        color: #1d4ed8;
+    }
+
+    .pm-anchor-offset {
+        position: relative;
+        top: -96px;
+        display: block;
+        visibility: hidden;
+    }
 </style>
 
 <div class="page-wrapper">
@@ -121,6 +158,29 @@
             <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newProjectModal">
                 <i class="fas fa-plus me-1"></i> New Project
             </button>
+        </div>
+
+        @php
+            $sectionLinks = [
+                ['id' => 'project-management', 'label' => 'Project Management', 'icon' => 'fa-briefcase'],
+                ['id' => 'profitability', 'label' => 'Project Profitability', 'icon' => 'fa-chart-line'],
+                ['id' => 'reputation-management', 'label' => 'Reputation Management', 'icon' => 'fa-star'],
+                ['id' => 'lead-management', 'label' => 'Lead Management', 'icon' => 'fa-user-plus'],
+                ['id' => 'appointment-scheduling', 'label' => 'Appointment Scheduling', 'icon' => 'fa-calendar-alt'],
+                ['id' => 'contract-esignature', 'label' => 'Contract Upload & E-Signature', 'icon' => 'fa-file-signature'],
+                ['id' => 'proposals', 'label' => 'Proposals', 'icon' => 'fa-file-alt'],
+                ['id' => 'ai-anomaly-detection', 'label' => 'AI Anomaly Detection', 'icon' => 'fa-microchip'],
+                ['id' => 'project-management-ai', 'label' => 'Project Management AI', 'icon' => 'fa-robot'],
+            ];
+        @endphp
+
+        <div class="pm-section-nav">
+            @foreach($sectionLinks as $sectionLink)
+                <a href="#{{ $sectionLink['id'] }}" class="pm-section-chip">
+                    <i class="fas {{ $sectionLink['icon'] }}"></i>
+                    <span>{{ $sectionLink['label'] }}</span>
+                </a>
+            @endforeach
         </div>
 
         @if(session('success'))
@@ -156,6 +216,8 @@
                 </div>
             </div>
         </div>
+
+        <span id="project-management" class="pm-anchor-offset"></span>
 
         <div class="row g-3">
             <div class="col-xl-7">
@@ -220,7 +282,7 @@
 
             <div class="col-xl-5">
                 <div class="pm-card p-3 h-100" id="profitability">
-                    <span id="tracking" style="position: relative; top: -96px;"></span>
+                    <span id="tracking" class="pm-anchor-offset"></span>
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <h5 class="mb-0" style="font-weight:800;">Project Profitability</h5>
                     </div>
@@ -293,17 +355,18 @@
             $canPro = in_array(($planTier ?? 'basic'), ['professional', 'enterprise'], true) || ($isSuperAdmin ?? false);
             $canEnterprise = (($planTier ?? 'basic') === 'enterprise') || ($isSuperAdmin ?? false);
             $suiteModules = [
-                ['id' => 'reputation-management', 'title' => 'Reputation Management', 'desc' => 'Track client sentiment, feedback loops, and issue closure rates.', 'tier' => 'professional'],
-                ['id' => 'lead-management', 'title' => 'Lead Management', 'desc' => 'Capture, score, and move prospects across your conversion pipeline.', 'tier' => 'professional'],
-                ['id' => 'appointment-scheduling', 'title' => 'Appointment Scheduling', 'desc' => 'Centralized booking board for demos, onboarding, and review meetings.', 'tier' => 'professional'],
-                ['id' => 'contract-esignature', 'title' => 'Contract Upload & E-Signature', 'desc' => 'Store contracts and manage signature lifecycle from draft to signed.', 'tier' => 'enterprise'],
-                ['id' => 'proposals', 'title' => 'Proposals', 'desc' => 'Create commercial proposals, track approvals, and close faster.', 'tier' => 'enterprise'],
-                ['id' => 'ai-anomaly-detection', 'title' => 'AI-Powered Anomaly Detection', 'desc' => 'Flag unusual transaction, margin, and project-cost patterns early.', 'tier' => 'enterprise'],
-                ['id' => 'project-management-ai', 'title' => 'Project Management AI', 'desc' => 'AI-assisted milestone planning, risk scoring, and workload balancing.', 'tier' => 'enterprise'],
+                ['id' => 'reputation-management', 'title' => 'Reputation Management', 'desc' => 'Track client sentiment, feedback loops, and issue closure rates.', 'tier' => 'professional', 'mode' => 'assistant'],
+                ['id' => 'lead-management', 'title' => 'Lead Management', 'desc' => 'Capture, score, and move prospects across your conversion pipeline.', 'tier' => 'professional', 'mode' => 'assistant'],
+                ['id' => 'appointment-scheduling', 'title' => 'Appointment Scheduling', 'desc' => 'Centralized booking board for demos, onboarding, and review meetings.', 'tier' => 'professional', 'mode' => 'assistant'],
+                ['id' => 'contract-esignature', 'title' => 'Contract Upload & E-Signature', 'desc' => 'Store contracts and manage signature lifecycle from draft to signed.', 'tier' => 'enterprise', 'mode' => 'assistant'],
+                ['id' => 'proposals', 'title' => 'Proposals', 'desc' => 'Create commercial proposals, track approvals, and close faster.', 'tier' => 'enterprise', 'mode' => 'assistant'],
+                ['id' => 'ai-anomaly-detection', 'title' => 'AI-Powered Anomaly Detection', 'desc' => 'Flag unusual transaction, margin, and project-cost patterns early.', 'tier' => 'enterprise', 'mode' => 'assistant'],
+                ['id' => 'project-management-ai', 'title' => 'Project Management AI', 'desc' => 'AI-assisted milestone planning, risk scoring, and workload balancing.', 'tier' => 'enterprise', 'mode' => 'assistant'],
             ];
         @endphp
 
         <div class="pm-card p-3 mt-3" id="modules">
+            <span id="reputation-management" class="pm-anchor-offset"></span>
             <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                 <h5 class="mb-0" style="font-weight:800;">Business Modules</h5>
                 <small class="text-muted">Plan Matrix: Basic ₦3,000 • Pro ₦7,000 • Enterprise ₦15,000</small>
@@ -328,6 +391,7 @@
                                     type="button"
                                     data-module-title="{{ $module['title'] }}"
                                     data-module-id="{{ $module['id'] }}"
+                                    data-module-mode="{{ $module['mode'] }}"
                                     data-is-ai="{{ in_array($module['id'], ['ai-anomaly-detection', 'project-management-ai'], true) ? '1' : '0' }}"
                                 >
                                     Run Module
@@ -443,6 +507,7 @@
         }
 
         const runButtons = document.querySelectorAll('.js-run-module');
+        const projectModalEl = document.getElementById('newProjectModal');
         const modalEl = document.getElementById('moduleAiModal');
         const modalTitle = document.getElementById('moduleAiModalTitle');
         const modalNote = document.getElementById('moduleAiModalNote');
@@ -450,36 +515,108 @@
         const openAssistantBtn = document.getElementById('moduleAiOpenAssistant');
         let activeModuleTitle = '';
 
-        if (runButtons.length && modalEl) {
-            const aiModal = (window.bootstrap && bootstrap.Modal)
-                ? bootstrap.Modal.getOrCreateInstance(modalEl)
-                : null;
+        const aiModal = (modalEl && window.bootstrap && bootstrap.Modal)
+            ? bootstrap.Modal.getOrCreateInstance(modalEl)
+            : null;
+        const projectModal = (projectModalEl && window.bootstrap && bootstrap.Modal)
+            ? bootstrap.Modal.getOrCreateInstance(projectModalEl)
+            : null;
 
+        const modulePrompts = {
+            'reputation-management': 'Review reputation management trends for my current projects, summarize sentiment issues, and suggest the next follow-up actions.',
+            'lead-management': 'Run lead management for my current pipeline, identify the hottest prospects, and recommend the next conversion steps.',
+            'appointment-scheduling': 'Organize appointment scheduling for my active leads and projects, and suggest the next meetings to book.',
+            'contract-esignature': 'Prepare the contract upload and e-signature workflow for my current projects, and list the next documents requiring action.',
+            'proposals': 'Generate a proposal workflow for my active projects, highlight pending approvals, and suggest what should be sent next.',
+            'ai-anomaly-detection': 'Run AI anomaly detection for my current projects and flag unusual costs, margins, or transaction patterns.',
+            'project-management-ai': 'Run project management AI for my active projects and highlight risks, blocked milestones, and recommended next actions.',
+        };
+
+        function setModuleFocus(moduleId) {
+            document.querySelectorAll('.pm-module').forEach(function (card) {
+                card.classList.remove('ring', 'ring-primary', 'shadow');
+                card.style.transition = '';
+            });
+
+            const target = document.getElementById(moduleId);
+            if (!target) return null;
+
+            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            target.classList.add('shadow');
+            target.style.transition = 'box-shadow 0.3s ease, transform 0.3s ease';
+            target.style.boxShadow = '0 0 0 3px rgba(37,99,235,0.15), 0 16px 32px rgba(15,23,42,0.10)';
+            target.style.transform = 'translateY(-2px)';
+
+            setTimeout(function () {
+                target.style.boxShadow = '';
+                target.style.transform = '';
+            }, 1800);
+
+            return target;
+        }
+
+        function launchModule(moduleId, moduleTitle, isAi, mode) {
+            activeModuleTitle = moduleTitle || 'Module';
+            setModuleFocus(moduleId);
+
+            if (moduleId === 'project-management') {
+                if (projectModal) {
+                    projectModal.show();
+                }
+                return;
+            }
+
+            if (moduleId === 'profitability') {
+                const target = document.getElementById('profitability');
+                target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                const taskSelect = document.getElementById('taskProjectSelect');
+                if (taskSelect) {
+                    setTimeout(function () {
+                        taskSelect.focus();
+                    }, 450);
+                }
+                return;
+            }
+
+            if (mode === 'assistant' || isAi) {
+                if (!aiModal) {
+                    alert('Module assistant is currently unavailable. Please refresh the page and try again.');
+                    return;
+                }
+
+                modalTitle.textContent = (moduleTitle || 'Module') + ' Assistant';
+                modalNote.textContent = isAi
+                    ? 'AI will guide you through this module and generate actionable output.'
+                    : 'Use the guided assistant to launch this module, prepare actions, and move faster.';
+                promptInput.value = modulePrompts[moduleId] || ('Run ' + (moduleTitle || 'this module') + ' for my current projects and suggest the next actions.');
+                aiModal.show();
+                return;
+            }
+        }
+
+        if (runButtons.length) {
             runButtons.forEach(function (btn) {
                 btn.addEventListener('click', function () {
                     const title = btn.getAttribute('data-module-title') || 'Module';
                     const id = btn.getAttribute('data-module-id') || '';
+                    const mode = btn.getAttribute('data-module-mode') || 'assistant';
                     const isAi = btn.getAttribute('data-is-ai') === '1';
-                    activeModuleTitle = title;
-
-                    if (isAi) {
-                        modalTitle.textContent = title + ' Assistant';
-                        modalNote.textContent = 'AI will guide you through this module and generate actionable output.';
-                        promptInput.value = 'Run ' + title + ' for my current projects and highlight key risks and next actions.';
-                        if (aiModal) {
-                            aiModal.show();
-                        } else {
-                            alert('AI assistant modal is currently unavailable. Please refresh the page and try again.');
-                        }
-                        return;
-                    }
-
-                    const target = document.getElementById(id);
-                    if (target) {
-                        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
+                    launchModule(id, title, isAi, mode);
                 });
             });
+        }
+
+        const requestedModule = new URLSearchParams(window.location.search).get('module');
+        if (requestedModule) {
+            const matchingButton = document.querySelector('.js-run-module[data-module-id="' + requestedModule + '"]');
+            if (matchingButton) {
+                setTimeout(function () {
+                    matchingButton.click();
+                }, 350);
+            } else {
+                const fallbackTarget = document.getElementById(requestedModule);
+                fallbackTarget?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         }
 
         if (openAssistantBtn) {

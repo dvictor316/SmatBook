@@ -10,12 +10,28 @@
     Updated to resolve Navbar overlap issues.
 --}}
 <style>
+    :root {
+        --dash-ink: #0f172a;
+        --dash-muted: #5f6b7a;
+        --dash-line: #dbe5f0;
+        --dash-surface: #ffffff;
+        --dash-surface-soft: #f8fbff;
+    }
+
+    #main-content-wrapper,
+    #main-content-wrapper * {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility;
+    }
+
     /* Base wrapper transition for smooth toggling */
     #main-content-wrapper {
         transition: margin-left 0.3s ease, width 0.3s ease;
         width: 100%;
         overflow-x: hidden;
-        padding-top: 16px; 
+        padding-top: 16px;
+        color: var(--dash-ink);
     }
 
     /* DESKTOP: Fixed 250px Sidebar Offset */
@@ -50,6 +66,15 @@
         justify-content: space-between;
         flex-wrap: wrap;
         gap: 15px;
+    }
+    .header-responsive-flex h3 {
+        font-size: clamp(1.35rem, 2vw, 1.8rem);
+        line-height: 1.05;
+        letter-spacing: -0.03em;
+        color: var(--dash-ink) !important;
+    }
+    .header-responsive-flex p {
+        color: var(--dash-muted) !important;
     }
 
     /* Heatmap Grid Styles */
@@ -113,8 +138,27 @@
     /* Dashboard density improvements */
     .dashboard-tight .row { --bs-gutter-y: 0.85rem; }
     .dashboard-tight .grid-margin { margin-bottom: 0.85rem !important; }
-    .dashboard-tight .card { height: 100%; }
+    .dashboard-tight .stretch-card > .card { height: 100%; }
     .dashboard-tight .card-subtitle { margin-bottom: 0.65rem !important; }
+    .dashboard-tight .card {
+        border-radius: 18px !important;
+        border: 1px solid var(--dash-line);
+        background: linear-gradient(180deg, var(--dash-surface) 0%, #fcfdff 100%);
+        box-shadow: 0 14px 34px rgba(15, 23, 42, 0.05);
+    }
+    .card-title.card-title-dash,
+    .card-title-dash {
+        font-size: 1.02rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        color: var(--dash-ink) !important;
+    }
+    .card-subtitle,
+    .card-subtitle-dash {
+        color: var(--dash-muted) !important;
+        font-size: 0.8rem !important;
+        line-height: 1.5;
+    }
     .live-badge-soft {
         font-size: 10px;
         font-weight: 800;
@@ -126,24 +170,516 @@
         color: #198754;
     }
     .kpi-compact {
-        border: 1px solid #e5edf8;
-        border-radius: 12px;
+        border: 1px solid #dce8f4;
+        border-radius: 14px;
         background: #ffffff;
-        padding: 10px 12px;
+        padding: 12px 13px;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
     }
     .kpi-compact .label {
         font-size: 10px;
-        font-weight: 700;
-        color: #6b7280;
+        font-weight: 800;
+        color: #5b6676;
         text-transform: uppercase;
-        letter-spacing: .4px;
-        margin-bottom: 4px;
+        letter-spacing: .08em;
+        margin-bottom: 6px;
     }
     .kpi-compact .value {
         font-weight: 800;
-        color: #0f172a;
-        font-size: 1rem;
+        color: var(--dash-ink);
+        font-size: 1.02rem;
         line-height: 1.1;
+        letter-spacing: -0.02em;
+    }
+    .kpi-grid-dense {
+        border: 1px solid #e5edf8;
+        border-radius: 16px;
+        background: linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(246,250,255,0.96) 100%);
+        padding: 12px;
+    }
+    .kpi-dense-item {
+        border: 1px solid #e8eff8;
+        border-radius: 12px;
+        background: #fff;
+        padding: 10px 12px;
+        height: 100%;
+    }
+    .kpi-dense-item .label {
+        font-size: 10px;
+        font-weight: 800;
+        color: #5f6b7a;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        margin-bottom: 6px;
+    }
+    .kpi-dense-item .value {
+        font-size: 0.98rem;
+        font-weight: 800;
+        color: var(--dash-ink);
+        line-height: 1.1;
+        letter-spacing: -0.02em;
+    }
+    .metric-wall {
+        border: 1px solid #e5edf8;
+        border-radius: 18px;
+        background: linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(240,247,255,0.96) 100%);
+        padding: 14px;
+    }
+    .metric-wall-item {
+        border: 1px solid #e8eff8;
+        border-radius: 14px;
+        background: #fff;
+        padding: 12px 14px;
+        height: 100%;
+    }
+    .metric-wall-item .label {
+        font-size: 10px;
+        font-weight: 800;
+        color: #5f6b7a;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        margin-bottom: 6px;
+    }
+    .metric-wall-item .value {
+        font-size: 0.98rem;
+        font-weight: 800;
+        color: var(--dash-ink);
+        line-height: 1.1;
+        letter-spacing: -0.02em;
+    }
+    .dashboard-row-balanced {
+        align-items: flex-start;
+    }
+    .dashboard-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 0.85rem;
+        min-width: 0;
+    }
+    .dashboard-stack > .card {
+        margin-bottom: 0 !important;
+        height: auto !important;
+        flex: 0 0 auto;
+    }
+    .chartjs-wrapper {
+        position: relative;
+        height: 250px;
+        min-height: 250px;
+    }
+    .chartjs-wrapper canvas,
+    .chart-container canvas {
+        width: 100% !important;
+        height: 100% !important;
+    }
+    .leaflet-container {
+        z-index: 0;
+    }
+    .dashboard-split-card {
+        display: flex;
+        flex-direction: column;
+        gap: 0.9rem;
+    }
+    .dashboard-split-card .table-responsive,
+    .dashboard-split-card .list-wrapper {
+        max-height: 260px !important;
+        overflow-x: auto;
+        overflow-y: auto;
+        min-height: 0;
+    }
+    .table-wrap-lock {
+        overflow-x: hidden !important;
+    }
+    .table-wrap-lock table {
+        width: 100%;
+        table-layout: fixed;
+    }
+    .table-wrap-lock th,
+    .table-wrap-lock td {
+        white-space: normal;
+        vertical-align: top;
+    }
+    .dashboard-micro-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.75rem;
+    }
+    .dashboard-micro-grid .summary-fill {
+        height: 100%;
+    }
+    .dashboard-side-fill {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.75rem;
+    }
+    .summary-fill {
+        border: 1px solid #dce7f3;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
+        padding: 12px 13px;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.75);
+    }
+    .summary-fill .label {
+        font-size: 10px;
+        font-weight: 800;
+        color: #5f6b7a;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        margin-bottom: 6px;
+    }
+    .summary-fill .value {
+        font-size: 0.98rem;
+        font-weight: 800;
+        color: var(--dash-ink);
+        line-height: 1.1;
+        letter-spacing: -0.02em;
+    }
+    .tone-card {
+        border: 1px solid transparent;
+        border-radius: 16px;
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+    }
+    .tone-card .mini-label,
+    .tone-card small,
+    .tone-card .tone-note {
+        color: inherit;
+        opacity: 0.9;
+    }
+    .tone-card .tone-value,
+    .tone-card h5,
+    .tone-card h3,
+    .tone-card .mdi {
+        color: inherit;
+    }
+    .tone-indigo {
+        background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+        border-color: #c7d2fe;
+        color: #312e81;
+    }
+    .tone-sky {
+        background: linear-gradient(135deg, #ecfeff 0%, #dff7ff 100%);
+        border-color: #bae6fd;
+        color: #0f4c81;
+    }
+    .tone-emerald {
+        background: linear-gradient(135deg, #ecfdf5 0%, #dcfce7 100%);
+        border-color: #a7f3d0;
+        color: #065f46;
+    }
+    .tone-amber {
+        background: linear-gradient(135deg, #fff7ed 0%, #fef3c7 100%);
+        border-color: #fcd34d;
+        color: #92400e;
+    }
+    .tone-rose {
+        background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%);
+        border-color: #fecdd3;
+        color: #9f1239;
+    }
+    .tone-slate {
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        border-color: #cbd5e1;
+        color: #334155;
+    }
+    .tone-violet {
+        background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+        border-color: #ddd6fe;
+        color: #5b21b6;
+    }
+    .summary-fill.tone-indigo .label,
+    .summary-fill.tone-sky .label,
+    .summary-fill.tone-emerald .label,
+    .summary-fill.tone-amber .label,
+    .summary-fill.tone-rose .label,
+    .summary-fill.tone-slate .label,
+    .summary-fill.tone-violet .label,
+    .kpi-compact.tone-indigo .label,
+    .kpi-compact.tone-sky .label,
+    .kpi-compact.tone-emerald .label,
+    .kpi-compact.tone-amber .label,
+    .kpi-compact.tone-rose .label,
+    .kpi-compact.tone-slate .label,
+    .kpi-compact.tone-violet .label {
+        color: inherit;
+        opacity: 0.82;
+    }
+    .summary-fill.tone-indigo .value,
+    .summary-fill.tone-sky .value,
+    .summary-fill.tone-emerald .value,
+    .summary-fill.tone-amber .value,
+    .summary-fill.tone-rose .value,
+    .summary-fill.tone-slate .value,
+    .summary-fill.tone-violet .value,
+    .kpi-compact.tone-indigo .value,
+    .kpi-compact.tone-sky .value,
+    .kpi-compact.tone-emerald .value,
+    .kpi-compact.tone-amber .value,
+    .kpi-compact.tone-rose .value,
+    .kpi-compact.tone-slate .value,
+    .kpi-compact.tone-violet .value {
+        color: inherit;
+    }
+    .card-body,
+    .table-responsive,
+    .list-wrapper,
+    .metric-wall,
+    .kpi-grid-dense {
+        min-width: 0;
+    }
+    .table-responsive table td,
+    .table-responsive table th,
+    .metric-wall-item,
+    .kpi-dense-item,
+    .kpi-compact,
+    .summary-fill {
+        word-break: break-word;
+        overflow-wrap: anywhere;
+    }
+    .table {
+        color: var(--dash-ink);
+    }
+    .table thead th {
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #607086;
+    }
+    .table tbody td {
+        font-size: 0.83rem;
+        line-height: 1.45;
+        color: #1e293b;
+    }
+    .btn {
+        border-radius: 12px !important;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+    }
+    .btn-outline-secondary {
+        border-color: #d5e1ee;
+        color: #42556b;
+    }
+    .btn-outline-secondary:hover {
+        background: #f5f8fc;
+        color: #163047;
+        border-color: #c2d3e4;
+    }
+    .badge {
+        letter-spacing: 0.03em;
+    }
+    .pulse-chart-shell {
+        display: grid;
+        grid-template-columns: minmax(220px, 250px) minmax(0, 1fr);
+        gap: 18px;
+        align-items: center;
+    }
+    .pulse-chart-wrap {
+        position: relative;
+        min-height: 220px;
+        display: grid;
+        place-items: center;
+    }
+    .pulse-chart-wrap canvas {
+        max-width: 220px;
+        max-height: 220px;
+    }
+    .pulse-center-badge {
+        position: absolute;
+        inset: 50% auto auto 50%;
+        transform: translate(-50%, -50%);
+        width: 104px;
+        height: 104px;
+        border-radius: 50%;
+        background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%);
+        border: 1px solid #e5edf8;
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+        display: grid;
+        place-items: center;
+        text-align: center;
+        pointer-events: none;
+    }
+    .pulse-center-badge .value {
+        font-size: 1.2rem;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1;
+    }
+    .pulse-center-badge .label {
+        margin-top: 4px;
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #64748b;
+    }
+    .pulse-legend-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+    .pulse-legend-item {
+        border: 1px solid #e5edf8;
+        border-radius: 14px;
+        background: #fff;
+        padding: 12px;
+        min-height: 86px;
+    }
+    .pulse-legend-item .topline {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+    .pulse-legend-item .swatch {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex: 0 0 auto;
+    }
+    .pulse-legend-item .label {
+        font-size: 11px;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+    }
+    .pulse-legend-item .value {
+        font-size: 1.1rem;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1.1;
+    }
+    .pulse-legend-item .note {
+        margin-top: 4px;
+        font-size: 12px;
+        color: #64748b;
+    }
+
+    @media (max-width: 1199.98px) {
+        .chart-container {
+            height: 300px;
+        }
+        .chartjs-wrapper {
+            height: 280px;
+            min-height: 280px;
+        }
+        #regionMap {
+            height: 340px;
+        }
+    }
+
+    @media (max-width: 991.98px) {
+        #main-content-wrapper {
+            padding-left: 12px !important;
+            padding-right: 12px !important;
+        }
+        .header-responsive-flex > div,
+        .btn-wrapper {
+            width: 100%;
+        }
+        .btn-wrapper {
+            justify-content: flex-start;
+        }
+        .chart-container {
+            height: 260px;
+        }
+        .chartjs-wrapper {
+            height: 240px;
+            min-height: 240px;
+        }
+        #regionMap {
+            height: 280px;
+        }
+        .dashboard-micro-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .dashboard-side-fill {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .table-responsive[style*="max-height"] {
+            max-height: none !important;
+            overflow-y: visible !important;
+        }
+        .list-wrapper[style*="max-height"] {
+            max-height: none !important;
+            overflow-y: visible !important;
+        }
+        .sticky-top {
+            position: static !important;
+        }
+        .pulse-chart-shell {
+            grid-template-columns: 1fr;
+        }
+        .pulse-legend-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .chart-container {
+            height: 220px;
+        }
+        .chartjs-wrapper {
+            height: 220px;
+            min-height: 220px;
+        }
+        #regionMap {
+            height: 240px;
+        }
+        .dashboard-micro-grid {
+            grid-template-columns: 1fr;
+        }
+        .dashboard-side-fill {
+            grid-template-columns: 1fr;
+        }
+        .card-body {
+            padding: 1rem !important;
+        }
+        .header-responsive-flex {
+            align-items: flex-start;
+        }
+        .header-responsive-flex h3 {
+            font-size: 1.2rem;
+        }
+        .btn-wrapper .btn {
+            width: 100%;
+            justify-content: center;
+        }
+        .kpi-compact .value,
+        .kpi-dense-item .value,
+        .metric-wall-item .value,
+        .summary-fill .value {
+            font-size: 0.88rem;
+        }
+        .badge,
+        .live-badge-soft {
+            white-space: normal;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        #main-content-wrapper {
+            padding-left: 8px !important;
+            padding-right: 8px !important;
+        }
+        .chart-container {
+            height: 200px;
+        }
+        .chartjs-wrapper {
+            height: 200px;
+            min-height: 200px;
+        }
+        #regionMap {
+            height: 220px;
+        }
+        .card-title.card-title-dash,
+        .card-title-dash {
+            font-size: 1rem;
+            line-height: 1.25;
+        }
+        .card-subtitle,
+        .card-subtitle-dash {
+            font-size: 0.75rem !important;
+        }
     }
 </style>
 
@@ -273,52 +809,52 @@
                         {{-- ROW 2: Operational Alerts --}}
                         <div class="row mt-2">
                             <div class="col-md-3 grid-margin stretch-card">
-                                <div class="card card-rounded bg-light-danger border-left-danger shadow-sm">
+                                <div class="card card-rounded tone-card tone-rose shadow-sm">
                                     <div class="card-body p-3">
                                         <div class="d-flex align-items-center">
-                                            <i class="mdi mdi-account-alert fs-2 text-danger me-3"></i>
+                                            <i class="mdi mdi-account-alert fs-2 me-3"></i>
                                             <div>
-                                                <h5 class="fw-bold mb-0 text-danger">{{ $metrics['pending_managers'] }}</h5>
-                                                <small class="text-dark">Pending Managers</small>
+                                                <h5 class="fw-bold mb-0 tone-value">{{ $metrics['pending_managers'] }}</h5>
+                                                <small class="mini-label">Pending Managers</small>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-md-3 grid-margin stretch-card">
-                                <div class="card card-rounded bg-white shadow-sm border-left-primary">
+                                <div class="card card-rounded tone-card tone-indigo shadow-sm">
                                     <div class="card-body p-3">
                                         <div class="d-flex align-items-center">
-                                            <i class="mdi mdi-account-tie fs-2 text-primary me-3"></i>
+                                            <i class="mdi mdi-account-tie fs-2 me-3"></i>
                                             <div>
-                                                <h5 class="fw-bold mb-0 text-dark">{{ $metrics['active_managers'] }}</h5>
-                                                <small class="text-muted">Active Managers</small>
+                                                <h5 class="fw-bold mb-0 tone-value">{{ $metrics['active_managers'] }}</h5>
+                                                <small class="mini-label">Active Managers</small>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-md-3 grid-margin stretch-card">
-                                <div class="card card-rounded bg-white shadow-sm border-left-info">
+                                <div class="card card-rounded tone-card tone-sky shadow-sm">
                                     <div class="card-body p-3">
                                         <div class="d-flex align-items-center">
-                                            <i class="mdi mdi-server-network-off fs-2 text-info me-3"></i>
+                                            <i class="mdi mdi-server-network-off fs-2 me-3"></i>
                                             <div>
-                                                <h5 class="fw-bold mb-0 text-dark">{{ $metrics['pending_setups'] }}</h5>
-                                                <small class="text-muted">Provisioning Queue</small>
+                                                <h5 class="fw-bold mb-0 tone-value">{{ $metrics['pending_setups'] }}</h5>
+                                                <small class="mini-label">Provisioning Queue</small>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-md-3 grid-margin stretch-card">
-                                <div class="card card-rounded bg-white shadow-sm border-left-success">
+                                <div class="card card-rounded tone-card tone-emerald shadow-sm">
                                     <div class="card-body p-3">
                                         <div class="d-flex align-items-center">
-                                            <i class="mdi mdi-package-variant-closed fs-2 text-success me-3"></i>
+                                            <i class="mdi mdi-package-variant-closed fs-2 me-3"></i>
                                             <div>
-                                                <h5 class="fw-bold mb-0 text-dark">₦{{ number_format($metrics['total_stock_val']) }}</h5>
-                                                <small class="text-muted">Stock Valuation</small>
+                                                <h5 class="fw-bold mb-0 tone-value">₦{{ number_format($metrics['total_stock_val']) }}</h5>
+                                                <small class="mini-label">Stock Valuation</small>
                                             </div>
                                         </div>
                                     </div>
@@ -329,52 +865,52 @@
                         {{-- ROW 2B: Extra KPI Density (reduce dead white space) --}}
                         <div class="row mt-2">
                             <div class="col-md-3 grid-margin stretch-card">
-                                <div class="card card-rounded bg-white shadow-sm border-left-primary">
+                                <div class="card card-rounded tone-card tone-indigo shadow-sm">
                                     <div class="card-body p-3">
                                         <div class="d-flex align-items-center">
-                                            <i class="mdi mdi-cash-check fs-2 text-primary me-3"></i>
+                                            <i class="mdi mdi-cash-check fs-2 me-3"></i>
                                             <div>
-                                                <h5 class="fw-bold mb-0 text-dark">{{ number_format($metrics['paid_subs'] ?? 0) }}</h5>
-                                                <small class="text-muted">Paid Subscriptions</small>
+                                                <h5 class="fw-bold mb-0 tone-value">{{ number_format($metrics['paid_subs'] ?? 0) }}</h5>
+                                                <small class="mini-label">Paid Subscriptions</small>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-md-3 grid-margin stretch-card">
-                                <div class="card card-rounded bg-white shadow-sm border-left-warning">
+                                <div class="card card-rounded tone-card tone-amber shadow-sm">
                                     <div class="card-body p-3">
                                         <div class="d-flex align-items-center">
-                                            <i class="mdi mdi-credit-card-outline fs-2 text-warning me-3"></i>
+                                            <i class="mdi mdi-credit-card-outline fs-2 me-3"></i>
                                             <div>
-                                                <h5 class="fw-bold mb-0 text-dark">{{ number_format($metrics['total_subs'] ?? 0) }}</h5>
-                                                <small class="text-muted">Total Subscriptions</small>
+                                                <h5 class="fw-bold mb-0 tone-value">{{ number_format($metrics['total_subs'] ?? 0) }}</h5>
+                                                <small class="mini-label">Total Subscriptions</small>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-md-3 grid-margin stretch-card">
-                                <div class="card card-rounded bg-white shadow-sm border-left-danger">
+                                <div class="card card-rounded tone-card tone-rose shadow-sm">
                                     <div class="card-body p-3">
                                         <div class="d-flex align-items-center">
-                                            <i class="mdi mdi-timer-sand fs-2 text-danger me-3"></i>
+                                            <i class="mdi mdi-timer-sand fs-2 me-3"></i>
                                             <div>
-                                                <h5 class="fw-bold mb-0 text-dark">{{ number_format($metrics['expiring_soon_subs'] ?? 0) }}</h5>
-                                                <small class="text-muted">Expiring in 7 Days</small>
+                                                <h5 class="fw-bold mb-0 tone-value">{{ number_format($metrics['expiring_soon_subs'] ?? 0) }}</h5>
+                                                <small class="mini-label">Expiring in 7 Days</small>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-md-3 grid-margin stretch-card">
-                                <div class="card card-rounded bg-white shadow-sm border-left-secondary">
+                                <div class="card card-rounded tone-card tone-slate shadow-sm">
                                     <div class="card-body p-3">
                                         <div class="d-flex align-items-center">
-                                            <i class="mdi mdi-close-octagon-outline fs-2 text-secondary me-3"></i>
+                                            <i class="mdi mdi-close-octagon-outline fs-2 me-3"></i>
                                             <div>
-                                                <h5 class="fw-bold mb-0 text-dark">{{ number_format($metrics['expired_subs'] ?? 0) }}</h5>
-                                                <small class="text-muted">Expired Subscriptions</small>
+                                                <h5 class="fw-bold mb-0 tone-value">{{ number_format($metrics['expired_subs'] ?? 0) }}</h5>
+                                                <small class="mini-label">Expired Subscriptions</small>
                                             </div>
                                         </div>
                                     </div>
@@ -430,15 +966,15 @@
 
                                         <div class="row g-2">
                                             @foreach([
-                                                ['title' => 'Project Management', 'tier' => 'Pro', 'href' => route('projects.index')],
-                                                ['title' => 'Project Profitability', 'tier' => 'Pro', 'href' => route('projects.index') . '#profitability'],
-                                                ['title' => 'Reputation Management', 'tier' => 'Pro', 'href' => route('projects.index') . '#reputation-management'],
-                                                ['title' => 'Lead Management', 'tier' => 'Pro', 'href' => route('projects.index') . '#lead-management'],
-                                                ['title' => 'Appointment Scheduling', 'tier' => 'Pro', 'href' => route('projects.index') . '#appointment-scheduling'],
-                                                ['title' => 'Contract Upload & E-Signature', 'tier' => 'Enterprise', 'href' => route('projects.index') . '#contract-esignature'],
-                                                ['title' => 'Proposals', 'tier' => 'Enterprise', 'href' => route('projects.index') . '#proposals'],
-                                                ['title' => 'AI Anomaly Detection', 'tier' => 'Enterprise', 'href' => route('projects.index') . '#ai-anomaly-detection'],
-                                                ['title' => 'Project Management AI', 'tier' => 'Enterprise', 'href' => route('projects.index') . '#project-management-ai'],
+                                                ['title' => 'Project Management', 'tier' => 'Pro', 'href' => route('projects.index', ['module' => 'project-management'])],
+                                                ['title' => 'Project Profitability', 'tier' => 'Pro', 'href' => route('projects.index', ['module' => 'profitability'])],
+                                                ['title' => 'Reputation Management', 'tier' => 'Pro', 'href' => route('projects.index', ['module' => 'reputation-management'])],
+                                                ['title' => 'Lead Management', 'tier' => 'Pro', 'href' => route('projects.index', ['module' => 'lead-management'])],
+                                                ['title' => 'Appointment Scheduling', 'tier' => 'Pro', 'href' => route('projects.index', ['module' => 'appointment-scheduling'])],
+                                                ['title' => 'Contract Upload & E-Signature', 'tier' => 'Enterprise', 'href' => route('projects.index', ['module' => 'contract-esignature'])],
+                                                ['title' => 'Proposals', 'tier' => 'Enterprise', 'href' => route('projects.index', ['module' => 'proposals'])],
+                                                ['title' => 'AI Anomaly Detection', 'tier' => 'Enterprise', 'href' => route('projects.index', ['module' => 'ai-anomaly-detection'])],
+                                                ['title' => 'Project Management AI', 'tier' => 'Enterprise', 'href' => route('projects.index', ['module' => 'project-management-ai'])],
                                                 ['title' => 'Payroll', 'tier' => 'Enterprise', 'href' => route('payroll.index')],
                                             ] as $module)
                                                 <div class="col-md-6 col-xl-3">
@@ -457,15 +993,15 @@
                         {{-- ROW 2D: Live KPI Strip (fills chart whitespace) --}}
                         <div class="row mt-2">
                             @foreach([
-                                ['label' => 'Live MRR', 'value' => '₦' . number_format($metrics['platform_revenue'] ?? 0, 0)],
-                                ['label' => 'Active Nodes', 'value' => number_format($metrics['active_subs'] ?? 0)],
-                                ['label' => 'Pending KYC', 'value' => number_format($metrics['pending_managers'] ?? 0)],
-                                ['label' => 'Low Stock Alerts', 'value' => number_format($metrics['low_stock_items'] ?? 0)],
-                                ['label' => 'New Signups (30d)', 'value' => number_format($metrics['recent_signups'] ?? 0)],
-                                ['label' => 'Paid Subscriptions', 'value' => number_format($metrics['paid_subs'] ?? 0)],
+                                ['label' => 'Live MRR', 'value' => '₦' . number_format($metrics['platform_revenue'] ?? 0, 0), 'tone' => 'tone-indigo'],
+                                ['label' => 'Plan Sales Today', 'value' => number_format($metrics['plan_sales_today'] ?? 0), 'tone' => 'tone-sky'],
+                                ['label' => 'Plan Sales This Month', 'value' => number_format($metrics['plan_sales_month'] ?? 0), 'tone' => 'tone-emerald'],
+                                ['label' => 'Monthly Plan Value', 'value' => '₦' . number_format($metrics['plan_sales_value_month'] ?? 0, 0), 'tone' => 'tone-violet'],
+                                ['label' => 'Average Plan Sale', 'value' => '₦' . number_format($metrics['avg_plan_sale'] ?? 0, 0), 'tone' => 'tone-amber'],
+                                ['label' => 'Paid Subscriptions', 'value' => number_format($metrics['paid_subs'] ?? 0), 'tone' => 'tone-rose'],
                             ] as $kpi)
                                 <div class="col-md-4 col-xl-2 grid-margin stretch-card">
-                                    <div class="kpi-compact w-100">
+                                    <div class="kpi-compact w-100 {{ $kpi['tone'] }}">
                                         <div class="d-flex justify-content-between align-items-start">
                                             <div class="label">{{ $kpi['label'] }}</div>
                                             <span class="live-badge-soft animate-pulse">Live</span>
@@ -486,7 +1022,7 @@
                                             <h4 class="card-title card-title-dash mb-0">Revenue by Plan</h4>
                                             <span class="live-badge-soft">Live</span>
                                         </div>
-                                        <p class="card-subtitle card-subtitle-dash text-muted mb-4">Subscription distribution</p>
+                                        <p class="card-subtitle card-subtitle-dash text-muted mb-4">Paid plan sales distribution</p>
                                         <div class="chart-container">
                                             <canvas id="planStatsChart"></canvas>
                                         </div>
@@ -527,14 +1063,100 @@
                             </div>
                         </div>
 
+                        <div class="row mt-2">
+                            <div class="col-12 grid-margin stretch-card">
+                                <div class="kpi-grid-dense">
+                                    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                                        <div>
+                                            <h5 class="mb-0 fw-bold text-dark">Live Operations Strip</h5>
+                                            <small class="text-muted">Additional command-center density under analytics</small>
+                                        </div>
+                                        <span class="live-badge-soft animate-pulse">Live</span>
+                                    </div>
+                                    <div class="row g-2">
+                                        @foreach([
+                                            ['label' => 'MRR', 'value' => '₦' . number_format($metrics['platform_revenue'] ?? 0, 0)],
+                                            ['label' => 'Paid Subs', 'value' => number_format($metrics['paid_subs'] ?? 0)],
+                                            ['label' => 'Plan Sales Today', 'value' => number_format($metrics['plan_sales_today'] ?? 0)],
+                                            ['label' => 'Plan Sales Month', 'value' => number_format($metrics['plan_sales_month'] ?? 0)],
+                                            ['label' => 'Monthly Plan Value', 'value' => '₦' . number_format($metrics['plan_sales_value_month'] ?? 0, 0)],
+                                            ['label' => 'Average Plan Sale', 'value' => '₦' . number_format($metrics['avg_plan_sale'] ?? 0, 0)],
+                                            ['label' => 'Expiring Soon', 'value' => number_format($metrics['expiring_soon_subs'] ?? 0)],
+                                            ['label' => 'Expired', 'value' => number_format($metrics['expired_subs'] ?? 0)],
+                                            ['label' => 'Tenants', 'value' => number_format($metrics['total_tenants'] ?? 0)],
+                                            ['label' => 'Low Stock', 'value' => number_format($metrics['low_stock_items'] ?? 0)],
+                                            ['label' => 'New Signups (30d)', 'value' => number_format($metrics['recent_signups'] ?? 0)],
+                                            ['label' => 'Users', 'value' => number_format($metrics['total_users'] ?? 0)],
+                                            ['label' => 'Active Managers', 'value' => number_format($metrics['active_managers'] ?? 0)],
+                                        ] as $denseKpi)
+                                            <div class="col-sm-6 col-xl-3">
+                                                <div class="kpi-dense-item">
+                                                    <div class="label">{{ $denseKpi['label'] }}</div>
+                                                    <div class="value">{{ $denseKpi['value'] }}</div>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mt-2">
+                            <div class="col-12 grid-margin stretch-card">
+                                <div class="metric-wall">
+                                    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                                        <div>
+                                            <h5 class="mb-0 fw-bold text-dark">Heavy Metrics Wall</h5>
+                                            <small class="text-muted">Live platform depth, plan mix, and approval pressure</small>
+                                        </div>
+                                        <span class="live-badge-soft animate-pulse">Live</span>
+                                    </div>
+                                    <div class="row g-2">
+                                        @php
+                                            $verifiedUsers = (int) ($metrics['verified_users'] ?? 0);
+                                            $totalUsers = max(1, (int) ($metrics['total_users'] ?? 0));
+                                            $activeSubs = (int) ($metrics['active_subs'] ?? 0);
+                                            $totalSubs = max(1, (int) ($metrics['total_subs'] ?? 0));
+                                            $companies = (int) ($metrics['total_companies'] ?? 0);
+                                            $tenants = max(1, (int) ($metrics['total_tenants'] ?? 0));
+                                            $paidSubs = (int) ($metrics['paid_subs'] ?? 0);
+                                            $pendingManagers = (int) ($metrics['pending_managers'] ?? 0);
+                                            $activeManagers = (int) ($metrics['active_managers'] ?? 0);
+                                            $managerBase = max(1, $pendingManagers + $activeManagers + (int) ($metrics['suspended_managers'] ?? 0));
+                                            $basicPlans = (int) ($planStats['Basic'] ?? $planStats['basic'] ?? 0);
+                                            $proPlans = (int) ($planStats['Pro'] ?? $planStats['Professional'] ?? $planStats['professional'] ?? 0);
+                                            $enterprisePlans = (int) ($planStats['Enterprise'] ?? $planStats['enterprise'] ?? 0);
+                                        @endphp
+                                        @foreach([
+                                            ['label' => 'Verification Ratio', 'value' => number_format(($verifiedUsers / $totalUsers) * 100, 1) . '%'],
+                                            ['label' => 'Subscription Coverage', 'value' => number_format(($activeSubs / $totalSubs) * 100, 1) . '%'],
+                                            ['label' => 'Paid Subscriptions', 'value' => number_format($paidSubs)],
+                                            ['label' => 'Tenant Footprint', 'value' => number_format(($companies / $tenants) * 100, 1) . '%'],
+                                            ['label' => 'Manager Approval Load', 'value' => number_format(($pendingManagers / $managerBase) * 100, 1) . '%'],
+                                            ['label' => 'Basic Plan Nodes', 'value' => number_format($basicPlans)],
+                                            ['label' => 'Pro Plan Nodes', 'value' => number_format($proPlans)],
+                                            ['label' => 'Enterprise Nodes', 'value' => number_format($enterprisePlans)],
+                                        ] as $wallItem)
+                                            <div class="col-sm-6 col-xl-3">
+                                                <div class="metric-wall-item">
+                                                    <div class="label">{{ $wallItem['label'] }}</div>
+                                                    <div class="value">{{ $wallItem['value'] }}</div>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         {{-- ROW 4: Revenue Chart & System Health --}}
-                        <div class="row mt-4">
+                        <div class="row mt-4 dashboard-row-balanced">
                             
                             {{-- LEFT COLUMN: Revenue Growth Chart --}}
-                            <div class="col-lg-7">
+                            <div class="col-12 col-xl-7 dashboard-stack">
                                 
                                 {{-- Revenue Growth Chart --}}
-                                <div class="card card-rounded shadow-sm mb-4">
+                                <div class="card card-rounded shadow-sm">
                                     <div class="card-body">
                                         <div class="d-flex justify-content-between align-items-center mb-4">
                                             <div>
@@ -548,13 +1170,35 @@
                                             </div>
                                         </div>
                                         <div class="chartjs-wrapper mt-4">
-                                            <canvas id="revenueTrendChart" height="120"></canvas>
+                                            <canvas id="revenueTrendChart"></canvas>
+                                        </div>
+                                        @php
+                                            $revenueSeries = collect($dashboardChartSeries['revenue'] ?? []);
+                                            $revenueLabels = collect($dashboardChartSeries['labels'] ?? []);
+                                            $peakRevenue = (float) $revenueSeries->max();
+                                            $peakRevenueIndex = $revenueSeries->search($peakRevenue);
+                                            $peakRevenueMonth = $peakRevenueIndex !== false ? ($revenueLabels->get($peakRevenueIndex) ?? 'N/A') : 'N/A';
+                                            $activeRevenueMonths = $revenueSeries->filter(fn ($value) => (float) $value > 0)->count();
+                                        @endphp
+                                        <div class="dashboard-micro-grid mt-3">
+                                            <div class="summary-fill">
+                                                <div class="label">Year Revenue</div>
+                                                <div class="value">₦{{ number_format((float) $revenueSeries->sum(), 2) }}</div>
+                                            </div>
+                                            <div class="summary-fill">
+                                                <div class="label">Peak Month</div>
+                                                <div class="value">{{ $peakRevenueMonth }}</div>
+                                            </div>
+                                            <div class="summary-fill">
+                                                <div class="label">Active Months</div>
+                                                <div class="value">{{ number_format($activeRevenueMonths) }}</div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
 
                                 {{-- System Capacity & Health Progress Bars --}}
-                                <div class="card card-rounded shadow-sm mb-3">
+                                <div class="card card-rounded shadow-sm">
                                     <div class="card-body">
                                         <h4 class="card-title card-title-dash mb-4">System Capacity & Health</h4>
                                         
@@ -625,17 +1269,101 @@
                                             <h5 class="mb-0 fw-bold text-dark">Platform Pulse</h5>
                                             <span class="badge bg-success-subtle text-success">Realtime</span>
                                         </div>
-                                        <div class="row g-3">
+                                        <p class="text-muted small mb-3">Manager approval health and verification pressure at a glance.</p>
+                                        @php
+                                            $pendingManagers = (int) ($metrics['pending_managers'] ?? 0);
+                                            $activeManagers = (int) ($metrics['active_managers'] ?? 0);
+                                            $suspendedManagers = (int) ($metrics['suspended_managers'] ?? 0);
+                                            $verifiedUsers = (int) ($metrics['verified_users'] ?? 0);
+                                            $totalCompanies = (int) ($metrics['total_companies'] ?? 0);
+                                            $managerUniverse = $pendingManagers + $activeManagers + $suspendedManagers;
+                                        @endphp
+                                        <div class="pulse-chart-shell">
+                                            <div class="pulse-chart-wrap">
+                                                <canvas id="managerStatusPieChart"></canvas>
+                                                <div class="pulse-center-badge">
+                                                    <div>
+                                                        <div class="value">{{ number_format($managerUniverse) }}</div>
+                                                        <div class="label">Managers</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="pulse-legend-grid">
+                                                <div class="pulse-legend-item">
+                                                    <div class="topline">
+                                                        <span class="swatch" style="background:#f59e0b;"></span>
+                                                        <span class="label">Pending</span>
+                                                    </div>
+                                                    <div class="value">{{ number_format($pendingManagers) }}</div>
+                                                    <div class="note">Awaiting superadmin approval.</div>
+                                                </div>
+                                                <div class="pulse-legend-item">
+                                                    <div class="topline">
+                                                        <span class="swatch" style="background:#2563eb;"></span>
+                                                        <span class="label">Approved</span>
+                                                    </div>
+                                                    <div class="value">{{ number_format($activeManagers) }}</div>
+                                                    <div class="note">Currently active deployment managers.</div>
+                                                </div>
+                                                <div class="pulse-legend-item">
+                                                    <div class="topline">
+                                                        <span class="swatch" style="background:#ef4444;"></span>
+                                                        <span class="label">Suspended</span>
+                                                    </div>
+                                                    <div class="value">{{ number_format($suspendedManagers) }}</div>
+                                                    <div class="note">Managers under restricted access.</div>
+                                                </div>
+                                                <div class="pulse-legend-item">
+                                                    <div class="topline">
+                                                        <span class="swatch" style="background:#10b981;"></span>
+                                                        <span class="label">Verified Users</span>
+                                                    </div>
+                                                    <div class="value">{{ number_format($verifiedUsers) }}</div>
+                                                    <div class="note">{{ number_format($totalCompanies) }} companies currently live.</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="card card-rounded shadow-sm">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <div>
+                                                <h5 class="mb-0 fw-bold text-dark">Subscription Intake Monitor</h5>
+                                                <small class="text-muted">Live onboarding and plan conversion status</small>
+                                            </div>
+                                            <span class="live-badge-soft animate-pulse">Live</span>
+                                        </div>
+                                        <div class="dashboard-side-fill">
+                                            <div class="summary-fill">
+                                                <div class="label">Recent Signups (30d)</div>
+                                                <div class="value">{{ number_format($metrics['recent_signups'] ?? 0) }}</div>
+                                            </div>
+                                            <div class="summary-fill">
+                                                <div class="label">Pending Setups</div>
+                                                <div class="value">{{ number_format($metrics['pending_setups'] ?? 0) }}</div>
+                                            </div>
+                                            <div class="summary-fill">
+                                                <div class="label">Paid Subscriptions</div>
+                                                <div class="value">{{ number_format($metrics['paid_subs'] ?? 0) }}</div>
+                                            </div>
+                                            <div class="summary-fill">
+                                                <div class="label">Expired Plans</div>
+                                                <div class="value">{{ number_format($metrics['expired_subs'] ?? 0) }}</div>
+                                            </div>
+                                        </div>
+                                        <div class="row g-2 mt-3">
                                             @foreach([
-                                                ['label' => 'Pending Managers', 'value' => number_format($metrics['pending_managers'] ?? 0), 'color' => 'warning'],
-                                                ['label' => 'Suspended Managers', 'value' => number_format($metrics['suspended_managers'] ?? 0), 'color' => 'danger'],
-                                                ['label' => 'Verified Users', 'value' => number_format($metrics['verified_users'] ?? 0), 'color' => 'success'],
-                                                ['label' => 'Total Companies', 'value' => number_format($metrics['total_companies'] ?? 0), 'color' => 'primary'],
-                                            ] as $item)
+                                                ['label' => 'Average Plan Sale', 'value' => '₦' . number_format($metrics['avg_plan_sale'] ?? 0, 0), 'tone' => 'tone-amber'],
+                                                ['label' => 'Monthly Plan Value', 'value' => '₦' . number_format($metrics['plan_sales_value_month'] ?? 0, 0), 'tone' => 'tone-violet'],
+                                                ['label' => 'Users', 'value' => number_format($metrics['total_users'] ?? 0), 'tone' => 'tone-sky'],
+                                                ['label' => 'Companies', 'value' => number_format($metrics['total_tenants'] ?? 0), 'tone' => 'tone-emerald'],
+                                            ] as $monitorStat)
                                                 <div class="col-sm-6">
-                                                    <div class="p-3 rounded border bg-light h-100">
-                                                        <div class="small text-muted mb-1">{{ $item['label'] }}</div>
-                                                        <div class="h5 mb-0 text-{{ $item['color'] }}">{{ $item['value'] }}</div>
+                                                    <div class="summary-fill {{ $monitorStat['tone'] }}">
+                                                        <div class="label">{{ $monitorStat['label'] }}</div>
+                                                        <div class="value">{{ $monitorStat['value'] }}</div>
                                                     </div>
                                                 </div>
                                             @endforeach
@@ -645,7 +1373,7 @@
                             </div>
 
                             {{-- RIGHT COLUMN: Deployment Manager Authorization List --}}
-                            <div class="col-lg-5 grid-margin stretch-card">
+                            <div class="col-12 col-xl-5 grid-margin dashboard-stack">
                                 <div class="card card-rounded shadow-sm">
                                     <div class="card-body">
                                         <div class="d-flex justify-content-between align-items-center mb-3">
@@ -747,10 +1475,21 @@
                                                         <div>
                                                             <div class="d-flex justify-content-between align-items-center small mb-1">
                                                                 <span class="text-dark fw-semibold">{{ \Illuminate\Support\Str::limit($m['name'] ?? 'Manager', 28) }}</span>
-                                                                <span class="text-muted">{{ number_format($score, 0) }}</span>
+                                                                <span class="text-muted">
+                                                                    @if((float) ($m['revenue'] ?? 0) > 0)
+                                                                        ₦{{ number_format((float) ($m['revenue'] ?? 0), 0) }}
+                                                                    @else
+                                                                        {{ number_format((int) ($m['plan_sales'] ?? 0)) }} plans
+                                                                    @endif
+                                                                </span>
                                                             </div>
                                                             <div class="progress" style="height: 9px;">
                                                                 <div class="progress-bar bg-{{ $c }}" role="progressbar" style="width: {{ $pct }}%" aria-valuenow="{{ (int) $pct }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                                            </div>
+                                                            <div class="small text-muted mt-1">
+                                                                {{ number_format((int) ($m['plan_sales'] ?? 0)) }} plan sales
+                                                                • {{ number_format((int) ($m['deployments'] ?? 0)) }} deployments
+                                                                • {{ ucfirst((string) ($m['status'] ?? 'pending')) }}
                                                             </div>
                                                         </div>
                                                     @endforeach
@@ -761,17 +1500,117 @@
                                         </div>
                                     </div>
                                 </div>
+
+                                <div class="card card-rounded shadow-sm">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <div>
+                                                <h5 class="mb-0 fw-bold text-dark">Plan Sales Snapshot</h5>
+                                                <small class="text-muted">Live subscription sales and approval pulse</small>
+                                            </div>
+                                            <span class="live-badge-soft animate-pulse">Live</span>
+                                        </div>
+                                        <div class="dashboard-side-fill">
+                                            <div class="summary-fill">
+                                                <div class="label">Plan Sales Today</div>
+                                                <div class="value">{{ number_format($metrics['plan_sales_today'] ?? 0) }}</div>
+                                            </div>
+                                            <div class="summary-fill">
+                                                <div class="label">This Month</div>
+                                                <div class="value">{{ number_format($metrics['plan_sales_month'] ?? 0) }}</div>
+                                            </div>
+                                            <div class="summary-fill">
+                                                <div class="label">Monthly Value</div>
+                                                <div class="value">₦{{ number_format($metrics['plan_sales_value_month'] ?? 0, 0) }}</div>
+                                            </div>
+                                            <div class="summary-fill">
+                                                <div class="label">Awaiting Setup</div>
+                                                <div class="value">{{ number_format($metrics['pending_setups'] ?? 0) }}</div>
+                                            </div>
+                                        </div>
+                                        <div class="mt-3">
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <h6 class="mb-0 fw-semibold">Recent Paid Plan Sales</h6>
+                                                <span class="small text-muted">{{ number_format($platformActivity->count() ?? 0) }} items</span>
+                                            </div>
+                                            <div class="list-wrapper" style="max-height: 220px; overflow-y: auto;">
+                                                <ul class="bullet-line-list mb-0">
+                                                    @forelse($platformActivity->take(5) as $activity)
+                                                        <li class="mb-2">
+                                                            <div class="d-flex justify-content-between align-items-start gap-2">
+                                                                <div class="small">
+                                                                    <div class="fw-semibold text-dark">{{ $activity->company->name ?? $activity->subscriber_name ?? 'Plan sale' }}</div>
+                                                                    <div class="text-muted">{{ $activity->plan_name ?? $activity->plan ?? 'Subscription' }}</div>
+                                                                </div>
+                                                                <div class="small text-end">
+                                                                    <div class="fw-bold text-primary">₦{{ number_format((float) ($activity->amount ?? 0), 0) }}</div>
+                                                                    <div class="text-muted">{{ optional($activity->created_at)->diffForHumans() }}</div>
+                                                                </div>
+                                                            </div>
+                                                        </li>
+                                                    @empty
+                                                        <li class="small text-muted">No paid plan sales captured yet.</li>
+                                                    @endforelse
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="card card-rounded shadow-sm">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <div>
+                                                <h5 class="mb-0 fw-bold text-dark">Approval Conversion Radar</h5>
+                                                <small class="text-muted">A compact view of manager pipeline and tenant readiness</small>
+                                            </div>
+                                            <span class="live-badge-soft animate-pulse">Live</span>
+                                        </div>
+                                        @php
+                                            $pendingManagers = (int) ($metrics['pending_managers'] ?? 0);
+                                            $activeManagers = (int) ($metrics['active_managers'] ?? 0);
+                                            $suspendedManagers = (int) ($metrics['suspended_managers'] ?? 0);
+                                            $pendingSetups = (int) ($metrics['pending_setups'] ?? 0);
+                                            $paidSubs = (int) ($metrics['paid_subs'] ?? 0);
+                                            $expiredSubs = (int) ($metrics['expired_subs'] ?? 0);
+                                            $approvalPool = max(1, $pendingManagers + $activeManagers + $suspendedManagers);
+                                            $setupPool = max(1, $pendingSetups + $paidSubs + $expiredSubs);
+                                            $approvalMix = [
+                                                ['label' => 'Pending Review', 'value' => $pendingManagers, 'color' => '#f59e0b', 'pct' => round(($pendingManagers / $approvalPool) * 100)],
+                                                ['label' => 'Approved', 'value' => $activeManagers, 'color' => '#2563eb', 'pct' => round(($activeManagers / $approvalPool) * 100)],
+                                                ['label' => 'Suspended', 'value' => $suspendedManagers, 'color' => '#ef4444', 'pct' => round(($suspendedManagers / $approvalPool) * 100)],
+                                                ['label' => 'Pending Setups', 'value' => $pendingSetups, 'color' => '#8b5cf6', 'pct' => round(($pendingSetups / $setupPool) * 100)],
+                                                ['label' => 'Paid Subs', 'value' => $paidSubs, 'color' => '#10b981', 'pct' => round(($paidSubs / $setupPool) * 100)],
+                                                ['label' => 'Expired Plans', 'value' => $expiredSubs, 'color' => '#64748b', 'pct' => round(($expiredSubs / $setupPool) * 100)],
+                                            ];
+                                        @endphp
+                                        <div class="d-grid gap-3">
+                                            @foreach($approvalMix as $mix)
+                                                <div class="p-3 rounded border bg-light-subtle">
+                                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                                        <div class="small fw-semibold text-dark">{{ $mix['label'] }}</div>
+                                                        <div class="small text-muted">{{ number_format($mix['value']) }} • {{ $mix['pct'] }}%</div>
+                                                    </div>
+                                                    <div class="progress" style="height: 10px;">
+                                                        <div class="progress-bar" role="progressbar" style="width: {{ max(6, $mix['pct']) }}%; background: {{ $mix['color'] }};" aria-valuenow="{{ $mix['pct'] }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
                         {{-- ROW 5: OPTIMIZED LAYOUT - New Company Registrations + Live Activity (LEFT) & Regional Map (RIGHT) --}}
-                        <div class="row">
-                            {{-- LEFT COLUMN: New Company Registrations + Live Platform Activity --}}
-                            <div class="col-lg-5 grid-margin stretch-card">
+                        <div class="row dashboard-row-balanced">
+                            {{-- LEFT COLUMN: New Company Registrations + User Registrations + Live Platform Activity --}}
+                            <div class="col-12 col-xl-5 grid-margin dashboard-stack">
                                 
                                 {{-- New Company Registrations (Scrollable) --}}
-                                <div class="card card-rounded shadow-sm mb-4">
+                                <div class="card card-rounded shadow-sm">
                                     <div class="card-body">
+                                        <div class="dashboard-split-card">
                                         <div class="d-flex justify-content-between align-items-center mb-3">
                                             <div>
                                                 <h4 class="card-title card-title-dash mb-1">New Company Registrations</h4>
@@ -779,7 +1618,7 @@
                                             </div>
                                             <a href="#" class="btn btn-link text-primary fw-bold text-decoration-none small">View All</a>
                                         </div>
-                                        <div class="table-responsive" style="max-height: 320px; overflow-y: auto;">
+                                        <div class="table-responsive table-wrap-lock" style="max-height: 320px; overflow-y: auto;">
                                             <table class="table table-striped table-borderless table-sm">
                                                 <thead class="sticky-top bg-white">
                                                     <tr class="text-muted border-bottom">
@@ -811,12 +1650,88 @@
                                                 </tbody>
                                             </table>
                                         </div>
+                                        <div class="row g-2 mt-2">
+                                            <div class="col-sm-6">
+                                                <div class="summary-fill">
+                                                    <div class="label">Latest Company Count</div>
+                                                    <div class="value">{{ number_format($recentTenants->count() ?? 0) }}</div>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-6">
+                                                <div class="summary-fill">
+                                                    <div class="label">Active Registrations</div>
+                                                    <div class="value">{{ number_format(($recentTenants ?? collect())->where('status', 'active')->count()) }}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- Latest User Registrations --}}
+                                <div class="card card-rounded shadow-sm">
+                                    <div class="card-body">
+                                        <div class="dashboard-split-card">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <div>
+                                                <h4 class="card-title card-title-dash mb-1">Latest User Registrations</h4>
+                                                <p class="card-subtitle card-subtitle-dash mb-0 small">Newest normal signups and plan users</p>
+                                            </div>
+                                            <span class="live-badge-soft">Live</span>
+                                        </div>
+                                        <div class="table-responsive table-wrap-lock" style="max-height: 320px; overflow-y: auto;">
+                                            <table class="table table-striped table-borderless table-sm">
+                                                <thead class="sticky-top bg-white">
+                                                    <tr class="text-muted border-bottom">
+                                                        <th class="small">User</th>
+                                                        <th class="small">Plan</th>
+                                                        <th class="small">Company</th>
+                                                        <th class="small">Joined</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @forelse($recentUsers as $recentUser)
+                                                    <tr>
+                                                        <td class="small">
+                                                            <div class="fw-bold text-dark">{{ $recentUser->name ?? 'N/A' }}</div>
+                                                            <div class="text-muted">{{ $recentUser->email ?? ($recentUser->phone ?? 'N/A') }}</div>
+                                                        </td>
+                                                        <td class="small">
+                                                            <span class="badge bg-soft-primary text-primary">
+                                                                {{ $recentUser->subscription->plan_name ?? $recentUser->subscription->plan ?? 'Pending' }}
+                                                            </span>
+                                                        </td>
+                                                        <td class="small">{{ $recentUser->company->name ?? 'Not setup yet' }}</td>
+                                                        <td class="small text-muted">{{ optional($recentUser->created_at)->diffForHumans() }}</td>
+                                                    </tr>
+                                                    @empty
+                                                    <tr><td colspan="4" class="text-center p-4 text-muted small">No recent user registrations yet.</td></tr>
+                                                    @endforelse
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <div class="row g-2 mt-2">
+                                            <div class="col-sm-6">
+                                                <div class="summary-fill">
+                                                    <div class="label">Recent Users</div>
+                                                    <div class="value">{{ number_format($recentUsers->count() ?? 0) }}</div>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-6">
+                                                <div class="summary-fill">
+                                                    <div class="label">Awaiting Setup</div>
+                                                    <div class="value">{{ number_format(($recentUsers ?? collect())->filter(fn($item) => empty(optional($item->company)->id))->count()) }}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        </div>
                                     </div>
                                 </div>
 
                                 {{-- Live Platform Activity --}}
                                 <div class="card card-rounded shadow-sm">
                                     <div class="card-body">
+                                        <div class="dashboard-split-card">
                                         <div class="d-flex justify-content-between mb-3">
                                             <div>
                                                 <h4 class="card-title card-title-dash mb-1">Live Platform Activity</h4>
@@ -844,12 +1759,27 @@
                                                 @endforelse
                                             </ul>
                                         </div>
+                                        <div class="row g-2 mt-2">
+                                            <div class="col-sm-6">
+                                                <div class="summary-fill">
+                                                    <div class="label">Activity Events</div>
+                                                    <div class="value">{{ number_format($platformActivity->count() ?? 0) }}</div>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-6">
+                                                <div class="summary-fill">
+                                                    <div class="label">Latest Stream Value</div>
+                                                    <div class="value">₦{{ number_format((float) optional($platformActivity->first())->amount, 2) }}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
                             {{-- RIGHT COLUMN: Real-time Regional Distribution Map --}}
-                            <div class="col-lg-7 grid-margin stretch-card">
+                            <div class="col-12 col-xl-7 grid-margin dashboard-stack">
                                 <div class="card card-rounded shadow-sm">
                                     <div class="card-body">
                                         <div class="d-flex justify-content-between align-items-center mb-3">
@@ -890,7 +1820,7 @@
                                             $topRegion = !empty($countryData) ? collect($countryData)->sortDesc()->keys()->first() : 'N/A';
                                             $regionsCount = !empty($countryData) ? count($countryData) : 0;
                                         @endphp
-                                        <div class="mt-3 p-3 rounded-3 border bg-light" style="min-height: 220px;">
+                                        <div class="mt-3 p-3 rounded-3 border bg-light">
                                             <div class="d-flex justify-content-between align-items-center mb-2">
                                                 <h6 class="mb-0 fw-bold text-dark">Regional Snapshot</h6>
                                                 <span class="badge bg-primary-subtle text-primary">Live</span>
@@ -918,6 +1848,67 @@
                                                     <div class="progress-bar bg-primary" role="progressbar" style="width: {{ $coveragePct }}%" aria-valuenow="{{ $coveragePct }}" aria-valuemin="0" aria-valuemax="100"></div>
                                                 </div>
                                                 <div class="small text-muted mt-2">{{ $coveragePct }}% region-to-tenant spread</div>
+                                            </div>
+                                            <div class="row g-2 mt-2">
+                                                <div class="col-sm-6">
+                                                    <div class="summary-fill">
+                                                        <div class="label">Pending Setups</div>
+                                                        <div class="value">{{ number_format($metrics['pending_setups'] ?? 0) }}</div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <div class="summary-fill">
+                                                        <div class="label">Paid Nodes</div>
+                                                        <div class="value">{{ number_format($metrics['paid_subs'] ?? 0) }}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="card card-rounded shadow-sm">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <div>
+                                                <h5 class="mb-0 fw-bold text-dark">Registration Health</h5>
+                                                <small class="text-muted">User onboarding, setup completion, and expiry pressure</small>
+                                            </div>
+                                            <span class="live-badge-soft">Live</span>
+                                        </div>
+                                        <div class="dashboard-side-fill">
+                                            <div class="summary-fill">
+                                                <div class="label">Recent Users</div>
+                                                <div class="value">{{ number_format($recentUsers->count() ?? 0) }}</div>
+                                            </div>
+                                            <div class="summary-fill">
+                                                <div class="label">Recent Companies</div>
+                                                <div class="value">{{ number_format($recentTenants->count() ?? 0) }}</div>
+                                            </div>
+                                            <div class="summary-fill">
+                                                <div class="label">Awaiting Setup</div>
+                                                <div class="value">{{ number_format(($recentUsers ?? collect())->filter(fn($item) => empty(optional($item->company)->id))->count()) }}</div>
+                                            </div>
+                                            <div class="summary-fill">
+                                                <div class="label">Expiring Soon</div>
+                                                <div class="value">{{ number_format($metrics['expiring_soon_subs'] ?? 0) }}</div>
+                                            </div>
+                                        </div>
+                                        <div class="mt-3 pt-2 border-top">
+                                            <div class="small text-muted mb-2 fw-semibold">Latest Setup Queue</div>
+                                            <div class="row g-2">
+                                                @forelse(($recentUsers ?? collect())->take(4) as $recentUser)
+                                                    <div class="col-md-6">
+                                                        <div class="summary-fill">
+                                                            <div class="label">{{ $recentUser->company->name ?? 'Setup Pending' }}</div>
+                                                            <div class="value">{{ \Illuminate\Support\Str::limit($recentUser->name ?? 'User', 22) }}</div>
+                                                        </div>
+                                                    </div>
+                                                @empty
+                                                    <div class="col-12">
+                                                        <div class="small text-muted">No new users in queue.</div>
+                                                    </div>
+                                                @endforelse
                                             </div>
                                         </div>
                                     </div>
@@ -1144,6 +2135,48 @@
             });
         }
 
+        // --- 2B. MANAGER STATUS MIX (Doughnut) ---
+        const managerPulseCtx = document.getElementById('managerStatusPieChart');
+        if (managerPulseCtx) {
+            const managerPulseValues = [
+                {{ (int) ($metrics['pending_managers'] ?? 0) }},
+                {{ (int) ($metrics['active_managers'] ?? 0) }},
+                {{ (int) ($metrics['suspended_managers'] ?? 0) }}
+            ];
+            const hasManagerPulseData = managerPulseValues.some(value => Number(value) > 0);
+
+            new Chart(managerPulseCtx.getContext("2d"), {
+                type: 'doughnut',
+                data: {
+                    labels: hasManagerPulseData ? ['Pending', 'Approved', 'Suspended'] : ['No manager data yet'],
+                    datasets: [{
+                        data: hasManagerPulseData ? managerPulseValues : [1],
+                        backgroundColor: hasManagerPulseData
+                            ? ['#f59e0b', '#2563eb', '#ef4444']
+                            : ['#dbe4f0'],
+                        borderWidth: 0,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '68%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            enabled: hasManagerPulseData,
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.label}: ${Number(context.parsed).toLocaleString()}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
         // --- 3. TRAFFIC LINE CHART ---
         const trafficCtx = document.getElementById('trafficLineChart');
         if (trafficCtx) {
@@ -1296,6 +2329,11 @@
                 // In production, fetch new data via AJAX and update markers
                 console.log('Map data refresh triggered');
             }, 30000);
+
+            setTimeout(() => regionMap.invalidateSize(), 250);
+            window.addEventListener('resize', () => {
+                setTimeout(() => regionMap.invalidateSize(), 100);
+            });
         }
 
         // --- 6. HEATMAP VISUALIZATION ---
