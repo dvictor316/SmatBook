@@ -149,7 +149,11 @@
 
                 {{-- Payments --}}
                 <li><a href="{{ route('payments.index') }}"><i class="fe fe-credit-card"></i><span>Payments</span></a></li>
-                <li><a href="{{ route('payroll.index') }}"><i class="fe fe-dollar-sign"></i><span>Payroll</span></a></li>
+                <li class="{{ request()->routeIs('payroll.*') ? 'active' : '' }}">
+                    <a href="{{ route('payroll.index') }}" class="{{ request()->routeIs('payroll.*') ? 'active' : '' }}">
+                        <i class="fe fe-dollar-sign"></i><span>Payroll</span>
+                    </a>
+                </li>
 
                 {{-- Taxation --}}
                 <li class="submenu {{ Request::is('compliance/tax-center*', 'compliance/tax-filings*') ? 'active subdrop' : '' }}">
