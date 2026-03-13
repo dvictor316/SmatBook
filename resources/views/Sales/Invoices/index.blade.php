@@ -679,6 +679,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <script>
+    const autoPrintReceipt = {{ request()->boolean('autoprint') ? 'true' : 'false' }};
+
     // Print Function
     function printInvoice() {
         window.print();
@@ -774,10 +776,17 @@ ${companyName}
         window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     }
 
-    // Auto-print on load (optional)
-    // window.onload = function() {
-    //     setTimeout(() => window.print(), 500);
-    // };
+    if (autoPrintReceipt) {
+        window.addEventListener('load', () => {
+            setTimeout(() => window.print(), 300);
+        });
+
+        window.addEventListener('afterprint', () => {
+            if (window.opener) {
+                window.close();
+            }
+        });
+    }
 </script>
 </body>
 </html>

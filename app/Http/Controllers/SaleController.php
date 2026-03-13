@@ -242,10 +242,10 @@ $sale = Sale::create([
     public function showInvoice($id)
     {
         $sale = Sale::with(['items.product', 'customer'])->findOrFail($id);
-        $company = Company::first() ?? new Company(['name' => 'General Store']);
+        $company = Company::find(auth()->user()?->company_id) ?? Company::first() ?? new Company(['name' => 'General Store']);
         $currencySymbol = '₦'; 
-        
-        return view('sales.invoices.index', compact('sale', 'company', 'currencySymbol'));
+
+        return view('Sales.Invoices.index', compact('sale', 'company', 'currencySymbol'));
     }
 
     private function generateInvoiceNo() {

@@ -1618,6 +1618,8 @@ $(document).ready(function() {
             return;
         }
 
+        const receiptWindow = window.open('', '_blank');
+
         $(this).prop('disabled', true).addClass('processing');
         $('#btn-text').hide();
         $('#btn-loading').show();
@@ -1642,23 +1644,32 @@ $(document).ready(function() {
                 }
             },
             success: function(res) {
+                const invoiceUrl = "{{ route('sales.invoice.show', ':id') }}".replace(':id', res.sale_id) + '?autoprint=1';
+
+                if (receiptWindow && !receiptWindow.closed) {
+                    receiptWindow.location = invoiceUrl;
+                } else {
+                    window.open(invoiceUrl, '_blank');
+                }
+
                 Swal.fire({
-                    title: 'Success!',
-                    text: 'Sale completed',
                     icon: 'success',
-                    showCancelButton: true,
-                    confirmButtonText: '<i class="fas fa-print me-1"></i> Print',
-                    cancelButtonText: 'New Sale',
-                    confirmButtonColor: '#22c55e',
-                    cancelButtonColor: '#6b7280'
-                }).then((r) => {
-                    if(r.isConfirmed) {
-                        window.open("{{ route('sales.invoice.show', ':id') }}".replace(':id', res.sale_id), '_blank');
-                    }
-                    location.reload();
+                    title: 'Sale completed',
+                    text: 'Preparing receipt and resetting POS...',
+                    timer: 1400,
+                    showConfirmButton: false,
+                    toast: true,
+                    position: 'top-end'
                 });
+
+                setTimeout(() => {
+                    window.location.href = "{{ route('sales.returnToPos') }}";
+                }, 250);
             },
             error: function(xhr) {
+                if (receiptWindow && !receiptWindow.closed) {
+                    receiptWindow.close();
+                }
                 $('#process-btn').prop('disabled', false).removeClass('processing');
                 $('#btn-text').show();
                 $('#btn-loading').hide();
