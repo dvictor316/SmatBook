@@ -4,6 +4,9 @@
 @section('content')
 <style>
 :root { --blue-deep:#002347; --gold:#c5a059; --gold-bright:#ffdf91; --red:#bc002d; }
+.payroll-shell { width:100%; max-width:100%; padding:1.5rem 0.75rem; overflow-x:hidden; }
+.payroll-shell .row { margin-left:0; margin-right:0; }
+.payroll-shell .row > * { padding-left:calc(var(--bs-gutter-x, 1.5rem) * 0.5); padding-right:calc(var(--bs-gutter-x, 1.5rem) * 0.5); }
 .page-header { background:linear-gradient(135deg,var(--blue-deep),#003d6b); border-radius:16px; padding:28px 32px; color:white; margin-bottom:28px; }
 .page-header h1 { font-size:1.5rem; font-weight:800; margin:0; }
 .run-card { background:#fff; border:1px solid #e8ecf4; border-radius:14px; overflow:hidden; box-shadow:0 2px 12px rgba(0,35,71,0.05); margin-bottom:24px; }
@@ -44,9 +47,10 @@
 .step-line { flex:1; height:2px; background:#e8ecf4; margin:0 8px; }
 .step.done .step-line { background:#22c55e; }
 @media(max-width:768px){ .page-header h1{font-size:1.2rem;} }
+@media(min-width:768px){ .payroll-shell{ padding-left:1rem; padding-right:1rem; } }
 </style>
 
-<div class="container-fluid px-3 px-md-4 py-4">
+<div class="payroll-shell">
 
     <div class="page-header">
         <div class="d-flex align-items-center gap-3">

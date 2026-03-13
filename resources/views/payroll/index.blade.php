@@ -12,6 +12,21 @@
     --blue-light: #f4f8ff;
 }
 
+.payroll-shell {
+    width: 100%;
+    max-width: 100%;
+    padding: 1.5rem 0.75rem;
+    overflow-x: hidden;
+}
+.payroll-shell .row {
+    margin-left: 0;
+    margin-right: 0;
+}
+.payroll-shell .row > * {
+    padding-left: calc(var(--bs-gutter-x, 1.5rem) * 0.5);
+    padding-right: calc(var(--bs-gutter-x, 1.5rem) * 0.5);
+}
+
 .payroll-header {
     background: linear-gradient(135deg, var(--blue-deep) 0%, #003d6b 100%);
     border-radius: 16px;
@@ -289,9 +304,12 @@
     .payroll-table-header { flex-direction: column; align-items: flex-start; }
     .payroll-table td, .payroll-table th { padding: 10px 12px; font-size: 0.78rem; }
 }
+@media (min-width: 768px) {
+    .payroll-shell { padding-left: 1rem; padding-right: 1rem; }
+}
 </style>
 
-<div class="container-fluid px-3 px-md-4 py-4">
+<div class="payroll-shell">
 
     {{-- Header --}}
     <div class="payroll-header mb-4">

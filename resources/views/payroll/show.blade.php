@@ -4,6 +4,9 @@
 @section('content')
 <style>
 :root { --blue-deep:#002347; --gold:#c5a059; --gold-bright:#ffdf91; --red:#bc002d; }
+.payroll-shell { width:100%; max-width:100%; padding:1.5rem 0.75rem; overflow-x:hidden; }
+.payroll-shell .row { margin-left:0; margin-right:0; }
+.payroll-shell .row > * { padding-left:calc(var(--bs-gutter-x, 1.5rem) * 0.5); padding-right:calc(var(--bs-gutter-x, 1.5rem) * 0.5); }
 .page-header { background:linear-gradient(135deg,var(--blue-deep),#003d6b); border-radius:16px; padding:28px 32px; color:white; margin-bottom:28px; }
 .page-header h1 { font-size:1.5rem; font-weight:800; margin:0; }
 .page-header p { color:rgba(255,255,255,0.7); margin:6px 0 0; font-size:0.88rem; }
@@ -30,9 +33,10 @@
 .net-box { background:linear-gradient(135deg,var(--blue-deep),#003d6b); border-radius:12px; padding:18px 22px; color:white; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
 .net-amount { font-size:1.6rem; font-weight:900; color:var(--gold-bright); }
 @media(max-width:768px){ .info-grid{grid-template-columns:1fr;} .page-header h1{font-size:1.2rem;} }
+@media(min-width:768px){ .payroll-shell{ padding-left:1rem; padding-right:1rem; } }
 </style>
 
-<div class="container-fluid px-3 px-md-4 py-4">
+<div class="payroll-shell">
     <div class="page-header">
         <div class="d-flex align-items-center gap-3 flex-wrap">
             <a href="{{ route('payroll.index') }}" style="color:rgba(255,255,255,0.7);text-decoration:none;">
