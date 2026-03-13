@@ -464,7 +464,9 @@
             return;
         }
 
-        const receiptHtml = receipt.innerHTML;
+        const receiptClone = receipt.cloneNode(true);
+        receiptClone.querySelectorAll('.receipt-actions').forEach((node) => node.remove());
+        const receiptHtml = receiptClone.innerHTML;
         printWindow.document.write(`
             <!DOCTYPE html>
             <html lang="en">
@@ -473,63 +475,86 @@
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>Payment Receipt</title>
                 <style>
-                    body { font-family: Arial, Helvetica, sans-serif; margin: 0; padding: 32px; color: #0f172a; background: #ffffff; }
-                    .receipt-sheet { color: #0f172a; }
-                    .receipt-panel { background: linear-gradient(180deg, #fbfdff 0%, #f8fafc 100%); border: 1px solid #e5e7eb; border-radius: 24px; padding: 24px; position: relative; overflow: hidden; }
-                    .receipt-stamp { position: absolute; top: 20px; right: 20px; border: 2px solid rgba(34,197,94,0.3); color: rgba(34,197,94,0.45); font-weight: 900; font-size: 18px; padding: 6px 12px; transform: rotate(12deg); border-radius: 12px; text-transform: uppercase; letter-spacing: .08em; }
-                    .grid { display: grid; gap: 20px; }
+                    html, body { margin: 0; min-height: 100%; overflow-y: auto; background: linear-gradient(180deg, #eef4ff 0%, #f8fbff 100%); color: #0f172a; font-family: Arial, Helvetica, sans-serif; }
+                    body { padding: 24px; }
+                    .preview-bar { position: sticky; top: 0; z-index: 10; display: flex; justify-content: space-between; align-items: center; gap: 16px; margin: 0 auto 20px; padding: 14px 18px; max-width: 980px; background: rgba(15, 23, 42, 0.92); color: #fff; border-radius: 18px; box-shadow: 0 16px 36px rgba(15, 23, 42, 0.2); }
+                    .preview-bar button { border: 0; border-radius: 12px; background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: #fff; padding: 10px 18px; font-size: 12px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; cursor: pointer; }
+                    .preview-bar small { color: rgba(255,255,255,0.75); font-size: 12px; }
+                    .receipt-sheet { max-width: 980px; margin: 0 auto; padding: 28px; border-radius: 30px; background: #ffffff; box-shadow: 0 20px 45px rgba(79, 70, 229, 0.08); color: #0f172a; }
+                    .receipt-panel { background: linear-gradient(135deg, #f7f7ff 0%, #eefaf4 100%); border: 1px solid #dbe6f5; border-radius: 26px; padding: 22px; position: relative; overflow: hidden; }
+                    .receipt-panel::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at top right, rgba(79,70,229,0.08), transparent 32%); pointer-events: none; }
+                    .receipt-stamp { position: absolute; top: 20px; right: 20px; border: 2px solid rgba(34,197,94,0.7); color: rgba(22,163,74,0.9); font-weight: 900; font-size: 14px; padding: 6px 12px; transform: rotate(10deg); border-radius: 12px; text-transform: uppercase; letter-spacing: .08em; background: rgba(240,253,244,0.9); }
+                    .grid { display: grid; gap: 18px; }
                     .grid-cols-1 { grid-template-columns: 1fr; }
                     .md\\:grid-cols-2, .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
                     .xl\\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
                     .gap-4, .gap-5 { gap: 16px; }
-                    .mb-6 { margin-bottom: 24px; }
+                    .mb-6 { margin-bottom: 20px; }
                     .mt-1 { margin-top: 4px; }
                     .mt-2 { margin-top: 8px; }
                     .mt-4 { margin-top: 16px; }
                     .text-right, .md\\:text-right, .xl\\:text-right { text-align: right; }
                     .text-center { text-align: center; }
-                    .text-3xl { font-size: 44px; }
-                    .text-sm { font-size: 14px; }
-                    .text-base { font-size: 16px; }
+                    .text-3xl { font-size: 28px; }
+                    .text-sm { font-size: 13px; }
+                    .text-base { font-size: 14px; }
                     .text-gray-900 { color: #111827; }
                     .text-gray-800 { color: #1f2937; }
-                    .text-gray-600 { color: #4b5563; }
-                    .text-gray-500 { color: #6b7280; }
+                    .text-gray-600 { color: #475569; }
+                    .text-gray-500 { color: #64748b; }
                     .text-gray-400 { color: #94a3b8; }
                     .text-primary { color: #4f46e5; }
                     .font-black, .font-bold, .font-semibold { font-weight: 700; }
                     .font-black { font-weight: 900; }
-                    .tracking-tight { letter-spacing: -.04em; }
+                    .tracking-tight { letter-spacing: -.03em; }
                     .border { border: 1px solid #e5e7eb; }
                     .border-t { border-top: 1px solid #e5e7eb; }
                     .rounded-2xl { border-radius: 18px; }
                     .bg-white { background: #fff; }
                     .px-4 { padding-left: 16px; padding-right: 16px; }
-                    .py-4 { padding-top: 16px; padding-bottom: 16px; }
+                    .py-4 { padding-top: 14px; padding-bottom: 14px; }
                     .pt-4 { padding-top: 16px; }
                     .italic { font-style: italic; }
-                    .leading-relaxed { line-height: 1.7; }
-                    .receipt-amount { font-size: 44px; font-weight: 900; letter-spacing: -.04em; color: #4f46e5; margin: 0; text-align: right; word-break: break-word; }
+                    .leading-relaxed { line-height: 1.6; }
+                    .receipt-amount { font-size: 34px; font-weight: 900; letter-spacing: -.04em; color: #4f46e5; margin: 0; text-align: right; word-break: break-word; }
                     .border-dashed { border-style: dashed; }
-                    .my-5 { margin-top: 20px; margin-bottom: 20px; }
+                    .my-5 { margin-top: 18px; margin-bottom: 18px; }
                     .items-end { align-items: end; }
                     .justify-between { justify-content: space-between; }
                     .flex { display: flex; }
                     .flex-col { flex-direction: column; }
-                    @media print { body { padding: 0; } }
+                    .receipt-actions { display: none !important; }
+                    .receipt-fact p:first-child,
+                    .receipt-sheet .text-\\[10px\\] { font-size: 10px !important; letter-spacing: .22em; text-transform: uppercase; color: #94a3b8; }
+                    @media (max-width: 768px) {
+                        body { padding: 12px; }
+                        .preview-bar { flex-direction: column; align-items: stretch; }
+                        .receipt-sheet { padding: 18px; }
+                        .xl\\:grid-cols-4, .md\\:grid-cols-2, .grid-cols-2 { grid-template-columns: 1fr; }
+                        .text-right, .md\\:text-right, .xl\\:text-right { text-align: left; }
+                        .receipt-amount { font-size: 28px; text-align: left; }
+                    }
+                    @media print {
+                        body { padding: 0; background: #fff; }
+                        .preview-bar { display: none !important; }
+                        .receipt-sheet { max-width: none; border-radius: 0; box-shadow: none; padding: 0; }
+                    }
                 </style>
             </head>
             <body>
+                <div class="preview-bar">
+                    <div>
+                        <strong style="display:block;font-size:14px;letter-spacing:.08em;text-transform:uppercase;">Receipt Preview</strong>
+                        <small>Scroll through the receipt, then print when ready.</small>
+                    </div>
+                    <button onclick="window.print()">Print Receipt</button>
+                </div>
                 <div class="receipt-sheet">${receiptHtml}</div>
             </body>
             </html>
         `);
         printWindow.document.close();
         printWindow.focus();
-        printWindow.onload = function () {
-            printWindow.print();
-            printWindow.close();
-        };
     }
 
     function openModal(id, mode) {
