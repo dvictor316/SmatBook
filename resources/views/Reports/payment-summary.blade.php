@@ -51,25 +51,25 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
-                <p class="text-[11px] uppercase tracking-[0.2em] text-gray-400 font-black">Collected Revenue</p>
-                <h2 class="mt-3 text-3xl font-black text-gray-900">{{ $currencySymbol }}{{ number_format($totalRevenue ?? 0, 2) }}</h2>
-                <p class="mt-2 text-sm text-gray-500">{{ number_format($summary['total_transactions'] ?? 0) }} payment records in current result</p>
+            <div class="summary-metric-card bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
+                <p class="summary-metric-label text-[11px] uppercase tracking-[0.2em] text-gray-400 font-black">Collected Revenue</p>
+                <h2 class="summary-metric-value mt-3 font-black text-gray-900">{{ $currencySymbol }}{{ number_format($totalRevenue ?? 0, 2) }}</h2>
+                <p class="summary-metric-note mt-2 text-sm text-gray-500">{{ number_format($summary['total_transactions'] ?? 0) }} payment records in current result</p>
             </div>
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
-                <p class="text-[11px] uppercase tracking-[0.2em] text-gray-400 font-black">Completed Payments</p>
-                <h2 class="mt-3 text-3xl font-black text-emerald-600">{{ number_format($summary['completed_count'] ?? 0) }}</h2>
-                <p class="mt-2 text-sm text-gray-500">{{ $currencySymbol }}{{ number_format($summary['completed_amount'] ?? 0, 2) }} confirmed</p>
+            <div class="summary-metric-card bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
+                <p class="summary-metric-label text-[11px] uppercase tracking-[0.2em] text-gray-400 font-black">Completed Payments</p>
+                <h2 class="summary-metric-value mt-3 font-black text-emerald-600">{{ number_format($summary['completed_count'] ?? 0) }}</h2>
+                <p class="summary-metric-note mt-2 text-sm text-gray-500">{{ $currencySymbol }}{{ number_format($summary['completed_amount'] ?? 0, 2) }} confirmed</p>
             </div>
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
-                <p class="text-[11px] uppercase tracking-[0.2em] text-gray-400 font-black">Average Payment</p>
-                <h2 class="mt-3 text-3xl font-black text-indigo-600">{{ $currencySymbol }}{{ number_format($summary['average_payment'] ?? 0, 2) }}</h2>
-                <p class="mt-2 text-sm text-gray-500">Largest payment {{ $currencySymbol }}{{ number_format($summary['largest_payment'] ?? 0, 2) }}</p>
+            <div class="summary-metric-card bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
+                <p class="summary-metric-label text-[11px] uppercase tracking-[0.2em] text-gray-400 font-black">Average Payment</p>
+                <h2 class="summary-metric-value mt-3 font-black text-indigo-600">{{ $currencySymbol }}{{ number_format($summary['average_payment'] ?? 0, 2) }}</h2>
+                <p class="summary-metric-note mt-2 text-sm text-gray-500">Largest payment {{ $currencySymbol }}{{ number_format($summary['largest_payment'] ?? 0, 2) }}</p>
             </div>
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
-                <p class="text-[11px] uppercase tracking-[0.2em] text-gray-400 font-black">Payment Mix</p>
-                <h2 class="mt-3 text-3xl font-black text-gray-900">{{ $summary['top_method'] ?? 'N/A' }}</h2>
-                <p class="mt-2 text-sm text-gray-500">
+            <div class="summary-metric-card bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
+                <p class="summary-metric-label text-[11px] uppercase tracking-[0.2em] text-gray-400 font-black">Payment Mix</p>
+                <h2 class="summary-metric-value mt-3 font-black text-gray-900">{{ $summary['top_method'] ?? 'N/A' }}</h2>
+                <p class="summary-metric-note mt-2 text-sm text-gray-500">
                     Pending {{ number_format($summary['pending_count'] ?? 0) }} | Partial {{ number_format($summary['partial_count'] ?? 0) }} | Failed {{ number_format($summary['failed_count'] ?? 0) }}
                 </p>
             </div>
@@ -222,7 +222,7 @@
 <div id="paymentModal" class="hidden fixed inset-0 z-50 overflow-y-auto no-print">
     <div class="flex items-center justify-center min-h-screen px-4">
         <div class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm" onclick="closeModal()"></div>
-        <div class="relative bg-white rounded-3xl shadow-2xl max-w-xl w-full p-8 overflow-hidden transition-all">
+        <div class="relative bg-white rounded-3xl shadow-2xl max-w-2xl w-full p-6 md:p-8 overflow-hidden transition-all">
             
             <div class="flex justify-between items-center mb-6 no-print">
                 <h3 class="text-xl font-bold text-gray-900" id="modalTitle">Details</h3>
@@ -232,39 +232,51 @@
                 </div>
             </div>
 
-            <div id="receipt-view" class="hidden pt-2 border-t border-gray-100">
-                <div class="flex justify-between items-start mb-8">
+            <div id="receipt-view" class="receipt-sheet hidden pt-2 border-t border-gray-100">
+                <div class="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-6">
                     <div>
-                        <div class="text-2xl font-black text-primary mb-1">RECEIPT</div>
-                        <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">ID: <span id="rec_id" class="text-gray-900"></span></div>
+                        <div class="text-3xl font-black text-gray-900 tracking-tight">Receipt</div>
+                        <div class="mt-2 text-[11px] text-gray-400 font-bold uppercase tracking-[0.25em]">Payment ID</div>
+                        <div id="rec_id" class="text-sm font-bold text-gray-900 mt-1"></div>
                     </div>
-                    <div class="text-right">
-                        <div class="font-black text-gray-900 text-sm">TRANSACTION RECORD</div>
-                        <div class="text-[10px] text-gray-400 uppercase tracking-tighter" id="rec_date_full"></div>
+                    <div class="md:text-right">
+                        <div class="text-[11px] text-gray-400 font-bold uppercase tracking-[0.25em]">Transaction Record</div>
+                        <div id="rec_date_full" class="text-sm text-gray-600 font-semibold mt-1"></div>
                     </div>
                 </div>
 
-                <div class="bg-gray-50 rounded-2xl p-6 mb-6 border border-dashed border-gray-200 relative">
-                    <div id="paid-stamp" class="absolute top-4 right-4 border-4 border-green-500/20 text-green-500/30 font-black text-3xl px-4 py-1 rotate-12 rounded-xl pointer-events-none uppercase">Paid</div>
+                <div class="receipt-panel bg-gray-50 rounded-2xl p-5 md:p-6 mb-6 border border-gray-200 relative overflow-hidden">
+                    <div id="paid-stamp" class="receipt-stamp absolute top-5 right-5 border-2 border-green-500/30 text-green-500/35 font-black text-xl px-3 py-1 rotate-12 rounded-lg pointer-events-none uppercase">Paid</div>
                     
-                    <div class="grid grid-cols-2 gap-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div class="receipt-fact">
+                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.25em]">Method</p>
+                            <p id="rec_method" class="text-base font-bold text-gray-900 mt-1"></p>
+                        </div>
+                        <div class="receipt-fact md:text-right">
+                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.25em]">Status</p>
+                            <p id="rec_status_text" class="text-base font-bold text-gray-900 mt-1"></p>
+                        </div>
+                    </div>
+
+                    <div class="border-t border-dashed border-gray-200 my-5"></div>
+
+                    <div class="flex items-end justify-between gap-4">
                         <div>
-                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Method</p>
-                            <p id="rec_method" class="text-sm font-bold text-gray-900"></p>
+                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.25em]">Total Paid</p>
+                            <p class="text-sm font-semibold text-gray-500 mt-1">Amount received and recorded</p>
                         </div>
                         <div class="text-right">
-                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Status</p>
-                            <p id="rec_status_text" class="text-sm font-bold text-gray-900"></p>
+                            <p id="rec_amount" class="receipt-amount text-3xl md:text-4xl font-black text-primary leading-none"></p>
                         </div>
-                        <div class="col-span-2 border-t border-gray-200 my-2"></div>
-                        <div><p class="text-sm font-bold text-gray-500">Total Paid</p></div>
-                        <div class="text-right"><p id="rec_amount" class="text-2xl font-black text-primary"></p></div>
                     </div>
                 </div>
 
                 <div class="mb-6">
-                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Notes / Description</p>
-                    <p id="rec_note" class="text-sm text-gray-600 italic leading-relaxed"></p>
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.25em] mb-2">Notes / Description</p>
+                    <div class="bg-white border border-gray-200 rounded-2xl px-4 py-4">
+                        <p id="rec_note" class="text-sm text-gray-600 italic leading-relaxed"></p>
+                    </div>
                 </div>
 
                 <div class="text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest pt-4 border-t border-gray-100">
@@ -319,9 +331,63 @@
         #paymentModal { position: absolute; left: 0; top: 0; width: 100%; height: auto; margin: 0; padding: 0; background: white; }
         .page-wrapper { background: white !important; }
     }
+    .summary-metric-card {
+        min-height: 220px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        overflow: hidden;
+    }
+    .summary-metric-label {
+        line-height: 1.45;
+    }
+    .summary-metric-value {
+        font-size: clamp(2rem, 2.2vw, 2.65rem);
+        line-height: 1;
+        letter-spacing: -0.04em;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+    .summary-metric-note {
+        max-width: 14rem;
+        line-height: 1.35;
+    }
+    .receipt-sheet {
+        color: #0f172a;
+    }
+    .receipt-panel {
+        background: linear-gradient(180deg, #fbfdff 0%, #f8fafc 100%);
+    }
+    .receipt-stamp {
+        letter-spacing: 0.08em;
+    }
+    .receipt-amount {
+        letter-spacing: -0.04em;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
     .bs-pagination .pagination { display: flex; gap: 6px; list-style: none; margin: 0; }
     .bs-pagination .page-item .page-link { border-radius: 12px !important; padding: 8px 16px; font-weight: 800; color: #4f46e5; border: 1px solid #e5e7eb; font-size: 0.75rem; transition: all 0.2s; background: white; }
     .bs-pagination .page-item.active .page-link { background-color: #4f46e5 !important; border-color: #4f46e5 !important; color: white !important; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2); }
+    @media (max-width: 767.98px) {
+        .summary-metric-card {
+            min-height: 180px;
+        }
+        .summary-metric-value {
+            font-size: 2.05rem;
+        }
+        .summary-metric-note {
+            max-width: 100%;
+        }
+        .receipt-stamp {
+            font-size: 0.95rem;
+            top: 1rem;
+            right: 1rem;
+        }
+        .receipt-amount {
+            font-size: 2rem !important;
+        }
+    }
 </style>
 
 <script>
@@ -359,7 +425,13 @@
                 const resolvedStatus = data.resolved_status || data.status || 'Pending';
                 document.getElementById('rec_status_text').innerText = resolvedStatus;
                 document.getElementById('rec_note').innerText = data.reference || data.note || 'No notes available.';
-                document.getElementById('rec_date_full').innerText = data.created_at;
+                document.getElementById('rec_date_full').innerText = new Date(data.created_at).toLocaleString('en-NG', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
 
                 // Populate Edit Mode
                 document.getElementById('edit_id').value = data.id;
