@@ -227,12 +227,17 @@
             <div class="flex justify-between items-center mb-6 no-print">
                 <h3 class="text-xl font-bold text-gray-900" id="modalTitle">Details</h3>
                 <div class="flex space-x-2">
-                    <button onclick="printReceipt()" id="printReceiptBtn" class="px-3 py-1 bg-gray-100 text-gray-600 rounded-lg text-[10px] font-black hover:bg-gray-200 uppercase tracking-wider">Print Receipt</button>
                     <button onclick="closeModal()" class="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-full text-gray-400 hover:text-gray-600 transition"><i class="fe fe-x"></i></button>
                 </div>
             </div>
 
             <div id="receipt-view" class="receipt-sheet hidden pt-2 border-t border-gray-100">
+                <div class="receipt-actions no-print flex justify-end mb-5">
+                    <button onclick="printReceipt()" id="printReceiptBtn" class="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-900 text-white rounded-xl text-xs font-black uppercase tracking-[0.18em] shadow-lg shadow-gray-900/10 hover:bg-black transition">
+                        <i class="fe fe-printer text-sm"></i>
+                        <span>Print Receipt</span>
+                    </button>
+                </div>
                 <div class="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-6">
                     <div>
                         <div class="text-3xl font-black text-gray-900 tracking-tight">Receipt</div>
