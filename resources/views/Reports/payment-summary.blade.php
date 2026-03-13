@@ -238,9 +238,13 @@
                         <span>Print Receipt</span>
                     </button>
                 </div>
-                <div class="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-6">
+                <div class="receipt-topband mb-5 rounded-2xl px-4 py-3">
+                    <div class="text-[10px] font-bold uppercase tracking-[0.28em] text-indigo-700">Transaction Receipt</div>
+                    <div class="text-xs text-slate-500 mt-1">Verified payment summary for your records</div>
+                </div>
+                <div class="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-5">
                     <div>
-                        <div class="text-3xl font-black text-gray-900 tracking-tight">Receipt</div>
+                        <div class="text-[2rem] font-black text-gray-900 tracking-tight">Receipt</div>
                         <div class="mt-2 text-[11px] text-gray-400 font-bold uppercase tracking-[0.25em]">Payment ID</div>
                         <div id="rec_id" class="text-sm font-bold text-gray-900 mt-1"></div>
                         <div class="mt-4 text-[11px] text-gray-400 font-bold uppercase tracking-[0.25em]">Customer</div>
@@ -254,8 +258,8 @@
                     </div>
                 </div>
 
-                <div class="receipt-panel bg-gray-50 rounded-2xl p-5 md:p-6 mb-6 border border-gray-200 relative overflow-hidden">
-                    <div id="paid-stamp" class="receipt-stamp absolute top-5 right-5 border-2 border-green-500/30 text-green-500/35 font-black text-xl px-3 py-1 rotate-12 rounded-lg pointer-events-none uppercase">Paid</div>
+                <div class="receipt-panel bg-gray-50 rounded-2xl p-4 md:p-5 mb-5 border border-gray-200 relative overflow-hidden">
+                    <div id="paid-stamp" class="receipt-stamp absolute top-5 right-5 border-2 border-green-500/30 text-green-500/35 font-black px-3 py-1 rotate-12 rounded-lg pointer-events-none uppercase">Paid</div>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
                         <div class="receipt-fact">
@@ -276,20 +280,20 @@
                         </div>
                     </div>
 
-                    <div class="border-t border-dashed border-gray-200 my-5"></div>
+                    <div class="border-t border-dashed border-gray-200 my-4"></div>
 
                     <div class="flex items-end justify-between gap-4">
                         <div>
                             <p class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.25em]">Total Paid</p>
-                            <p class="text-sm font-semibold text-gray-500 mt-1">Amount received and recorded</p>
+                            <p class="text-[0.92rem] font-semibold text-gray-500 mt-1">Amount received and recorded</p>
                         </div>
                         <div class="text-right">
-                            <p id="rec_amount" class="receipt-amount text-3xl md:text-4xl font-black text-primary leading-none"></p>
+                            <p id="rec_amount" class="receipt-amount font-black text-primary leading-none"></p>
                         </div>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
                     <div class="bg-white border border-gray-200 rounded-2xl px-4 py-4">
                         <p class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.25em] mb-1">Invoice / Order</p>
                         <p id="rec_invoice" class="text-sm font-semibold text-gray-800"></p>
@@ -300,7 +304,7 @@
                     </div>
                 </div>
 
-                <div class="mb-6">
+                <div class="mb-5">
                     <p class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.25em] mb-2">Notes / Description</p>
                     <div class="bg-white border border-gray-200 rounded-2xl px-4 py-4">
                         <p id="rec_note" class="text-sm text-gray-600 italic leading-relaxed"></p>
@@ -398,23 +402,28 @@
     .receipt-sheet {
         color: #0f172a;
     }
+    .receipt-topband {
+        background: linear-gradient(135deg, rgba(79, 70, 229, 0.08) 0%, rgba(14, 165, 233, 0.06) 100%);
+        border: 1px solid rgba(99, 102, 241, 0.12);
+    }
     .receipt-panel {
         background: linear-gradient(135deg, #f8f9ff 0%, #eefaf4 100%);
         border-color: #d7e4f6;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
     }
     .receipt-fact p:last-child {
         line-height: 1.35;
     }
     .receipt-stamp {
         letter-spacing: 0.08em;
-        font-size: 0.95rem;
+        font-size: 0.82rem;
         background: rgba(240,253,244,0.9);
     }
     .receipt-amount {
         letter-spacing: -0.04em;
         overflow-wrap: anywhere;
         word-break: break-word;
-        font-size: clamp(1.9rem, 2.4vw, 2.5rem);
+        font-size: clamp(1.7rem, 2.1vw, 2.15rem);
     }
     #main-payment-table td,
     #main-payment-table th {
@@ -433,13 +442,16 @@
         .summary-metric-note {
             max-width: 100%;
         }
+        .receipt-sheet .text-\[2rem\] {
+            font-size: 1.75rem !important;
+        }
         .receipt-stamp {
-            font-size: 0.72rem;
+            font-size: 0.68rem;
             top: 1rem;
             right: 1rem;
         }
         .receipt-amount {
-            font-size: 1.55rem !important;
+            font-size: 1.4rem !important;
         }
     }
 </style>
@@ -451,6 +463,7 @@
         destroy: "{{ route('reports.payments.destroy', ['id' => '__ID__']) }}",
         bulk: "{{ route('reports.payments.bulk-update') }}",
     };
+    let isReceiptPrinting = false;
 
     function paymentUrl(key, id) {
         return paymentApi[key].replace('__ID__', String(id));
@@ -468,14 +481,16 @@
 
     window.addEventListener('afterprint', function () {
         document.body.classList.remove('receipt-print-active');
+        isReceiptPrinting = false;
     });
 
     function printReceipt() {
         const modal = document.getElementById('paymentModal');
         const receipt = document.getElementById('receipt-view');
-        if (!modal || !receipt || receipt.classList.contains('hidden')) {
+        if (!modal || !receipt || receipt.classList.contains('hidden') || isReceiptPrinting) {
             return;
         }
+        isReceiptPrinting = true;
         document.body.classList.add('receipt-print-active');
         setTimeout(() => {
             window.print();
