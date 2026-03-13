@@ -50,7 +50,7 @@
                                 <div class="upload-profile me-2">
                                     <div class="profile-img">
                                         <img id="blah" class="avatar"
-                                            src="{{ URL::asset($settings->site_logo ?? '/assets/img/profiles/avatar-10.jpg') }}"
+                                            src="{{ URL::asset($settings->site_logo ?? '/assets/img/logos.png') }}"
                                             alt="profile-img">
                                     </div>
                                 </div>
@@ -58,8 +58,7 @@
                                     <label class="btn btn-primary">
                                         Upload new picture <input type="file" id="imgInp" name="site_logo" accept=".jpg,.jpeg,.png,.svg">
                                     </label>
-                                    <a class="btn btn-remove">Delete</a>
-                                    <p class="mt-1">Logo Should be minimum 152 * 152 Supported File format JPG,PNG,SVG</p>
+                                    <p class="mt-2 mb-0">Recommended logo size: 152 x 152 or higher. Supported formats: JPG, PNG, SVG.</p>
                                 </div>
                             </div>
 
@@ -160,7 +159,7 @@
                                             <button type="submit" class="btn btn-warning">Run Ledger Backfill</button>
                                         </form>
                                     @endif
-                                    <a href="javascript:void(0);" class="btn btn-cancel bg-primary-light me-3">Cancel</a>
+                                    <a href="{{ route('settings.index') }}" class="btn btn-cancel bg-primary-light me-3">Cancel</a>
                                     <button type="submit" class="btn btn-primary">Save Changes</button>
                                 </div>
                             </div>

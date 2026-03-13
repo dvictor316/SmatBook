@@ -87,7 +87,7 @@
                         <form action="{{ route('settings.update') }}" method="POST" enctype="multipart/form-data">
                             @csrf
                         @php
-                            $invoiceLogo = !empty($settings['invoice_logo']) ? asset($settings['invoice_logo']) : (!empty($settings['site_logo']) ? asset($settings['site_logo']) : asset('assets/img/settings-logo1.png'));
+                            $invoiceLogo = !empty($settings['invoice_logo']) ? asset($settings['invoice_logo']) : (!empty($settings['site_logo']) ? asset($settings['site_logo']) : asset('assets/img/logos.png'));
                             $digitalSignature = !empty($settings['digital_signature']) ? asset($settings['digital_signature']) : null;
                         @endphp
                         <div class="row">
@@ -121,7 +121,7 @@
                                             </div>
                                             <div class="mt-3">
                                                 <img id="invoice_logo_preview" src="{{ $invoiceLogo }}" alt="Current Invoice Logo" class="preview-logo">
-                                                <div id="invoice_logo_name" class="file-meta">Current logo</div>
+                                                <div id="invoice_logo_name" class="file-meta">{{ !empty($settings['invoice_logo']) ? 'Saved invoice logo' : 'Using primary company logo' }}</div>
                                             </div>
                                         </div>
                                     </div>
@@ -145,7 +145,7 @@
                                             </div>
                                             <div class="mt-3">
                                                 <img id="digital_signature_preview" src="{{ $digitalSignature ?? $invoiceLogo }}" alt="Current Signature" class="preview-logo">
-                                                <div id="digital_signature_name" class="file-meta">{{ $digitalSignature ? 'Current signature' : 'No signature uploaded yet' }}</div>
+                                                <div id="digital_signature_name" class="file-meta">{{ $digitalSignature ? 'Saved digital signature' : 'Upload a signature image to enable sign-off' }}</div>
                                             </div>
                                         </div>
                                     </div>
@@ -154,7 +154,7 @@
 
                             <div class="col-lg-12 mt-4">
                                 <div class="btn-path text-end border-top pt-4">
-                                    <a href="javascript:void(0);" class="btn btn-cancel bg-primary-light me-3 px-4">Cancel</a>
+                                    <a href="{{ route('template-invoice') }}" class="btn btn-cancel bg-primary-light me-3 px-4">Back to Templates</a>
                                     <button type="submit" class="btn btn-primary px-4 shadow-sm">Save Changes</button>
                                 </div>
                             </div>

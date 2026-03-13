@@ -111,7 +111,7 @@
                         <label class="form-label fw-bold small text-uppercase text-muted">Domain Environment</label>
                         <div class="input-group">
                             <span class="input-group-text bg-light border-end-0"><i class="fas fa-globe text-muted"></i></span>
-                            <input type="text" class="form-control bg-light" value="{{ env('SESSION_DOMAIN', 'Not Configured') }}" readonly>
+                            <input type="text" class="form-control bg-light" value="{{ config('session.domain') ?: request()->getHost() }}" readonly>
                             <span class="input-group-text bg-light border-start-0 text-success fw-bold small">ACTIVE</span>
                         </div>
                         <div class="form-text">Defined in environment configuration. Cannot be changed here.</div>

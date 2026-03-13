@@ -6,7 +6,7 @@
         $selectedReceiptTemplate = \App\Models\Setting::where('key', 'receipt_template')->value('value') ?: 'receipt_template_1';
         $templateLogo = !empty($settings['invoice_logo'])
             ? asset($settings['invoice_logo'])
-            : (!empty($settings['site_logo']) ? asset($settings['site_logo']) : asset('/assets/img/settings-logo1.png'));
+            : (!empty($settings['site_logo']) ? asset($settings['site_logo']) : asset('/assets/img/logos.png'));
     @endphp
     <div class="page-wrapper">
         <div class="content container-fluid">
@@ -27,7 +27,12 @@
                 <div class="col-xl-9 col-md-8">
                     <div class="w-100 pt-0">
                         <div class="content-page-header">
-                            <h5>Invoice Templates</h5>
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <h5 class="mb-0">Invoice Templates</h5>
+                                <a href="{{ route('invoice-settings') }}" class="btn btn-primary btn-sm text-white">
+                                    <i class="fas fa-plus me-1"></i> Add Template Assets
+                                </a>
+                            </div>
                         </div>
                         <div class="card invoices-tabs-card">
                             <div class="invoice-template-tab invoices-main-tabs">
@@ -81,7 +86,7 @@
                                                         </a>
                                                     </div>
                                                     <div class="invoice-content-title">
-                                                        <a href="javascript:;">General Invoice 1</a>
+                                                        <a href="javascript:;">Operational Purchase</a>
                                                         <form action="{{ route('settings.update') }}" method="POST" class="ms-2">
                                                             @csrf
                                                             <input type="hidden" name="purchase_template" value="purchase_template_1">
@@ -115,7 +120,7 @@
                                                         </a>
                                                     </div>
                                                     <div class="invoice-content-title">
-                                                        <a href="javascript:;">Receipt Invoice 1</a>
+                                                        <a href="javascript:;">Receipt Standard</a>
                                                         <form action="{{ route('settings.update') }}" method="POST" class="ms-2">
                                                             @csrf
                                                             <input type="hidden" name="receipt_template" value="receipt_template_1">

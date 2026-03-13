@@ -3,7 +3,7 @@
         ?: \App\Models\Setting::where('key', 'site_logo')->value('value');
     $companyName = \App\Models\Setting::where('key', 'company_name')->value('value') ?: (optional(auth()->user())->company->name ?? config('app.name'));
     $selectedInvoiceTemplate = \App\Models\Setting::where('key', 'invoice_template')->value('value') ?: 'template_1';
-    $logoUrl = $logoPath ? asset($logoPath) : asset('assets/img/settings-logo1.png');
+    $logoUrl = $logoPath ? asset($logoPath) : asset('assets/img/logos.png');
 @endphp
 <div class="tab-pane active" id="invoice_tab" role="tabpanel" aria-labelledby="invoice-tab" tabindex="0">
     <div class="card template-invoice-card">
@@ -18,14 +18,19 @@
                     <span class="small fw-semibold">{{ $companyName }}</span>
                 </div>
             </div>
+            <div class="d-flex justify-content-end mb-3">
+                <a href="{{ route('invoice-settings') }}" class="btn btn-primary btn-sm text-white">
+                    <i class="fas fa-plus me-1"></i> Add Template Assets
+                </a>
+            </div>
             <div class="row">
                 @php
                     $templates = [
-                        ['key' => 'template_1', 'name' => 'General Invoice 1', 'route' => route('invoice-one-a')],
-                        ['key' => 'template_2', 'name' => 'General Invoice 2', 'route' => route('invoice-two')],
-                        ['key' => 'template_3', 'name' => 'General Invoice 3', 'route' => route('invoice-three')],
-                        ['key' => 'template_4', 'name' => 'General Invoice 4', 'route' => route('invoice-four-a')],
-                        ['key' => 'template_5', 'name' => 'General Invoice 5', 'route' => route('invoice-five')],
+                        ['key' => 'template_1', 'name' => 'Executive Blue', 'route' => route('invoice-one-a')],
+                        ['key' => 'template_2', 'name' => 'Compact Ledger', 'route' => route('invoice-two')],
+                        ['key' => 'template_3', 'name' => 'Statement Pro', 'route' => route('invoice-three')],
+                        ['key' => 'template_4', 'name' => 'Corporate Edge', 'route' => route('invoice-four-a')],
+                        ['key' => 'template_5', 'name' => 'Premium Signature', 'route' => route('invoice-five')],
                     ];
                 @endphp
                 @foreach($templates as $template)

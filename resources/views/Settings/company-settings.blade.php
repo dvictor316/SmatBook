@@ -68,7 +68,7 @@
                             <form action="{{ route('settings.update') }}" method="POST" enctype="multipart/form-data">
                                 @csrf
                             @php
-                                $siteLogo = !empty($settings['site_logo']) ? asset($settings['site_logo']) : asset('assets/img/settings-logo1.png');
+                                $siteLogo = !empty($settings['site_logo']) ? asset($settings['site_logo']) : asset('assets/img/logos.png');
                                 $faviconLogo = !empty($settings['favicon']) ? asset($settings['favicon']) : asset('assets/img/favicon.png');
                             @endphp
                             <div class="row">
@@ -161,7 +161,7 @@
 
                                 <div class="col-lg-12">
                                     <div class="btn-path text-end mt-4">
-                                        <button type="button" class="btn btn-cancel bg-primary-light me-3 px-4">Cancel</button>
+                                        <a href="{{ route('settings.index') }}" class="btn btn-cancel bg-primary-light me-3 px-4">Cancel</a>
                                         <button type="submit" class="btn btn-primary px-4 shadow-sm">Save Changes</button>
                                     </div>
                                 </div>
