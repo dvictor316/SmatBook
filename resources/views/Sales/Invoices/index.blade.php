@@ -435,6 +435,21 @@
     </style>
 </head>
 <body>
+    @php
+        $companyDisplayName = $company->company_name
+            ?? $company->name
+            ?? \App\Models\Setting::where('key', 'company_name')->value('value')
+            ?? config('app.name', 'SmartProbook');
+        $companyAddress = $company->address
+            ?? \App\Models\Setting::where('key', 'company_address')->value('value')
+            ?? 'Company Address Not Set';
+        $companyPhone = $company->phone
+            ?? \App\Models\Setting::where('key', 'company_phone')->value('value')
+            ?? '';
+        $companyEmail = $company->email
+            ?? \App\Models\Setting::where('key', 'company_email')->value('value')
+            ?? '';
+    @endphp
 
     <div class="invoice-wrapper" id="invoice_content">
         <!-- Action Buttons -->
@@ -459,21 +474,15 @@
         <!-- Invoice Header -->
         <div class="invoice-header">
             <div class="company-info">
-                @php
-                    // Fetch company details from database
-                    $companyDetails = null;
-                    try {
-                        $companyDetails = \DB::table('companies')->first();
-                    } catch (\Exception $e) {
-                        // Fallback if table doesn't exist
-                    }
-                @endphp
-                <h4>{{ $companyDetails->name ?? $company->name ?? config('app.name', 'POS SYSTEM') }}</h4>
-                <p>{{ $companyDetails->address ?? $company->address ?? 'Company Address Not Set' }}</p>
+                <h4>{{ $companyDisplayName }}</h4>
+                <p>{{ $companyAddress }}</p>
                 <p>
-                    {{ $companyDetails->phone ?? $company->phone ?? '' }} 
-                    @if(($companyDetails->email ?? $company->email ?? false))
-                        • {{ $companyDetails->email ?? $company->email }}
+                    {{ $companyPhone }}
+                    @if($companyPhone && $companyEmail)
+                        •
+                    @endif
+                    @if($companyEmail)
+                        {{ $companyEmail }}
                     @endif
                 </p>
             </div>
