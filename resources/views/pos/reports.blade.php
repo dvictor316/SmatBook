@@ -248,7 +248,7 @@ body.mini-sidebar .report-page-wrapper { margin-left: 80px; }
             <div class="p-4 rounded-4 bg-white border-2 border h-100 d-flex flex-column justify-content-center" style="border-style: dashed; border-color: var(--brand-slate);">
                 <h6 class="fw-bold text-dark mb-3"><i class="fas fa-microchip me-2 text-primary"></i> Analytical Logic Summary</h6>
                 <p class="small text-muted mb-0 leading-relaxed">
-                    Background tint has been forcefully sanitized to **Neutral Grey (`#f4f7fa`)**. If any warm or gold tones appear, they are likely cached in your browser styles. Revenue is calculated on a per-node basis from finalized invoices.
+                    This report summarizes sold units, gross sales value, and current stock value across your products based on recorded sales and live inventory balances.
                 </p>
             </div>
         </div>
