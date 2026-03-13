@@ -14,10 +14,11 @@
 
 .payroll-shell {
     width: 100%;
-    max-width: 100%;
-    padding: 1.5rem 0.9rem 1.75rem;
+    max-width: 1480px;
+    margin: 0 auto;
+    padding: 1.5rem 1rem 1.75rem;
     overflow-x: hidden;
-    transition: padding 0.3s ease;
+    transition: max-width 0.3s ease, padding 0.3s ease, margin 0.3s ease;
 }
 .payroll-shell .row {
     margin-left: 0;
@@ -345,7 +346,10 @@
     .payroll-table td, .payroll-table th { padding: 10px 12px; font-size: 0.78rem; }
 }
 @media (min-width: 768px) {
-    .payroll-shell { padding-left: 1.25rem; padding-right: 1.1rem; }
+    .payroll-shell {
+        padding-left: 1.25rem;
+        padding-right: 1.25rem;
+    }
 }
 @media (min-width: 992px) {
     .payroll-main-grid {
@@ -358,10 +362,17 @@
         padding-left: 0;
         padding-right: 0;
     }
+    body:not(.sidebar-collapsed):not(.mini-sidebar):not(.sidebar-icon-only) .payroll-shell {
+        max-width: 1420px;
+        padding-left: 0.5rem;
+        padding-right: 1rem;
+    }
     body.sidebar-collapsed .payroll-shell,
     body.mini-sidebar .payroll-shell,
     body.sidebar-icon-only .payroll-shell {
-        padding-left: 1rem;
+        max-width: 1340px;
+        margin-left: 0;
+        padding-left: 1.5rem;
         padding-right: 1rem;
     }
 }
