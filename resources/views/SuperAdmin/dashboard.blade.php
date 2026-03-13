@@ -477,6 +477,26 @@
         box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);
         color: #fff;
     }
+    .executive-kpi .kpi-icon-shell svg,
+    .executive-kpi .kpi-icon-shell i {
+        width: 24px;
+        height: 24px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+    .executive-kpi .kpi-icon-shell i {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: auto;
+        height: auto;
+        font-size: 1.2rem;
+        stroke: none;
+        fill: currentColor;
+    }
     .executive-kpi .kpi-kicker {
         font-family: var(--kpi-ui-font);
         font-size: 0.64rem;
@@ -906,7 +926,7 @@
                                     <div class="card-body">
                                         <div class="d-flex justify-content-between align-items-start">
                                             <div class="kpi-icon-shell">
-                                                <i class="mdi mdi-currency-usd fs-4"></i>
+                                                <i class="fas fa-sack-dollar" aria-hidden="true"></i>
                                             </div>
                                             <div class="kpi-badge">Revenue</div>
                                         </div>
@@ -923,7 +943,7 @@
                                     <div class="card-body">
                                         <div class="d-flex justify-content-between align-items-start">
                                             <div class="kpi-icon-shell">
-                                                <i class="mdi mdi-check-decagram fs-4"></i>
+                                                <i class="fas fa-chart-line" aria-hidden="true"></i>
                                             </div>
                                             <div class="kpi-badge">MRR</div>
                                         </div>
@@ -940,7 +960,7 @@
                                     <div class="card-body">
                                         <div class="d-flex justify-content-between align-items-start">
                                             <div class="kpi-icon-shell">
-                                                <i class="mdi mdi-domain fs-4"></i>
+                                                <i class="fas fa-building" aria-hidden="true"></i>
                                             </div>
                                             <div class="kpi-badge">Tenants</div>
                                         </div>
@@ -957,7 +977,7 @@
                                     <div class="card-body">
                                         <div class="d-flex justify-content-between align-items-start">
                                             <div class="kpi-icon-shell">
-                                                <i class="mdi mdi-account-group fs-4"></i>
+                                                <i class="fas fa-users" aria-hidden="true"></i>
                                             </div>
                                             <div class="kpi-badge">Users</div>
                                         </div>
