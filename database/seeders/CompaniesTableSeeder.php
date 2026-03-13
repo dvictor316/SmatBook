@@ -13,9 +13,13 @@ class CompaniesTableSeeder extends Seeder
      */
     public function run()
     {
+        if (! app()->environment(['local', 'testing'])) {
+            return;
+        }
+
         $faker = FakerFactory::create();
 
-        // Generate 10 sample companies
+        // Generate sample companies only for local/test environments.
         for ($i = 0; $i < 10; $i++) {
             DB::table('companies')->insert([
                 'name' => $faker->company(),

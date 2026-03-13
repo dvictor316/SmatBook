@@ -11,10 +11,14 @@ class InvoiceSeeder extends Seeder
 {
     public function run(): void
     {
+        if (! app()->environment(['local', 'testing'])) {
+            return;
+        }
+
         // Find or create a default customer
         $customer = Customer::firstOrCreate(
-            ['email' => 'victor@example.com'],
-            ['name' => 'Victor Oyzzy', 'phone' => '08012345678', 'address' => '123 Customer Address, Enugu']
+            ['email' => 'sample.customer@example.com'],
+            ['name' => 'Sample Customer', 'phone' => '08000000000', 'address' => 'Sample Address']
         );
 
         // Insert Invoices

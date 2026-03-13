@@ -1044,7 +1044,30 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     .hero-trust { display: none !important; }
     .hero-eyebrow { margin-bottom: 10px !important; }
     .hero-body { margin-bottom: 16px !important; }
-    .gadget-stage { padding: 20px 14px 14px; border-radius: 24px; }
+    .gadget-mobile-bleed {
+        padding: 16px 0 24px !important;
+        margin-inline: calc(50% - 50vw);
+    }
+    .gadget-stage {
+        width: 100vw;
+        border-radius: 24px;
+        padding: 18px 0 14px;
+        border-left: 0;
+        border-right: 0;
+    }
+    .gadget-stage::before {
+        inset: 10px 0;
+        border-left: 0;
+        border-right: 0;
+        border-radius: 0;
+    }
+    .gadget-grid,
+    .gadget-orbit {
+        padding-inline: 14px;
+    }
+    .gadget-card {
+        border-radius: 18px;
+    }
     .gadget-stat-grid { grid-template-columns: 1fr; }
     .benefit-card { border: 1px solid var(--border); box-shadow: none; }
     .benefit-card:hover { transform: none; box-shadow: none; }
@@ -1298,7 +1321,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
         {{-- Feature 1 --}}
         <div class="row align-items-center g-5 mb-5 pb-4">
             <div class="col-lg-7">
-                <div class="position-relative" style="padding:24px 24px 24px 0;">
+                <div class="position-relative gadget-mobile-bleed" style="padding:24px 24px 24px 0;">
                     <div class="float-badge fb-1">
                         <div class="fb-icon" style="background:#dcfce7;"><svg width="16" height="16" fill="none" stroke="#15803d" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></div>
                         <div><div class="fb-val">+24.8%</div><div class="fb-lbl">Monthly Revenue</div></div>
@@ -1371,9 +1394,9 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                                         <span class="gadget-chip">Collections</span>
                                     </div>
                                     <div class="gadget-mini-list">
-                                        <div class="gadget-mini-row"><span class="gadget-mini-label">Adaobi Nwosu</span><span class="gadget-mini-value">₦85,000</span></div>
-                                        <div class="gadget-mini-row"><span class="gadget-mini-label">TechBridge Ltd</span><span class="gadget-mini-value">₦240,000</span></div>
-                                        <div class="gadget-mini-row"><span class="gadget-mini-label">Kalu Stores</span><span class="gadget-mini-value">₦62,500</span></div>
+                                        <div class="gadget-mini-row"><span class="gadget-mini-label">Invoice A102</span><span class="gadget-mini-value">₦85,000</span></div>
+                                        <div class="gadget-mini-row"><span class="gadget-mini-label">Invoice B341</span><span class="gadget-mini-value">₦240,000</span></div>
+                                        <div class="gadget-mini-row"><span class="gadget-mini-label">Invoice C227</span><span class="gadget-mini-value">₦62,500</span></div>
                                     </div>
                                 </div>
                             </div>
@@ -1504,7 +1527,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     <div class="container">
         <div class="row align-items-center g-5">
             <div class="col-lg-7">
-                <div class="position-relative" style="padding:24px 24px 24px 0;">
+                <div class="position-relative gadget-mobile-bleed" style="padding:24px 24px 24px 0;">
                     <div class="float-badge" style="top:-10px;left:10px;animation:floatBob 4s ease-in-out infinite;">
                         <div class="fb-icon" style="background:#ede9fe;"><svg width="16" height="16" fill="none" stroke="#7c3aed" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
                         <div><div class="fb-val">Auto</div><div class="fb-lbl">Bank reconciled</div></div>
