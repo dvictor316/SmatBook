@@ -8,7 +8,7 @@
 .payroll-shell .row { margin-left:0; margin-right:0; }
 .payroll-shell .row > * { padding-left:calc(var(--bs-gutter-x, 1.5rem) * 0.5); padding-right:calc(var(--bs-gutter-x, 1.5rem) * 0.5); }
 .page-header { background:linear-gradient(135deg,var(--blue-deep),#003d6b); border-radius:16px; padding:28px 32px; color:white; margin-bottom:28px; }
-.page-header h1 { font-size:1.5rem; font-weight:800; margin:0; }
+.page-header h1 { font-size:1.5rem; font-weight:800; margin:0; color:#ffffff; }
 .table-wrap { background:#fff; border:1px solid #e8ecf4; border-radius:14px; overflow:hidden; box-shadow:0 2px 12px rgba(0,35,71,0.05); }
 .table-header { padding:20px 24px; border-bottom:1px solid #e8ecf4; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; }
 .table-header h6 { font-weight:800; color:var(--blue-deep); margin:0; }

@@ -54,7 +54,7 @@
     border-radius: 50%;
     border: 1px solid rgba(197,160,89,0.25);
 }
-.payroll-header h1 { font-size: 1.8rem; font-weight: 800; margin: 0; }
+.payroll-header h1 { font-size: 1.8rem; font-weight: 800; margin: 0; color: #ffffff; }
 .payroll-header p { color: rgba(255,255,255,0.7); margin: 6px 0 0; font-size: 0.9rem; }
 .header-badge {
     background: rgba(197,160,89,0.2);
