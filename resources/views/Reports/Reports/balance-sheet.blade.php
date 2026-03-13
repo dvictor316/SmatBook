@@ -15,13 +15,13 @@
     .page-wrapper { background: #f8fafc; min-height: 100vh; color: var(--text-dark); }
 
     .report-container {
-        max-width: 1100px;
+        max-width: 1280px;
         margin: 0 auto 24px auto;
         background: #fff;
         border: 1px solid #e2e8f0;
         border-radius: 14px;
         box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
-        padding: 1.25rem;
+        padding: 1.5rem;
     }
 
     /* Header Styling */
@@ -80,18 +80,53 @@
     .balance-sheet-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 4rem;
+        gap: 1.5rem;
+        align-items: start;
+    }
+
+    .statement-panel {
+        min-width: 0;
+        height: 100%;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+        border: 1px solid #dbe7f5;
+        border-radius: 18px;
+        padding: 1.25rem 1.1rem;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+    }
+
+    .statement-panel--assets {
+        border-top: 4px solid #2563eb;
+    }
+
+    .statement-panel--liabilities {
+        border-top: 4px solid #0f766e;
+    }
+
+    .section-card {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 0.9rem 1rem;
+        box-shadow: 0 4px 10px rgba(15, 23, 42, 0.04);
+    }
+
+    .section-card + .section-card {
+        margin-top: 1rem;
     }
 
     .ledger-section-title {
-        font-size: 0.72rem;
+        font-size: 0.78rem;
         font-weight: 800;
         text-transform: uppercase;
-        color: #ffffff;
-        background: var(--brand-blue);
-        padding: 3px 8px;
+        color: #0f172a;
+        background: linear-gradient(135deg, #dbeafe, #eff6ff);
+        border: 1px solid #bfdbfe;
+        border-radius: 999px;
+        padding: 0.45rem 0.8rem;
         margin-bottom: 1rem;
-        display: inline-block;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
     }
 
     .group-label {
@@ -131,6 +166,8 @@
         border-radius: 8px;
         background: #f8fafc;
         overflow: hidden;
+        max-height: 220px;
+        overflow-y: auto;
     }
 
     .txn-item {
@@ -174,12 +211,12 @@
     /* Verification strip */
     .status-strip {
         grid-column: span 2;
-        margin-top: 3.5rem;
-        padding: 0.5rem;
-        font-size: 0.62rem;
+        margin-top: 1rem;
+        padding: 0.75rem 0.9rem;
+        font-size: 0.68rem;
         font-weight: 800;
         text-align: center;
-        border-radius: 2px;
+        border-radius: 12px;
         letter-spacing: 0.05em;
         text-transform: uppercase;
     }
@@ -193,6 +230,27 @@
         font-weight: 700;
         text-transform: uppercase;
         border-radius: 3px;
+    }
+
+    .empty-state-row {
+        padding: 0.8rem 0;
+        color: #94a3b8;
+        font-size: 0.74rem;
+        border-bottom: 1px solid var(--border-faint);
+    }
+
+    @media (max-width: 991.98px) {
+        .summary-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .balance-sheet-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .status-strip {
+            grid-column: span 1;
+        }
     }
 
     @media print {
@@ -244,11 +302,11 @@
 
         <div class="balance-sheet-grid">
             {{-- ASSETS SIDE --}}
-            <div>
+            <div class="statement-panel statement-panel--assets">
                 <div class="ledger-section-title">01 Assets</div>
-                
+                <div class="section-card">
                 <div class="group-label">Current Assets</div>
-                @foreach($currentAssets ?? [] as $asset)
+                @forelse($currentAssets ?? [] as $asset)
                 <div class="account-row">
                     <span class="account-name">{{ $asset->name }}</span>
                     <span class="account-val">{{ number_format($asset->balance, 2) }}</span>
@@ -269,14 +327,18 @@
                     @endforeach
                 </div>
                 @endif
-                @endforeach
+                @empty
+                <div class="empty-state-row">No current asset accounts found for the selected date.</div>
+                @endforelse
                 <div class="subtotal-row">
                     <span>Total Current Assets</span>
                     <span>{{ number_format($totalCurrentAssets ?? 0, 2) }}</span>
                 </div>
+                </div>
 
-                <div class="group-label" style="margin-top: 10px;">Fixed Assets</div>
-                @foreach($fixedAssets ?? [] as $asset)
+                <div class="section-card">
+                <div class="group-label">Fixed Assets</div>
+                @forelse($fixedAssets ?? [] as $asset)
                 <div class="account-row">
                     <span class="account-name">{{ $asset->name }}</span>
                     <span class="account-val">{{ number_format($asset->balance, 2) }}</span>
@@ -297,10 +359,13 @@
                     @endforeach
                 </div>
                 @endif
-                @endforeach
+                @empty
+                <div class="empty-state-row">No fixed asset accounts found for the selected date.</div>
+                @endforelse
                 <div class="subtotal-row">
                     <span>Total Fixed Assets</span>
                     <span>{{ number_format($totalFixedAssets ?? 0, 2) }}</span>
+                </div>
                 </div>
 
                 <div class="grand-total-row">
@@ -310,11 +375,11 @@
             </div>
 
             {{-- LIABILITIES SIDE --}}
-            <div>
+            <div class="statement-panel statement-panel--liabilities">
                 <div class="ledger-section-title">02 Liabilities & Equity</div>
-                
+                <div class="section-card">
                 <div class="group-label">Liabilities</div>
-                @foreach($currentLiabilities ?? [] as $liability)
+                @forelse($currentLiabilities ?? [] as $liability)
                 <div class="account-row">
                     <span class="account-name">{{ $liability->name }}</span>
                     <span class="account-val">{{ number_format($liability->balance, 2) }}</span>
@@ -335,14 +400,18 @@
                     @endforeach
                 </div>
                 @endif
-                @endforeach
+                @empty
+                <div class="empty-state-row">No liability accounts found for the selected date.</div>
+                @endforelse
                 <div class="subtotal-row">
                     <span>Total Liabilities</span>
                     <span>{{ number_format($totalLiabilities ?? 0, 2) }}</span>
                 </div>
+                </div>
 
-                <div class="group-label" style="margin-top: 10px;">Capital & Equity</div>
-                @foreach($equity ?? [] as $eq)
+                <div class="section-card">
+                <div class="group-label">Capital & Equity</div>
+                @forelse($equity ?? [] as $eq)
                 <div class="account-row">
                     <span class="account-name">{{ $eq->name }}</span>
                     <span class="account-val">{{ number_format($eq->balance, 2) }}</span>
@@ -363,7 +432,9 @@
                     @endforeach
                 </div>
                 @endif
-                @endforeach
+                @empty
+                <div class="empty-state-row">No equity accounts found for the selected date.</div>
+                @endforelse
                 <div class="account-row">
                     <span class="account-name">Retained Earnings</span>
                     <span class="account-val">{{ number_format($retainedEarnings ?? 0, 2) }}</span>
@@ -371,6 +442,7 @@
                 <div class="subtotal-row">
                     <span>Total Equity</span>
                     <span>{{ number_format($totalEquity ?? 0, 2) }}</span>
+                </div>
                 </div>
 
                 <div class="grand-total-row">
