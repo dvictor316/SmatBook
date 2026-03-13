@@ -79,6 +79,7 @@ class DashboardController extends Controller
             $avgOrderValue = $totalInvoices > 0 ? ($totalSales / $totalInvoices) : 0;
             $profitMargin = $totalSales > 0 ? (($totalProfit / $totalSales) * 100) : 0;
             $expenseRatio = $totalSales > 0 ? (($totalExpenses / $totalSales) * 100) : 0;
+            $revenueProgress = $this->getRevenueProgress($todayRevenue, $totalSales);
 
             return [
                 'todayRevenue'    => $todayRevenue,
@@ -99,8 +100,7 @@ class DashboardController extends Controller
                 'paidInvoices'    => $paymentStatus['paid'],
                 'partialInvoices' => $paymentStatus['partial'],
                 'unpaidInvoices'  => $paymentStatus['unpaid'],
-                'revenueProgress' => 1000000,
-                // FIX: Initialize Heatmap data to prevent undefined variable error
+                'revenueProgress' => $revenueProgress,
                 'countryHeatMap'  => $this->getHeatMapData($company),
             ];
         });
@@ -159,12 +159,36 @@ class DashboardController extends Controller
      * Data fetcher for Global HeatMap (Enterprise Only)
      */
     private function getHeatMapData($company) {
-        // Mock data or actual DB query if you track customer locations
-        return [
-            'Nigeria' => $this->scopeByCompany(Sale::query(), 'sales', $company)->count(),
-            'USA'     => 0,
-            'UK'      => 0
-        ];
+        if (Schema::hasTable('companies') && Schema::hasColumn('companies', 'country')) {
+            return $this->scopeByCompany(Company::query(), 'companies', $company)
+                ->whereNotNull('country')
+                ->where('country', '!=', '')
+                ->select('country', DB::raw('COUNT(*) as total'))
+                ->groupBy('country')
+                ->pluck('total', 'country')
+                ->map(fn ($count) => (int) $count)
+                ->toArray();
+        }
+
+        if (Schema::hasTable('customers') && Schema::hasColumn('customers', 'country')) {
+            try {
+                return $this->scopeByCompany(DB::table('customers'), 'customers', $company)
+                    ->whereNotNull('country')
+                    ->where('country', '!=', '')
+                    ->select('country', DB::raw('COUNT(*) as total'))
+                    ->groupBy('country')
+                    ->pluck('total', 'country')
+                    ->map(fn ($count) => (int) $count)
+                    ->toArray();
+            } catch (QueryException $e) {
+                Log::warning('Customer heatmap scope skipped due to schema mismatch.', [
+                    'error' => $e->getMessage(),
+                    'company_id' => $company->id ?? null,
+                ]);
+            }
+        }
+
+        return [];
     }
 
     private function subscriptionStatusPayload(?Subscription $subscription, int $seatCount, ?int $seatLimit): ?array
@@ -220,7 +244,40 @@ class DashboardController extends Controller
         if (!Schema::hasTable('sales')) return 0;
         $salesQuery = $this->scopeByCompany(Sale::query(), 'sales', $company);
         $totalRevenue = (clone $salesQuery)->sum('total') ?? 0;
-        $totalCost    = (clone $salesQuery)->sum('purchase_price') ?? 0;
+        $totalCost = 0;
+
+        if (Schema::hasColumn('sales', 'purchase_price')) {
+            $totalCost = (clone $salesQuery)->sum('purchase_price') ?? 0;
+        } elseif (Schema::hasTable('sale_items') && Schema::hasTable('products')) {
+            $salesTableHasCompany = Schema::hasColumn('sales', 'company_id');
+            $salesTableHasUser = Schema::hasColumn('sales', 'user_id');
+            $companyUserIds = $this->companyUserIds($company);
+            $qtyColumn = Schema::hasColumn('sale_items', 'qty') ? 'sale_items.qty' : 'sale_items.quantity';
+            $costColumn = Schema::hasColumn('products', 'purchase_price') ? 'products.purchase_price' : '0';
+
+            $costQuery = DB::table('sale_items')
+                ->join('sales', 'sales.id', '=', 'sale_items.sale_id')
+                ->join('products', 'products.id', '=', 'sale_items.product_id');
+
+            if ($company?->id) {
+                if ($salesTableHasCompany) {
+                    $costQuery->where(function ($nested) use ($company, $salesTableHasUser, $companyUserIds) {
+                        $nested->where('sales.company_id', $company->id);
+                        if ($salesTableHasUser) {
+                            $nested->orWhere(function ($legacy) use ($companyUserIds) {
+                                $legacy->whereNull('sales.company_id')
+                                    ->whereIn('sales.user_id', $companyUserIds);
+                            });
+                        }
+                    });
+                } elseif ($salesTableHasUser) {
+                    $costQuery->whereIn('sales.user_id', $companyUserIds);
+                }
+            }
+
+            $totalCost = (float) ($costQuery->selectRaw("SUM(COALESCE({$qtyColumn}, 0) * COALESCE({$costColumn}, 0)) as total_cost")->value('total_cost') ?? 0);
+        }
+
         return $totalRevenue - $totalCost;
     }
 
@@ -235,7 +292,11 @@ class DashboardController extends Controller
 
     private function getTotalStock($company) {
         if (!Schema::hasTable('products')) return 0;
-        return $this->scopeByCompany(Product::query(), 'products', $company)->sum('stock') ?? 0;
+        $stockColumn = Schema::hasColumn('products', 'stock') ? 'stock' : (Schema::hasColumn('products', 'stock_quantity') ? 'stock_quantity' : null);
+        if (!$stockColumn) {
+            return 0;
+        }
+        return $this->scopeByCompany(Product::query(), 'products', $company)->sum($stockColumn) ?? 0;
     }
 
     private function getMonthlySalesData($company) {
@@ -282,18 +343,26 @@ class DashboardController extends Controller
 
     private function getLowStockProducts($company) {
         if (!Schema::hasTable('products')) return collect();
+        $stockColumn = Schema::hasColumn('products', 'stock') ? 'stock' : (Schema::hasColumn('products', 'stock_quantity') ? 'stock_quantity' : null);
+        if (!$stockColumn) {
+            return collect();
+        }
         return $this->scopeByCompany(Product::query(), 'products', $company)
-            ->select('id', 'name', 'stock')
-            ->where('stock', '<=', 15)
-            ->orderBy('stock', 'asc')
+            ->select('id', 'name', $stockColumn . ' as stock')
+            ->where($stockColumn, '<=', 15)
+            ->orderBy($stockColumn, 'asc')
             ->limit(10)
             ->get();
     }
 
     private function getLowStockCount($company) {
         if (!Schema::hasTable('products')) return 0;
+        $stockColumn = Schema::hasColumn('products', 'stock') ? 'stock' : (Schema::hasColumn('products', 'stock_quantity') ? 'stock_quantity' : null);
+        if (!$stockColumn) {
+            return 0;
+        }
         return $this->scopeByCompany(Product::query(), 'products', $company)
-            ->where('stock', '<=', 15)
+            ->where($stockColumn, '<=', 15)
             ->count();
     }
 
@@ -468,11 +537,33 @@ class DashboardController extends Controller
             ->groupBy('payment_status')
             ->pluck('total', 'payment_status');
 
+        $normalized = [];
+        foreach ($statusData as $status => $total) {
+            $key = strtolower(trim((string) $status));
+            $normalized[$key] = ($normalized[$key] ?? 0) + (int) $total;
+        }
+
         return [
-            'paid' => (int) ($statusData->get('paid') ?? 0),
-            'partial' => (int) ($statusData->get('partial') ?? 0),
-            'unpaid' => (int) (($statusData->get('unpaid') ?? 0) + ($statusData->get('pending') ?? 0)),
+            'paid' => (int) (($normalized['paid'] ?? 0) + ($normalized['completed'] ?? 0) + ($normalized['success'] ?? 0)),
+            'partial' => (int) (($normalized['partial'] ?? 0) + ($normalized['partially_paid'] ?? 0)),
+            'unpaid' => (int) (($normalized['unpaid'] ?? 0) + ($normalized['pending'] ?? 0) + ($normalized['outstanding'] ?? 0) + ($normalized['overdue'] ?? 0)),
         ];
+    }
+
+    private function getRevenueProgress(float $todayRevenue, float $totalSales): float
+    {
+        if ($totalSales <= 0) {
+            return 0;
+        }
+
+        $daysElapsed = max(1, now()->day);
+        $projectedMonthRevenue = ($totalSales / $daysElapsed) * now()->daysInMonth;
+
+        if ($projectedMonthRevenue <= 0) {
+            return 0;
+        }
+
+        return round(min(100, max(0, ($todayRevenue / $projectedMonthRevenue) * 100)), 1);
     }
 
     private function getDashboardHealth(array $metrics): array

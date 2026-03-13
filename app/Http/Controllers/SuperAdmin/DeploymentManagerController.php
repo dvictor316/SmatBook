@@ -12,6 +12,9 @@ use App\Support\SystemEventMailer;
 
 class DeploymentManagerController extends Controller
 {
+    private array $paidStatuses = ['paid', 'completed', 'success', 'successful', 'verified'];
+    private array $activeStatuses = ['active', 'trial'];
+    private array $pendingStatuses = ['pending', 'awaiting payment', 'awaiting_payment', 'unpaid'];
 
 
     // Commission rate for deployment managers
@@ -135,8 +138,20 @@ class DeploymentManagerController extends Controller
         $commissionRate = (float) ($managerProfile->commission_rate ?? self::COMMISSION_RATE);
 
         // Use created_at fallback because some rows may not have payment_date populated.
-        $totalRevenue = $this->managedSubscriptions()
-            ->where('payment_status', 'paid')
+        $paidSubscriptions = $this->managedSubscriptions()
+            ->where(function ($query) {
+                $query->whereIn(DB::raw("LOWER(COALESCE(payment_status, ''))"), $this->paidStatuses);
+
+                if (Schema::hasColumn('subscriptions', 'paid_at')) {
+                    $query->orWhereNotNull('paid_at');
+                }
+
+                if (Schema::hasColumn('subscriptions', 'payment_date')) {
+                    $query->orWhereNotNull('payment_date');
+                }
+            });
+
+        $totalRevenue = (clone $paidSubscriptions)
             ->whereYear('created_at', $now->year)
             ->whereMonth('created_at', $now->month)
             ->sum('amount');
@@ -170,17 +185,22 @@ class DeploymentManagerController extends Controller
         $metrics = [
             'totalCompanies'         => $this->managedCompanies()->count(),
             'activeSubscriptions'    => $this->managedSubscriptions()
-                ->where('payment_status', 'paid')
-                ->where('status', 'Active')
+                ->whereIn(DB::raw("LOWER(COALESCE(status, ''))"), $this->activeStatuses)
+                ->where(function ($query) {
+                    $query->whereIn(DB::raw("LOWER(COALESCE(payment_status, ''))"), array_merge($this->paidStatuses, ['free']));
+                    if (Schema::hasColumn('subscriptions', 'paid_at')) {
+                        $query->orWhereNotNull('paid_at');
+                    }
+                })
                 ->where(function ($q) use ($now) {
                     $q->whereNull('end_date')->orWhere('end_date', '>=', $now);
                 })
                 ->count(),
             'monthlyRevenue'         => $totalRevenue,
-            'pendingApprovals'       => $this->managedCompanies()->where('status', 'pending')->count(),
-            'trialCount'             => $this->managedCompanies()->where('status', 'trial')->count(),
-            'pendingPayments'        => $this->managedSubscriptions()->whereIn('payment_status', ['pending', 'unpaid'])->count(),
-            'pendingPaymentsValue'   => $this->managedSubscriptions()->whereIn('payment_status', ['pending', 'unpaid'])->sum('amount'),
+            'pendingApprovals'       => $this->managedCompanies()->whereIn(DB::raw("LOWER(COALESCE(status, ''))"), ['pending', 'awaiting approval'])->count(),
+            'trialCount'             => $this->managedCompanies()->whereIn(DB::raw("LOWER(COALESCE(status, ''))"), ['trial'])->count(),
+            'pendingPayments'        => $this->managedSubscriptions()->whereIn(DB::raw("LOWER(COALESCE(payment_status, ''))"), $this->pendingStatuses)->count(),
+            'pendingPaymentsValue'   => $this->managedSubscriptions()->whereIn(DB::raw("LOWER(COALESCE(payment_status, ''))"), $this->pendingStatuses)->sum('amount'),
             'commissionRate'         => $commissionRate,
             'totalCommissions'       => $totalCommissions,
             'paidCommissions'        => $paidCommissions,

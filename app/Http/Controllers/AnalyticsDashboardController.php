@@ -19,6 +19,10 @@ use Illuminate\Support\Facades\Log;
 
 class AnalyticsDashboardController extends Controller
 {
+    private array $paidSaleStatuses = ['paid', 'completed', 'success'];
+    private array $outstandingSaleStatuses = ['outstanding', 'partial', 'partially_paid', 'pending'];
+    private array $overdueSaleStatuses = ['overdue', 'unpaid'];
+
     private function scopeCompanyId(): ?int
     {
         $user = Auth::user();
@@ -50,8 +54,8 @@ class AnalyticsDashboardController extends Controller
         // --- 2. Fetch Company Metrics ---
         try {
             $totalCompanies    = Company::count();
-            $activeCompanies   = Company::where('status', 'active')->count();
-            $inactiveCompanies = Company::where('status', 'inactive')->count();
+            $activeCompanies   = Company::whereIn(DB::raw("LOWER(COALESCE(status, 'active'))"), ['active', 'trial', 'enabled'])->count();
+            $inactiveCompanies = Company::whereIn(DB::raw("LOWER(COALESCE(status, ''))"), ['inactive', 'suspended', 'disabled'])->count();
             $newTodayCompanies = Company::whereDate('created_at', today())->count();
         } catch (Exception $e) {
             Log::error("Company Metrics Error: " . $e->getMessage());
@@ -59,7 +63,11 @@ class AnalyticsDashboardController extends Controller
 
         // --- 3. Fetch Financial Metrics ---
         try {
-            $totalSales    = (float)Sale::where('status', 'paid')->sum('total');
+            $salesBaseQuery = Sale::query();
+            $saleStatusColumn = Schema::hasColumn('sales', 'payment_status') ? 'payment_status' : 'status';
+            $totalSales    = (float)(clone $salesBaseQuery)
+                ->whereIn(DB::raw("LOWER(COALESCE({$saleStatusColumn}, ''))"), $this->paidSaleStatuses)
+                ->sum('total');
             $totalReceipts = (float)Receipt::sum('amount');
             $totalExpenses = (float)Expense::sum('amount');
             $totalEarnings = ($totalSales + $totalReceipts) - $totalExpenses;
@@ -75,7 +83,7 @@ class AnalyticsDashboardController extends Controller
                 DB::raw('DATE_FORMAT(created_at, "%Y-%m") as period'),
                 DB::raw('SUM(total) as total_sales')
             )
-            ->where('status', 'paid')
+            ->whereIn(DB::raw("LOWER(COALESCE(" . (Schema::hasColumn('sales', 'payment_status') ? 'payment_status' : 'status') . ", ''))"), $this->paidSaleStatuses)
             ->where('created_at', '>=', $startDate)
             ->groupBy(DB::raw('DATE_FORMAT(created_at, "%Y-%m")'))
             ->orderByRaw('MIN(created_at)')
@@ -90,9 +98,9 @@ class AnalyticsDashboardController extends Controller
                 ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
                 ->select(
                     'products.name',
-                    DB::raw('SUM(sale_items.sub_total) as total_product_sales')
+                    DB::raw('SUM(CASE WHEN sale_items.total_price IS NOT NULL THEN sale_items.total_price WHEN sale_items.subtotal IS NOT NULL THEN sale_items.subtotal ELSE COALESCE(sale_items.qty, sale_items.quantity, 0) * COALESCE(sale_items.unit_price, 0) END) as total_product_sales')
                 )
-                ->where('sales.status', 'paid')
+                ->whereIn(DB::raw("LOWER(COALESCE(" . (Schema::hasColumn('sales', 'payment_status') ? 'sales.payment_status' : 'sales.status') . ", ''))"), $this->paidSaleStatuses)
                 ->groupBy('products.name')
                 ->orderByDesc('total_product_sales')
                 ->take(5)
@@ -169,8 +177,10 @@ class AnalyticsDashboardController extends Controller
     private function getSaleStatusDataForDoughnut()
     {
         $paidCount      = Sale::where('status', 'paid')->count();
-        $outstandingCount = Sale::where('status', 'outstanding')->count();
-        $overdueCount   = Sale::where('status', 'overdue')->count();
+        $statusColumn = Schema::hasColumn('sales', 'payment_status') ? 'payment_status' : 'status';
+        $paidCount = Sale::whereIn(DB::raw("LOWER(COALESCE({$statusColumn}, ''))"), $this->paidSaleStatuses)->count();
+        $outstandingCount = Sale::whereIn(DB::raw("LOWER(COALESCE({$statusColumn}, ''))"), $this->outstandingSaleStatuses)->count();
+        $overdueCount   = Sale::whereIn(DB::raw("LOWER(COALESCE({$statusColumn}, ''))"), $this->overdueSaleStatuses)->count();
 
         return [
             'labels' => ['Paid', 'Outstanding', 'Overdue'],
@@ -196,7 +206,7 @@ class AnalyticsDashboardController extends Controller
             'total_companies' => $companies->count(),
             'active_companies' => (clone $companies)->where('status', 'active')->count(),
             'total_sales' => (float) $sales->sum('total'),
-            'active_subscriptions' => (clone $subscriptions)->where('status', 'Active')->count(),
+            'active_subscriptions' => (clone $subscriptions)->whereIn(DB::raw("LOWER(COALESCE(status, ''))"), ['active', 'trial'])->count(),
             'timestamp' => now()->toDateTimeString(),
         ]);
     }
@@ -258,8 +268,8 @@ class AnalyticsDashboardController extends Controller
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
             ->select(
                 'products.name',
-                DB::raw('SUM(sale_items.quantity) as qty'),
-                DB::raw('SUM(sale_items.sub_total) as amount')
+                DB::raw('SUM(COALESCE(sale_items.qty, sale_items.quantity, 0)) as qty'),
+                DB::raw('SUM(CASE WHEN sale_items.total_price IS NOT NULL THEN sale_items.total_price WHEN sale_items.subtotal IS NOT NULL THEN sale_items.subtotal ELSE COALESCE(sale_items.qty, sale_items.quantity, 0) * COALESCE(sale_items.unit_price, 0) END) as amount')
             )
             ->groupBy('products.name')
             ->orderByDesc('amount')
