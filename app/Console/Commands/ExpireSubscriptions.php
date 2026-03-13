@@ -12,10 +12,11 @@ class ExpireSubscriptions extends Command
 
     public function handle(): int
     {
-        $count = Subscription::expireDueSubscriptions();
+        $count = method_exists(Subscription::class, 'expireDueSubscriptions')
+            ? Subscription::expireDueSubscriptions()
+            : 0;
         $this->info("Expired {$count} subscription(s).");
 
         return self::SUCCESS;
     }
 }
-

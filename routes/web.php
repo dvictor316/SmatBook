@@ -613,7 +613,7 @@ Route::middleware(['auth', 'subscription.active'])->group(function () {
         Route::get('/reports', 'report')->name('reports');
     });
     Route::get('/pos', [SaleController::class, 'showPos'])->name('sales.showPos');
-    Route::get('/pos/reports', [SaleController::class, 'index'])->name('pos.reports');
+    Route::get('/pos/reports', [SaleController::class, 'report'])->name('pos.reports');
     Route::get('/sales/items/{item}/delete', [SaleItemController::class, 'destroy'])->name('sales.items.delete');
     
     // Invoices

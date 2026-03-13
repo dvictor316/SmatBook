@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Schema;
 use App\Support\LedgerService;
 
 class SaleController extends Controller
@@ -45,6 +46,80 @@ class SaleController extends Controller
         $sales = $query->orderBy('created_at', 'desc')->paginate(10);
 
         return view('sales.index', compact('sales', 'totalRevenue', 'totalSalesCount'));
+    }
+
+    public function report(Request $request)
+    {
+        $stockExpression = Schema::hasColumn('products', 'stock')
+            ? 'COALESCE(products.stock, 0)'
+            : (Schema::hasColumn('products', 'stock_quantity') ? 'COALESCE(products.stock_quantity, 0)' : '0');
+        $priceExpression = Schema::hasColumn('products', 'product_price')
+            ? 'COALESCE(products.product_price, 0)'
+            : (Schema::hasColumn('products', 'price') ? 'COALESCE(products.price, 0)' : '0');
+
+        $query = Product::query()
+            ->leftJoin('categories', 'products.category_id', '=', 'categories.id')
+            ->leftJoin('sale_items', 'products.id', '=', 'sale_items.product_id')
+            ->leftJoin('sales', 'sale_items.sale_id', '=', 'sales.id')
+            ->selectRaw('
+                products.id,
+                products.name as product_name,
+                products.sku,
+                categories.name as category_name,
+                ' . $priceExpression . ' as product_price,
+                ' . $stockExpression . ' as instock_qty,
+                COALESCE(SUM(sale_items.qty), 0) as total_sold_qty,
+                COALESCE(SUM(
+                    CASE
+                        WHEN sale_items.total_price IS NOT NULL THEN sale_items.total_price
+                        WHEN sale_items.subtotal IS NOT NULL THEN sale_items.subtotal
+                        ELSE COALESCE(sale_items.qty, 0) * COALESCE(sale_items.unit_price, 0)
+                    END
+                ), 0) as total_sold_amount
+            ')
+            ->groupBy(
+                'products.id',
+                'products.name',
+                'products.sku',
+                'categories.name',
+                DB::raw($priceExpression),
+                DB::raw($stockExpression)
+            );
+
+        if ($request->filled('search')) {
+            $search = trim((string) $request->search);
+            $query->where(function ($builder) use ($search) {
+                $builder->where('products.name', 'like', "%{$search}%")
+                    ->orWhere('products.sku', 'like', "%{$search}%")
+                    ->orWhere('categories.name', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('category_id')) {
+            $query->where('products.category_id', $request->integer('category_id'));
+        }
+
+        if ($request->filled('date_from')) {
+            $query->where(function ($builder) use ($request) {
+                $builder->whereNull('sales.created_at')
+                    ->orWhereDate('sales.created_at', '>=', $request->date_from);
+            });
+        }
+
+        if ($request->filled('date_to')) {
+            $query->where(function ($builder) use ($request) {
+                $builder->whereNull('sales.created_at')
+                    ->orWhereDate('sales.created_at', '<=', $request->date_to);
+            });
+        }
+
+        $reports = $query
+            ->orderByDesc('total_sold_amount')
+            ->orderBy('products.name')
+            ->paginate(15)
+            ->withQueryString();
+
+        return view('pos.reports', compact('reports'));
     }
 
 

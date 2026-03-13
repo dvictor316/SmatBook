@@ -159,7 +159,7 @@ use App\Http\Controllers\{
         // 2.3 SALES & POS
         Route::controller(SaleController::class)->group(function () {
         Route::get('/pos', 'showPos')->name('sales.showPos');
-        Route::get('/pos/reports', [SaleController::class, 'index'])->name('pos.reports');
+        Route::get('/pos/reports', [SaleController::class, 'report'])->name('pos.reports');
         Route::get('/sales/index', [SaleController::class, 'index'])->name('sales.index');
         Route::post('/sales', 'store')->name('sales.store');
         Route::get('/sales/reports', 'report')->name('pos.report');

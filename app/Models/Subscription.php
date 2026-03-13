@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Carbon\Carbon;
 use App\Support\GeoCurrency;
 use App\Models\Plan;
+use Illuminate\Support\Facades\Schema;
 
 class Subscription extends Model
 {
@@ -221,6 +222,22 @@ class Subscription extends Model
         $days = $this->daysRemaining();
         if ($days <= 0) return 'Expires today';
         return "Expires in $days days (" . ($this->end_date ? $this->end_date->format('M d, Y') : 'N/A') . ")";
+    }
+
+    public static function expireDueSubscriptions(): int
+    {
+        if (! Schema::hasTable('subscriptions') || ! Schema::hasColumn('subscriptions', 'end_date')) {
+            return 0;
+        }
+
+        return static::query()
+            ->whereIn(\DB::raw("LOWER(COALESCE(status, ''))"), ['active', 'trial'])
+            ->whereNotNull('end_date')
+            ->whereDate('end_date', '<', now()->toDateString())
+            ->update([
+                'status' => 'Expired',
+                'updated_at' => now(),
+            ]);
     }
 
     protected static function boot()
