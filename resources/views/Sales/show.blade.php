@@ -156,6 +156,12 @@
                             <div class="stat-value text-danger">₦{{ number_format($displayBalance, 2) }}</div>
                         </div>
                     </div>
+                    <div class="col-6 col-md-3">
+                        <div class="stat-box border-info" style="background-color: #eff6ff;">
+                            <div class="stat-label text-primary">Change</div>
+                            <div class="stat-value text-primary">₦{{ number_format($sale->change_amount ?? 0, 2) }}</div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="table-responsive mb-4 shadow-sm rounded">

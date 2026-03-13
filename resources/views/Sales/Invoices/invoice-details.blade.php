@@ -147,6 +147,14 @@
                                                     {{-- Fixed: DB column is 'tax' --}}
                                                     <span>{{ number_format($sale->tax ?? 0, 2) }}</span>
                                                 </div>
+                                                <div class="d-flex justify-content-between mb-2 text-muted">
+                                                    <span>Amount Paid</span>
+                                                    <span>{{ number_format($sale->amount_paid ?? $sale->paid ?? 0, 2) }}</span>
+                                                </div>
+                                                <div class="d-flex justify-content-between mb-2 text-muted">
+                                                    <span>Change</span>
+                                                    <span>{{ number_format($sale->change_amount ?? 0, 2) }}</span>
+                                                </div>
                                                 <hr class="my-2">
                                                 <div class="d-flex justify-content-between align-items-center">
                                                     <h4 class="text-primary fw-bold mb-0">Total</h4>
