@@ -21,20 +21,29 @@ class ExpenseController extends Controller
         $this->syncBanksToAssetAccounts();
 
         $expenses = Expense::with('creator')->latest()->paginate(15);
-        $expenseAccounts = Account::where('type', 'Expense')->orderBy('name')->get();
-        $assetAccounts = Account::where('type', 'Asset')->orderBy('name')->get();
-        $categories = Category::orderBy('name')->get(['id', 'name']);
+        $expenseAccounts = Schema::hasTable('accounts')
+            ? Account::where('type', 'Expense')->orderBy('name')->get()
+            : collect();
+        $assetAccounts = Schema::hasTable('accounts')
+            ? Account::where('type', 'Asset')->orderBy('name')->get()
+            : collect();
+        $categories = Schema::hasTable('categories')
+            ? Category::orderBy('name')->get(['id', 'name'])
+            : collect();
 
         $partyOptions = collect();
-        if (Schema::hasTable('vendors')) {
+        if (Schema::hasTable('vendors') && Schema::hasColumn('vendors', 'name')) {
             $partyOptions = $partyOptions->merge(Vendor::query()->orderBy('name')->pluck('name'));
         }
-        if (Schema::hasTable('customers')) {
+        if (Schema::hasTable('customers') && Schema::hasColumn('customers', 'customer_name')) {
             $partyOptions = $partyOptions->merge(Customer::query()->orderBy('customer_name')->pluck('customer_name'));
         }
-        $partyOptions = $partyOptions->merge(
-            Expense::query()->whereNotNull('company_name')->orderBy('company_name')->pluck('company_name')
-        )->filter()->unique()->values();
+        if (Schema::hasColumn('expenses', 'company_name')) {
+            $partyOptions = $partyOptions->merge(
+                Expense::query()->whereNotNull('company_name')->orderBy('company_name')->pluck('company_name')
+            );
+        }
+        $partyOptions = $partyOptions->filter()->unique()->values();
 
         return view('Finance.expenses', compact('expenses', 'expenseAccounts', 'assetAccounts', 'partyOptions', 'categories'));
     }
@@ -268,6 +277,10 @@ private function handleFileUpload($request) {
 
     public function quickAddCategory(Request $request)
     {
+        if (!Schema::hasTable('categories')) {
+            return redirect()->route('expenses.index')->with('error', 'Expense categories table is not available on this installation yet.');
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:191',
         ]);
@@ -302,6 +315,10 @@ private function handleFileUpload($request) {
         $selector = trim($selector);
 
         if (str_starts_with($selector, 'cat:')) {
+            if (!Schema::hasTable('categories')) {
+                abort(422, 'Expense categories are not configured on this installation.');
+            }
+
             $categoryId = (int) str_replace('cat:', '', $selector);
             $category = Category::findOrFail($categoryId);
 
@@ -357,7 +374,7 @@ private function handleFileUpload($request) {
 
     private function syncBanksToAssetAccounts(): void
     {
-        if (!Schema::hasTable('banks')) {
+        if (!Schema::hasTable('banks') || !Schema::hasTable('accounts')) {
             return;
         }
 
