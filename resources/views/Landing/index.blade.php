@@ -748,6 +748,15 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     color: #16a34a;
     font-weight: 700;
 }
+.gadget-visual {
+    position: relative;
+}
+.gadget-visual--left {
+    padding: 24px 24px 24px 0;
+}
+.gadget-visual--right {
+    padding: 24px 0 24px 24px;
+}
 
 /* Feature cards */
 .feat-card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px 16px; transition: all 0.3s; position: relative; overflow: hidden; }
@@ -1011,6 +1020,44 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     #mujiNav .sb-nav-link:hover { background: rgba(28,102,232,0.06) !important; color: #1c66e8 !important; }
     #mujiNav .btn-portal { width: 100%; justify-content: center; margin-top: 12px; }
     #mujiNav .ms-lg-3 { margin-left: 0 !important; margin-top: 4px; }
+    .gadget-mobile-column {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+    .gadget-mobile-bleed {
+        width: calc(100% + 24px);
+        max-width: none;
+        margin-left: -12px;
+        margin-right: -12px;
+        padding: 20px 0 24px !important;
+    }
+    .gadget-stage {
+        border-left: 0;
+        border-right: 0;
+        border-radius: 24px;
+        padding: 20px 0 16px;
+    }
+    .gadget-stage::before {
+        inset: 10px 0;
+        border-left: 0;
+        border-right: 0;
+        border-radius: 0;
+    }
+    .gadget-grid,
+    .gadget-orbit {
+        padding-inline: 16px;
+    }
+    .float-badge {
+        display: none !important;
+    }
+    .benefit-card:hover,
+    .feat-card:hover,
+    .feat-card-dark:hover,
+    .strip-card:hover,
+    .sol-tile:hover,
+    .project-card:hover {
+        transform: none;
+    }
 }
 @media (max-width: 768px) {
     :root { --announce-h: 34px; }
@@ -1035,10 +1082,6 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     .benefit-belt { padding: 32px 12px 0; }
 }
 @media (max-width: 640px) {
-    .gadget-mobile-column {
-        padding-left: 0 !important;
-        padding-right: 0 !important;
-    }
     .hero-content { padding: 16px 16px 24px; gap: 28px; }
     .hero-circle { width: min(90vw,340px) !important; height: min(90vw,340px) !important; padding: clamp(52px,16%,72px) !important; }
     .hero-phone { width: clamp(220px,72vw,280px); }
@@ -1048,30 +1091,9 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     .hero-trust { display: none !important; }
     .hero-eyebrow { margin-bottom: 10px !important; }
     .hero-body { margin-bottom: 16px !important; }
-    .gadget-mobile-bleed {
-        width: calc(100% + 24px);
-        max-width: none;
-        padding: 16px 0 24px !important;
-        margin-left: -12px;
-        margin-right: -12px;
-    }
     .gadget-stage {
         width: 100%;
-        border-radius: 24px;
-        padding: 18px 0 14px;
-        border-left: 0;
-        border-right: 0;
         box-sizing: border-box;
-    }
-    .gadget-stage::before {
-        inset: 10px 0;
-        border-left: 0;
-        border-right: 0;
-        border-radius: 0;
-    }
-    .gadget-grid,
-    .gadget-orbit {
-        padding-inline: 14px;
     }
     .gadget-card {
         border-radius: 18px;
@@ -1356,7 +1378,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
         {{-- Feature 1 --}}
         <div class="row align-items-center g-5 mb-5 pb-4">
             <div class="col-lg-7 gadget-mobile-column">
-                <div class="position-relative gadget-mobile-bleed" style="padding:24px 24px 24px 0;">
+                <div class="gadget-visual gadget-visual--left gadget-mobile-bleed">
                     <div class="float-badge fb-1">
                         <div class="fb-icon" style="background:#dcfce7;"><svg width="16" height="16" fill="none" stroke="#15803d" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></div>
                         <div><div class="fb-val">+24.8%</div><div class="fb-lbl">Monthly Revenue</div></div>
@@ -1473,7 +1495,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                 </div>
             </div>
             <div class="col-lg-7 gadget-mobile-column">
-                <div class="position-relative" style="padding:24px 0 24px 24px;">
+                <div class="gadget-visual gadget-visual--right gadget-mobile-bleed">
                     <div class="float-badge" style="top:0;right:-10px;animation:floatBob 4s ease-in-out infinite;">
                         <div class="fb-icon" style="background:#fee2e2;"><svg width="16" height="16" fill="none" stroke="#dc2626" stroke-width="2.5" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
                         <div><div class="fb-val">3 Items</div><div class="fb-lbl">Low stock alert</div></div>
@@ -1561,8 +1583,8 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 <section class="sb-section sb-section--dark" id="expenses">
     <div class="container">
         <div class="row align-items-center g-5">
-            <div class="col-lg-7">
-                <div class="position-relative gadget-mobile-bleed" style="padding:24px 24px 24px 0;">
+            <div class="col-lg-7 gadget-mobile-column">
+                <div class="gadget-visual gadget-visual--left gadget-mobile-bleed">
                     <div class="float-badge" style="top:-10px;left:10px;animation:floatBob 4s ease-in-out infinite;">
                         <div class="fb-icon" style="background:#ede9fe;"><svg width="16" height="16" fill="none" stroke="#7c3aed" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
                         <div><div class="fb-val">Auto</div><div class="fb-lbl">Bank reconciled</div></div>
