@@ -83,7 +83,7 @@
                                             </div>
                                             <div class="col-md-4 text-md-end">
                                                 <p class="mb-0 text-muted small text-uppercase">Customer</p>
-                                                <p class="mb-0 fw-bold">{{ $sale->customer_name }}</p>
+                                                <p class="mb-0 fw-bold">{{ $sale->display_customer_name }}</p>
                                             </div>
                                         </div>
                                     </div>

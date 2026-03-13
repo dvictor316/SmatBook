@@ -487,7 +487,7 @@
         <div class="customer-section">
             <div class="customer-info">
                 <div class="section-label">Bill To</div>
-                <div class="customer-name">{{ $sale->customer_name ?? 'Walk-in Customer' }}</div>
+                <div class="customer-name">{{ $sale->display_customer_name }}</div>
                 @if($sale->customer_email ?? false)
                     <div style="font-size: 13px; color: var(--gray-700);">{{ $sale->customer_email }}</div>
                 @endif
@@ -611,19 +611,7 @@
             <div class="footer-left">
                 <div class="words-label">Amount in Words</div>
                 <div class="amount-words">
-                    @php
-                        try {
-                            if (class_exists(\NumberFormatter::class)) {
-                                $formatter = new \NumberFormatter('en', \NumberFormatter::SPELLOUT);
-                                $words = ucwords($formatter->format($grandTotal)) . ' Naira Only';
-                            } else {
-                                $words = 'Amount: ₦' . number_format($grandTotal, 2);
-                            }
-                        } catch (\Throwable $e) {
-                            $words = 'Amount: ₦' . number_format($grandTotal, 2);
-                        }
-                    @endphp
-                    {{ $sale->amount_in_words ?? $words }}
+                    {{ $sale->amount_in_words_display }}
                 </div>
                 
                 <div class="cashier-info">
