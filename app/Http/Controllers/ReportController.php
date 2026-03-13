@@ -442,7 +442,7 @@ public function purchase_report(Request $request)
 
 public function show($id)
 {
-    $payment = \App\Models\Payment::with('sale')->findOrFail($id);
+    $payment = \App\Models\Payment::with(['sale.customer', 'creator', 'account'])->findOrFail($id);
     $payment->resolved_status = $this->resolvePaymentStatus($payment);
     return response()->json($payment);
 }

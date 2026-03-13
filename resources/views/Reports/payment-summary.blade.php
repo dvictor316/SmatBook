@@ -17,7 +17,7 @@
     }
 </script>
 
-<div class="page-wrapper bg-gray-50 min-h-screen relative">
+<div class="page-wrapper report-page bg-gray-50 min-h-screen relative">
     <div class="p-4 sm:p-6 lg:p-8 w-full">
         @php
             $currencySymbol = '₦';
@@ -227,7 +227,7 @@
             <div class="flex justify-between items-center mb-6 no-print">
                 <h3 class="text-xl font-bold text-gray-900" id="modalTitle">Details</h3>
                 <div class="flex space-x-2">
-                    <button onclick="window.print()" id="printReceiptBtn" class="px-3 py-1 bg-gray-100 text-gray-600 rounded-lg text-[10px] font-black hover:bg-gray-200 uppercase tracking-wider">Print Receipt</button>
+                    <button onclick="printReceipt()" id="printReceiptBtn" class="px-3 py-1 bg-gray-100 text-gray-600 rounded-lg text-[10px] font-black hover:bg-gray-200 uppercase tracking-wider">Print Receipt</button>
                     <button onclick="closeModal()" class="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-full text-gray-400 hover:text-gray-600 transition"><i class="fe fe-x"></i></button>
                 </div>
             </div>
@@ -238,24 +238,36 @@
                         <div class="text-3xl font-black text-gray-900 tracking-tight">Receipt</div>
                         <div class="mt-2 text-[11px] text-gray-400 font-bold uppercase tracking-[0.25em]">Payment ID</div>
                         <div id="rec_id" class="text-sm font-bold text-gray-900 mt-1"></div>
+                        <div class="mt-4 text-[11px] text-gray-400 font-bold uppercase tracking-[0.25em]">Customer</div>
+                        <div id="rec_customer" class="text-sm font-semibold text-gray-800 mt-1"></div>
                     </div>
                     <div class="md:text-right">
                         <div class="text-[11px] text-gray-400 font-bold uppercase tracking-[0.25em]">Transaction Record</div>
                         <div id="rec_date_full" class="text-sm text-gray-600 font-semibold mt-1"></div>
+                        <div class="mt-4 text-[11px] text-gray-400 font-bold uppercase tracking-[0.25em]">Reference</div>
+                        <div id="rec_reference" class="text-sm font-semibold text-gray-800 mt-1"></div>
                     </div>
                 </div>
 
                 <div class="receipt-panel bg-gray-50 rounded-2xl p-5 md:p-6 mb-6 border border-gray-200 relative overflow-hidden">
                     <div id="paid-stamp" class="receipt-stamp absolute top-5 right-5 border-2 border-green-500/30 text-green-500/35 font-black text-xl px-3 py-1 rotate-12 rounded-lg pointer-events-none uppercase">Paid</div>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
                         <div class="receipt-fact">
                             <p class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.25em]">Method</p>
                             <p id="rec_method" class="text-base font-bold text-gray-900 mt-1"></p>
                         </div>
-                        <div class="receipt-fact md:text-right">
+                        <div class="receipt-fact">
                             <p class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.25em]">Status</p>
                             <p id="rec_status_text" class="text-base font-bold text-gray-900 mt-1"></p>
+                        </div>
+                        <div class="receipt-fact">
+                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.25em]">Account</p>
+                            <p id="rec_account" class="text-sm font-semibold text-gray-800 mt-1"></p>
+                        </div>
+                        <div class="receipt-fact xl:text-right">
+                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.25em]">Processed By</p>
+                            <p id="rec_processed_by" class="text-sm font-semibold text-gray-800 mt-1"></p>
                         </div>
                     </div>
 
@@ -269,6 +281,17 @@
                         <div class="text-right">
                             <p id="rec_amount" class="receipt-amount text-3xl md:text-4xl font-black text-primary leading-none"></p>
                         </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div class="bg-white border border-gray-200 rounded-2xl px-4 py-4">
+                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.25em] mb-1">Invoice / Order</p>
+                        <p id="rec_invoice" class="text-sm font-semibold text-gray-800"></p>
+                    </div>
+                    <div class="bg-white border border-gray-200 rounded-2xl px-4 py-4">
+                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.25em] mb-1">Payment Source</p>
+                        <p id="rec_source" class="text-sm font-semibold text-gray-800"></p>
                     </div>
                 </div>
 
@@ -338,11 +361,14 @@
         justify-content: space-between;
         overflow: hidden;
     }
+    .report-page {
+        font-size: 0.95rem;
+    }
     .summary-metric-label {
         line-height: 1.45;
     }
     .summary-metric-value {
-        font-size: clamp(2rem, 2.2vw, 2.65rem);
+        font-size: clamp(1.75rem, 2vw, 2.3rem);
         line-height: 1;
         letter-spacing: -0.04em;
         overflow-wrap: anywhere;
@@ -351,12 +377,16 @@
     .summary-metric-note {
         max-width: 14rem;
         line-height: 1.35;
+        font-size: 0.95rem;
     }
     .receipt-sheet {
         color: #0f172a;
     }
     .receipt-panel {
         background: linear-gradient(180deg, #fbfdff 0%, #f8fafc 100%);
+    }
+    .receipt-fact p:last-child {
+        line-height: 1.35;
     }
     .receipt-stamp {
         letter-spacing: 0.08em;
@@ -365,6 +395,11 @@
         letter-spacing: -0.04em;
         overflow-wrap: anywhere;
         word-break: break-word;
+        font-size: clamp(2.2rem, 3vw, 3rem);
+    }
+    #main-payment-table td,
+    #main-payment-table th {
+        font-size: 0.92rem;
     }
     .bs-pagination .pagination { display: flex; gap: 6px; list-style: none; margin: 0; }
     .bs-pagination .page-item .page-link { border-radius: 12px !important; padding: 8px 16px; font-weight: 800; color: #4f46e5; border: 1px solid #e5e7eb; font-size: 0.75rem; transition: all 0.2s; background: white; }
@@ -374,18 +409,18 @@
             min-height: 180px;
         }
         .summary-metric-value {
-            font-size: 2.05rem;
+            font-size: 1.85rem;
         }
         .summary-metric-note {
             max-width: 100%;
         }
         .receipt-stamp {
-            font-size: 0.95rem;
+            font-size: 0.82rem;
             top: 1rem;
             right: 1rem;
         }
         .receipt-amount {
-            font-size: 2rem !important;
+            font-size: 1.8rem !important;
         }
     }
 </style>
@@ -412,6 +447,86 @@
 
     function closeModal() { document.getElementById('paymentModal').classList.add('hidden'); }
 
+    function printReceipt() {
+        const receipt = document.getElementById('receipt-view');
+        if (!receipt || receipt.classList.contains('hidden')) {
+            return;
+        }
+
+        const printWindow = window.open('', '_blank', 'width=900,height=700');
+        if (!printWindow) {
+            showToast('Please allow popups to print the receipt.');
+            return;
+        }
+
+        const receiptHtml = receipt.innerHTML;
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Payment Receipt</title>
+                <style>
+                    body { font-family: Arial, Helvetica, sans-serif; margin: 0; padding: 32px; color: #0f172a; background: #ffffff; }
+                    .receipt-sheet { color: #0f172a; }
+                    .receipt-panel { background: linear-gradient(180deg, #fbfdff 0%, #f8fafc 100%); border: 1px solid #e5e7eb; border-radius: 24px; padding: 24px; position: relative; overflow: hidden; }
+                    .receipt-stamp { position: absolute; top: 20px; right: 20px; border: 2px solid rgba(34,197,94,0.3); color: rgba(34,197,94,0.45); font-weight: 900; font-size: 18px; padding: 6px 12px; transform: rotate(12deg); border-radius: 12px; text-transform: uppercase; letter-spacing: .08em; }
+                    .grid { display: grid; gap: 20px; }
+                    .grid-cols-1 { grid-template-columns: 1fr; }
+                    .md\\:grid-cols-2, .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+                    .xl\\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+                    .gap-4, .gap-5 { gap: 16px; }
+                    .mb-6 { margin-bottom: 24px; }
+                    .mt-1 { margin-top: 4px; }
+                    .mt-2 { margin-top: 8px; }
+                    .mt-4 { margin-top: 16px; }
+                    .text-right, .md\\:text-right, .xl\\:text-right { text-align: right; }
+                    .text-center { text-align: center; }
+                    .text-3xl { font-size: 44px; }
+                    .text-sm { font-size: 14px; }
+                    .text-base { font-size: 16px; }
+                    .text-gray-900 { color: #111827; }
+                    .text-gray-800 { color: #1f2937; }
+                    .text-gray-600 { color: #4b5563; }
+                    .text-gray-500 { color: #6b7280; }
+                    .text-gray-400 { color: #94a3b8; }
+                    .text-primary { color: #4f46e5; }
+                    .font-black, .font-bold, .font-semibold { font-weight: 700; }
+                    .font-black { font-weight: 900; }
+                    .tracking-tight { letter-spacing: -.04em; }
+                    .border { border: 1px solid #e5e7eb; }
+                    .border-t { border-top: 1px solid #e5e7eb; }
+                    .rounded-2xl { border-radius: 18px; }
+                    .bg-white { background: #fff; }
+                    .px-4 { padding-left: 16px; padding-right: 16px; }
+                    .py-4 { padding-top: 16px; padding-bottom: 16px; }
+                    .pt-4 { padding-top: 16px; }
+                    .italic { font-style: italic; }
+                    .leading-relaxed { line-height: 1.7; }
+                    .receipt-amount { font-size: 44px; font-weight: 900; letter-spacing: -.04em; color: #4f46e5; margin: 0; text-align: right; word-break: break-word; }
+                    .border-dashed { border-style: dashed; }
+                    .my-5 { margin-top: 20px; margin-bottom: 20px; }
+                    .items-end { align-items: end; }
+                    .justify-between { justify-content: space-between; }
+                    .flex { display: flex; }
+                    .flex-col { flex-direction: column; }
+                    @media print { body { padding: 0; } }
+                </style>
+            </head>
+            <body>
+                <div class="receipt-sheet">${receiptHtml}</div>
+            </body>
+            </html>
+        `);
+        printWindow.document.close();
+        printWindow.focus();
+        printWindow.onload = function () {
+            printWindow.print();
+            printWindow.close();
+        };
+    }
+
     function openModal(id, mode) {
         fetch(paymentUrl('show', id), { headers: { 'Accept': 'application/json' } })
             .then(res => res.json())
@@ -420,11 +535,17 @@
                 
                 // Populate Receipt Mode
                 document.getElementById('rec_id').innerText = data.payment_id;
-                document.getElementById('rec_method').innerText = data.method;
+                document.getElementById('rec_method').innerText = data.method || 'Not specified';
                 document.getElementById('rec_amount').innerText = '₦' + parseFloat(data.amount).toLocaleString(undefined, {minimumFractionDigits: 2});
                 const resolvedStatus = data.resolved_status || data.status || 'Pending';
                 document.getElementById('rec_status_text').innerText = resolvedStatus;
                 document.getElementById('rec_note').innerText = data.reference || data.note || 'No notes available.';
+                document.getElementById('rec_customer').innerText = data.sale?.customer_name || data.sale?.customer?.name || 'Walk-in customer';
+                document.getElementById('rec_reference').innerText = data.reference || data.payment_id || 'N/A';
+                document.getElementById('rec_invoice').innerText = data.sale?.invoice_no || data.sale?.order_number || 'No linked invoice';
+                document.getElementById('rec_account').innerText = data.account?.name || data.account?.account_name || 'Unassigned account';
+                document.getElementById('rec_processed_by').innerText = data.creator?.name || 'System';
+                document.getElementById('rec_source').innerText = data.sale ? 'POS / Sales Payment' : 'Direct Payment Entry';
                 document.getElementById('rec_date_full').innerText = new Date(data.created_at).toLocaleString('en-NG', {
                     year: 'numeric',
                     month: 'short',
