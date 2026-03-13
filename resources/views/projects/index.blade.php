@@ -409,6 +409,8 @@
                 ['id' => 'proposals', 'title' => 'Proposals', 'desc' => 'Create commercial proposals, track approvals, and close faster.', 'tier' => 'enterprise', 'mode' => 'assistant', 'action' => 'Build Next Steps'],
                 ['id' => 'ai-anomaly-detection', 'title' => 'AI-Powered Anomaly Detection', 'desc' => 'Flag unusual transaction, margin, and project-cost patterns early.', 'tier' => 'enterprise', 'mode' => 'assistant', 'action' => 'Scan Workspace'],
                 ['id' => 'project-management-ai', 'title' => 'Project Management AI', 'desc' => 'AI-assisted milestone planning, risk scoring, and workload balancing.', 'tier' => 'enterprise', 'mode' => 'assistant', 'action' => 'Analyze Delivery'],
+                ['id' => 'resource-capacity-planning', 'title' => 'Resource Capacity Planning', 'desc' => 'Balance team availability, delivery load, and role assignments before bottlenecks hit.', 'tier' => 'enterprise', 'mode' => 'assistant', 'action' => 'Balance Capacity'],
+                ['id' => 'change-order-control', 'title' => 'Change Order Control', 'desc' => 'Track scope changes, cost impact, and approval history without losing delivery context.', 'tier' => 'enterprise', 'mode' => 'assistant', 'action' => 'Review Scope'],
             ];
         @endphp
 
@@ -578,6 +580,8 @@
             'proposals': 'Review my proposal workflow and tell me which proposals need follow-up next.',
             'ai-anomaly-detection': 'Run AI anomaly detection for my workspace and flag unusual costs, margins, or transaction patterns.',
             'project-management-ai': 'Run project management AI for my workspace and highlight risks, overdue work, and recommended next actions.',
+            'resource-capacity-planning': 'Review resource capacity planning for my workspace and highlight overloaded teams, idle capacity, and the best balancing actions.',
+            'change-order-control': 'Review change orders for my workspace and highlight scope drift, approval gaps, and cost impact that needs attention.',
         };
 
         const buttonLabels = {
@@ -588,6 +592,8 @@
             'proposals': 'Build Next Steps',
             'ai-anomaly-detection': 'Scan Workspace',
             'project-management-ai': 'Analyze Delivery',
+            'resource-capacity-planning': 'Balance Capacity',
+            'change-order-control': 'Review Scope',
         };
 
         function setModuleFocus(moduleId) {
