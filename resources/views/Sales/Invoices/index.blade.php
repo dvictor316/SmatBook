@@ -782,13 +782,10 @@ ${companyName}
 
     if (autoPrintReceipt) {
         window.addEventListener('load', () => {
-            setTimeout(() => window.print(), 300);
-        });
-
-        window.addEventListener('afterprint', () => {
-            if (window.opener) {
-                window.close();
-            }
+            setTimeout(() => {
+                window.focus();
+                window.print();
+            }, 300);
         });
     }
 </script>
