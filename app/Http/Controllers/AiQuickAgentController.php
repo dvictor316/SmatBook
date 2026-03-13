@@ -11,6 +11,8 @@ use App\Models\Customer;
 use App\Models\Vendor;
 use App\Models\Product;
 use App\Models\Payment;
+use App\Models\Project;
+use App\Models\ProjectTask;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -104,6 +106,9 @@ class AiQuickAgentController extends Controller
             'u ' => 'you ',
             'ur ' => 'your ',
             'p/l' => 'profit loss',
+            'mrr' => 'monthly recurring revenue',
+            'e-signature' => 'esignature',
+            'e signature' => 'esignature',
         ];
         $normalized = str_replace(array_keys($replacements), array_values($replacements), $normalized);
 
@@ -134,6 +139,70 @@ class AiQuickAgentController extends Controller
             str_contains($message, 'how do you work')
         ) {
             return ['type' => 'assistant_help', 'required_plan' => 'basic'];
+        }
+
+        if (
+            str_contains($message, 'reputation management') ||
+            str_contains($message, 'client sentiment') ||
+            str_contains($message, 'feedback loop') ||
+            str_contains($message, 'issue closure')
+        ) {
+            return ['type' => 'reputation_management', 'required_plan' => 'professional'];
+        }
+
+        if (
+            str_contains($message, 'lead management') ||
+            str_contains($message, 'lead pipeline') ||
+            str_contains($message, 'prospect') ||
+            str_contains($message, 'conversion pipeline') ||
+            str_contains($message, 'lead score')
+        ) {
+            return ['type' => 'lead_management', 'required_plan' => 'professional'];
+        }
+
+        if (
+            str_contains($message, 'appointment scheduling') ||
+            str_contains($message, 'book meeting') ||
+            str_contains($message, 'schedule meeting') ||
+            str_contains($message, 'appointment')
+        ) {
+            return ['type' => 'appointment_scheduling', 'required_plan' => 'professional'];
+        }
+
+        if (
+            str_contains($message, 'contract upload') ||
+            str_contains($message, 'esignature') ||
+            str_contains($message, 'e-signature') ||
+            str_contains($message, 'contract workflow') ||
+            str_contains($message, 'signature lifecycle')
+        ) {
+            return ['type' => 'contract_esignature', 'required_plan' => 'enterprise'];
+        }
+
+        if (
+            str_contains($message, 'proposal workflow') ||
+            str_contains($message, 'proposal') ||
+            str_contains($message, 'commercial proposal')
+        ) {
+            return ['type' => 'proposals', 'required_plan' => 'enterprise'];
+        }
+
+        if (
+            str_contains($message, 'anomaly detection') ||
+            str_contains($message, 'unusual transaction') ||
+            str_contains($message, 'margin pattern') ||
+            str_contains($message, 'cost pattern')
+        ) {
+            return ['type' => 'ai_anomaly_detection', 'required_plan' => 'enterprise'];
+        }
+
+        if (
+            str_contains($message, 'project management ai') ||
+            str_contains($message, 'milestone planning') ||
+            str_contains($message, 'workload balancing') ||
+            str_contains($message, 'project risk')
+        ) {
+            return ['type' => 'project_management_ai', 'required_plan' => 'enterprise'];
         }
 
         if (
@@ -253,6 +322,13 @@ class AiQuickAgentController extends Controller
             'products_count' => ['type' => 'products_count', 'required_plan' => 'basic'],
             'payments' => ['type' => 'payments', 'required_plan' => 'basic'],
             'online_users' => ['type' => 'online_users', 'required_plan' => 'basic'],
+            'reputation_management' => ['type' => 'reputation_management', 'required_plan' => 'professional'],
+            'lead_management' => ['type' => 'lead_management', 'required_plan' => 'professional'],
+            'appointment_scheduling' => ['type' => 'appointment_scheduling', 'required_plan' => 'professional'],
+            'contract_esignature' => ['type' => 'contract_esignature', 'required_plan' => 'enterprise'],
+            'proposals' => ['type' => 'proposals', 'required_plan' => 'enterprise'],
+            'ai_anomaly_detection' => ['type' => 'ai_anomaly_detection', 'required_plan' => 'enterprise'],
+            'project_management_ai' => ['type' => 'project_management_ai', 'required_plan' => 'enterprise'],
             default => null,
         };
     }
@@ -282,7 +358,7 @@ class AiQuickAgentController extends Controller
         if ($intent === 'assistant_help') {
             return response()->json([
                 'ok' => true,
-                'answer' => "I can answer: sales, purchases, expenses, invoices due, payments, customer/vendor/product counts, trial balance, ledger, balance sheet, and tax (based on your plan access).",
+                'answer' => "I can answer sales, purchases, expenses, invoices due, payments, customer/vendor/product counts, trial balance, ledger, balance sheet, tax, and guided business-module prompts like lead management, proposals, anomaly detection, and project risk.",
             ]);
         }
 
@@ -374,6 +450,55 @@ class AiQuickAgentController extends Controller
                 'ok' => true,
                 'answer' => "Users online now: {$data['count']} (active within last {$data['window_minutes']} minutes).",
                 'meta' => $data,
+            ]);
+        }
+
+        if ($intent === 'reputation_management') {
+            return response()->json([
+                'ok' => true,
+                'answer' => $this->buildReputationManagementAnswer($request),
+            ]);
+        }
+
+        if ($intent === 'lead_management') {
+            return response()->json([
+                'ok' => true,
+                'answer' => $this->buildLeadManagementAnswer($request),
+            ]);
+        }
+
+        if ($intent === 'appointment_scheduling') {
+            return response()->json([
+                'ok' => true,
+                'answer' => $this->buildAppointmentSchedulingAnswer($request),
+            ]);
+        }
+
+        if ($intent === 'contract_esignature') {
+            return response()->json([
+                'ok' => true,
+                'answer' => $this->buildContractWorkflowAnswer($request),
+            ]);
+        }
+
+        if ($intent === 'proposals') {
+            return response()->json([
+                'ok' => true,
+                'answer' => $this->buildProposalWorkflowAnswer($request),
+            ]);
+        }
+
+        if ($intent === 'ai_anomaly_detection') {
+            return response()->json([
+                'ok' => true,
+                'answer' => $this->buildAnomalyDetectionAnswer($request),
+            ]);
+        }
+
+        if ($intent === 'project_management_ai') {
+            return response()->json([
+                'ok' => true,
+                'answer' => $this->buildProjectManagementAnswer($request),
             ]);
         }
 
@@ -489,6 +614,39 @@ class AiQuickAgentController extends Controller
             ];
         }
 
+        if (str_contains($message, 'last 7 days')) {
+            return [
+                'start' => Carbon::now()->subDays(6)->startOfDay(),
+                'end' => Carbon::now()->endOfDay(),
+                'label' => 'last 7 days',
+            ];
+        }
+
+        if (str_contains($message, 'last 30 days')) {
+            return [
+                'start' => Carbon::now()->subDays(29)->startOfDay(),
+                'end' => Carbon::now()->endOfDay(),
+                'label' => 'last 30 days',
+            ];
+        }
+
+        if (str_contains($message, 'this quarter')) {
+            return [
+                'start' => Carbon::now()->startOfQuarter(),
+                'end' => Carbon::now()->endOfQuarter(),
+                'label' => 'this quarter',
+            ];
+        }
+
+        if (str_contains($message, 'last quarter')) {
+            $quarter = Carbon::now()->subQuarter();
+            return [
+                'start' => $quarter->copy()->startOfQuarter(),
+                'end' => $quarter->copy()->endOfQuarter(),
+                'label' => 'last quarter',
+            ];
+        }
+
         return [
             'start' => Carbon::today()->startOfDay(),
             'end' => Carbon::today()->endOfDay(),
@@ -507,8 +665,8 @@ class AiQuickAgentController extends Controller
         $baseUrl = rtrim((string) config('services.openai.base_url', 'https://api.openai.com/v1'), '/');
 
         $instruction = "Return only JSON with keys: intent, period. ".
-            "intent must be one of: sales,purchases,profit_loss,tax,expenses,invoices_due,general_ledger,trial_balance,balance_sheet,customers_count,vendors_count,products_count,payments,online_users,assistant_intro,assistant_help,unknown. ".
-            "period must be one of: today,yesterday,this week,last week,this month,last month,this year,all time. ".
+            "intent must be one of: sales,purchases,profit_loss,tax,expenses,invoices_due,general_ledger,trial_balance,balance_sheet,customers_count,vendors_count,products_count,payments,online_users,assistant_intro,assistant_help,reputation_management,lead_management,appointment_scheduling,contract_esignature,proposals,ai_anomaly_detection,project_management_ai,unknown. ".
+            "period must be one of: today,yesterday,this week,last week,this month,last month,this year,this quarter,last quarter,last 7 days,last 30 days,all time. ".
             "If uncertain, set intent to unknown and period to today.";
 
         try {
@@ -984,6 +1142,152 @@ class AiQuickAgentController extends Controller
         if (Schema::hasColumn($table, 'created_by')) {
             $query->where('created_by', $request->user()->id);
         }
+    }
+
+    private function getProjectWorkspaceStats(Request $request): array
+    {
+        if (!Schema::hasTable('projects')) {
+            return [
+                'projects_total' => 0,
+                'projects_active' => 0,
+                'projects_due_soon' => 0,
+                'projects_over_budget' => 0,
+                'tasks_total' => 0,
+                'tasks_todo' => 0,
+                'tasks_in_progress' => 0,
+                'tasks_done' => 0,
+                'tasks_overdue' => 0,
+            ];
+        }
+
+        $projects = Project::query();
+        $this->applyTenantScope($projects, 'projects', $request);
+
+        $projectStats = [
+            'projects_total' => (clone $projects)->count(),
+            'projects_active' => (clone $projects)->whereIn('status', ['planning', 'in_progress'])->count(),
+            'projects_due_soon' => Schema::hasColumn('projects', 'due_date')
+                ? (clone $projects)->whereBetween('due_date', [Carbon::today(), Carbon::today()->copy()->addDays(7)])->count()
+                : 0,
+            'projects_over_budget' => Schema::hasColumn('projects', 'spent') && Schema::hasColumn('projects', 'budget')
+                ? (clone $projects)->whereColumn('spent', '>', 'budget')->count()
+                : 0,
+        ];
+
+        if (!Schema::hasTable('project_tasks')) {
+            return $projectStats + [
+                'tasks_total' => 0,
+                'tasks_todo' => 0,
+                'tasks_in_progress' => 0,
+                'tasks_done' => 0,
+                'tasks_overdue' => 0,
+            ];
+        }
+
+        $taskQuery = ProjectTask::query()
+            ->join('projects', 'project_tasks.project_id', '=', 'projects.id');
+
+        if (!$this->isSuperAdmin($request)) {
+            if (Schema::hasColumn('projects', 'company_id') && optional($request->user())->company_id) {
+                $taskQuery->where('projects.company_id', $request->user()->company_id);
+            } elseif (Schema::hasColumn('projects', 'created_by')) {
+                $taskQuery->where('projects.created_by', $request->user()->id);
+            }
+        }
+
+        return $projectStats + [
+            'tasks_total' => (clone $taskQuery)->count(),
+            'tasks_todo' => (clone $taskQuery)->where('project_tasks.status', 'todo')->count(),
+            'tasks_in_progress' => (clone $taskQuery)->where('project_tasks.status', 'in_progress')->count(),
+            'tasks_done' => (clone $taskQuery)->where('project_tasks.status', 'done')->count(),
+            'tasks_overdue' => Schema::hasColumn('project_tasks', 'due_date')
+                ? (clone $taskQuery)
+                    ->where('project_tasks.status', '!=', 'done')
+                    ->whereDate('project_tasks.due_date', '<', Carbon::today())
+                    ->count()
+                : 0,
+        ];
+    }
+
+    private function getQuotationCount(Request $request): int
+    {
+        if (!Schema::hasTable('quotations')) {
+            return 0;
+        }
+
+        $query = \App\Models\Quotation::query();
+        $this->applyTenantScope($query, 'quotations', $request);
+
+        return (int) $query->count();
+    }
+
+    private function buildReputationManagementAnswer(Request $request): string
+    {
+        $customers = $this->getCustomersCount($request)['count'];
+        $overdueInvoices = $this->getInvoicesDueStats($request, Carbon::today()->startOfDay(), Carbon::today()->endOfDay())['count'];
+        $projects = $this->getProjectWorkspaceStats($request);
+
+        return "Reputation management snapshot: {$customers} customer record(s), {$projects['projects_active']} active project(s), and {$overdueInvoices} invoice(s) due today. Focus next on closing unresolved billing issues, checking recently active clients, and logging a short satisfaction follow-up for projects due within 7 days.";
+    }
+
+    private function buildLeadManagementAnswer(Request $request): string
+    {
+        $customers = $this->getCustomersCount($request)['count'];
+        $quotations = $this->getQuotationCount($request);
+        $projects = $this->getProjectWorkspaceStats($request);
+
+        return "Lead management view: {$customers} customer record(s), {$quotations} quotation(s), and {$projects['projects_active']} active project(s). Best next move: follow up open quotations first, convert warm customers without active projects, and assign one owner to every prospect still sitting without a next action.";
+    }
+
+    private function buildAppointmentSchedulingAnswer(Request $request): string
+    {
+        $projects = $this->getProjectWorkspaceStats($request);
+
+        return "Appointment scheduling summary: {$projects['projects_due_soon']} project(s) due within 7 days, {$projects['tasks_overdue']} overdue task(s), and {$projects['projects_active']} active project(s). Recommended schedule: book review meetings for due-soon projects, recovery calls for overdue work, and onboarding slots for any newly approved client this week.";
+    }
+
+    private function buildContractWorkflowAnswer(Request $request): string
+    {
+        $quotations = $this->getQuotationCount($request);
+        $projects = $this->getProjectWorkspaceStats($request);
+
+        return "Contract workflow status: {$quotations} quotation/proposal record(s) and {$projects['projects_active']} active project(s). Next action: convert approved commercial terms into signed documents, attach one contract owner per active deal, and keep a pending-signature queue before work starts.";
+    }
+
+    private function buildProposalWorkflowAnswer(Request $request): string
+    {
+        $quotations = $this->getQuotationCount($request);
+        $customers = $this->getCustomersCount($request)['count'];
+
+        return "Proposal workflow snapshot: {$quotations} quotation/proposal record(s) for {$customers} customer record(s). Recommended flow: review stale proposals first, refresh pricing where needed, and send the next proposal only with a clear follow-up date and owner attached.";
+    }
+
+    private function buildAnomalyDetectionAnswer(Request $request): string
+    {
+        $sales = $this->getSalesStats($request, Carbon::now()->startOfMonth(), Carbon::now()->endOfDay());
+        $expenses = $this->getExpenseStats($request, Carbon::now()->startOfMonth(), Carbon::now()->endOfDay());
+        $projects = $this->getProjectWorkspaceStats($request);
+
+        $marginPressure = $sales['amount'] > 0 && $expenses['amount'] > ($sales['amount'] * 0.75);
+        $alerts = [];
+        if ($marginPressure) {
+            $alerts[] = 'expense run-rate is heavy against this month\'s sales';
+        }
+        if ($projects['projects_over_budget'] > 0) {
+            $alerts[] = "{$projects['projects_over_budget']} project(s) are already over budget";
+        }
+        if (empty($alerts)) {
+            $alerts[] = 'no major outlier from the current lightweight checks';
+        }
+
+        return "AI anomaly scan: sales this month ₦" . number_format($sales['amount'], 2) . ", expenses ₦" . number_format($expenses['amount'], 2) . ", active alerts: " . implode('; ', $alerts) . ". Recommended next step: inspect the highest-spend transactions and any project where spend is rising faster than billed revenue.";
+    }
+
+    private function buildProjectManagementAnswer(Request $request): string
+    {
+        $projects = $this->getProjectWorkspaceStats($request);
+
+        return "Project management AI summary: {$projects['projects_total']} project(s), {$projects['tasks_total']} task(s), {$projects['tasks_overdue']} overdue item(s), and {$projects['projects_over_budget']} over-budget project(s). Recommended next action: recover overdue tasks first, rebalance work from overloaded owners, and review scope on any project that is spending ahead of plan.";
     }
 
     private function hasPlanAccess(string $currentPlan, string $requiredPlan, Request $request): bool

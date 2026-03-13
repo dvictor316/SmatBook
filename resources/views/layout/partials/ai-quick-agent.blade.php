@@ -39,11 +39,17 @@
     </div>
     <div class="offcanvas-body d-flex flex-column p-0">
         <div id="ai-agent-messages" class="p-3" style="height: calc(100vh - 210px); overflow-y: auto; background:#f8fafc;">
-            <div class="small text-muted mb-2">Try: <b>total sales yesterday</b>, <b>trial balance this month</b>, <b>invoices due today</b></div>
+            <div class="small text-muted mb-2">Try: <b>total sales yesterday</b>, <b>trial balance this month</b>, <b>review lead management</b>, <b>run anomaly detection</b></div>
+            <div class="d-flex flex-wrap gap-2 mb-3" id="ai-agent-starters">
+                <button class="btn btn-sm btn-light border ai-starter-chip" type="button" data-prompt="total sales today">Sales Today</button>
+                <button class="btn btn-sm btn-light border ai-starter-chip" type="button" data-prompt="invoices due today">Invoices Due</button>
+                <button class="btn btn-sm btn-light border ai-starter-chip" type="button" data-prompt="review lead management for my workspace">Lead Review</button>
+                <button class="btn btn-sm btn-light border ai-starter-chip" type="button" data-prompt="run project management ai for my workspace">Project Risks</button>
+            </div>
         </div>
         <div class="border-top p-3">
             <div class="input-group">
-                <input type="text" id="ai-agent-input" class="form-control" placeholder="Ask something about your data...">
+                <input type="text" id="ai-agent-input" class="form-control" placeholder="Ask about sales, invoices, leads, proposals, anomalies, or project risk...">
                 <button class="btn btn-primary" type="button" id="ai-agent-send">Send</button>
             </div>
         </div>
@@ -160,6 +166,12 @@
         border: 1px solid #e2e8f0;
         color: #1e293b;
     }
+    .ai-starter-chip {
+        border-radius: 999px;
+        color: #312e81;
+        background: #fff;
+        font-weight: 600;
+    }
     .ai-dots span {
         animation: aiDots 1.2s infinite;
         display: inline-block;
@@ -270,6 +282,7 @@
             const introModalEl = document.getElementById('aiAssistantIntroModal');
             const trigger = document.getElementById('ai-agent-trigger');
             const openAiChatBtn = document.getElementById('open-ai-chat-btn');
+            const starterChips = document.querySelectorAll('.ai-starter-chip');
             if (sendBtn) sendBtn.addEventListener('click', runQuery);
             if (input) {
                 input.addEventListener('keydown', function (e) {
@@ -277,6 +290,15 @@
                         e.preventDefault();
                         runQuery();
                     }
+                });
+            }
+            if (starterChips.length) {
+                starterChips.forEach(function (chip) {
+                    chip.addEventListener('click', function () {
+                        if (!input) return;
+                        input.value = chip.getAttribute('data-prompt') || '';
+                        input.focus();
+                    });
                 });
             }
             if (offcanvasEl) {

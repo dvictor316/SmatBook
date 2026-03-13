@@ -402,13 +402,13 @@
             $canPro = in_array(($planTier ?? 'basic'), ['professional', 'enterprise'], true) || ($isSuperAdmin ?? false);
             $canEnterprise = (($planTier ?? 'basic') === 'enterprise') || ($isSuperAdmin ?? false);
             $suiteModules = [
-                ['id' => 'reputation-management', 'title' => 'Reputation Management', 'desc' => 'Track client sentiment, feedback loops, and issue closure rates.', 'tier' => 'professional', 'mode' => 'assistant'],
-                ['id' => 'lead-management', 'title' => 'Lead Management', 'desc' => 'Capture, score, and move prospects across your conversion pipeline.', 'tier' => 'professional', 'mode' => 'assistant'],
-                ['id' => 'appointment-scheduling', 'title' => 'Appointment Scheduling', 'desc' => 'Centralized booking board for demos, onboarding, and review meetings.', 'tier' => 'professional', 'mode' => 'assistant'],
-                ['id' => 'contract-esignature', 'title' => 'Contract Upload & E-Signature', 'desc' => 'Store contracts and manage signature lifecycle from draft to signed.', 'tier' => 'enterprise', 'mode' => 'assistant'],
-                ['id' => 'proposals', 'title' => 'Proposals', 'desc' => 'Create commercial proposals, track approvals, and close faster.', 'tier' => 'enterprise', 'mode' => 'assistant'],
-                ['id' => 'ai-anomaly-detection', 'title' => 'AI-Powered Anomaly Detection', 'desc' => 'Flag unusual transaction, margin, and project-cost patterns early.', 'tier' => 'enterprise', 'mode' => 'assistant'],
-                ['id' => 'project-management-ai', 'title' => 'Project Management AI', 'desc' => 'AI-assisted milestone planning, risk scoring, and workload balancing.', 'tier' => 'enterprise', 'mode' => 'assistant'],
+                ['id' => 'reputation-management', 'title' => 'Reputation Management', 'desc' => 'Track client sentiment, feedback loops, and issue closure rates.', 'tier' => 'professional', 'mode' => 'assistant', 'action' => 'Review Workspace'],
+                ['id' => 'lead-management', 'title' => 'Lead Management', 'desc' => 'Capture, score, and move prospects across your conversion pipeline.', 'tier' => 'professional', 'mode' => 'assistant', 'action' => 'Review Pipeline'],
+                ['id' => 'appointment-scheduling', 'title' => 'Appointment Scheduling', 'desc' => 'Centralized booking board for demos, onboarding, and review meetings.', 'tier' => 'professional', 'mode' => 'assistant', 'action' => 'Plan Schedule'],
+                ['id' => 'contract-esignature', 'title' => 'Contract Upload & E-Signature', 'desc' => 'Store contracts and manage signature lifecycle from draft to signed.', 'tier' => 'enterprise', 'mode' => 'assistant', 'action' => 'Open Workflow'],
+                ['id' => 'proposals', 'title' => 'Proposals', 'desc' => 'Create commercial proposals, track approvals, and close faster.', 'tier' => 'enterprise', 'mode' => 'assistant', 'action' => 'Build Next Steps'],
+                ['id' => 'ai-anomaly-detection', 'title' => 'AI-Powered Anomaly Detection', 'desc' => 'Flag unusual transaction, margin, and project-cost patterns early.', 'tier' => 'enterprise', 'mode' => 'assistant', 'action' => 'Scan Workspace'],
+                ['id' => 'project-management-ai', 'title' => 'Project Management AI', 'desc' => 'AI-assisted milestone planning, risk scoring, and workload balancing.', 'tier' => 'enterprise', 'mode' => 'assistant', 'action' => 'Analyze Delivery'],
             ];
         @endphp
 
@@ -442,7 +442,7 @@
                                     data-is-ai="{{ in_array($module['id'], ['ai-anomaly-detection', 'project-management-ai'], true) ? '1' : '0' }}"
                                 >
                                     <span class="pm-module-spinner" aria-hidden="true"></span>
-                                    <span class="pm-module-label">Run Module</span>
+                                    <span class="pm-module-label">{{ $module['action'] }}</span>
                                 </button>
                             @else
                                 <button class="btn btn-sm btn-outline-secondary" type="button" disabled>Upgrade Required</button>
@@ -463,13 +463,13 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p class="text-muted mb-2" id="moduleAiModalNote">Use AI assistant to run this module with guided actions.</p>
+                <p class="text-muted mb-2" id="moduleAiModalNote">Use AI assistant to analyze this module with guided actions.</p>
                 <label class="form-label small mb-1">Assistant Prompt</label>
                 <textarea id="moduleAiPrompt" class="form-control" rows="4" placeholder="Type what you need..."></textarea>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-light" type="button" data-bs-dismiss="modal">Close</button>
-                <button class="btn btn-primary" type="button" id="moduleAiOpenAssistant">Open AI Assistant</button>
+                <button class="btn btn-primary" type="button" id="moduleAiOpenAssistant">Run In AI Assistant</button>
             </div>
         </div>
     </div>
@@ -571,13 +571,23 @@
             : null;
 
         const modulePrompts = {
-            'reputation-management': 'Review reputation management trends for my current projects, summarize sentiment issues, and suggest the next follow-up actions.',
-            'lead-management': 'Run lead management for my current pipeline, identify the hottest prospects, and recommend the next conversion steps.',
-            'appointment-scheduling': 'Organize appointment scheduling for my active leads and projects, and suggest the next meetings to book.',
-            'contract-esignature': 'Prepare the contract upload and e-signature workflow for my current projects, and list the next documents requiring action.',
-            'proposals': 'Generate a proposal workflow for my active projects, highlight pending approvals, and suggest what should be sent next.',
-            'ai-anomaly-detection': 'Run AI anomaly detection for my current projects and flag unusual costs, margins, or transaction patterns.',
-            'project-management-ai': 'Run project management AI for my active projects and highlight risks, blocked milestones, and recommended next actions.',
+            'reputation-management': 'Review reputation management for my workspace and tell me the next client follow-up actions.',
+            'lead-management': 'Review lead management for my workspace and tell me the best conversion actions to take next.',
+            'appointment-scheduling': 'Review appointment scheduling for my workspace and tell me which meetings should be booked next.',
+            'contract-esignature': 'Review my contract upload and esignature workflow and tell me the next documents needing action.',
+            'proposals': 'Review my proposal workflow and tell me which proposals need follow-up next.',
+            'ai-anomaly-detection': 'Run AI anomaly detection for my workspace and flag unusual costs, margins, or transaction patterns.',
+            'project-management-ai': 'Run project management AI for my workspace and highlight risks, overdue work, and recommended next actions.',
+        };
+
+        const buttonLabels = {
+            'reputation-management': 'Review Workspace',
+            'lead-management': 'Review Pipeline',
+            'appointment-scheduling': 'Plan Schedule',
+            'contract-esignature': 'Open Workflow',
+            'proposals': 'Build Next Steps',
+            'ai-anomaly-detection': 'Scan Workspace',
+            'project-management-ai': 'Analyze Delivery',
         };
 
         function setModuleFocus(moduleId) {
@@ -615,7 +625,7 @@
 
             if (moduleId === 'project-management') {
                 setTimeout(function () {
-                    setButtonRunning(button, false, 'Run Module');
+                    setButtonRunning(button, false, buttonLabels[moduleId] || 'Run Module');
                 }, 700);
                 if (projectModal) {
                     projectModal.show();
@@ -633,32 +643,32 @@
                     }, 450);
                 }
                 setTimeout(function () {
-                    setButtonRunning(button, false, 'Run Module');
+                    setButtonRunning(button, false, buttonLabels[moduleId] || 'Run Module');
                 }, 900);
                 return;
             }
 
             if (mode === 'assistant' || isAi) {
                 if (!aiModal) {
-                    setButtonRunning(button, false, 'Run Module');
+                    setButtonRunning(button, false, buttonLabels[moduleId] || 'Run Module');
                     alert('Module assistant is currently unavailable. Please refresh the page and try again.');
                     return;
                 }
 
                 modalTitle.textContent = (moduleTitle || 'Module') + ' Assistant';
                 modalNote.textContent = isAi
-                    ? 'AI will guide you through this module and generate actionable output.'
-                    : 'Use the guided assistant to launch this module, prepare actions, and move faster.';
+                    ? 'AI will scan your live workspace and return actionable exceptions, risks, and next steps.'
+                    : 'AI will review your current workspace data for this module and suggest the best next actions.';
                 promptInput.value = modulePrompts[moduleId] || ('Run ' + (moduleTitle || 'this module') + ' for my current projects and suggest the next actions.');
                 setTimeout(function () {
-                    setButtonRunning(button, false, 'Open Assistant');
+                    setButtonRunning(button, false, buttonLabels[moduleId] || 'Open Assistant');
                 }, 250);
                 aiModal.show();
                 return;
             }
 
             setTimeout(function () {
-                setButtonRunning(button, false, 'Run Module');
+                setButtonRunning(button, false, buttonLabels[moduleId] || 'Run Module');
             }, 900);
         }
 
