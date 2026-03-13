@@ -123,11 +123,12 @@
         color: #198754;
     }
     .mini-metric {
-        border: 1px solid #e5edf8;
+        border: 1px solid rgba(99, 102, 241, 0.12);
         border-radius: 12px;
-        background: #fff;
+        background: linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(244,242,255,0.94) 100%);
         padding: 10px 12px;
         height: 100%;
+        box-shadow: 0 10px 20px rgba(67, 56, 202, 0.06);
     }
     .mini-metric .label { font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 700; margin-bottom: 4px; }
     .mini-metric .value { font-size: 0.88rem; font-weight: 800; color: #0f172a; line-height: 1.1; }
@@ -182,9 +183,9 @@
         gap: 12px;
     }
     .spark-box {
-        border: 1px solid #e8eff8;
+        border: 1px solid rgba(99, 102, 241, 0.14);
         border-radius: 14px;
-        background: #fff;
+        background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(242,238,255,0.92) 100%);
         padding: 12px;
     }
     .spark-box canvas {
@@ -511,6 +512,10 @@
         const proFinanceCtx = document.getElementById('proFinanceChart');
         if (!proFinanceCtx) return;
 
+        const proFinanceGradient = proFinanceCtx.getContext('2d').createLinearGradient(0, 0, 0, 320);
+        proFinanceGradient.addColorStop(0, 'rgba(99, 102, 241, 0.22)');
+        proFinanceGradient.addColorStop(1, 'rgba(99, 102, 241, 0.02)');
+
         new Chart(proFinanceCtx.getContext('2d'), {
             type: 'line',
             data: {
@@ -520,39 +525,59 @@
                         label: 'Revenue',
                         data: salesSeries,
                         borderColor: '#16a34a',
-                        backgroundColor: 'rgba(22,163,74,0.12)',
+                        backgroundColor: 'rgba(22,163,74,0.14)',
                         fill: true,
-                        tension: 0.3
+                        tension: 0.3,
+                        borderWidth: 3,
+                        pointRadius: 3
                     },
                     {
                         label: 'Expenses',
                         data: expenseSeries,
                         borderColor: '#dc2626',
-                        backgroundColor: 'rgba(220,38,38,0.12)',
+                        backgroundColor: 'rgba(220,38,38,0.14)',
                         fill: true,
-                        tension: 0.3
+                        tension: 0.3,
+                        borderWidth: 3,
+                        pointRadius: 3
                     },
                     {
                         label: 'Profit',
                         data: profitSeries,
                         borderColor: '#4338ca',
-                        backgroundColor: 'rgba(67,56,202,0.1)',
+                        backgroundColor: proFinanceGradient,
                         fill: false,
-                        tension: 0.3
+                        tension: 0.3,
+                        borderWidth: 3,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#4338ca',
+                        pointBorderWidth: 2
                     }
                 ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { position: 'bottom' } },
+                plugins: {
+                    legend: { position: 'bottom' },
+                    tooltip: {
+                        backgroundColor: 'rgba(15,23,42,0.92)',
+                        callbacks: {
+                            label: (context) => context.dataset.label + ': ₦' + Number(context.parsed.y || 0).toLocaleString()
+                        }
+                    }
+                },
                 scales: {
                     y: {
                         beginAtZero: true,
+                        grid: { color: 'rgba(148, 163, 184, 0.18)' },
                         ticks: {
                             callback: (v) => '₦' + Number(v).toLocaleString()
                         }
-                    }
+                    },
+                    x: { grid: { display: false } }
                 }
             }
         });

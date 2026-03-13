@@ -388,6 +388,11 @@
         const canvas = document.getElementById('enterpriseTopProductsChart');
         if (!canvas) return;
 
+        const enterpriseBarGradient = canvas.getContext('2d').createLinearGradient(0, 0, 0, 300);
+        enterpriseBarGradient.addColorStop(0, '#f8d66d');
+        enterpriseBarGradient.addColorStop(0.5, '#d4af37');
+        enterpriseBarGradient.addColorStop(1, '#8b5e18');
+
         new Chart(canvas.getContext('2d'), {
             type: 'bar',
             data: {
@@ -395,7 +400,7 @@
                 datasets: [{
                     label: 'Qty Sold',
                     data: topProducts.map(p => Number(p.total_qty || 0)),
-                    backgroundColor: '#d4af37',
+                    backgroundColor: enterpriseBarGradient,
                     borderRadius: 8
                 }]
             },
@@ -403,7 +408,13 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true } }
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(148, 163, 184, 0.18)' }
+                    },
+                    x: { grid: { display: false } }
+                }
             }
         });
     });

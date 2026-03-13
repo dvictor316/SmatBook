@@ -106,11 +106,12 @@
         color: #198754;
     }
     .mini-metric {
-        border: 1px solid #e5edf8;
+        border: 1px solid rgba(37, 99, 235, 0.1);
         border-radius: 12px;
-        background: #fff;
+        background: linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(237,244,255,0.94) 100%);
         padding: 10px 12px;
         height: 100%;
+        box-shadow: 0 10px 20px rgba(0,35,71,0.05);
     }
     .mini-metric .label { font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 700; margin-bottom: 4px; }
     .mini-metric .value { font-size: 0.88rem; font-weight: 800; color: #0f172a; line-height: 1.1; }
@@ -177,9 +178,9 @@
         gap: 12px;
     }
     .spark-box {
-        border: 1px solid #e8eff8;
+        border: 1px solid rgba(37, 99, 235, 0.12);
         border-radius: 14px;
-        background: #fff;
+        background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(238,245,255,0.92) 100%);
         padding: 12px;
     }
     .spark-box canvas {
@@ -479,6 +480,11 @@
 
         const revenueCtx = document.getElementById('basicRevenueChart');
         if (revenueCtx) {
+            const revenueGradient = revenueCtx.getContext('2d').createLinearGradient(0, 0, 0, 280);
+            revenueGradient.addColorStop(0, 'rgba(37, 99, 235, 0.32)');
+            revenueGradient.addColorStop(0.55, 'rgba(14, 165, 233, 0.18)');
+            revenueGradient.addColorStop(1, 'rgba(14, 165, 233, 0.03)');
+
             new Chart(revenueCtx.getContext('2d'), {
                 type: 'line',
                 data: {
@@ -486,24 +492,39 @@
                     datasets: [{
                         label: 'Revenue',
                         data: totals,
-                        borderColor: '#002347',
-                        backgroundColor: 'rgba(0,35,71,0.12)',
+                        borderColor: '#2563eb',
+                        backgroundColor: revenueGradient,
                         fill: true,
                         tension: 0.35,
-                        borderWidth: 2
+                        borderWidth: 3,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#2563eb',
+                        pointBorderWidth: 2
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(15,23,42,0.92)',
+                            callbacks: {
+                                label: (context) => 'Revenue: ₦' + Number(context.parsed.y || 0).toLocaleString()
+                            }
+                        }
+                    },
                     scales: {
                         y: {
                             beginAtZero: true,
+                            grid: { color: 'rgba(148, 163, 184, 0.18)' },
                             ticks: {
                                 callback: (v) => '₦' + Number(v).toLocaleString()
                             }
-                        }
+                        },
+                        x: { grid: { display: false } }
                     }
                 }
             });
@@ -586,7 +607,14 @@
                     datasets: [{
                         label: 'Qty Sold',
                         data: topProducts.map(p => Number(p.total_qty || 0)),
-                        backgroundColor: '#ff8c00',
+                        backgroundColor: [
+                            '#2563eb',
+                            '#7c3aed',
+                            '#06b6d4',
+                            '#f59e0b',
+                            '#10b981',
+                            '#ef4444'
+                        ],
                         borderRadius: 8
                     }]
                 },

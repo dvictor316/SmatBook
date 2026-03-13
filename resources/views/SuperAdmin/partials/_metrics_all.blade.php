@@ -8,6 +8,17 @@
 @endphp
 
 <style>
+    :root {
+        --metric-blue-start: #2563eb;
+        --metric-blue-end: #1d4ed8;
+        --metric-green-start: #10b981;
+        --metric-green-end: #059669;
+        --metric-orange-start: #f97316;
+        --metric-orange-end: #ea580c;
+        --metric-slate-start: #0f172a;
+        --metric-slate-end: #1e293b;
+    }
+
     .metric-glass {
         border: none;
         border-radius: 22px;
@@ -46,22 +57,30 @@
     }
 
     .metric-glass.metric-theme-primary {
-        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        background:
+            radial-gradient(circle at top right, rgba(255,255,255,0.2), transparent 42%),
+            linear-gradient(135deg, var(--metric-blue-start) 0%, var(--metric-blue-end) 100%);
         color: #fff;
     }
 
     .metric-glass.metric-theme-success {
-        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        background:
+            radial-gradient(circle at top right, rgba(255,255,255,0.2), transparent 42%),
+            linear-gradient(135deg, var(--metric-green-start) 0%, var(--metric-green-end) 100%);
         color: #fff;
     }
 
     .metric-glass.metric-theme-danger {
-        background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+        background:
+            radial-gradient(circle at top right, rgba(255,255,255,0.18), transparent 42%),
+            linear-gradient(135deg, var(--metric-orange-start) 0%, var(--metric-orange-end) 100%);
         color: #fff;
     }
 
     .metric-glass.metric-theme-dark {
-        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        background:
+            radial-gradient(circle at top right, rgba(255,255,255,0.16), transparent 42%),
+            linear-gradient(135deg, var(--metric-slate-start) 0%, var(--metric-slate-end) 100%);
         color: #fff;
     }
 
@@ -81,6 +100,14 @@
     .metric-glass.metric-theme-danger .text-muted,
     .metric-glass.metric-theme-dark .text-muted {
         color: rgba(255,255,255,0.72) !important;
+    }
+
+    .metric-glass.metric-theme-primary .metric-icon-box,
+    .metric-glass.metric-theme-success .metric-icon-box,
+    .metric-glass.metric-theme-danger .metric-icon-box,
+    .metric-glass.metric-theme-dark .metric-icon-box {
+        border: 1px solid rgba(255,255,255,0.16);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);
     }
 
     .locked-blur {

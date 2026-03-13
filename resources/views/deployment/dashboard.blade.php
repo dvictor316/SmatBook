@@ -86,6 +86,30 @@
         border: none;
     }
 
+    .chart-panel {
+        background:
+            radial-gradient(circle at top right, rgba(255,255,255,0.08), transparent 36%),
+            linear-gradient(135deg, #0f172a 0%, #1d4ed8 56%, #0891b2 100%);
+        color: #fff;
+        border: none;
+    }
+
+    .chart-panel h6,
+    .chart-panel .text-muted,
+    .chart-panel small {
+        color: inherit !important;
+    }
+
+    .chart-panel .form-select {
+        background-color: rgba(255,255,255,0.12);
+        border-color: rgba(255,255,255,0.2);
+        color: #fff;
+    }
+
+    .chart-panel .form-select option {
+        color: #0f172a;
+    }
+
     @media (max-width: 576px) {
         #deployment-wrapper { padding: 1rem; }
     }
@@ -345,7 +369,7 @@
     {{-- CHARTS --}}
     <div class="row g-3 mb-4">
         <div class="col-lg-8">
-            <div class="glass-card p-4">
+            <div class="glass-card chart-panel p-4">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <div>
                         <h6 class="fw-bold mb-0">Revenue & Commission Trend</h6>
@@ -542,6 +566,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const labels = Object.keys(revenueData).slice(-6);
         const revenueValues = labels.map(l => revenueData[l] || 0);
         const commissionValues = labels.map(l => commissionData[l] || 0);
+        const revenueGradient = ctx.createLinearGradient(0, 0, 0, 260);
+        revenueGradient.addColorStop(0, 'rgba(125, 211, 252, 0.45)');
+        revenueGradient.addColorStop(0.45, 'rgba(59, 130, 246, 0.22)');
+        revenueGradient.addColorStop(1, 'rgba(59, 130, 246, 0.04)');
+        const commissionGradient = ctx.createLinearGradient(0, 0, 0, 260);
+        commissionGradient.addColorStop(0, 'rgba(110, 231, 183, 0.42)');
+        commissionGradient.addColorStop(0.45, 'rgba(16, 185, 129, 0.18)');
+        commissionGradient.addColorStop(1, 'rgba(16, 185, 129, 0.03)');
 
         new Chart(ctx, {
             type: 'line',
@@ -551,26 +583,26 @@ document.addEventListener('DOMContentLoaded', function() {
                     {
                         label: 'Revenue',
                         data: revenueValues.length ? revenueValues : [0],
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderColor: '#7dd3fc',
+                        backgroundColor: revenueGradient,
                         borderWidth: 3,
                         tension: 0.4,
                         fill: true,
-                        pointBackgroundColor: '#fff',
-                        pointBorderColor: '#3b82f6',
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#7dd3fc',
                         pointBorderWidth: 2,
                         pointRadius: 5
                     },
                     {
                         label: 'Commission',
                         data: commissionValues.length ? commissionValues : [0],
-                        borderColor: '#10b981',
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderColor: '#6ee7b7',
+                        backgroundColor: commissionGradient,
                         borderWidth: 3,
                         tension: 0.4,
                         fill: true,
-                        pointBackgroundColor: '#fff',
-                        pointBorderColor: '#10b981',
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#6ee7b7',
                         pointBorderWidth: 2,
                         pointRadius: 5
                     }
@@ -581,14 +613,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 scales: {
                     y: { 
                         beginAtZero: true, 
-                        grid: { borderDash: [2, 4], color: '#f0f0f0' },
+                        grid: { borderDash: [2, 4], color: 'rgba(255,255,255,0.12)' },
                         ticks: {
+                            color: 'rgba(255,255,255,0.84)',
                             callback: function(value) {
                                 return '₦' + value.toLocaleString();
                             }
                         }
                     },
-                    x: { grid: { display: false } }
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: 'rgba(255,255,255,0.84)' }
+                    }
                 },
                 plugins: { 
                     legend: { 
@@ -596,11 +632,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         position: 'top',
                         labels: {
                             usePointStyle: true,
-                            padding: 20
+                            padding: 20,
+                            color: 'rgba(255,255,255,0.9)'
                         }
                     }, 
                     tooltip: { 
-                        backgroundColor: 'rgba(0,0,0,0.8)', 
+                        backgroundColor: 'rgba(15,23,42,0.92)', 
                         padding: 12,
                         callbacks: {
                             label: function(context) {
@@ -630,7 +667,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 labels: Object.keys(statusCounts),
                 datasets: [{
                     data: Object.values(statusCounts),
-                    backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+                    backgroundColor: ['#2563eb', '#f59e0b', '#ef4444'],
                     borderWidth: 0,
                     hoverOffset: 10
                 }]
