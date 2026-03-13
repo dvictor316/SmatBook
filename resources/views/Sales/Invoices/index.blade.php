@@ -560,7 +560,6 @@
 
                     $changeAmount = (float) ($sale->change_amount ?? 0);
                     $tenderedAmount = $appliedAmount + max(0, $changeAmount);
-                    $balanceDue = max(0, $grandTotal - $appliedAmount);
                 @endphp
 
                 @forelse($sale->items ?? [] as $item)
@@ -668,10 +667,6 @@
                             <td class="label">Change</td>
                             <td class="value">₦{{ number_format($changeAmount, 2) }}</td>
                         </tr>
-                        <tr>
-                            <td class="label">Balance Due</td>
-                            <td class="value">₦{{ number_format($balanceDue, 2) }}</td>
-                        </tr>
                     </table>
                 </div>
             </div>
@@ -767,7 +762,6 @@
         const paid = '{{ number_format($appliedAmount, 2) }}';
         const tendered = '{{ number_format($tenderedAmount, 2) }}';
         const change = '{{ number_format($changeAmount, 2) }}';
-        const balance = '{{ number_format($balanceDue, 2) }}';
 
         const subject = `Invoice #${invoiceNo} from ${companyName}`;
         const body = `Dear Customer,
@@ -782,7 +776,6 @@ Total Amount: ₦${total}
 Amount Tendered: ₦${tendered}
 Applied to Sale: ₦${paid}
 Change: ₦${change}
-Balance Due: ₦${balance}
 
 Thank you for your business!
 
