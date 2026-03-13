@@ -14,11 +14,11 @@
 
 .payroll-shell {
     width: 100%;
-    max-width: 1480px;
-    margin: 0 auto;
-    padding: 1.5rem 1rem 1.75rem;
+    max-width: none;
+    margin: 0;
+    padding: 1rem 0.35rem 1.5rem;
     overflow-x: hidden;
-    transition: max-width 0.3s ease, padding 0.3s ease, margin 0.3s ease;
+    transition: margin-left 0.3s ease, width 0.3s ease, padding 0.3s ease;
 }
 .payroll-shell .row {
     margin-left: 0;
@@ -347,8 +347,8 @@
 }
 @media (min-width: 768px) {
     .payroll-shell {
-        padding-left: 1.25rem;
-        padding-right: 1.25rem;
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
     }
 }
 @media (min-width: 992px) {
@@ -362,23 +362,32 @@
         padding-left: 0;
         padding-right: 0;
     }
-    body:not(.sidebar-collapsed):not(.mini-sidebar):not(.sidebar-icon-only) .payroll-shell {
-        max-width: 1420px;
-        padding-left: 0.5rem;
+    #main-content-wrapper.payroll-shell {
+        margin-left: 250px;
+        width: calc(100% - 250px);
+        padding-left: 0.85rem;
         padding-right: 1rem;
     }
-    body.sidebar-collapsed .payroll-shell,
-    body.mini-sidebar .payroll-shell,
-    body.sidebar-icon-only .payroll-shell {
-        max-width: 1340px;
-        margin-left: 0;
-        padding-left: 1.5rem;
-        padding-right: 1rem;
+    body.sidebar-collapsed #main-content-wrapper.payroll-shell,
+    body.mini-sidebar #main-content-wrapper.payroll-shell,
+    body.sidebar-icon-only #main-content-wrapper.payroll-shell {
+        margin-left: var(--sb-sidebar-collapsed, 80px);
+        width: calc(100% - var(--sb-sidebar-collapsed, 80px));
+        padding-left: 0.85rem;
+        padding-right: 0.85rem;
+    }
+}
+@media (max-width: 991.98px) {
+    #main-content-wrapper.payroll-shell {
+        margin-left: 0 !important;
+        width: 100% !important;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
     }
 }
 </style>
 
-<div class="payroll-shell">
+<div id="main-content-wrapper" class="payroll-shell">
 
     {{-- Header --}}
     <div class="payroll-header mb-4">
