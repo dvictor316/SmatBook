@@ -4618,42 +4618,9 @@
                                                 <span><img src="{{ URL::asset('/assets/img/icons/search.svg')}}" alt="img"></span>
                                             </div>
                                             <div class="selectBox-cont">
-                                                <label class="custom_check w-100">
-                                                    <input type="checkbox" name="username">
-                                                    <span class="checkmark"></span> John Smith
-                                                </label>
-                                                <label class="custom_check w-100">
-                                                    <input type="checkbox" name="username">
-                                                    <span class="checkmark"></span> Johnny
-                                                </label>
-                                                <label class="custom_check w-100">
-                                                    <input type="checkbox" name="username">
-                                                    <span class="checkmark"></span> Robert
-                                                </label>
-                                                <label class="custom_check w-100">
-                                                    <input type="checkbox" name="username">
-                                                    <span class="checkmark"></span> Sharonda
-                                                </label>
-                                                <!-- View All -->
-                                                <div class="view-content">
-                                                    <div class="viewall-One">
-                                                        <label class="custom_check w-100">
-                                                            <input type="checkbox" name="username">
-                                                            <span class="checkmark"></span> Pricilla
-                                                        </label>
-                                                        <label class="custom_check w-100">
-                                                            <input type="checkbox" name="username">
-                                                            <span class="checkmark"></span> Randall
-                                                        </label>
-                                                    </div>
-                                                    <div class="view-all">
-                                                        <a href="javascript:void(0);"
-                                                            class="viewall-button-One"><span class="me-2">View
-                                                                All</span><span><i
-                                                                    class="fa fa-circle-chevron-down"></i></span></a>
-                                                    </div>
+                                                <div class="text-muted small py-2">
+                                                    Customer filtering will list live quotation customers here once filter wiring is enabled.
                                                 </div>
-                                                <!-- /View All -->
                                             </div>
                                         </div>
                                     </div>
@@ -5961,41 +5928,9 @@
                             <div class="card-body-chat">
                                 <div id="checkBoxes3">
                                     <div class="selectBox-cont">
-                                        <label class="custom_check w-100">
-                                            <input type="checkbox" name="category">
-                                            <span class="checkmark"></span> 4905681
-                                        </label>
-                                        <label class="custom_check w-100">
-                                            <input type="checkbox" name="category">
-                                            <span class="checkmark"></span> 4905682
-                                        </label>
-                                        <label class="custom_check w-100">
-                                            <input type="checkbox" name="category">
-                                            <span class="checkmark"></span> 4905683
-                                        </label>
-                                        <label class="custom_check w-100">
-                                            <input type="checkbox" name="category">
-                                            <span class="checkmark"></span> 4905684
-                                        </label>
-                                        <!-- View All -->
-                                        <div class="view-content">
-                                            <div class="viewall-Two">
-                                                <label class="custom_check w-100">
-                                                    <input type="checkbox" name="username">
-                                                    <span class="checkmark"></span> 4905685
-                                                </label>
-                                                <label class="custom_check w-100">
-                                                    <input type="checkbox" name="username">
-                                                    <span class="checkmark"></span> 4905686
-                                                </label>
-                                            </div>
-                                            <div class="view-all">
-                                                <a href="javascript:void(0);" class="viewall-button-Two"><span
-                                                        class="me-2">View All</span><span><i
-                                                            class="fa fa-circle-chevron-down"></i></span></a>
-                                            </div>
+                                        <div class="text-muted small py-2">
+                                            Quotation ID filters will appear here from real records instead of hardcoded values.
                                         </div>
-                                        <!-- /View All -->
                                     </div>
                                 </div>
                             </div>
@@ -9686,42 +9621,9 @@
                                                         alt="img"></span>
                                             </div>
                                             <div class="selectBox-cont">
-                                                <label class="custom_check w-100">
-                                                    <input type="checkbox" name="username">
-                                                    <span class="checkmark"></span> Orn LLC
-                                                </label>
-                                                <label class="custom_check w-100">
-                                                    <input type="checkbox" name="username">
-                                                    <span class="checkmark"></span> Accent Technology
-                                                </label>
-                                                <label class="custom_check w-100">
-                                                    <input type="checkbox" name="username">
-                                                    <span class="checkmark"></span> Express Advertising
-                                                </label>
-                                                <label class="custom_check w-100">
-                                                    <input type="checkbox" name="username">
-                                                    <span class="checkmark"></span> Lexicon Technologies
-                                                </label>
-                                                <!-- View All -->
-                                                <div class="view-content">
-                                                    <div class="viewall-One">
-                                                        <label class="custom_check w-100">
-                                                            <input type="checkbox" name="username">
-                                                            <span class="checkmark"></span> Sumo Soft Limited
-                                                        </label>
-                                                        <label class="custom_check w-100">
-                                                            <input type="checkbox" name="username">
-                                                            <span class="checkmark"></span> Repair Group Co
-                                                        </label>
-                                                    </div>
-                                                    <div class="view-all">
-                                                        <a href="javascript:void(0);"
-                                                            class="viewall-button-One"><span class="me-2">View
-                                                                All</span><span><i
-                                                                    class="fa fa-circle-chevron-down"></i></span></a>
-                                                    </div>
+                                                <div class="text-muted small py-2">
+                                                    Report company filters will use live quotation customers here when this filter drawer is connected.
                                                 </div>
-                                                <!-- /View All -->
                                             </div>
                                         </div>
                                     </div>
@@ -16382,4 +16284,3 @@
     </div>
     <!-- /Add User -->
 @endif
-

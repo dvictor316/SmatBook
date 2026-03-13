@@ -25,12 +25,6 @@
             @endcomponent
             <!-- /Search Filter -->
 
-            <div class="mb-3 text-end">
-                <a href="{{ route('add-quotations') }}" class="btn btn-primary">
-                    <i class="fas fa-plus-circle me-1"></i> New Quotation
-                </a>
-            </div>
-
             <!-- Table -->
             <div class="row">
                 <div class="col-sm-12">
