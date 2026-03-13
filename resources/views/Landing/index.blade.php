@@ -1049,11 +1049,12 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
         margin-inline: calc(50% - 50vw);
     }
     .gadget-stage {
-        width: 100vw;
+        width: 100%;
         border-radius: 24px;
         padding: 18px 0 14px;
         border-left: 0;
         border-right: 0;
+        box-sizing: border-box;
     }
     .gadget-stage::before {
         inset: 10px 0;
@@ -1067,6 +1068,33 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     }
     .gadget-card {
         border-radius: 18px;
+    }
+    .gadget-topline,
+    .gadget-bar-label,
+    .gadget-mini-row {
+        gap: 12px;
+    }
+    .gadget-topline {
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+    .gadget-title,
+    .gadget-mini-label {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+    .gadget-chip,
+    .gadget-mini-value,
+    .gadget-bar-label span:last-child {
+        flex-shrink: 0;
+        text-align: right;
+    }
+    .gadget-bar-label {
+        align-items: flex-start;
+    }
+    .gadget-bar-label span:first-child {
+        flex: 1 1 auto;
+        min-width: 0;
     }
     .gadget-stat-grid { grid-template-columns: 1fr; }
     .benefit-card { border: 1px solid var(--border); box-shadow: none; }
