@@ -10,6 +10,11 @@
                         <h5>Edit Quotation</h5>
                     </div>
                 </div>
+                @if($errors->any())
+                    <div class="alert alert-danger border-0 shadow-sm">
+                        {{ $errors->first() }}
+                    </div>
+                @endif
 
                 @if(empty($quotation))
                     <div class="alert alert-warning">No quotation found to edit.</div>
@@ -43,10 +48,10 @@
                                     <option value="Rejected" {{ $status === 'Rejected' ? 'selected' : '' }}>Rejected</option>
                                 </select>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Total Amount</label>
-                                <input type="number" step="0.01" min="0" name="total" class="form-control" value="{{ old('total', $quotation->total) }}" required>
-                            </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Total Amount</label>
+                            <input type="number" step="0.01" min="0" name="total" class="form-control" value="{{ old('total', (float) $quotation->total) }}" required>
+                        </div>
                             <div class="col-md-12 mb-3">
                                 <label class="form-label">Note</label>
                                 <textarea name="note" rows="4" class="form-control">{{ old('note', $quotation->note) }}</textarea>

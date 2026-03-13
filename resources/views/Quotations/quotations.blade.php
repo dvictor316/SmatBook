@@ -13,10 +13,23 @@
             @endcomponent
             <!-- /Page Header -->
 
+            @if(session('success'))
+                <div class="alert alert-success border-0 shadow-sm">{{ session('success') }}</div>
+            @endif
+            @if(session('error'))
+                <div class="alert alert-danger border-0 shadow-sm">{{ session('error') }}</div>
+            @endif
+
             <!-- Search Filter -->
             @component('components.search-filter')
             @endcomponent
             <!-- /Search Filter -->
+
+            <div class="mb-3 text-end">
+                <a href="{{ route('add-quotations') }}" class="btn btn-primary">
+                    <i class="fas fa-plus-circle me-1"></i> New Quotation
+                </a>
+            </div>
 
             <!-- Table -->
             <div class="row">
@@ -24,19 +37,25 @@
                     <div class="card-table">
                         <div class="card-body">
                             <div class="table-responsive">
-                                <table class="table table-stripped table-hover datatable">
+                                <table class="table table-stripped table-hover">
                                     <thead class="thead-light">
                                         <tr>
                                             <th>#</th>
                                             <th>Quotation ID</th>
                                             <th>Customer</th>
                                             <th>Created On</th>
+                                            <th>Total</th>
                                             <th>Status</th>
                                             <th class="text-end">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         @forelse (($quotations ?? collect()) as $quotation)
+                                            @php
+                                                $customerName = $quotation->customer->name
+                                                    ?? $quotation->customer->customer_name
+                                                    ?? 'Walk-in Customer';
+                                            @endphp
                                             <tr>
                                                 <td>{{ $quotation->id }}</td>
                                                 <td>{{ $quotation->quotation_id }}</td>
@@ -46,11 +65,12 @@
                                                                 class="avatar-img rounded-circle"
                                                                 src="{{ URL::asset('assets/img/profiles/avatar-01.jpg') }}"
                                                                 alt="User Image"></a>
-                                                        <a href="{{ url('profile') }}">{{ $quotation->customer->name ?? 'Walk-in Customer' }} <span>
+                                                        <a href="{{ url('profile') }}">{{ $customerName }} <span>
                                                                 {{ $quotation->customer->phone ?? '' }}</span></a>
                                                     </h2>
                                                 </td>
                                                 <td>{{ optional($quotation->created_at)->format('d M Y') }}</td>
+                                                <td class="fw-semibold">₦{{ number_format((float) ($quotation->total ?? 0), 2) }}</td>
                                                 <td><span
                                                         class="badge {{ strtolower((string) $quotation->status) === 'sent' ? 'bg-info-light text-info' : 'bg-warning-light text-warning' }}">{{ $quotation->status }}</span>
                                                 </td>
@@ -109,7 +129,7 @@
                                                 </td>
                                             </tr>
                                         @empty
-                                            <tr><td colspan="6" class="text-center py-4 text-muted">No quotations found.</td></tr>
+                                            <tr><td colspan="7" class="text-center py-4 text-muted">No quotations found.</td></tr>
                                         @endforelse
                                     </tbody>
                                 </table>

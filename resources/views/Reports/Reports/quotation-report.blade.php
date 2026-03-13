@@ -41,7 +41,7 @@
         {{-- Filter Card --}}
         <div class="card mb-4 border-0 shadow-sm no-print">
             <div class="card-body">
-                <form action="{{ route('reports.quotation') }}" method="GET">
+                <form action="{{ \Illuminate\Support\Facades\Route::has('reports.quotation') ? route('reports.quotation') : route('quotation') }}" method="GET">
                     <div class="row g-3 align-items-end">
                         <div class="col-md-3">
                             <label class="small fw-bold">From Date</label>
@@ -74,9 +74,14 @@
                         </thead>
                         <tbody>
                             @forelse($quotationreports as $quotation)
+                            @php
+                                $customerName = $quotation->customer->name
+                                    ?? $quotation->customer->customer_name
+                                    ?? 'Walk-in Customer';
+                            @endphp
                             <tr>
                                 <td class="fw-bold">{{ $quotation->quotation_id }}</td>
-                                <td>{{ $quotation->customer->name ?? 'Walk-in Customer' }}</td>
+                                <td>{{ $customerName }}</td>
                                 <td>{{ \Carbon\Carbon::parse($quotation->created_at)->format('d M, Y') }}</td>
                                 <td class="fw-bold text-dark">₦{{ number_format($quotation->total, 2) }}</td>
                                 <td>

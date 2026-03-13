@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\{Company, Subscription, User, DeploymentManager};
 use App\Models\Customer;
 use App\Models\Quotation;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\{Auth, DB, Log, Schema, Storage, Hash};
 use Illuminate\Http\Request;
 
@@ -274,30 +275,41 @@ class HomeController extends Controller
     // Quotations / Delivery pages used by sidebar links
     public function quotations()
     {
-        $quotations = Quotation::with('customer')->latest()->paginate(20);
+        $quotations = Schema::hasTable('quotations')
+            ? Quotation::with('customer')->latest()->paginate(20)
+            : new LengthAwarePaginator([], 0, 20);
         return view('Quotations.quotations', compact('quotations'));
     }
 
     public function add_quotations()
     {
-        $customerNameColumn = Schema::hasColumn('customers', 'name') ? 'name' : 'customer_name';
-        $customers = Customer::orderBy($customerNameColumn)->get();
+        $customers = collect();
+        if (Schema::hasTable('customers')) {
+            $customerNameColumn = Schema::hasColumn('customers', 'name') ? 'name' : 'customer_name';
+            $customers = Customer::orderBy($customerNameColumn)->get();
+        }
         return view('Quotations.add-quotations', compact('customers'));
     }
 
     public function edit_quotations($id = null)
     {
-        $quotation = $id ? Quotation::findOrFail($id) : Quotation::latest()->first();
-        $customerNameColumn = Schema::hasColumn('customers', 'name') ? 'name' : 'customer_name';
-        $customers = Customer::orderBy($customerNameColumn)->get();
+        $quotation = Schema::hasTable('quotations')
+            ? ($id ? Quotation::findOrFail($id) : Quotation::latest()->first())
+            : null;
+        $customers = collect();
+        if (Schema::hasTable('customers')) {
+            $customerNameColumn = Schema::hasColumn('customers', 'name') ? 'name' : 'customer_name';
+            $customers = Customer::orderBy($customerNameColumn)->get();
+        }
         return view('Quotations.edit-quotations', compact('quotation', 'customers'));
     }
 
     public function storeQuotation(Request $request)
     {
+        $customerValidation = Schema::hasTable('customers') ? 'nullable|exists:customers,id' : 'nullable';
         $validated = $request->validate([
             'quotation_id' => 'nullable|string|max:100',
-            'customer_id' => 'nullable|exists:customers,id',
+            'customer_id' => $customerValidation,
             'total' => 'required|numeric|min:0',
             'status' => 'nullable|string|max:50',
             'note' => 'nullable|string|max:1000',
@@ -316,10 +328,11 @@ class HomeController extends Controller
     public function updateQuotation(Request $request, $id)
     {
         $quotation = Quotation::findOrFail($id);
+        $customerValidation = Schema::hasTable('customers') ? 'nullable|exists:customers,id' : 'nullable';
 
         $validated = $request->validate([
             'quotation_id' => 'required|string|max:100|unique:quotations,quotation_id,' . $quotation->id,
-            'customer_id' => 'nullable|exists:customers,id',
+            'customer_id' => $customerValidation,
             'total' => 'required|numeric|min:0',
             'status' => 'nullable|string|max:50',
             'note' => 'nullable|string|max:1000',

@@ -10,6 +10,11 @@
                         <h5>Create Quotation</h5>
                     </div>
                 </div>
+                @if($errors->any())
+                    <div class="alert alert-danger border-0 shadow-sm">
+                        {{ $errors->first() }}
+                    </div>
+                @endif
                 <form action="{{ route('quotations.store') }}" method="POST">
                     @csrf
                     <div class="row">
@@ -22,7 +27,9 @@
                             <select name="customer_id" class="form-control">
                                 <option value="">Walk-in Customer</option>
                                 @foreach(($customers ?? collect()) as $customer)
-                                    <option value="{{ $customer->id }}">{{ $customer->name ?? $customer->customer_name }}</option>
+                                    <option value="{{ $customer->id }}" {{ (string) old('customer_id') === (string) $customer->id ? 'selected' : '' }}>
+                                        {{ $customer->name ?? $customer->customer_name }}
+                                    </option>
                                 @endforeach
                             </select>
                         </div>
@@ -37,11 +44,11 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Total Amount</label>
-                            <input type="number" step="0.01" min="0" name="total" class="form-control" required>
+                            <input type="number" step="0.01" min="0" name="total" class="form-control" value="{{ old('total') }}" required>
                         </div>
                         <div class="col-md-12 mb-3">
                             <label class="form-label">Note</label>
-                            <textarea name="note" rows="4" class="form-control"></textarea>
+                            <textarea name="note" rows="4" class="form-control">{{ old('note') }}</textarea>
                         </div>
                     </div>
                     <div class="text-end">
