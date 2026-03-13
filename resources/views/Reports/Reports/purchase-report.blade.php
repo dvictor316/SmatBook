@@ -20,10 +20,6 @@
                                 </span>
                                 <div class="dash-count">
                                     <p class="text-muted mb-1">{{ __('Total Purchase Value') }}</p>
-                                    @php
-                                        // sum() works on the collection provided by the controller
-                                        $totalSum = $purchases->sum('Amount');
-                                    @endphp
                                     <h4 class="mb-0 fw-bold">{{ number_format($totalSum, 2) }}</h4>
                                 </div>
                             </div>
@@ -87,7 +83,7 @@
                             {{-- Pagination Links --}}
                             <div class="d-flex justify-content-between align-items-center mt-3">
                                 <div>
-                                    Showing {{ $purchases->firstItem() }} to {{ $purchases->lastItem() }} of {{ $purchases->total() }} entries
+                                    Showing {{ $purchases->firstItem() ?? 0 }} to {{ $purchases->lastItem() ?? 0 }} of {{ $purchases->total() }} entries
                                 </div>
                                 <div>
                                     {{ $purchases->appends(request()->query())->links() }}
