@@ -1603,6 +1603,37 @@ $(document).ready(function() {
         $('#change-amount').text(fmt.format(change)).css('color', change < 0 ? 'var(--danger-500)' : 'var(--success-500)');
     }
 
+    function restoreProcessButton() {
+        $('#process-btn').prop('disabled', false).removeClass('processing');
+        $('#btn-text').show();
+        $('#btn-loading').hide();
+    }
+
+    function resetPosWorkspace() {
+        cart = [];
+        lastSelectedProductId = null;
+
+        $('#customer-select').val(null).trigger('change');
+        $('#payment-method').val('Cash').trigger('change');
+        $('#split-cash, #split-card, #split-transfer').val(0);
+        $('#split-box').hide();
+        $('#amount-paid').prop('readonly', false).val('0.00');
+
+        $('#product-select').val('').trigger('change');
+        $('#product-search').val(null).trigger('change.select2');
+        $('#quick-search').val('');
+        $('#barcode-input').val('');
+        $('#quantity').val(1);
+        $('#discount, #tax').val(0);
+        $('#unit-type-price').prop('checked', true);
+
+        filterProductCards();
+        renderCart();
+        restoreProcessButton();
+
+        setTimeout(() => $('#barcode-input').trigger('focus'), 50);
+    }
+
     // Process Sale
     $('#process-btn').on('click', function() {
         if(!cart.length) {
@@ -1652,27 +1683,23 @@ $(document).ready(function() {
                     window.open(invoiceUrl, '_blank');
                 }
 
+                resetPosWorkspace();
+
                 Swal.fire({
                     icon: 'success',
                     title: 'Sale completed',
-                    text: 'Preparing receipt and resetting POS...',
-                    timer: 1400,
+                    text: 'Receipt opened. POS is ready for the next sale.',
+                    timer: 1600,
                     showConfirmButton: false,
                     toast: true,
                     position: 'top-end'
                 });
-
-                setTimeout(() => {
-                    window.location.href = "{{ route('sales.showPos') }}";
-                }, 250);
             },
             error: function(xhr) {
                 if (receiptWindow && !receiptWindow.closed) {
                     receiptWindow.close();
                 }
-                $('#process-btn').prop('disabled', false).removeClass('processing');
-                $('#btn-text').show();
-                $('#btn-loading').hide();
+                restoreProcessButton();
                 Swal.fire({ icon: 'error', title: 'Error', text: xhr.responseJSON?.message || 'Failed', confirmButtonColor: '#ef4444' });
             }
         });
