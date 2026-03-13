@@ -613,9 +613,13 @@
                 <div class="amount-words">
                     @php
                         try {
-                            $formatter = new \NumberFormatter('en', \NumberFormatter::SPELLOUT);
-                            $words = ucwords($formatter->format($grandTotal)) . ' Naira Only';
-                        } catch (\Exception $e) {
+                            if (class_exists(\NumberFormatter::class)) {
+                                $formatter = new \NumberFormatter('en', \NumberFormatter::SPELLOUT);
+                                $words = ucwords($formatter->format($grandTotal)) . ' Naira Only';
+                            } else {
+                                $words = 'Amount: ₦' . number_format($grandTotal, 2);
+                            }
+                        } catch (\Throwable $e) {
                             $words = 'Amount: ₦' . number_format($grandTotal, 2);
                         }
                     @endphp

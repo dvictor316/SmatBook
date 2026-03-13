@@ -1663,7 +1663,7 @@ $(document).ready(function() {
                 });
 
                 setTimeout(() => {
-                    window.location.href = "{{ route('sales.returnToPos') }}";
+                    window.location.href = "{{ route('sales.showPos') }}";
                 }, 250);
             },
             error: function(xhr) {
