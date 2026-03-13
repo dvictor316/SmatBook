@@ -353,17 +353,26 @@
     }
 
     .btn-smat-red {
-        background: linear-gradient(145deg, #2348c7 0%, #1b2fb5 38%, #0a148a 100%);
-        color: var(--spa-gold); border: none; padding: 14px;
-        border-radius: 16px; width: 100%; font-weight: 800; font-size: 13px;
-        box-shadow: 0 16px 30px rgba(10, 20, 138, 0.28); transition: 0.3s;
-        margin-top: 10px; text-transform: uppercase; letter-spacing: 1px;
-        border: 1px solid rgba(255, 224, 138, 0.18);
+        background: linear-gradient(180deg, #edf4ff 0%, #dce9ff 100%);
+        color: #173b92;
+        border: 1px solid #c7d8f8;
+        padding: 14px;
+        border-radius: 16px;
+        width: 100%;
+        font-weight: 800;
+        font-size: 13px;
+        box-shadow: 0 14px 28px rgba(37, 99, 235, 0.12);
+        transition: 0.3s;
+        margin-top: 10px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
     }
 
     .btn-smat-red:hover {
-        transform: translateY(-2px); box-shadow: 0 18px 34px rgba(10, 20, 138, 0.34); color: #fff4c8;
-        background: linear-gradient(145deg, #294fd3 0%, #2038c6 42%, #0e1a99 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 18px 32px rgba(37, 99, 235, 0.16);
+        color: #0f2f80;
+        background: linear-gradient(180deg, #e4efff 0%, #d1e2ff 100%);
     }
 
     .error-pill {
@@ -381,27 +390,26 @@
         gap: 10px;
     }
     .bottom-action-link {
-        border: 1px solid #dbe5f2;
+        border: 1px solid #cfe0fb;
         border-radius: 14px;
         padding: 12px 14px;
         text-decoration: none;
-        color: var(--spa-gold) !important;
+        color: #173b92 !important;
         font-size: 11px;
         font-weight: 800;
-        background: linear-gradient(145deg, #2348c7 0%, #1b2fb5 38%, #0a148a 100%);
-        box-shadow: 0 14px 30px rgba(10, 20, 138, 0.26);
+        background: linear-gradient(180deg, #eef5ff 0%, #dce9ff 100%);
+        box-shadow: 0 12px 24px rgba(37, 99, 235, 0.1);
         transition: all 0.2s ease;
         text-align: center;
         display: block;
-        border-color: rgba(255, 224, 138, 0.22);
     }
     .bottom-link .bottom-action-link,
     .bottom-link .bottom-action-link:visited {
-        color: var(--spa-gold) !important;
+        color: #173b92 !important;
     }
     .bottom-action-link:hover {
-        border-color: rgba(255, 224, 138, 0.42);
-        color: #fff4c8 !important;
+        border-color: #b9d0fb;
+        color: #0f2f80 !important;
         transform: translateY(-2px);
     }
 
@@ -424,8 +432,8 @@
         text-transform: uppercase;
     }
     .btn-social {
-        background: linear-gradient(145deg, #2348c7 0%, #1b2fb5 38%, #0a148a 100%);
-        border: 1px solid rgba(255, 224, 138, 0.22);
+        background: linear-gradient(180deg, #f6faff 0%, #e8f0ff 100%);
+        border: 1px solid #d4e2fa;
         padding: 11px;
         border-radius: 14px;
         display: flex;
@@ -434,15 +442,15 @@
         gap: 10px;
         font-size: 13px;
         font-weight: 800;
-        color: #f8fbff;
+        color: #173b92;
         text-decoration: none;
         transition: 0.2s;
-        box-shadow: 0 14px 28px rgba(10, 20, 138, 0.18);
+        box-shadow: 0 12px 24px rgba(37, 99, 235, 0.08);
     }
     .btn-social:hover {
-        background: linear-gradient(145deg, #294fd3 0%, #2038c6 42%, #0e1a99 100%);
-        border-color: rgba(255, 224, 138, 0.42);
-        color: #fff4c8;
+        background: linear-gradient(180deg, #eef5ff 0%, #deeaff 100%);
+        border-color: #bfd4fb;
+        color: #0f2f80;
         transform: translateY(-1px);
     }
     .social-mark {
