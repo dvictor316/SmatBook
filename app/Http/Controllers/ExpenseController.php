@@ -13,6 +13,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\File;
+use RuntimeException;
 
 class ExpenseController extends Controller
 {
@@ -116,14 +119,35 @@ class ExpenseController extends Controller
         });
     }
 
-private function handleFileUpload($request) {
-    if ($request->hasFile('image')) {
-        $imageName = time() . '.' . $request->image->extension();
-        $request->image->move(public_path('assets/img/expenses'), $imageName);
-        return $imageName;
+    private function handleFileUpload($request)
+    {
+        if (!$request->hasFile('image')) {
+            return null;
+        }
+
+        $image = $request->file('image');
+        $imageName = time() . '_' . uniqid('', true) . '.' . $image->getClientOriginalExtension();
+        $publicDir = public_path('assets/img/expenses');
+
+        try {
+            if (!File::isDirectory($publicDir)) {
+                File::makeDirectory($publicDir, 0755, true);
+            }
+
+            if (is_writable($publicDir)) {
+                $image->move($publicDir, $imageName);
+                return $imageName;
+            }
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
+        if (Storage::disk('public')->putFileAs('expenses', $image, $imageName)) {
+            return $imageName;
+        }
+
+        throw new RuntimeException('Expense receipt upload failed. Storage directory is not writable.');
     }
-    return null;
-}
 
     public function update(Request $request, Expense $expense)
     {
@@ -144,9 +168,7 @@ private function handleFileUpload($request) {
             $paymentAccount = Account::findOrFail((int) $validated['payment_account_id']);
 
             if ($request->hasFile('image')) {
-                if ($expense->image && file_exists(public_path('assets/img/expenses/' . $expense->image))) {
-                    unlink(public_path('assets/img/expenses/' . $expense->image));
-                }
+                $this->deleteExpenseAttachment($expense->image);
                 $validated['image'] = $this->handleFileUpload($request);
             }
 
@@ -210,9 +232,7 @@ private function handleFileUpload($request) {
             ->delete();
 
         // Delete image if exists
-        if ($expense->image && file_exists(public_path('assets/img/expenses/' . $expense->image))) {
-            unlink(public_path('assets/img/expenses/' . $expense->image));
-        }
+        $this->deleteExpenseAttachment($expense->image);
 
         $expense->delete();
 
@@ -225,9 +245,9 @@ private function handleFileUpload($request) {
      */
     public function download($filename)
     {
-        $filepath = public_path('assets/img/expenses/' . $filename);
-        
-        if (file_exists($filepath)) {
+        $filepath = $this->resolveExpenseAttachmentPath($filename);
+
+        if ($filepath) {
             return response()->download($filepath);
         }
         
@@ -395,6 +415,33 @@ private function handleFileUpload($request) {
                     'is_active' => true,
                 ]
             );
+        }
+    }
+
+    private function resolveExpenseAttachmentPath(?string $filename): ?string
+    {
+        if (!$filename) {
+            return null;
+        }
+
+        $publicPath = public_path('assets/img/expenses/' . $filename);
+        if (file_exists($publicPath)) {
+            return $publicPath;
+        }
+
+        $storagePath = storage_path('app/public/expenses/' . $filename);
+        if (file_exists($storagePath)) {
+            return $storagePath;
+        }
+
+        return null;
+    }
+
+    private function deleteExpenseAttachment(?string $filename): void
+    {
+        $filepath = $this->resolveExpenseAttachmentPath($filename);
+        if ($filepath && file_exists($filepath)) {
+            @unlink($filepath);
         }
     }
 

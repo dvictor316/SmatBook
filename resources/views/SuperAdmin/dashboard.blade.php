@@ -19,6 +19,18 @@
         --dash-line: #dbe5f0;
         --dash-surface: #ffffff;
         --dash-surface-soft: #f8fbff;
+        --kpi-indigo-start: #312e81;
+        --kpi-indigo-end: #4f46e5;
+        --kpi-emerald-start: #065f46;
+        --kpi-emerald-end: #10b981;
+        --kpi-cyan-start: #164e63;
+        --kpi-cyan-end: #06b6d4;
+        --kpi-amber-start: #92400e;
+        --kpi-amber-end: #f59e0b;
+        --kpi-rose-start: #881337;
+        --kpi-rose-end: #f43f5e;
+        --kpi-slate-start: #0f172a;
+        --kpi-slate-end: #334155;
     }
 
     #main-content-wrapper,
@@ -339,13 +351,28 @@
     .tone-card {
         border: 1px solid transparent;
         border-radius: 16px;
-        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+        box-shadow: 0 18px 36px rgba(15, 23, 42, 0.14);
+        position: relative;
+        overflow: hidden;
+    }
+    .tone-card::after {
+        content: "";
+        position: absolute;
+        inset: auto -28px -38px auto;
+        width: 140px;
+        height: 140px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.12);
+        pointer-events: none;
     }
     .tone-card .mini-label,
     .tone-card small,
     .tone-card .tone-note {
         color: inherit;
-        opacity: 0.9;
+        opacity: 0.82;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        font-weight: 700;
     }
     .tone-card .tone-value,
     .tone-card h5,
@@ -353,40 +380,138 @@
     .tone-card .mdi {
         color: inherit;
     }
+    .tone-card .tone-value {
+        font-size: clamp(1.45rem, 2vw, 2rem);
+        letter-spacing: -0.04em;
+    }
     .tone-indigo {
-        background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
-        border-color: #c7d2fe;
-        color: #312e81;
+        background:
+            radial-gradient(circle at top right, rgba(255,255,255,0.18), transparent 34%),
+            linear-gradient(135deg, var(--kpi-indigo-start) 0%, var(--kpi-indigo-end) 100%);
+        border-color: rgba(165, 180, 252, 0.34);
+        color: #f8fafc;
     }
     .tone-sky {
-        background: linear-gradient(135deg, #ecfeff 0%, #dff7ff 100%);
-        border-color: #bae6fd;
-        color: #0f4c81;
+        background:
+            radial-gradient(circle at top right, rgba(255,255,255,0.18), transparent 34%),
+            linear-gradient(135deg, var(--kpi-cyan-start) 0%, var(--kpi-cyan-end) 100%);
+        border-color: rgba(103, 232, 249, 0.34);
+        color: #ecfeff;
     }
     .tone-emerald {
-        background: linear-gradient(135deg, #ecfdf5 0%, #dcfce7 100%);
-        border-color: #a7f3d0;
-        color: #065f46;
+        background:
+            radial-gradient(circle at top right, rgba(255,255,255,0.18), transparent 34%),
+            linear-gradient(135deg, var(--kpi-emerald-start) 0%, var(--kpi-emerald-end) 100%);
+        border-color: rgba(110, 231, 183, 0.34);
+        color: #ecfdf5;
     }
     .tone-amber {
-        background: linear-gradient(135deg, #fff7ed 0%, #fef3c7 100%);
-        border-color: #fcd34d;
-        color: #92400e;
+        background:
+            radial-gradient(circle at top right, rgba(255,255,255,0.18), transparent 34%),
+            linear-gradient(135deg, var(--kpi-amber-start) 0%, var(--kpi-amber-end) 100%);
+        border-color: rgba(253, 230, 138, 0.36);
+        color: #fffbeb;
     }
     .tone-rose {
-        background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%);
-        border-color: #fecdd3;
-        color: #9f1239;
+        background:
+            radial-gradient(circle at top right, rgba(255,255,255,0.18), transparent 34%),
+            linear-gradient(135deg, var(--kpi-rose-start) 0%, var(--kpi-rose-end) 100%);
+        border-color: rgba(253, 164, 175, 0.34);
+        color: #fff1f2;
     }
     .tone-slate {
-        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-        border-color: #cbd5e1;
-        color: #334155;
+        background:
+            radial-gradient(circle at top right, rgba(255,255,255,0.14), transparent 34%),
+            linear-gradient(135deg, var(--kpi-slate-start) 0%, var(--kpi-slate-end) 100%);
+        border-color: rgba(148, 163, 184, 0.32);
+        color: #f8fafc;
     }
     .tone-violet {
-        background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
-        border-color: #ddd6fe;
-        color: #5b21b6;
+        background:
+            radial-gradient(circle at top right, rgba(255,255,255,0.18), transparent 34%),
+            linear-gradient(135deg, #4c1d95 0%, #7c3aed 100%);
+        border-color: rgba(196, 181, 253, 0.34);
+        color: #f5f3ff;
+    }
+    .executive-kpi {
+        border: none !important;
+        border-radius: 22px !important;
+        min-height: 192px;
+        overflow: hidden;
+        position: relative;
+        box-shadow: 0 22px 44px rgba(15, 23, 42, 0.16) !important;
+    }
+    .executive-kpi::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 32%);
+        pointer-events: none;
+    }
+    .executive-kpi .card-body {
+        position: relative;
+        z-index: 1;
+        padding: 1.4rem;
+    }
+    .executive-kpi .kpi-icon-shell {
+        width: 58px;
+        height: 58px;
+        border-radius: 18px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255,255,255,0.14);
+        border: 1px solid rgba(255,255,255,0.16);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);
+        color: #fff;
+    }
+    .executive-kpi .kpi-kicker {
+        font-size: 0.7rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: rgba(255,255,255,0.72) !important;
+    }
+    .executive-kpi .kpi-value {
+        font-size: clamp(1.9rem, 2.5vw, 2.6rem);
+        line-height: 1;
+        letter-spacing: -0.05em;
+        color: #fff !important;
+    }
+    .executive-kpi .kpi-note {
+        color: rgba(255,255,255,0.78) !important;
+        font-size: 0.88rem;
+    }
+    .executive-kpi .kpi-badge {
+        border-radius: 999px;
+        padding: 0.35rem 0.7rem;
+        font-size: 0.68rem;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        background: rgba(255,255,255,0.16);
+        color: #fff;
+        border: 1px solid rgba(255,255,255,0.14);
+    }
+    .executive-kpi.kpi-revenue {
+        background:
+            radial-gradient(circle at top right, rgba(255,255,255,0.18), transparent 30%),
+            linear-gradient(135deg, #0f172a 0%, #1d4ed8 52%, #38bdf8 100%);
+    }
+    .executive-kpi.kpi-subscriptions {
+        background:
+            radial-gradient(circle at top right, rgba(255,255,255,0.18), transparent 30%),
+            linear-gradient(135deg, #052e16 0%, #059669 55%, #34d399 100%);
+    }
+    .executive-kpi.kpi-companies {
+        background:
+            radial-gradient(circle at top right, rgba(255,255,255,0.18), transparent 30%),
+            linear-gradient(135deg, #083344 0%, #0891b2 52%, #67e8f9 100%);
+    }
+    .executive-kpi.kpi-users {
+        background:
+            radial-gradient(circle at top right, rgba(255,255,255,0.18), transparent 30%),
+            linear-gradient(135deg, #7c2d12 0%, #f59e0b 52%, #fde68a 100%);
     }
     .summary-fill.tone-indigo .label,
     .summary-fill.tone-sky .label,
@@ -749,60 +874,69 @@
                         {{-- ROW 1: Key Financial & User Metrics --}}
                         <div class="row">
                             <div class="col-lg-3 col-md-6 grid-margin stretch-card">
-                                <div class="card card-gradient shadow-sm border-0">
+                                <div class="card executive-kpi kpi-revenue border-0">
                                     <div class="card-body">
                                         <div class="d-flex justify-content-between align-items-start">
-                                            <div class="circle-shadow-primary bg-soft-primary p-3 rounded-circle">
-                                                <i class="mdi mdi-currency-usd fs-4 text-primary"></i>
+                                            <div class="kpi-icon-shell">
+                                                <i class="mdi mdi-currency-usd fs-4"></i>
                                             </div>
-                                            <div class="badge badge-success small">+12.5%</div>
+                                            <div class="kpi-badge">Revenue</div>
                                         </div>
                                         <div class="mt-3">
-                                            <h6 class="text-uppercase text-muted small fw-bold">Platform Revenue</h6>
-                                            <h3 class="text-primary fw-bold mb-0">₦{{ number_format($metrics['platform_revenue'], 2) }}</h3>
-                                            <p class="text-muted small mt-1">Total Verified Subscriptions</p>
+                                            <h6 class="kpi-kicker mb-2">Platform Revenue</h6>
+                                            <h3 class="fw-bold mb-0 kpi-value">₦{{ number_format($metrics['platform_revenue'], 2) }}</h3>
+                                            <p class="kpi-note mb-0 mt-2">Total Verified Subscriptions</p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-lg-3 col-md-6 grid-margin stretch-card">
-                                <div class="card card-gradient shadow-sm border-0">
+                                <div class="card executive-kpi kpi-subscriptions border-0">
                                     <div class="card-body">
-                                        <div class="circle-shadow-success bg-soft-success p-3 rounded-circle d-inline-block">
-                                            <i class="mdi mdi-check-decagram fs-4 text-success"></i>
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="kpi-icon-shell">
+                                                <i class="mdi mdi-check-decagram fs-4"></i>
+                                            </div>
+                                            <div class="kpi-badge">MRR</div>
                                         </div>
                                         <div class="mt-3">
-                                            <h6 class="text-uppercase text-muted small fw-bold">Active Subscriptions</h6>
-                                            <h3 class="text-success fw-bold mb-0">{{ number_format($metrics['active_subs']) }}</h3>
-                                            <p class="text-muted small mt-1">Monthly Recurring Revenue</p>
+                                            <h6 class="kpi-kicker mb-2">Active Subscriptions</h6>
+                                            <h3 class="fw-bold mb-0 kpi-value">{{ number_format($metrics['active_subs']) }}</h3>
+                                            <p class="kpi-note mb-0 mt-2">Monthly Recurring Revenue</p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-lg-3 col-md-6 grid-margin stretch-card">
-                                <div class="card card-gradient shadow-sm border-0">
+                                <div class="card executive-kpi kpi-companies border-0">
                                     <div class="card-body">
-                                        <div class="circle-shadow-info bg-soft-info p-3 rounded-circle d-inline-block">
-                                            <i class="mdi mdi-domain fs-4 text-info"></i>
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="kpi-icon-shell">
+                                                <i class="mdi mdi-domain fs-4"></i>
+                                            </div>
+                                            <div class="kpi-badge">Tenants</div>
                                         </div>
                                         <div class="mt-3">
-                                            <h6 class="text-uppercase text-muted small fw-bold">Total Companies</h6>
-                                            <h3 class="text-info fw-bold mb-0">{{ number_format($metrics['total_tenants']) }}</h3>
-                                            <p class="text-muted small mt-1">Registered Organizations</p>
+                                            <h6 class="kpi-kicker mb-2">Total Companies</h6>
+                                            <h3 class="fw-bold mb-0 kpi-value">{{ number_format($metrics['total_tenants']) }}</h3>
+                                            <p class="kpi-note mb-0 mt-2">Registered Organizations</p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-lg-3 col-md-6 grid-margin stretch-card">
-                                <div class="card card-gradient shadow-sm border-0">
+                                <div class="card executive-kpi kpi-users border-0">
                                     <div class="card-body">
-                                        <div class="circle-shadow-warning bg-soft-warning p-3 rounded-circle d-inline-block">
-                                            <i class="mdi mdi-account-group fs-4 text-warning"></i>
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="kpi-icon-shell">
+                                                <i class="mdi mdi-account-group fs-4"></i>
+                                            </div>
+                                            <div class="kpi-badge">Users</div>
                                         </div>
                                         <div class="mt-3">
-                                            <h6 class="text-uppercase text-muted small fw-bold">Total Users</h6>
-                                            <h3 class="text-warning fw-bold mb-0">{{ number_format($metrics['total_users']) }}</h3>
-                                            <p class="text-muted small mt-1">Active Accounts</p>
+                                            <h6 class="kpi-kicker mb-2">Total Users</h6>
+                                            <h3 class="fw-bold mb-0 kpi-value">{{ number_format($metrics['total_users']) }}</h3>
+                                            <p class="kpi-note mb-0 mt-2">Active Accounts</p>
                                         </div>
                                     </div>
                                 </div>
