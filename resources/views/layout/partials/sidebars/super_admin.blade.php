@@ -60,9 +60,6 @@
                         <li class="{{ Request::is('superadmin/managers*') ? 'active' : '' }}">
                             <a href="{{ route('super_admin.managers.list', $routeParams) }}">Deployment Managers</a>
                         </li>
-                        <li><a href="{{ route('super_admin.managers.pending', $routeParams) }}" class="{{ Request::is('superadmin/managers/pending') ? 'active' : '' }}">Manager Pending</a></li>
-                        <li><a href="{{ route('super_admin.managers.approved', $routeParams) }}" class="{{ Request::is('superadmin/managers/approved') ? 'active' : '' }}">Manager Approved</a></li>
-                        <li><a href="{{ route('super_admin.managers.suspended', $routeParams) }}" class="{{ Request::is('superadmin/managers/suspended') ? 'active' : '' }}">Manager Suspended</a></li>
                         <li><a href="{{ route('projects.index') }}" class="{{ Request::is('projects*') ? 'active' : '' }}">Project Management</a></li>
                         <li><a href="{{ route('projects.index') }}#profitability" class="{{ Request::is('projects*') ? 'active' : '' }}">Project Profitability</a></li>
                         <li><a href="{{ route('projects.index') }}#reputation-management" class="{{ Request::is('projects*') ? 'active' : '' }}">Reputation Management</a></li>
