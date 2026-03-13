@@ -198,6 +198,11 @@
 
 <div class="pos-content-area">
     @include('SuperAdmin.partials._subscription_status_banner')
+    @php
+        $currentMonthSales = (float) ($metrics['currentMonthSales'] ?? 0);
+        $salesGrowthRate = (float) ($metrics['salesGrowthRate'] ?? 0);
+        $inventoryValue = (float) ($metrics['inventoryValue'] ?? 0);
+    @endphp
 
     {{-- Header Section --}}
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -229,7 +234,7 @@
             <div class="metric-card-basic metric-violet">
                 <div class="small fw-bold mb-1">TOTAL INVOICES</div>
                 <h3 class="fw-bold mb-0">{{ number_format($metrics['totalInvoices'] ?? 0) }}</h3>
-                <p class="small mb-0 mt-2">Processed today</p>
+                <p class="small mb-0 mt-2">All recorded sales documents</p>
             </div>
         </div>
         <div class="col-md-3">
@@ -241,9 +246,9 @@
         </div>
         <div class="col-md-3">
             <div class="metric-card-basic metric-amber">
-                <div class="small fw-bold mb-1">STOCK VALUE</div>
-                <h3 class="fw-bold mb-0">{{ number_format($metrics['activeStock'] ?? 0) }}</h3>
-                <p class="small mb-0 mt-2">Items in inventory</p>
+                <div class="small fw-bold mb-1">INVENTORY VALUE</div>
+                <h3 class="fw-bold mb-0">₦{{ number_format($inventoryValue, 2) }}</h3>
+                <p class="small mb-0 mt-2">{{ number_format($metrics['activeStock'] ?? 0) }} units in inventory</p>
             </div>
         </div>
     </div>
@@ -324,7 +329,7 @@
             ['label' => 'Avg Order Value', 'value' => '₦' . number_format($metrics['avgOrderValue'] ?? 0, 0)],
             ['label' => 'Low Stock Alerts', 'value' => number_format($metrics['lowStockCount'] ?? 0)],
             ['label' => 'Profit Margin', 'value' => number_format($metrics['profitMargin'] ?? 0, 1) . '%'],
-            ['label' => 'Total Customers', 'value' => number_format($metrics['activeCustomers'] ?? 0)],
+            ['label' => 'Month Revenue', 'value' => '₦' . number_format($currentMonthSales, 0)],
         ] as $m)
             <div class="col-sm-6 col-xl-3">
                 <div class="mini-metric">
@@ -433,6 +438,10 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <span class="text-muted small fw-bold">Pending Balance</span>
                         <strong style="color: var(--deep-sapphire);">₦{{ number_format($metrics['pendingBalance'] ?? 0, 2) }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted small fw-bold">Sales Growth</span>
+                        <strong style="color: var(--deep-sapphire);">{{ number_format($salesGrowthRate, 1) }}%</strong>
                     </div>
                 </div>
             </div>

@@ -360,37 +360,84 @@ public function purchase_report(Request $request)
  
  public function paymentSummary(Request $request)
 {
-    // Use Payment + Sale for reliable status resolution on this page only
-    $query = Payment::with('sale');
+    $baseQuery = Payment::with(['sale.customer', 'creator', 'account']);
+    $this->scopePaymentsForActor($baseQuery);
 
-    // 1. Search Logic
+    $query = clone $baseQuery;
+
     if ($request->filled('search')) {
-        $search = $request->search;
+        $search = trim((string) $request->search);
         $query->where(function($q) use ($search) {
             $q->where('payment_id', 'like', "%$search%")
               ->orWhere('reference', 'like', "%$search%")
-              ->orWhere('note', 'like', "%$search%");
+              ->orWhere('note', 'like', "%$search%")
+              ->orWhere('method', 'like', "%$search%")
+              ->orWhere('status', 'like', "%$search%")
+              ->orWhereHas('sale', function ($saleQuery) use ($search) {
+                  $saleQuery->where('invoice_no', 'like', "%$search%")
+                      ->orWhere('order_number', 'like', "%$search%")
+                      ->orWhere('customer_name', 'like', "%$search%");
+              });
         });
     }
 
-    // 2. Filter by created_at
-    if ($request->filled('from') && $request->filled('to')) {
-        $query->whereBetween('created_at', [$request->from . ' 00:00:00', $request->to . ' 23:59:59']);
+    if ($request->filled('from')) {
+        $query->whereDate('created_at', '>=', $request->from);
+    }
+    if ($request->filled('to')) {
+        $query->whereDate('created_at', '<=', $request->to);
+    }
+    if ($request->filled('method')) {
+        $query->where('method', $request->method);
+    }
+    if ($request->filled('status')) {
+        $status = strtolower(trim((string) $request->status));
+        $query->where(function ($q) use ($status) {
+            $q->whereRaw('LOWER(COALESCE(status, "")) = ?', [$status])
+                ->orWhereHas('sale', function ($saleQuery) use ($status) {
+                    $saleQuery->whereRaw('LOWER(COALESCE(payment_status, "")) = ?', [$status]);
+                });
+        });
     }
 
-    // 3. Calculate Grand Total Revenue (before pagination)
-    $totalRevenue = $query->sum('amount');
+    $filteredPayments = (clone $query)->orderBy('created_at', 'desc')->get();
+    $filteredPayments->transform(function ($payment) {
+        $payment->resolved_status = $this->resolvePaymentStatus($payment);
+        return $payment;
+    });
 
-    // 4. Apply Pagination (10 records per page)
-    $payments = $query->orderBy('created_at', 'desc')->paginate(10);
+    $totalRevenue = (float) $filteredPayments->sum('amount');
+    $summary = [
+        'total_transactions' => $filteredPayments->count(),
+        'completed_count' => $filteredPayments->where('resolved_status', 'Completed')->count(),
+        'pending_count' => $filteredPayments->where('resolved_status', 'Pending')->count(),
+        'partial_count' => $filteredPayments->where('resolved_status', 'Partial')->count(),
+        'failed_count' => $filteredPayments->whereIn('resolved_status', ['Failed', 'Cancelled'])->count(),
+        'completed_amount' => (float) $filteredPayments->where('resolved_status', 'Completed')->sum('amount'),
+        'pending_amount' => (float) $filteredPayments->where('resolved_status', 'Pending')->sum('amount'),
+        'partial_amount' => (float) $filteredPayments->where('resolved_status', 'Partial')->sum('amount'),
+        'average_payment' => $filteredPayments->count() > 0 ? ((float) $filteredPayments->sum('amount') / $filteredPayments->count()) : 0,
+        'largest_payment' => (float) ($filteredPayments->max('amount') ?? 0),
+        'top_method' => (string) ($filteredPayments->groupBy(fn ($payment) => $payment->method ?: 'Unknown')->sortByDesc->count()->keys()->first() ?? 'N/A'),
+    ];
 
-    // Resolve status per row without mutating stored values
+    $methodOptions = (clone $baseQuery)
+        ->get()
+        ->pluck('method')
+        ->filter()
+        ->unique()
+        ->sort()
+        ->values();
+
+    $statusOptions = collect(['Completed', 'Pending', 'Partial', 'Failed', 'Cancelled']);
+
+    $payments = $query->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
     $payments->getCollection()->transform(function ($payment) {
         $payment->resolved_status = $this->resolvePaymentStatus($payment);
         return $payment;
     });
 
-    return view('Reports.payment-summary', compact('payments', 'totalRevenue'));
+    return view('Reports.payment-summary', compact('payments', 'totalRevenue', 'summary', 'methodOptions', 'statusOptions'));
 }
 
 public function show($id)
@@ -455,6 +502,37 @@ private function resolvePaymentStatus(Payment $payment): string
     }
 
     return 'Pending';
+}
+
+private function scopePaymentsForActor($query): void
+{
+    $user = Auth::user();
+    if (!$user) {
+        return;
+    }
+
+    $role = strtolower((string) ($user->role ?? ''));
+    if (in_array($role, ['super_admin', 'superadmin', 'administrator', 'admin'], true)) {
+        return;
+    }
+
+    $companyId = (int) ($user->company_id ?? 0);
+
+    $query->where(function ($paymentQuery) use ($companyId, $user) {
+        if ($companyId > 0) {
+            $paymentQuery->whereHas('sale', function ($saleQuery) use ($companyId, $user) {
+                if (Schema::hasColumn('sales', 'company_id')) {
+                    $saleQuery->where('company_id', $companyId);
+                } elseif (Schema::hasColumn('sales', 'user_id')) {
+                    $saleQuery->where('user_id', $user->id);
+                }
+            });
+        }
+
+        if (Schema::hasColumn('payments', 'created_by')) {
+            $paymentQuery->orWhere('created_by', $user->id);
+        }
+    });
 }
 
 

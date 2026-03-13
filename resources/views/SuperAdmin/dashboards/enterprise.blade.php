@@ -152,6 +152,7 @@
         $salesRunRate = $salesTotals->count() ? ($salesTotals->sum() / max($salesTotals->count(), 1)) : 0;
         $expenseRunRate = $expenseTotals->count() ? ($expenseTotals->sum() / max($expenseTotals->count(), 1)) : 0;
         $profitRunRate = $profitTotals->count() ? ($profitTotals->sum() / max($profitTotals->count(), 1)) : 0;
+        $inventoryValue = (float) ($metrics['inventoryValue'] ?? 0);
     @endphp
 
     {{-- 1. Master Header --}} 
@@ -182,10 +183,10 @@
     {{-- Enterprise Live Strip --}}
     <div class="row g-3 mb-4">
         @foreach([
-            ['label' => 'Platform Revenue', 'value' => '₦' . number_format($metrics['todayRevenue'] ?? 0, 0)],
+            ['label' => 'Platform Revenue', 'value' => '₦' . number_format($metrics['totalSales'] ?? 0, 0)],
             ['label' => 'Net Profit', 'value' => '₦' . number_format($metrics['netProfit'] ?? 0, 0)],
             ['label' => 'Expense Load', 'value' => number_format($metrics['expenseRatio'] ?? 0, 1) . '%'],
-            ['label' => 'Low Stock Alerts', 'value' => number_format($metrics['lowStockCount'] ?? 0)],
+            ['label' => 'Inventory Value', 'value' => '₦' . number_format($inventoryValue, 0)],
         ] as $m)
             <div class="col-sm-6 col-xl-3">
                 <div class="mini-metric">

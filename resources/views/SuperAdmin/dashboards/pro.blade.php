@@ -201,6 +201,11 @@
 
 <div class="pos-content-area">
     @include('SuperAdmin.partials._subscription_status_banner')
+    @php
+        $inventoryValue = (float) ($metrics['inventoryValue'] ?? 0);
+        $currentMonthSales = (float) ($metrics['currentMonthSales'] ?? 0);
+        $salesGrowthRate = (float) ($metrics['salesGrowthRate'] ?? 0);
+    @endphp
 
     {{-- Header Section --}}
     <div class="d-flex justify-content-between align-items-center mb-5">
@@ -257,8 +262,8 @@
                     <i class="fas fa-boxes fa-lg"></i>
                 </div>
                 <div class="small fw-bold text-uppercase">Inventory Assets</div>
-                <h3 class="fw-bold mb-0">{{ number_format($metrics['activeStock'] ?? 0) }}</h3>
-                <span class="small">Units across categories</span>
+                <h3 class="fw-bold mb-0">₦{{ number_format($inventoryValue, 2) }}</h3>
+                <span class="small">{{ number_format($metrics['activeStock'] ?? 0) }} units across categories</span>
             </div>
         </div>
     </div>
@@ -336,7 +341,7 @@
             ['label' => 'Profit Margin', 'value' => number_format($metrics['profitMargin'] ?? 0, 1) . '%'],
             ['label' => 'Avg Order Value', 'value' => '₦' . number_format($metrics['avgOrderValue'] ?? 0, 0)],
             ['label' => 'Expense Ratio', 'value' => number_format($metrics['expenseRatio'] ?? 0, 1) . '%'],
-            ['label' => 'Low Stock Alerts', 'value' => number_format($metrics['lowStockCount'] ?? 0)],
+            ['label' => 'Month Revenue', 'value' => '₦' . number_format($currentMonthSales, 0)],
         ] as $m)
             <div class="col-sm-6 col-xl-3">
                 <div class="mini-metric">
@@ -439,8 +444,8 @@
                     </div>
                     <div class="col-6">
                         <div class="insight-item text-start">
-                            <div class="label">Expense Ratio</div>
-                            <div class="value">{{ number_format($metrics['expenseRatio'] ?? 0, 1) }}%</div>
+                            <div class="label">Sales Growth</div>
+                            <div class="value">{{ number_format($salesGrowthRate, 1) }}%</div>
                         </div>
                     </div>
                     <div class="col-6">

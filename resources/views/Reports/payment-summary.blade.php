@@ -19,13 +19,18 @@
 
 <div class="page-wrapper bg-gray-50 min-h-screen relative">
     <div class="p-4 sm:p-6 lg:p-8 w-full">
+        @php
+            $currencySymbol = '₦';
+            $showingFrom = $payments->firstItem() ?? 0;
+            $showingTo = $payments->lastItem() ?? 0;
+        @endphp
         
         <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
             <div>
                 <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">Payment Summary Report</h1>
                 <p class="text-sm text-gray-500 mt-1">
                     System Date: <span class="font-bold">{{ now()->format('M d, Y') }}</span> | Total Revenue:
-                    <span class="text-green-600 font-bold text-lg">${{ number_format($totalRevenue ?? 0, 2) }}</span>
+                    <span class="text-green-600 font-bold text-lg">{{ $currencySymbol }}{{ number_format($totalRevenue ?? 0, 2) }}</span>
                 </p>
             </div>
             
@@ -45,24 +50,70 @@
             </div>
         </div>
 
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
+                <p class="text-[11px] uppercase tracking-[0.2em] text-gray-400 font-black">Collected Revenue</p>
+                <h2 class="mt-3 text-3xl font-black text-gray-900">{{ $currencySymbol }}{{ number_format($totalRevenue ?? 0, 2) }}</h2>
+                <p class="mt-2 text-sm text-gray-500">{{ number_format($summary['total_transactions'] ?? 0) }} payment records in current result</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
+                <p class="text-[11px] uppercase tracking-[0.2em] text-gray-400 font-black">Completed Payments</p>
+                <h2 class="mt-3 text-3xl font-black text-emerald-600">{{ number_format($summary['completed_count'] ?? 0) }}</h2>
+                <p class="mt-2 text-sm text-gray-500">{{ $currencySymbol }}{{ number_format($summary['completed_amount'] ?? 0, 2) }} confirmed</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
+                <p class="text-[11px] uppercase tracking-[0.2em] text-gray-400 font-black">Average Payment</p>
+                <h2 class="mt-3 text-3xl font-black text-indigo-600">{{ $currencySymbol }}{{ number_format($summary['average_payment'] ?? 0, 2) }}</h2>
+                <p class="mt-2 text-sm text-gray-500">Largest payment {{ $currencySymbol }}{{ number_format($summary['largest_payment'] ?? 0, 2) }}</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
+                <p class="text-[11px] uppercase tracking-[0.2em] text-gray-400 font-black">Payment Mix</p>
+                <h2 class="mt-3 text-3xl font-black text-gray-900">{{ $summary['top_method'] ?? 'N/A' }}</h2>
+                <p class="mt-2 text-sm text-gray-500">
+                    Pending {{ number_format($summary['pending_count'] ?? 0) }} | Partial {{ number_format($summary['partial_count'] ?? 0) }} | Failed {{ number_format($summary['failed_count'] ?? 0) }}
+                </p>
+            </div>
+        </div>
+
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 mb-6 no-print">
             <form action="{{ route('reports.payment-summary') }}" method="GET" class="grid grid-cols-1 md:grid-cols-12 gap-4">
-                <div class="md:col-span-5">
+                <div class="md:col-span-4">
                     <label class="text-[10px] font-bold text-gray-400 uppercase ml-1">Search Keywords</label>
                     <input type="text" name="search" value="{{ request('search') }}" placeholder="ID, Reference, or Note..." 
                            class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none transition">
                 </div>
-                <div class="md:col-span-3">
+                <div class="md:col-span-2">
+                    <label class="text-[10px] font-bold text-gray-400 uppercase ml-1">Status</label>
+                    <select name="status" class="w-full px-4 py-2.5 border border-gray-300 rounded-xl outline-none">
+                        <option value="">All Statuses</option>
+                        @foreach ($statusOptions as $statusOption)
+                            <option value="{{ $statusOption }}" @selected(request('status') === $statusOption)>{{ $statusOption }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="md:col-span-2">
+                    <label class="text-[10px] font-bold text-gray-400 uppercase ml-1">Method</label>
+                    <select name="method" class="w-full px-4 py-2.5 border border-gray-300 rounded-xl outline-none">
+                        <option value="">All Methods</option>
+                        @foreach ($methodOptions as $methodOption)
+                            <option value="{{ $methodOption }}" @selected(request('method') === $methodOption)>{{ $methodOption }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="md:col-span-2">
                     <label class="text-[10px] font-bold text-gray-400 uppercase ml-1">From</label>
                     <input type="date" name="from" value="{{ request('from') }}" class="w-full px-4 py-2.5 border border-gray-300 rounded-xl outline-none">
                 </div>
-                <div class="md:col-span-3">
+                <div class="md:col-span-2">
                     <label class="text-[10px] font-bold text-gray-400 uppercase ml-1">To</label>
                     <input type="date" name="to" value="{{ request('to') }}" class="w-full px-4 py-2.5 border border-gray-300 rounded-xl outline-none">
                 </div>
-                <div class="md:col-span-1 flex items-end">
-                    <button type="submit" class="w-full bg-gray-900 text-white px-4 py-3 rounded-xl font-bold hover:bg-black transition shadow-sm">
-                        <i class="fe fe-search"></i>
+                <div class="md:col-span-12 flex flex-col sm:flex-row gap-3 md:justify-end">
+                    <a href="{{ route('reports.payment-summary') }}" class="inline-flex items-center justify-center px-5 py-3 border border-gray-200 rounded-xl font-bold text-gray-600 hover:bg-gray-50 transition">
+                        Reset
+                    </a>
+                    <button type="submit" class="inline-flex items-center justify-center px-5 py-3 bg-gray-900 text-white rounded-xl font-bold hover:bg-black transition shadow-sm">
+                        <i class="fe fe-search mr-2"></i> Apply Filters
                     </button>
                 </div>
             </form>
@@ -93,6 +144,7 @@
                                 <input type="checkbox" id="select-all" class="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary">
                             </th>
                             <th class="px-6 py-4 text-left text-[11px] font-bold text-gray-500 uppercase tracking-widest">Payment ID</th>
+                            <th class="px-6 py-4 text-left text-[11px] font-bold text-gray-500 uppercase tracking-widest">Reference</th>
                             <th class="px-6 py-4 text-left text-[11px] font-bold text-gray-500 uppercase tracking-widest">Method</th>
                             <th class="px-6 py-4 text-left text-[11px] font-bold text-gray-500 uppercase tracking-widest">Amount</th>
                             <th class="px-6 py-4 text-left text-[11px] font-bold text-gray-500 uppercase tracking-widest">Status</th>
@@ -107,8 +159,14 @@
                                 <input type="checkbox" class="row-checkbox w-4 h-4 text-primary border-gray-300 rounded" value="{{ $payment->id }}">
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-primary">{{ $payment->payment_id }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $payment->method }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-black text-gray-900">${{ number_format($payment->amount, 2) }}</td>
+                            <td class="px-6 py-4 min-w-[220px]">
+                                <div class="text-sm font-semibold text-gray-900">{{ $payment->reference ?: ($payment->sale->invoice_no ?? $payment->sale->order_number ?? 'Payment record') }}</div>
+                                <div class="text-xs text-gray-500 mt-1">
+                                    {{ $payment->sale->customer_name ?? optional($payment->sale->customer)->name ?? ($payment->note ?: 'No extra note') }}
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $payment->method ?: 'Not set' }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-black text-gray-900">{{ $currencySymbol }}{{ number_format($payment->amount, 2) }}</td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 @php
                                     $rowStatus = $payment->resolved_status ?? $payment->status ?? 'Pending';
@@ -136,7 +194,7 @@
                             </td>
                         </tr>
                         @empty
-                        <tr><td colspan="7" class="px-6 py-20 text-center text-gray-400 font-medium italic">No transactions found matching your search.</td></tr>
+                        <tr><td colspan="8" class="px-6 py-20 text-center text-gray-400 font-medium italic">No transactions found matching your search.</td></tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -145,7 +203,7 @@
             <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 no-print">
                 <div class="flex flex-col md:flex-row justify-between items-center gap-4">
                     <div class="text-xs font-bold text-gray-400 tracking-widest uppercase">
-                        Showing {{ $payments->firstItem() }} - {{ $payments->lastItem() }} of {{ $payments->total() }} entries
+                        Showing {{ $showingFrom }} - {{ $showingTo }} of {{ $payments->total() }} entries
                     </div>
                     <div class="bs-pagination">
                         {{ $payments->appends(request()->query())->links('pagination::bootstrap-5') }}
@@ -227,7 +285,7 @@
                             <input type="text" id="edit_method" class="w-full border-gray-300 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/20 transition">
                         </div>
                         <div>
-                            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Amount ($)</label>
+                            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Amount (₦)</label>
                             <input type="number" step="0.01" id="edit_amount" class="w-full border-gray-300 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/20 transition">
                         </div>
                     </div>
@@ -297,7 +355,7 @@
                 // Populate Receipt Mode
                 document.getElementById('rec_id').innerText = data.payment_id;
                 document.getElementById('rec_method').innerText = data.method;
-                document.getElementById('rec_amount').innerText = '$' + parseFloat(data.amount).toLocaleString(undefined, {minimumFractionDigits: 2});
+                document.getElementById('rec_amount').innerText = '₦' + parseFloat(data.amount).toLocaleString(undefined, {minimumFractionDigits: 2});
                 const resolvedStatus = data.resolved_status || data.status || 'Pending';
                 document.getElementById('rec_status_text').innerText = resolvedStatus;
                 document.getElementById('rec_note').innerText = data.reference || data.note || 'No notes available.';

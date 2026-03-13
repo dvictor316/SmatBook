@@ -69,6 +69,7 @@ class DashboardController extends Controller
             $totalProfit = $this->getTotalProfit($company);
             $totalExpenses = $this->getTotalExpenses($company);
             $activeStock = $this->getTotalStock($company);
+            $inventoryValue = $this->getInventoryValue($company);
             $totalInvoices = $this->getTotalInvoices($company);
             $activeCustomers = $this->getActiveCustomers($company);
             $lowStockCount = $this->getLowStockCount($company);
@@ -76,10 +77,15 @@ class DashboardController extends Controller
             $itemsSold = $this->getItemsSold($company);
             $todayOrders = $this->getTodayOrders($company);
             $paymentStatus = $this->getPaymentStatusCounts($company);
+            $currentMonthSales = $this->getCurrentMonthSales($company);
+            $previousMonthSales = $this->getPreviousMonthSales($company);
             $avgOrderValue = $totalInvoices > 0 ? ($totalSales / $totalInvoices) : 0;
             $profitMargin = $totalSales > 0 ? (($totalProfit / $totalSales) * 100) : 0;
             $expenseRatio = $totalSales > 0 ? (($totalExpenses / $totalSales) * 100) : 0;
             $revenueProgress = $this->getRevenueProgress($todayRevenue, $totalSales);
+            $salesGrowthRate = $previousMonthSales > 0
+                ? (($currentMonthSales - $previousMonthSales) / $previousMonthSales) * 100
+                : ($currentMonthSales > 0 ? 100 : 0);
 
             return [
                 'todayRevenue'    => $todayRevenue,
@@ -88,6 +94,7 @@ class DashboardController extends Controller
                 'netProfit'       => $totalProfit, // alias used by pro dashboard
                 'totalExpenses'   => $totalExpenses,
                 'activeStock'     => $activeStock,
+                'inventoryValue'  => $inventoryValue,
                 'totalInvoices'   => $totalInvoices, // alias used by basic dashboard
                 'activeCustomers' => $activeCustomers, // alias used by basic dashboard
                 'lowStockCount'   => $lowStockCount,
@@ -97,6 +104,9 @@ class DashboardController extends Controller
                 'avgOrderValue'   => $avgOrderValue,
                 'profitMargin'    => $profitMargin,
                 'expenseRatio'    => $expenseRatio,
+                'currentMonthSales' => $currentMonthSales,
+                'previousMonthSales' => $previousMonthSales,
+                'salesGrowthRate' => $salesGrowthRate,
                 'paidInvoices'    => $paymentStatus['paid'],
                 'partialInvoices' => $paymentStatus['partial'],
                 'unpaidInvoices'  => $paymentStatus['unpaid'],
@@ -564,6 +574,50 @@ class DashboardController extends Controller
         }
 
         return round(min(100, max(0, ($todayRevenue / $projectedMonthRevenue) * 100)), 1);
+    }
+
+    private function getInventoryValue($company): float
+    {
+        if (!Schema::hasTable('products')) {
+            return 0;
+        }
+
+        $stockColumn = Schema::hasColumn('products', 'stock') ? 'stock' : (Schema::hasColumn('products', 'stock_quantity') ? 'stock_quantity' : null);
+        $priceColumn = Schema::hasColumn('products', 'price') ? 'price' : (Schema::hasColumn('products', 'product_price') ? 'product_price' : null);
+
+        if (!$stockColumn || !$priceColumn) {
+            return 0;
+        }
+
+        return (float) ($this->scopeByCompany(Product::query(), 'products', $company)
+            ->selectRaw("SUM(COALESCE({$stockColumn}, 0) * COALESCE({$priceColumn}, 0)) as inventory_value")
+            ->value('inventory_value') ?? 0);
+    }
+
+    private function getCurrentMonthSales($company): float
+    {
+        if (!Schema::hasTable('sales')) {
+            return 0;
+        }
+
+        return (float) ($this->scopeByCompany(Sale::query(), 'sales', $company)
+            ->whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->sum('total') ?? 0);
+    }
+
+    private function getPreviousMonthSales($company): float
+    {
+        if (!Schema::hasTable('sales')) {
+            return 0;
+        }
+
+        $previousMonth = now()->copy()->subMonth();
+
+        return (float) ($this->scopeByCompany(Sale::query(), 'sales', $company)
+            ->whereMonth('created_at', $previousMonth->month)
+            ->whereYear('created_at', $previousMonth->year)
+            ->sum('total') ?? 0);
     }
 
     private function getDashboardHealth(array $metrics): array
