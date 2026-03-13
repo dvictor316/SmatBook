@@ -168,9 +168,6 @@
                 <li class="menu-title"><span>Growth & Projects</span></li>
                 <li><a href="{{ route('projects.index') }}"><i class="fe fe-briefcase"></i><span>Project Management</span></a></li>
                 <li><a href="{{ route('projects.index') }}#profitability"><i class="fe fe-trending-up"></i><span>Project Profitability</span></a></li>
-                <li><a href="{{ route('projects.index') }}#reputation-management"><i class="fe fe-star"></i><span>Reputation Management</span></a></li>
-                <li><a href="{{ route('projects.index') }}#lead-management"><i class="fe fe-user-plus"></i><span>Lead Management</span></a></li>
-                <li><a href="{{ route('projects.index') }}#appointment-scheduling"><i class="fe fe-calendar"></i><span>Appointment Scheduling</span></a></li>
 
                 {{-- LOCKED FEATURES - Upgrade to Enterprise --}}
                 <li class="menu-title"><span>Enterprise Features</span></li>
@@ -203,35 +200,6 @@
                         <span class="badge bg-warning">Enterprise</span>
                     </a>
                 </li>
-                <li>
-                    <a href="javascript:void(0);" onclick="showUpgradeModal('Enterprise', 'Contract Upload & E-Signature')">
-                        <i class="fe fe-lock"></i>
-                        <span>Contract Upload & E-Signature</span>
-                        <span class="badge bg-warning">Enterprise</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="javascript:void(0);" onclick="showUpgradeModal('Enterprise', 'Proposals')">
-                        <i class="fe fe-lock"></i>
-                        <span>Proposals</span>
-                        <span class="badge bg-warning">Enterprise</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="javascript:void(0);" onclick="showUpgradeModal('Enterprise', 'AI-Powered Anomaly Detection')">
-                        <i class="fe fe-lock"></i>
-                        <span>AI Anomaly Detection</span>
-                        <span class="badge bg-warning">Enterprise</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="javascript:void(0);" onclick="showUpgradeModal('Enterprise', 'Project Management AI')">
-                        <i class="fe fe-lock"></i>
-                        <span>Project Management AI</span>
-                        <span class="badge bg-warning">Enterprise</span>
-                    </a>
-                </li>
-
                 <li class="menu-title"><span>Settings</span></li>
                 <li><a href="{{ route('settings.index') }}"><i class="fe fe-settings"></i><span>Settings</span></a></li>
                 <li><a href="{{ route('roles.index') }}"><i class="fe fe-shield"></i><span>Roles & Permission</span></a></li>
