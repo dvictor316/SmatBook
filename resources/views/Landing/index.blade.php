@@ -1035,6 +1035,10 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     .benefit-belt { padding: 32px 12px 0; }
 }
 @media (max-width: 640px) {
+    .gadget-mobile-column {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
     .hero-content { padding: 16px 16px 24px; gap: 28px; }
     .hero-circle { width: min(90vw,340px) !important; height: min(90vw,340px) !important; padding: clamp(52px,16%,72px) !important; }
     .hero-phone { width: clamp(220px,72vw,280px); }
@@ -1351,7 +1355,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 
         {{-- Feature 1 --}}
         <div class="row align-items-center g-5 mb-5 pb-4">
-            <div class="col-lg-7">
+            <div class="col-lg-7 gadget-mobile-column">
                 <div class="position-relative gadget-mobile-bleed" style="padding:24px 24px 24px 0;">
                     <div class="float-badge fb-1">
                         <div class="fb-icon" style="background:#dcfce7;"><svg width="16" height="16" fill="none" stroke="#15803d" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></div>
@@ -1468,7 +1472,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                     <div class="feat-card"><div class="d-flex align-items-start gap-3"><div class="feat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg></div><div><h6>Expiry Date Tracking</h6><p>Tag perishable items with expiry dates — SmartProbook flags them before they become a liability.</p></div></div></div>
                 </div>
             </div>
-            <div class="col-lg-7">
+            <div class="col-lg-7 gadget-mobile-column">
                 <div class="position-relative" style="padding:24px 0 24px 24px;">
                     <div class="float-badge" style="top:0;right:-10px;animation:floatBob 4s ease-in-out infinite;">
                         <div class="fb-icon" style="background:#fee2e2;"><svg width="16" height="16" fill="none" stroke="#dc2626" stroke-width="2.5" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
