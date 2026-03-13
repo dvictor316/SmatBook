@@ -55,18 +55,50 @@ class SuperAdminDashboardController extends Controller
         try {
             $deploymentLimit = 50; 
 
+            $paidPaymentStatuses = ['paid', 'completed', 'success', 'successful', 'verified'];
+            $activeSubscriptionStatuses = ['active', 'trial'];
+            $pendingSubscriptionStatuses = ['pending', 'awaiting payment', 'awaiting_payment', 'unpaid'];
+            $activeCompanyStatuses = ['active', 'trial', 'enabled'];
+
+            $paidSubscriptionsQuery = Schema::hasTable('subscriptions')
+                ? Subscription::query()->where(function ($query) use ($paidPaymentStatuses) {
+                    $query->whereIn(DB::raw("LOWER(COALESCE(payment_status, ''))"), $paidPaymentStatuses);
+
+                    if (Schema::hasColumn('subscriptions', 'paid_at')) {
+                        $query->orWhereNotNull('paid_at');
+                    }
+
+                    if (Schema::hasColumn('subscriptions', 'payment_date')) {
+                        $query->orWhereNotNull('payment_date');
+                    }
+                })
+                : null;
+
             $salesRevenue = Schema::hasTable('sales') ? ((float) (DB::table('sales')->sum('total') ?? 0)) : 0.0;
-            $subscriptionRevenue = Schema::hasTable('subscriptions')
-                ? ((float) (Subscription::whereRaw('LOWER(payment_status) = ?', ['paid'])->sum('amount') ?? 0))
+            $subscriptionRevenue = $paidSubscriptionsQuery
+                ? ((float) ((clone $paidSubscriptionsQuery)->sum('amount') ?? 0))
                 : 0.0;
             $platformRevenue = $subscriptionRevenue > 0 ? $subscriptionRevenue : $salesRevenue;
 
             $activeSubs = Schema::hasTable('subscriptions')
-                ? Subscription::whereRaw('LOWER(status) = ?', ['active'])->count()
+                ? Subscription::query()
+                    ->where(function ($query) use ($activeSubscriptionStatuses, $paidPaymentStatuses) {
+                        $query->whereIn(DB::raw("LOWER(COALESCE(status, ''))"), $activeSubscriptionStatuses)
+                            ->orWhereIn(DB::raw("LOWER(COALESCE(payment_status, ''))"), array_merge($paidPaymentStatuses, ['free']));
+                    })
+                    ->count()
                 : 0;
-            $activeCompanies = Company::whereRaw("LOWER(COALESCE(status, 'active')) = ?", ['active'])->count();
+            $activeCompanies = Company::query()
+                ->where(function ($query) use ($activeCompanyStatuses) {
+                    $query->whereNull('status')
+                        ->orWhereIn(DB::raw("LOWER(COALESCE(status, ''))"), $activeCompanyStatuses);
+                })
+                ->count();
+            $totalCompanies = Company::count();
+            $recentSignups = User::where('created_at', '>=', now()->subDays(30))->count();
 
             $stockValue = 0;
+            $lowStockItems = 0;
             if (Schema::hasTable('products')) {
                 $hasProductPrice = Schema::hasColumn('products', 'product_price');
                 $hasPrice = Schema::hasColumn('products', 'price');
@@ -74,24 +106,34 @@ class SuperAdminDashboardController extends Controller
                 $stockValue = (float) (DB::table('products')
                     ->selectRaw("SUM(COALESCE({$priceExpr}, 0) * COALESCE(stock, 0)) as total_stock_value")
                     ->value('total_stock_value') ?? 0);
+                if (Schema::hasColumn('products', 'stock')) {
+                    $lowStockItems = (int) (DB::table('products')
+                        ->whereNotNull('stock')
+                        ->where('stock', '<=', 10)
+                        ->count());
+                }
             }
+
+            $planSalesBaseQuery = Schema::hasTable('subscriptions') ? clone $paidSubscriptionsQuery : null;
+            $planSalesToday = $planSalesBaseQuery ? (clone $planSalesBaseQuery)->whereDate('created_at', today())->count() : 0;
+            $planSalesMonth = $planSalesBaseQuery ? (clone $planSalesBaseQuery)->whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->count() : 0;
+            $planSalesValueMonth = $planSalesBaseQuery ? (float) ((clone $planSalesBaseQuery)->whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->sum('amount') ?? 0) : 0;
+            $avgPlanSale = $planSalesMonth > 0 ? ($planSalesValueMonth / $planSalesMonth) : 0;
 
             // METRICS
             $metrics = [
-                'total_companies'  => Company::count(), 
-                'total_tenants'    => $activeCompanies > 0 ? $activeCompanies : Company::count(),
+                'total_companies'  => $totalCompanies, 
+                'total_tenants'    => $activeCompanies > 0 ? $activeCompanies : $totalCompanies,
                 'total_users'      => User::count(),
                 'verified_users'   => Schema::hasColumn('users', 'is_verified') ? User::where('is_verified', 1)->count() : 0,
                 'active_subs'      => $activeSubs > 0 ? $activeSubs : $activeCompanies,
-                'paid_subs'        => Schema::hasTable('subscriptions')
-                                      ? Subscription::whereRaw('LOWER(payment_status) = ?', ['paid'])->count()
-                                      : 0,
+                'paid_subs'        => $paidSubscriptionsQuery ? (clone $paidSubscriptionsQuery)->count() : 0,
                 'total_subs'       => Schema::hasTable('subscriptions')
                                       ? Subscription::count()
                                       : 0,
                 'platform_revenue' => $platformRevenue,
                 'pending_setups'   => Schema::hasTable('subscriptions')
-                                      ? Subscription::whereRaw('LOWER(status) IN (?, ?)', ['pending', 'awaiting payment'])->count()
+                                      ? Subscription::query()->whereIn(DB::raw("LOWER(COALESCE(status, ''))"), $pendingSubscriptionStatuses)->count()
                                       : 0,
                 'pending_managers' => Schema::hasTable('deployment_managers') 
                                       ? DB::table('deployment_managers')->whereIn('status', ['pending', 'pending_info'])->count() 
@@ -103,6 +145,12 @@ class SuperAdminDashboardController extends Controller
                                       ? DB::table('deployment_managers')->where('status', 'suspended')->count() 
                                       : 0,
                 'total_stock_val'  => $stockValue,
+                'low_stock_items'  => $lowStockItems,
+                'recent_signups'   => $recentSignups,
+                'plan_sales_today' => $planSalesToday,
+                'plan_sales_month' => $planSalesMonth,
+                'plan_sales_value_month' => $planSalesValueMonth,
+                'avg_plan_sale'    => $avgPlanSale,
                 'expiring_soon_subs' => Schema::hasTable('subscriptions')
                                       ? Subscription::expiringSoon(7)->count()
                                       : 0,
@@ -115,8 +163,8 @@ class SuperAdminDashboardController extends Controller
 
             // REVENUE TRENDS
             $revenueTrends = collect();
-            if (Schema::hasTable('subscriptions')) {
-                $revenueTrends = Subscription::whereRaw('LOWER(payment_status) = ?', ['paid'])
+            if ($paidSubscriptionsQuery) {
+                $revenueTrends = (clone $paidSubscriptionsQuery)
                     ->select(
                         DB::raw('MONTHNAME(created_at) as month'), 
                         DB::raw('SUM(amount) as total'), 
@@ -176,9 +224,9 @@ class SuperAdminDashboardController extends Controller
 
             // REVENUE BY PLAN
             $revenueByPlan = collect();
-            if (Schema::hasTable('subscriptions')) {
+            if ($paidSubscriptionsQuery) {
                 $planExpr = "COALESCE(NULLIF(plan_name, ''), plan, 'Basic')";
-                $revenueByPlan = Subscription::whereRaw('LOWER(payment_status) = ?', ['paid'])
+                $revenueByPlan = (clone $paidSubscriptionsQuery)
                     ->whereYear('created_at', date('Y'))
                     ->select(
                         DB::raw('MONTHNAME(created_at) as month'),
@@ -398,9 +446,9 @@ class SuperAdminDashboardController extends Controller
 
             // PLATFORM ACTIVITY
             $platformActivity = collect();
-            if (Schema::hasTable('subscriptions')) {
-                $platformActivity = Subscription::with(['company', 'company.user'])
-                    ->whereRaw('LOWER(payment_status) = ?', ['paid'])
+            if ($paidSubscriptionsQuery) {
+                $platformActivity = (clone $paidSubscriptionsQuery)
+                    ->with(['company', 'company.user'])
                     ->latest()
                     ->limit(10)
                     ->get();
@@ -455,6 +503,9 @@ class SuperAdminDashboardController extends Controller
                 'total_companies' => 0, 'total_tenants' => 0, 'active_subs' => 0, 
                 'platform_revenue' => 0, 'total_users' => 0, 'pending_setups' => 0, 
                 'pending_managers' => 0, 'active_managers' => 0, 'total_stock_val' => 0,
+                'paid_subs' => 0, 'total_subs' => 0, 'verified_users' => 0, 'recent_signups' => 0,
+                'low_stock_items' => 0, 'plan_sales_today' => 0, 'plan_sales_month' => 0,
+                'plan_sales_value_month' => 0, 'avg_plan_sale' => 0,
                 'expiring_soon_subs' => 0, 'expired_subs' => 0
             ];
 
