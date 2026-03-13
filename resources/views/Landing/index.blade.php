@@ -1049,11 +1049,11 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     .hero-eyebrow { margin-bottom: 10px !important; }
     .hero-body { margin-bottom: 16px !important; }
     .gadget-mobile-bleed {
-        width: 100vw;
-        max-width: 100vw;
+        width: calc(100% + 24px);
+        max-width: none;
         padding: 16px 0 24px !important;
-        margin-left: calc(50% - 50vw);
-        margin-right: calc(50% - 50vw);
+        margin-left: -12px;
+        margin-right: -12px;
     }
     .gadget-stage {
         width: 100%;
