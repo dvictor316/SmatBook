@@ -193,6 +193,17 @@
         color: #2563eb;
         font-weight: 700;
     }
+    .mobile-brand-lockup {
+        display: none;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 16px;
+        padding: 10px 12px;
+        border-radius: 16px;
+        background: #f8fbff;
+        border: 1px solid #dbeafe;
+        box-shadow: 0 14px 28px rgba(37, 99, 235, 0.08);
+    }
 
     .step-badge {
         display: inline-block;
@@ -459,6 +470,7 @@
         .brand-lockup { gap: 7px; margin-bottom: 6px; }
         .brand-name { font-size: 1.12rem; }
         .field-grid { grid-template-columns: 1fr; }
+        .mobile-brand-lockup { display: inline-flex; }
     }
 
     @media (max-width: 640px) {
@@ -466,6 +478,9 @@
         .smat-aside, .smat-main { padding: 18px 14px; }
         .form-shell { padding: 18px 16px; border-radius: 18px; }
         .bottom-actions { grid-template-columns: 1fr; }
+        .mobile-brand-lockup .logo-img { height: 34px; }
+        .mobile-brand-lockup .brand-name { font-size: 0.98rem; }
+        .mobile-brand-lockup .brand-tagline { font-size: 0.62rem; }
     }
 </style>
 
@@ -535,6 +550,13 @@
         </div>
 
         <div class="smat-main">
+            <div class="mobile-brand-lockup">
+                <img src="{{ asset('assets/img/logos.png') }}" alt="SmartProbook" class="logo-img">
+                <div class="brand-panel">
+                    <span class="brand-name">SmartProbook</span>
+                    <span class="brand-tagline">Secure Business Stack</span>
+                </div>
+            </div>
             <span class="panel-kicker">Protected onboarding</span>
             <h1 class="form-title">Create Account</h1>
             <p class="form-subtitle">Enter your details to initialize this {{ $isManager ? 'management' : 'terminal' }} node.</p>

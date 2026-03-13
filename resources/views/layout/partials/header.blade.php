@@ -382,15 +382,33 @@
     body.mini-sidebar .spb-wordmark { display: none; }
 
     @media (max-width: 991px) {
-        .header-logo img { height: 44px; }
+        .header {
+            padding: 0 12px;
+        }
+        .header-logo {
+            gap: 6px;
+            min-width: 0;
+        }
+        .header-logo img { height: 36px; }
         .spb-wordmark {
-            font-size: 0.88rem;
+            font-size: 0.82rem;
             letter-spacing: -0.2px;
+            white-space: normal;
+            line-height: 1.05;
         }
     }
 
     @media (max-width: 480px) {
-        .spb-wordmark { display: none; }
+        .header-logo img { height: 30px; }
+        .spb-wordmark {
+            display: block;
+            font-size: 0.72rem;
+            max-width: 86px;
+        }
+        .header-actions {
+            gap: 4px;
+            margin-left: 8px;
+        }
     }
 
     @media print { .header { display: none !important; } }

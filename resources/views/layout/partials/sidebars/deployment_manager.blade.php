@@ -125,6 +125,13 @@
         font-size: 20px;
         color: white;
         flex-shrink: 0;
+        overflow: hidden;
+    }
+
+    .dm-brand-icon img {
+        width: 28px;
+        height: 28px;
+        object-fit: contain;
     }
 
     .dm-brand-text {
@@ -520,6 +527,34 @@
             width: 280px;
         }
 
+        .dm-brand {
+            padding: 16px;
+        }
+
+        .dm-brand-logo {
+            gap: 10px;
+        }
+
+        .dm-brand-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 9px;
+        }
+
+        .dm-brand-icon img {
+            width: 23px;
+            height: 23px;
+        }
+
+        .dm-brand-title {
+            font-size: 15px;
+        }
+
+        .dm-brand-subtitle {
+            font-size: 9px;
+            letter-spacing: 0.7px;
+        }
+
         .dm-hamburger {
             width: 40px;
             height: 40px;
@@ -551,7 +586,7 @@
     <div class="dm-brand">
         <a href="{{ route('deployment.dashboard') }}" class="dm-brand-logo">
             <div class="dm-brand-icon">
-                <i class="fas fa-rocket"></i>
+                <img src="{{ asset('assets/img/logos.png') }}" alt="SmartProbook">
             </div>
             <div class="dm-brand-text">
                 <h1 class="dm-brand-title">SmartProbook</h1>
@@ -594,14 +629,6 @@
                 <a href="{{ route('deployment.dashboard') }}" class="dm-menu-link {{ request()->routeIs('deployment.dashboard') ? 'active' : '' }}">
                     <span class="dm-menu-icon"><i class="fas fa-th-large"></i></span>
                     <span class="dm-menu-text">Dashboard</span>
-                </a>
-            </li>
-
-            <!-- Analytics -->
-            <li class="dm-menu-item">
-                <a href="{{ route('deployment.stats') }}" class="dm-menu-link {{ request()->routeIs('deployment.stats') ? 'active' : '' }}">
-                    <span class="dm-menu-icon"><i class="fas fa-chart-line"></i></span>
-                    <span class="dm-menu-text">Analytics</span>
                 </a>
             </li>
 
@@ -706,81 +733,11 @@
                 </ul>
             </li>
 
-            <!-- Invoices -->
-            <li class="dm-menu-item">
-                <a href="{{ route('deployment.invoices.index') }}" class="dm-menu-link {{ request()->routeIs('deployment.invoices.*') ? 'active' : '' }}">
-                    <span class="dm-menu-icon"><i class="fas fa-file-invoice"></i></span>
-                    <span class="dm-menu-text">Invoices</span>
-                </a>
-            </li>
-
-            <!-- Payments -->
-            <li class="dm-menu-item has-submenu {{ request()->routeIs('deployment.payments.*') ? 'open' : '' }}">
-                <a href="#" class="dm-menu-link {{ request()->routeIs('deployment.payments.*') ? 'active' : '' }}" onclick="toggleSubmenu(event, this)">
-                    <span class="dm-menu-icon"><i class="fas fa-credit-card"></i></span>
-                    <span class="dm-menu-text">Payments</span>
-                    <span class="dm-menu-arrow"><i class="fas fa-chevron-right"></i></span>
-                </a>
-                <ul class="dm-submenu">
-                    <li>
-                        <a href="{{ route('deployment.payments.index') }}" class="dm-submenu-link {{ request()->routeIs('deployment.payments.index') ? 'active' : '' }}">
-                            <i class="fas fa-list"></i> All Payments
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('deployment.payments.pending') }}" class="dm-submenu-link {{ request()->routeIs('deployment.payments.pending') ? 'active' : '' }}">
-                            <i class="fas fa-clock"></i> Pending
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('deployment.payments.completed') }}" class="dm-submenu-link {{ request()->routeIs('deployment.payments.completed') ? 'active' : '' }}">
-                            <i class="fas fa-check-circle"></i> Completed
-                        </a>
-                    </li>
-                </ul>
-            </li>
-
-            <!-- Reports -->
-            <li class="dm-menu-item">
-                <a href="{{ route('deployment.reports.performance') }}" class="dm-menu-link {{ request()->routeIs('deployment.reports.*') ? 'active' : '' }}">
-                    <span class="dm-menu-icon"><i class="fas fa-chart-bar"></i></span>
-                    <span class="dm-menu-text">Reports</span>
-                </a>
-            </li>
-
-            <!-- Export Data -->
-            <li class="dm-menu-item">
-                <a href="{{ route('deployment.export') }}" class="dm-menu-link {{ request()->routeIs('deployment.export') ? 'active' : '' }}">
-                    <span class="dm-menu-icon"><i class="fas fa-download"></i></span>
-                    <span class="dm-menu-text">Export Data</span>
-                </a>
-            </li>
-
-            <!-- Profile -->
-            <li class="dm-menu-item">
-                <a href="{{ route('deployment.profile') }}" class="dm-menu-link {{ request()->routeIs('deployment.profile') ? 'active' : '' }}">
-                    <span class="dm-menu-icon"><i class="fas fa-user-circle"></i></span>
-                    <span class="dm-menu-text">My Profile</span>
-                </a>
-            </li>
-
-            <!-- Settings -->
-            <li class="dm-menu-item">
-                <a href="{{ route('deployment.settings') }}" class="dm-menu-link {{ request()->routeIs('deployment.settings') ? 'active' : '' }}">
-                    <span class="dm-menu-icon"><i class="fas fa-cog"></i></span>
-                    <span class="dm-menu-text">Settings</span>
-                </a>
-            </li>
-
         </ul>
     </nav>
 
     <!-- FOOTER -->
     <div class="dm-footer">
-        <a href="{{ route('deployment.help') }}" class="dm-footer-link">
-            <i class="fas fa-question-circle"></i>
-            <span>Help Center</span>
-        </a>
         <a href="{{ route('logout') }}" class="dm-footer-link" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
             <i class="fas fa-sign-out-alt"></i>
             <span>Logout</span>

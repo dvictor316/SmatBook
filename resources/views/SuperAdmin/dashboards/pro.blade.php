@@ -62,6 +62,29 @@
         transform: translateY(-5px); 
     }
 
+    .glass-card-pro.metric-indigo {
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        color: #fff;
+    }
+    .glass-card-pro.metric-emerald {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: #fff;
+    }
+    .glass-card-pro.metric-rose {
+        background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+        color: #fff;
+    }
+    .glass-card-pro.metric-cyan {
+        background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+        color: #fff;
+    }
+    .glass-card-pro.metric-indigo .text-muted,
+    .glass-card-pro.metric-emerald .text-muted,
+    .glass-card-pro.metric-rose .text-muted,
+    .glass-card-pro.metric-cyan .text-muted {
+        color: rgba(255,255,255,0.72) !important;
+    }
+
     .teaser-lock {
         background: linear-gradient(rgba(255,255,255,0.92), rgba(255,255,255,0.92)), 
                     url('https://www.transparenttextures.com/patterns/world-map.png');
@@ -199,43 +222,43 @@
     {{-- 1. Expanded Metrics (Pro Tier includes Expense/Profit Visibility) --}}
     <div class="row g-4 mb-5">
         <div class="col-md-3">
-            <div class="glass-card-pro p-4 border-bottom border-primary border-4">
-                <div class="stat-icon-circle bg-primary bg-opacity-10 text-primary">
+            <div class="glass-card-pro metric-indigo p-4">
+                <div class="stat-icon-circle" style="background: rgba(255,255,255,0.16); color: #fff;">
                     <i class="fas fa-wallet fa-lg"></i>
                 </div>
-                <div class="text-muted small fw-bold text-uppercase">Gross Revenue</div>
+                <div class="small fw-bold text-uppercase">Gross Revenue</div>
                 <h3 class="fw-bold mb-0">₦{{ number_format($metrics['todayRevenue'] ?? 0, 2) }}</h3>
-                <span class="text-success small"><i class="fas fa-caret-up"></i> Live from sales ledger</span>
+                <span class="small"><i class="fas fa-caret-up"></i> Live from sales ledger</span>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="glass-card-pro p-4 border-bottom border-success border-4">
-                <div class="stat-icon-circle bg-success bg-opacity-10 text-success">
+            <div class="glass-card-pro metric-emerald p-4">
+                <div class="stat-icon-circle" style="background: rgba(255,255,255,0.16); color: #fff;">
                     <i class="fas fa-chart-line fa-lg"></i>
                 </div>
-                <div class="text-muted small fw-bold text-uppercase">Net Profit</div>
+                <div class="small fw-bold text-uppercase">Net Profit</div>
                 <h3 class="fw-bold mb-0">₦{{ number_format($metrics['netProfit'] ?? 0, 2) }}</h3>
-                <span class="text-muted small">Real-time margin</span>
+                <span class="small">Real-time margin</span>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="glass-card-pro p-4 border-bottom border-danger border-4">
-                <div class="stat-icon-circle bg-danger bg-opacity-10 text-danger">
+            <div class="glass-card-pro metric-rose p-4">
+                <div class="stat-icon-circle" style="background: rgba(255,255,255,0.16); color: #fff;">
                     <i class="fas fa-receipt fa-lg"></i>
                 </div>
-                <div class="text-muted small fw-bold text-uppercase">Operating Expenses</div>
+                <div class="small fw-bold text-uppercase">Operating Expenses</div>
                 <h3 class="fw-bold mb-0">₦{{ number_format($metrics['totalExpenses'] ?? 0, 2) }}</h3>
-                <span class="text-danger small"><i class="fas fa-arrow-up"></i> Dynamic from expenses table</span>
+                <span class="small"><i class="fas fa-arrow-up"></i> Dynamic from expenses table</span>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="glass-card-pro p-4 border-bottom border-info border-4">
-                <div class="stat-icon-circle bg-info bg-opacity-10 text-info">
+            <div class="glass-card-pro metric-cyan p-4">
+                <div class="stat-icon-circle" style="background: rgba(255,255,255,0.16); color: #fff;">
                     <i class="fas fa-boxes fa-lg"></i>
                 </div>
-                <div class="text-muted small fw-bold text-uppercase">Inventory Assets</div>
+                <div class="small fw-bold text-uppercase">Inventory Assets</div>
                 <h3 class="fw-bold mb-0">{{ number_format($metrics['activeStock'] ?? 0) }}</h3>
-                <span class="text-muted small">Units across categories</span>
+                <span class="small">Units across categories</span>
             </div>
         </div>
     </div>

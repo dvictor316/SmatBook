@@ -57,6 +57,29 @@
         transform: translateY(-5px);
     }
 
+    .metric-card-basic.metric-sky {
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        color: #fff;
+    }
+    .metric-card-basic.metric-violet {
+        background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+        color: #fff;
+    }
+    .metric-card-basic.metric-cyan {
+        background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
+        color: #fff;
+    }
+    .metric-card-basic.metric-amber {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: #fff;
+    }
+    .metric-card-basic.metric-sky .text-muted,
+    .metric-card-basic.metric-violet .text-muted,
+    .metric-card-basic.metric-cyan .text-muted,
+    .metric-card-basic.metric-amber .text-muted {
+        color: rgba(255,255,255,0.72) !important;
+    }
+
     .upgrade-banner {
         background: linear-gradient(135deg, var(--deep-sapphire) 0%, #004a8f 100%);
         border-radius: 20px; color: white; padding: 30px;
@@ -196,31 +219,31 @@
     {{-- Primary Metrics Row --}}
     <div class="row g-4 mb-4">
         <div class="col-md-3">
-            <div class="metric-card-basic">
-                <div class="text-muted small fw-bold mb-1">TODAY'S REVENUE</div>
-                <h3 class="fw-bold mb-0" style="color: var(--deep-sapphire);">₦{{ number_format($metrics['todayRevenue'] ?? 0, 2) }}</h3>
-                <p class="text-success small mb-0 mt-2"><i class="fas fa-arrow-up"></i> Live</p>
+            <div class="metric-card-basic metric-sky">
+                <div class="small fw-bold mb-1">TODAY'S REVENUE</div>
+                <h3 class="fw-bold mb-0">₦{{ number_format($metrics['todayRevenue'] ?? 0, 2) }}</h3>
+                <p class="small mb-0 mt-2"><i class="fas fa-arrow-up"></i> Live</p>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="metric-card-basic">
-                <div class="text-muted small fw-bold mb-1">TOTAL INVOICES</div>
-                <h3 class="fw-bold mb-0" style="color: #6f42c1;">{{ number_format($metrics['totalInvoices'] ?? 0) }}</h3>
-                <p class="text-muted small mb-0 mt-2">Processed today</p>
+            <div class="metric-card-basic metric-violet">
+                <div class="small fw-bold mb-1">TOTAL INVOICES</div>
+                <h3 class="fw-bold mb-0">{{ number_format($metrics['totalInvoices'] ?? 0) }}</h3>
+                <p class="small mb-0 mt-2">Processed today</p>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="metric-card-basic">
-                <div class="text-muted small fw-bold mb-1">ACTIVE CUSTOMERS</div>
-                <h3 class="fw-bold mb-0" style="color: #0dcaf0;">{{ number_format($metrics['activeCustomers'] ?? 0) }}</h3>
-                <p class="text-muted small mb-0 mt-2">Registered on node</p>
+            <div class="metric-card-basic metric-cyan">
+                <div class="small fw-bold mb-1">ACTIVE CUSTOMERS</div>
+                <h3 class="fw-bold mb-0">{{ number_format($metrics['activeCustomers'] ?? 0) }}</h3>
+                <p class="small mb-0 mt-2">Registered on node</p>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="metric-card-basic">
-                <div class="text-muted small fw-bold mb-1">STOCK VALUE</div>
-                <h3 class="fw-bold mb-0" style="color: var(--accent-orange);">{{ number_format($metrics['activeStock'] ?? 0) }}</h3>
-                <p class="text-muted small mb-0 mt-2">Items in inventory</p>
+            <div class="metric-card-basic metric-amber">
+                <div class="small fw-bold mb-1">STOCK VALUE</div>
+                <h3 class="fw-bold mb-0">{{ number_format($metrics['activeStock'] ?? 0) }}</h3>
+                <p class="small mb-0 mt-2">Items in inventory</p>
             </div>
         </div>
     </div>

@@ -3,78 +3,266 @@
 
 @section('content')
 <style>
-    /* 1. Remove Sidebar and Navbar for this page */
-    .header, .sidebar, .sidebar-two, .sidebar-three, .two-col-bar, .settings-icon { 
-        display: none !important; 
-    }
-    
-    /* 2. Reset Page Wrapper margins */
-    .page-wrapper { 
-        margin-left: 0 !important; 
-        padding: 0 !important; 
-        min-height: 100vh !important;
+    :root {
+        --spa-surface: rgba(255, 255, 255, 0.95);
+        --spa-aside: linear-gradient(145deg, #2348c7 0%, #1b2fb5 38%, #0a148a 100%);
+        --spa-primary: #2563eb;
+        --spa-text: #0f172a;
+        --spa-muted: #64748b;
+        --spa-gold: #ffe08a;
     }
 
-    /* 3. Force No-Scroll Layout */
+    .header, .sidebar, .sidebar-two, .sidebar-three, .two-col-bar, .settings-icon, .footer, .nav-header, .breadcrumb { 
+        display: none !important; 
+    }
+
     body, html {
         min-height: 100%;
-        background-color: #f4f7fe;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+        background:
+            radial-gradient(circle at top left, rgba(40, 195, 243, 0.28), transparent 24%),
+            radial-gradient(circle at bottom right, rgba(29, 109, 255, 0.2), transparent 28%),
+            linear-gradient(180deg, #f4f9ff 0%, #e8f2ff 100%);
+    }
+
+    .main-wrapper,
+    .main-wrapper.login-body,
+    .page-wrapper {
+        margin: 0 !important;
+        padding: 0 !important;
+        min-height: 100% !important;
+        overflow: visible !important;
     }
 
     .auth-wrapper {
         min-height: 100vh;
         display: flex;
-        align-items: center;
         justify-content: center;
-        padding: 20px;
+        padding: 20px 14px 40px;
+        position: relative;
     }
 
     .login-card-custom {
-        background: #fff;
-        border-radius: 20px;
-        box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        background: var(--spa-surface);
+        border-radius: 24px;
+        box-shadow: 0 30px 90px rgba(15, 23, 42, 0.12), 0 10px 24px rgba(37, 99, 235, 0.08);
         overflow: hidden;
-        max-width: 900px;
+        max-width: 940px;
         width: 100%;
-        border: none;
+        border: 1px solid rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(18px);
+        margin: auto 0;
     }
 
     .branding-side {
-        background: linear-gradient(135deg, #3d5ee1 0%, #1e3bb3 100%);
-        padding: 60px;
+        background: var(--spa-aside);
+        padding: 42px 34px;
+        position: relative;
+    }
+
+    .branding-side::before {
+        content: '';
+        position: absolute;
+        right: -70px;
+        bottom: -90px;
+        width: 260px;
+        height: 260px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 72%);
+        pointer-events: none;
+    }
+
+    .brand-lockup,
+    .mobile-brand-lockup {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 14px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.97);
+        box-shadow: 0 18px 40px rgba(7, 27, 77, 0.18);
+    }
+
+    .mobile-brand-lockup {
+        display: none;
+        margin-bottom: 18px;
+    }
+
+    .logo-img {
+        height: 46px;
+        width: auto;
+        flex: 0 0 auto;
+    }
+
+    .brand-panel {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+
+    .brand-name {
+        font-size: 1.15rem;
+        font-weight: 900;
+        line-height: 1;
+        color: #0b2b6d;
+    }
+
+    .brand-tagline {
+        margin-top: 4px;
+        font-size: 0.68rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #2563eb;
+        font-weight: 700;
+    }
+
+    .branding-title {
+        color: #fff;
+        font-size: 1.9rem;
+        line-height: 1.1;
+        font-weight: 800;
+        margin: 22px 0 10px;
+    }
+
+    .branding-copy {
+        color: rgba(255, 255, 255, 0.9);
+        line-height: 1.7;
+        font-size: 0.94rem;
+        max-width: 32ch;
+        margin: 0;
+    }
+
+    .branding-points {
+        display: grid;
+        gap: 12px;
+        margin-top: 20px;
+    }
+
+    .branding-point {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        padding: 12px 13px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.92);
+    }
+
+    .branding-point strong {
+        display: block;
+        color: #fff;
+        font-size: 0.88rem;
+        margin-bottom: 2px;
+    }
+
+    .form-panel {
+        padding: 36px 32px;
+        background: #fff;
     }
 
     .form-control {
-        border-radius: 10px;
-        padding: 12px 15px;
-        border: 1px solid #e1e1e1;
+        border-radius: 14px;
+        padding: 13px 16px;
+        border: 1px solid #dbe5f2;
+        background: #fcfdfe;
     }
 
     .form-control:focus {
-        box-shadow: 0 0 0 3px rgba(61, 94, 225, 0.1);
-        border-color: #3d5ee1;
+        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.16);
+        border-color: var(--spa-primary);
+        background: #fff;
     }
 
     .btn-primary {
-        border-radius: 10px;
-        background: #3d5ee1;
-        border: none;
+        border-radius: 16px;
+        background: linear-gradient(145deg, #2348c7 0%, #1b2fb5 38%, #0a148a 100%);
+        border: 1px solid rgba(255, 224, 138, 0.18);
+        color: var(--spa-gold);
         transition: all 0.3s;
+        box-shadow: 0 16px 30px rgba(10, 20, 138, 0.28);
     }
 
     .btn-primary:hover {
-        background: #2b46b9;
-        transform: translateY(-1px);
+        background: linear-gradient(145deg, #294fd3 0%, #2038c6 42%, #0e1a99 100%);
+        color: #fff4c8;
+        transform: translateY(-2px);
+    }
+
+    .panel-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: #eff6ff;
+        color: #173b92;
+        border: 1px solid #dbeafe;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 14px;
+    }
+
+    .panel-kicker::before {
+        content: '';
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #173b92;
+        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+    }
+
+    .form-shell {
+        border: 1px solid #e5edf8;
+        border-radius: 22px;
+        background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+        padding: 22px;
+        box-shadow: 0 18px 38px rgba(15, 23, 42, 0.05);
+    }
+
+    .helper-box {
+        border: 1px solid #dbeafe;
+        background: #eff6ff;
+        color: #173b92;
+        border-radius: 14px;
+        padding: 12px 14px;
+        margin-bottom: 18px;
+        font-size: 12px;
+        line-height: 1.55;
+    }
+
+    .helper-box strong {
+        color: #0f2f80;
     }
 
     @media (max-width: 767px) {
         .auth-wrapper {
             padding: 14px;
-            align-items: flex-start;
         }
         .login-card-custom {
-            border-radius: 14px;
-            margin-top: 20px;
+            border-radius: 20px;
+        }
+        .mobile-brand-lockup {
+            display: inline-flex;
+        }
+        .form-panel {
+            padding: 22px 18px;
+        }
+        .logo-img {
+            height: 34px;
+        }
+        .brand-name {
+            font-size: 0.98rem;
+        }
+        .brand-tagline {
+            font-size: 0.62rem;
+        }
+        .form-shell {
+            padding: 18px 16px;
+            border-radius: 18px;
         }
     }
 </style>
@@ -85,57 +273,90 @@
             
             {{-- Left Side: Branding --}}
             <div class="col-lg-6 d-none d-lg-block branding-side">
-                <div class="h-100 d-flex flex-column align-items-center justify-content-center text-center text-white">
-                    <img src="{{ asset('/assets/img/logos.png') }}" class="img-fluid mb-4" alt="Branding" style="max-height: 440px; filter: brightness(0) invert(1);">
-                    <h2 class="fw-bold">Don't Worry!</h2>
-                    <p class="opacity-75">It happens to everyone. Enter your details and we'll help you regain access to your SmartProbook workspace in seconds.</p>
+                <div class="h-100 d-flex flex-column justify-content-center text-white">
+                    <div class="brand-lockup">
+                        <img src="{{ asset('/assets/img/logos.png') }}" class="logo-img" alt="SmartProbook">
+                        <div class="brand-panel">
+                            <span class="brand-name">SmartProbook</span>
+                            <span class="brand-tagline">Secure Business Stack</span>
+                        </div>
+                    </div>
+                    <h2 class="branding-title">Recover your access without leaving the blue flow.</h2>
+                    <p class="branding-copy">Enter the email attached to your workspace and we will send a secure reset link to continue onboarding or return to your dashboard.</p>
+                    <div class="branding-points">
+                        <div class="branding-point">
+                            <i class="fas fa-envelope-open-text mt-1"></i>
+                            <div>
+                                <strong>Fast recovery</strong>
+                                <span>Reset instructions are sent straight to the registered business email.</span>
+                            </div>
+                        </div>
+                        <div class="branding-point">
+                            <i class="fas fa-shield-check mt-1"></i>
+                            <div>
+                                <strong>Protected workflow</strong>
+                                <span>Your account stays inside the same SmartProbook blue authentication experience.</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             {{-- Right Side: Form --}}
-            <div class="col-lg-6 p-4 p-md-5">
-                <div class="text-center mb-5">
-                    <img src="{{ asset('/assets/img/logos.png') }}" class="mb-4 d-lg-none" style="max-height: 80px;" alt="Logo">
-                    <h3 class="fw-bold text-dark">Password Recovery</h3>
-                    <p class="text-muted">Enter email to receive reset link</p>
+            <div class="col-lg-6 form-panel">
+                <div class="mobile-brand-lockup">
+                    <img src="{{ asset('/assets/img/logos.png') }}" class="logo-img" alt="SmartProbook">
+                    <div class="brand-panel">
+                        <span class="brand-name">SmartProbook</span>
+                        <span class="brand-tagline">Secure Business Stack</span>
+                    </div>
                 </div>
-
-                {{-- Alert Messages --}}
-                @if (session('status') || session('success'))
-                    <div class="alert alert-success border-0 shadow-sm small py-3 mb-4">
-                        <i class="fas fa-check-circle me-2"></i> {{ session('status') ?? session('success') }}
-                    </div>
-                @endif
-
-                <form method="POST" action="{{ route('password.email') }}">
-                    @csrf
-                    
+                <span class="panel-kicker">Protected recovery</span>
+                <div class="form-shell">
                     <div class="mb-4">
-                        <label class="form-label small fw-bold text-secondary">Email Address</label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-white border-end-0 text-muted"><i class="far fa-envelope"></i></span>
-                            <input type="email" name="email" class="form-control border-start-0 @error('email') is-invalid @enderror" 
-                                   placeholder="name@company.com" value="{{ old('email') }}" required autofocus>
+                        <h3 class="fw-bold text-dark mb-2">Password Recovery</h3>
+                        <p class="text-muted mb-0">Enter your email to receive a secure reset link.</p>
+                    </div>
+
+                    @if (session('status') || session('success'))
+                        <div class="alert alert-success border-0 shadow-sm small py-3 mb-4">
+                            <i class="fas fa-check-circle me-2"></i> {{ session('status') ?? session('success') }}
                         </div>
-                        @error('email')
-                            <span class="invalid-feedback d-block" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
-                        @enderror
+                    @endif
+
+                    <div class="helper-box">
+                        <strong>Need access again?</strong> We’ll send your recovery link to the email attached to this SmartProbook workspace.
                     </div>
 
-                    <button type="submit" class="btn btn-primary w-100 py-3 fw-bold shadow-sm mb-4">
-                        Send Reset Link
-                    </button>
+                    <form method="POST" action="{{ route('password.email') }}">
+                        @csrf
+                        
+                        <div class="mb-4">
+                            <label class="form-label small fw-bold text-secondary">Email Address</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white border-end-0 text-muted"><i class="far fa-envelope"></i></span>
+                                <input type="email" name="email" class="form-control border-start-0 @error('email') is-invalid @enderror" 
+                                       placeholder="name@company.com" value="{{ old('email') }}" required autofocus>
+                            </div>
+                            @error('email')
+                                <span class="invalid-feedback d-block" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                            @enderror
+                        </div>
 
-                    <div class="text-center">
-                        <a href="{{ route('saas-login') }}" class="text-decoration-none small text-muted">
-                            <i class="fas fa-chevron-left me-1 small"></i> Back to <span class="text-primary fw-bold">Sign In</span>
-                        </a>
-                    </div>
-                </form>
+                        <button type="submit" class="btn btn-primary w-100 py-3 fw-bold shadow-sm mb-4">
+                            Send Reset Link
+                        </button>
+
+                        <div class="text-center">
+                            <a href="{{ route('saas-login') }}" class="text-decoration-none small text-muted">
+                                <i class="fas fa-chevron-left me-1 small"></i> Back to <span class="text-primary fw-bold">Sign In</span>
+                            </a>
+                        </div>
+                    </form>
+                </div>
             </div>
-
         </div>
     </div>
 </div>

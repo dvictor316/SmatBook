@@ -13,7 +13,7 @@
     :root {
         --side-w: 270px;
         --side-w-collapsed: 70px;
-        --primary-color: #7c3aed;
+        --primary-color: #2563eb;
         --glass-border: #e2e8f0;
     }
 
@@ -37,15 +37,28 @@
     }
 
     .glass-card {
-        background: white;
+        background: linear-gradient(160deg, rgba(255,255,255,0.98) 0%, rgba(248,251,255,0.96) 100%);
         border: 1px solid var(--glass-border);
         border-radius: 12px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
         height: 100%;
         transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
         text-decoration: none;
         display: block;
         color: inherit;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .glass-card::after {
+        content: '';
+        position: absolute;
+        inset: auto -22px -32px auto;
+        width: 110px;
+        height: 110px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.2);
+        pointer-events: none;
     }
 
     a.glass-card:hover, div.glass-card.clickable:hover {
@@ -184,7 +197,7 @@
     <div class="row g-3 mb-4">
         {{-- Pending Commission --}}
         <div class="col-lg-3 col-md-6">
-            <div class="glass-card p-4">
+            <div class="glass-card p-4" style="background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <h6 class="fw-bold mb-0 small text-uppercase text-muted">Pending Commission</h6>
                     <span class="badge bg-warning">{{ $commissionPending > 0 ? 'YES' : 'NO' }}</span>
@@ -196,7 +209,7 @@
 
         {{-- Trial Accounts --}}
         <div class="col-lg-3 col-md-6">
-            <div class="glass-card p-4">
+            <div class="glass-card p-4" style="background: linear-gradient(135deg, #ecfeff 0%, #cffafe 100%);">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <h6 class="fw-bold mb-0 small text-uppercase text-muted">Trial Accounts</h6>
                     <span class="badge bg-info">{{ $metrics['trialCount'] ?? 0 }}</span>
@@ -208,7 +221,7 @@
 
         {{-- Conversion Rate --}}
         <div class="col-lg-3 col-md-6">
-            <div class="glass-card p-4">
+            <div class="glass-card p-4" style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <h6 class="fw-bold mb-0 small text-uppercase text-muted">Conversion Rate</h6>
                     <i class="fas fa-chart-line text-success"></i>
@@ -225,7 +238,7 @@
 
         {{-- Average Deal Size --}}
         <div class="col-lg-3 col-md-6">
-            <div class="glass-card p-4">
+            <div class="glass-card p-4" style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <h6 class="fw-bold mb-0 small text-uppercase text-muted">Avg Deal Size</h6>
                     <i class="fas fa-dollar-sign text-primary"></i>

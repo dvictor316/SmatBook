@@ -199,6 +199,17 @@
         color: #2563eb;
         font-weight: 700;
     }
+    .mobile-brand-lockup {
+        display: none;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 16px;
+        padding: 10px 12px;
+        border-radius: 16px;
+        background: #f8fbff;
+        border: 1px solid #dbeafe;
+        box-shadow: 0 14px 28px rgba(37, 99, 235, 0.08);
+    }
 
     .status-badge {
         display: inline-flex;
@@ -467,6 +478,7 @@
         .logo-img { height: 46px; }
         .brand-lockup { gap: 7px; margin-bottom: 6px; }
         .brand-name { font-size: 1.1rem; }
+        .mobile-brand-lockup { display: inline-flex; }
         /* Reset viewport for mobile scrolling */
         .smat-viewport { display: block; overflow-y: auto; }
     }
@@ -477,6 +489,9 @@
         .btn-smat-navy { padding: 13px; font-size: 13px; }
         .btn-social { font-size: 12px; padding: 9px; }
         .form-shell { padding: 18px 16px; border-radius: 18px; }
+        .mobile-brand-lockup .logo-img { height: 34px; }
+        .mobile-brand-lockup .brand-name { font-size: 0.98rem; }
+        .mobile-brand-lockup .brand-tagline { font-size: 0.62rem; }
     }
 </style>
 
@@ -529,6 +544,13 @@
 
         <!-- Login Form Panel -->
         <div class="smat-main">
+            <div class="mobile-brand-lockup">
+                <img src="{{ asset('/assets/img/logos.png') }}" alt="SmartProbook" class="logo-img">
+                <div class="brand-panel">
+                    <span class="brand-name">SmartProbook</span>
+                    <span class="brand-tagline">Secure Business Stack</span>
+                </div>
+            </div>
             <span class="panel-kicker">Protected access</span>
             <form action="{{ route('saas-login.post') }}" method="POST" class="form-shell">
                 @csrf
