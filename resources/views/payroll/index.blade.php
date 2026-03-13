@@ -15,8 +15,9 @@
 .payroll-shell {
     width: 100%;
     max-width: 100%;
-    padding: 1.5rem 0.75rem;
+    padding: 1.5rem 0.9rem 1.75rem;
     overflow-x: hidden;
+    transition: padding 0.3s ease;
 }
 .payroll-shell .row {
     margin-left: 0;
@@ -260,6 +261,45 @@
 .bar-track { flex: 1; height: 8px; background: #f0f4f8; border-radius: 99px; overflow: hidden; }
 .bar-fill { height: 100%; border-radius: 99px; background: linear-gradient(to right, var(--blue-deep), var(--gold)); transition: width 1.2s ease; }
 .bar-val { font-size: 0.75rem; font-weight: 700; color: var(--blue-deep); width: 55px; }
+.payroll-main-grid {
+    align-items: stretch;
+}
+.chart-panel-body {
+    min-height: 300px;
+}
+.empty-insight {
+    min-height: 230px;
+    border: 1px dashed #cbd5e1;
+    border-radius: 18px;
+    background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 1.5rem;
+}
+.empty-insight-icon {
+    width: 58px;
+    height: 58px;
+    border-radius: 18px;
+    margin: 0 auto 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #dbeafe;
+    color: #1d4ed8;
+    font-size: 1.4rem;
+}
+.empty-insight h6 {
+    margin-bottom: 0.35rem;
+    font-weight: 800;
+    color: var(--blue-deep);
+}
+.empty-insight p {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.86rem;
+}
 
 /* Modal */
 .modal-content { border: none; border-radius: 16px; overflow: hidden; }
@@ -305,7 +345,25 @@
     .payroll-table td, .payroll-table th { padding: 10px 12px; font-size: 0.78rem; }
 }
 @media (min-width: 768px) {
-    .payroll-shell { padding-left: 1rem; padding-right: 1rem; }
+    .payroll-shell { padding-left: 1.25rem; padding-right: 1.1rem; }
+}
+@media (min-width: 992px) {
+    .payroll-main-grid {
+        display: grid;
+        grid-template-columns: minmax(320px, 380px) minmax(0, 1fr);
+        gap: 1.25rem;
+    }
+    .payroll-main-grid > [class*="col-"] {
+        width: auto;
+        padding-left: 0;
+        padding-right: 0;
+    }
+    body.sidebar-collapsed .payroll-shell,
+    body.mini-sidebar .payroll-shell,
+    body.sidebar-icon-only .payroll-shell {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
 }
 </style>
 
@@ -375,7 +433,7 @@
     </div>
 
     {{-- Main Content Row --}}
-    <div class="row g-4 mb-4">
+    <div class="row g-4 mb-4 payroll-main-grid">
 
         {{-- Payroll Cycle Info --}}
         <div class="col-lg-4">
@@ -428,7 +486,7 @@
                     <h6><i class="fas fa-chart-bar me-2" style="color:var(--gold);"></i>Salary Distribution by Department</h6>
                     <span class="status-badge status-processing">{{ now()->format('M Y') }}</span>
                 </div>
-                <div class="p-4">
+                <div class="p-4 chart-panel-body">
                     <div class="bar-chart-wrap" id="deptChart">
                         @php
                         $departments = $deptBreakdown ?? [
@@ -439,7 +497,9 @@
                             ['name'=>'Operations','amount'=>210000,'pct'=>42],
                             ['name'=>'HR','amount'=>175000,'pct'=>35],
                         ];
+                        $hasDeptData = collect($departments)->sum(fn ($dept) => (float) ($dept['amount'] ?? 0)) > 0;
                         @endphp
+                        @if($hasDeptData)
                         @foreach($departments as $dept)
                         <div class="bar-row">
                             <div class="bar-label">{{ $dept['name'] }}</div>
@@ -449,6 +509,17 @@
                             <div class="bar-val">₦{{ number_format($dept['amount']/1000) }}K</div>
                         </div>
                         @endforeach
+                        @else
+                        <div class="empty-insight">
+                            <div>
+                                <div class="empty-insight-icon">
+                                    <i class="fas fa-chart-column"></i>
+                                </div>
+                                <h6>No salary distribution yet</h6>
+                                <p>Add employees and run payroll to populate this department breakdown.</p>
+                            </div>
+                        </div>
+                        @endif
                     </div>
 
                     <hr style="border-color:#e8ecf4; margin:20px 0;">
