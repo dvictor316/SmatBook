@@ -30,10 +30,9 @@
 
     .master-hub-wrapper {
         margin-left: var(--sidebar-width);
-        margin-top: var(--navbar-height);
         padding: 1.5rem;
         background-color: #f8fafc;
-        min-height: calc(100vh - var(--navbar-height));
+        min-height: 100vh;
         transition: all 0.3s ease;
     }
 

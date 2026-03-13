@@ -161,6 +161,8 @@
     .page-content-wrapper {
         overflow-x: hidden;
         overflow-y: visible;
+        margin-top: 0 !important;
+        padding-top: 0 !important;
     }
 
     /* Global sidebar scroll behavior (all roles, all pages). */

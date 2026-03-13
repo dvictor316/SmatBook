@@ -17,7 +17,6 @@
         padding: 40px;
         background-color: var(--crystal-blue); 
         min-height: 100vh;
-        margin-top: 8px;
         position: relative;
     }
 

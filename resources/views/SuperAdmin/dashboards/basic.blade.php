@@ -12,7 +12,6 @@
     .pos-content-area {
         margin-left: 250px;
         padding: 40px;
-        margin-top: 8px;
         background-color: var(--crystal-blue);
         min-height: 100vh;
         position: relative;
