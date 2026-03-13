@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 // 2. Third Party Packages
 use Barryvdh\DomPDF\Facade\Pdf; 
@@ -132,38 +133,85 @@ public function purchase_report(Request $request)
     $currentSubdomain = request()->route('subdomain') ?? 'admin';
     $routeParams = ['subdomain' => $currentSubdomain];
 
-    $query = \App\Models\Purchase::leftJoin('suppliers', 'purchases.supplier_id', '=', 'suppliers.id')
-        ->select(
-            'purchases.purchase_no as Reference',
-            DB::raw("COALESCE(suppliers.name, 'N/A') as CompanyName"),
-            'purchases.total_amount as Amount',
-            'purchases.created_at as Date',
-            'purchases.status as Type',
-            'purchases.id'
-        );
+    $purchases = collect();
+    $totalSum = 0;
+    $hasPurchaseRows = false;
 
-    // 2. Filter by Date Range
-    if ($request->filled('start_date') && $request->filled('end_date')) {
-        $query->whereBetween('purchases.created_at', [
-            Carbon::parse($request->start_date)->startOfDay(),
-            Carbon::parse($request->end_date)->endOfDay(),
-        ]);
+    if (Schema::hasTable('purchases')) {
+        $purchaseRefColumn = Schema::hasColumn('purchases', 'purchase_no') ? 'purchase_no' : 'id';
+        $purchaseAmountColumn = Schema::hasColumn('purchases', 'total_amount') ? 'total_amount' : (Schema::hasColumn('purchases', 'amount') ? 'amount' : null);
+        $purchaseDateColumn = Schema::hasColumn('purchases', 'purchase_date') ? 'purchase_date' : (Schema::hasColumn('purchases', 'date') ? 'date' : 'created_at');
+        $purchaseStatusColumn = Schema::hasColumn('purchases', 'status') ? 'status' : null;
+
+        $supplierNameExpression = DB::raw("'N/A' as CompanyName");
+        $supplierSearchColumn = null;
+
+        if (
+            Schema::hasTable('suppliers') &&
+            Schema::hasColumn('purchases', 'supplier_id') &&
+            Schema::hasColumn('suppliers', 'id')
+        ) {
+            if (Schema::hasColumn('suppliers', 'name')) {
+                $supplierNameExpression = DB::raw("COALESCE(suppliers.name, 'N/A') as CompanyName");
+                $supplierSearchColumn = 'suppliers.name';
+            } elseif (Schema::hasColumn('suppliers', 'supplier_name')) {
+                $supplierNameExpression = DB::raw("COALESCE(suppliers.supplier_name, 'N/A') as CompanyName");
+                $supplierSearchColumn = 'suppliers.supplier_name';
+            } elseif (Schema::hasColumn('suppliers', 'company_name')) {
+                $supplierNameExpression = DB::raw("COALESCE(suppliers.company_name, 'N/A') as CompanyName");
+                $supplierSearchColumn = 'suppliers.company_name';
+            }
+        }
+
+        if ($purchaseAmountColumn) {
+            $query = \App\Models\Purchase::query();
+
+            if (
+                Schema::hasTable('suppliers') &&
+                Schema::hasColumn('purchases', 'supplier_id') &&
+                Schema::hasColumn('suppliers', 'id')
+            ) {
+                $query->leftJoin('suppliers', 'purchases.supplier_id', '=', 'suppliers.id');
+            }
+
+            $query->select([
+                DB::raw("COALESCE(purchases.{$purchaseRefColumn}, CONCAT('PUR-', purchases.id)) as Reference"),
+                $supplierNameExpression,
+                DB::raw("COALESCE(purchases.{$purchaseAmountColumn}, 0) as Amount"),
+                DB::raw("purchases.{$purchaseDateColumn} as Date"),
+                $purchaseStatusColumn
+                    ? DB::raw("COALESCE(purchases.{$purchaseStatusColumn}, 'received') as Type")
+                    : DB::raw("'received' as Type"),
+                'purchases.id',
+            ]);
+
+            if ($request->filled('start_date') && $request->filled('end_date')) {
+                $query->whereBetween("purchases.{$purchaseDateColumn}", [
+                    Carbon::parse($request->start_date)->startOfDay(),
+                    Carbon::parse($request->end_date)->endOfDay(),
+                ]);
+            }
+
+            if ($request->filled('search')) {
+                $search = trim((string) $request->search);
+                $query->where(function ($q) use ($search, $purchaseRefColumn, $supplierSearchColumn) {
+                    $q->where("purchases.{$purchaseRefColumn}", 'like', '%' . $search . '%');
+                    if ($supplierSearchColumn) {
+                        $q->orWhere($supplierSearchColumn, 'like', '%' . $search . '%');
+                    }
+                });
+            }
+
+            $hasPurchaseRows = (clone $query)->exists();
+
+            if ($hasPurchaseRows) {
+                $purchases = $query->orderByDesc("purchases.{$purchaseDateColumn}")->paginate(20);
+                $totalSum = (float) ((clone $query)->sum("purchases.{$purchaseAmountColumn}") ?? 0);
+            }
+        }
     }
 
-    // 3. Filter by Search
-    if ($request->filled('search')) {
-        $query->where(function($q) use ($request) {
-            $q->where('purchases.purchase_no', 'like', '%' . $request->search . '%')
-              ->orWhere('suppliers.name', 'like', '%' . $request->search . '%');
-        });
-    }
-
-    $hasPurchaseRows = (clone $query)->exists();
-
-    if ($hasPurchaseRows) {
-        $purchases = $query->orderBy('purchases.created_at', 'desc')->paginate(20);
-        $totalSum = (clone $query)->sum('purchases.total_amount');
-    } else {
+    if (!$hasPurchaseRows && Schema::hasTable('inventory_history') && Schema::hasTable('products')) {
         $historyQuery = DB::table('inventory_history')
             ->join('products', 'inventory_history.product_id', '=', 'products.id')
             ->select([
@@ -194,6 +242,12 @@ public function purchase_report(Request $request)
 
         $purchases = $historyQuery->orderByDesc('inventory_history.created_at')->paginate(20);
         $totalSum = (clone $historyQuery)->sum(DB::raw('COALESCE(inventory_history.quantity, 0) * COALESCE(products.purchase_price, products.price, 0)'));
+    } elseif (!$hasPurchaseRows) {
+        $purchases = new LengthAwarePaginator([], 0, 20, 1, [
+            'path' => request()->url(),
+            'query' => request()->query(),
+        ]);
+        $totalSum = 0;
     }
 
     // 6. Return View
