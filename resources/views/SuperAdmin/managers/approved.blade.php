@@ -1,15 +1,22 @@
-// Page: resources/views/superadmin/managers/approved.blade.php
-
-/** * REWRITE SUMMARY:
- * Fixed the "no response" issue on approval by adding a Success/Error alert block.
- * Corrected the form redirect logic by adding a visual feedback mechanism.
- * Integrated session domain: {{ env('SESSION_DOMAIN', null) }}.
- * Ensured CSRF and Method handling for all partner control actions.
- */
-
 @extends('layout.mainlayout')
 
 @section('content')
+@php
+    $currentManagerRoute = request()->route()?->getName();
+    $pageTitle = match ($currentManagerRoute) {
+        'super_admin.managers.pending' => 'Pending Deployment Managers',
+        'super_admin.managers.suspended' => 'Suspended Deployment Managers',
+        'super_admin.managers.approved' => 'Approved Deployment Managers',
+        default => 'Deployment Managers List',
+    };
+
+    $pageSubtitle = match ($currentManagerRoute) {
+        'super_admin.managers.pending' => 'Review partners awaiting approval and activation.',
+        'super_admin.managers.suspended' => 'Monitor suspended partners and restore access when necessary.',
+        'super_admin.managers.approved' => 'Manage approved deployment partners across the platform.',
+        default => 'Centralized registry for all deployment partners across the platform.',
+    };
+@endphp
 <style>
     :root {
         --sidebar-width: 250px;
@@ -114,8 +121,8 @@
     {{-- Header --}}
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h3 class="fw-bold text-dark mb-0">Partner Management Console</h3>
-            <p class="text-muted small">Centralized Registry for Deployment Partners | Domain: {{ env('SESSION_DOMAIN', 'System Default') }}</p>
+            <h3 class="fw-bold text-dark mb-0">{{ $pageTitle }}</h3>
+            <p class="text-muted small">{{ $pageSubtitle }} | Domain: {{ env('SESSION_DOMAIN', 'System Default') }}</p>
         </div>
         <div class="d-flex gap-2">
             <button onclick="window.print();" class="btn btn-white border px-3 btn-sm fw-bold">
