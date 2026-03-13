@@ -124,6 +124,11 @@ public function customerDetails($id = null)
 
         $paymentStatus = ($balance <= 0) ? 'paid' : (($actualPaymentKept > 0) ? 'partial' : 'unpaid');
 
+        $selectedCustomer = $request->customer_id ? Customer::find($request->customer_id) : null;
+        $resolvedCustomerName = $selectedCustomer?->customer_name
+            ?? $selectedCustomer?->name
+            ?? 'Walk-in Customer';
+
         // --- 2. CREATE THE SALE RECORD ---
 $sale = Sale::create([
     'company_id'     => auth()->user()?->company_id,
@@ -131,7 +136,7 @@ $sale = Sale::create([
     'invoice_no'     => $invoiceNo,
     'receipt_no'     => $receiptNo,
     'customer_id'    => $request->customer_id,
-    'customer_name'  => $request->customer_id ? Customer::find($request->customer_id)->name : 'Walk-in Customer',
+    'customer_name'  => $resolvedCustomerName,
     'user_id'        => auth()->id() ?? 1,
     'terminal_id'    => 'POS1',
     'subtotal'       => 0, 
