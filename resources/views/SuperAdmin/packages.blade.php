@@ -1,6 +1,3 @@
-// session domain logic
-// domain => env('SESSION_DOMAIN', null)
-
 @extends('layout.mainlayout')
 
 @section('content')
