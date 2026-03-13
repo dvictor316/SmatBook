@@ -117,6 +117,17 @@ class Subscription extends Model
         return $query->where('status', 'Active');
     }
 
+    public function scopeExpiringSoon($query, int $days = 7)
+    {
+        $days = max(1, $days);
+
+        return $query
+            ->whereIn(\DB::raw("LOWER(COALESCE(status, ''))"), ['active', 'trial'])
+            ->whereNotNull('end_date')
+            ->whereDate('end_date', '>=', now()->toDateString())
+            ->whereDate('end_date', '<=', now()->addDays($days)->toDateString());
+    }
+
     public function hasDomain(): bool
     {
         return !empty($this->domain_prefix) || ($this->company && !empty($this->company->subdomain));
@@ -224,17 +235,22 @@ class Subscription extends Model
         return "Expires in $days days (" . ($this->end_date ? $this->end_date->format('M d, Y') : 'N/A') . ")";
     }
 
-    public static function expireDueSubscriptions(): int
+    public static function expireDueSubscriptions(?array $companyIds = null): int
     {
         if (! Schema::hasTable('subscriptions') || ! Schema::hasColumn('subscriptions', 'end_date')) {
             return 0;
         }
 
-        return static::query()
+        $query = static::query()
             ->whereIn(\DB::raw("LOWER(COALESCE(status, ''))"), ['active', 'trial'])
             ->whereNotNull('end_date')
-            ->whereDate('end_date', '<', now()->toDateString())
-            ->update([
+            ->whereDate('end_date', '<', now()->toDateString());
+
+        if (!empty($companyIds) && Schema::hasColumn('subscriptions', 'company_id')) {
+            $query->whereIn('company_id', $companyIds);
+        }
+
+        return $query->update([
                 'status' => 'Expired',
                 'updated_at' => now(),
             ]);
