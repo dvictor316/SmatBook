@@ -1047,6 +1047,11 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     .gadget-orbit {
         padding-inline: 16px;
     }
+    .gadget-orbit {
+        width: auto;
+        margin-inline: 16px;
+        padding: 14px 18px;
+    }
     .float-badge {
         display: none !important;
     }
@@ -1097,6 +1102,10 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     }
     .gadget-card {
         border-radius: 18px;
+    }
+    .gadget-orbit {
+        margin-inline: 14px;
+        padding: 14px 16px;
     }
     .gadget-topline,
     .gadget-bar-label,
