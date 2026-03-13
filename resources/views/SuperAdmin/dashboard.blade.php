@@ -384,6 +384,12 @@
         font-size: clamp(1.45rem, 2vw, 2rem);
         letter-spacing: -0.04em;
     }
+    .tone-card .card-body {
+        padding: 1rem 1.05rem !important;
+    }
+    .tone-card .mdi {
+        opacity: 0.9;
+    }
     .tone-indigo {
         background:
             radial-gradient(circle at top right, rgba(255,255,255,0.18), transparent 34%),
@@ -436,10 +442,10 @@
     .executive-kpi {
         border: none !important;
         border-radius: 22px !important;
-        min-height: 192px;
+        min-height: 156px;
         overflow: hidden;
         position: relative;
-        box-shadow: 0 22px 44px rgba(15, 23, 42, 0.16) !important;
+        box-shadow: 0 18px 34px rgba(15, 23, 42, 0.14) !important;
     }
     .executive-kpi::before {
         content: "";
@@ -451,12 +457,12 @@
     .executive-kpi .card-body {
         position: relative;
         z-index: 1;
-        padding: 1.4rem;
+        padding: 1.05rem 1.1rem;
     }
     .executive-kpi .kpi-icon-shell {
-        width: 58px;
-        height: 58px;
-        border-radius: 18px;
+        width: 48px;
+        height: 48px;
+        border-radius: 15px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -466,26 +472,26 @@
         color: #fff;
     }
     .executive-kpi .kpi-kicker {
-        font-size: 0.7rem;
+        font-size: 0.64rem;
         font-weight: 800;
         letter-spacing: 0.08em;
         text-transform: uppercase;
         color: rgba(255,255,255,0.72) !important;
     }
     .executive-kpi .kpi-value {
-        font-size: clamp(1.9rem, 2.5vw, 2.6rem);
+        font-size: clamp(1.55rem, 2vw, 2.1rem);
         line-height: 1;
         letter-spacing: -0.05em;
         color: #fff !important;
     }
     .executive-kpi .kpi-note {
         color: rgba(255,255,255,0.78) !important;
-        font-size: 0.88rem;
+        font-size: 0.8rem;
     }
     .executive-kpi .kpi-badge {
         border-radius: 999px;
-        padding: 0.35rem 0.7rem;
-        font-size: 0.68rem;
+        padding: 0.28rem 0.58rem;
+        font-size: 0.62rem;
         font-weight: 800;
         letter-spacing: 0.06em;
         text-transform: uppercase;
@@ -777,6 +783,18 @@
         .metric-wall-item .value,
         .summary-fill .value {
             font-size: 0.88rem;
+        }
+        .executive-kpi {
+            min-height: 138px;
+        }
+        .executive-kpi .kpi-value {
+            font-size: 1.45rem;
+        }
+        .executive-kpi .kpi-note {
+            font-size: 0.74rem;
+        }
+        .tone-card .tone-value {
+            font-size: 1.3rem;
         }
         .badge,
         .live-badge-soft {
