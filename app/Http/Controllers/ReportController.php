@@ -122,6 +122,11 @@ use App\Support\LedgerService;
         }
 
 
+public function purchaseReport(Request $request)
+{
+    return $this->purchase_report($request);
+}
+
 public function purchase_report(Request $request) 
 {
     $currentSubdomain = request()->route('subdomain') ?? 'admin';
