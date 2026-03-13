@@ -1190,43 +1190,44 @@
                                                     placeholder="Search here">
                                                 <span><img src="{{ URL::asset('/assets/img/icons/search.svg')}}" alt="img"></span>
                                             </div>
+                                            @php
+                                                $quotationReportCustomers = collect();
+                                                if (\Illuminate\Support\Facades\Schema::hasTable('customers')) {
+                                                    $quotationReportCustomerColumn = \Illuminate\Support\Facades\Schema::hasColumn('customers', 'name') ? 'name' : 'customer_name';
+                                                    $quotationReportCustomers = \App\Models\Customer::query()
+                                                        ->orderBy($quotationReportCustomerColumn)
+                                                        ->get(['id', $quotationReportCustomerColumn]);
+                                                }
+                                            @endphp
                                             <div class="selectBox-cont">
-                                                <label class="custom_check w-100">
-                                                    <input type="checkbox" name="username">
-                                                    <span class="checkmark"></span> Orn LLC
-                                                </label>
-                                                <label class="custom_check w-100">
-                                                    <input type="checkbox" name="username">
-                                                    <span class="checkmark"></span> Accent Technology
-                                                </label>
-                                                <label class="custom_check w-100">
-                                                    <input type="checkbox" name="username">
-                                                    <span class="checkmark"></span> Express Advertising
-                                                </label>
-                                                <label class="custom_check w-100">
-                                                    <input type="checkbox" name="username">
-                                                    <span class="checkmark"></span> Lexicon Technologies
-                                                </label>
-                                                <!-- View All -->
-                                                <div class="view-content">
-                                                    <div class="viewall-One">
-                                                        <label class="custom_check w-100">
-                                                            <input type="checkbox" name="username">
-                                                            <span class="checkmark"></span> Sumo Soft Limited
-                                                        </label>
-                                                        <label class="custom_check w-100">
-                                                            <input type="checkbox" name="username">
-                                                            <span class="checkmark"></span> Repair Group Co
-                                                        </label>
+                                                @forelse($quotationReportCustomers->take(4) as $customer)
+                                                    @php $customerName = $customer->name ?? $customer->customer_name ?? 'Unknown Customer'; @endphp
+                                                    <label class="custom_check w-100">
+                                                        <input type="checkbox" name="username">
+                                                        <span class="checkmark"></span> {{ $customerName }}
+                                                    </label>
+                                                @empty
+                                                    <div class="text-muted small py-2">No customer records available yet.</div>
+                                                @endforelse
+                                                @if($quotationReportCustomers->count() > 4)
+                                                    <div class="view-content">
+                                                        <div class="viewall-One">
+                                                            @foreach($quotationReportCustomers->slice(4) as $customer)
+                                                                @php $customerName = $customer->name ?? $customer->customer_name ?? 'Unknown Customer'; @endphp
+                                                                <label class="custom_check w-100">
+                                                                    <input type="checkbox" name="username">
+                                                                    <span class="checkmark"></span> {{ $customerName }}
+                                                                </label>
+                                                            @endforeach
+                                                        </div>
+                                                        <div class="view-all">
+                                                            <a href="javascript:void(0);"
+                                                                class="viewall-button-One"><span class="me-2">View
+                                                                    All</span><span><i
+                                                                        class="fa fa-circle-chevron-down"></i></span></a>
+                                                        </div>
                                                     </div>
-                                                    <div class="view-all">
-                                                        <a href="javascript:void(0);"
-                                                            class="viewall-button-One"><span class="me-2">View
-                                                                All</span><span><i
-                                                                    class="fa fa-circle-chevron-down"></i></span></a>
-                                                    </div>
-                                                </div>
-                                                <!-- /View All -->
+                                                @endif
                                             </div>
                                         </div>
                                     </div>
@@ -5415,43 +5416,44 @@
                                                     placeholder="Search Vendor">
                                                 <span><img src="{{ URL::asset('/assets/img/icons/search.svg')}}" alt="img"></span>
                                             </div>
+                                            @php
+                                                $quotationFilterCustomers = collect();
+                                                if (\Illuminate\Support\Facades\Schema::hasTable('customers')) {
+                                                    $quotationCustomerColumn = \Illuminate\Support\Facades\Schema::hasColumn('customers', 'name') ? 'name' : 'customer_name';
+                                                    $quotationFilterCustomers = \App\Models\Customer::query()
+                                                        ->orderBy($quotationCustomerColumn)
+                                                        ->get(['id', $quotationCustomerColumn]);
+                                                }
+                                            @endphp
                                             <div class="selectBox-cont">
-                                                <label class="custom_check w-100">
-                                                    <input type="checkbox" name="username">
-                                                    <span class="checkmark"></span> John Smith
-                                                </label>
-                                                <label class="custom_check w-100">
-                                                    <input type="checkbox" name="username">
-                                                    <span class="checkmark"></span> Johnny
-                                                </label>
-                                                <label class="custom_check w-100">
-                                                    <input type="checkbox" name="username">
-                                                    <span class="checkmark"></span> Robert
-                                                </label>
-                                                <label class="custom_check w-100">
-                                                    <input type="checkbox" name="username">
-                                                    <span class="checkmark"></span> Sharonda
-                                                </label>
-                                                <!-- View All -->
-                                                <div class="view-content">
-                                                    <div class="viewall-One">
-                                                        <label class="custom_check w-100">
-                                                            <input type="checkbox" name="username">
-                                                            <span class="checkmark"></span> Pricilla
-                                                        </label>
-                                                        <label class="custom_check w-100">
-                                                            <input type="checkbox" name="username">
-                                                            <span class="checkmark"></span> Randall
-                                                        </label>
+                                                @forelse($quotationFilterCustomers->take(4) as $customer)
+                                                    @php $customerName = $customer->name ?? $customer->customer_name ?? 'Unknown Customer'; @endphp
+                                                    <label class="custom_check w-100">
+                                                        <input type="checkbox" name="username">
+                                                        <span class="checkmark"></span> {{ $customerName }}
+                                                    </label>
+                                                @empty
+                                                    <div class="text-muted small py-2">No customer records available yet.</div>
+                                                @endforelse
+                                                @if($quotationFilterCustomers->count() > 4)
+                                                    <div class="view-content">
+                                                        <div class="viewall-One">
+                                                            @foreach($quotationFilterCustomers->slice(4) as $customer)
+                                                                @php $customerName = $customer->name ?? $customer->customer_name ?? 'Unknown Customer'; @endphp
+                                                                <label class="custom_check w-100">
+                                                                    <input type="checkbox" name="username">
+                                                                    <span class="checkmark"></span> {{ $customerName }}
+                                                                </label>
+                                                            @endforeach
+                                                        </div>
+                                                        <div class="view-all">
+                                                            <a href="javascript:void(0);"
+                                                                class="viewall-button-One"><span class="me-2">View
+                                                                    All</span><span><i
+                                                                        class="fa fa-circle-chevron-down"></i></span></a>
+                                                        </div>
                                                     </div>
-                                                    <div class="view-all">
-                                                        <a href="javascript:void(0);"
-                                                            class="viewall-button-One"><span class="me-2">View
-                                                                All</span><span><i
-                                                                    class="fa fa-circle-chevron-down"></i></span></a>
-                                                    </div>
-                                                </div>
-                                                <!-- /View All -->
+                                                @endif
                                             </div>
                                         </div>
                                     </div>
@@ -5927,10 +5929,37 @@
                             data-bs-parent="#accordionExample4">
                             <div class="card-body-chat">
                                 <div id="checkBoxes3">
+                                    @php
+                                        $quotationFilterIds = \Illuminate\Support\Facades\Schema::hasTable('quotations')
+                                            ? \App\Models\Quotation::query()->whereNotNull('quotation_id')->latest()->pluck('quotation_id')
+                                            : collect();
+                                    @endphp
                                     <div class="selectBox-cont">
-                                        <div class="text-muted small py-2">
-                                            Quotation ID filters will appear here from real records instead of hardcoded values.
-                                        </div>
+                                        @forelse($quotationFilterIds->take(4) as $quotationId)
+                                            <label class="custom_check w-100">
+                                                <input type="checkbox" name="category">
+                                                <span class="checkmark"></span> {{ $quotationId }}
+                                            </label>
+                                        @empty
+                                            <div class="text-muted small py-2">No quotation IDs available yet.</div>
+                                        @endforelse
+                                        @if($quotationFilterIds->count() > 4)
+                                            <div class="view-content">
+                                                <div class="viewall-Two">
+                                                    @foreach($quotationFilterIds->slice(4) as $quotationId)
+                                                        <label class="custom_check w-100">
+                                                            <input type="checkbox" name="category">
+                                                            <span class="checkmark"></span> {{ $quotationId }}
+                                                        </label>
+                                                    @endforeach
+                                                </div>
+                                                <div class="view-all">
+                                                    <a href="javascript:void(0);" class="viewall-button-Two"><span
+                                                            class="me-2">View All</span><span><i
+                                                                class="fa fa-circle-chevron-down"></i></span></a>
+                                                </div>
+                                            </div>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
@@ -9639,7 +9668,7 @@
                                 <a href="javascript:void(0);" class="w-100 collapsed" data-bs-toggle="collapse"
                                     data-bs-target="#collapseTwo" aria-expanded="true"
                                     aria-controls="collapseTwo">
-                                    Serial Number
+                                    Quotation Id
                                     <span class="float-end"><i class="fa-solid fa-chevron-down"></i></span>
                                 </a>
                             </h6>
@@ -9649,44 +9678,43 @@
                             data-bs-parent="#accordionExample2">
                             <div class="card-body-chat">
                                 <div id="checkBoxes3">
+                                    @php
+                                        $quotationReportIds = \Illuminate\Support\Facades\Schema::hasTable('quotations')
+                                            ? \App\Models\Quotation::query()->whereNotNull('quotation_id')->latest()->pluck('quotation_id')
+                                            : collect();
+                                    @endphp
                                     <div class="selectBox-cont">
-                                        <label class="custom_check w-100">
-                                            <input type="checkbox" name="s-no">
-                                            <span class="checkmark"></span> AA1100123
-                                        </label>
-                                        <label class="custom_check w-100">
-                                            <input type="checkbox" name="s-no">
-                                            <span class="checkmark"></span> AA1100124
-                                        </label>
-                                        <label class="custom_check w-100">
-                                            <input type="checkbox" name="s-no">
-                                            <span class="checkmark"></span> AA1100125
-                                        </label>
-                                        <label class="custom_check w-100">
-                                            <input type="checkbox" name="s-no">
-                                            <span class="checkmark"></span> AA1100126
-                                        </label>
-                                        <!-- View All -->
-                                        <div class="view-content">
-                                            <div class="viewall-Two">
-                                                <label class="custom_check w-100">
-                                                    <input type="checkbox" name="s-no">
-                                                    <span class="checkmark"></span> AA1100127
-                                                </label>
+                                        @forelse($quotationReportIds->take(4) as $quotationId)
+                                            <label class="custom_check w-100">
+                                                <input type="checkbox" name="s-no">
+                                                <span class="checkmark"></span> {{ $quotationId }}
+                                            </label>
+                                        @empty
+                                            <div class="text-muted small py-2">No quotation IDs available yet.</div>
+                                        @endforelse
+                                        @if($quotationReportIds->count() > 4)
+                                            <div class="view-content">
+                                                <div class="viewall-Two">
+                                                    @foreach($quotationReportIds->slice(4) as $quotationId)
+                                                        <label class="custom_check w-100">
+                                                            <input type="checkbox" name="s-no">
+                                                            <span class="checkmark"></span> {{ $quotationId }}
+                                                        </label>
+                                                    @endforeach
+                                                </div>
+                                                <div class="view-all">
+                                                    <a href="javascript:void(0);" class="viewall-button-Two"><span
+                                                            class="me-2">View All</span><span><i
+                                                                class="fa fa-circle-chevron-down"></i></span></a>
+                                                </div>
                                             </div>
-                                            <div class="view-all">
-                                                <a href="javascript:void(0);" class="viewall-button-Two"><span
-                                                        class="me-2">View All</span><span><i
-                                                            class="fa fa-circle-chevron-down"></i></span></a>
-                                            </div>
-                                        </div>
-                                        <!-- /View All -->
+                                        @endif
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- /Product Code -->
+                    <!-- /Quotation Id -->
                     <div class="filter-buttons">
                         <button type="submit"
                             class="d-inline-flex align-items-center justify-content-center btn w-100 btn-primary">
