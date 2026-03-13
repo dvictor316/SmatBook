@@ -13,12 +13,16 @@
     Updated to resolve Navbar overlap issues.
 --}}
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap');
+
     :root {
         --dash-ink: #0f172a;
         --dash-muted: #5f6b7a;
         --dash-line: #dbe5f0;
         --dash-surface: #ffffff;
         --dash-surface-soft: #f8fbff;
+        --kpi-display-font: 'Space Grotesk', 'Plus Jakarta Sans', 'Inter', sans-serif;
+        --kpi-ui-font: 'Plus Jakarta Sans', 'Inter', sans-serif;
         --kpi-indigo-start: #312e81;
         --kpi-indigo-end: #4f46e5;
         --kpi-emerald-start: #065f46;
@@ -368,6 +372,7 @@
     .tone-card .mini-label,
     .tone-card small,
     .tone-card .tone-note {
+        font-family: var(--kpi-ui-font);
         color: inherit;
         opacity: 0.82;
         letter-spacing: 0.04em;
@@ -378,6 +383,7 @@
     .tone-card h5,
     .tone-card h3,
     .tone-card .mdi {
+        font-family: var(--kpi-display-font);
         color: inherit;
     }
     .tone-card .tone-value {
@@ -472,6 +478,7 @@
         color: #fff;
     }
     .executive-kpi .kpi-kicker {
+        font-family: var(--kpi-ui-font);
         font-size: 0.64rem;
         font-weight: 800;
         letter-spacing: 0.08em;
@@ -479,16 +486,19 @@
         color: rgba(255,255,255,0.72) !important;
     }
     .executive-kpi .kpi-value {
+        font-family: var(--kpi-display-font);
         font-size: clamp(1.55rem, 2vw, 2.1rem);
         line-height: 1;
         letter-spacing: -0.05em;
         color: #fff !important;
     }
     .executive-kpi .kpi-note {
+        font-family: var(--kpi-ui-font);
         color: rgba(255,255,255,0.78) !important;
         font-size: 0.8rem;
     }
     .executive-kpi .kpi-badge {
+        font-family: var(--kpi-ui-font);
         border-radius: 999px;
         padding: 0.28rem 0.58rem;
         font-size: 0.62rem;
