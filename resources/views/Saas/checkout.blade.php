@@ -3,6 +3,10 @@
 @section('page-title', 'Payment')
 
 @section('content')
+@php
+    $checkoutProfileName = old('customer_name', $subscription->user->name ?? auth()->user()->name);
+    $checkoutProfileEmail = old('customer_email', $subscription->user->email ?? auth()->user()->email);
+@endphp
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
@@ -280,7 +284,7 @@
                 </div>
                 <div class="summary-row">
                     <span>Email</span>
-                    <strong style="font-size:11px;">{{ $subscription->user->email ?? auth()->user()->email }}</strong>
+                    <strong style="font-size:11px;">{{ $checkoutProfileEmail }}</strong>
                 </div>
                 <div class="summary-total">₦{{ number_format((float) ($subscription->amount ?? 0), 2) }}</div>
             </div>
@@ -304,11 +308,11 @@
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label class="field-label">Full Name</label>
-                        <input class="field-input" type="text" value="{{ old('customer_name', auth()->user()->name) }}" autocomplete="name" readonly>
+                        <input class="field-input" type="text" value="{{ $checkoutProfileName }}" autocomplete="name" readonly>
                     </div>
                     <div class="col-md-6">
                         <label class="field-label">Email Address</label>
-                        <input class="field-input" type="email" value="{{ old('customer_email', auth()->user()->email) }}" autocomplete="email" readonly>
+                        <input class="field-input" type="email" value="{{ $checkoutProfileEmail }}" autocomplete="email" readonly>
                     </div>
                     <div class="col-12">
                         <label class="field-label">Payment Gateway</label>
