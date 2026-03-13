@@ -8,6 +8,10 @@
         $invoiceLogoUrl = $invoiceLogoPath ? asset($invoiceLogoPath) : null;
         $brandName = \App\Models\Setting::where('key', 'company_name')->value('value')
             ?: (optional(auth()->user())->company->name ?? config('app.name', 'SmartProbook'));
+        $appliedAmount = (float) ($sale->amount_paid ?? $sale->paid ?? 0);
+        $changeAmount = (float) ($sale->change_amount ?? 0);
+        $tenderedAmount = $appliedAmount + max(0, $changeAmount);
+        $balanceDue = max(0, (float) ($sale->total ?? 0) - $appliedAmount);
     @endphp
     <div class="page-wrapper">
         <div class="content container-fluid">
@@ -148,12 +152,20 @@
                                                     <span>{{ number_format($sale->tax ?? 0, 2) }}</span>
                                                 </div>
                                                 <div class="d-flex justify-content-between mb-2 text-muted">
-                                                    <span>Amount Paid</span>
-                                                    <span>{{ number_format($sale->amount_paid ?? $sale->paid ?? 0, 2) }}</span>
+                                                    <span>Amount Tendered</span>
+                                                    <span>{{ number_format($tenderedAmount, 2) }}</span>
+                                                </div>
+                                                <div class="d-flex justify-content-between mb-2 text-muted">
+                                                    <span>Applied to Sale</span>
+                                                    <span>{{ number_format($appliedAmount, 2) }}</span>
                                                 </div>
                                                 <div class="d-flex justify-content-between mb-2 text-muted">
                                                     <span>Change</span>
-                                                    <span>{{ number_format($sale->change_amount ?? 0, 2) }}</span>
+                                                    <span>{{ number_format($changeAmount, 2) }}</span>
+                                                </div>
+                                                <div class="d-flex justify-content-between mb-2 text-muted">
+                                                    <span>Balance Due</span>
+                                                    <span>{{ number_format($balanceDue, 2) }}</span>
                                                 </div>
                                                 <hr class="my-2">
                                                 <div class="d-flex justify-content-between align-items-center">

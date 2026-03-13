@@ -549,17 +549,18 @@
                     // Calculate grand total
                     $grandTotal = $calculatedSubtotal - $totalDiscount + $totalTax;
                     
-                    // Get amount paid - try multiple fields
-                    $amountPaid = (float)(
+                    // Net amount applied to the sale
+                    $appliedAmount = (float)(
                         $sale->amount_paid ?? 
                         $sale->paid_amount ?? 
                         $sale->amount ?? 
                         $sale->total_paid ?? 
                         $grandTotal
                     );
-                    
-                    // Calculate change
-                    $changeAmount = max(0, $amountPaid - $grandTotal);
+
+                    $changeAmount = (float) ($sale->change_amount ?? 0);
+                    $tenderedAmount = $appliedAmount + max(0, $changeAmount);
+                    $balanceDue = max(0, $grandTotal - $appliedAmount);
                 @endphp
 
                 @forelse($sale->items ?? [] as $item)
@@ -656,12 +657,20 @@
                             <td class="value">₦{{ number_format($grandTotal, 2) }}</td>
                         </tr>
                         <tr class="paid-row">
-                            <td class="label">Amount Paid</td>
-                            <td class="value">₦{{ number_format($amountPaid, 2) }}</td>
+                            <td class="label">Amount Tendered</td>
+                            <td class="value">₦{{ number_format($tenderedAmount, 2) }}</td>
+                        </tr>
+                        <tr class="paid-row">
+                            <td class="label">Applied to Sale</td>
+                            <td class="value">₦{{ number_format($appliedAmount, 2) }}</td>
                         </tr>
                         <tr class="change-row">
                             <td class="label">Change</td>
                             <td class="value">₦{{ number_format($changeAmount, 2) }}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Balance Due</td>
+                            <td class="value">₦{{ number_format($balanceDue, 2) }}</td>
                         </tr>
                     </table>
                 </div>
@@ -755,8 +764,10 @@
         
         const companyName = '{{ $emailCompany->name ?? $company->name ?? config("app.name", "POS System") }}';
         const total = '{{ number_format($grandTotal, 2) }}';
-        const paid = '{{ number_format($amountPaid, 2) }}';
+        const paid = '{{ number_format($appliedAmount, 2) }}';
+        const tendered = '{{ number_format($tenderedAmount, 2) }}';
         const change = '{{ number_format($changeAmount, 2) }}';
+        const balance = '{{ number_format($balanceDue, 2) }}';
 
         const subject = `Invoice #${invoiceNo} from ${companyName}`;
         const body = `Dear Customer,
@@ -768,8 +779,10 @@ Date: {{ $sale->created_at ? $sale->created_at->format('d M, Y h:i A') : date('d
 Payment Method: {{ $sale->payment_method ?? 'Cash' }}
 
 Total Amount: ₦${total}
-Amount Paid: ₦${paid}
+Amount Tendered: ₦${tendered}
+Applied to Sale: ₦${paid}
 Change: ₦${change}
+Balance Due: ₦${balance}
 
 Thank you for your business!
 

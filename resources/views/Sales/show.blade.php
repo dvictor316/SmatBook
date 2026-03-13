@@ -127,8 +127,9 @@
 
             <div class="card-body p-4">
                 @php 
-                    $historyPaid = $sale->payments->sum('amount');
-                    $displayBalance = $sale->total - $historyPaid;
+                    $appliedAmount = (float) ($sale->amount_paid ?? $sale->paid ?? $sale->payments->sum('amount'));
+                    $tenderedAmount = $appliedAmount + max(0, (float) ($sale->change_amount ?? 0));
+                    $displayBalance = max(0, (float) $sale->total - $appliedAmount);
                 @endphp
 
                 <div class="row g-3 mb-4">
@@ -146,8 +147,14 @@
                     </div>
                     <div class="col-6 col-md-3">
                         <div class="stat-box border-success" style="background-color: #f0fdf4;">
-                            <div class="stat-label text-success">Paid</div>
-                            <div class="stat-value text-success">₦{{ number_format($historyPaid, 2) }}</div>
+                            <div class="stat-label text-success">Tendered</div>
+                            <div class="stat-value text-success">₦{{ number_format($tenderedAmount, 2) }}</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="stat-box border-success" style="background-color: #ecfdf5;">
+                            <div class="stat-label text-success">Applied</div>
+                            <div class="stat-value text-success">₦{{ number_format($appliedAmount, 2) }}</div>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
