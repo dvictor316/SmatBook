@@ -2003,7 +2003,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
             <div class="impact-story-grid">
                 <div class="impact-story-media">
                     <div class="impact-story-image-wrap">
-                        <img src="https://images.pexels.com/photos/34690060/pexels-photo-34690060.jpeg?auto=compress&cs=tinysrgb&w=1200" alt="Nigerian businessman in an office" loading="lazy">
+                        <img src="https://images.pexels.com/photos/9304565/pexels-photo-9304565.jpeg?auto=compress&cs=tinysrgb&w=1200" alt="Young sales assistant demonstrating a POS machine during checkout" loading="lazy">
                     </div>
                     <div class="impact-story-badge">
                         <i class="fas fa-file-export"></i>
