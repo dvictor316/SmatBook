@@ -80,6 +80,15 @@
         overflow: visible !important;
     }
 
+    .page-wrapper,
+    .content,
+    .container-fluid {
+        width: 100% !important;
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
     /* Hide standard layout noise */
     .sidebar, .header, .navbar, .header-left, .header-right, .footer, .nav-header, .settings-icon, .breadcrumb { 
         display: none !important; 
@@ -127,7 +136,7 @@
         border: 1px solid rgba(255, 255, 255, 0.8);
         
         /* KEY FIX: This centers it vertically but allows scrolling if needed */
-        margin: auto auto 24px;
+        margin: 24px auto;
         backdrop-filter: blur(18px);
     }
 

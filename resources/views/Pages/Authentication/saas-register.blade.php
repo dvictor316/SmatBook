@@ -62,6 +62,15 @@
         overflow: visible !important;
     }
 
+    .page-wrapper,
+    .content,
+    .container-fluid {
+        width: 100% !important;
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
     .smat-viewport {
         position: relative;
         top: 0;
@@ -75,7 +84,7 @@
             linear-gradient(180deg, #f4f9ff 0%, #e8f2ff 100%);
         z-index: 9999;
         display: flex;
-        align-items: flex-start;
+        align-items: center;
         justify-content: center;
         font-family: 'Plus Jakarta Sans', sans-serif;
         overflow: visible;
@@ -121,7 +130,7 @@
         overflow: hidden;
         border: 1px solid rgba(255, 255, 255, 0.8);
         backdrop-filter: blur(18px);
-        margin-bottom: 24px;
+        margin: 24px auto;
     }
 
     .smat-aside {
