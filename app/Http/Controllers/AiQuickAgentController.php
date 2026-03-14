@@ -200,7 +200,15 @@ class AiQuickAgentController extends Controller
             str_contains($message, 'project management ai') ||
             str_contains($message, 'milestone planning') ||
             str_contains($message, 'workload balancing') ||
-            str_contains($message, 'project risk')
+            str_contains($message, 'project risk') ||
+            str_contains($message, 'project status') ||
+            str_contains($message, 'project summary') ||
+            str_contains($message, 'project update') ||
+            str_contains($message, 'task status') ||
+            str_contains($message, 'overdue task') ||
+            str_contains($message, 'deadline') ||
+            str_contains($message, 'milestone') ||
+            str_contains($message, 'task progress')
         ) {
             return ['type' => 'project_management_ai', 'required_plan' => 'enterprise'];
         }
@@ -721,7 +729,7 @@ class AiQuickAgentController extends Controller
     {
         $apiKey = (string) config('services.openai.api_key');
         if ($apiKey === '') {
-            return "I can answer business queries now. For open-domain random questions, set OPENAI_API_KEY to enable full assistant mode.";
+            return $this->answerWithoutModel($message, $request);
         }
 
         $model = (string) config('services.openai.model', 'gpt-5-mini');
@@ -788,8 +796,72 @@ class AiQuickAgentController extends Controller
             return $text;
         } catch (\Throwable $e) {
             Log::warning('AI general answer fallback', ['error' => $e->getMessage()]);
-            return "I couldn't process that right now. Try again in a moment.";
+            return $this->answerWithoutModel($message, $request);
         }
+    }
+
+    private function answerWithoutModel(string $message, Request $request): string
+    {
+        $normalized = $this->normalizeMessage($message);
+
+        if (
+            str_contains($normalized, 'project') ||
+            str_contains($normalized, 'task') ||
+            str_contains($normalized, 'milestone') ||
+            str_contains($normalized, 'deadline') ||
+            str_contains($normalized, 'workload')
+        ) {
+            return $this->buildProjectManagementAnswer($request);
+        }
+
+        if (
+            str_contains($normalized, 'lead') ||
+            str_contains($normalized, 'prospect') ||
+            str_contains($normalized, 'pipeline')
+        ) {
+            return $this->buildLeadManagementAnswer($request);
+        }
+
+        if (
+            str_contains($normalized, 'proposal') ||
+            str_contains($normalized, 'quotation')
+        ) {
+            return $this->buildProposalWorkflowAnswer($request);
+        }
+
+        if (
+            str_contains($normalized, 'appointment') ||
+            str_contains($normalized, 'meeting') ||
+            str_contains($normalized, 'schedule')
+        ) {
+            return $this->buildAppointmentSchedulingAnswer($request);
+        }
+
+        if (
+            str_contains($normalized, 'anomaly') ||
+            str_contains($normalized, 'unusual') ||
+            str_contains($normalized, 'outlier')
+        ) {
+            return $this->buildAnomalyDetectionAnswer($request);
+        }
+
+        if (
+            str_contains($normalized, 'contract') ||
+            str_contains($normalized, 'signature') ||
+            str_contains($normalized, 'esignature')
+        ) {
+            return $this->buildContractWorkflowAnswer($request);
+        }
+
+        if (
+            str_contains($normalized, 'customer') ||
+            str_contains($normalized, 'client satisfaction') ||
+            str_contains($normalized, 'reputation')
+        ) {
+            return $this->buildReputationManagementAnswer($request);
+        }
+
+        return "I can help immediately with SmartProbook business data, accounting figures, workflow reviews, project status, proposals, lead management, and operational summaries. Ask a direct question such as total sales today, invoices due this week, trial balance this month, or give me a project management summary.";
     }
 
     private function conversationHistory(Request $request): array
