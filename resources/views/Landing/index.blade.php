@@ -758,6 +758,187 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     padding: 24px 0 24px 24px;
 }
 
+/* Business impact stories */
+.impact-story {
+    margin-top: 36px;
+    padding: 24px;
+    border-radius: 28px;
+    border: 1px solid rgba(0,35,71,0.1);
+    background: linear-gradient(145deg, #ffffff 0%, #f6f9ff 100%);
+    box-shadow: 0 22px 56px rgba(0,35,71,0.10);
+}
+.impact-story--soft {
+    background: linear-gradient(145deg, #fffdf7 0%, #f8fbff 100%);
+}
+.impact-story--dark {
+    background: linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%);
+    border-color: rgba(255,255,255,0.12);
+    box-shadow: 0 24px 56px rgba(0,0,0,0.24);
+}
+.impact-story-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+    gap: 24px;
+    align-items: center;
+}
+.impact-story-grid--reverse {
+    grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+}
+.impact-story-media {
+    position: relative;
+    min-width: 0;
+}
+.impact-story-image-wrap {
+    position: relative;
+    overflow: hidden;
+    border-radius: 24px;
+    min-height: 360px;
+    box-shadow: 0 18px 46px rgba(0,35,71,0.18);
+}
+.impact-story-image-wrap::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(0,35,71,0.05) 0%, rgba(0,35,71,0.30) 100%);
+    pointer-events: none;
+}
+.impact-story-image-wrap img {
+    width: 100%;
+    height: 100%;
+    min-height: 360px;
+    object-fit: cover;
+    display: block;
+}
+.impact-story-badge {
+    position: absolute;
+    left: 18px;
+    right: 18px;
+    bottom: 18px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 18px;
+    background: rgba(255,255,255,0.92);
+    color: var(--navy);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 14px 28px rgba(0,35,71,0.12);
+}
+.impact-story-badge i {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    background: rgba(0,35,71,0.08);
+    color: var(--crimson);
+}
+.impact-story-badge strong {
+    display: block;
+    font-family: var(--font-display);
+    font-size: 0.9rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
+.impact-story-badge span {
+    display: block;
+    font-size: 0.78rem;
+    color: #516071;
+    margin-top: 2px;
+}
+.impact-story-copy {
+    min-width: 0;
+}
+.impact-story-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+    padding: 7px 12px;
+    border-radius: 999px;
+    background: rgba(0,35,71,0.06);
+    color: var(--navy);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+}
+.impact-story-kicker i {
+    color: var(--gold);
+}
+.impact-story--dark .impact-story-kicker {
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+}
+.impact-story-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.55rem, 2.8vw, 2.2rem);
+    font-weight: 800;
+    line-height: 1.14;
+    letter-spacing: -0.8px;
+    color: var(--navy);
+    margin-bottom: 14px;
+}
+.impact-story--dark .impact-story-title {
+    color: #fff;
+}
+.impact-story-text {
+    font-size: 0.98rem;
+    line-height: 1.8;
+    color: #526173;
+    margin-bottom: 18px;
+}
+.impact-story--dark .impact-story-text {
+    color: rgba(255,255,255,0.72);
+}
+.impact-story-list {
+    display: grid;
+    gap: 10px;
+    margin-bottom: 22px;
+}
+.impact-story-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 16px;
+    background: rgba(255,255,255,0.85);
+    border: 1px solid rgba(0,35,71,0.08);
+}
+.impact-story-item i {
+    margin-top: 2px;
+    color: #16a34a;
+    flex-shrink: 0;
+}
+.impact-story-item strong {
+    display: block;
+    font-size: 0.94rem;
+    color: var(--navy);
+    font-weight: 800;
+    margin-bottom: 3px;
+}
+.impact-story-item span {
+    display: block;
+    font-size: 0.88rem;
+    line-height: 1.65;
+    color: #5c6b7c;
+}
+.impact-story--dark .impact-story-item {
+    background: rgba(255,255,255,0.06);
+    border-color: rgba(255,255,255,0.1);
+}
+.impact-story--dark .impact-story-item strong {
+    color: #fff;
+}
+.impact-story--dark .impact-story-item span {
+    color: rgba(255,255,255,0.72);
+}
+.impact-story-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
 /* Feature cards */
 .feat-card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px 16px; transition: all 0.3s; position: relative; overflow: hidden; }
 .feat-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(to right, var(--navy), var(--gold)); transform:scaleX(0); transform-origin:left; transition:transform 0.3s; }
@@ -1063,6 +1244,18 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     .project-card:hover {
         transform: none;
     }
+    .impact-story {
+        margin-top: 28px;
+        padding: 20px;
+        border-radius: 24px;
+    }
+    .impact-story-grid,
+    .impact-story-grid--reverse {
+        grid-template-columns: 1fr;
+    }
+    .impact-story-grid--reverse .impact-story-media {
+        order: -1;
+    }
 }
 @media (max-width: 768px) {
     :root { --announce-h: 34px; }
@@ -1085,6 +1278,15 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     
     .benefit-card { border-color: var(--border); background: #fff; }
     .benefit-belt { padding: 32px 12px 0; }
+    .impact-story-image-wrap,
+    .impact-story-image-wrap img {
+        min-height: 300px;
+    }
+    .impact-story-badge {
+        left: 14px;
+        right: 14px;
+        bottom: 14px;
+    }
 }
 @media (max-width: 640px) {
     .hero-content { padding: 16px 16px 24px; gap: 28px; }
@@ -1137,6 +1339,32 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     .gadget-stat-grid { grid-template-columns: 1fr; }
     .benefit-card { border: 1px solid var(--border); box-shadow: none; }
     .benefit-card:hover { transform: none; box-shadow: none; }
+    .impact-story {
+        padding: 16px;
+        border-radius: 20px;
+    }
+    .impact-story-grid {
+        gap: 18px;
+    }
+    .impact-story-image-wrap,
+    .impact-story-image-wrap img {
+        min-height: 260px;
+        border-radius: 20px;
+    }
+    .impact-story-badge {
+        position: static;
+        margin-top: 12px;
+    }
+    .impact-story-item {
+        padding: 11px 12px;
+    }
+    .impact-story-actions {
+        flex-direction: column;
+    }
+    .impact-story-actions a {
+        width: 100%;
+        justify-content: center;
+    }
 }
 @media (max-width: 480px) {
     :root { --nav-h: 60px; --announce-h: 32px; }
@@ -1487,6 +1715,46 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
             </div>
         </div>
 
+        <div class="impact-story impact-story--soft">
+            <div class="impact-story-grid">
+                <div class="impact-story-media">
+                    <div class="impact-story-image-wrap">
+                        <img src="https://images.pexels.com/photos/30690402/pexels-photo-30690402.jpeg?auto=compress&cs=tinysrgb&w=1200" alt="Young Nigerian business women using laptops" loading="lazy">
+                    </div>
+                    <div class="impact-story-badge">
+                        <i class="fas fa-bolt"></i>
+                        <div>
+                            <strong>Smarter daily selling decisions</strong>
+                            <span>Sales, invoices, and customer follow-up in one live workflow.</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="impact-story-copy">
+                    <span class="impact-story-kicker"><i class="fas fa-chart-line"></i> Built for fast-moving founders</span>
+                    <h3 class="impact-story-title">SmartProbook helps young business teams stay sharp from the first sale to the final payment.</h3>
+                    <p class="impact-story-text">For startups, boutiques, service brands, and growing shops, SmartProbook turns scattered records into a clean revenue system your team can trust every day.</p>
+                    <div class="impact-story-list">
+                        <div class="impact-story-item">
+                            <i class="fas fa-check-circle"></i>
+                            <div><strong>Close sales faster</strong><span>Create invoices, issue receipts, and confirm payments without leaving the same dashboard.</span></div>
+                        </div>
+                        <div class="impact-story-item">
+                            <i class="fas fa-check-circle"></i>
+                            <div><strong>Track who owes you</strong><span>See unpaid invoices instantly and follow up before overdue revenue starts affecting cash flow.</span></div>
+                        </div>
+                        <div class="impact-story-item">
+                            <i class="fas fa-check-circle"></i>
+                            <div><strong>Keep everyone aligned</strong><span>Owners, finance staff, and operations leads all work from the same real-time numbers.</span></div>
+                        </div>
+                    </div>
+                    <div class="impact-story-actions">
+                        <a href="{{ route('landing.contact') }}" class="btn-red">Request Demo</a>
+                        <a href="{{ route('login', ['portal' => 1]) }}" class="btn-outline-navy">Open Portal</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         {{-- Feature 2 --}}
         <div class="row align-items-center g-5 pt-4">
             <div class="col-lg-5">
@@ -1580,6 +1848,46 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                             <div class="label">Critical items</div>
                             <div class="value">03</div>
                             <div class="meta">Auto-alerted to manager</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="impact-story">
+            <div class="impact-story-grid impact-story-grid--reverse">
+                <div class="impact-story-copy">
+                    <span class="impact-story-kicker"><i class="fas fa-boxes-stacked"></i> Designed for active operations</span>
+                    <h3 class="impact-story-title">SmartProbook gives Nigerian business teams tighter control over stock, branches, and operational handoffs.</h3>
+                    <p class="impact-story-text">When multiple people handle sales, store movement, and purchasing, SmartProbook reduces guesswork by making inventory status visible to the whole team in real time.</p>
+                    <div class="impact-story-list">
+                        <div class="impact-story-item">
+                            <i class="fas fa-check-circle"></i>
+                            <div><strong>Prevent stockouts early</strong><span>Low-stock triggers and reorder cues reach the right team before shelves go empty.</span></div>
+                        </div>
+                        <div class="impact-story-item">
+                            <i class="fas fa-check-circle"></i>
+                            <div><strong>Coordinate branches better</strong><span>Keep purchasing, warehouse, and outlet teams aligned on what is available and what needs attention.</span></div>
+                        </div>
+                        <div class="impact-story-item">
+                            <i class="fas fa-check-circle"></i>
+                            <div><strong>Reduce waste and leakage</strong><span>Expiry tracking and stock movement visibility make shrinkage easier to catch and correct.</span></div>
+                        </div>
+                    </div>
+                    <div class="impact-story-actions">
+                        <a href="{{ route('landing.contact') }}" class="btn-red">Talk To Sales</a>
+                        <a href="#expenses" class="btn-outline-navy">See Reporting</a>
+                    </div>
+                </div>
+                <div class="impact-story-media">
+                    <div class="impact-story-image-wrap">
+                        <img src="https://images.pexels.com/photos/30677714/pexels-photo-30677714.jpeg?auto=compress&cs=tinysrgb&w=1200" alt="Nigerian business team in a strategy meeting" loading="lazy">
+                    </div>
+                    <div class="impact-story-badge">
+                        <i class="fas fa-warehouse"></i>
+                        <div>
+                            <strong>Operational visibility your team can act on</strong>
+                            <span>Inventory alerts, stock movement, and branch coordination in one place.</span>
                         </div>
                     </div>
                 </div>
@@ -1687,6 +1995,46 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                     <div class="feat-card-dark"><div class="d-flex align-items-start gap-3"><div class="feat-icon feat-icon-dark"><svg viewBox="0 0 24 24" fill="none" stroke="#c5a059" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></div><div><h6>Automatic Expense Categorization</h6><p>SmartProbook learns your spending patterns and auto-tags expenses to the right accounts without manual entry.</p></div></div></div>
                     <div class="feat-card-dark"><div class="d-flex align-items-start gap-3"><div class="feat-icon feat-icon-dark"><svg viewBox="0 0 24 24" fill="none" stroke="#c5a059" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></div><div><h6>One-Click Tax Reports</h6><p>Generate VAT, PAYE, and annual tax summaries in seconds — fully formatted for FIRS submission.</p></div></div></div>
                     <div class="feat-card-dark"><div class="d-flex align-items-start gap-3"><div class="feat-icon feat-icon-dark"><svg viewBox="0 0 24 24" fill="none" stroke="#c5a059" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div><div><h6>Bank Reconciliation</h6><p>Import your bank statements and SmartProbook matches every transaction automatically — zero manual reconciliation.</p></div></div></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="impact-story impact-story--dark">
+            <div class="impact-story-grid">
+                <div class="impact-story-media">
+                    <div class="impact-story-image-wrap">
+                        <img src="https://images.pexels.com/photos/34690060/pexels-photo-34690060.jpeg?auto=compress&cs=tinysrgb&w=1200" alt="Nigerian businessman in an office" loading="lazy">
+                    </div>
+                    <div class="impact-story-badge">
+                        <i class="fas fa-file-export"></i>
+                        <div>
+                            <strong>Executive-ready financial clarity</strong>
+                            <span>Reports, reconciliations, and tax prep delivered without spreadsheet stress.</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="impact-story-copy">
+                    <span class="impact-story-kicker"><i class="fas fa-briefcase"></i> For owners, executives, and finance leads</span>
+                    <h3 class="impact-story-title">SmartProbook helps decision-makers see the health of the business without waiting days for manual reports.</h3>
+                    <p class="impact-story-text">From profit snapshots to export-ready tax summaries, SmartProbook gives leadership a cleaner reporting layer for board reviews, lending conversations, and day-to-day control.</p>
+                    <div class="impact-story-list">
+                        <div class="impact-story-item">
+                            <i class="fas fa-check-circle"></i>
+                            <div><strong>Generate polished reports quickly</strong><span>Board packs, expense summaries, and tax-ready statements can be prepared in just a few clicks.</span></div>
+                        </div>
+                        <div class="impact-story-item">
+                            <i class="fas fa-check-circle"></i>
+                            <div><strong>Reconcile accounts with less effort</strong><span>Bring in bank activity and match transactions faster, with less manual review from finance staff.</span></div>
+                        </div>
+                        <div class="impact-story-item">
+                            <i class="fas fa-check-circle"></i>
+                            <div><strong>Make faster strategic calls</strong><span>Leadership gets a clearer view of margins, spending trends, and compliance readiness at any time.</span></div>
+                        </div>
+                    </div>
+                    <div class="impact-story-actions">
+                        <a href="{{ url('/membership-plans') }}" class="btn-red">View Plans</a>
+                        <a href="{{ route('landing.contact') }}" class="btn-outline-navy">Book Consultation</a>
+                    </div>
                 </div>
             </div>
         </div>
