@@ -809,6 +809,27 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     object-fit: cover;
     display: block;
 }
+.impact-story-shirt-tag {
+    position: absolute;
+    left: 50%;
+    bottom: 24%;
+    transform: translateX(-50%) rotate(-4deg);
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 9px 16px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.9);
+    color: var(--navy);
+    font-family: var(--font-display);
+    font-size: 0.78rem;
+    font-weight: 900;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    box-shadow: 0 10px 24px rgba(0,35,71,0.18);
+    border: 1px solid rgba(0,35,71,0.08);
+}
 .impact-story-badge {
     position: absolute;
     left: 18px;
@@ -1287,6 +1308,11 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
         right: 14px;
         bottom: 14px;
     }
+    .impact-story-shirt-tag {
+        bottom: 22%;
+        font-size: 0.72rem;
+        padding: 8px 14px;
+    }
 }
 @media (max-width: 640px) {
     .hero-content { padding: 16px 16px 24px; gap: 28px; }
@@ -1354,6 +1380,13 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     .impact-story-badge {
         position: static;
         margin-top: 12px;
+    }
+    .impact-story-shirt-tag {
+        bottom: 18px;
+        left: 18px;
+        transform: none;
+        font-size: 0.68rem;
+        padding: 7px 12px;
     }
     .impact-story-item {
         padding: 11px 12px;
@@ -2003,7 +2036,8 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
             <div class="impact-story-grid">
                 <div class="impact-story-media">
                     <div class="impact-story-image-wrap">
-                        <img src="https://images.pexels.com/photos/9304565/pexels-photo-9304565.jpeg?auto=compress&cs=tinysrgb&w=1200" alt="Young sales assistant demonstrating a POS machine during checkout" loading="lazy">
+                        <img src="https://images.pexels.com/photos/9304565/pexels-photo-9304565.jpeg?auto=compress&cs=tinysrgb&w=1200" alt="Young Nigerian sales agent demonstrating a POS checkout" loading="lazy">
+                        <span class="impact-story-shirt-tag">SmartProbook</span>
                     </div>
                     <div class="impact-story-badge">
                         <i class="fas fa-file-export"></i>
