@@ -4,14 +4,25 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 
 class CategoryController extends Controller
 {
 public function index()
 {
-    // This is the most direct way to get data in Laravel
-    // It ignores all models and goes straight to the SQL engine
-    $categories = \DB::select("SELECT id, name, description, status, created_at FROM categories");
+    if (!Schema::hasTable('categories')) {
+        $categories = collect();
+        return view('inventory.Products.categories', compact('categories'));
+    }
+
+    $query = Category::query();
+
+    if (Schema::hasTable('products')) {
+        $query->withCount('products');
+    }
+
+    $orderColumn = Schema::hasColumn('categories', 'created_at') ? 'created_at' : 'id';
+    $categories = $query->orderByDesc($orderColumn)->get();
 
     return view('inventory.Products.categories', compact('categories'));
 }
@@ -21,6 +32,10 @@ public function index()
      */
 public function store(Request $request)
 {
+    if (!Schema::hasTable('categories')) {
+        return redirect()->back()->with('error', 'Categories table is not available yet.');
+    }
+
     // 1. Validation
     $request->validate([
         'name' => 'required|string|max:255|unique:categories,name',
@@ -45,12 +60,23 @@ public function store(Request $request)
     }
 
     // 3. Create Record
-    $category = \App\Models\Category::create([
-        'name'        => $request->name,
-        'description' => $request->description,
-        'image'       => $imageName,
-        'status'      => $request->has('status') ? (int)$request->status : 1, 
-    ]);
+    $payload = [
+        'name' => $request->name,
+    ];
+
+    if (Schema::hasColumn('categories', 'description')) {
+        $payload['description'] = $request->description;
+    }
+
+    if (Schema::hasColumn('categories', 'image')) {
+        $payload['image'] = $imageName;
+    }
+
+    if (Schema::hasColumn('categories', 'status')) {
+        $payload['status'] = $request->has('status') ? (int) $request->status : 1;
+    }
+
+    $category = \App\Models\Category::create($payload);
 
     if ($request->expectsJson()) {
         return response()->json([
@@ -76,7 +102,17 @@ public function store(Request $request)
             'name' => 'required|string|max:255|unique:categories,name,' . $category->id,
         ]);
 
-        $category->update(['name' => $request->name]);
+        $payload = ['name' => $request->name];
+
+        if (Schema::hasColumn('categories', 'description')) {
+            $payload['description'] = $request->description;
+        }
+
+        if (Schema::hasColumn('categories', 'status')) {
+            $payload['status'] = $request->input('status', $category->status ?? 1);
+        }
+
+        $category->update($payload);
 
         return redirect()->back()->with('success', 'Category updated successfully!');
     }

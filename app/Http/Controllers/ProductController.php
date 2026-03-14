@@ -28,18 +28,47 @@ class ProductController extends Controller
             ], 500);
         }
 
+        if (!Schema::hasTable('products')) {
+            return view('inventory.Products.index', [
+                'products' => collect(),
+                'categories' => collect(),
+                'search' => trim((string) $request->input('search', '')),
+                'session_domain' => env('SESSION_DOMAIN', null)
+            ]);
+        }
+
         $search = $request->input('search');
-        $query = Product::with('category')->orderByDesc('created_at');
+        $query = Product::query();
+
+        if (Schema::hasTable('categories') && Schema::hasColumn('products', 'category_id')) {
+            $query->with('category');
+        }
+
+        $orderColumn = Schema::hasColumn('products', 'created_at') ? 'created_at' : 'id';
+        $query->orderByDesc($orderColumn);
 
         if ($search) {
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('sku', 'like', "%{$search}%");
-            });
+            $hasNameColumn = Schema::hasColumn('products', 'name');
+            $hasSkuColumn = Schema::hasColumn('products', 'sku');
+
+            if ($hasNameColumn || $hasSkuColumn) {
+                $query->where(function($q) use ($search, $hasNameColumn, $hasSkuColumn) {
+                    if ($hasNameColumn) {
+                        $q->where('name', 'like', "%{$search}%");
+                    }
+
+                    if ($hasSkuColumn) {
+                        $method = $hasNameColumn ? 'orWhere' : 'where';
+                        $q->{$method}('sku', 'like', "%{$search}%");
+                    }
+                });
+            }
         }
 
         $products = $query->paginate(15)->withQueryString();
-        $categories = Category::orderBy('name')->get(); 
+        $categories = Schema::hasTable('categories')
+            ? Category::orderBy(Schema::hasColumn('categories', 'name') ? 'name' : 'id')->get()
+            : collect();
 
         return view('inventory.Products.index', [
             'products' => $products,
@@ -60,7 +89,7 @@ class ProductController extends Controller
             (object)['name' => 'Carton', 'short_name' => 'ctn'],
         ];
 
-        $products = Product::select('id', 'name', 'sku', 'base_unit_name')->get();
+        $products = collect();
         return view('inventory.Products.units', compact('products', 'units'));
     }
 
