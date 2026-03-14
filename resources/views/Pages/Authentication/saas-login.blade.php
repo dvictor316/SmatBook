@@ -54,8 +54,8 @@
     .smat-viewport {
         position: relative;
         top: 0;
-        left: 0;
-        width: 100%;
+        left: 50%;
+        width: 100vw;
         min-height: 100vh;
         padding: 20px 15px 40px;
         background:
@@ -66,6 +66,7 @@
         display: grid !important;
         place-items: center !important;
         overflow: visible;
+        transform: translateX(-50%);
     }
 
     /* Hard reset wrapper overrides to prevent theme conflict */

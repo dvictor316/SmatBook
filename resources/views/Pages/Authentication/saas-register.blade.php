@@ -74,8 +74,8 @@
     .smat-viewport {
         position: relative;
         top: 0;
-        left: 0;
-        width: 100%;
+        left: 50%;
+        width: 100vw;
         min-height: 100vh;
         padding: 16px 12px 40px;
         background:
@@ -87,6 +87,7 @@
         place-items: center !important;
         font-family: 'Plus Jakarta Sans', sans-serif;
         overflow: visible;
+        transform: translateX(-50%);
     }
 
     /* Force hide standard layout elements for a clean portal experience */
