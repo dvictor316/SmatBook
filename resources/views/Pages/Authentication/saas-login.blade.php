@@ -63,9 +63,8 @@
             radial-gradient(circle at bottom right, rgba(29, 109, 255, 0.2), transparent 28%),
             linear-gradient(180deg, #f4f9ff 0%, #e8f2ff 100%);
         z-index: 900;
-        /* Flexbox for vertical centering */
-        display: flex;
-        flex-direction: column;
+        display: grid !important;
+        place-items: center !important;
         overflow: visible;
     }
 
@@ -125,8 +124,8 @@
     /* 3. COMPACT PROFESSIONAL CARD */
     .smat-card {
         background: var(--spa-surface);
-        width: min(100%, 940px);
-        max-width: 940px;
+        width: min(calc(100vw - 40px), 940px) !important;
+        max-width: 940px !important;
         min-height: 0;
         height: auto;
         border-radius: 24px;
@@ -136,8 +135,9 @@
         border: 1px solid rgba(255, 255, 255, 0.8);
         
         /* KEY FIX: This centers it vertically but allows scrolling if needed */
-        margin: 24px auto;
+        margin: 24px auto !important;
         backdrop-filter: blur(18px);
+        justify-self: center !important;
     }
 
     /* Side Panel (Branding) */
@@ -491,10 +491,10 @@
 
     @media (max-width: 991px) {
         .smat-card {
-            width: min(100%, 560px);
-            max-width: 560px;
+            width: min(calc(100vw - 28px), 560px) !important;
+            max-width: 560px !important;
             height: auto;
-            margin: 20px auto;
+            margin: 20px auto !important;
         }
         .smat-aside { display: none; }
         .smat-main { width: 100%; padding: 24px 20px; }
@@ -503,7 +503,7 @@
         .brand-name { font-size: 1.1rem; }
         .mobile-brand-lockup { display: inline-flex; }
         /* Reset viewport for mobile scrolling */
-        .smat-viewport { display: block; overflow: visible; }
+        .smat-viewport { display: grid !important; place-items: center !important; overflow: visible; }
     }
 
     @media (max-width: 640px) {

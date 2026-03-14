@@ -83,9 +83,8 @@
             radial-gradient(circle at bottom right, rgba(29, 109, 255, 0.2), transparent 28%),
             linear-gradient(180deg, #f4f9ff 0%, #e8f2ff 100%);
         z-index: 9999;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        display: grid !important;
+        place-items: center !important;
         font-family: 'Plus Jakarta Sans', sans-serif;
         overflow: visible;
     }
@@ -121,8 +120,8 @@
 
     .smat-card {
         background: var(--spa-surface);
-        width: min(100%, 980px);
-        max-width: 980px;
+        width: min(calc(100vw - 40px), 980px) !important;
+        max-width: 980px !important;
         min-height: 560px;
         border-radius: 24px;
         box-shadow: 0 30px 90px rgba(15, 23, 42, 0.12), 0 10px 24px rgba(37, 99, 235, 0.08);
@@ -130,7 +129,8 @@
         overflow: hidden;
         border: 1px solid rgba(255, 255, 255, 0.8);
         backdrop-filter: blur(18px);
-        margin: 24px auto;
+        margin: 24px auto !important;
+        justify-self: center !important;
     }
 
     .smat-aside {
@@ -479,7 +479,7 @@
     }
 
     @media (max-width: 991px) {
-        .smat-card { width: min(100%, 560px); height: auto; margin: 0 auto; min-height: 0; }
+        .smat-card { width: min(calc(100vw - 28px), 560px) !important; max-width: 560px !important; height: auto; margin: 0 auto !important; min-height: 0; }
         .smat-aside { display: none; }
         .smat-main { width: 100%; padding: 24px 20px; }
         .smat-viewport { padding-bottom: 24px; }
