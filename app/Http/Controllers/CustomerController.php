@@ -12,23 +12,12 @@ class CustomerController extends Controller
     /**
      * Display a listing of customers.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $query = Customer::query()->latest();
+        $customers = $this->buildCustomerQuery($request)
+            ->paginate(20)
+            ->withQueryString();
 
-        if ($search = trim((string) request('search', ''))) {
-            $query->where(function ($q) use ($search) {
-                $q->where('customer_name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('phone', 'like', "%{$search}%");
-            });
-        }
-
-        if ($status = request('status')) {
-            $query->where('status', $status);
-        }
-
-        $customers = $query->paginate(20)->withQueryString();
         return view('Customers.customers', compact('customers'));
     }
 
@@ -174,16 +163,44 @@ class CustomerController extends Controller
     /**
      * Toggle Status and Filters.
      */
-    public function activeView()
+    public function activeView(Request $request)
     {
-        $customers = Customer::where('status', 'active')->latest()->paginate(20);
+        $customers = $this->buildCustomerQuery($request, 'active')
+            ->paginate(20)
+            ->withQueryString();
+
         return view('Customers.customers', compact('customers'));
     }
 
-    public function deactiveView()
+    public function deactiveView(Request $request)
     {
-        $customers = Customer::where('status', 'deactive')->latest()->paginate(20);
+        $customers = $this->buildCustomerQuery($request, 'deactive')
+            ->paginate(20)
+            ->withQueryString();
+
         return view('Customers.customers', compact('customers'));
+    }
+
+    private function buildCustomerQuery(Request $request, ?string $fixedStatus = null)
+    {
+        $query = Customer::query()->latest();
+
+        $search = trim((string) $request->input('search', ''));
+        if ($search !== '') {
+            $query->where(function ($builder) use ($search) {
+                $builder->where('customer_name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
+            });
+        }
+
+        if ($fixedStatus !== null) {
+            $query->where('status', $fixedStatus);
+        } elseif ($request->filled('status')) {
+            $query->where('status', trim((string) $request->input('status')));
+        }
+
+        return $query;
     }
 
     public function activate($id)
