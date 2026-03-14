@@ -154,6 +154,32 @@
                 min-height: 40px;
             }
         }
+
+        /* Keep the Livewire/NProgress busy spinner visible on mobile */
+        #nprogress .spinner {
+            top: calc(env(safe-area-inset-top, 0px) + 14px) !important;
+            right: 14px !important;
+            z-index: 10060 !important;
+        }
+
+        #nprogress .spinner-icon {
+            width: 18px;
+            height: 18px;
+            border-width: 2px;
+        }
+
+        @media (max-width: 991.98px) {
+            #nprogress .spinner {
+                top: calc(env(safe-area-inset-top, 0px) + 72px) !important;
+                right: 12px !important;
+            }
+
+            #nprogress .spinner-icon {
+                width: 22px;
+                height: 22px;
+                border-width: 2.5px;
+            }
+        }
     </style>
 </head>
 
