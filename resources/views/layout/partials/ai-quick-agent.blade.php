@@ -18,11 +18,11 @@
                     </div>
                     <div>
                         <div class="fw-bold text-dark">AI Assistant</div>
-                        <div class="small text-muted">Your helper</div>
+                        <div class="small text-muted">Professional business assistant</div>
                     </div>
                 </div>
-                <h5 id="aiAssistantIntroTitle" class="fw-bold mb-2">Hey I'm your personal assistant.</h5>
-                <p class="mb-0 text-muted">Ask me any question about your data.</p>
+                <h5 id="aiAssistantIntroTitle" class="fw-bold mb-2">I am your SmartProbook AI assistant.</h5>
+                <p class="mb-0 text-muted">Ask detailed questions about your reports, accounting figures, workflows, and business performance.</p>
             </div>
             <div class="modal-footer border-0 pt-0 px-4 pb-4">
                 <button type="button" class="btn btn-light" data-bs-dismiss="modal">Maybe later</button>
@@ -39,7 +39,7 @@
     </div>
     <div class="offcanvas-body d-flex flex-column p-0">
         <div id="ai-agent-messages" class="p-3" style="height: calc(100vh - 210px); overflow-y: auto; background:#f8fafc;">
-            <div class="small text-muted mb-2">Try: <b>total sales yesterday</b>, <b>trial balance this month</b>, <b>review lead management</b>, <b>run anomaly detection</b></div>
+            <div class="small text-muted mb-2">Try: <b>total sales yesterday</b>, <b>explain my trial balance this month</b>, <b>review lead management for my workspace</b>, <b>run anomaly detection for this month</b></div>
             <div class="d-flex flex-wrap gap-2 mb-3" id="ai-agent-starters">
                 <button class="btn btn-sm btn-light border ai-starter-chip" type="button" data-prompt="total sales today">Sales Today</button>
                 <button class="btn btn-sm btn-light border ai-starter-chip" type="button" data-prompt="invoices due today">Invoices Due</button>
@@ -49,7 +49,7 @@
         </div>
         <div class="border-top p-3">
             <div class="input-group">
-                <input type="text" id="ai-agent-input" class="form-control" placeholder="Ask about sales, invoices, leads, proposals, anomalies, or project risk...">
+                <input type="text" id="ai-agent-input" class="form-control" placeholder="Ask a detailed question about reports, sales, invoices, accounting, operations, or business workflows...">
                 <button class="btn btn-primary" type="button" id="ai-agent-send">Send</button>
             </div>
         </div>
@@ -154,6 +154,7 @@
         margin-bottom: 10px;
         font-size: 13px;
         line-height: 1.45;
+        white-space: pre-wrap;
     }
     .ai-msg-user {
         margin-left: auto;
