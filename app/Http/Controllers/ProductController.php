@@ -29,7 +29,7 @@ class ProductController extends Controller
         }
 
         if (!Schema::hasTable('products')) {
-            return view('inventory.Products.index', [
+            return view('Inventory.Products.index', [
                 'products' => collect(),
                 'categories' => collect(),
                 'search' => trim((string) $request->input('search', '')),
@@ -70,7 +70,7 @@ class ProductController extends Controller
             ? Category::orderBy(Schema::hasColumn('categories', 'name') ? 'name' : 'id')->get()
             : collect();
 
-        return view('inventory.Products.index', [
+        return view('Inventory.Products.index', [
             'products' => $products,
             'categories' => $categories,
             'search' => $search,
@@ -90,7 +90,7 @@ class ProductController extends Controller
         ];
 
         $products = collect();
-        return view('inventory.Products.units', compact('products', 'units'));
+        return view('Inventory.Products.units', compact('products', 'units'));
     }
 
     /**
@@ -99,7 +99,7 @@ class ProductController extends Controller
     public function create()
     {
         $categories = Category::orderBy('name')->get();
-        return view('inventory.Products.add-products', compact('categories'));
+        return view('Inventory.Products.add-products', compact('categories'));
     }
 
     /**
@@ -157,7 +157,7 @@ class ProductController extends Controller
         $product = Product::findOrFail($id);
         $categories = Category::orderBy('name')->get();
         
-        return view('inventory.Products.edit', compact('product', 'categories'));
+        return view('Inventory.Products.edit', compact('product', 'categories'));
     }
 
 public function inventory(Request $request)

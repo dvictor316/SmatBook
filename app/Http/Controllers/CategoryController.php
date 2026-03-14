@@ -12,7 +12,7 @@ public function index()
 {
     if (!Schema::hasTable('categories')) {
         $categories = collect();
-        return view('inventory.Products.categories', compact('categories'));
+        return view('Inventory.Products.categories', compact('categories'));
     }
 
     $query = Category::query();
@@ -24,7 +24,7 @@ public function index()
     $orderColumn = Schema::hasColumn('categories', 'created_at') ? 'created_at' : 'id';
     $categories = $query->orderByDesc($orderColumn)->get();
 
-    return view('inventory.Products.categories', compact('categories'));
+    return view('Inventory.Products.categories', compact('categories'));
 }
     /**
      * Store a new category.
