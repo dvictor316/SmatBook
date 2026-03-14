@@ -49,6 +49,7 @@
 
     html, body {
         min-height: 100%;
+        margin: 0;
         overflow-x: hidden !important;
         overflow-y: auto !important;
     }
@@ -77,8 +78,7 @@
         align-items: flex-start;
         justify-content: center;
         font-family: 'Plus Jakarta Sans', sans-serif;
-        overflow-y: auto;
-        overflow-x: hidden;
+        overflow: visible;
     }
 
     /* Force hide standard layout elements for a clean portal experience */

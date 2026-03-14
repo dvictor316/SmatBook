@@ -45,6 +45,7 @@
 
     html, body {
         min-height: 100%;
+        margin: 0;
         overflow-x: hidden !important;
         overflow-y: auto !important;
     }
@@ -65,7 +66,7 @@
         /* Flexbox for vertical centering */
         display: flex;
         flex-direction: column;
-        overflow-y: auto; /* Allows scrolling if card is taller than screen */
+        overflow: visible;
     }
 
     /* Hard reset wrapper overrides to prevent theme conflict */
@@ -493,7 +494,7 @@
         .brand-name { font-size: 1.1rem; }
         .mobile-brand-lockup { display: inline-flex; }
         /* Reset viewport for mobile scrolling */
-        .smat-viewport { display: block; overflow-y: auto; }
+        .smat-viewport { display: block; overflow: visible; }
     }
 
     @media (max-width: 640px) {
