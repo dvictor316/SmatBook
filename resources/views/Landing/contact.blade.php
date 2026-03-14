@@ -157,6 +157,22 @@
 
 <!-- ===== CONTACT PAGE STYLES ===== -->
 <style>
+    .contact-header,
+    .contact-section,
+    .contact-info-section,
+    .contact-wrapper,
+    .contact-info-panel,
+    .contact-form-panel,
+    .contact-item,
+    .form-row,
+    .form-group,
+    .form-input,
+    .btn-submit,
+    .info-grid,
+    .info-card {
+        box-sizing: border-box;
+    }
+
     /* ===== CONTACT HEADER ===== */
     .contact-header {
         padding: 100px 20px;
@@ -218,6 +234,8 @@
         box-shadow: 0 50px 100px rgba(0, 0, 0, 0.12);
         background: white;
         border: 1px solid #edf2f7;
+        width: 100%;
+        max-width: 100%;
     }
 
     /* ===== CONTACT INFO PANEL ===== */
@@ -228,6 +246,7 @@
         display: flex;
         flex-direction: column;
         justify-content: space-between;
+        min-width: 0;
     }
 
     .info-content h2 {
@@ -248,6 +267,7 @@
         gap: 20px;
         margin-bottom: 30px;
         align-items: flex-start;
+        min-width: 0;
     }
 
     .contact-item i {
@@ -279,6 +299,8 @@
         line-height: 1.6;
         text-decoration: none;
         transition: 0.3s ease;
+        overflow-wrap: anywhere;
+        word-break: break-word;
     }
 
     .contact-item a:hover {
@@ -306,6 +328,7 @@
         display: flex;
         align-items: center;
         gap: 12px;
+        min-width: 0;
     }
 
     .status-dot {
@@ -332,6 +355,7 @@
     .contact-form-panel {
         padding: 60px 50px;
         background: white;
+        min-width: 0;
     }
 
     .contact-form {
@@ -349,6 +373,7 @@
     .form-group {
         display: flex;
         flex-direction: column;
+        min-width: 0;
     }
 
     .form-group label {
@@ -368,6 +393,8 @@
         transition: 0.3s ease;
         background: white;
         color: var(--dark);
+        width: 100%;
+        max-width: 100%;
     }
 
     .form-input:focus {
@@ -433,6 +460,8 @@
         cursor: pointer;
         transition: 0.3s ease;
         box-shadow: 0 15px 30px rgba(0, 98, 255, 0.2);
+        width: 100%;
+        justify-content: center;
     }
 
     .btn-submit:hover {
@@ -531,25 +560,38 @@
 
     @media (max-width: 768px) {
         .contact-header {
-            padding: 80px 20px;
+            padding: 64px 16px 52px;
             margin-top: 70px;
         }
 
         .contact-section {
-            padding: 60px 20px;
+            padding: 44px 14px;
+        }
+
+        .container {
+            width: 100%;
+            padding-left: 0;
+            padding-right: 0;
+        }
+
+        .contact-wrapper {
+            border-radius: 24px;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.10);
         }
 
         .contact-info-panel,
         .contact-form-panel {
-            padding: 40px 30px;
+            padding: 32px 22px;
         }
 
         .section-title {
             font-size: 2rem;
+            line-height: 1.12;
         }
 
         .section-subtitle {
             font-size: 1rem;
+            line-height: 1.75;
         }
 
         .form-row {
@@ -568,33 +610,96 @@
         .contact-info-panel h2 {
             font-size: 1.5rem;
         }
+
+        .support-status {
+            padding: 22px 18px;
+            margin-top: 8px;
+        }
+
+        .status-indicator {
+            align-items: flex-start;
+        }
+
+        .info-card {
+            padding: 34px 22px;
+        }
     }
 
     @media (max-width: 480px) {
         .contact-header {
-            padding: 60px 15px;
+            padding: 52px 12px 40px;
         }
 
         .section-title {
-            font-size: 1.6rem;
+            font-size: 1.55rem;
+            letter-spacing: -0.5px;
         }
 
         .contact-info-panel,
         .contact-form-panel {
-            padding: 30px 20px;
+            padding: 26px 16px;
         }
 
         .contact-item {
-            gap: 15px;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .contact-item i {
+            width: 42px;
+            height: 42px;
+            font-size: 1.1rem;
         }
 
         .form-input {
-            padding: 12px 15px;
+            padding: 12px 14px;
+            font-size: 16px;
         }
 
         .btn-submit {
-            padding: 14px 30px;
+            padding: 14px 18px;
             font-size: 0.85rem;
+        }
+
+        .form-checkbox {
+            padding: 14px 12px;
+            gap: 10px;
+        }
+
+        .form-checkbox label {
+            font-size: 0.84rem;
+        }
+
+        .info-card h3 {
+            font-size: 1.1rem;
+        }
+
+        .info-card p {
+            font-size: 0.88rem;
+        }
+    }
+
+    @media (max-width: 360px) {
+        .contact-section {
+            padding: 36px 10px;
+        }
+
+        .contact-wrapper {
+            border-radius: 18px;
+        }
+
+        .contact-info-panel,
+        .contact-form-panel {
+            padding: 22px 14px;
+        }
+
+        .section-title {
+            font-size: 1.4rem;
+        }
+
+        .section-label {
+            font-size: 0.72rem;
+            letter-spacing: 2px;
         }
     }
 </style>
