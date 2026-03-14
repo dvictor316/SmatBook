@@ -162,8 +162,14 @@ class CustomerController extends Controller
         // From: return redirect()->route('customers.show', $customer->id)
         // To:   return redirect()->route('customers.index')
         
+        $redirectTo = (string) $request->input('redirect_to', '');
+        if ($redirectTo === 'show') {
+            return redirect()->route('customers.show', $customer->id)
+                ->with('success', 'Customer record updated successfully.');
+        }
+
         return redirect()->route('customers.index')
-                         ->with('success', 'Customer record updated successfully.');
+            ->with('success', 'Customer record updated successfully.');
     }
     /**
      * Toggle Status and Filters.
