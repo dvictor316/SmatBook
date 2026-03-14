@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse; 
 use Illuminate\Routing\Redirector; 
+use Illuminate\Support\Facades\Storage;
 
 class VendorController extends Controller
 {
@@ -45,7 +46,12 @@ class VendorController extends Controller
             'phone' => 'nullable|string|max:191',
             'address' => 'nullable|string|max:191',
             'balance' => 'nullable|numeric|min:0',
+            'logo' => 'nullable|image|max:4096',
         ]);
+
+        if ($request->hasFile('logo')) {
+            $validated['logo'] = $request->file('logo')->store('vendors', 'public');
+        }
 
         // 1. Create the Vendor account
         $vendor = Vendor::create($validated);
@@ -125,6 +131,63 @@ class VendorController extends Controller
 
         return redirect()->route('vendors.ledger', ['id' => $vendor->id])->with('success', 'Transaction added.');
     }
+
+    public function updateLedgerProfile(Request $request, $id): RedirectResponse
+    {
+        $vendor = Vendor::findOrFail($id);
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:191',
+            'email' => 'required|email|unique:vendors,email,' . $vendor->id . '|max:191',
+            'phone' => 'nullable|string|max:191',
+            'address' => 'nullable|string|max:191',
+            'logo' => 'nullable|image|max:4096',
+        ]);
+
+        if ($request->hasFile('logo')) {
+            if ($vendor->logo && Storage::disk('public')->exists($vendor->logo)) {
+                Storage::disk('public')->delete($vendor->logo);
+            }
+
+            $validated['logo'] = $request->file('logo')->store('vendors', 'public');
+        }
+
+        $vendor->update($validated);
+
+        return redirect()
+            ->route('vendors.ledger', ['id' => $vendor->id])
+            ->with('success', 'Vendor profile updated successfully.');
+    }
+
+    public function updateTransaction(Request $request, $id, $transactionId): RedirectResponse
+    {
+        $vendor = Vendor::findOrFail($id);
+        $transaction = VendorLedgerTransaction::where('vendor_id', $vendor->id)->findOrFail($transactionId);
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:191',
+            'reference' => 'required|string|max:191',
+            'mode' => 'required|string|max:191',
+            'amount' => 'required|numeric',
+        ]);
+
+        $transaction->update($validated);
+
+        return redirect()
+            ->route('vendors.ledger', ['id' => $vendor->id])
+            ->with('success', 'Transaction updated successfully.');
+    }
+
+    public function destroyTransaction($id, $transactionId): RedirectResponse
+    {
+        $vendor = Vendor::findOrFail($id);
+        $transaction = VendorLedgerTransaction::where('vendor_id', $vendor->id)->findOrFail($transactionId);
+        $transaction->delete();
+
+        return redirect()
+            ->route('vendors.ledger', ['id' => $vendor->id])
+            ->with('success', 'Transaction deleted successfully.');
+    }
     
     /**
      * Show the form for editing the specified vendor.
@@ -150,7 +213,16 @@ class VendorController extends Controller
             'email' => 'required|email|unique:vendors,email,'.$vendor->id.'|max:191',
             'phone' => 'nullable|string|max:191',
             'address' => 'nullable|string|max:191',
+            'logo' => 'nullable|image|max:4096',
         ]);
+
+        if ($request->hasFile('logo')) {
+            if ($vendor->logo && Storage::disk('public')->exists($vendor->logo)) {
+                Storage::disk('public')->delete($vendor->logo);
+            }
+
+            $validated['logo'] = $request->file('logo')->store('vendors', 'public');
+        }
 
         $vendor->update($validated);
 
@@ -163,6 +235,9 @@ class VendorController extends Controller
     public function destroy($id): RedirectResponse
     {
         $vendor = Vendor::findOrFail($id);
+        if ($vendor->logo && Storage::disk('public')->exists($vendor->logo)) {
+            Storage::disk('public')->delete($vendor->logo);
+        }
         $vendor->delete(); 
 
         return redirect()->route('vendors.index')->with('success', 'Vendor deleted successfully!');

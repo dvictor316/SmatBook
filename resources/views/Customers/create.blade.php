@@ -39,10 +39,17 @@
                         @endif
 
                         {{-- Action points to the vendors.store route we defined --}}
-                        <form action="{{ route('vendors.store') }}" method="POST">
+                        <form action="{{ route('vendors.store') }}" method="POST" enctype="multipart/form-data">
                             @csrf
 
                             <div class="row">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label for="logo" class="col-form-label">Vendor Image</label>
+                                        <input type="file" id="logo" name="logo" class="form-control" accept="image/*">
+                                        <small class="text-muted">Upload a logo or profile image to personalize the vendor record.</small>
+                                    </div>
+                                </div>
                                 <div class="col-md-6">
                                     {{-- Name Field --}}
                                     <div class="form-group">

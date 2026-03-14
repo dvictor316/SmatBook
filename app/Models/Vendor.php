@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 class Vendor extends Model
 {
@@ -23,6 +25,7 @@ class Vendor extends Model
      */
     protected $fillable = [
         'name',
+        'logo',
         'email',
         'phone',
         'address',
@@ -39,4 +42,18 @@ class Vendor extends Model
     protected $casts = [
         // No specific casts needed for the fields above right now
     ];
+
+    public function ledgerTransactions(): HasMany
+    {
+        return $this->hasMany(VendorLedgerTransaction::class);
+    }
+
+    public function getLogoUrlAttribute(): string
+    {
+        if ($this->logo && Storage::disk('public')->exists($this->logo)) {
+            return Storage::url($this->logo);
+        }
+
+        return asset('assets/img/profiles/default-avatar.jpg');
+    }
 }

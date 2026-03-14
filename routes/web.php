@@ -564,6 +564,9 @@ Route::middleware(['auth', 'subscription.active'])->group(function () {
         Route::delete('/{id}', 'destroy')->name('destroy');
         Route::get('/{id}/transactions/create', 'createTransaction')->name('transactions.create');
         Route::post('/{id}/transactions', 'storeTransaction')->name('transactions.store');
+        Route::put('/{id}/transactions/{transactionId}', 'updateTransaction')->name('transactions.update');
+        Route::delete('/{id}/transactions/{transactionId}', 'destroyTransaction')->name('transactions.destroy');
+        Route::post('/{id}/profile', 'updateLedgerProfile')->name('profile.update');
         Route::get('/{id}/ledger', 'vendorLedger')->name('ledger');
     });
     Route::get('/Customers/ledger/{id}', [VendorController::class, 'ledger'])->name('ledger');

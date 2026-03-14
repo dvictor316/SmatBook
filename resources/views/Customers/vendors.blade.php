@@ -38,7 +38,10 @@
                                                 <td>{{ $vendor->id }}</td>
                                                 <td>
                                                     <h2 class="table-avatar">
-                                                        <a href="{{ url('profile') }}">{{ $vendor->name }}
+                                                        <a href="{{ route('vendors.ledger', ['id' => $vendor->id]) }}" class="avatar avatar-md me-2">
+                                                            <img class="avatar-img rounded-circle" src="{{ $vendor->logo_url }}" alt="{{ $vendor->name }}">
+                                                        </a>
+                                                        <a href="{{ route('vendors.ledger', ['id' => $vendor->id]) }}">{{ $vendor->name }}
                                                             <span>{{ $vendor->email }}</span></a>
                                                     </h2>
                                                 </td>
