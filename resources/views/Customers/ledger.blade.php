@@ -36,6 +36,7 @@
                 .vendor-ledger-shell {
                     display: grid;
                     gap: 24px;
+                    min-width: 0;
                 }
                 .vendor-ledger-hero,
                 .vendor-ledger-card {
@@ -43,9 +44,11 @@
                     border: 1px solid #e9eef5;
                     border-radius: 24px;
                     box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
+                    min-width: 0;
                 }
                 .vendor-ledger-hero {
                     padding: 28px;
+                    overflow: hidden;
                 }
                 .vendor-ledger-head {
                     display: flex;
@@ -98,6 +101,7 @@
                     flex-wrap: wrap;
                     gap: 10px;
                     justify-content: flex-end;
+                    max-width: 100%;
                 }
                 .vendor-ledger-summary {
                     margin-top: 24px;
@@ -132,6 +136,7 @@
                 }
                 .vendor-ledger-card {
                     padding: 24px;
+                    overflow: hidden;
                 }
                 .vendor-ledger-card-head {
                     display: flex;
@@ -141,11 +146,17 @@
                     flex-wrap: wrap;
                     margin-bottom: 18px;
                 }
+                .vendor-ledger-card-head > div:first-child {
+                    flex: 1 1 320px;
+                    min-width: 0;
+                }
                 .vendor-ledger-tools {
                     display: flex;
                     align-items: center;
                     gap: 10px;
                     flex-wrap: wrap;
+                    justify-content: flex-end;
+                    max-width: 100%;
                 }
                 .vendor-ledger-filter {
                     display: none;
@@ -158,9 +169,19 @@
                 .vendor-ledger-filter.show {
                     display: block;
                 }
+                .vendor-ledger-card .table-responsive {
+                    width: 100%;
+                    max-width: 100%;
+                    overflow-x: auto;
+                    overflow-y: hidden;
+                    padding-bottom: 8px;
+                    -webkit-overflow-scrolling: touch;
+                }
                 .vendor-ledger-table {
                     border-collapse: separate;
                     border-spacing: 0 12px;
+                    width: 100%;
+                    min-width: 1040px;
                 }
                 .vendor-ledger-table thead th {
                     border: 0;
@@ -249,6 +270,9 @@
                     .vendor-ledger-tools .btn {
                         flex: 1 1 auto;
                         justify-content: center;
+                    }
+                    .vendor-ledger-card-head > div:first-child {
+                        flex-basis: 100%;
                     }
                 }
             </style>
