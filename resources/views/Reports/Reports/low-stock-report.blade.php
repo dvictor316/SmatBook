@@ -22,6 +22,10 @@
                 </div>
             </div>
         </div>
+        @include('Reports.partials.context-strip', [
+            'reportLabel' => 'Low Stock Alert Report',
+            'periodLabel' => 'Threshold: ' . $threshold . ' | Restock Target: ' . $target,
+        ])
 
         {{-- Light Summary Cards --}}
         @php $totalValuation = $products->sum(fn($p) => $p->stock * $p->purchase_price); @endphp

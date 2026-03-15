@@ -174,6 +174,10 @@
                 <h5>Trial Balance</h5>
             </div>
         </div>
+        @include('Reports.partials.context-strip', [
+            'reportLabel' => 'Trial Balance Report',
+            'periodLabel' => 'Period: ' . $startDate . ' to ' . $endDate,
+        ])
         <div class="report-container">
         
         {{-- Header --}}

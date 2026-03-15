@@ -37,6 +37,12 @@
                 </div>
             </div>
         </div>
+        @include('Reports.partials.context-strip', [
+            'reportLabel' => 'Quotation Report',
+            'periodLabel' => request('from_date') || request('to_date')
+                ? 'Filtered Quotation Window'
+                : 'All Recorded Quotations',
+        ])
 
         {{-- Filter Card --}}
         <div class="card mb-4 border-0 shadow-sm no-print">

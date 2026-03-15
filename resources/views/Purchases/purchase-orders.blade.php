@@ -1,6 +1,36 @@
 <?php $page = 'purchases-orders'; ?>
 @extends('layout.mainlayout')
 @section('content')
+    <style>
+        .vendor-order-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            overflow: hidden;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%);
+            color: #1d4ed8;
+            font-weight: 800;
+            font-size: 0.85rem;
+            border: 1px solid #bfdbfe;
+            flex-shrink: 0;
+        }
+        .vendor-order-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .vendor-order-avatar-fallback {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
     <div class="page-wrapper">
         <div class="content container-fluid">
 
@@ -35,14 +65,32 @@
                                                 <td>{{ $order['Id'] ?? $loop->iteration }}</td>
                                                 <td>{{ $order['PurchaseID'] ?? 'N/A' }}</td>
                                                 <td>
+                                                    @php
+                                                        $vendorName = $order['Vendor'] ?? 'Unknown Vendor';
+                                                        $vendorInitials = \Illuminate\Support\Str::of($vendorName)
+                                                            ->explode(' ')
+                                                            ->filter()
+                                                            ->take(2)
+                                                            ->map(fn ($part) => \Illuminate\Support\Str::upper(\Illuminate\Support\Str::substr($part, 0, 1)))
+                                                            ->implode('');
+                                                        $vendorImage = trim((string) ($order['Image'] ?? ''));
+                                                        $vendorImageUrl = $vendorImage !== ''
+                                                            ? asset('assets/img/profiles/' . ltrim($vendorImage, '/'))
+                                                            : null;
+                                                    @endphp
                                                     <h2 class="table-avatar">
-                                                        <a href="{{ url('profile') }}" class="avatar avatar-sm me-2">
-                                                            <img class="avatar-img rounded-circle"
-                                                                src="{{ URL::asset('/assets/img/profiles/' . ($order['Image'] ?? 'default.jpg')) }}"
-                                                                alt="User Image">
+                                                        <a href="{{ url('profile') }}" class="vendor-order-avatar me-2">
+                                                            @if($vendorImageUrl)
+                                                                <img src="{{ $vendorImageUrl }}"
+                                                                    alt="{{ $vendorName }}"
+                                                                    onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-flex';">
+                                                            @endif
+                                                            <span class="vendor-order-avatar-fallback" @if($vendorImageUrl) style="display:none;" @endif>
+                                                                {{ $vendorInitials !== '' ? $vendorInitials : 'VN' }}
+                                                            </span>
                                                         </a>
                                                         <a href="{{ url('profile') }}">
-                                                            {{ $order['Vendor'] ?? 'Unknown' }}
+                                                            {{ $vendorName }}
                                                             <span>{{ $order['Phone'] ?? '' }}</span>
                                                         </a>
                                                     </h2>

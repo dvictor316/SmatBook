@@ -9,6 +9,12 @@
         @component('components.page-header')
             @slot('title') {{ __('Expense Report') }} @endslot
         @endcomponent
+        @include('Reports.partials.context-strip', [
+            'reportLabel' => 'Expense Report',
+            'periodLabel' => request('start_date') || request('end_date')
+                ? 'Filtered Expense Window'
+                : 'Current Expense Ledger',
+        ])
 
         {{-- 2. Functional Filter Section --}}
         <div class="card shadow-sm border-0 mb-4">

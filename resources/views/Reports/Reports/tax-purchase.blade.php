@@ -58,6 +58,10 @@
                 </div>
             </div>
         </div>
+        @include('Reports.partials.context-strip', [
+            'reportLabel' => 'Purchase Tax Report',
+            'periodLabel' => 'Generated on ' . $reportDate,
+        ])
 
         {{-- Tabs --}}
         <div class="report-tabs mb-4 no-print">
