@@ -15,6 +15,12 @@
                             <li class="breadcrumb-item"><a href="{{url('purchases')}}">Purchases</a></li>
                             <li class="breadcrumb-item active">Details</li>
                         </ul>
+                        <div class="mt-2">
+                            <span class="badge bg-light border text-primary px-3 py-2">
+                                <i class="fas fa-code-branch me-2"></i>
+                                Active Branch: {{ $purchase->branch_label ?? $activeBranch['name'] ?? 'Workspace Default' }}
+                            </span>
+                        </div>
                     </div>
                     <div class="col-auto">
                         <div class="d-print-none"> 
@@ -56,6 +62,7 @@
                                                 <div class="invoice-info text-md-end">
                                                     <h1 class="text-uppercase text-primary">Purchase</h1>
                                                     <p class="mb-0">Ref: <strong>{{ $purchase->purchase_no }}</strong></p>
+                                                    <p class="mb-0">Branch: <strong>{{ $purchase->branch_label ?? 'Workspace Default' }}</strong></p>
                                                     <p>Status: 
                                                         <span class="badge {{ $purchase->status == 'paid' ? 'bg-success-light' : 'bg-warning-light' }}">
                                                             {{ ucfirst($purchase->status ?? 'Pending') }}

@@ -10,6 +10,8 @@ class Purchase extends Model
     use HasFactory;
 
     protected $fillable = [
+        'branch_id',
+        'branch_name',
         'purchase_no', 
         'supplier_id',
         'vendor_id', 
@@ -21,6 +23,11 @@ class Purchase extends Model
         'paid_at',      // Added this based on your tinker output
         'status'
     ];
+
+    public function getBranchLabelAttribute(): ?string
+    {
+        return $this->branch_name ?: null;
+    }
 
     /**
      * Relationship to the Vendor

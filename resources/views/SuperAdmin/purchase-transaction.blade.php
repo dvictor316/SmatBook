@@ -71,7 +71,15 @@
     {{-- Page Header --}}
     <div class="page-header">
         <div class="content-page-header">
-            <h5 class="fw-bold">{{ __('Purchase Transactions') }}</h5>
+            <div>
+                <h5 class="fw-bold">{{ __('Purchase Transactions') }}</h5>
+                <div class="mt-2">
+                    <span class="badge bg-light border text-primary px-3 py-2">
+                        <i class="fas fa-code-branch me-2"></i>
+                        Active Branch: {{ $activeBranch['name'] ?? 'All Recorded Purchases' }}
+                    </span>
+                </div>
+            </div>
             <div class="list-btn">
                 <ul class="filter-list">
                     <li>
@@ -131,6 +139,7 @@
                                 <tr>
                                     <th>ID</th>
                                     <th>Purchase #</th>
+                                    <th>Branch</th>
                                     <th>Created On</th>
                                     <th>Amount</th>
                                     <th>Status</th>
@@ -143,6 +152,11 @@
                                         <tr>
                                             <td>#{{ $transaction->id }}</td> 
                                             <td class="fw-bold text-primary">{{ $transaction->purchase_no ?? $transaction->payment_reference }}</td>
+                                            <td>
+                                                <span class="badge bg-light border text-primary">
+                                                    {{ $transaction->branch_name ?? 'Workspace Default' }}
+                                                </span>
+                                            </td>
                                             <td>{{ \Carbon\Carbon::parse($transaction->created_at)->format('d M Y') }}</td> 
                                             <td class="fw-bold text-dark">₦{{ number_format($transaction->amount ?? $transaction->total_amount, 2) }}</td>
                                             <td>
@@ -197,7 +211,7 @@
                                         @endif
                                     @empty
                                         <tr>
-                                            <td colspan="6" class="text-center text-muted p-5">
+                                            <td colspan="7" class="text-center text-muted p-5">
                                                 <i class="fas fa-folder-open fa-3x mb-3 d-block"></i>
                                                 No Transactions Found
                                             </td>
@@ -205,7 +219,7 @@
                                     @endforelse
                                 @else
                                     <tr>
-                                        <td colspan="6" class="text-center text-danger p-5">
+                                        <td colspan="7" class="text-center text-danger p-5">
                                             <i class="fas fa-bug fa-2x mb-2"></i><br>
                                             <strong>Error:</strong> Variable <code>$purchasereports</code> is not defined in the controller.
                                         </td>

@@ -52,6 +52,13 @@
 {{-- WRAPPER START --}}
 <div id="main-content-wrapper" class="container-fluid px-4 pb-4">
 
+    <div class="mb-3">
+        <span class="badge bg-light border text-primary px-3 py-2">
+            <i class="fas fa-code-branch me-2"></i>
+            Active Branch: {{ $activeBranch['name'] ?? 'All Recorded Purchases' }}
+        </span>
+    </div>
+
     {{-- 
         1. TOP RIGHT ACTION BUTTONS 
         Moved here as requested

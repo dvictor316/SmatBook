@@ -9,6 +9,13 @@
                 @slot('title') {{ __('Purchase Report') }} @endslot
             @endcomponent
 
+            <div class="mb-3">
+                <span class="badge bg-light border text-primary px-3 py-2">
+                    <i class="fas fa-code-branch me-2"></i>
+                    Active Branch: {{ $activeBranch['name'] ?? 'All Recorded Purchases' }}
+                </span>
+            </div>
+
             {{-- Summary Card: Now calculates based on the paginated data or total --}}
             <div class="row">
                 <div class="col-xl-4 col-sm-6 col-12">
@@ -44,6 +51,7 @@
                                             <th>#</th>
                                             <th>{{ __('Reference') }}</th>
                                             <th>{{ __('Company / Supplier') }}</th>
+                                            <th>{{ __('Branch') }}</th>
                                             <th>{{ __('Amount') }}</th>
                                             <th>{{ __('Date') }}</th>
                                             <th>{{ __('Status') }}</th>
@@ -59,6 +67,11 @@
                                                 <td class="fw-bold text-dark">
                                                     {{ $item->CompanyName ?? 'N/A' }}
                                                 </td>
+                                                <td>
+                                                    <span class="badge bg-light border text-primary">
+                                                        {{ $item->BranchName ?? 'Workspace Default' }}
+                                                    </span>
+                                                </td>
                                                 <td class="fw-bold">
                                                     {{ number_format($item->Amount, 2) }}
                                                 </td>
@@ -73,7 +86,7 @@
                                             </tr>
                                         @empty
                                             <tr>
-                                                <td colspan="6" class="text-center text-muted">No purchase records found.</td>
+                                                <td colspan="7" class="text-center text-muted">No purchase records found.</td>
                                             </tr>
                                         @endforelse
                                     </tbody>
@@ -123,19 +136,19 @@
                         extend: 'excelHtml5',
                         text: '<i class="feather-file-text me-1"></i> Excel',
                         className: 'btn btn-success btn-sm me-2',
-                        exportOptions: { columns: [0, 1, 2, 3, 4, 5] }
+                        exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6] }
                     },
                     {
                         extend: 'pdfHtml5',
                         text: '<i class="feather-file me-1"></i> PDF',
                         className: 'btn btn-danger btn-sm me-2',
-                        exportOptions: { columns: [0, 1, 2, 3, 4, 5] }
+                        exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6] }
                     },
                     {
                         extend: 'print',
                         text: '<i class="feather-printer me-1"></i> Print',
                         className: 'btn btn-primary btn-sm',
-                        exportOptions: { columns: [0, 1, 2, 3, 4, 5] }
+                        exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6] }
                     }
                 ],
                 "language": {

@@ -24,10 +24,22 @@ use App\Support\LedgerService;
 
 class PurchaseController extends Controller
 {
+public function getActiveBranchContext(): array
+    {
+        return [
+            'id' => session('active_branch_id') ? (string) session('active_branch_id') : null,
+            'name' => session('active_branch_name') ? (string) session('active_branch_name') : null,
+        ];
+    }
+
 public function index()
     {
+        $activeBranch = $this->getActiveBranchContext();
         // 1. Fetch Purchases (using 'vendor' or 'supplier' based on your model relation)
         $purchases = Purchase::with(['supplier', 'items.product'])
+            ->when(!empty($activeBranch['name']) && Schema::hasColumn('purchases', 'branch_name'), function ($query) use ($activeBranch) {
+                $query->where('branch_name', $activeBranch['name']);
+            })
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
@@ -35,7 +47,7 @@ public function index()
         $products = Product::with('category')->latest()->paginate(10);
             
         // 3. Pass BOTH variables to the view
-        return view('Purchases.purchases', compact('purchases', 'products'));
+        return view('Purchases.purchases', compact('purchases', 'products', 'activeBranch'));
     }
 
     /**
@@ -43,6 +55,7 @@ public function index()
      */
     public function purchaseReport(Request $request)
     {
+        $activeBranch = $this->getActiveBranchContext();
         $search = $request->input('search');
 
         $products = Product::with('category')
@@ -54,6 +67,9 @@ public function index()
             ->paginate(10);
 
         $purchases = Purchase::with(['supplier', 'items.product'])
+            ->when(!empty($activeBranch['name']) && Schema::hasColumn('purchases', 'branch_name'), function ($query) use ($activeBranch) {
+                $query->where('branch_name', $activeBranch['name']);
+            })
             ->latest()
             ->paginate(10);
 
@@ -61,7 +77,8 @@ public function index()
             'products'  => $products,
             'purchases' => $purchases,
             'search'    => $search,
-            'page'      => 'products'
+            'page'      => 'products',
+            'activeBranch' => $activeBranch,
         ]);
     }
 
@@ -70,6 +87,7 @@ public function index()
      */
     public function create()
     {
+        $activeBranch = $this->getActiveBranchContext();
         $vendors = Vendor::orderBy('name')->get();
         $products = Product::orderBy('name')->get();
         $taxOptions = collect();
@@ -81,7 +99,7 @@ public function index()
         // Generate a unique purchase ID
         $purchaseId = 'PUR-' . date('Ymd') . '-' . strtoupper(Str::random(6));
         
-        return view('Purchases.add-purchases', compact('vendors', 'products', 'taxOptions', 'banks', 'purchaseId'));
+        return view('Purchases.add-purchases', compact('vendors', 'products', 'taxOptions', 'banks', 'purchaseId', 'activeBranch'));
     }
 
     /**
@@ -89,6 +107,7 @@ public function index()
      */
     public function store(Request $request)
     {
+        $activeBranch = $this->getActiveBranchContext();
         // Validate the request (schema-safe)
         $validated = $request->validate([
             'purchase_id' => 'nullable|string|max:50',
@@ -139,6 +158,8 @@ public function index()
             }
 
             $purchasePayload = [
+                'branch_id' => $activeBranch['id'],
+                'branch_name' => $activeBranch['name'],
                 'purchase_no' => $purchaseNo,
                 'total_amount' => $totals['total_amount'],
                 'tax_amount' => $totals['vat_amount'],
@@ -211,6 +232,7 @@ public function show($id)
 {
     // Fetch purchase with vendor relationship
     $purchase = Purchase::with(['vendor', 'bank', 'items.product'])->findOrFail($id);
+    $activeBranch = $this->getActiveBranchContext();
 
     // Logic: Look for the vendor's specific logo first. 
     // If the vendor doesn't have a logo, fall back to the site-wide logo.
@@ -226,7 +248,8 @@ public function show($id)
     return view('Purchases.purchase-details', [
         'purchase' => $purchase,
         'logo'     => $logo,
-        'page'     => 'purchase-details'
+        'page'     => 'purchase-details',
+        'activeBranch' => $activeBranch,
     ]);
 }
 
@@ -263,13 +286,14 @@ public function show($id)
      */
     public function edit($id)
     {
+        $activeBranch = $this->getActiveBranchContext();
         $purchase = Purchase::with('items.product')->findOrFail($id);
         $vendors = Vendor::orderBy('name')->get();
         $products = Product::orderBy('name')->get();
         $taxOptions = Tax::orderBy('name')->get();
         $banks = Bank::orderBy('name')->get();
         
-        return view('Purchases.edit-purchases', compact('purchase', 'vendors', 'products', 'taxOptions', 'banks'));
+        return view('Purchases.edit-purchases', compact('purchase', 'vendors', 'products', 'taxOptions', 'banks', 'activeBranch'));
     }
 
     /**
@@ -277,6 +301,7 @@ public function show($id)
      */
     public function update(Request $request, $id)
     {
+        $activeBranch = $this->getActiveBranchContext();
         $purchase = Purchase::findOrFail($id);
         
         $validated = $request->validate([
@@ -324,6 +349,8 @@ public function show($id)
             
             // Update purchase
             $purchasePayload = [
+                'branch_id' => $activeBranch['id'],
+                'branch_name' => $activeBranch['name'],
                 'total_amount' => $totals['total_amount'],
                 'tax_amount' => $totals['vat_amount'],
             ];
@@ -786,7 +813,12 @@ public function show($id)
      */
     public function purchase_transaction(Request $request)
     {
+        $activeBranch = $this->getActiveBranchContext();
         $query = Purchase::with('vendor');
+
+        if (!empty($activeBranch['name']) && Schema::hasColumn('purchases', 'branch_name')) {
+            $query->where('branch_name', $activeBranch['name']);
+        }
 
         // Search by purchase number
         if ($request->filled('search')) {
@@ -821,11 +853,16 @@ public function show($id)
                     'inventory_history.id as id',
                     DB::raw("CONCAT('HIST-IN-', inventory_history.id) as purchase_no"),
                     'inventory_history.created_at as created_at',
+                    'inventory_history.branch_name as branch_name',
                     DB::raw('COALESCE(inventory_history.quantity, 0) * COALESCE(products.purchase_price, products.price, 0) as total_amount'),
                     DB::raw("'received' as status"),
                     DB::raw("'inventory_history' as source_type"),
                 ])
                 ->whereRaw("LOWER(COALESCE(inventory_history.type, '')) = 'in'");
+
+            if (!empty($activeBranch['name']) && Schema::hasColumn('inventory_history', 'branch_name')) {
+                $historyQuery->where('inventory_history.branch_name', $activeBranch['name']);
+            }
 
             if ($request->filled('search')) {
                 $search = trim((string) $request->search);
@@ -850,7 +887,7 @@ public function show($id)
         }
         $vendors = Vendor::orderBy('name')->get();
 
-        return view('SuperAdmin.purchase-transaction', compact('purchasereports', 'vendors'));
+        return view('SuperAdmin.purchase-transaction', compact('purchasereports', 'vendors', 'activeBranch'));
     }
 
 }

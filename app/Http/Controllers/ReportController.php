@@ -179,6 +179,7 @@ public function purchaseReport(Request $request)
 
 public function purchase_report(Request $request) 
 {
+    $activeBranch = $this->getActiveBranchContext();
     $currentSubdomain = request()->route('subdomain') ?? 'admin';
     $routeParams = ['subdomain' => $currentSubdomain];
 
@@ -226,6 +227,9 @@ public function purchase_report(Request $request)
             $query->select([
                 DB::raw("COALESCE(purchases.{$purchaseRefColumn}, CONCAT('PUR-', purchases.id)) as Reference"),
                 $supplierNameExpression,
+                Schema::hasColumn('purchases', 'branch_name')
+                    ? DB::raw("COALESCE(purchases.branch_name, 'Workspace Default') as BranchName")
+                    : DB::raw("'Workspace Default' as BranchName"),
                 DB::raw("COALESCE(purchases.{$purchaseAmountColumn}, 0) as Amount"),
                 DB::raw("purchases.{$purchaseDateColumn} as Date"),
                 $purchaseStatusColumn
@@ -251,6 +255,10 @@ public function purchase_report(Request $request)
                 });
             }
 
+            if (!empty($activeBranch['name']) && Schema::hasColumn('purchases', 'branch_name')) {
+                $query->where('purchases.branch_name', $activeBranch['name']);
+            }
+
             $hasPurchaseRows = (clone $query)->exists();
 
             if ($hasPurchaseRows) {
@@ -266,12 +274,17 @@ public function purchase_report(Request $request)
             ->select([
                 DB::raw("CONCAT('HIST-IN-', inventory_history.id) as Reference"),
                 DB::raw("'Inventory History' as CompanyName"),
+                'inventory_history.branch_name as BranchName',
                 DB::raw('COALESCE(inventory_history.quantity, 0) * COALESCE(products.purchase_price, products.price, 0) as Amount'),
                 'inventory_history.created_at as Date',
                 DB::raw("'received' as Type"),
                 'inventory_history.id as id',
             ])
             ->whereRaw("LOWER(COALESCE(inventory_history.type, '')) = 'in'");
+
+        if (!empty($activeBranch['name']) && Schema::hasColumn('inventory_history', 'branch_name')) {
+            $historyQuery->where('inventory_history.branch_name', $activeBranch['name']);
+        }
 
         if ($request->filled('start_date') && $request->filled('end_date')) {
             $historyQuery->whereBetween('inventory_history.created_at', [
@@ -303,7 +316,8 @@ public function purchase_report(Request $request)
     return view('Reports.Reports.purchase-report', compact(
         'purchases', 
         'totalSum',
-        'routeParams'
+        'routeParams',
+        'activeBranch'
     ));
 }
 
