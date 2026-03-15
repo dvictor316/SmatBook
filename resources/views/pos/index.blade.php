@@ -52,10 +52,13 @@
 .pos-full-page-wrapper { 
     margin-left: 250px; 
     padding: 20px; 
-    background: linear-gradient(to bottom, #f9fafb 0%, #ffffff 100%);
+    background:
+        radial-gradient(1200px 320px at 10% 0%, rgba(96, 165, 250, 0.10) 0%, rgba(96, 165, 250, 0) 55%),
+        radial-gradient(900px 260px at 92% 6%, rgba(248, 113, 113, 0.08) 0%, rgba(248, 113, 113, 0) 58%),
+        linear-gradient(to bottom, #f7fbff 0%, #fff8fa 55%, #ffffff 100%);
     min-height: 100vh; 
     transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    margin-top: 22px;
+    margin-top: 34px;
 }
 
 body.mini-sidebar .pos-full-page-wrapper { 
@@ -66,7 +69,7 @@ body.mini-sidebar .pos-full-page-wrapper {
     .pos-full-page-wrapper { 
         margin-left: 0 !important; 
         padding: 16px; 
-        margin-top: 12px; 
+        margin-top: 20px; 
     } 
 }
 
@@ -78,7 +81,8 @@ body.mini-sidebar .pos-full-page-wrapper {
     padding: 10px 14px;
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
-    background: linear-gradient(90deg, #eff6ff 0%, #ffffff 70%);
+    background:
+        linear-gradient(90deg, rgba(239, 246, 255, 0.94) 0%, rgba(255, 244, 246, 0.92) 52%, rgba(255, 255, 255, 0.96) 100%);
     margin-bottom: 10px;
 }
 
@@ -87,9 +91,9 @@ body.mini-sidebar .pos-full-page-wrapper {
     padding: 10px;
     border-radius: 18px;
     background:
-        radial-gradient(1200px 220px at 10% 0%, rgba(37, 99, 235, 0.10) 0%, rgba(37, 99, 235, 0) 60%),
-        radial-gradient(900px 220px at 100% 0%, rgba(79, 70, 229, 0.12) 0%, rgba(79, 70, 229, 0) 62%),
-        linear-gradient(180deg, #f8fbff 0%, #f2f7ff 100%);
+        radial-gradient(1200px 220px at 10% 0%, rgba(37, 99, 235, 0.12) 0%, rgba(37, 99, 235, 0) 60%),
+        radial-gradient(900px 220px at 100% 0%, rgba(239, 68, 68, 0.10) 0%, rgba(239, 68, 68, 0) 62%),
+        linear-gradient(180deg, #f8fbff 0%, #fff6f8 55%, #f3f8ff 100%);
     border: 1px solid #dbeafe;
     margin-bottom: 14px;
 }
@@ -105,9 +109,9 @@ body.mini-sidebar .pos-full-page-wrapper {
 
 .header-stage.plan-basic {
     background:
-        radial-gradient(1200px 220px at 10% 0%, rgba(37, 99, 235, 0.10) 0%, rgba(37, 99, 235, 0) 60%),
-        radial-gradient(900px 220px at 100% 0%, rgba(59, 130, 246, 0.12) 0%, rgba(59, 130, 246, 0) 62%),
-        linear-gradient(180deg, #f8fbff 0%, #f2f7ff 100%);
+        radial-gradient(1200px 220px at 10% 0%, rgba(37, 99, 235, 0.12) 0%, rgba(37, 99, 235, 0) 60%),
+        radial-gradient(900px 220px at 100% 0%, rgba(248, 113, 113, 0.10) 0%, rgba(248, 113, 113, 0) 62%),
+        linear-gradient(180deg, #f8fbff 0%, #fff7fa 56%, #f2f7ff 100%);
     border-color: #dbeafe;
 }
 
