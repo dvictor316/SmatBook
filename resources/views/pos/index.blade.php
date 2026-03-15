@@ -676,28 +676,32 @@ body.mini-sidebar .pos-full-page-wrapper {
     border: 1.5px solid var(--border);
     border-radius: var(--radius-lg);
     margin-bottom: 18px;
-    background: var(--gray-50);
+    background:
+        linear-gradient(180deg, #fdfefe 0%, #f8fbff 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.9);
 }
 
 .cart-wrapper::-webkit-scrollbar {
-    width: 6px;
+    width: 10px;
 }
 
 .cart-wrapper::-webkit-scrollbar-track {
-    background: var(--gray-100);
+    background: #eef4ff;
+    border-radius: 999px;
 }
 
 .cart-wrapper::-webkit-scrollbar-thumb {
-    background: var(--gray-300);
-    border-radius: 3px;
+    background: linear-gradient(180deg, #c7d2fe 0%, #93c5fd 100%);
+    border-radius: 999px;
+    border: 2px solid #eef4ff;
 }
 
 .cart-wrapper::-webkit-scrollbar-thumb:hover {
-    background: var(--gray-400);
+    background: linear-gradient(180deg, #93c5fd 0%, #60a5fa 100%);
 }
 
 .cart-table thead th {
-    background: #ffffff;
+    background: linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
     color: var(--text-primary);
     font-weight: 700;
     border-bottom: 2px solid var(--border);
@@ -711,17 +715,66 @@ body.mini-sidebar .pos-full-page-wrapper {
 }
 
 .cart-table tbody tr {
-    background: #ffffff;
+    background: rgba(255, 255, 255, 0.82);
     transition: var(--transition);
 }
 
 .cart-table tbody tr:hover {
-    background: var(--gray-50);
+    background: #ffffff;
 }
 
 .cart-table td {
     padding: 10px;
     font-size: 0.8125rem;
+}
+
+.cart-empty-state {
+    min-height: 260px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 28px 20px;
+    background:
+        radial-gradient(circle at top, rgba(191, 219, 254, 0.42) 0%, rgba(191, 219, 254, 0) 58%),
+        linear-gradient(180deg, #f8fbff 0%, #fdfefe 100%);
+}
+
+.cart-empty-shell {
+    width: min(100%, 320px);
+    padding: 26px 22px;
+    text-align: center;
+    border: 1px dashed #bfdbfe;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 16px 40px rgba(37, 99, 235, 0.08);
+}
+
+.cart-empty-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 14px;
+    border-radius: 18px;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
+    color: var(--primary-600);
+    font-size: 1.4rem;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.9);
+}
+
+.cart-empty-title {
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    font-weight: 800;
+    margin-bottom: 4px;
+    letter-spacing: -0.02em;
+}
+
+.cart-empty-copy {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    margin-bottom: 0;
+    line-height: 1.55;
 }
 
 /* Summary Panel */
@@ -1528,7 +1581,21 @@ $(document).ready(function() {
         let totSub = 0, totDisc = 0, totTax = 0, totGrand = 0;
 
         if(!cart.length) {
-            html = `<tr><td colspan="4" class="text-center py-5" style="color: var(--text-tertiary);"><i class="fas fa-shopping-cart fa-2x mb-2 opacity-25"></i><p class="mb-0 small">Cart Empty</p></td></tr>`;
+            html = `
+                <tr>
+                    <td colspan="4" class="p-0 border-0">
+                        <div class="cart-empty-state">
+                            <div class="cart-empty-shell">
+                                <div class="cart-empty-icon">
+                                    <i class="fas fa-shopping-cart"></i>
+                                </div>
+                                <div class="cart-empty-title">Cart Empty</div>
+                                <p class="cart-empty-copy">Select products from the catalog and they will appear here in a smooth scrollable cart.</p>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            `;
         } else {
             cart.forEach((item, i) => {
                 totSub += item.sub;
