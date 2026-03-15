@@ -92,11 +92,12 @@ body.mini-sidebar .pos-full-page-wrapper {
     padding: 10px;
     border-radius: 18px;
     background:
-        radial-gradient(1200px 220px at 10% 0%, rgba(37, 99, 235, 0.16) 0%, rgba(37, 99, 235, 0) 60%),
-        radial-gradient(900px 220px at 100% 0%, rgba(79, 70, 229, 0.12) 0%, rgba(79, 70, 229, 0) 62%),
-        linear-gradient(180deg, #f7fbff 0%, #eef5ff 56%, #f4f8ff 100%);
-    border: 1px solid #dbeafe;
+        radial-gradient(1200px 220px at 10% 0%, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0) 60%),
+        radial-gradient(900px 220px at 100% 0%, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0) 62%),
+        linear-gradient(135deg, rgba(37, 99, 235, 0.16) 0%, rgba(79, 70, 229, 0.13) 100%);
+    border: 1px solid rgba(37, 99, 235, 0.20);
     margin-bottom: 14px;
+    box-shadow: 0 14px 30px rgba(37, 99, 235, 0.10);
 }
 
 .header-stage::after {
@@ -110,10 +111,10 @@ body.mini-sidebar .pos-full-page-wrapper {
 
 .header-stage.plan-basic {
     background:
-        radial-gradient(1200px 220px at 10% 0%, rgba(37, 99, 235, 0.15) 0%, rgba(37, 99, 235, 0) 60%),
-        radial-gradient(900px 220px at 100% 0%, rgba(99, 102, 241, 0.11) 0%, rgba(99, 102, 241, 0) 62%),
-        linear-gradient(180deg, #f7fbff 0%, #edf5ff 56%, #f2f7ff 100%);
-    border-color: #dbeafe;
+        radial-gradient(1200px 220px at 10% 0%, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0) 60%),
+        radial-gradient(900px 220px at 100% 0%, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0) 62%),
+        linear-gradient(135deg, rgba(37, 99, 235, 0.18) 0%, rgba(79, 70, 229, 0.14) 100%);
+    border-color: rgba(37, 99, 235, 0.22);
 }
 
 .header-stage.plan-pro {
@@ -149,12 +150,13 @@ body.mini-sidebar .pos-full-page-wrapper {
 .util-pill {
     font-size: 0.7rem;
     font-weight: 700;
-    color: var(--text-secondary);
-    background: #fff;
-    border: 1px solid #dbeafe;
+    color: #ffffff;
+    background: linear-gradient(135deg, var(--primary-600) 0%, var(--indigo-600) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.18);
     border-radius: 999px;
     padding: 4px 10px;
     white-space: nowrap;
+    box-shadow: 0 8px 18px rgba(37, 99, 235, 0.14);
 }
 
 /* Premium Header */
