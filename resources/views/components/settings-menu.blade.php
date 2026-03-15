@@ -35,6 +35,11 @@
             </a>
         </li>
         <li class="nav-item">
+            <a href="{{ route('chart-of-accounts') }}" class="nav-link {{ Request::routeIs('chart-of-accounts') ? 'active' : '' }}">
+                <i class="fe fe-grid"></i> <span>Chart of Accounts</span>
+            </a>
+        </li>
+        <li class="nav-item">
             <a href="{{ route('tax-rates') }}" class="nav-link {{ Request::routeIs('tax-rates') ? 'active' : '' }}">
                 <i class="fe fe-file-text"></i> <span>Tax Rates</span>
             </a>

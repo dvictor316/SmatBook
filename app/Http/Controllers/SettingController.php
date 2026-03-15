@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Setting;
 use App\Models\EmailAuditLog;
 use App\Models\Bank;
+use App\Models\Account;
 use App\Models\Subscription;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -308,6 +309,50 @@ class SettingController extends Controller
     }
 
     public function preferences()     { return view('Settings.preferences', ['settings' => $this->getSettings()]); }
+    public function chart_of_accounts()
+    {
+        $settings = $this->getSettings();
+        $accounts = collect();
+        $accountGroups = collect();
+        $accountSummary = collect();
+
+        if (Schema::hasTable('accounts')) {
+            $accounts = Account::query()
+                ->when(Schema::hasTable('transactions'), fn ($query) => $query->withCount('transactions'))
+                ->orderByRaw("FIELD(type, 'Asset', 'Liability', 'Equity', 'Revenue', 'Expense')")
+                ->orderBy('code')
+                ->get()
+                ->map(function (Account $account) {
+                    if (is_null($account->current_balance) && Schema::hasTable('transactions')) {
+                        $account->current_balance = $account->calculateBalance();
+                    }
+
+                    return $account;
+                });
+
+            $accountGroups = $accounts->groupBy('type');
+
+            $typeOrder = [
+                Account::TYPE_ASSET,
+                Account::TYPE_LIABILITY,
+                Account::TYPE_EQUITY,
+                Account::TYPE_REVENUE,
+                Account::TYPE_EXPENSE,
+            ];
+
+            $accountSummary = collect($typeOrder)->map(function ($type) use ($accountGroups) {
+                $group = $accountGroups->get($type, collect());
+
+                return [
+                    'type' => $type,
+                    'count' => $group->count(),
+                    'balance' => (float) $group->sum(fn ($account) => (float) ($account->current_balance ?? $account->opening_balance ?? 0)),
+                ];
+            });
+        }
+
+        return view('Settings.chart-of-accounts', compact('settings', 'accounts', 'accountGroups', 'accountSummary'));
+    }
     public function tax_rates()
     {
         $defaultTaxes = [
@@ -373,6 +418,47 @@ class SettingController extends Controller
         } catch (\Throwable $e) {
             return redirect()->back()->with('error', 'Ledger backfill failed: ' . $e->getMessage());
         }
+    }
+
+    public function storeChartAccount(Request $request)
+    {
+        if (!Schema::hasTable('accounts')) {
+            return redirect()->back()->with('error', 'Accounts table is not available in this installation.');
+        }
+
+        $validated = $request->validate([
+            'code' => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('accounts', 'code'),
+            ],
+            'name' => 'required|string|max:191',
+            'type' => ['required', Rule::in([
+                Account::TYPE_ASSET,
+                Account::TYPE_LIABILITY,
+                Account::TYPE_EQUITY,
+                Account::TYPE_REVENUE,
+                Account::TYPE_EXPENSE,
+            ])],
+            'sub_type' => 'nullable|string|max:191',
+            'opening_balance' => 'nullable|numeric',
+            'description' => 'nullable|string|max:1000',
+            'is_active' => 'nullable|boolean',
+        ]);
+
+        Account::create([
+            'code' => $validated['code'],
+            'name' => $validated['name'],
+            'type' => $validated['type'],
+            'sub_type' => $validated['sub_type'] ?? null,
+            'opening_balance' => (float) ($validated['opening_balance'] ?? 0),
+            'current_balance' => (float) ($validated['opening_balance'] ?? 0),
+            'description' => $validated['description'] ?? null,
+            'is_active' => (bool) ($validated['is_active'] ?? true),
+        ]);
+
+        return redirect()->route('chart-of-accounts')->with('success', 'Account added to chart of accounts.');
     }
 
     public function storeBankAccount(Request $request)
