@@ -240,8 +240,8 @@
                             <span class="brand-tagline">Secure Business Stack</span>
                         </div>
                     </div>
-                    <h2 class="branding-title">Set a new password and return to the same blue authentication flow.</h2>
-                    <p class="branding-copy">Create a stronger password for your SmartProbook workspace and continue from the same secure access experience used across login and registration.</p>
+                    <h2 class="branding-title">Set a new password and return to the login page.</h2>
+                    <p class="branding-copy">Create a stronger password for your SmartProbook workspace, then sign back in from the login page with your updated credentials.</p>
                 </div>
             </div>
 
@@ -258,7 +258,7 @@
                 <div class="form-shell">
                     <div class="mb-4">
                         <h3 class="fw-bold mb-2">Set New Password</h3>
-                        <p class="text-muted mb-0">Enter your email and choose a new password below.</p>
+                        <p class="text-muted mb-0">Set a new password and return to the login page.</p>
                     </div>
 
                     <form method="POST" action="{{ route('password.update') }}">
@@ -302,5 +302,28 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const toggleFieldVisibility = (triggerSelector, inputSelector) => {
+        const toggle = document.querySelector(triggerSelector);
+        const input = document.querySelector(inputSelector);
+
+        if (!toggle || !input) {
+            return;
+        }
+
+        toggle.addEventListener('click', function () {
+            const reveal = input.type === 'password';
+            input.type = reveal ? 'text' : 'password';
+            toggle.classList.toggle('fa-eye', reveal);
+            toggle.classList.toggle('fa-eye-slash', !reveal);
+        });
+    };
+
+    toggleFieldVisibility('.toggle-password', '.pass-input');
+    toggleFieldVisibility('.toggle-password-two', '.pass-input-two');
+});
+</script>
 
 @endsection
