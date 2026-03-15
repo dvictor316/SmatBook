@@ -659,6 +659,23 @@ body.mini-sidebar .pos-full-page-wrapper {
     box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
 }
 
+.unit-btn small {
+    display: block;
+    margin-top: 2px;
+    font-size: 0.58rem;
+    font-weight: 700;
+    opacity: 0.86;
+    letter-spacing: 0.3px;
+    text-transform: none;
+}
+
+.unit-helper {
+    font-size: 0.68rem;
+    color: var(--text-secondary);
+    margin: -6px 0 12px;
+    line-height: 1.45;
+}
+
 /* Subtotal Display */
 .subtotal-box { 
     background: linear-gradient(135deg, #fafafa 0%, #ffffff 100%);
@@ -1243,17 +1260,18 @@ label {
                 <label class="mt-2">Unit Type</label>
                 <div class="unit-grid mb-2">
                     <input type="radio" class="btn-check" name="unit_type" id="unit-type-price" value="price" checked>
-                    <label class="btn unit-btn" for="unit-type-price">Unit</label>
+                    <label class="btn unit-btn" for="unit-type-price">Unit<small id="unit-meta-price">1 item</small></label>
                     
                     <input type="radio" class="btn-check" name="unit_type" id="unit-type-sachet" value="sachet">
-                    <label class="btn unit-btn" for="unit-type-sachet">Sachet</label>
+                    <label class="btn unit-btn" for="unit-type-sachet">Sachet<small id="unit-meta-sachet">Ready</small></label>
                     
                     <input type="radio" class="btn-check" name="unit_type" id="unit-type-roll" value="roll">
-                    <label class="btn unit-btn" for="unit-type-roll">Roll</label>
+                    <label class="btn unit-btn" for="unit-type-roll">Roll<small id="unit-meta-roll">Set by product</small></label>
                     
                     <input type="radio" class="btn-check" name="unit_type" id="unit-type-carton" value="carton">
-                    <label class="btn unit-btn" for="unit-type-carton">Carton</label>
+                    <label class="btn unit-btn" for="unit-type-carton">Carton<small id="unit-meta-carton">Set by product</small></label>
                 </div>
+                <div class="unit-helper" id="unit-helper-copy">Select a product to unlock the right unit packs and live pricing.</div>
 
                 <div class="row g-2 mb-2">
                     <div class="col-6">
@@ -1483,11 +1501,14 @@ $(document).ready(function() {
         const hasProduct = !!selectedOption && !!selectedOption.val();
         const unitsPerCarton = hasProduct ? (parseInt(selectedOption.data('upc')) || 0) : 0;
         const unitsPerRoll = hasProduct ? (parseInt(selectedOption.data('upr')) || 0) : 0;
+        const stock = hasProduct ? (parseInt(selectedOption.data('stock')) || 0) : 0;
 
         const cartonInput = $('#unit-type-carton');
         const rollInput = $('#unit-type-roll');
         const cartonLabel = $('label[for="unit-type-carton"]');
         const rollLabel = $('label[for="unit-type-roll"]');
+        const sachetLabel = $('label[for="unit-type-sachet"]');
+        const priceLabel = $('label[for="unit-type-price"]');
 
         const cartonEnabled = !hasProduct || unitsPerCarton > 0;
         const rollEnabled = !hasProduct || unitsPerRoll > 0;
@@ -1497,10 +1518,48 @@ $(document).ready(function() {
         cartonLabel.toggleClass('disabled', !cartonEnabled);
         rollLabel.toggleClass('disabled', !rollEnabled);
 
+        $('#unit-meta-price').text(hasProduct ? `${stock} in stock` : '1 item');
+        $('#unit-meta-sachet').text(hasProduct ? 'Ready to sell' : 'Ready');
+        $('#unit-meta-roll').text(rollEnabled ? `${unitsPerRoll} units / roll` : 'Unavailable');
+        $('#unit-meta-carton').text(cartonEnabled ? `${unitsPerCarton} units / carton` : 'Unavailable');
+        priceLabel.toggleClass('disabled', false);
+        sachetLabel.toggleClass('disabled', false);
+
         const currentType = $('input[name="unit_type"]:checked').val();
         if ((currentType === 'carton' && !cartonEnabled) || (currentType === 'roll' && !rollEnabled)) {
             $('#unit-type-price').prop('checked', true);
         }
+    }
+
+    function resolveUnitMetrics(selectedOption) {
+        const type = $('input[name="unit_type"]:checked').val() || 'price';
+        const stock = parseInt(selectedOption.data('stock')) || 0;
+        const unitsPerCarton = Math.max(parseInt(selectedOption.data('upc')) || 0, 0);
+        const unitsPerRoll = Math.max(parseInt(selectedOption.data('upr')) || 0, 0);
+
+        let multiplier = 1;
+        let unitName = 'units';
+
+        if (type === 'carton' && unitsPerCarton > 0) {
+            multiplier = unitsPerCarton;
+            unitName = 'cartons';
+        } else if (type === 'roll' && unitsPerRoll > 0) {
+            multiplier = unitsPerRoll;
+            unitName = 'rolls';
+        } else if (type === 'sachet') {
+            multiplier = 1;
+            unitName = 'sachets';
+        }
+
+        const maxQty = multiplier > 0 ? Math.max(Math.floor(stock / multiplier), 0) : stock;
+
+        return {
+            type,
+            stock,
+            multiplier,
+            unitName,
+            maxQty: type === 'price' || type === 'sachet' ? stock : maxQty
+        };
     }
 
     $(document).on('click', '.category-pill', function() {
@@ -1649,6 +1708,7 @@ $(document).ready(function() {
         if(!opt.val()) {
             $('#unit-price-input').val('');
             $('#qty-label').text('Quantity');
+            $('#unit-helper-copy').text('Select a product to unlock the right unit packs and live pricing.');
             $('#product-img').hide();
             $('#no-img').show();
             $('#product-search').val(null).trigger('change.select2');
@@ -1666,14 +1726,23 @@ $(document).ready(function() {
         }
 
         setUnitTypeAvailability(opt);
+        const unitMeta = resolveUnitMetrics(opt);
         
         let type = $('input[name="unit_type"]:checked').val();
         let typePrice = parseFloat(opt.data(type));
         let fallbackPrice = parseFloat(opt.data('price')) || 0;
         let price = typePrice > 0 ? typePrice : fallbackPrice;
         $('#unit-price-input').val(price);
-        $('#qty-label').text(`Quantity (Stock: ${opt.data('stock')})`);
-        $('#quantity').attr('max', opt.data('stock'));
+        $('#qty-label').text(`Quantity (${unitMeta.maxQty || 0} ${unitMeta.unitName} available)`);
+        $('#quantity').attr('max', Math.max(unitMeta.maxQty, 1));
+        if ((parseFloat($('#quantity').val()) || 1) > Math.max(unitMeta.maxQty, 1)) {
+            $('#quantity').val(Math.max(unitMeta.maxQty, 1));
+        }
+        $('#unit-helper-copy').text(
+            unitMeta.type === 'price' || unitMeta.type === 'sachet'
+                ? `Selling in single ${unitMeta.type === 'sachet' ? 'sachets' : 'units'} with live item pricing.`
+                : `Each ${unitMeta.type} uses ${unitMeta.multiplier} stock unit(s). Available: ${unitMeta.maxQty} ${unitMeta.unitName}.`
+        );
         $('#product-search').val(String(opt.val())).trigger('change.select2');
         $('#hdr-selected-product').text(opt.data('name'));
         $('#quick-selected-name').text(opt.data('name'));
@@ -1713,10 +1782,17 @@ $(document).ready(function() {
         }
 
         let qty = parseFloat($('#quantity').val()) || 1;
+        const unitMeta = resolveUnitMetrics(opt);
         let stock = opt.data('stock');
+        const maxAllowed = Math.max(unitMeta.maxQty, 0);
         
-        if(qty > stock) {
-            Swal.fire({ icon: 'error', title: 'Low Stock', text: `Only ${stock} available`, confirmButtonColor: '#ef4444' });
+        if(maxAllowed <= 0) {
+            Swal.fire({ icon: 'error', title: 'Unavailable', text: `No ${unitMeta.unitName} available for this product`, confirmButtonColor: '#ef4444' });
+            return;
+        }
+
+        if(qty > maxAllowed) {
+            Swal.fire({ icon: 'error', title: 'Low Stock', text: `Only ${maxAllowed} ${unitMeta.unitName} available`, confirmButtonColor: '#ef4444' });
             return;
         }
 
