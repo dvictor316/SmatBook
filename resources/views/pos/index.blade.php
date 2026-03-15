@@ -218,9 +218,9 @@ body.mini-sidebar .pos-full-page-wrapper {
 
 /* Clock Badge */
 .clock-badge {
-    background: linear-gradient(135deg, var(--primary-600) 0%, var(--indigo-600) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    color: #ffffff;
+    background: linear-gradient(135deg, #f4d37a 0%, #d4af37 100%);
+    border: 1px solid rgba(180, 134, 12, 0.18);
+    color: #1f2937;
     padding: 6px 12px;
     border-radius: var(--radius-md);
     font-weight: 600;
@@ -228,7 +228,7 @@ body.mini-sidebar .pos-full-page-wrapper {
     font-variant-numeric: tabular-nums;
     letter-spacing: 0.3px;
     white-space: nowrap;
-    box-shadow: 0 8px 20px rgba(37, 99, 235, 0.18);
+    box-shadow: 0 8px 20px rgba(212, 175, 55, 0.20);
 }
 
 /* Search Bar - FIXED ICON POSITIONING */
