@@ -466,6 +466,7 @@ Route::middleware(['auth', 'role:super_admin,administrator'])->prefix('superadmi
         Route::get('/pending', [SuperAdminDashboardController::class, 'pendingManagers'])->name('pending');
         Route::get('/suspended', [SuperAdminDashboardController::class, 'suspendedManagers'])->name('suspended');
         Route::get('/approved', [SuperAdminDashboardController::class, 'approvedManagers'])->name('approved');
+        Route::post('/{id}/email', [SuperAdminDashboardController::class, 'emailManager'])->name('email');
         Route::post('/{id}/approve', [SuperAdminDashboardController::class, 'approveManager'])->name('approve');
         Route::post('/{id}/suspend', [SuperAdminDashboardController::class, 'suspendManager'])->name('suspend');
         Route::post('/{id}/activate', [SuperAdminDashboardController::class, 'activateManager'])->name('activate');

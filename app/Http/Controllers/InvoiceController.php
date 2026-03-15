@@ -17,28 +17,50 @@ class InvoiceController extends Controller
     /**
      * Display a listing of invoices with statistics and company branding.
      */
-    public function index()
+    public function index(Request $request)
     {
-        return $this->renderInvoiceView();
+        return $this->renderInvoiceView($request);
     }
 
-    public function invoices()
+    public function invoices(Request $request)
     {
-        return $this->renderInvoiceView();
+        return $this->renderInvoiceView($request);
     }
 
     /**
      * Centralized logic for rendering invoice views across different filters.
      */
-    private function renderInvoiceView($statusFilter = null)
+    private function renderInvoiceView(Request $request, $statusFilter = null)
     {
         $query = Sale::with('customer')->latest();
-        
-        if ($statusFilter) {
-            $query->where('payment_status', strtolower($statusFilter));
+
+        $effectiveStatus = $statusFilter ?: trim((string) $request->input('status', ''));
+        if ($effectiveStatus !== '') {
+            $query->where('payment_status', strtolower($effectiveStatus));
         }
 
-        $invoices = $query->get();
+        $search = trim((string) $request->input('search', ''));
+        if ($search !== '') {
+            $query->where(function ($builder) use ($search) {
+                $builder->where('invoice_no', 'like', "%{$search}%")
+                    ->orWhere('customer_name', 'like', "%{$search}%")
+                    ->orWhereHas('customer', function ($customerQuery) use ($search) {
+                        $customerQuery->where('customer_name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%")
+                            ->orWhere('phone', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->input('date_from'));
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->input('date_to'));
+        }
+
+        $invoices = $query->paginate(15)->withQueryString();
         $invoicescards = $this->getInvoiceStats();
         
         $latestSale = Sale::latest()->first();
@@ -221,29 +243,30 @@ class InvoiceController extends Controller
     /**
      * Status Filter Shortcuts.
      */
-    public function invoices_paid()      { return $this->renderInvoiceView('paid'); }
-    public function invoices_unpaid()    { return $this->renderInvoiceView('unpaid'); }
-    public function invoices_cancelled() { return $this->renderInvoiceView('cancelled'); }
-    public function invoices_draft()     { return $this->renderInvoiceView('draft'); }
-    public function invoices_overdue()   { return $this->renderInvoiceView('overdue'); }
-    public function invoices_recurring() { return $this->renderInvoiceView('recurring'); }
-    public function invoices_refunded()  { return $this->renderInvoiceView('refunded'); }
+    public function invoices_paid(Request $request)      { return $this->renderInvoiceView($request, 'paid'); }
+    public function invoices_unpaid(Request $request)    { return $this->renderInvoiceView($request, 'unpaid'); }
+    public function invoices_cancelled(Request $request) { return $this->renderInvoiceView($request, 'cancelled'); }
+    public function invoices_draft(Request $request)     { return $this->renderInvoiceView($request, 'draft'); }
+    public function invoices_overdue(Request $request)   { return $this->renderInvoiceView($request, 'overdue'); }
+    public function invoices_recurring(Request $request) { return $this->renderInvoiceView($request, 'recurring'); }
+    public function invoices_refunded(Request $request)  { return $this->renderInvoiceView($request, 'refunded'); }
 
     /**
      * Recurring Invoices Management.
      */
     public function recurringInvoices()
     {
-        $sales = DB::table('sales')->whereNull('deleted_at')->get();
+        $sales = Sale::with('customer')->latest()->get();
 
         $invoices = $sales->map(function ($sale) {
             return [
+                'id'          => $sale->id,
                 'InvoiceID'   => $sale->invoice_no,
                 'Category'    => 'Sales',
-                'IssuedOn'    => date('d M Y', strtotime($sale->created_at)),
-                'InvoiceTo'   => $sale->customer_name,
+                'IssuedOn'    => optional($sale->created_at)->format('d M Y') ?? date('d M Y'),
+                'InvoiceTo'   => $sale->display_customer_name,
                 'Image'       => 'avatar-01.jpg',
-                'Email'       => 'customer@example.com',
+                'Email'       => $sale->customer?->email ?? 'No customer email',
                 'TotalAmount' => '₦' . number_format($sale->total, 2),
                 'PaidAmount'  => '₦' . number_format($sale->paid ?? 0, 2),
                 'PaymentMode' => $sale->payment_method,

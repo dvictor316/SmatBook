@@ -707,6 +707,51 @@ class SuperAdminDashboardController extends Controller
         return $this->reactivateManager($id);
     }
 
+    public function emailManager(Request $request, $id)
+    {
+        $manager = DeploymentManager::with('user')->findOrFail($id);
+
+        $recipient = $manager->user?->email;
+        if (!filter_var($recipient, FILTER_VALIDATE_EMAIL)) {
+            $message = 'This deployment manager does not have a valid email address.';
+
+            if ($request->expectsJson()) {
+                return response()->json(['ok' => false, 'message' => $message], 422);
+            }
+
+            return back()->with('error', $message);
+        }
+
+        $displayName = $manager->business_name
+            ?? $manager->user?->name
+            ?? 'Deployment Manager';
+
+        $sent = SystemEventMailer::sendMessage(
+            $recipient,
+            'SmartProbook Partner Update',
+            'Deployment Manager Notification',
+            'A new update has been sent to your deployment manager account.',
+            [
+                'Manager' => $displayName,
+                'Email' => $recipient,
+                'Status' => ucfirst((string) ($manager->status ?? 'pending')),
+                'Workspace Domain' => (string) env('SESSION_DOMAIN', config('app.url')),
+                'Sent By' => Auth::user()?->name ?? Auth::user()?->email ?? 'System',
+                'Time' => now()->format('d M Y h:i A'),
+            ]
+        );
+
+        $message = $sent
+            ? "Email sent to {$displayName} successfully."
+            : 'Email could not be sent. Please confirm mail settings and try again.';
+
+        if ($request->expectsJson()) {
+            return response()->json(['ok' => $sent, 'message' => $message], $sent ? 200 : 500);
+        }
+
+        return back()->with($sent ? 'success' : 'error', $message);
+    }
+
     private function ensureManagerHasWorkspace($user) 
     {
         $hasCompany = Company::where('user_id', $user->id)->exists();

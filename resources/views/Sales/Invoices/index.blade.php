@@ -463,7 +463,7 @@
             <button onclick="exportExcel()" class="btn-action btn-excel">
                 📊 Excel
             </button>
-            <button onclick="sendEmail()" class="btn-action btn-email">
+            <button onclick="sendEmail(this)" class="btn-action btn-email">
                 ✉️ Email
             </button>
             <a href="javascript:window.close()" class="btn-action btn-close-window">
@@ -747,40 +747,38 @@
     }
 
     // Send Email
-    function sendEmail() {
-        const invoiceNo = '{{ $sale->invoice_no }}';
-        
-        @php
-            $emailCompany = \DB::table('companies')->first();
-        @endphp
-        
-        const companyName = '{{ $emailCompany->name ?? $company->name ?? config("app.name", "POS System") }}';
-        const total = '{{ number_format($grandTotal, 2) }}';
-        const paid = '{{ number_format($appliedAmount, 2) }}';
-        const tendered = '{{ number_format($tenderedAmount, 2) }}';
-        const change = '{{ number_format($changeAmount, 2) }}';
+    async function sendEmail(sendButton) {
 
-        const subject = `Invoice #${invoiceNo} from ${companyName}`;
-        const body = `Dear Customer,
+        if (sendButton) {
+            sendButton.disabled = true;
+            sendButton.classList.add('loading');
+        }
 
-Please find below the details of your invoice:
+        try {
+            const response = await fetch('{{ route('sales.send', $sale->id) }}', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
+            });
 
-Invoice Number: #${invoiceNo}
-Date: {{ $sale->created_at ? $sale->created_at->format('d M, Y h:i A') : date('d M, Y h:i A') }}
-Payment Method: {{ $sale->payment_method ?? 'Cash' }}
+            const payload = await response.json().catch(() => ({
+                ok: false,
+                message: 'Unable to email this invoice right now.'
+            }));
 
-Total Amount: ₦${total}
-Amount Tendered: ₦${tendered}
-Applied to Sale: ₦${paid}
-Change: ₦${change}
-
-Thank you for your business!
-
----
-${companyName}
-{{ $emailCompany->address ?? $company->address ?? '' }}`;
-
-        window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            alert(payload.message || 'Invoice email request completed.');
+        } catch (error) {
+            console.error('Invoice email error:', error);
+            alert('Invoice email failed. Please try again.');
+        } finally {
+            if (sendButton) {
+                sendButton.disabled = false;
+                sendButton.classList.remove('loading');
+            }
+        }
     }
 
     if (autoPrintReceipt) {

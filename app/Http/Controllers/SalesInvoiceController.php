@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Company;
 use App\Models\Sale;
 use App\Support\LedgerService;
+use App\Support\SystemEventMailer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -12,16 +14,16 @@ class SalesInvoiceController extends Controller
 {
 public function index()
 {
-    $salesData = DB::table('sales')->whereNull('deleted_at')->get();
+    $salesData = Sale::with('customer')->latest()->get();
 
     $invoices = $salesData->map(function ($sale) {
         return [
             'id'          => $sale->id,
             'InvoiceID'   => $sale->invoice_no,
             'Category'    => 'Sales', 
-            'IssuedOn'    => date('d M Y', strtotime($sale->created_at)),
-            'InvoiceTo'   => $sale->customer_name ?? 'Walk-in Customer',
-            'Email'       => 'customer@example.com', // Added this to fix your error
+            'IssuedOn'    => optional($sale->created_at)->format('d M Y') ?? date('d M Y'),
+            'InvoiceTo'   => $sale->display_customer_name,
+            'Email'       => $sale->customer?->email ?? 'No customer email',
             'Image'       => 'avatar-01.jpg',
             'TotalAmount' => number_format($sale->total, 2),
             'PaidAmount'  => number_format($sale->amount_paid, 2),
@@ -71,9 +73,56 @@ public function index()
     }
 
     // Send Action
-    public function send($id)
+    public function send(Request $request, $id)
     {
-        // Logic to trigger email would go here
-        return back()->with('info', 'Email notification sent to customer.');
+        $sale = Sale::with(['customer', 'user'])->findOrFail($id);
+
+        $recipient = $sale->customer?->email;
+        if (!filter_var($recipient, FILTER_VALIDATE_EMAIL)) {
+            $message = 'This invoice has no valid customer email address yet.';
+
+            if ($request->expectsJson()) {
+                return response()->json(['ok' => false, 'message' => $message], 422);
+            }
+
+            return back()->with('error', $message);
+        }
+
+        $company = Company::query()->find($sale->company_id)
+            ?: Company::query()->where('user_id', optional(auth()->user())->id)->first()
+            ?: Company::query()->first();
+
+        $companyName = $company->company_name
+            ?? $company->name
+            ?? config('app.name', 'SmartProbook');
+
+        $sent = SystemEventMailer::sendMessage(
+            $recipient,
+            'Invoice ' . ($sale->invoice_no ?? ('#' . $sale->id)) . ' from ' . $companyName,
+            'Customer Invoice',
+            'Your invoice has been prepared and is ready for your records.',
+            [
+                'Customer' => $sale->display_customer_name,
+                'Invoice Number' => $sale->invoice_no ?? ('#' . $sale->id),
+                'Order Number' => $sale->order_number ?? 'N/A',
+                'Invoice Date' => optional($sale->created_at)->format('d M Y h:i A') ?? now()->format('d M Y h:i A'),
+                'Payment Method' => $sale->payment_method ?? 'N/A',
+                'Total Amount' => 'NGN ' . number_format((float) ($sale->total ?? 0), 2),
+                'Amount Tendered' => 'NGN ' . number_format((float) (($sale->amount_paid ?? 0) + max(0, (float) ($sale->change_amount ?? 0))), 2),
+                'Applied to Sale' => 'NGN ' . number_format((float) ($sale->amount_paid ?? 0), 2),
+                'Change Returned' => 'NGN ' . number_format((float) ($sale->change_amount ?? 0), 2),
+                'Company' => $companyName,
+            ]
+        );
+
+        $message = $sent
+            ? 'Invoice emailed to customer successfully.'
+            : 'Email could not be sent. Please confirm mail settings and try again.';
+
+        if ($request->expectsJson()) {
+            return response()->json(['ok' => $sent, 'message' => $message], $sent ? 200 : 500);
+        }
+
+        return back()->with($sent ? 'success' : 'error', $message);
     }
 }

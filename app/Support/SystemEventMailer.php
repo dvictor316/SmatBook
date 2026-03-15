@@ -55,6 +55,18 @@ class SystemEventMailer
         self::send($recipients, $subject, 'Manager Approval', 'A deployment manager account has been approved.', $details);
     }
 
+    public static function sendMessage(array|string $recipients, string $subject, string $title, string $intro, array $details = []): bool
+    {
+        $recipientList = is_array($recipients) ? $recipients : [$recipients];
+        $recipientList = self::uniqueEmails($recipientList);
+
+        if ($recipientList === []) {
+            return false;
+        }
+
+        return self::send($recipientList, $subject, $title, $intro, $details);
+    }
+
     private static function adminInbox(): string
     {
         $configured = (string) config('mail.admin_inbox', self::ADMIN_INBOX);
@@ -70,8 +82,10 @@ class SystemEventMailer
         return array_values($emails);
     }
 
-    private static function send(array $recipients, string $subject, string $title, string $intro, array $details = []): void
+    private static function send(array $recipients, string $subject, string $title, string $intro, array $details = []): bool
     {
+        $allSent = true;
+
         foreach ($recipients as $email) {
             $auditId = self::createAudit($title, $email, $subject, $details);
             try {
@@ -84,6 +98,7 @@ class SystemEventMailer
                 });
                 self::markAudit($auditId, 'sent');
             } catch (\Throwable $e) {
+                $allSent = false;
                 self::markAudit($auditId, 'failed', $e->getMessage());
                 Log::error('System event email failed', [
                     'to' => $email,
@@ -92,6 +107,8 @@ class SystemEventMailer
                 ]);
             }
         }
+
+        return $allSent;
     }
 
     private static function createAudit(string $eventType, string $recipient, string $subject, array $details): ?int

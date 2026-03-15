@@ -270,7 +270,14 @@
 
                                     <li><hr class="dropdown-divider"></li>
                                     <li><a class="dropdown-item" href="{{ route('messages.chat.show', ['id' => $manager->user_id]) }}"><i class="fas fa-comments text-primary me-2"></i>Chat Partner</a></li>
-                                    <li><a class="dropdown-item" href="mailto:{{ $manager->email }}"><i class="fas fa-envelope text-info me-2"></i>Email Partner</a></li>
+                                    <li>
+                                        <form action="{{ route('super_admin.managers.email', $manager->id) }}" method="POST">
+                                            @csrf
+                                            <button type="submit" class="dropdown-item">
+                                                <i class="fas fa-envelope text-info me-2"></i>Email Partner
+                                            </button>
+                                        </form>
+                                    </li>
                                 </ul>
                             </div>
                             <form action="{{ route('super_admin.managers.delete', $manager->id) }}" method="POST">
