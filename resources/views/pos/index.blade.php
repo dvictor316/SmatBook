@@ -702,7 +702,7 @@ body.mini-sidebar .pos-full-page-wrapper {
 
 .cart-table thead th {
     background: linear-gradient(135deg, var(--primary-600) 0%, var(--indigo-600) 100%);
-    color: #e6c15a;
+    color: #ffffff;
     font-weight: 700;
     border-bottom: 2px solid #d4af37;
     font-size: 0.6875rem;
@@ -769,6 +769,12 @@ body.mini-sidebar .pos-full-page-wrapper {
     font-size: 1.4rem;
     border: 1px solid rgba(212, 175, 55, 0.38);
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.95);
+}
+
+.cart-empty-icon svg {
+    width: 30px;
+    height: 30px;
+    display: block;
 }
 
 .cart-empty-title {
@@ -1596,7 +1602,11 @@ $(document).ready(function() {
                         <div class="cart-empty-state">
                             <div class="cart-empty-shell">
                                 <div class="cart-empty-icon">
-                                    <i class="fas fa-shopping-cart"></i>
+                                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                        <path d="M3 4h2l1.4 7.2a1 1 0 0 0 1 .8h8.9a1 1 0 0 0 1-.75L19 7H7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <circle cx="10" cy="18" r="1.6" fill="currentColor"/>
+                                        <circle cx="17" cy="18" r="1.6" fill="currentColor"/>
+                                    </svg>
                                 </div>
                                 <div class="cart-empty-title">Cart Empty</div>
                                 <p class="cart-empty-copy">Select products from the catalog and they will appear here in a smooth scrollable cart.</p>
