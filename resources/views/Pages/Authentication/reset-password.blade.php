@@ -170,6 +170,7 @@
         padding: 13px 16px;
         border: 1px solid #dbe5f2;
         background: #fcfdfe;
+        padding-right: 54px;
     }
 
     .form-control:focus {
@@ -195,14 +196,18 @@
         position: relative;
     }
 
-    .pass-shell .toggle-password,
-    .pass-shell .toggle-password-two {
+    .pass-shell .password-visibility-toggle {
         position: absolute;
         right: 14px;
         top: 50%;
         transform: translateY(-50%);
         color: #94a3b8;
         cursor: pointer;
+        border: 0;
+        background: transparent;
+        padding: 4px;
+        line-height: 1;
+        z-index: 2;
     }
 
     @media (max-width: 767px) {
@@ -277,8 +282,10 @@
                         <div class="mb-3">
                             <label class="form-label small fw-bold">New Password</label>
                             <div class="pass-shell">
-                                <input type="password" name="password" class="form-control pass-input @error('password') is-invalid @enderror" placeholder="••••••••" required autofocus>
-                                <span class="fas fa-eye-slash toggle-password"></span>
+                                <input type="password" id="reset-password-field" name="password" class="form-control @error('password') is-invalid @enderror" placeholder="••••••••" required autofocus>
+                                <button type="button" class="password-visibility-toggle" data-target="#reset-password-field" aria-label="Toggle new password visibility">
+                                    <span class="fas fa-eye-slash"></span>
+                                </button>
                             </div>
                             @error('password')
                                 <span class="text-danger small"><strong>{{ $message }}</strong></span>
@@ -288,8 +295,10 @@
                         <div class="mb-4">
                             <label class="form-label small fw-bold">Confirm New Password</label>
                             <div class="pass-shell">
-                                <input type="password" name="password_confirmation" class="form-control pass-input-two" placeholder="••••••••" required>
-                                <span class="fas fa-eye-slash toggle-password-two"></span>
+                                <input type="password" id="reset-password-confirmation-field" name="password_confirmation" class="form-control" placeholder="••••••••" required>
+                                <button type="button" class="password-visibility-toggle" data-target="#reset-password-confirmation-field" aria-label="Toggle confirm password visibility">
+                                    <span class="fas fa-eye-slash"></span>
+                                </button>
                             </div>
                         </div>
 
@@ -305,24 +314,21 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const toggleFieldVisibility = (triggerSelector, inputSelector) => {
-        const toggle = document.querySelector(triggerSelector);
-        const input = document.querySelector(inputSelector);
+    document.querySelectorAll('.password-visibility-toggle').forEach(function (toggle) {
+        const input = document.querySelector(toggle.dataset.target);
+        const icon = toggle.querySelector('.fas');
 
-        if (!toggle || !input) {
+        if (!input || !icon) {
             return;
         }
 
         toggle.addEventListener('click', function () {
             const reveal = input.type === 'password';
             input.type = reveal ? 'text' : 'password';
-            toggle.classList.toggle('fa-eye', reveal);
-            toggle.classList.toggle('fa-eye-slash', !reveal);
+            icon.classList.toggle('fa-eye', reveal);
+            icon.classList.toggle('fa-eye-slash', !reveal);
         });
-    };
-
-    toggleFieldVisibility('.toggle-password', '.pass-input');
-    toggleFieldVisibility('.toggle-password-two', '.pass-input-two');
+    });
 });
 </script>
 
