@@ -168,6 +168,9 @@ Route::middleware(['auth'])->group(function () {
 Route::middleware(['auth'])->group(function () {
 
     Route::get('/home', [HomeController::class, 'index'])->name('home');
+    Route::get('/workspace/business', [DashboardController::class, 'switchToBusinessWorkspace'])->name('workspace.business');
+    Route::get('/workspace/platform', [DashboardController::class, 'switchToPlatformWorkspace'])->name('workspace.platform');
+    Route::get('/workspace/business/dashboard', [DashboardController::class, 'index'])->name('workspace.business.dashboard');
     Route::match(['get', 'post'], '/ai/quick-agent/query', [AiQuickAgentController::class, 'query'])->name('ai.quick-agent.query');
 
     // ── Subscription / SaaS routes ──────────────────────────────

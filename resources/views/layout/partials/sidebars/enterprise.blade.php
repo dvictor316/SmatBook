@@ -6,6 +6,10 @@
 @php
     $user = auth()->user();
     $currentSubdomain = request()->route('subdomain');
+    $showPlatformReturn = $user && (
+        in_array(strtolower((string) ($user->role ?? '')), ['super_admin', 'superadmin', 'administrator', 'admin'], true)
+        || $user->email === 'donvictorlive@gmail.com'
+    ) && session('workspace_context') === 'business';
     
     if (!$currentSubdomain && $user && optional($user->company)->subdomain) {
         $currentSubdomain = $user->company->subdomain;
@@ -19,6 +23,15 @@
     <div class="sidebar-inner slimscroll">
         <div id="sidebar-menu" class="sidebar-menu">
             <ul>
+                @if($showPlatformReturn)
+                    <li class="menu-title"><span>Workspace</span></li>
+                    <li>
+                        <a href="{{ route('workspace.platform') }}">
+                            <i class="fe fe-command"></i>
+                            <span>Back to Partnership</span>
+                        </a>
+                    </li>
+                @endif
                 <li class="menu-title"><span>Main</span></li>
 
                 {{-- Dashboard --}}

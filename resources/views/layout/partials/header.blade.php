@@ -38,6 +38,15 @@
         ?? 'admin';
     $routeParams = ['subdomain' => $currentSubdomain];
     $headerLogoUrl = asset('assets/img/logos.png');
+    $isWorkspaceSwitcherVisible = $user && (
+        in_array(strtolower((string) ($user->role ?? '')), ['super_admin', 'superadmin', 'administrator', 'admin'], true)
+        || $user->email === 'donvictorlive@gmail.com'
+    );
+    $workspaceContext = session('workspace_context', 'platform');
+    $isBusinessWorkspace = $workspaceContext === 'business';
+    $headerHomeUrl = $isBusinessWorkspace && Route::has('workspace.business.dashboard')
+        ? route('workspace.business.dashboard')
+        : route('super_admin.dashboard', $routeParams);
 
     $headerSearchPlaceholder = 'Search customers, invoices, products...';
 
@@ -388,6 +397,37 @@
         order: 4;
     }
 
+    .workspace-switcher {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px;
+        border-radius: 999px;
+        background: linear-gradient(135deg, #eff6ff 0%, #e0e7ff 100%);
+        border: 1px solid #c7d2fe;
+    }
+
+    .workspace-switcher a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 34px;
+        padding: 0 12px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        text-decoration: none;
+        color: #475569;
+    }
+
+    .workspace-switcher a.is-active {
+        background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+        color: #fff;
+        box-shadow: 0 10px 22px rgba(37, 99, 235, 0.22);
+    }
+
     .country-selector {
         display: flex;
         align-items: center;
@@ -487,6 +527,7 @@
         .user-info, .country-name { display: none; }
         .country-currency { display: none; }
         .header-actions { margin-left: auto; }
+        .workspace-switcher { display: none; }
 
         /* ── Regular sidebar (#sidebar) ── */
         #sidebar {
@@ -615,7 +656,7 @@
 
     {{-- 2. Logo --}}
     <div class="header-logo">
-        <a href="{{ route('super_admin.dashboard', $routeParams) }}">
+        <a href="{{ $headerHomeUrl }}">
             <img src="{{ $headerLogoUrl }}" alt="Logo">
         </a>
         <span class="spb-wordmark">SmartPro<span class="book">book</span></span>
@@ -643,6 +684,12 @@
 
     {{-- 5. Right Actions --}}
     <div class="header-actions">
+        @if($isWorkspaceSwitcherVisible)
+            <div class="workspace-switcher">
+                <a href="{{ route('workspace.platform') }}" class="{{ !$isBusinessWorkspace ? 'is-active' : '' }}">Partnership</a>
+                <a href="{{ route('workspace.business') }}" class="{{ $isBusinessWorkspace ? 'is-active' : '' }}">Business</a>
+            </div>
+        @endif
 
         <button class="mobile-search-btn" id="mobileSearchToggle" aria-label="Search">
             <i class="fas fa-search"></i>

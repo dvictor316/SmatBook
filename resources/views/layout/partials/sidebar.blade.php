@@ -68,12 +68,16 @@
             }
         }
     }
+
+    $workspaceContext = session('workspace_context', 'platform');
 @endphp
 
 @unless(Route::is(['index-two', 'index-three', 'index-four', 'index-five']))
     {{-- Deployment/plan sidebars are self-contained containers. --}}
     @if($isDeploymentManager)
         @include('layout.partials.sidebars.deployment_manager')
+    @elseif($isSuperAdmin && $workspaceContext === 'business')
+        @include('layout.partials.sidebars.enterprise')
     @elseif($isSuperAdmin)
         @include('layout.partials.sidebars.super_admin')
     @elseif($plan === 'enterprise')

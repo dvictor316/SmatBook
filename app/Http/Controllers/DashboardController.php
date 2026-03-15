@@ -10,12 +10,30 @@ use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
+    public function switchToBusinessWorkspace(Request $request)
+    {
+        $request->session()->put('workspace_context', 'business');
+
+        return redirect()->route('workspace.business.dashboard')
+            ->with('success', 'Business workspace is now active.');
+    }
+
+    public function switchToPlatformWorkspace(Request $request)
+    {
+        $request->session()->put('workspace_context', 'platform');
+
+        return redirect()->route('super_admin.dashboard')
+            ->with('success', 'Partnership workspace is now active.');
+    }
+
     /**
      * Main Dashboard View (Multi-Tenant & Subdomain Optimized)
      */
     public function index(Request $request)
     {
         $user = Auth::user();
+        $workspaceContext = (string) $request->session()->get('workspace_context', 'platform');
+        $isBusinessWorkspace = $workspaceContext === 'business';
         $currentHost = $request->getHost();
         $mainDomain = ltrim(config('app.domain', 'smartprobook.com'), '.');
         $centralHosts = [
@@ -148,14 +166,14 @@ class DashboardController extends Controller
         ];
 
         // 5. THEME-BASED VIEW SELECTION
-        if ($userRole === 'superadmin' || $user->email === 'donvictorlive@gmail.com') {
+        if (($userRole === 'superadmin' || $user->email === 'donvictorlive@gmail.com') && !$isBusinessWorkspace) {
             return view('SuperAdmin.dashboards.enterprise', $data);
         }
 
         $plan = Plan::normalizeTier(
             $currentSubscription?->plan_name
             ?? $currentSubscription?->plan
-            ?? ($company->plan ?? 'basic')
+            ?? ($company->plan ?? (($userRole === 'superadmin' || $user->email === 'donvictorlive@gmail.com') ? 'enterprise' : 'basic'))
         );
 
         return match($plan) {
