@@ -100,6 +100,68 @@
             color: white;
         }
 
+        .invoice-wrapper.compact-mode {
+            padding: 28px;
+        }
+
+        .invoice-wrapper.compact-mode .invoice-header {
+            margin-bottom: 20px;
+            padding-bottom: 14px;
+        }
+
+        .invoice-wrapper.compact-mode .company-info h4 {
+            font-size: 21px;
+        }
+
+        .invoice-wrapper.compact-mode .company-info p,
+        .invoice-wrapper.compact-mode .invoice-date,
+        .invoice-wrapper.compact-mode .cashier-info p {
+            font-size: 12px;
+        }
+
+        .invoice-wrapper.compact-mode .customer-section {
+            margin-bottom: 20px;
+            padding: 14px 16px;
+        }
+
+        .invoice-wrapper.compact-mode .customer-name {
+            font-size: 16px;
+        }
+
+        .invoice-wrapper.compact-mode .table-custom {
+            margin: 14px 0;
+            font-size: 12px;
+        }
+
+        .invoice-wrapper.compact-mode .table-custom th,
+        .invoice-wrapper.compact-mode .table-custom td {
+            padding: 9px 8px;
+        }
+
+        .invoice-wrapper.compact-mode .invoice-footer {
+            margin-top: 20px;
+            gap: 18px;
+        }
+
+        .invoice-wrapper.compact-mode .cashier-info {
+            margin-top: 16px;
+            padding-top: 12px;
+        }
+
+        .invoice-wrapper.compact-mode .summary-box {
+            min-width: 300px;
+            padding: 18px;
+        }
+
+        .invoice-wrapper.compact-mode .summary-table td {
+            padding: 8px 0;
+        }
+
+        .invoice-wrapper.compact-mode .thank-you {
+            margin-top: 20px;
+            padding-top: 14px;
+        }
+
         /* Header Section */
         .invoice-header {
             display: flex;
@@ -366,6 +428,16 @@
 
         /* Print Styles */
         @media print {
+            @page {
+                size: auto;
+                margin: 8mm;
+            }
+
+            html, body {
+                width: 100%;
+                height: auto;
+            }
+
             .no-print-controls { 
                 display: none !important; 
             }
@@ -373,6 +445,8 @@
             body { 
                 background: white;
                 padding: 0;
+                margin: 0;
+                font-size: 11px;
             }
 
             .invoice-wrapper { 
@@ -380,8 +454,11 @@
                 max-width: 100% !important;
                 margin: 0 !important; 
                 border: none !important; 
-                padding: 20px !important;
+                padding: 10px 12px !important;
                 box-shadow: none !important;
+                border-radius: 0 !important;
+                break-inside: avoid;
+                page-break-inside: avoid;
             }
 
             .table-custom thead {
@@ -400,6 +477,110 @@
                 background: var(--light-gold) !important;
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
+            }
+
+            .invoice-header {
+                margin-bottom: 14px;
+                padding-bottom: 10px;
+            }
+
+            .company-info h4 {
+                font-size: 20px;
+                margin-bottom: 2px;
+            }
+
+            .company-info p,
+            .invoice-date,
+            .cashier-info p,
+            .amount-words,
+            .thank-you p {
+                font-size: 11px !important;
+                line-height: 1.35;
+            }
+
+            .invoice-info h3 {
+                font-size: 24px;
+                letter-spacing: 2px;
+            }
+
+            .invoice-number {
+                font-size: 12px;
+            }
+
+            .customer-section {
+                margin-bottom: 14px;
+                padding: 12px 14px;
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+
+            .customer-name {
+                font-size: 16px;
+                margin: 2px 0;
+            }
+
+            .payment-badge {
+                padding: 3px 10px;
+                font-size: 11px;
+            }
+
+            .table-custom {
+                margin: 12px 0;
+                font-size: 11px;
+            }
+
+            .table-custom th {
+                padding: 8px 8px;
+                font-size: 10px;
+            }
+
+            .table-custom td {
+                padding: 8px 8px;
+                font-size: 11px;
+                line-height: 1.25;
+            }
+
+            .invoice-footer,
+            .summary-box,
+            .thank-you {
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+
+            .invoice-footer {
+                margin-top: 16px;
+                gap: 18px;
+            }
+
+            .footer-left {
+                max-width: 42%;
+            }
+
+            .cashier-info {
+                margin-top: 14px;
+                padding-top: 12px;
+            }
+
+            .summary-box {
+                min-width: 280px;
+                padding: 16px 18px;
+            }
+
+            .summary-table {
+                font-size: 12px;
+            }
+
+            .summary-table td {
+                padding: 7px 0;
+            }
+
+            .total-row {
+                font-size: 17px;
+            }
+
+            .thank-you {
+                margin-top: 18px;
+                padding-top: 12px;
             }
         }
 
@@ -436,17 +617,21 @@
 </head>
 <body>
     @php
-        $companyDisplayName = $company->company_name
-            ?? $company->name
+        $workspaceCompany = optional(auth()->user())->company;
+        $resolvedCompany = $company->company_name || $company->name || $company->address || $company->email || $company->phone
+            ? $company
+            : $workspaceCompany;
+        $companyDisplayName = $resolvedCompany?->company_name
+            ?? $resolvedCompany?->name
             ?? \App\Models\Setting::where('key', 'company_name')->value('value')
             ?? config('app.name', 'SmartProbook');
-        $companyAddress = $company->address
+        $companyAddress = $resolvedCompany?->address
             ?? \App\Models\Setting::where('key', 'company_address')->value('value')
             ?? 'Company Address Not Set';
-        $companyPhone = $company->phone
+        $companyPhone = $resolvedCompany?->phone
             ?? \App\Models\Setting::where('key', 'company_phone')->value('value')
             ?? '';
-        $companyEmail = $company->email
+        $companyEmail = $resolvedCompany?->email
             ?? \App\Models\Setting::where('key', 'company_email')->value('value')
             ?? '';
     @endphp
@@ -685,9 +870,49 @@
 
 <script>
     const autoPrintReceipt = {{ request()->boolean('autoprint') ? 'true' : 'false' }};
+    const invoiceItemCount = {{ count($sale->items ?? []) }};
+    let originalInvoiceZoom = '';
+
+    function fitInvoiceToSinglePrintPage() {
+        const wrapper = document.getElementById('invoice_content');
+        if (!wrapper) {
+            return;
+        }
+
+        if (originalInvoiceZoom === '') {
+            originalInvoiceZoom = wrapper.style.zoom || '';
+        }
+
+        wrapper.style.zoom = '1';
+        wrapper.classList.remove('compact-mode');
+
+        if (invoiceItemCount > 4 || wrapper.scrollHeight > 980) {
+            wrapper.classList.add('compact-mode');
+        }
+
+        // Fit for the smaller of A4 portrait/landscape printable heights in Chrome.
+        const targetHeight = wrapper.classList.contains('compact-mode') ? 790 : 760;
+        const currentHeight = wrapper.scrollHeight;
+        const scale = Math.min(1, targetHeight / Math.max(currentHeight, 1));
+
+        if (scale < 1) {
+            wrapper.style.zoom = String(Math.max(scale, 0.78));
+        }
+    }
+
+    function resetInvoicePrintFit() {
+        const wrapper = document.getElementById('invoice_content');
+        if (!wrapper) {
+            return;
+        }
+
+        wrapper.style.zoom = originalInvoiceZoom || '';
+        wrapper.classList.remove('compact-mode');
+    }
 
     // Print Function
     function printInvoice() {
+        fitInvoiceToSinglePrintPage();
         window.print();
     }
 
@@ -785,10 +1010,14 @@
         window.addEventListener('load', () => {
             setTimeout(() => {
                 window.focus();
+                fitInvoiceToSinglePrintPage();
                 window.print();
             }, 300);
         });
     }
+
+    window.addEventListener('beforeprint', fitInvoiceToSinglePrintPage);
+    window.addEventListener('afterprint', resetInvoicePrintFit);
 </script>
 </body>
 </html>

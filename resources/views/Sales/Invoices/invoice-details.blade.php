@@ -3,11 +3,15 @@
 
 @section('content')
     @php
+        $invoiceCompany = \App\Models\Company::find($sale->company_id)
+            ?? optional(auth()->user())->company;
         $invoiceLogoPath = \App\Models\Setting::where('key', 'invoice_logo')->value('value')
             ?: \App\Models\Setting::where('key', 'site_logo')->value('value');
         $invoiceLogoUrl = $invoiceLogoPath ? asset($invoiceLogoPath) : null;
-        $brandName = \App\Models\Setting::where('key', 'company_name')->value('value')
-            ?: (optional(auth()->user())->company->name ?? config('app.name', 'SmartProbook'));
+        $brandName = $invoiceCompany?->company_name
+            ?: $invoiceCompany?->name
+            ?: \App\Models\Setting::where('key', 'company_name')->value('value')
+            ?: config('app.name', 'SmartProbook');
         $appliedAmount = (float) ($sale->amount_paid ?? $sale->paid ?? 0);
         $changeAmount = (float) ($sale->change_amount ?? 0);
         $tenderedAmount = $appliedAmount + max(0, $changeAmount);

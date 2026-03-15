@@ -4,11 +4,14 @@
 
 @section('content')
 @php
+    $invoiceCompany = optional(auth()->user())->company;
     $logoPath = \App\Models\Setting::where('key', 'invoice_logo')->value('value')
         ?: \App\Models\Setting::where('key', 'site_logo')->value('value');
     $logoUrl = $logoPath ? asset($logoPath) : asset('assets/img/logos.png');
-    $companyName = \App\Models\Setting::where('key', 'company_name')->value('value')
-        ?: (optional(auth()->user())->company->name ?? config('app.name', 'SmartProbook'));
+    $companyName = $invoiceCompany?->company_name
+        ?: $invoiceCompany?->name
+        ?: \App\Models\Setting::where('key', 'company_name')->value('value')
+        ?: config('app.name', 'SmartProbook');
     $selectedInvoiceTemplate = \App\Models\Setting::where('key', 'invoice_template')->value('value') ?: 'template_1';
     $templates = [
         ['key' => 'template_1', 'name' => 'Executive Blue', 'route' => route('invoice-one-a'), 'summary' => 'Classic branded invoice with a clean commercial layout.'],
