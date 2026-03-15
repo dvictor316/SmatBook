@@ -95,10 +95,10 @@
             'icon' => 'fa-file-invoice',
             'keywords' => ['invoices', 'billing', 'receipts', 'sales'],
         ] : null,
-        Route::has('pos.index') ? [
+        Route::has('sales.showPos') ? [
             'title' => 'POS',
             'subtitle' => 'Point of sale terminal',
-            'url' => route('pos.index'),
+            'url' => route('sales.showPos'),
             'icon' => 'fa-cash-register',
             'keywords' => ['pos', 'terminal', 'checkout', 'cashier'],
         ] : null,
