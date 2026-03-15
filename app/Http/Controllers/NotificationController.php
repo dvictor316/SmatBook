@@ -3,62 +3,81 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Notifications\DatabaseNotification;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 class NotificationController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        //
+        $user = Auth::user();
+
+        $notifications = $user
+            ? $user->notifications()->latest()->paginate(20)
+            : DatabaseNotification::query()->whereRaw('1 = 0')->paginate(20);
+
+        return view('notifications', compact('notifications'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function markAsRead(Request $request, string $id)
     {
-        //
+        $notification = $this->findUserNotification($id);
+        $notification?->markAsRead();
+        $this->flushHeaderNotificationCache();
+
+        return $this->notificationResponse($request, 'Notification marked as read.');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function markAllAsRead(Request $request)
     {
-        //
+        $user = Auth::user();
+        if ($user) {
+            $user->unreadNotifications->markAsRead();
+        }
+
+        $this->flushHeaderNotificationCache();
+
+        return $this->notificationResponse($request, 'All notifications marked as read.');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    public function destroy(Request $request, string $id)
     {
-        //
+        $notification = $this->findUserNotification($id);
+        if ($notification) {
+            $notification->delete();
+        }
+
+        $this->flushHeaderNotificationCache();
+
+        return $this->notificationResponse($request, 'Notification deleted.');
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
+    private function findUserNotification(string $id): ?DatabaseNotification
     {
-        //
+        $user = Auth::user();
+
+        if (!$user) {
+            return null;
+        }
+
+        return $user->notifications()->whereKey($id)->first();
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
+    private function flushHeaderNotificationCache(): void
     {
-        //
+        if (Auth::check()) {
+            Cache::forget('ui:header:notifications:' . Auth::id());
+            Cache::forget('ui:header:notifications:count:' . Auth::id());
+        }
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
+    private function notificationResponse(Request $request, string $message)
     {
-        //
+        if ($request->expectsJson()) {
+            return response()->json(['ok' => true, 'message' => $message]);
+        }
+
+        return back()->with('success', $message);
     }
 }

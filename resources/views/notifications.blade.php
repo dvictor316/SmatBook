@@ -8,9 +8,12 @@
                     <h5>Notifications</h5>
                 </div>
                 <div class="noti-action-btns d-flex align-items-center justify-content-sm-end">
-                    <a href="{{ route('notifications.mark-all-read') }}" class="btn btn-white btn-mark-read">
-                        <i class="fa-solid fa-check me-1"></i>Mark as read
-                    </a>
+                    <form action="{{ route('notifications.mark-all-read') }}" method="POST" class="d-inline">
+                        @csrf
+                        <button type="submit" class="btn btn-white btn-mark-read">
+                            <i class="fa-solid fa-check me-1"></i>Mark as read
+                        </button>
+                    </form>
                     <a href="#" class="btn btn-white btn-delete-all" data-bs-toggle="modal"
                         data-bs-target="#notification-delete">
                         <i class="fe fe-trash-2 me-1"></i>Delete all
@@ -46,8 +49,8 @@
                                     {{-- Action Buttons for specific notification types --}}
                                     @if(isset($notification->data['type']) && $notification->data['type'] == 'request')
                                         <div class="follow-btn">
-                                            <a href="{{ url('action/accept/'.$notification->id) }}" class="btn btn-primary">Accept</a>
-                                            <a href="{{ url('action/reject/'.$notification->id) }}" class="btn btn-outline-primary">Reject</a>
+                                        <a href="{{ url('action/accept/'.$notification->id) }}" class="btn btn-primary">Accept</a>
+                                        <a href="{{ url('action/reject/'.$notification->id) }}" class="btn btn-outline-primary">Reject</a>
                                         </div>
                                     @endif
                                     
@@ -55,12 +58,13 @@
                                 </div>
                                 <div class="chat-user-time">
                                     <span class="chats-delete">
-                                        <a href="javascript:;" 
-                                           onclick="deleteNotification('{{ $notification->id }}')" 
-                                           data-bs-toggle="modal" 
-                                           data-bs-target="#notification-delete">
-                                            <i class="fe fe-trash"></i>
-                                        </a>
+                                        <form action="{{ route('notifications.destroy', $notification->id) }}" method="POST" onsubmit="return confirm('Delete this notification?')" class="d-inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-link p-0 border-0 bg-transparent text-danger">
+                                                <i class="fe fe-trash"></i>
+                                            </button>
+                                        </form>
                                     </span>
                                 </div>
                             </div>
@@ -82,11 +86,4 @@
             </div>
         </div>
     </div>
-    {{-- Script for handling the ID in the delete modal --}}
-    <script>
-        function deleteNotification(id) {
-            // Set the form action URL or input value in your modal dynamically
-            $('#delete-notification-id').val(id);
-        }
-    </script>
 @endsection

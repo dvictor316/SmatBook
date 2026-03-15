@@ -1,6 +1,7 @@
 @php
     $user = Auth::user();
     $notifications = [];
+    $unreadNotificationCount = 0;
 
     if ($user && Schema::hasTable('notifications')) {
         $notifications = \Illuminate\Support\Facades\Cache::remember(
@@ -13,6 +14,18 @@
                     ->orderByDesc('created_at')
                     ->limit(5)
                     ->get();
+            }
+        );
+
+        $unreadNotificationCount = \Illuminate\Support\Facades\Cache::remember(
+            'ui:header:notifications:count:' . $user->id,
+            now()->addSeconds(30),
+            function () use ($user) {
+                return (int) DB::table('notifications')
+                    ->where('notifiable_id', $user->id)
+                    ->where('notifiable_type', 'App\\Models\\User')
+                    ->whereNull('read_at')
+                    ->count();
             }
         );
     }
@@ -222,6 +235,12 @@
         text-decoration: none;
     }
     .country-selector img { height: 18px; width: 27px; border-radius: 3px; }
+    .country-currency {
+        font-size: 11px;
+        font-weight: 700;
+        color: #94a3b8;
+        letter-spacing: 0.2px;
+    }
 
     .notification-bell {
         position: relative;
@@ -302,6 +321,7 @@
         .header-search-container { display: none; }
         .mobile-search-btn       { display: flex; }
         .user-info, .country-name { display: none; }
+        .country-currency { display: none; }
         .header-actions { margin-left: auto; }
 
         /* ── Regular sidebar (#sidebar) ── */
@@ -468,6 +488,7 @@
             <a href="#" class="country-selector" data-bs-toggle="dropdown" id="geoCountryToggle">
                 <img id="geoCountryFlag" src="{{ asset('assets/img/flags/ng.png') }}" alt="NG" width="20" height="14">
                 <span class="country-name" id="geoCountryCode">NG</span>
+                <span class="country-currency" id="geoCurrencyCode">{{ $geoCurrency ?? 'NGN' }}</span>
             </a>
             <div class="dropdown-menu dropdown-menu-end" id="geoCountryMenu">
                 <a href="javascript:void(0);" class="dropdown-item geo-country-item" data-country="NG"><img class="me-2" src="{{ asset('assets/img/flags/ng.png') }}" alt="NG" width="18" height="12">Nigeria (NGN)</a>
@@ -488,21 +509,21 @@
         <div class="dropdown">
             <a href="#" class="notification-bell" data-bs-toggle="dropdown">
                 <i class="fas fa-bell"></i>
-                @if(count($notifications) > 0)
-                    <span class="badge rounded-pill bg-danger">{{ count($notifications) }}</span>
+                @if($unreadNotificationCount > 0)
+                    <span class="badge rounded-pill bg-danger">{{ $unreadNotificationCount }}</span>
                 @endif
             </a>
             <div class="dropdown-menu dropdown-menu-end" style="min-width:320px">
                 <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
                     <span class="fw-bold">Notifications</span>
-                    <a href="javascript:void(0)" class="small text-primary text-decoration-none">
+                    <a href="javascript:void(0)" class="small text-primary text-decoration-none" id="markAllNotificationsRead">
                         Mark all as read
                     </a>
                 </div>
                 <div style="max-height: 300px;overflow-y:auto">
                     @forelse($notifications as $notification)
                         @php $data = json_decode($notification->data, true); @endphp
-                        <a href="#" class="dropdown-item p-3 border-bottom">
+                        <a href="{{ route('notifications.index') }}" class="dropdown-item p-3 border-bottom header-notification-item" data-notification-id="{{ $notification->id }}">
                             <div class="small text-wrap">
                                 {{ $data['message'] ?? 'New system update available' }}
                             </div>
@@ -563,6 +584,7 @@
 document.addEventListener('DOMContentLoaded', function () {
     const geoFlag = document.getElementById('geoCountryFlag');
     const geoCode = document.getElementById('geoCountryCode');
+    const geoCurrencyCode = document.getElementById('geoCurrencyCode');
     const geoItems = document.querySelectorAll('.geo-country-item');
     const geoFlags = {
         NG: @json(asset('assets/img/flags/ng.png')),
@@ -577,6 +599,19 @@ document.addEventListener('DOMContentLoaded', function () {
         KE: @json(asset('assets/img/flags/ke.png')),
         GH: @json(asset('assets/img/flags/gh.png'))
     };
+    const geoCurrencies = {
+        NG: 'NGN',
+        US: 'USD',
+        CN: 'CNY',
+        GB: 'GBP',
+        EU: 'EUR',
+        CA: 'CAD',
+        IN: 'INR',
+        AE: 'AED',
+        ZA: 'ZAR',
+        KE: 'KES',
+        GH: 'GHS'
+    };
 
     const euRegions = ['FR', 'DE', 'ES', 'IT', 'PT', 'NL', 'BE', 'AT', 'IE', 'FI', 'SE', 'DK', 'PL', 'CZ', 'GR', 'RO', 'HU'];
     const normalizeGeoCountry = (rawCode) => {
@@ -589,10 +624,29 @@ document.addEventListener('DOMContentLoaded', function () {
         try {
             const locale = Intl.DateTimeFormat().resolvedOptions().locale || navigator.language || 'en-NG';
             const region = locale.split('-').pop();
-            return normalizeGeoCountry(region);
+            if (region && region.length >= 2) {
+                return normalizeGeoCountry(region);
+            }
+        } catch (e) {}
+
+        try {
+            const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+            if (tz.includes('Lagos')) return 'NG';
+            if (tz.includes('Nairobi')) return 'KE';
+            if (tz.includes('Accra')) return 'GH';
+            if (tz.includes('Johannesburg')) return 'ZA';
+            if (tz.includes('Dubai')) return 'AE';
+            if (tz.includes('Kolkata')) return 'IN';
+            if (tz.includes('London')) return 'GB';
+            if (tz.includes('Toronto') || tz.includes('Vancouver')) return 'CA';
+            if (tz.includes('New_York') || tz.includes('Chicago') || tz.includes('Los_Angeles')) return 'US';
+            if (tz.includes('Shanghai') || tz.includes('Hong_Kong')) return 'CN';
+            if (tz.includes('Paris') || tz.includes('Berlin') || tz.includes('Rome') || tz.includes('Madrid')) return 'EU';
         } catch (e) {
             return 'NG';
         }
+
+        return 'NG';
     };
 
     const setGeoCookie = (country) => {
@@ -604,21 +658,72 @@ document.addEventListener('DOMContentLoaded', function () {
         const code = normalizeGeoCountry(country);
         if (geoFlag) geoFlag.src = geoFlags[code] || geoFlags.NG;
         if (geoCode) geoCode.textContent = code;
+        if (geoCurrencyCode) geoCurrencyCode.textContent = geoCurrencies[code] || 'NGN';
         localStorage.setItem('smat_country', code);
         setGeoCookie(code);
-        document.dispatchEvent(new CustomEvent('smat:geo-change', { detail: { country: code } }));
+        document.dispatchEvent(new CustomEvent('smat:geo-change', {
+            detail: {
+                country: code,
+                currency: geoCurrencies[code] || 'NGN'
+            }
+        }));
     };
 
     const cookieMatch = document.cookie.match(/(?:^|;\s*)smat_country=([^;]+)/);
     const cookieCountry = cookieMatch ? decodeURIComponent(cookieMatch[1]) : '';
     const geoSaved = localStorage.getItem('smat_country');
     const serverDefault = @json($geoCountry ?? 'NG');
-    applyGeoCountryUi(geoSaved || cookieCountry || serverDefault || 'NG');
+    applyGeoCountryUi(geoSaved || cookieCountry || localeCountry() || serverDefault || 'NG');
 
     geoItems.forEach((item) => {
         item.addEventListener('click', function () {
             const country = this.getAttribute('data-country');
             applyGeoCountryUi(country);
+        });
+    });
+
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    const markAllRead = document.getElementById('markAllNotificationsRead');
+    const notificationItems = document.querySelectorAll('.header-notification-item');
+
+    if (markAllRead) {
+        markAllRead.addEventListener('click', async function (e) {
+            e.preventDefault();
+            try {
+                await fetch(@json(route('notifications.mark-all-read')), {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
+                    credentials: 'same-origin'
+                });
+                window.location.reload();
+            } catch (error) {
+                console.error('Notification mark-all-read failed', error);
+            }
+        });
+    }
+
+    notificationItems.forEach((item) => {
+        item.addEventListener('click', async function () {
+            const notificationId = this.getAttribute('data-notification-id');
+            if (!notificationId) return;
+
+            try {
+                await fetch(@json(url('/notifications/mark-read')) + '/' + notificationId, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
+                    credentials: 'same-origin'
+                });
+            } catch (error) {
+                console.error('Notification mark-read failed', error);
+            }
         });
     });
 
