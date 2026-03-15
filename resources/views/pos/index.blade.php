@@ -752,18 +752,18 @@ body.mini-sidebar .pos-full-page-wrapper {
     justify-content: center;
     padding: 28px 20px;
     background:
-        radial-gradient(circle at top, rgba(250, 204, 21, 0.16) 0%, rgba(250, 204, 21, 0) 58%),
-        linear-gradient(180deg, #fffdf6 0%, #fffaf0 100%);
+        radial-gradient(circle at top, rgba(250, 204, 21, 0.10) 0%, rgba(250, 204, 21, 0) 58%),
+        linear-gradient(180deg, #fffefb 0%, #fffcf6 100%);
 }
 
 .cart-empty-shell {
     width: min(100%, 320px);
     padding: 26px 22px;
     text-align: center;
-    border: 1px dashed #e7c768;
+    border: 1px dashed #eddca2;
     border-radius: 20px;
-    background: linear-gradient(180deg, rgba(255, 252, 235, 0.98) 0%, rgba(255, 248, 220, 0.96) 100%);
-    box-shadow: 0 16px 40px rgba(212, 175, 55, 0.14);
+    background: linear-gradient(180deg, rgba(255, 253, 244, 0.98) 0%, rgba(255, 250, 236, 0.96) 100%);
+    box-shadow: 0 14px 34px rgba(212, 175, 55, 0.10);
 }
 
 .cart-empty-icon {
@@ -773,10 +773,10 @@ body.mini-sidebar .pos-full-page-wrapper {
     border-radius: 18px;
     display: grid;
     place-items: center;
-    background: linear-gradient(135deg, #fff4c7 0%, #fde68a 100%);
-    color: #8a6400;
+    background: linear-gradient(135deg, #fff8dc 0%, #fef3c7 100%);
+    color: #9a6f00;
     font-size: 1.4rem;
-    border: 1px solid rgba(212, 175, 55, 0.38);
+    border: 1px solid rgba(212, 175, 55, 0.24);
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.95);
 }
 
