@@ -809,9 +809,11 @@ Route::middleware(['auth', 'subscription.active'])->group(function () {
         Route::put('/settings/email-templates/{id}', 'updateEmailTemplate')->name('settings.email-templates.update');
         Route::delete('/settings/email-templates/{id}', 'destroyEmailTemplate')->name('settings.email-templates.destroy');
         Route::post('/settings/chart-of-accounts', 'storeChartAccount')->name('settings.chart-of-accounts.store');
+        Route::post('/settings/manual-journal', 'storeManualJournal')->name('settings.manual-journal.store');
         Route::prefix('settings')->group(function () {
             Route::get('/bank-account', 'bank_account')->name('bank-account');
             Route::get('/chart-of-accounts', 'chart_of_accounts')->name('chart-of-accounts');
+            Route::get('/manual-journal', 'manual_journal')->name('manual-journal');
             Route::get('/company-settings', 'company_settings')->name('company-settings');
             Route::get('/email-settings', 'email_settings')->name('email-settings');
             Route::get('/invoice-settings', 'invoice_settings')->name('invoice-settings');
@@ -834,6 +836,7 @@ Route::middleware(['auth', 'subscription.active'])->group(function () {
         Route::get('/payment-settings', 'payment_settings');
         Route::get('/bank-account', 'bank_account');
         Route::get('/chart-of-accounts', 'chart_of_accounts');
+        Route::get('/manual-journal', 'manual_journal');
         Route::get('/tax-rates', 'tax_rates');
         Route::get('/plan-billing', 'plan_billing');
         Route::get('/two-factor', 'two_factor');

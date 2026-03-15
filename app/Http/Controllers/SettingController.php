@@ -6,6 +6,7 @@ use App\Models\Setting;
 use App\Models\EmailAuditLog;
 use App\Models\Bank;
 use App\Models\Account;
+use App\Models\Transaction;
 use App\Models\Subscription;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -353,6 +354,34 @@ class SettingController extends Controller
 
         return view('Settings.chart-of-accounts', compact('settings', 'accounts', 'accountGroups', 'accountSummary'));
     }
+    public function manual_journal()
+    {
+        $settings = $this->getSettings();
+        $accounts = collect();
+        $recentJournalGroups = collect();
+
+        if (Schema::hasTable('accounts')) {
+            $accounts = Account::query()
+                ->where('is_active', true)
+                ->orderByRaw("FIELD(type, 'Asset', 'Liability', 'Equity', 'Revenue', 'Expense')")
+                ->orderBy('code')
+                ->get();
+        }
+
+        if (Schema::hasTable('transactions')) {
+            $recentJournalGroups = Transaction::query()
+                ->with('account')
+                ->where('transaction_type', Transaction::TYPE_JOURNAL)
+                ->orderByDesc('transaction_date')
+                ->orderByDesc('id')
+                ->limit(60)
+                ->get()
+                ->groupBy(fn ($entry) => $entry->reference ?: 'JRNL-' . $entry->id)
+                ->take(12);
+        }
+
+        return view('Settings.manual-journal', compact('settings', 'accounts', 'recentJournalGroups'));
+    }
     public function tax_rates()
     {
         $defaultTaxes = [
@@ -459,6 +488,81 @@ class SettingController extends Controller
         ]);
 
         return redirect()->route('chart-of-accounts')->with('success', 'Account added to chart of accounts.');
+    }
+
+    public function storeManualJournal(Request $request)
+    {
+        if (!Schema::hasTable('accounts') || !Schema::hasTable('transactions')) {
+            return redirect()->back()->with('error', 'Manual journal requires accounts and transactions tables.');
+        }
+
+        $validated = $request->validate([
+            'transaction_date' => 'required|date',
+            'reference' => 'nullable|string|max:100',
+            'description' => 'nullable|string|max:1000',
+            'lines' => 'required|array|min:2',
+            'lines.*.account_id' => 'required|exists:accounts,id',
+            'lines.*.debit' => 'nullable|numeric|min:0',
+            'lines.*.credit' => 'nullable|numeric|min:0',
+            'lines.*.memo' => 'nullable|string|max:255',
+        ]);
+
+        $lines = collect($validated['lines'])
+            ->map(function ($line) {
+                return [
+                    'account_id' => (int) ($line['account_id'] ?? 0),
+                    'debit' => round((float) ($line['debit'] ?? 0), 2),
+                    'credit' => round((float) ($line['credit'] ?? 0), 2),
+                    'memo' => trim((string) ($line['memo'] ?? '')),
+                ];
+            })
+            ->filter(fn ($line) => $line['account_id'] && ($line['debit'] > 0 || $line['credit'] > 0))
+            ->values();
+
+        if ($lines->count() < 2) {
+            return redirect()->back()->withInput()->with('error', 'Add at least two journal lines with values.');
+        }
+
+        $invalidLine = $lines->first(fn ($line) => $line['debit'] > 0 && $line['credit'] > 0);
+        if ($invalidLine) {
+            return redirect()->back()->withInput()->with('error', 'Each journal line must be either debit or credit, not both.');
+        }
+
+        $totalDebit = round((float) $lines->sum('debit'), 2);
+        $totalCredit = round((float) $lines->sum('credit'), 2);
+
+        if ($totalDebit <= 0 || $totalCredit <= 0) {
+            return redirect()->back()->withInput()->with('error', 'Journal entry must contain both debit and credit lines.');
+        }
+
+        if (abs($totalDebit - $totalCredit) > 0.009) {
+            return redirect()->back()->withInput()->with('error', 'Debits and credits must balance before posting.');
+        }
+
+        $reference = trim((string) ($validated['reference'] ?? ''));
+        if ($reference === '') {
+            $reference = 'JRNL-' . now()->format('Ymd-His');
+        }
+
+        DB::transaction(function () use ($validated, $lines, $reference, $request) {
+            foreach ($lines as $line) {
+                Transaction::create([
+                    'account_id' => $line['account_id'],
+                    'transaction_date' => $validated['transaction_date'],
+                    'reference' => $reference,
+                    'description' => $line['memo'] ?: ($validated['description'] ?? 'Manual journal entry'),
+                    'debit' => $line['debit'],
+                    'credit' => $line['credit'],
+                    'balance' => 0,
+                    'transaction_type' => Transaction::TYPE_JOURNAL,
+                    'related_id' => null,
+                    'related_type' => null,
+                    'user_id' => $request->user()?->id,
+                ]);
+            }
+        });
+
+        return redirect()->route('manual-journal')->with('success', 'Manual journal entry posted successfully.');
     }
 
     public function storeBankAccount(Request $request)

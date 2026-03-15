@@ -40,6 +40,11 @@
             </a>
         </li>
         <li class="nav-item">
+            <a href="{{ route('manual-journal') }}" class="nav-link {{ Request::routeIs('manual-journal') ? 'active' : '' }}">
+                <i class="fe fe-edit-3"></i> <span>Manual Journal</span>
+            </a>
+        </li>
+        <li class="nav-item">
             <a href="{{ route('tax-rates') }}" class="nav-link {{ Request::routeIs('tax-rates') ? 'active' : '' }}">
                 <i class="fe fe-file-text"></i> <span>Tax Rates</span>
             </a>
