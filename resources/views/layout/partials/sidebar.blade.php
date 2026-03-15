@@ -48,7 +48,7 @@
             $planName = strtolower(
                 $subscription->plan
                 ?? $subscription->plan_name
-                ?? ($user->company->plan ?? '')
+                ?? (optional($user->company)->plan ?? '')
             );
             
             if (str_contains($planName, 'enterprise')) {
@@ -58,9 +58,9 @@
             } else {
                 $plan = 'basic';
             }
-        } elseif (!empty($user->company?->plan)) {
+        } elseif (!empty(optional($user->company)->plan)) {
             // Fallback when subscription row is missing but company plan exists.
-            $companyPlan = strtolower((string) $user->company->plan);
+            $companyPlan = strtolower((string) optional($user->company)->plan);
             if (str_contains($companyPlan, 'enterprise')) {
                 $plan = 'enterprise';
             } elseif (str_contains($companyPlan, 'prof') || str_contains($companyPlan, 'pro') || str_contains($companyPlan, 'premium')) {

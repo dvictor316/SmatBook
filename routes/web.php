@@ -545,7 +545,7 @@ Route::middleware(['auth', 'subscription.active'])->group(function () {
     });
 
     // Roles & Permissions (available to all subscribed plans)
-    Route::controller(RoleController::class)->prefix('roles')->name('roles.')->group(function () {
+    Route::middleware('role:super_admin,administrator')->controller(RoleController::class)->prefix('roles')->name('roles.')->group(function () {
         Route::get('/permission', 'index')->name('index');
         Route::post('/store', 'store')->name('store');
         Route::put('/update/{id}', 'update')->name('update');

@@ -30,8 +30,16 @@ class RoleMiddleware
             return $next($request);
         }
 
+        $allowedRoles = array_map(fn ($role) => strtolower(trim((string) $role)), $roles);
+        $userRole = strtolower((string) ($user->role ?? ''));
+        $roleMatch = in_array($userRole, $allowedRoles, true);
+
+        if (!$roleMatch && method_exists($user, 'role') && $user->relationLoaded('role') ? $user->role : $user->role()->first()) {
+            $roleMatch = in_array(strtolower((string) optional($user->role)->name), $allowedRoles, true);
+        }
+
         // Check if user has any of the allowed roles
-        if (!in_array($user->role, $roles)) {
+        if (!$roleMatch) {
             // Check if this is a deployment manager trying to access their area
             if (in_array('deployment_manager', $roles) || in_array('manager', $roles)) {
                 return redirect()->route('home')

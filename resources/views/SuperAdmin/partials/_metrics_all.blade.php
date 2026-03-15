@@ -1,8 +1,9 @@
 @php
+    $companySubscription = optional($company)->subscription;
     $plan = strtolower(
-        optional($company->subscription)->plan_name
-        ?? optional($company->subscription)->plan
-        ?? ($company->plan ?? 'basic')
+        optional($companySubscription)->plan_name
+        ?? optional($companySubscription)->plan
+        ?? (optional($company)->plan ?? 'basic')
     );
     $isBasic = ($plan === 'basic');
 @endphp

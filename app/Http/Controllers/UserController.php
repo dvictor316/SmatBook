@@ -5,11 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\Subscription;
 use App\Models\User;
 use App\Models\DeploymentManager;
+use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class UserController extends Controller
 {
@@ -79,7 +82,10 @@ class UserController extends Controller
         $user = new User();
         $user->name = $request->name;
         $user->email = $request->email;
-        $user->role = $request->role;
+        $selectedRole = $this->resolveSelectedRole($request->role);
+
+        $user->role = $selectedRole['legacy'];
+        $user->role_id = $selectedRole['id'];
         $user->password = Hash::make($request->password);
         $user->status = 'active';
         $user->is_verified = 1;
@@ -130,7 +136,10 @@ class UserController extends Controller
         
         $user->name = $request->name;
         $user->email = $request->email;
-        $user->role = $request->role;
+        $selectedRole = $this->resolveSelectedRole($request->role);
+
+        $user->role = $selectedRole['legacy'];
+        $user->role_id = $selectedRole['id'];
 
         if ($request->filled('password')) {
             $user->password = Hash::make($request->password);
@@ -377,6 +386,19 @@ class UserController extends Controller
      */
     private function getRoles()
     {
+        if (Schema::hasTable('roles')) {
+            $rolesFromTable = Role::query()
+                ->orderBy('name')
+                ->pluck('name')
+                ->filter()
+                ->values()
+                ->all();
+
+            if (!empty($rolesFromTable)) {
+                return $rolesFromTable;
+            }
+        }
+
         $results = DB::select("SHOW COLUMNS FROM users WHERE Field = 'role'");
         $roles = [];
         
@@ -395,6 +417,74 @@ class UserController extends Controller
         }
 
         return $roles;
+    }
+
+    private function resolveRoleId(?string $roleName): ?int
+    {
+        return $this->resolveSelectedRole($roleName)['id'];
+    }
+
+    private function resolveSelectedRole(?string $roleName): array
+    {
+        $roleName = trim((string) $roleName);
+
+        if ($roleName === '') {
+            return ['id' => null, 'legacy' => null, 'display' => null];
+        }
+
+        if (!Schema::hasTable('roles')) {
+            return [
+                'id' => null,
+                'legacy' => $this->legacyRoleKey($roleName),
+                'display' => Str::title(str_replace('_', ' ', $roleName)),
+            ];
+        }
+
+        $role = Role::query()
+            ->whereRaw('LOWER(name) = ?', [strtolower($roleName)])
+            ->orWhereRaw('LOWER(name) = ?', [strtolower(Str::title(str_replace('_', ' ', $roleName)))])
+            ->first();
+
+        if (!$role) {
+            $legacyKey = $this->legacyRoleKey($roleName);
+            $role = Role::query()
+                ->get()
+                ->first(fn (Role $candidate) => $this->legacyRoleKey($candidate->name) === $legacyKey);
+        }
+
+        if (!$role) {
+            return [
+                'id' => null,
+                'legacy' => $this->legacyRoleKey($roleName),
+                'display' => Str::title(str_replace('_', ' ', $roleName)),
+            ];
+        }
+
+        return [
+            'id' => $role->id,
+            'legacy' => $this->legacyRoleKey($role->name),
+            'display' => $role->name,
+        ];
+    }
+
+    private function legacyRoleKey(?string $roleName): ?string
+    {
+        $normalized = strtolower(trim((string) $roleName));
+
+        if ($normalized === '') {
+            return null;
+        }
+
+        return match ($normalized) {
+            'super admin', 'super_admin', 'superadmin' => 'super_admin',
+            'administrator', 'admin' => 'administrator',
+            'deployment manager', 'deployment_manager', 'manager' => 'deployment_manager',
+            'store manager', 'store_manager' => 'store_manager',
+            'sales manager', 'sales_manager' => 'sales_manager',
+            'finance manager', 'finance_manager' => 'finance_manager',
+            'account officer', 'account_officer', 'accountant' => 'accountant',
+            default => Str::snake(str_replace('-', ' ', $normalized)),
+        };
     }
 
     private function usersIndexRoute(): string

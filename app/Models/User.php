@@ -12,6 +12,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
@@ -202,11 +204,68 @@ class User extends Authenticatable
 
     public function hasRole(string $roleName): bool
     {
-        // Optimize: Check loaded relation first, fallback to simple check if role name is stored on user
-        if ($this->relationLoaded('role')) {
-            return $this->role?->name === $roleName;
+        $target = $this->normalizeRoleKey($roleName);
+
+        if ($this->relationLoaded('role') && $this->getRelation('role')) {
+            return $this->normalizeRoleKey($this->role?->name) === $target;
         }
-        return $this->role === $roleName; 
+
+        if (!empty($this->role_id) && $this->role()->exists()) {
+            return $this->normalizeRoleKey((string) $this->role()->value('name')) === $target;
+        }
+
+        return $this->normalizeRoleKey((string) ($this->attributes['role'] ?? '')) === $target;
+    }
+
+    public function hasPermissionTo(string $permissionName): bool
+    {
+        if (!Schema::hasTable('permissions') || !Schema::hasTable('role_has_permissions')) {
+            return false;
+        }
+
+        $permissionName = strtolower(trim($permissionName));
+
+        if (!empty($this->role_id)) {
+            return $this->role()
+                ->whereHas('permissions', fn ($query) => $query->whereRaw('LOWER(name) = ?', [$permissionName]))
+                ->exists();
+        }
+
+        if (!empty($this->attributes['role'])) {
+            $legacyRole = $this->normalizeRoleKey((string) $this->attributes['role']);
+
+            return Role::query()
+                ->where(function ($query) use ($legacyRole) {
+                    $query->whereRaw('LOWER(name) = ?', [strtolower((string) $this->attributes['role'])]);
+                    if ($legacyRole !== null) {
+                        $query->orWhereRaw('LOWER(name) = ?', [strtolower(Str::title(str_replace('_', ' ', $legacyRole)))]);
+                    }
+                })
+                ->whereHas('permissions', fn ($query) => $query->whereRaw('LOWER(name) = ?', [$permissionName]))
+                ->exists();
+        }
+
+        return false;
+    }
+
+    private function normalizeRoleKey(?string $role): ?string
+    {
+        $normalized = strtolower(trim((string) $role));
+
+        if ($normalized === '') {
+            return null;
+        }
+
+        return match ($normalized) {
+            'super admin', 'super_admin', 'superadmin' => 'super_admin',
+            'administrator', 'admin' => 'administrator',
+            'deployment manager', 'deployment_manager', 'manager' => 'deployment_manager',
+            'store manager', 'store_manager' => 'store_manager',
+            'sales manager', 'sales_manager' => 'sales_manager',
+            'finance manager', 'finance_manager' => 'finance_manager',
+            'account officer', 'account_officer', 'accountant' => 'accountant',
+            default => Str::snake(str_replace('-', ' ', $normalized)),
+        };
     }
 
     /**

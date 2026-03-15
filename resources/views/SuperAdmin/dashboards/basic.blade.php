@@ -381,7 +381,7 @@
                 <ul class="list-group list-group-flush small">
                     <li class="list-group-item d-flex justify-content-between align-items-center px-0 bg-transparent">
                         <span><span class="status-dot bg-success"></span> Subscription status</span>
-                        <span class="badge bg-light text-dark">{{ optional($company->subscription)->status ?? 'Pending' }}</span>
+                        <span class="badge bg-light text-dark">{{ optional(optional($company)->subscription)->status ?? 'Pending' }}</span>
                     </li>
                     <li class="list-group-item d-flex justify-content-between align-items-center px-0 bg-transparent">
                         <span><span class="status-dot bg-primary"></span> Average invoice</span>

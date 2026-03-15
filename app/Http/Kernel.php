@@ -157,6 +157,7 @@ class Kernel extends HttpKernel
         */
         // Check user role
         'role' => \App\Http\Middleware\CheckRole::class,
+        'permission' => \App\Http\Middleware\CheckPermission::class,
         
         // Deployment Manager Verification
         'manager.verified' => \App\Http\Middleware\ManagerVerified::class,
