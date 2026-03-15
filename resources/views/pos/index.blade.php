@@ -1150,6 +1150,7 @@ label {
                 data-id="{{ $p->id }}"
                 data-name="{{ strtolower($p->name) }}"
                 data-sku="{{ strtolower($p->sku ?? '') }}"
+                data-barcode="{{ strtolower($p->barcode ?? '') }}"
                 data-category="{{ strtolower($p->category->name ?? 'uncategorized') }}">
                 <div class="product-card-img">
                     @if($p->image)
@@ -1204,6 +1205,7 @@ label {
                     @endphp
                     <option value="{{ $p->id }}" 
                         data-sku="{{ $p->sku }}" 
+                        data-barcode="{{ $p->barcode }}" 
                         data-name="{{ $p->name }}" 
                         data-price="{{ $unitPrice }}" 
                         data-stock="{{ $p->stock }}" 
@@ -1524,28 +1526,67 @@ $(document).ready(function() {
     // Barcode
     let barcodeBuffer = '';
     let barcodeTimeout;
-    
+
+    function commitBarcodeScan(rawCode) {
+        const normalizedCode = String(rawCode || '').trim().toLowerCase();
+        if (!normalizedCode) {
+            return false;
+        }
+
+        let matchedOption = null;
+        $('#product-select option').each(function() {
+            const option = $(this);
+            const barcode = String(option.data('barcode') || '').trim().toLowerCase();
+            const sku = String(option.data('sku') || '').trim().toLowerCase();
+
+            if (barcode && barcode === normalizedCode) {
+                matchedOption = option;
+                return false;
+            }
+
+            if (!matchedOption && sku && sku === normalizedCode) {
+                matchedOption = option;
+            }
+        });
+
+        if (matchedOption && matchedOption.val()) {
+            $('#product-select').val(matchedOption.val()).trigger('change');
+            $('#barcode-input').val('');
+            barcodeBuffer = '';
+            return true;
+        }
+
+        Swal.fire({
+            icon: 'error',
+            title: 'Product Not Found',
+            text: `No product matched "${rawCode}"`,
+            timer: 1800,
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false
+        });
+        $('#barcode-input').select();
+        return false;
+    }
+
     $('#barcode-input').on('input', function() {
         clearTimeout(barcodeTimeout);
         barcodeBuffer = $(this).val();
-        
+
         barcodeTimeout = setTimeout(() => {
-            if(barcodeBuffer) {
-                let found = false;
-                $('#product-select option').each(function() {
-                    if ($(this).data('sku') == barcodeBuffer) {
-                        $('#product-select').val($(this).val()).trigger('change');
-                        found = true;
-                        return false;
-                    }
-                });
-                if(!found) {
-                    Swal.fire({ icon: 'error', title: 'Not Found', timer: 1500, toast: true, position: 'top-end', showConfirmButton: false });
-                }
-                $('#barcode-input').val('');
-                barcodeBuffer = '';
+            if (barcodeBuffer && barcodeBuffer.trim().length >= 3) {
+                commitBarcodeScan(barcodeBuffer);
             }
-        }, 300);
+        }, 220);
+    });
+
+    $('#barcode-input').on('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            clearTimeout(barcodeTimeout);
+            barcodeBuffer = $(this).val();
+            commitBarcodeScan(barcodeBuffer);
+        }
     });
 
     // Calculate
