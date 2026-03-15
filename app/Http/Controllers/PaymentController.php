@@ -12,6 +12,14 @@ use Flutterwave\Laravel\Facades\Flutterwave;
 
 class PaymentController extends Controller
 {
+    private function getActiveBranchContext(): array
+    {
+        return [
+            'id' => session('active_branch_id') ? (string) session('active_branch_id') : null,
+            'name' => session('active_branch_name') ? (string) session('active_branch_name') : null,
+        ];
+    }
+
     public function store(Request $request)
     {
         $request->validate([
@@ -27,6 +35,7 @@ class PaymentController extends Controller
 
         return DB::transaction(function () use ($request) {
             $sale = $request->filled('sale_id') ? Sale::find($request->sale_id) : null;
+            $activeBranch = $this->getActiveBranchContext();
 
             $attachmentName = null;
             if ($request->hasFile('attachment')) {
@@ -37,6 +46,8 @@ class PaymentController extends Controller
 
             $payload = [
                 'sale_id' => $sale?->id,
+                'branch_id' => $sale?->branch_id ?? $activeBranch['id'],
+                'branch_name' => $sale?->branch_name ?? $sale?->branch_label ?? $activeBranch['name'],
                 'reference' => $request->reference,
                 'amount' => (float) $request->amount,
                 'method' => $request->method ?: 'cash',
@@ -252,6 +263,8 @@ class PaymentController extends Controller
                     $payment = Payment::create([
                         'payment_id' => 'ONLINE-' . strtoupper(Str::random(6)),
                         'sale_id'    => $sale->id,
+                        'branch_id'  => $sale->branch_id,
+                        'branch_name'=> $sale->branch_name ?? $sale->branch_label,
                         'amount'     => $amountDue,
                         'method'     => 'Online Gateway',
                         'status'     => 'Completed',

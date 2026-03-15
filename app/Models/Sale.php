@@ -18,7 +18,7 @@ class Sale extends Model
      * Mass assignable attributes.
      */
     protected $fillable = [
-        'company_id',
+        'company_id', 'branch_id', 'branch_name',
         'order_number', 'invoice_no', 'receipt_no', 'order_date', 'delivery_date',
         'customer_id', 'customer_name', 'user_id', 'terminal_id', 
         'subtotal', 'discount', 'tax', 'shipping_cost', 'total', 
@@ -155,6 +155,10 @@ class Sale extends Model
 
     public function getBranchLabelAttribute(): ?string
     {
+        if (!empty($this->attributes['branch_name'] ?? null)) {
+            return (string) $this->attributes['branch_name'];
+        }
+
         $details = $this->payment_details;
 
         if (is_string($details)) {
@@ -172,6 +176,10 @@ class Sale extends Model
 
     public function getBranchIdAttribute(): ?string
     {
+        if (!empty($this->attributes['branch_id'] ?? null)) {
+            return (string) $this->attributes['branch_id'];
+        }
+
         $details = $this->payment_details;
 
         if (is_string($details)) {

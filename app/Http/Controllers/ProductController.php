@@ -465,6 +465,7 @@ public function inventory(Request $request)
 
         DB::transaction(function () use ($request) {
             $operator = ($request->type == 'in') ? '+' : '-';
+            $activeBranch = $this->getActiveBranchContext();
             
             DB::table('products')->where('id', $request->product_id)->update([
                 'stock' => DB::raw("stock $operator " . $request->quantity),
@@ -474,6 +475,8 @@ public function inventory(Request $request)
 
             $payload = [
                 'product_id' => $request->product_id,
+                'branch_id'  => $activeBranch['id'],
+                'branch_name'=> $activeBranch['name'],
                 'quantity'   => $request->quantity,
                 'type'       => $request->type,
                 'created_at' => now(),

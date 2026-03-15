@@ -14,6 +14,8 @@ class Payment extends Model
     protected $fillable = [
         'payment_id',
         'sale_id',
+        'branch_id',
+        'branch_name',
         'payment_account_id', // ADDED: Required to save the account link
         'reference',
         'amount',
@@ -97,6 +99,13 @@ class Payment extends Model
     public function getAttachmentUrlAttribute()
     {
         return $this->attachment ? asset('assets/img/payments/' . $this->attachment) : null;
+    }
+
+    public function getBranchLabelAttribute(): ?string
+    {
+        return $this->branch_name
+            ?? $this->sale?->branch_label
+            ?? null;
     }
 
     // --- Scopes ---

@@ -214,6 +214,8 @@ public function customerDetails($id = null)
         // --- 2. CREATE THE SALE RECORD ---
 $sale = Sale::create([
     'company_id'     => auth()->user()?->company_id,
+    'branch_id'      => $activeBranch['id'],
+    'branch_name'    => $activeBranch['name'],
     'order_number'   => $orderNumber,
     'invoice_no'     => $invoiceNo,
     'receipt_no'     => $receiptNo,
@@ -291,6 +293,8 @@ $sale = Sale::create([
         $finalPaymentStatus = $finalBalance <= 0 ? 'paid' : ($finalPaid > 0 ? 'partial' : 'unpaid');
 
         $sale->update([
+            'branch_id'       => $activeBranch['id'],
+            'branch_name'     => $activeBranch['name'],
             'subtotal'       => $runningSubtotal,
             'discount'       => $runningDiscount,
             'tax'            => $runningTax,
@@ -316,6 +320,8 @@ $sale = Sale::create([
         if ($finalPaid > 0) {
             Payment::create([
                 'sale_id' => $sale->id,
+                'branch_id' => $activeBranch['id'],
+                'branch_name' => $activeBranch['name'],
                 'amount'  => $finalPaid,
                 'method'  => $request->payment_method,
                 'note'    => 'Initial POS Payment',

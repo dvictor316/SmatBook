@@ -46,7 +46,11 @@ use App\Support\LedgerService;
             }
 
             return $query->where(function ($sub) use ($salesTable, $branchName) {
-                $sub->whereRaw(
+                if (Schema::hasColumn('sales', 'branch_name')) {
+                    $sub->where("{$salesTable}.branch_name", $branchName);
+                }
+
+                $sub->orWhereRaw(
                     "JSON_UNQUOTE(JSON_EXTRACT(COALESCE({$salesTable}.payment_details, '{}'), '$.branch_name')) = ?",
                     [$branchName]
                 )->orWhereRaw(
@@ -64,7 +68,13 @@ use App\Support\LedgerService;
                 return $query;
             }
 
-            return $query->where("{$historyTable}.reference", 'like', '%' . $branchName . '%');
+            return $query->where(function ($sub) use ($historyTable, $branchName) {
+                if (Schema::hasColumn('inventory_history', 'branch_name')) {
+                    $sub->where("{$historyTable}.branch_name", $branchName);
+                }
+
+                $sub->orWhere("{$historyTable}.reference", 'like', '%' . $branchName . '%');
+            });
         }
 
         public function index(Request $request)
