@@ -122,6 +122,10 @@ Route::middleware('guest')->group(function () {
     
     Route::get('/forgot-password', [AuthController::class, 'showForgotPasswordForm'])->name('password.request');
     Route::post('/forgot-password', [AuthController::class, 'sendResetLinkEmail'])->name('password.email');
+    Route::get('/reset-password', function () {
+        return redirect()->route('password.request')
+            ->with('error', 'A valid password reset link is required. Request a new reset email to continue.');
+    });
     Route::get('/reset-password/{token}', [AuthController::class, 'showResetForm'])->name('password.reset');
     Route::post('/reset-password', [AuthController::class, 'updatePassword'])->name('password.update');
 });
