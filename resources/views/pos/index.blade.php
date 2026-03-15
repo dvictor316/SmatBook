@@ -670,6 +670,7 @@ body.mini-sidebar .pos-full-page-wrapper {
 
 /* Cart Table */
 .cart-wrapper { 
+    position: relative;
     min-height: 360px;
     max-height: 480px; 
     overflow-y: auto; 
@@ -737,7 +738,11 @@ body.mini-sidebar .pos-full-page-wrapper {
 }
 
 .cart-empty-state {
-    min-height: 260px;
+    position: absolute;
+    top: 54px;
+    left: 0;
+    right: 0;
+    bottom: 0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -790,6 +795,10 @@ body.mini-sidebar .pos-full-page-wrapper {
     font-size: 0.8rem;
     margin-bottom: 0;
     line-height: 1.55;
+}
+
+.cart-wrapper.has-items .cart-empty-state {
+    display: none;
 }
 
 /* Summary Panel */
@@ -1232,6 +1241,19 @@ label {
 
                 <!-- Cart -->
                 <div class="cart-wrapper">
+                    <div id="cart-empty-state" class="cart-empty-state">
+                        <div class="cart-empty-shell">
+                            <div class="cart-empty-icon">
+                                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                    <path d="M3 4h2l1.4 7.2a1 1 0 0 0 1 .8h8.9a1 1 0 0 0 1-.75L19 7H7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <circle cx="10" cy="18" r="1.6" fill="currentColor"/>
+                                    <circle cx="17" cy="18" r="1.6" fill="currentColor"/>
+                                </svg>
+                            </div>
+                            <div class="cart-empty-title">Cart Empty</div>
+                            <p class="cart-empty-copy">Select products from the catalog and they will appear here in a smooth scrollable cart.</p>
+                        </div>
+                    </div>
                     <table class="table cart-table mb-0">
                         <thead>
                             <tr>
@@ -1595,27 +1617,7 @@ $(document).ready(function() {
         let html = '';
         let totSub = 0, totDisc = 0, totTax = 0, totGrand = 0;
 
-        if(!cart.length) {
-            html = `
-                <tr>
-                    <td colspan="4" class="p-0 border-0">
-                        <div class="cart-empty-state">
-                            <div class="cart-empty-shell">
-                                <div class="cart-empty-icon">
-                                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                        <path d="M3 4h2l1.4 7.2a1 1 0 0 0 1 .8h8.9a1 1 0 0 0 1-.75L19 7H7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                                        <circle cx="10" cy="18" r="1.6" fill="currentColor"/>
-                                        <circle cx="17" cy="18" r="1.6" fill="currentColor"/>
-                                    </svg>
-                                </div>
-                                <div class="cart-empty-title">Cart Empty</div>
-                                <p class="cart-empty-copy">Select products from the catalog and they will appear here in a smooth scrollable cart.</p>
-                            </div>
-                        </div>
-                    </td>
-                </tr>
-            `;
-        } else {
+        if(cart.length) {
             cart.forEach((item, i) => {
                 totSub += item.sub;
                 totDisc += item.discVal;
@@ -1637,6 +1639,7 @@ $(document).ready(function() {
         }
 
         $('#cart-body').html(html);
+        $('.cart-wrapper').toggleClass('has-items', cart.length > 0);
         $('#sum-subtotal').text(fmt.format(totSub));
         $('#sum-discount').text(totDisc > 0 ? '- ' + fmt.format(totDisc) : fmt.format(0));
         $('#sum-tax').text(totTax > 0 ? '+ ' + fmt.format(totTax) : fmt.format(0));
