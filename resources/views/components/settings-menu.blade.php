@@ -40,6 +40,11 @@
             </a>
         </li>
         <li class="nav-item">
+            <a href="{{ route('bank-reconciliation') }}" class="nav-link {{ Request::routeIs('bank-reconciliation') ? 'active' : '' }}">
+                <i class="fe fe-refresh-cw"></i> <span>Bank Reconciliation</span>
+            </a>
+        </li>
+        <li class="nav-item">
             <a href="{{ route('manual-journal') }}" class="nav-link {{ Request::routeIs('manual-journal') ? 'active' : '' }}">
                 <i class="fe fe-edit-3"></i> <span>Manual Journal</span>
             </a>

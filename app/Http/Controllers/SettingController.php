@@ -354,6 +354,87 @@ class SettingController extends Controller
 
         return view('Settings.chart-of-accounts', compact('settings', 'accounts', 'accountGroups', 'accountSummary'));
     }
+    public function bank_reconciliation()
+    {
+        $settings = $this->getSettings();
+        $banks = collect();
+        $reconciliations = collect();
+        $summary = [
+            'bank_count' => 0,
+            'matched_count' => 0,
+            'mismatch_count' => 0,
+            'difference_total' => 0.0,
+        ];
+
+        if (Schema::hasTable('banks')) {
+            $banks = Bank::query()->orderBy('name')->get();
+        }
+
+        $accounts = collect();
+        if (Schema::hasTable('accounts')) {
+            $accounts = Account::query()
+                ->where('is_active', true)
+                ->where('type', Account::TYPE_ASSET)
+                ->orderBy('name')
+                ->get();
+        }
+
+        if ($banks->isNotEmpty()) {
+            $reconciliations = $banks->map(function (Bank $bank) use ($accounts) {
+                $account = $accounts->first(function (Account $account) use ($bank) {
+                    $bankName = strtolower(trim((string) $bank->name));
+                    $accountName = strtolower(trim((string) $account->name));
+
+                    return $bankName !== '' && (
+                        $accountName === $bankName
+                        || str_contains($accountName, $bankName)
+                        || str_contains($bankName, $accountName)
+                    );
+                });
+
+                if (!$account) {
+                    $account = $accounts->first(function (Account $account) {
+                        $name = strtolower((string) $account->name);
+                        return str_contains($name, 'bank') || str_contains($name, 'cash');
+                    });
+                }
+
+                $bookBalance = $account
+                    ? (float) ($account->current_balance ?? $account->calculateBalance())
+                    : 0.0;
+                $bankBalance = (float) ($bank->balance ?? 0);
+                $difference = round($bankBalance - $bookBalance, 2);
+
+                $lastTransaction = null;
+                if ($account && Schema::hasTable('transactions')) {
+                    $lastTransaction = Transaction::query()
+                        ->where('account_id', $account->id)
+                        ->latest('transaction_date')
+                        ->value('transaction_date');
+                }
+
+                return [
+                    'bank' => $bank,
+                    'account' => $account,
+                    'bank_balance' => $bankBalance,
+                    'book_balance' => $bookBalance,
+                    'difference' => $difference,
+                    'is_matched' => $account !== null,
+                    'is_balanced' => abs($difference) < 0.01,
+                    'last_transaction_date' => $lastTransaction,
+                ];
+            });
+
+            $summary = [
+                'bank_count' => $reconciliations->count(),
+                'matched_count' => $reconciliations->where('is_matched', true)->count(),
+                'mismatch_count' => $reconciliations->reject(fn ($item) => $item['is_balanced'])->count(),
+                'difference_total' => (float) $reconciliations->sum('difference'),
+            ];
+        }
+
+        return view('Settings.bank-reconciliation', compact('settings', 'banks', 'reconciliations', 'summary'));
+    }
     public function manual_journal()
     {
         $settings = $this->getSettings();
@@ -563,6 +644,87 @@ class SettingController extends Controller
         });
 
         return redirect()->route('manual-journal')->with('success', 'Manual journal entry posted successfully.');
+    }
+
+    public function storeBankReconciliationAdjustment(Request $request)
+    {
+        if (!Schema::hasTable('banks') || !Schema::hasTable('accounts') || !Schema::hasTable('transactions')) {
+            return redirect()->back()->with('error', 'Bank reconciliation requires banks, accounts, and transactions tables.');
+        }
+
+        $validated = $request->validate([
+            'bank_id' => 'required|exists:banks,id',
+            'account_id' => 'required|exists:accounts,id',
+            'difference' => 'required|numeric',
+            'transaction_date' => 'required|date',
+            'memo' => 'nullable|string|max:255',
+        ]);
+
+        $difference = round((float) $validated['difference'], 2);
+        if (abs($difference) < 0.01) {
+            return redirect()->back()->with('success', 'This bank is already fully reconciled.');
+        }
+
+        $bank = Bank::query()->findOrFail($validated['bank_id']);
+        $bankAccount = Account::query()->findOrFail($validated['account_id']);
+        $suspenseAccount = $this->resolveReconciliationSuspenseAccount();
+
+        $reference = 'BREC-' . now()->format('Ymd-His') . '-' . $bank->id;
+        $memo = trim((string) ($validated['memo'] ?? ''));
+        $description = $memo !== ''
+            ? $memo
+            : 'Bank reconciliation adjustment for ' . ($bank->name ?: 'Bank Account');
+
+        DB::transaction(function () use ($validated, $difference, $bankAccount, $suspenseAccount, $reference, $description, $request) {
+            $debitToBank = $difference > 0 ? abs($difference) : 0;
+            $creditToBank = $difference < 0 ? abs($difference) : 0;
+
+            Transaction::create([
+                'account_id' => $bankAccount->id,
+                'transaction_date' => $validated['transaction_date'],
+                'reference' => $reference,
+                'description' => $description,
+                'debit' => $debitToBank,
+                'credit' => $creditToBank,
+                'balance' => 0,
+                'transaction_type' => Transaction::TYPE_ADJUSTMENT,
+                'related_id' => null,
+                'related_type' => null,
+                'user_id' => $request->user()?->id,
+            ]);
+
+            Transaction::create([
+                'account_id' => $suspenseAccount->id,
+                'transaction_date' => $validated['transaction_date'],
+                'reference' => $reference,
+                'description' => $description,
+                'debit' => $creditToBank,
+                'credit' => $debitToBank,
+                'balance' => 0,
+                'transaction_type' => Transaction::TYPE_ADJUSTMENT,
+                'related_id' => null,
+                'related_type' => null,
+                'user_id' => $request->user()?->id,
+            ]);
+        });
+
+        return redirect()->route('bank-reconciliation')->with('success', 'Reconciliation adjustment posted successfully.');
+    }
+
+    private function resolveReconciliationSuspenseAccount(): Account
+    {
+        return Account::query()->firstOrCreate(
+            ['code' => 'EQT-RECON-SUSPENSE'],
+            [
+                'name' => 'Bank Reconciliation Suspense',
+                'type' => Account::TYPE_EQUITY,
+                'sub_type' => 'Reconciliation Reserve',
+                'description' => 'Temporary balancing account used for bank reconciliation adjustments.',
+                'opening_balance' => 0,
+                'current_balance' => 0,
+                'is_active' => true,
+            ]
+        );
     }
 
     public function storeBankAccount(Request $request)
