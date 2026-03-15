@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class ProductController extends Controller
 {
@@ -98,7 +99,9 @@ class ProductController extends Controller
      */
     public function create()
     {
-        $categories = Category::orderBy('name')->get();
+        $categories = Schema::hasTable('categories')
+            ? Category::orderBy('name')->get()
+            : collect();
         return view('Inventory.Products.add-products', compact('categories'));
     }
 
@@ -109,21 +112,30 @@ class ProductController extends Controller
     {
         $validated = $request->validate([
             'name'             => 'required|string|max:191',
-            'sku'              => 'required|string|unique:products,sku',
+            'sku'              => 'nullable|string|max:191|unique:products,sku',
             'price'            => 'required|numeric|min:0', 
             'purchase_price'   => 'required|numeric|min:0', 
-            'stock'            => 'required|integer|min:0', 
+            'stock'            => 'nullable|integer|min:0', 
+            'stock_cartons'    => 'nullable|numeric|min:0',
             'units_per_carton' => 'nullable|integer|min:0',
             'units_per_roll'   => 'nullable|integer|min:0',
             'base_unit_name'   => 'required|string|max:100',
             'category_id'      => 'required|exists:categories,id',
             'unit_type'        => 'required|in:unit,sachet,roll,carton',
             'description'      => 'nullable|string',
+            'barcode'          => 'nullable|string|max:191',
             'image'            => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
         ]);
 
         $validated['units_per_carton'] = (int) ($validated['units_per_carton'] ?? 0);
         $validated['units_per_roll'] = (int) ($validated['units_per_roll'] ?? 0);
+        $validated['sku'] = $this->generateUniqueSku($validated['sku'] ?? null, $validated['name']);
+
+        $calculatedStock = $validated['stock'] ?? null;
+        if ($calculatedStock === null && isset($validated['stock_cartons']) && $validated['units_per_carton'] > 0) {
+            $calculatedStock = (int) round(((float) $validated['stock_cartons']) * $validated['units_per_carton']);
+        }
+        $validated['stock'] = (int) ($calculatedStock ?? 0);
 
         if ($validated['unit_type'] === 'carton' && $validated['units_per_carton'] < 1) {
             return back()->withErrors([
@@ -141,7 +153,7 @@ class ProductController extends Controller
         }
 
         $validated['status'] = 'active';
-        $validated['stock_quantity'] = $request->stock; // Dual column sync
+        $validated['stock_quantity'] = $validated['stock'];
 
         Product::create($validated);
 
@@ -382,10 +394,11 @@ public function inventory(Request $request)
 
         $validated = $request->validate([
             'name'             => 'required|string|max:191',
-            'sku'              => 'required|string|unique:products,sku,' . $id,
+            'sku'              => 'nullable|string|max:191|unique:products,sku,' . $id,
             'price'            => 'required|numeric|min:0',
             'purchase_price'   => 'required|numeric|min:0',
-            'stock'            => 'required|integer|min:0',
+            'stock'            => 'nullable|integer|min:0',
+            'stock_cartons'    => 'nullable|numeric|min:0',
             'units_per_carton' => 'nullable|integer|min:0',
             'units_per_roll'   => 'nullable|integer|min:0',
             'base_unit_name'   => 'required|string|max:100',
@@ -399,6 +412,13 @@ public function inventory(Request $request)
 
         $validated['units_per_carton'] = (int) ($validated['units_per_carton'] ?? 0);
         $validated['units_per_roll'] = (int) ($validated['units_per_roll'] ?? 0);
+        $validated['sku'] = $this->generateUniqueSku($validated['sku'] ?? null, $validated['name'], $product->id);
+
+        $calculatedStock = $validated['stock'] ?? null;
+        if ($calculatedStock === null && isset($validated['stock_cartons']) && $validated['units_per_carton'] > 0) {
+            $calculatedStock = (int) round(((float) $validated['stock_cartons']) * $validated['units_per_carton']);
+        }
+        $validated['stock'] = (int) ($calculatedStock ?? (int) $product->stock);
 
         if ($validated['unit_type'] === 'carton' && $validated['units_per_carton'] < 1) {
             return back()->withErrors([
@@ -418,7 +438,7 @@ public function inventory(Request $request)
             $validated['image'] = $request->file('image')->store('products', 'public');
         }
 
-        $validated['stock_quantity'] = $request->stock; 
+        $validated['stock_quantity'] = $validated['stock']; 
         $product->update($validated);
 
         return redirect()->route('product-list')->with('success', 'Update pushed to ' . env('SESSION_DOMAIN'));
@@ -536,5 +556,164 @@ public function inventory(Request $request)
             ->get();
 
         return view('inventory.inventory-history', compact('inventoryHistories'));
+    }
+
+    public function downloadImportTemplate()
+    {
+        $headers = [
+            'name',
+            'sku',
+            'barcode',
+            'category',
+            'base_unit_name',
+            'unit_type',
+            'units_per_carton',
+            'units_per_roll',
+            'price',
+            'purchase_price',
+            'stock',
+            'description',
+        ];
+
+        $rows = [
+            ['Indomie Chicken', '', '1234567890123', 'Noodles', 'pcs', 'carton', '40', '0', '250', '180', '400', 'Fast moving carton item'],
+            ['Tissue Roll Premium', '', '8800112233445', 'Toiletries', 'roll', 'roll', '12', '1', '1500', '1100', '120', 'Can be sold as roll or carton'],
+        ];
+
+        $content = implode(',', $headers) . "\n";
+        foreach ($rows as $row) {
+            $content .= implode(',', array_map(function ($value) {
+                $escaped = str_replace('"', '""', (string) $value);
+                return '"' . $escaped . '"';
+            }, $row)) . "\n";
+        }
+
+        return response($content, 200, [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="product-import-template.csv"',
+        ]);
+    }
+
+    public function import(Request $request)
+    {
+        $request->validate([
+            'import_file' => 'required|file|mimes:csv,txt|max:10240',
+        ]);
+
+        if (!Schema::hasTable('products') || !Schema::hasTable('categories')) {
+            return redirect()->back()->with('error', 'Products and categories tables are required for import.');
+        }
+
+        $file = $request->file('import_file');
+        $handle = fopen($file->getRealPath(), 'r');
+        if ($handle === false) {
+            return redirect()->back()->with('error', 'Unable to read the uploaded file.');
+        }
+
+        $header = fgetcsv($handle);
+        if (!$header) {
+            fclose($handle);
+            return redirect()->back()->with('error', 'The CSV file is empty.');
+        }
+
+        $header = array_map(fn ($value) => strtolower(trim((string) $value)), $header);
+        $required = ['name', 'category', 'base_unit_name', 'unit_type', 'price', 'purchase_price'];
+        foreach ($required as $column) {
+            if (!in_array($column, $header, true)) {
+                fclose($handle);
+                return redirect()->back()->with('error', 'Missing required import column: ' . $column);
+            }
+        }
+
+        $created = 0;
+        $updated = 0;
+        $skipped = 0;
+
+        DB::transaction(function () use ($handle, $header, &$created, &$updated, &$skipped) {
+            while (($row = fgetcsv($handle)) !== false) {
+                $rowData = [];
+                foreach ($header as $index => $column) {
+                    $rowData[$column] = trim((string) ($row[$index] ?? ''));
+                }
+
+                if (($rowData['name'] ?? '') === '') {
+                    $skipped++;
+                    continue;
+                }
+
+                $categoryName = $rowData['category'] ?: 'General';
+                $category = Category::firstOrCreate(['name' => $categoryName], [
+                    'status' => 'active',
+                    'description' => 'Auto-created during product import',
+                ]);
+
+                $unitType = strtolower($rowData['unit_type'] ?: 'unit');
+                if (!in_array($unitType, ['unit', 'sachet', 'roll', 'carton'], true)) {
+                    $unitType = 'unit';
+                }
+
+                $sku = $this->generateUniqueSku($rowData['sku'] ?? null, $rowData['name']);
+                $product = Product::query()->where('sku', $sku)->first();
+                $isNew = $product === null;
+                $product = $product ?: new Product();
+
+                $stock = is_numeric($rowData['stock'] ?? null) ? (int) $rowData['stock'] : 0;
+                $product->fill([
+                    'name' => $rowData['name'],
+                    'sku' => $sku,
+                    'barcode' => $rowData['barcode'] ?: null,
+                    'category_id' => $category->id,
+                    'base_unit_name' => $rowData['base_unit_name'] ?: 'pcs',
+                    'unit_type' => $unitType,
+                    'units_per_carton' => max(0, (int) ($rowData['units_per_carton'] ?: 0)),
+                    'units_per_roll' => max(0, (int) ($rowData['units_per_roll'] ?: 0)),
+                    'price' => (float) ($rowData['price'] ?: 0),
+                    'purchase_price' => (float) ($rowData['purchase_price'] ?: 0),
+                    'stock' => $stock,
+                    'stock_quantity' => $stock,
+                    'status' => 'active',
+                    'description' => $rowData['description'] ?: null,
+                ]);
+                $product->save();
+
+                if ($isNew) {
+                    $created++;
+                } else {
+                    $updated++;
+                }
+            }
+        });
+
+        fclose($handle);
+
+        return redirect()->route('product-list')->with(
+            'success',
+            "Product import completed. Created: {$created}, Updated: {$updated}, Skipped: {$skipped}."
+        );
+    }
+
+    private function generateUniqueSku(?string $providedSku, string $name, ?int $ignoreId = null): string
+    {
+        $candidate = strtoupper(trim((string) $providedSku));
+        if ($candidate !== '' && !$this->skuExists($candidate, $ignoreId)) {
+            return $candidate;
+        }
+
+        $prefix = strtoupper(Str::of($name)->replaceMatches('/[^A-Za-z0-9]+/', '')->substr(0, 4)->value());
+        $prefix = $prefix !== '' ? $prefix : 'PRD';
+
+        do {
+            $candidate = $prefix . '-' . now()->format('ymd') . '-' . strtoupper(Str::random(4));
+        } while ($this->skuExists($candidate, $ignoreId));
+
+        return $candidate;
+    }
+
+    private function skuExists(string $sku, ?int $ignoreId = null): bool
+    {
+        return Product::query()
+            ->when($ignoreId, fn ($query) => $query->where('id', '!=', $ignoreId))
+            ->where('sku', $sku)
+            ->exists();
     }
 }

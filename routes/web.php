@@ -583,6 +583,8 @@ Route::middleware(['auth', 'subscription.active'])->group(function () {
         Route::get('/inventory', 'inventory')->name('inventory.Products');
         Route::get('/add-products', 'create')->name('add-products');
         Route::post('/products/store', 'store')->name('inventory.Products.store');
+        Route::post('/products/import', 'import')->name('inventory.Products.import');
+        Route::get('/products/import/template', 'downloadImportTemplate')->name('inventory.Products.import.template');
         Route::get('/edit-products/{id}', 'edit')->name('inventory.Products.edit');
         Route::put('/products/update/{id}', 'update')->name('inventory.Products.update');
         Route::delete('/products/delete/{id}', 'destroy')->name('inventory.Products.destroy');

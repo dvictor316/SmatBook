@@ -25,7 +25,7 @@
         {{-- Main Form --}}
         <div class="card shadow-sm border-0 mb-4">
             <div class="card-body">
-                <form action="{{ url('products/store') }}" method="POST">
+                <form action="{{ route('inventory.Products.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <div class="row">
                         {{-- Basic Info --}}
@@ -35,7 +35,12 @@
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="form-label fw-bold">SKU / Code</label>
-                            <input type="text" name="sku" id="p_sku" class="form-control" required>
+                            <input type="text" name="sku" id="p_sku" class="form-control" placeholder="Leave blank to auto-generate">
+                            <small class="text-muted">A unique SKU will be generated if the product does not already have one.</small>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">Barcode</label>
+                            <input type="text" name="barcode" id="p_barcode" class="form-control" placeholder="Optional barcode">
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="form-label fw-bold d-flex justify-content-between">
@@ -77,6 +82,10 @@
                             <input type="number" name="stock_cartons" id="stock_cartons" class="form-control" value="0">
                         </div>
                         <div class="col-md-3 mb-3">
+                            <label class="form-label">Initial Stock (Units)</label>
+                            <input type="number" id="stock_units" class="form-control" value="0">
+                        </div>
+                        <div class="col-md-3 mb-3">
                             <label class="form-label">Purchase Price (Per Carton)</label>
                             <input type="number" step="0.01" name="purchase_price" class="form-control" required>
                         </div>
@@ -90,6 +99,10 @@
                             <label class="form-label fw-bold text-primary">Total Inventory (Pieces)</label>
                             <div class="form-control bg-dark text-white fw-bold" id="total_pieces_preview">0</div>
                             <input type="hidden" name="stock" id="final_stock_input" value="0">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label fw-bold">Product Image</label>
+                            <input type="file" name="image" class="form-control">
                         </div>
                     </div>
 
@@ -119,15 +132,16 @@
         function calculateTotalPieces() {
             let cartons = parseFloat($('#stock_cartons').val()) || 0;
             let upc = parseFloat($('#upc').val()) || 1; // Units Per Carton
+            let units = parseFloat($('#stock_units').val()) || 0;
             
-            let total = cartons * upc;
+            let total = units + (cartons * upc);
             
             $('#total_pieces_preview').text(total.toLocaleString() + " Units");
             $('#final_stock_input').val(total); // This is what gets saved to 'stock' column
         }
 
         // Trigger calculation on any input change
-        $('#stock_cartons, #upc').on('input', function() {
+        $('#stock_cartons, #stock_units, #upc').on('input', function() {
             calculateTotalPieces();
         });
     });

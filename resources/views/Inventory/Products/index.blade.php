@@ -48,6 +48,16 @@
                                 </ul>
                             </div>
 
+                            <div class="dropdown">
+                                <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                    <i class="fas fa-upload me-1"></i> Import
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li><a class="dropdown-item" href="{{ route('inventory.Products.import.template') }}"><i class="far fa-file-lines me-2 text-primary"></i>Download CSV Template</a></li>
+                                    <li><button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#importProductsModal"><i class="fas fa-file-upload me-2 text-success"></i>Import Products</button></li>
+                                </ul>
+                            </div>
+
                             <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addProductModal">
                                 <i class="fa fa-plus"></i> Add Product
                             </button>
@@ -147,8 +157,13 @@
                             <input type="text" name="name" class="form-control" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">SKU / Barcode</label>
-                            <input type="text" name="sku" class="form-control" required>
+                            <label class="form-label">SKU</label>
+                            <input type="text" name="sku" class="form-control" placeholder="Leave blank to auto-generate">
+                            <small class="text-muted">If the product does not come with a code, the system will generate a unique SKU.</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Barcode</label>
+                            <input type="text" name="barcode" class="form-control" placeholder="Scan or type barcode">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Category</label>
@@ -189,8 +204,13 @@
                             <input type="number" step="0.01" name="purchase_price" class="form-control" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Opening Stock</label>
+                            <label class="form-label">Opening Stock (Units)</label>
                             <input type="number" name="stock" class="form-control" value="0">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Opening Stock (Cartons)</label>
+                            <input type="number" step="0.01" name="stock_cartons" class="form-control" value="0">
+                            <small class="text-muted">If cartons are entered, the system converts them to unit stock using Units/Carton.</small>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Product Image</label>
@@ -201,6 +221,36 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     <button type="submit" class="btn btn-primary">Save Product</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="importProductsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ route('inventory.Products.import') }}" enctype="multipart/form-data">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title">Bulk Import Products</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted mb-3">Use the CSV template for large catalogs. Missing SKU values will be generated automatically during import.</p>
+                    <div class="mb-3">
+                        <a href="{{ route('inventory.Products.import.template') }}" class="btn btn-light border w-100">
+                            <i class="far fa-file-lines me-2"></i>Download CSV Template
+                        </a>
+                    </div>
+                    <div>
+                        <label class="form-label">CSV File</label>
+                        <input type="file" name="import_file" class="form-control" accept=".csv,text/csv" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Import Products</button>
                 </div>
             </form>
         </div>
