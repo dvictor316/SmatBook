@@ -168,6 +168,7 @@
         top: 0;
         z-index: 1040;
         gap: 0;
+        margin-bottom: 8px;
     }
 
     .header-logo {
@@ -567,6 +568,7 @@
     @media (max-width: 991px) {
         .header {
             padding: 0 12px;
+            margin-bottom: 6px;
         }
         .header-logo {
             gap: 6px;
