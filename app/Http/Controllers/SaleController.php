@@ -16,10 +16,15 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
+use App\Support\BranchInventoryService;
 use App\Support\LedgerService;
 
 class SaleController extends Controller
 {
+    public function __construct(private readonly BranchInventoryService $branchInventory)
+    {
+    }
+
     public function index(Request $request)
     {
         // 1. Start the query with relationships
@@ -156,10 +161,25 @@ public function customerDetails($id = null)
     public function showPos()
     {
         $activeBranch = $this->getActiveBranchContext();
-        $products = Product::with('category')
-            ->where('stock', '>', 0)
-            ->orderBy('name', 'asc')
-            ->get();
+        $productsQuery = Product::with('category')
+            ->orderBy('name', 'asc');
+
+        if (Schema::hasTable('product_branch_stocks') && !empty($activeBranch['id'])) {
+            $productsQuery->with(['branchStocks' => function ($query) use ($activeBranch) {
+                $query->where('branch_id', $activeBranch['id']);
+            }]);
+        }
+
+        $products = $productsQuery
+            ->get()
+            ->map(function ($product) use ($activeBranch) {
+                $availableStock = $this->branchInventory->getAvailableStock($product, $activeBranch);
+                $product->setAttribute('available_stock', $availableStock);
+
+                return $product;
+            })
+            ->filter(fn ($product) => (float) ($product->available_stock ?? 0) > 0)
+            ->values();
         $customers = Customer::orderBy('customer_name', 'asc')->get();
         $sales = Sale::with('customer')->latest()->take(10)->get();
 
@@ -251,8 +271,9 @@ $sale = Sale::create([
         // --- 3. PROCESS ITEMS ---
         foreach ($request->items as $itemData) {
             $product = Product::lockForUpdate()->find($itemData['id']);
+            $availableStock = $this->branchInventory->getAvailableStock($product, $activeBranch);
 
-            if ($product->stock < $itemData['qty']) {
+            if ($availableStock < $itemData['qty']) {
                 throw new \Exception("Insufficient stock for {$product->name}.");
             }
 
@@ -283,6 +304,15 @@ $sale = Sale::create([
             $runningTax      += $itemTaxAmount;
 
             $product->decrement('stock', $qty);
+            if (Schema::hasColumn('products', 'stock_quantity')) {
+                $product->decrement('stock_quantity', $qty);
+            }
+            $this->branchInventory->adjustBranchStock(
+                $product,
+                -$qty,
+                $activeBranch,
+                (int) ($product->company_id ?? auth()->user()?->company_id ?? 0)
+            );
         }
 
         // --- 4. UPDATE TOTALS & LOG PAYMENT ---

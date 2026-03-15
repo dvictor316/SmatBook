@@ -1249,7 +1249,7 @@ label {
                         data-barcode="{{ $p->barcode }}" 
                         data-name="{{ $p->name }}" 
                         data-price="{{ $unitPrice }}" 
-                        data-stock="{{ $p->stock }}" 
+                        data-stock="{{ (float) ($p->available_stock ?? $p->stock) }}" 
                         data-roll="{{ $rollPrice }}" 
                         data-sachet="{{ $sachetPrice }}" 
                         data-carton="{{ $cartonPrice }}" 

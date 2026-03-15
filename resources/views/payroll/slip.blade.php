@@ -243,7 +243,13 @@
         </div>
 
         <div class="slip-footer">
-            This payslip is computer generated and does not require a signature. · {{ config('app.name') }} · {{ now()->year }}
+            @php
+                $payslipBrand = auth()->user()?->company?->company_name
+                    ?? auth()->user()?->company?->name
+                    ?? \App\Models\Setting::where('key', 'company_name')->value('value')
+                    ?? 'SmartProbook';
+            @endphp
+            This payslip is computer generated and does not require a signature. · {{ $payslipBrand }} · {{ now()->year }}
         </div>
     </div>
 </div>

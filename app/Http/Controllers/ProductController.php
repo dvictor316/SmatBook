@@ -12,9 +12,14 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use App\Support\BranchInventoryService;
 
 class ProductController extends Controller
 {
+    public function __construct(private readonly BranchInventoryService $branchInventory)
+    {
+    }
+
     private function getActiveBranchContext(): array
     {
         return [
@@ -47,10 +52,17 @@ class ProductController extends Controller
         }
 
         $search = $request->input('search');
+        $activeBranch = $this->getActiveBranchContext();
         $query = Product::query();
 
         if (Schema::hasTable('categories') && Schema::hasColumn('products', 'category_id')) {
             $query->with('category');
+        }
+
+        if (Schema::hasTable('product_branch_stocks') && !empty($activeBranch['id'])) {
+            $query->with(['branchStocks' => function ($branchQuery) use ($activeBranch) {
+                $branchQuery->where('branch_id', $activeBranch['id']);
+            }]);
         }
 
         $orderColumn = Schema::hasColumn('products', 'created_at') ? 'created_at' : 'id';
@@ -75,6 +87,10 @@ class ProductController extends Controller
         }
 
         $products = $query->paginate(15)->withQueryString();
+        $products->getCollection()->transform(function ($product) use ($activeBranch) {
+            $product->setAttribute('active_branch_stock', $this->branchInventory->getAvailableStock($product, $activeBranch));
+            return $product;
+        });
         $categories = Schema::hasTable('categories')
             ? Category::orderBy(Schema::hasColumn('categories', 'name') ? 'name' : 'id')->get()
             : collect();
@@ -83,6 +99,7 @@ class ProductController extends Controller
             'products' => $products,
             'categories' => $categories,
             'search' => $search,
+            'activeBranch' => $activeBranch,
             'session_domain' => env('SESSION_DOMAIN', null)
         ]);
     }
@@ -162,8 +179,13 @@ class ProductController extends Controller
 
         $validated['status'] = 'active';
         $validated['stock_quantity'] = $validated['stock'];
-
-        Product::create($validated);
+        $product = Product::create($validated);
+        $this->branchInventory->seedOpeningStock(
+            $product,
+            (float) $validated['stock'],
+            $this->getActiveBranchContext(),
+            (int) ($product->company_id ?? auth()->user()?->company_id ?? 0)
+        );
 
         return redirect()->route('product-list')
             ->with('success', 'Product synchronized successfully on ' . env('SESSION_DOMAIN', 'local'));
@@ -466,12 +488,25 @@ public function inventory(Request $request)
         DB::transaction(function () use ($request) {
             $operator = ($request->type == 'in') ? '+' : '-';
             $activeBranch = $this->getActiveBranchContext();
+            $product = Product::query()->lockForUpdate()->findOrFail($request->product_id);
+            $availableBranchStock = $this->branchInventory->getAvailableStock($product, $activeBranch);
+
+            if ($request->type === 'out' && $availableBranchStock < (float) $request->quantity) {
+                throw new \RuntimeException("Insufficient stock for {$product->name} in {$activeBranch['name']}.");
+            }
             
             DB::table('products')->where('id', $request->product_id)->update([
                 'stock' => DB::raw("stock $operator " . $request->quantity),
                 'stock_quantity' => DB::raw("stock_quantity $operator " . $request->quantity),
                 'updated_at' => now()
             ]);
+
+            $this->branchInventory->adjustBranchStock(
+                $product,
+                $request->type === 'in' ? (float) $request->quantity : -1 * (float) $request->quantity,
+                $activeBranch,
+                (int) ($product->company_id ?? auth()->user()?->company_id ?? 0)
+            );
 
             $payload = [
                 'product_id' => $request->product_id,
@@ -497,7 +532,6 @@ public function inventory(Request $request)
 
             // Raw DB stock update bypasses Eloquent observer; mirror stock-in to purchases here.
             if ($request->type === 'in') {
-                $product = Product::query()->find($request->product_id);
                 if ($product && Schema::hasTable('purchases') && Schema::hasTable('purchase_items')) {
                     $purchaseNo = 'AUTO-STK-' . $historyId;
                     if (!Purchase::where('purchase_no', $purchaseNo)->exists()) {
@@ -505,6 +539,8 @@ public function inventory(Request $request)
                         $amount = round(((float) $request->quantity) * $unitPrice, 2);
 
                         $purchase = Purchase::create([
+                            'branch_id' => $activeBranch['id'],
+                            'branch_name' => $activeBranch['name'],
                             'purchase_no' => $purchaseNo,
                             'supplier_id' => null,
                             'total_amount' => $amount,
@@ -645,6 +681,7 @@ public function inventory(Request $request)
         $skipped = 0;
 
         DB::transaction(function () use ($handle, $header, &$created, &$updated, &$skipped) {
+            $activeBranch = $this->getActiveBranchContext();
             while (($row = fgetcsv($handle)) !== false) {
                 $rowData = [];
                 foreach ($header as $index => $column) {
@@ -690,6 +727,12 @@ public function inventory(Request $request)
                     'description' => $rowData['description'] ?: null,
                 ]);
                 $product->save();
+                $this->branchInventory->seedOpeningStock(
+                    $product,
+                    $stock,
+                    $activeBranch,
+                    (int) ($product->company_id ?? auth()->user()?->company_id ?? 0)
+                );
 
                 if ($isNew) {
                     $created++;

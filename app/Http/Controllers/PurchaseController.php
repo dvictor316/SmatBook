@@ -19,11 +19,16 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\PurchaseExport;
 use App\Models\Transaction;
+use App\Support\BranchInventoryService;
 use App\Support\LedgerService;
 // -----------------------------
 
 class PurchaseController extends Controller
 {
+public function __construct(private readonly BranchInventoryService $branchInventory)
+    {
+    }
+
 public function getActiveBranchContext(): array
     {
         return [
@@ -178,11 +183,13 @@ public function index()
             // Create purchase items
             foreach ($request->products as $item) {
                 $itemAmount = ($item['quantity'] * $item['rate']) - ($item['discount'] ?? 0);
+                $product = Product::query()->lockForUpdate()->findOrFail($item['product_id']);
+                $quantity = (float) $item['quantity'];
 
                 $itemPayload = [
                     'purchase_id' => $purchase->id,
-                    'product_id' => $item['product_id'],
-                    'qty' => (float) $item['quantity'],
+                    'product_id' => $product->id,
+                    'qty' => $quantity,
                     'unit_price' => (float) $item['rate'],
                 ];
 
@@ -204,6 +211,16 @@ public function index()
                 }
 
                 PurchaseItem::create($itemPayload);
+                $product->increment('stock', $quantity);
+                if (Schema::hasColumn('products', 'stock_quantity')) {
+                    $product->increment('stock_quantity', $quantity);
+                }
+                $this->branchInventory->adjustBranchStock(
+                    $product,
+                    $quantity,
+                    $activeBranch,
+                    (int) ($product->company_id ?? auth()->user()?->company_id ?? 0)
+                );
             }
 
             LedgerService::postPurchase($purchase->fresh());
@@ -362,16 +379,42 @@ public function show($id)
             }
             $purchase->update($purchasePayload);
 
+            $previousItems = $purchase->items()->get();
+            foreach ($previousItems as $previousItem) {
+                $previousProduct = Product::query()->lockForUpdate()->find($previousItem->product_id);
+                if (!$previousProduct) {
+                    continue;
+                }
+
+                $previousQty = (float) ($previousItem->qty ?? $previousItem->quantity ?? 0);
+                if ($previousQty <= 0) {
+                    continue;
+                }
+
+                $previousProduct->decrement('stock', $previousQty);
+                if (Schema::hasColumn('products', 'stock_quantity')) {
+                    $previousProduct->decrement('stock_quantity', $previousQty);
+                }
+                $this->branchInventory->adjustBranchStock(
+                    $previousProduct,
+                    -$previousQty,
+                    $activeBranch,
+                    (int) ($previousProduct->company_id ?? auth()->user()?->company_id ?? 0)
+                );
+            }
+
             // Delete old items and create new ones
             $purchase->items()->delete();
             
             foreach ($request->products as $item) {
                 $itemAmount = ($item['quantity'] * $item['rate']) - ($item['discount'] ?? 0);
+                $product = Product::query()->lockForUpdate()->findOrFail($item['product_id']);
+                $quantity = (float) $item['quantity'];
 
                 $itemPayload = [
                     'purchase_id' => $purchase->id,
-                    'product_id' => $item['product_id'],
-                    'qty' => (float) $item['quantity'],
+                    'product_id' => $product->id,
+                    'qty' => $quantity,
                     'unit_price' => (float) $item['rate'],
                 ];
                 if (Schema::hasColumn('purchase_items', 'quantity')) {
@@ -391,6 +434,16 @@ public function show($id)
                 }
 
                 PurchaseItem::create($itemPayload);
+                $product->increment('stock', $quantity);
+                if (Schema::hasColumn('products', 'stock_quantity')) {
+                    $product->increment('stock_quantity', $quantity);
+                }
+                $this->branchInventory->adjustBranchStock(
+                    $product,
+                    $quantity,
+                    $activeBranch,
+                    (int) ($product->company_id ?? auth()->user()?->company_id ?? 0)
+                );
             }
 
             LedgerService::postPurchase($purchase->fresh());
@@ -421,6 +474,33 @@ public function show($id)
             // Delete signature image if exists
             if ($purchase->signature_image) {
                 Storage::disk('public')->delete($purchase->signature_image);
+            }
+
+            $activeBranch = $this->getActiveBranchContext();
+            foreach ($purchase->items as $item) {
+                $product = Product::query()->lockForUpdate()->find($item->product_id);
+                if (!$product) {
+                    continue;
+                }
+
+                $quantity = (float) ($item->qty ?? $item->quantity ?? 0);
+                if ($quantity <= 0) {
+                    continue;
+                }
+
+                $product->decrement('stock', $quantity);
+                if (Schema::hasColumn('products', 'stock_quantity')) {
+                    $product->decrement('stock_quantity', $quantity);
+                }
+                $this->branchInventory->adjustBranchStock(
+                    $product,
+                    -$quantity,
+                    [
+                        'id' => $purchase->branch_id ?? $activeBranch['id'],
+                        'name' => $purchase->branch_name ?? $activeBranch['name'],
+                    ],
+                    (int) ($product->company_id ?? auth()->user()?->company_id ?? 0)
+                );
             }
             
             // Delete purchase items

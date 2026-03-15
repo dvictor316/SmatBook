@@ -162,6 +162,13 @@
 
 <div class="page-wrapper">
     <div class="content container-fluid">
+        @php
+            $reportCompany = auth()->user()?->company;
+            $reportCompanyName = $reportCompany?->company_name
+                ?? $reportCompany?->name
+                ?? \App\Models\Setting::where('key', 'company_name')->value('value')
+                ?? 'SmartProbook';
+        @endphp
         <div class="page-header">
             <div class="content-page-header">
                 <h5>Trial Balance</h5>
@@ -173,9 +180,12 @@
         <div class="report-header d-flex justify-content-between align-items-end no-print">
             <div>
                 <div class="report-title">Financial Audit Report</div>
-                <h1 class="company-name text-uppercase">{{ config('app.name') }}</h1>
+                <h1 class="company-name text-uppercase">{{ $reportCompanyName }}</h1>
                 <div class="text-muted small mt-1" style="font-size: 0.62rem;">
                     Period: {{ $startDate }} — {{ $endDate }}
+                    @if(!empty($activeBranch['name'] ?? null))
+                        <span class="ms-2">· Branch: {{ $activeBranch['name'] }}</span>
+                    @endif
                 </div>
             </div>
             <div class="export-actions d-flex gap-1">

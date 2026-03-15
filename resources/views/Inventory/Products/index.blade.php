@@ -111,9 +111,16 @@
                                             </small>
                                         </td>
                                         <td>
-                                            <span class="badge {{ $product->stock <= 5 ? 'bg-danger' : 'bg-success' }}">
-                                                {{ $product->stock }}
+                                            @php
+                                                $displayStock = (float) ($product->active_branch_stock ?? $product->stock);
+                                                $hasActiveBranch = !empty($activeBranch['name'] ?? null);
+                                            @endphp
+                                            <span class="badge {{ $displayStock <= 5 ? 'bg-danger' : 'bg-success' }}">
+                                                {{ rtrim(rtrim(number_format($displayStock, 2), '0'), '.') }}
                                             </span>
+                                            @if($hasActiveBranch)
+                                                <div class="small text-muted mt-1">{{ $activeBranch['name'] }}</div>
+                                            @endif
                                         </td>
                                         <td>{{ number_format($product->price, 2) }}</td>
                                         <td>{{ number_format($product->purchase_price, 2) }}</td>
