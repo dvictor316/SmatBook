@@ -79,7 +79,7 @@ body.mini-sidebar .pos-full-page-wrapper {
     justify-content: space-between;
     gap: 10px;
     padding: 10px 14px;
-    border: 1px solid var(--border);
+    border: 1px solid rgba(96, 165, 250, 0.28);
     border-radius: var(--radius-md);
     background:
         linear-gradient(90deg, rgba(239, 246, 255, 0.96) 0%, rgba(225, 239, 255, 0.94) 48%, rgba(255, 255, 255, 0.98) 100%);
@@ -106,7 +106,7 @@ body.mini-sidebar .pos-full-page-wrapper {
     inset: 0;
     border-radius: 18px;
     pointer-events: none;
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.65);
+    box-shadow: inset 0 0 0 1px rgba(147, 197, 253, 0.55);
 }
 
 .header-stage.plan-basic {
@@ -165,8 +165,8 @@ body.mini-sidebar .pos-full-page-wrapper {
     min-height: 72px; 
     padding: 10px 28px;
     border-radius: var(--radius-lg);
-    border: 1px solid var(--border);
-    box-shadow: var(--shadow-md);
+    border: 1px solid rgba(96, 165, 250, 0.24);
+    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.08);
     margin-bottom: 0;
     display: flex;
     align-items: center;
@@ -244,7 +244,7 @@ body.mini-sidebar .pos-full-page-wrapper {
 
 .search-input { 
     height: 46px;
-    border: 1.5px solid var(--border);
+    border: 1.5px solid rgba(96, 165, 250, 0.20);
     border-radius: var(--radius-md);
     padding: 0 78px 0 50px;
     width: 100%;
@@ -591,7 +591,7 @@ body.mini-sidebar .pos-full-page-wrapper {
 
 /* Form Controls */
 .form-control, .form-select {
-    border: 1.5px solid var(--border);
+    border: 1.5px solid rgba(96, 165, 250, 0.20);
     border-radius: var(--radius-md);
     font-weight: 500;
     color: var(--text-primary);
