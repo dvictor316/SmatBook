@@ -168,6 +168,7 @@ class SubscriptionController extends Controller
             $currentUser          = auth()->user();
             $isDeploymentCheckout = $this->isDeploymentCheckout($subscription);
             $isManager            = DeploymentManager::where('user_id', $currentUser->id)->exists();
+            $deploymentManager    = null;
 
             // Keep manager identity intact for deployment-assisted checkout.
             // Switching auth user here can cause wrong dashboard/sidebar context on failure.
@@ -179,6 +180,13 @@ class SubscriptionController extends Controller
                     'deployment_company_id'      => $subscription->company_id,
                     'deployment_subscription_id' => $subscription->id,
                 ]);
+            }
+
+            if ($isDeploymentCheckout) {
+                $deploymentManagerId = $this->resolveDeploymentManagerId($subscription);
+                if ($deploymentManagerId) {
+                    $deploymentManager = DeploymentManager::with('user')->find($deploymentManagerId);
+                }
             }
 
             // Auth check: own subscription OR a deployment manager
@@ -219,6 +227,7 @@ class SubscriptionController extends Controller
                 'subscription'          => $subscription,
                 'isDeploymentCheckout'  => $isDeploymentCheckout,
                 'isManager'             => $isManager,
+                'deploymentManager'     => $deploymentManager,
                 'bankAccounts'          => $bankAccounts,
                 'stripePublishableKey'  => $this->resolveStripePublishableKey(),
             ]);

@@ -16,6 +16,9 @@
                 </div>
             </div>
 
+            @component('components.search-filter')
+            @endcomponent
+
             <div class="row">
                 <div class="col-sm-12">
                     <div class="card-table">

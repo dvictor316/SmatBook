@@ -57,6 +57,11 @@
                 @endif
             </div>
 
+            <div class="d-print-none">
+                @component('components.search-filter')
+                @endcomponent
+            </div>
+
             {{-- Invoice List Table --}}
             <div class="row">
                 <div class="col-sm-12">
@@ -149,6 +154,10 @@
                                         @endforelse
                                     </tbody>
                                 </table>
+                            </div>
+
+                            <div class="mt-4 d-print-none">
+                                {{ $invoices->links() }}
                             </div>
                         </div>
                     </div>

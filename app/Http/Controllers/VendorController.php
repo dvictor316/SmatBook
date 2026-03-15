@@ -15,9 +15,21 @@ class VendorController extends Controller
     /**
      * Display a listing of the vendors.
      */
-    public function index(): View
+    public function index(Request $request): View
     {
-        $vendors = Vendor::latest()->paginate(20);
+        $query = Vendor::query()->latest();
+
+        $search = trim((string) $request->input('search', ''));
+        if ($search !== '') {
+            $query->where(function ($builder) use ($search) {
+                $builder->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%")
+                    ->orWhere('address', 'like', "%{$search}%");
+            });
+        }
+
+        $vendors = $query->paginate(20)->withQueryString();
 
         // Loop through vendors and calculate their actual current balance dynamically
         foreach ($vendors as $vendor) {
