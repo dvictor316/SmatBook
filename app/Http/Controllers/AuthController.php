@@ -726,21 +726,33 @@ class AuthController extends Controller
             'email' => 'required|email',
             'password' => 'required|min:8|confirmed'
         ]);
-        
+
+        $passwordWasUpdated = false;
+
         $status = Password::reset(
             $request->only('email', 'password', 'password_confirmation', 'token'),
-            function ($user, $password) {
+            function ($user, $password) use ($request, &$passwordWasUpdated) {
+                $user = $user ?: User::where('email', $request->email)->first();
+
+                if (!$user) {
+                    Log::warning('Password reset callback resolved null user', [
+                        'email' => $request->email,
+                    ]);
+                    return;
+                }
+
                 $user->forceFill([
                     'password' => Hash::make($password)
                 ])->setRememberToken(Str::random(60))->save();
-                
+
+                $passwordWasUpdated = true;
                 event(new PasswordReset($user));
             }
         );
-        
-        return $status === Password::PASSWORD_RESET
+
+        return ($status === Password::PASSWORD_RESET && $passwordWasUpdated)
             ? redirect()->route('saas-login')->with('success', 'Reset successful!')
-            : back()->withErrors(['email' => [__($status)]]);
+            : back()->withErrors(['email' => ['Password reset could not be completed. Please request a fresh reset link and try again.']]);
     }
 
     /*
