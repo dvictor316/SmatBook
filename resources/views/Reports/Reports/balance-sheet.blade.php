@@ -263,17 +263,28 @@
 
 <div class="page-wrapper">
     <div class="content container-fluid">
+        @php
+            $reportCompany = auth()->user()?->company;
+            $reportCompanyName = $reportCompany?->company_name
+                ?? $reportCompany?->name
+                ?? \App\Models\Setting::where('key', 'company_name')->value('value')
+                ?? 'SmartProbook';
+        @endphp
         <div class="page-header">
             <div class="content-page-header">
                 <h5>Balance Sheet</h5>
             </div>
         </div>
+        @include('Reports.partials.context-strip', [
+            'reportLabel' => 'Balance Sheet Report',
+            'periodLabel' => 'As at ' . \Carbon\Carbon::parse($reportDate ?? now())->format('d M Y'),
+        ])
         <div class="report-container">
         
         <div class="report-header d-flex justify-content-between align-items-end">
             <div>
                 <div class="report-title">Statement of Financial Position</div>
-                <h1 class="company-name">{{ config('company.name', 'SMAT Company') }}</h1>
+                <h1 class="company-name">{{ $reportCompanyName }}</h1>
                 <div class="text-muted" style="font-size: 0.62rem;">Date: {{ \Carbon\Carbon::parse($reportDate ?? now())->format('d F Y') }}</div>
             </div>
             <div class="d-flex gap-1 no-print">

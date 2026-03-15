@@ -75,11 +75,22 @@
 
 <div class="page-wrapper">
     <div class="report-container">
+        @php
+            $cashFlowCompany = auth()->user()?->company;
+            $cashFlowCompanyName = $cashFlowCompany?->company_name
+                ?? $cashFlowCompany?->name
+                ?? \App\Models\Setting::where('key', 'company_name')->value('value')
+                ?? 'SmartProbook';
+        @endphp
+        @include('Reports.partials.context-strip', [
+            'reportLabel' => 'Cash Flow Statement',
+            'periodLabel' => 'Period: ' . $start->format('d M Y') . ' to ' . $end->format('d M Y'),
+        ])
         
         <div class="report-header d-flex justify-content-between align-items-end">
             <div>
                 <div class="text-primary fw-bold small text-uppercase" style="letter-spacing: 0.05em;">Statement of Cash Flows</div>
-                <h1 class="h3 fw-800 text-uppercase m-0">{{ config('app.name', 'SMAT Company') }}</h1>
+                <h1 class="h3 fw-800 text-uppercase m-0">{{ $cashFlowCompanyName }}</h1>
                 <div class="text-muted small">Period: <strong>{{ $start->format('d M Y') }}</strong> to <strong>{{ $end->format('d M Y') }}</strong></div>
             </div>
             

@@ -16,6 +16,10 @@
                 </div>
             </div>
         </div>
+        @include('Reports.partials.context-strip', [
+            'reportLabel' => 'General Ledger Report',
+            'periodLabel' => 'Period: ' . ($startDate ?? '') . ' to ' . ($endDate ?? ''),
+        ])
 
         @if(!empty($message))
             <div class="alert alert-warning">{{ $message }}</div>

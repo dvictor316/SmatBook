@@ -1,11 +1,4 @@
 @php
-    /**
-     * REWRITE SUMMARY: 
-     * Corrected Route Name from 'profit-loss-list' to 'reports.profit-loss' based on artisan route:list.
-     * Unified $routeParams to include 'subdomain' to prevent UrlGenerationException.
-     * Environment: domain => env('SESSION_DOMAIN', null).
-     */
-
     $page = 'profit-loss-list';
     $reportDate = date('Y-m-d');
     
@@ -94,6 +87,12 @@
                 </div>
             </div>
         </div>
+        @include('Reports.partials.context-strip', [
+            'reportLabel' => 'Profit and Loss Report',
+            'periodLabel' => request('start_date') || request('end_date')
+                ? 'Filtered Financial Window'
+                : 'Current Business Performance',
+        ])
 
         {{-- Summary Cards (Grand Totals) --}}
         <div class="row mb-4">

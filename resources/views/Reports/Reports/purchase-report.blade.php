@@ -8,13 +8,12 @@
             @component('components.page-header')
                 @slot('title') {{ __('Purchase Report') }} @endslot
             @endcomponent
-
-            <div class="mb-3">
-                <span class="badge bg-light border text-primary px-3 py-2">
-                    <i class="fas fa-code-branch me-2"></i>
-                    Active Branch: {{ $activeBranch['name'] ?? 'All Recorded Purchases' }}
-                </span>
-            </div>
+            @include('Reports.partials.context-strip', [
+                'reportLabel' => 'Procurement Report',
+                'periodLabel' => request('start_date') || request('end_date')
+                    ? 'Filtered Purchase Window'
+                    : 'All Recorded Purchases',
+            ])
 
             {{-- Summary Card: Now calculates based on the paginated data or total --}}
             <div class="row">
