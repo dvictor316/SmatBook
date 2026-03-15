@@ -154,6 +154,13 @@
                         <i class="fe fe-dollar-sign"></i><span>Payroll</span>
                     </a>
                 </li>
+                <li class="submenu {{ request()->routeIs('chart-of-accounts', 'manual-journal') ? 'active subdrop' : '' }}">
+                    <a href="#"><i class="fe fe-book-open"></i><span>Accounting</span><span class="menu-arrow"></span></a>
+                    <ul>
+                        <li><a href="{{ route('chart-of-accounts') }}" class="{{ request()->routeIs('chart-of-accounts') ? 'active' : '' }}">Chart of Accounts</a></li>
+                        <li><a href="{{ route('manual-journal') }}" class="{{ request()->routeIs('manual-journal') ? 'active' : '' }}">Manual Journal</a></li>
+                    </ul>
+                </li>
 
                 {{-- Taxation --}}
                 <li class="submenu {{ Request::is('compliance/tax-center*', 'compliance/tax-filings*') ? 'active subdrop' : '' }}">
