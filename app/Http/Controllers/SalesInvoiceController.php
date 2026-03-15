@@ -89,11 +89,10 @@ public function index()
         }
 
         $company = Company::query()->find($sale->company_id)
-            ?: Company::query()->where('user_id', optional(auth()->user())->id)->first()
-            ?: Company::query()->first();
+            ?: optional(auth()->user())->company;
 
-        $companyName = $company->company_name
-            ?? $company->name
+        $companyName = $company?->company_name
+            ?? $company?->name
             ?? config('app.name', 'SmartProbook');
 
         $sent = SystemEventMailer::sendMessage(

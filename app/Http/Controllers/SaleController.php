@@ -323,9 +323,8 @@ $sale = Sale::create([
     {
         $sale = Sale::with(['items.product', 'customer'])->findOrFail($id);
         $company = Company::find($sale->company_id)
-            ?? Company::find(auth()->user()?->company_id)
-            ?? Company::first()
-            ?? new Company(['company_name' => 'General Store']);
+            ?? auth()->user()?->company
+            ?? new Company();
         $currencySymbol = '₦'; 
 
         return view('Sales.Invoices.index', compact('sale', 'company', 'currencySymbol'));
