@@ -79,12 +79,14 @@ body.mini-sidebar .pos-full-page-wrapper {
     justify-content: space-between;
     gap: 10px;
     padding: 10px 14px;
-    border: 1px solid rgba(96, 165, 250, 0.28);
+    border: 1px solid rgba(59, 130, 246, 0.30);
     border-radius: var(--radius-md);
     background:
-        linear-gradient(90deg, rgba(239, 246, 255, 0.96) 0%, rgba(225, 239, 255, 0.94) 48%, rgba(255, 255, 255, 0.98) 100%);
+        linear-gradient(90deg, rgba(219, 234, 254, 0.96) 0%, rgba(206, 228, 255, 0.94) 52%, rgba(237, 245, 255, 0.98) 100%);
     margin-bottom: 10px;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.9);
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.92),
+        0 0 0 1px rgba(96, 165, 250, 0.08);
 }
 
 .header-stage {
@@ -94,10 +96,10 @@ body.mini-sidebar .pos-full-page-wrapper {
     background:
         radial-gradient(1200px 220px at 10% 0%, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0) 60%),
         radial-gradient(900px 220px at 100% 0%, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0) 62%),
-        linear-gradient(135deg, rgba(37, 99, 235, 0.16) 0%, rgba(79, 70, 229, 0.13) 100%);
-    border: 1px solid rgba(37, 99, 235, 0.20);
+        linear-gradient(135deg, rgba(59, 130, 246, 0.18) 0%, rgba(96, 165, 250, 0.16) 52%, rgba(129, 140, 248, 0.12) 100%);
+    border: 1px solid rgba(59, 130, 246, 0.26);
     margin-bottom: 14px;
-    box-shadow: 0 14px 30px rgba(37, 99, 235, 0.10);
+    box-shadow: 0 14px 30px rgba(59, 130, 246, 0.12);
 }
 
 .header-stage::after {
@@ -106,7 +108,7 @@ body.mini-sidebar .pos-full-page-wrapper {
     inset: 0;
     border-radius: 18px;
     pointer-events: none;
-    box-shadow: inset 0 0 0 1px rgba(147, 197, 253, 0.55);
+    box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.62);
 }
 
 .header-stage.plan-basic {
@@ -151,12 +153,12 @@ body.mini-sidebar .pos-full-page-wrapper {
     font-size: 0.7rem;
     font-weight: 700;
     color: #ffffff;
-    background: linear-gradient(135deg, var(--primary-600) 0%, var(--indigo-600) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: linear-gradient(135deg, #4f7fff 0%, #4a67f4 100%);
+    border: 1px solid rgba(255, 255, 255, 0.24);
     border-radius: 999px;
     padding: 4px 10px;
     white-space: nowrap;
-    box-shadow: 0 8px 18px rgba(37, 99, 235, 0.14);
+    box-shadow: 0 8px 18px rgba(59, 130, 246, 0.12);
 }
 
 /* Premium Header */
