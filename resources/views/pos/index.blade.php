@@ -161,6 +161,19 @@ body.mini-sidebar .pos-full-page-wrapper {
     box-shadow: 0 8px 18px rgba(59, 130, 246, 0.12);
 }
 
+.header-util-note {
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: #111827;
+    letter-spacing: -0.01em;
+    text-align: right;
+}
+
+.header-util-note .accent {
+    color: #dc2626;
+    font-weight: 700;
+}
+
 /* Premium Header */
 .pos-header-bar {
     background: #ffffff;
@@ -297,8 +310,8 @@ body.mini-sidebar .pos-full-page-wrapper {
 
 .user-label {
     font-size: 0.625rem;
-    color: var(--text-tertiary);
-    font-weight: 700;
+    color: #64748b;
+    font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     line-height: 1;
@@ -306,9 +319,9 @@ body.mini-sidebar .pos-full-page-wrapper {
 }
 
 .user-name {
-    color: var(--text-primary);
-    font-size: 0.75rem;
-    font-weight: 600;
+    color: #0f172a;
+    font-size: 0.9rem;
+    font-weight: 800;
     line-height: 1;
 }
 
@@ -1049,6 +1062,10 @@ label {
         align-items: flex-start;
     }
 
+    .header-util-note {
+        text-align: left;
+    }
+
     .header-stage {
         padding: 8px;
     }
@@ -1090,7 +1107,7 @@ label {
                 <span class="util-pill">Selected: <span id="hdr-selected-product">None</span></span>
                 <span class="util-pill">Cart Items: <span id="hdr-cart-count">0</span></span>
             </div>
-            <div class="small text-muted">Use search to quickly find products not visible on shelf.</div>
+            <div class="header-util-note">Use <span class="accent">search</span> to quickly find products not visible on shelf.</div>
         </div>
 
         <!-- Header -->
