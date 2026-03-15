@@ -147,7 +147,11 @@
             $commissionEarned = (float) ($metrics['totalCommissions'] ?? (($totalRevenue * $commissionRate) / 100));
             $commissionPaid = (float) ($metrics['paidCommissions'] ?? 0);
             $commissionPending = (float) ($metrics['pendingCommissions'] ?? 0);
+            $commissionProcessing = (float) ($metrics['processingPayouts'] ?? 0);
             $pendingPayments = $metrics['pendingPayments'] ?? 0;
+            $payoutStatus = (string) ($metrics['payoutStatus'] ?? 'not_configured');
+            $autoPayoutEnabled = (bool) ($metrics['autoPayoutEnabled'] ?? false);
+            $minimumPayoutAmount = (float) ($metrics['minimumPayoutAmount'] ?? 5000);
         @endphp
 
         {{-- Total Companies --}}
@@ -218,15 +222,15 @@
 
     {{-- Secondary Metrics Row --}}
     <div class="row g-3 mb-4">
-        {{-- Pending Commission --}}
+        {{-- Available Commission --}}
         <div class="col-lg-3 col-md-6">
             <div class="glass-card p-4" style="background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);">
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h6 class="fw-bold mb-0 small text-uppercase text-muted">Pending Commission</h6>
+                    <h6 class="fw-bold mb-0 small text-uppercase text-muted">Available Commission</h6>
                     <span class="badge bg-warning">{{ $commissionPending > 0 ? 'YES' : 'NO' }}</span>
                 </div>
                 <h4 class="fw-bold text-warning mb-0">₦{{ number_format($commissionPending, 2) }}</h4>
-                <small class="text-muted">Deducts automatically after payout</small>
+                <small class="text-muted">Ready for next payout cycle</small>
             </div>
         </div>
 
@@ -242,37 +246,37 @@
             </div>
         </div>
 
-        {{-- Conversion Rate --}}
-        <div class="col-lg-3 col-md-6">
-            <div class="glass-card p-4" style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h6 class="fw-bold mb-0 small text-uppercase text-muted">Conversion Rate</h6>
-                    <i class="fas fa-chart-line text-success"></i>
-                </div>
-                @php
-                    $totalCompanies = $metrics['totalCompanies'] ?? 0;
-                    $activeSubscriptions = $metrics['activeSubscriptions'] ?? 0;
-                    $conversionRate = $totalCompanies > 0 ? ($activeSubscriptions / $totalCompanies) * 100 : 0;
-                @endphp
-                <h4 class="fw-bold text-success mb-0">{{ number_format($conversionRate, 1) }}%</h4>
-                <small class="text-muted">Trial to paid</small>
-            </div>
-        </div>
-
-        {{-- Average Deal Size --}}
+        {{-- Processing Payouts --}}
         <div class="col-lg-3 col-md-6">
             <div class="glass-card p-4" style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);">
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h6 class="fw-bold mb-0 small text-uppercase text-muted">Avg Deal Size</h6>
-                    <i class="fas fa-dollar-sign text-primary"></i>
+                    <h6 class="fw-bold mb-0 small text-uppercase text-muted">Processing Payouts</h6>
+                    <i class="fas fa-spinner text-primary"></i>
                 </div>
-                @php
-                    $avgDealSize = $activeSubscriptions > 0 ? $totalRevenue / $activeSubscriptions : 0;
-                @endphp
-                <h4 class="fw-bold text-primary mb-0">₦{{ number_format($avgDealSize, 0) }}</h4>
-                <small class="text-muted">Per subscription</small>
+                <h4 class="fw-bold text-primary mb-0">₦{{ number_format($commissionProcessing, 2) }}</h4>
+                <small class="text-muted">Awaiting gateway settlement</small>
             </div>
         </div>
+
+        {{-- Payout Readiness --}}
+        <div class="col-lg-3 col-md-6">
+            <div class="glass-card p-4" style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="fw-bold mb-0 small text-uppercase text-muted">Payout Readiness</h6>
+                    <i class="fas fa-university text-success"></i>
+                </div>
+                <h4 class="fw-bold text-success mb-0 text-uppercase">{{ str_replace('_', ' ', $payoutStatus) }}</h4>
+                <small class="text-muted">{{ $autoPayoutEnabled ? 'Auto payout enabled' : 'Manual payout mode' }} • Min ₦{{ number_format($minimumPayoutAmount, 0) }}</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="alert alert-light border shadow-sm mb-4 d-flex justify-content-between align-items-start flex-wrap gap-3">
+        <div>
+            <strong class="d-block text-dark mb-1">Commission Payout Center</strong>
+            <span class="text-muted small">Keep bank details updated, enable auto payout when ready, and monitor available, processing, and settled commission from the payout center.</span>
+        </div>
+        <a href="{{ route('deployment.commissions.index') }}" class="btn btn-outline-primary btn-sm">Open Payout Center</a>
     </div>
 
     {{-- Payment Alert --}}

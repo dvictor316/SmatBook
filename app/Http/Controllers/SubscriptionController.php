@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\{Subscription, Plan, User, Company, DeploymentManager, Domain, Bank, Setting};
+use App\Support\DeploymentCommissionPayoutService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\{Auth, DB, Http, Log, Mail, Schema};
@@ -11,6 +12,11 @@ use Illuminate\Support\Str;
 
 class SubscriptionController extends Controller
 {
+    public function __construct(
+        private readonly DeploymentCommissionPayoutService $deploymentCommissionPayouts
+    ) {
+    }
+
     /*
     |--------------------------------------------------------------------------
     | PLANS
@@ -1166,7 +1172,7 @@ class SubscriptionController extends Controller
                     'manager_id'      => $managerId,
                     'subscription_id' => $subscription->id,
                     'commission_rate' => $commissionRate,
-                    'status'          => $table === 'deployment_commissions' ? 'paid' : 'credited',
+                    'status'          => $table === 'deployment_commissions' ? 'pending' : 'credited',
                     'created_at'      => now(),
                     'updated_at'      => now(),
                 ];
@@ -1176,7 +1182,7 @@ class SubscriptionController extends Controller
                 }
 
                 if (Schema::hasColumn($table, 'processed_at')) {
-                    $payload['processed_at'] = now();
+                    $payload['processed_at'] = $table === 'deployment_commissions' ? null : now();
                 }
 
                 if (Schema::hasColumn($table, 'commission_amount')) {
@@ -1203,6 +1209,16 @@ class SubscriptionController extends Controller
                     'error' => $commissionError->getMessage(),
                 ]);
             }
+        }
+
+        try {
+            $this->deploymentCommissionPayouts->attemptAutoPayout($managerId);
+        } catch (\Throwable $payoutError) {
+            Log::warning('Auto payout attempt skipped after commission creation.', [
+                'manager_id' => $managerId,
+                'subscription_id' => $subscription->id,
+                'error' => $payoutError->getMessage(),
+            ]);
         }
 
         return $commissionAmount;

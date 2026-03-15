@@ -25,7 +25,22 @@ class DeploymentManager extends Model
         'id_number',
         'status', // active, pending, suspended
         'deployment_limit',
-        'commission_rate'
+        'commission_rate',
+        'payout_bank_name',
+        'payout_bank_code',
+        'payout_account_name',
+        'payout_account_number',
+        'payout_provider',
+        'payout_recipient_code',
+        'payout_status',
+        'auto_payout_enabled',
+        'minimum_payout_amount',
+    ];
+
+    protected $casts = [
+        'commission_rate' => 'decimal:2',
+        'auto_payout_enabled' => 'boolean',
+        'minimum_payout_amount' => 'decimal:2',
     ];
 
     // =========================================================================

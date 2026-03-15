@@ -306,6 +306,8 @@ Route::middleware(['auth'])
         Route::get('/',        [DeploymentManagerController::class, 'commissionsIndex'])   ->name('index');
         Route::get('/pending', [DeploymentManagerController::class, 'pendingCommissions']) ->name('pending');
         Route::get('/paid',    [DeploymentManagerController::class, 'paidCommissions'])    ->name('paid');
+        Route::post('/payout-profile', [DeploymentManagerController::class, 'updatePayoutProfile'])->name('payout-profile');
+        Route::post('/request-payout', [DeploymentManagerController::class, 'requestPayout'])->name('request-payout');
         Route::get('/{id}',    [DeploymentManagerController::class, 'commissionDetails'])  ->name('details');
     });
 

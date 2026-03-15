@@ -8,10 +8,16 @@ use Illuminate\Support\Facades\{Auth, DB, Hash, Mail, Log, Storage, Schema};
 use Illuminate\Support\{Str, Carbon};
 use Illuminate\Validation\Rule;
 use App\Models\{Company, User, Subscription, ActivityLog, DeploymentManager, DeploymentCompany, Plan};
-use App\Support\SystemEventMailer;
+use App\Models\DeploymentManagerPayout;
+use App\Support\{SystemEventMailer, DeploymentCommissionPayoutService};
 
 class DeploymentManagerController extends Controller
 {
+    public function __construct(
+        private readonly DeploymentCommissionPayoutService $deploymentCommissionPayouts
+    ) {
+    }
+
     private array $paidStatuses = ['paid', 'completed', 'success', 'successful', 'verified'];
     private array $activeStatuses = ['active', 'trial'];
     private array $pendingStatuses = ['pending', 'awaiting payment', 'awaiting_payment', 'unpaid'];
@@ -159,24 +165,16 @@ class DeploymentManagerController extends Controller
         $totalCommissions = 0.0;
         $paidCommissions = 0.0;
         $pendingCommissions = 0.0;
+        $processingPayouts = 0.0;
+        $lastPayout = null;
 
         if (Schema::hasTable('deployment_commissions')) {
-            $amountColumn = Schema::hasColumn('deployment_commissions', 'commission_amount')
-                ? 'commission_amount'
-                : 'amount';
-
-            $commissionRows = DB::table('deployment_commissions')
-                ->where('manager_id', Auth::id())
-                ->select([$amountColumn . ' as amount', 'status'])
-                ->get();
-
-            $totalCommissions = (float) $commissionRows->sum('amount');
-            $paidCommissions = (float) $commissionRows
-                ->filter(fn ($row) => in_array(strtolower((string) ($row->status ?? '')), ['paid', 'credited']))
-                ->sum('amount');
-            $pendingCommissions = (float) $commissionRows
-                ->filter(fn ($row) => strtolower((string) ($row->status ?? '')) === 'pending')
-                ->sum('amount');
+            $payoutSummary = $this->deploymentCommissionPayouts->summaryForManager(Auth::id());
+            $paidCommissions = (float) ($payoutSummary['paid'] ?? 0);
+            $pendingCommissions = (float) ($payoutSummary['available'] ?? 0);
+            $processingPayouts = (float) ($payoutSummary['processing'] ?? 0);
+            $lastPayout = $payoutSummary['last_payout'] ?? null;
+            $totalCommissions = $paidCommissions + $pendingCommissions + $processingPayouts;
         } else {
             // Fallback for environments that do not have the commission ledger table yet.
             $totalCommissions = ($totalRevenue * $commissionRate) / 100;
@@ -205,10 +203,14 @@ class DeploymentManagerController extends Controller
             'totalCommissions'       => $totalCommissions,
             'paidCommissions'        => $paidCommissions,
             'pendingCommissions'     => $pendingCommissions,
+            'processingPayouts'      => $processingPayouts,
             'expiringSoonSubscriptions' => $this->expiringManagedSubscriptionsQuery(7)->count(),
             'expiredSubscriptions'   => $this->managedSubscriptions()
                 ->whereRaw("LOWER(COALESCE(status, '')) = 'expired'")
                 ->count(),
+            'autoPayoutEnabled'      => (bool) ($managerProfile->auto_payout_enabled ?? false),
+            'minimumPayoutAmount'    => (float) ($managerProfile->minimum_payout_amount ?? 0),
+            'payoutStatus'           => (string) ($managerProfile->payout_status ?? 'not_configured'),
         ];
 
         $companies = $this->managedCompanies()->withCount('users')->latest()->get();
@@ -231,7 +233,7 @@ class DeploymentManagerController extends Controller
             ->limit(8)
             ->get();
 
-        return view('deployment.dashboard', compact('metrics', 'companies', 'recentSubscriptions', 'recentActivities', 'expiringSubscriptions'));
+        return view('deployment.dashboard', compact('metrics', 'companies', 'recentSubscriptions', 'recentActivities', 'expiringSubscriptions', 'managerProfile', 'lastPayout'));
     }
 
     private function expireDueManagedSubscriptions(): void
@@ -957,20 +959,88 @@ private function resolvePlanIdFromCatalog(string $planName, string $billingCycle
             ? 'commission_amount'
             : 'amount';
         $totalCommission = $commissions->sum($amountColumn);
-        $paidCommissions = $commissions->whereIn('status', ['credited', 'paid'])->sum($amountColumn);
-        $pendingCommission = $commissions->where('status', 'pending')->sum($amountColumn);
+        $summary = $this->deploymentCommissionPayouts->summaryForManager(Auth::id());
+        $paidCommissions = (float) ($summary['paid'] ?? 0);
+        $pendingCommission = (float) ($summary['available'] ?? 0);
         $pendingCommissions = $pendingCommission;
+        $processingPayouts = (float) ($summary['processing'] ?? 0);
+        $failedPayouts = (float) ($summary['failed'] ?? 0);
         $totalCommissions = $totalCommission;
+        $recentPayouts = Schema::hasTable('deployment_manager_payouts')
+            ? DeploymentManagerPayout::query()->where('manager_id', Auth::id())->latest()->limit(8)->get()
+            : collect();
 
         return view('deployment.commissions.index', compact(
             'commissions',
+            'manager',
             'rate',
             'totalCommission',
             'totalCommissions',
             'pendingCommission',
             'pendingCommissions',
-            'paidCommissions'
+            'paidCommissions',
+            'processingPayouts',
+            'failedPayouts',
+            'recentPayouts'
         ));
+    }
+
+    public function updatePayoutProfile(Request $request)
+    {
+        $validated = $request->validate([
+            'payout_bank_name' => 'required|string|max:191',
+            'payout_bank_code' => 'nullable|string|max:50',
+            'payout_account_name' => 'required|string|max:191',
+            'payout_account_number' => 'required|string|max:100',
+            'payout_provider' => 'required|in:paystack,flutterwave',
+            'minimum_payout_amount' => 'nullable|numeric|min:0',
+            'auto_payout_enabled' => 'nullable|boolean',
+        ]);
+
+        $manager = DeploymentManager::query()->where('user_id', Auth::id())->firstOrFail();
+        $providerChanged = strtolower((string) ($manager->payout_provider ?? '')) !== strtolower((string) $validated['payout_provider']);
+        $bankChanged = (string) ($manager->payout_account_number ?? '') !== (string) $validated['payout_account_number']
+            || (string) ($manager->payout_bank_code ?? '') !== (string) ($validated['payout_bank_code'] ?? '');
+
+        $manager->update([
+            'payout_bank_name' => $validated['payout_bank_name'],
+            'payout_bank_code' => $validated['payout_bank_code'] ?? null,
+            'payout_account_name' => $validated['payout_account_name'],
+            'payout_account_number' => $validated['payout_account_number'],
+            'payout_provider' => $validated['payout_provider'],
+            'minimum_payout_amount' => $validated['minimum_payout_amount'] ?? ($manager->minimum_payout_amount ?? 5000),
+            'auto_payout_enabled' => (bool) ($request->boolean('auto_payout_enabled')),
+            'payout_status' => !empty($validated['payout_bank_code']) ? 'verified' : 'pending_verification',
+            'payout_recipient_code' => ($providerChanged || $bankChanged) ? null : $manager->payout_recipient_code,
+        ]);
+
+        try {
+            if ($manager->auto_payout_enabled) {
+                $this->deploymentCommissionPayouts->attemptAutoPayout($manager->user_id);
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Auto payout did not run after payout profile update.', [
+                'manager_id' => $manager->user_id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        return back()->with('success', 'Payout profile updated successfully.');
+    }
+
+    public function requestPayout()
+    {
+        $payout = $this->deploymentCommissionPayouts->createPayoutForManager(Auth::id(), false, Auth::id());
+
+        if (!$payout) {
+            return back()->with('error', 'No eligible commission is available for payout yet.');
+        }
+
+        if ($payout->status === 'manual_review') {
+            return back()->with('info', 'Payout record created for manual review. Complete bank details or gateway setup to continue.');
+        }
+
+        return back()->with('success', 'Payout request submitted successfully.');
     }
 
     public function commissionDetails($id) {
