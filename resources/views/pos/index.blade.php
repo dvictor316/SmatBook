@@ -701,10 +701,10 @@ body.mini-sidebar .pos-full-page-wrapper {
 }
 
 .cart-table thead th {
-    background: linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
-    color: var(--text-primary);
+    background: linear-gradient(135deg, #0f4c81 0%, #0b5ea8 100%);
+    color: #e6c15a;
     font-weight: 700;
-    border-bottom: 2px solid var(--border);
+    border-bottom: 2px solid #d4af37;
     font-size: 0.6875rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -712,6 +712,14 @@ body.mini-sidebar .pos-full-page-wrapper {
     position: sticky;
     top: 0;
     z-index: 10;
+}
+
+.cart-table thead th:first-child {
+    border-top-left-radius: 14px;
+}
+
+.cart-table thead th:last-child {
+    border-top-right-radius: 14px;
 }
 
 .cart-table tbody tr {
@@ -735,18 +743,18 @@ body.mini-sidebar .pos-full-page-wrapper {
     justify-content: center;
     padding: 28px 20px;
     background:
-        radial-gradient(circle at top, rgba(191, 219, 254, 0.42) 0%, rgba(191, 219, 254, 0) 58%),
-        linear-gradient(180deg, #f8fbff 0%, #fdfefe 100%);
+        radial-gradient(circle at top, rgba(187, 247, 208, 0.42) 0%, rgba(187, 247, 208, 0) 58%),
+        linear-gradient(180deg, #f0fdf4 0%, #f8fffb 100%);
 }
 
 .cart-empty-shell {
     width: min(100%, 320px);
     padding: 26px 22px;
     text-align: center;
-    border: 1px dashed #bfdbfe;
+    border: 1px dashed #86efac;
     border-radius: 20px;
-    background: rgba(255, 255, 255, 0.9);
-    box-shadow: 0 16px 40px rgba(37, 99, 235, 0.08);
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 16px 40px rgba(22, 163, 74, 0.10);
 }
 
 .cart-empty-icon {
@@ -756,8 +764,8 @@ body.mini-sidebar .pos-full-page-wrapper {
     border-radius: 18px;
     display: grid;
     place-items: center;
-    background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
-    color: var(--primary-600);
+    background: linear-gradient(135deg, #dcfce7 0%, #d1fae5 100%);
+    color: #15803d;
     font-size: 1.4rem;
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.9);
 }
