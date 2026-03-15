@@ -745,6 +745,49 @@ body.mini-sidebar .pos-full-page-wrapper {
     font-size: 0.8125rem;
 }
 
+.cart-qty-input {
+    width: 58px;
+    min-width: 58px;
+    text-align: center;
+    border: 1px solid rgba(96, 165, 250, 0.26);
+    border-radius: 10px;
+    padding: 6px 8px;
+    font-weight: 700;
+    color: var(--primary-600);
+    background: #ffffff;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.9);
+}
+
+.cart-qty-input:focus {
+    outline: none;
+    border-color: var(--primary-600);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.10);
+}
+
+.cart-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-cart-edit {
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 999px;
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.12) 0%, rgba(79, 70, 229, 0.14) 100%);
+    color: var(--primary-600);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.9);
+}
+
+.btn-cart-edit:hover {
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.18) 0%, rgba(79, 70, 229, 0.18) 100%);
+    color: var(--primary-700);
+}
+
 .cart-empty-state {
     position: absolute;
     top: 54px;
@@ -1520,6 +1563,26 @@ $(document).ready(function() {
         return { sub, discVal, taxVal, total };
     }
 
+    function calculateCartLine(item) {
+        const qty = parseFloat(item.qty) || 1;
+        const price = parseFloat(item.price) || 0;
+        const discount = parseFloat(item.discount) || 0;
+        const tax = parseFloat(item.tax) || 0;
+
+        const sub = price * qty;
+        const discVal = sub * (discount / 100);
+        const afterDisc = sub - discVal;
+        const taxVal = afterDisc * (tax / 100);
+        const total = afterDisc + taxVal;
+
+        item.sub = sub;
+        item.discVal = discVal;
+        item.taxVal = taxVal;
+        item.total = total;
+
+        return item;
+    }
+
     // Product Change
     $('#product-select').on('change', function() {
         let opt = $(this).find(':selected');
@@ -1638,9 +1701,26 @@ $(document).ready(function() {
                             <div class="fw-bold" style="color: var(--text-primary);">${item.name}</div>
                             <small style="color: var(--text-secondary); font-size: 0.75rem;">${item.qty} × ${fmt.format(item.price)}</small>
                         </td>
-                        <td class="text-center"><span class="badge qty-badge bg-light border" style="color: var(--primary-600);">${item.qty}</span></td>
+                        <td class="text-center">
+                            <input
+                                type="number"
+                                min="1"
+                                step="1"
+                                value="${item.qty}"
+                                class="cart-qty-input"
+                                onchange="updateCartQty(${i}, this.value)"
+                                oninput="updateCartQty(${i}, this.value)"
+                            >
+                        </td>
                         <td class="text-end fw-bold tabular-nums" style="color: var(--text-primary);">${fmt.format(item.total)}</td>
-                        <td class="text-center"><button class="btn btn-sm btn-remove" onclick="removeItem(${i})"><i class="fas fa-trash-alt"></i></button></td>
+                        <td class="text-center">
+                            <div class="cart-actions">
+                                <button class="btn btn-sm btn-cart-edit" onclick="editCartItem(${i})" title="Load item back into editor">
+                                    <i class="fas fa-pen"></i>
+                                </button>
+                                <button class="btn btn-sm btn-remove" onclick="removeItem(${i})"><i class="fas fa-trash-alt"></i></button>
+                            </div>
+                        </td>
                     </tr>
                 `;
             });
@@ -1665,6 +1745,28 @@ $(document).ready(function() {
     window.removeItem = function(i) {
         cart.splice(i, 1);
         renderCart();
+    };
+
+    window.updateCartQty = function(i, value) {
+        const nextQty = Math.max(1, parseFloat(value) || 1);
+        if (!cart[i]) return;
+
+        cart[i].qty = nextQty;
+        calculateCartLine(cart[i]);
+        renderCart();
+    };
+
+    window.editCartItem = function(i) {
+        const item = cart[i];
+        if (!item) return;
+
+        $('#product-select').val(String(item.id)).trigger('change');
+        $('#quantity').val(item.qty);
+        $('#discount').val(item.discount || 0);
+        $('#tax').val(item.tax || 0);
+        $('#unit-price-input').val(item.price);
+        calculate();
+        $('#barcode-input').focus();
     };
 
     // Payment
