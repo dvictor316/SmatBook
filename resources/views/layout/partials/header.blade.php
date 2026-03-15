@@ -38,6 +38,119 @@
         ?? 'admin';
     $routeParams = ['subdomain' => $currentSubdomain];
     $headerLogoUrl = asset('assets/img/logos.png');
+
+    $headerSearchPlaceholder = 'Search customers, invoices, products...';
+
+    if (request()->routeIs('customers.*') || request()->is('customers*', 'vendors*')) {
+        $headerSearchPlaceholder = 'Search customers, vendors, ledgers...';
+    } elseif (request()->routeIs('invoices.*') || request()->routeIs('sales.*') || request()->is('pos*')) {
+        $headerSearchPlaceholder = 'Search invoices, POS, receipts, customers...';
+    } elseif (request()->routeIs('products.*') || request()->is('products*', 'inventory*')) {
+        $headerSearchPlaceholder = 'Search products, inventory, stock, shelves...';
+    } elseif (request()->routeIs('purchases.*') || request()->routeIs('expenses.*')) {
+        $headerSearchPlaceholder = 'Search purchases, expenses, vendors...';
+    } elseif (request()->routeIs('quotations*') || request()->is('quotations*', 'add-quotations*', 'edit-quotations*')) {
+        $headerSearchPlaceholder = 'Search quotations, proposals, customers...';
+    } elseif (request()->routeIs('payroll.*') || request()->is('payroll*')) {
+        $headerSearchPlaceholder = 'Search payroll, staff, salary runs...';
+    } elseif (request()->routeIs('notifications.*')) {
+        $headerSearchPlaceholder = 'Search notifications, alerts, updates...';
+    } elseif (request()->routeIs('settings*') || request()->is('settings*')) {
+        $headerSearchPlaceholder = 'Search settings, company profile, templates...';
+    }
+
+    $headerSearchItems = array_values(array_filter([
+        [
+            'title' => 'Dashboard',
+            'subtitle' => 'Workspace overview and analytics',
+            'url' => url('/'),
+            'icon' => 'fa-th-large',
+            'keywords' => ['dashboard', 'home', 'overview', 'analytics'],
+        ],
+        Route::has('customers.index') ? [
+            'title' => 'Customers',
+            'subtitle' => 'Customer list and relationships',
+            'url' => route('customers.index'),
+            'icon' => 'fa-users',
+            'keywords' => ['customers', 'clients', 'accounts', 'crm'],
+        ] : null,
+        Route::has('vendors.index') ? [
+            'title' => 'Vendors',
+            'subtitle' => 'Suppliers and vendor ledger',
+            'url' => route('vendors.index'),
+            'icon' => 'fa-truck',
+            'keywords' => ['vendors', 'suppliers', 'procurement'],
+        ] : null,
+        Route::has('products.index') ? [
+            'title' => 'Products',
+            'subtitle' => 'Products, stock, and shelves',
+            'url' => route('products.index'),
+            'icon' => 'fa-box-open',
+            'keywords' => ['products', 'inventory', 'stock', 'items'],
+        ] : null,
+        Route::has('invoices.index') ? [
+            'title' => 'Invoices',
+            'subtitle' => 'Invoice list and receivables',
+            'url' => route('invoices.index'),
+            'icon' => 'fa-file-invoice',
+            'keywords' => ['invoices', 'billing', 'receipts', 'sales'],
+        ] : null,
+        Route::has('pos.index') ? [
+            'title' => 'POS',
+            'subtitle' => 'Point of sale terminal',
+            'url' => route('pos.index'),
+            'icon' => 'fa-cash-register',
+            'keywords' => ['pos', 'terminal', 'checkout', 'cashier'],
+        ] : null,
+        Route::has('purchases.index') ? [
+            'title' => 'Purchases',
+            'subtitle' => 'Purchase orders and procurement',
+            'url' => route('purchases.index'),
+            'icon' => 'fa-shopping-bag',
+            'keywords' => ['purchases', 'procurement', 'orders', 'supply'],
+        ] : null,
+        Route::has('expenses.index') ? [
+            'title' => 'Expenses',
+            'subtitle' => 'Expense tracking and payments',
+            'url' => route('expenses.index'),
+            'icon' => 'fa-receipt',
+            'keywords' => ['expenses', 'costs', 'spend', 'payments'],
+        ] : null,
+        Route::has('quotations') ? [
+            'title' => 'Quotations',
+            'subtitle' => 'Quotes and proposals',
+            'url' => route('quotations'),
+            'icon' => 'fa-file-signature',
+            'keywords' => ['quotations', 'quotes', 'proposals'],
+        ] : null,
+        Route::has('payroll.index') ? [
+            'title' => 'Payroll',
+            'subtitle' => 'Salary runs and staff payments',
+            'url' => route('payroll.index'),
+            'icon' => 'fa-money-check-alt',
+            'keywords' => ['payroll', 'salary', 'staff', 'wages'],
+        ] : null,
+        Route::has('notifications.index') ? [
+            'title' => 'Notifications',
+            'subtitle' => 'System alerts and updates',
+            'url' => route('notifications.index'),
+            'icon' => 'fa-bell',
+            'keywords' => ['notifications', 'alerts', 'updates', 'messages'],
+        ] : null,
+        Route::has('settings') ? [
+            'title' => 'Settings',
+            'subtitle' => 'Workspace and company configuration',
+            'url' => route('settings'),
+            'icon' => 'fa-cog',
+            'keywords' => ['settings', 'configuration', 'company', 'profile'],
+        ] : [
+            'title' => 'Settings',
+            'subtitle' => 'Workspace and company configuration',
+            'url' => url('/settings'),
+            'icon' => 'fa-cog',
+            'keywords' => ['settings', 'configuration', 'company', 'profile'],
+        ],
+    ]));
 @endphp
 
 <style>
@@ -213,6 +326,56 @@
         z-index: 1100;
     }
     .search-results.show { display: block; }
+    .search-result-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 12px 14px;
+        text-decoration: none;
+        color: #0f172a;
+        border-bottom: 1px solid #eef2f7;
+        transition: background 0.2s ease;
+    }
+    .search-result-item:last-child { border-bottom: 0; }
+    .search-result-item:hover {
+        background: #f8fbff;
+        color: #0b2a63;
+    }
+    .search-result-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(59, 130, 246, 0.1);
+        color: #2f56ff;
+        flex-shrink: 0;
+        margin-top: 1px;
+    }
+    .search-result-body {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+    .search-result-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: inherit;
+        line-height: 1.3;
+    }
+    .search-result-subtitle {
+        font-size: 11px;
+        color: #64748b;
+        line-height: 1.35;
+    }
+    .search-no-results {
+        padding: 16px;
+        text-align: center;
+        font-size: 12px;
+        color: #64748b;
+    }
 
     /* ── Right Actions ── */
     .header-actions {
@@ -469,7 +632,7 @@
     <div class="header-search-container">
         <div class="header-search">
             <input type="text" id="globalSearch"
-                placeholder="Search customers, invoices, products..."
+                placeholder="{{ $headerSearchPlaceholder }}"
                 autocomplete="off">
             <i class="fas fa-search search-icon"></i>
             <div class="search-results" id="searchResults"></div>
@@ -570,7 +733,7 @@
 {{-- Mobile Search Overlay --}}
 <div class="mobile-search-overlay" id="mobileSearchOverlay">
     <div class="header-search" style="max-width:100%">
-        <input type="text" id="mobileGlobalSearch" placeholder="Search..." autocomplete="off">
+        <input type="text" id="mobileGlobalSearch" placeholder="{{ $headerSearchPlaceholder }}" autocomplete="off">
         <i class="fas fa-search search-icon"></i>
         <div class="search-results" id="mobileSearchResults"></div>
     </div>
@@ -835,27 +998,74 @@ document.addEventListener('DOMContentLoaded', function () {
     /* ════════════════════════════════════════════
        SEARCH
        ════════════════════════════════════════════ */
-    const desktopSearch  = document.getElementById('globalSearch');
-    const desktopResults = document.getElementById('searchResults');
+    const searchConfig = { minChars: 2 };
+    const searchableData = @json($headerSearchItems);
 
-    if (desktopSearch) {
-        desktopSearch.addEventListener('input', function () {
-            if (this.value.length > 2) {
-                desktopResults.innerHTML =
-                    `<div class="p-3 small text-muted">Searching for "<strong>${this.value}</strong>"…</div>`;
-                desktopResults.classList.add('show');
-            } else {
-                desktopResults.classList.remove('show');
+    function renderSearchResults(query, container) {
+        if (!container) return;
+
+        const trimmedQuery = String(query || '').trim().toLowerCase();
+        if (trimmedQuery.length < searchConfig.minChars) {
+            container.classList.remove('show');
+            container.innerHTML = '';
+            return;
+        }
+
+        const results = searchableData.filter((item) => {
+            const haystack = [
+                item.title || '',
+                item.subtitle || '',
+                ...(item.keywords || [])
+            ].join(' ').toLowerCase();
+
+            return haystack.includes(trimmedQuery);
+        }).slice(0, 8);
+
+        if (!results.length) {
+            container.innerHTML = '<div class="search-no-results">No matching pages found</div>';
+            container.classList.add('show');
+            return;
+        }
+
+        container.innerHTML = results.map((item) => `
+            <a href="${item.url}" class="search-result-item">
+                <span class="search-result-icon"><i class="fas ${item.icon}"></i></span>
+                <span class="search-result-body">
+                    <span class="search-result-title">${item.title}</span>
+                    <span class="search-result-subtitle">${item.subtitle || ''}</span>
+                </span>
+            </a>
+        `).join('');
+        container.classList.add('show');
+    }
+
+    function bindSearchInput(inputId, resultsId) {
+        const input = document.getElementById(inputId);
+        const results = document.getElementById(resultsId);
+        if (!input || !results) return;
+
+        input.addEventListener('input', function () {
+            renderSearchResults(this.value, results);
+        });
+
+        input.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                const firstResult = results.querySelector('.search-result-item');
+                if (firstResult) {
+                    window.location.href = firstResult.getAttribute('href');
+                }
             }
         });
 
-        // Close search results on outside click
         document.addEventListener('click', function (e) {
-            if (!desktopSearch.contains(e.target)) {
-                desktopResults.classList.remove('show');
+            if (!input.closest('.header-search')?.contains(e.target) && !results.contains(e.target)) {
+                results.classList.remove('show');
             }
         });
     }
+
+    bindSearchInput('globalSearch', 'searchResults');
+    bindSearchInput('mobileGlobalSearch', 'mobileSearchResults');
 
     /* ── Mobile search overlay toggle ── */
     const mSearchBtn = document.getElementById('mobileSearchToggle');
