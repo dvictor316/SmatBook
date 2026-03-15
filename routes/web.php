@@ -813,11 +813,16 @@ Route::middleware(['auth', 'subscription.active'])->group(function () {
         Route::post('/settings/email-templates', 'storeEmailTemplate')->name('settings.email-templates.store');
         Route::put('/settings/email-templates/{id}', 'updateEmailTemplate')->name('settings.email-templates.update');
         Route::delete('/settings/email-templates/{id}', 'destroyEmailTemplate')->name('settings.email-templates.destroy');
+        Route::post('/settings/branches', 'storeBranch')->name('settings.branches.store');
+        Route::put('/settings/branches/{branchId}', 'updateBranch')->name('settings.branches.update');
+        Route::delete('/settings/branches/{branchId}', 'destroyBranch')->name('settings.branches.destroy');
+        Route::post('/settings/branches/activate', 'activateBranch')->name('settings.branches.activate');
         Route::post('/settings/chart-of-accounts', 'storeChartAccount')->name('settings.chart-of-accounts.store');
         Route::post('/settings/bank-reconciliation/adjustment', 'storeBankReconciliationAdjustment')->name('settings.bank-reconciliation.adjustment');
         Route::post('/settings/manual-journal', 'storeManualJournal')->name('settings.manual-journal.store');
         Route::prefix('settings')->group(function () {
             Route::get('/bank-account', 'bank_account')->name('bank-account');
+            Route::get('/branches', 'branches')->name('branches.index');
             Route::get('/chart-of-accounts', 'chart_of_accounts')->name('chart-of-accounts');
             Route::get('/bank-reconciliation', 'bank_reconciliation')->name('bank-reconciliation');
             Route::get('/manual-journal', 'manual_journal')->name('manual-journal');
@@ -842,6 +847,7 @@ Route::middleware(['auth', 'subscription.active'])->group(function () {
         Route::get('/template-invoice', 'template_invoice');
         Route::get('/payment-settings', 'payment_settings');
         Route::get('/bank-account', 'bank_account');
+        Route::get('/branches', 'branches');
         Route::get('/chart-of-accounts', 'chart_of_accounts');
         Route::get('/bank-reconciliation', 'bank_reconciliation');
         Route::get('/manual-journal', 'manual_journal');

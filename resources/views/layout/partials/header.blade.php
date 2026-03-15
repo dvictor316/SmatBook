@@ -47,6 +47,22 @@
     $headerHomeUrl = $isBusinessWorkspace && Route::has('workspace.business.dashboard')
         ? route('workspace.business.dashboard')
         : route('super_admin.dashboard', $routeParams);
+    $headerBranchOptions = collect();
+    $activeBranchId = session('active_branch_id');
+    $activeBranchName = session('active_branch_name');
+
+    if ($user && !empty($user->company_id)) {
+        $branchKey = 'branches_json_company_' . $user->company_id;
+        $headerBranchOptions = collect(json_decode((string) \App\Models\Setting::where('key', $branchKey)->value('value'), true) ?: [])
+            ->filter(fn ($branch) => !empty($branch['id']) && !empty($branch['name']))
+            ->values();
+
+        if (!$activeBranchName && $headerBranchOptions->isNotEmpty()) {
+            $matchedBranch = $headerBranchOptions->firstWhere('id', $activeBranchId) ?: $headerBranchOptions->first();
+            $activeBranchId = $matchedBranch['id'] ?? null;
+            $activeBranchName = $matchedBranch['name'] ?? null;
+        }
+    }
 
     $headerSearchPlaceholder = 'Search customers, invoices, products...';
 
@@ -428,6 +444,30 @@
         box-shadow: 0 10px 22px rgba(37, 99, 235, 0.22);
     }
 
+    .branch-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 40px;
+        padding: 0 12px;
+        border-radius: 999px;
+        text-decoration: none;
+        border: 1px solid #dbe7ff;
+        background: linear-gradient(135deg, #fff 0%, #f8fbff 100%);
+        color: #1e293b;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .branch-pill small {
+        display: block;
+        font-size: 9px;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        line-height: 1.1;
+    }
+
     .country-selector {
         display: flex;
         align-items: center;
@@ -528,6 +568,7 @@
         .country-currency { display: none; }
         .header-actions { margin-left: auto; }
         .workspace-switcher { display: none; }
+        .branch-pill { display: none; }
 
         /* ── Regular sidebar (#sidebar) ── */
         #sidebar {
@@ -688,6 +729,34 @@
             <div class="workspace-switcher">
                 <a href="{{ route('workspace.platform') }}" class="{{ !$isBusinessWorkspace ? 'is-active' : '' }}">Partnership</a>
                 <a href="{{ route('workspace.business') }}" class="{{ $isBusinessWorkspace ? 'is-active' : '' }}">Business</a>
+            </div>
+        @endif
+
+        @if($headerBranchOptions->isNotEmpty())
+            <div class="dropdown">
+                <a href="#" class="branch-pill" data-bs-toggle="dropdown">
+                    <i class="fe fe-git-branch"></i>
+                    <span>
+                        <small>Active Branch</small>
+                        {{ $activeBranchName ?: 'Select Branch' }}
+                    </span>
+                </a>
+                <div class="dropdown-menu dropdown-menu-end">
+                    @foreach($headerBranchOptions as $branch)
+                        <form method="POST" action="{{ route('settings.branches.activate') }}">
+                            @csrf
+                            <input type="hidden" name="branch_id" value="{{ $branch['id'] }}">
+                            <button type="submit" class="dropdown-item d-flex justify-content-between align-items-center">
+                                <span>{{ $branch['name'] }}</span>
+                                @if(($activeBranchId ?? null) === ($branch['id'] ?? null))
+                                    <i class="fe fe-check text-success"></i>
+                                @endif
+                            </button>
+                        </form>
+                    @endforeach
+                    <div class="dropdown-divider"></div>
+                    <a href="{{ route('branches.index') }}" class="dropdown-item">Manage Branches</a>
+                </div>
             </div>
         @endif
 

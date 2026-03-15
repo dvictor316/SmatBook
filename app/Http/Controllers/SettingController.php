@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class SettingController extends Controller
@@ -43,6 +44,23 @@ class SettingController extends Controller
     private function setJsonSettingArray(string $key, array $value): void
     {
         Setting::updateOrCreate(['key' => $key], ['value' => json_encode(array_values($value))]);
+    }
+
+    private function companyScopedSettingKey(string $baseKey): string
+    {
+        $companyId = (int) (Auth::user()?->company_id ?? optional(Auth::user()?->company)->id ?? 0);
+
+        return $companyId > 0 ? "{$baseKey}_company_{$companyId}" : $baseKey;
+    }
+
+    private function getCompanyScopedJsonSettingArray(string $baseKey, array $fallback = []): array
+    {
+        return $this->getJsonSettingArray($this->companyScopedSettingKey($baseKey), $fallback);
+    }
+
+    private function setCompanyScopedJsonSettingArray(string $baseKey, array $value): void
+    {
+        $this->setJsonSettingArray($this->companyScopedSettingKey($baseKey), $value);
     }
 
     /**
@@ -354,6 +372,36 @@ class SettingController extends Controller
 
         return view('Settings.chart-of-accounts', compact('settings', 'accounts', 'accountGroups', 'accountSummary'));
     }
+    public function branches()
+    {
+        $settings = $this->getSettings();
+        $branches = collect($this->getCompanyScopedJsonSettingArray('branches_json'))
+            ->map(function ($branch) {
+                return [
+                    'id' => (string) ($branch['id'] ?? ''),
+                    'name' => (string) ($branch['name'] ?? ''),
+                    'code' => (string) ($branch['code'] ?? ''),
+                    'manager' => (string) ($branch['manager'] ?? ''),
+                    'phone' => (string) ($branch['phone'] ?? ''),
+                    'address' => (string) ($branch['address'] ?? ''),
+                    'is_active' => (bool) ($branch['is_active'] ?? true),
+                ];
+            })
+            ->filter(fn ($branch) => $branch['id'] !== '' && $branch['name'] !== '')
+            ->values();
+
+        $activeBranchId = (string) session('active_branch_id', '');
+        $activeBranch = $branches->firstWhere('id', $activeBranchId) ?: $branches->first();
+
+        if ($activeBranch && $activeBranchId === '') {
+            session([
+                'active_branch_id' => $activeBranch['id'],
+                'active_branch_name' => $activeBranch['name'],
+            ]);
+        }
+
+        return view('Settings.branches', compact('settings', 'branches', 'activeBranch'));
+    }
     public function bank_reconciliation()
     {
         $settings = $this->getSettings();
@@ -569,6 +617,115 @@ class SettingController extends Controller
         ]);
 
         return redirect()->route('chart-of-accounts')->with('success', 'Account added to chart of accounts.');
+    }
+
+    public function storeBranch(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:191',
+            'code' => 'nullable|string|max:50',
+            'manager' => 'nullable|string|max:191',
+            'phone' => 'nullable|string|max:100',
+            'address' => 'nullable|string|max:500',
+            'is_active' => 'nullable|boolean',
+        ]);
+
+        $branches = collect($this->getCompanyScopedJsonSettingArray('branches_json'));
+        $code = strtoupper(trim((string) ($validated['code'] ?? '')));
+        if ($code === '') {
+            $code = strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $validated['name']), 0, 4));
+            $code = $code !== '' ? $code . '-' . now()->format('Hi') : 'BR-' . now()->format('Hi');
+        }
+
+        $branches->push([
+            'id' => (string) Str::uuid(),
+            'name' => $validated['name'],
+            'code' => $code,
+            'manager' => $validated['manager'] ?? '',
+            'phone' => $validated['phone'] ?? '',
+            'address' => $validated['address'] ?? '',
+            'is_active' => (bool) ($validated['is_active'] ?? true),
+        ]);
+
+        $this->setCompanyScopedJsonSettingArray('branches_json', $branches->all());
+
+        return redirect()->route('branches.index')->with('success', 'Branch added successfully.');
+    }
+
+    public function updateBranch(Request $request, string $branchId)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:191',
+            'code' => 'nullable|string|max:50',
+            'manager' => 'nullable|string|max:191',
+            'phone' => 'nullable|string|max:100',
+            'address' => 'nullable|string|max:500',
+            'is_active' => 'nullable|boolean',
+        ]);
+
+        $branches = collect($this->getCompanyScopedJsonSettingArray('branches_json'))->map(function ($branch) use ($branchId, $validated) {
+            if ((string) ($branch['id'] ?? '') !== $branchId) {
+                return $branch;
+            }
+
+            $branch['name'] = $validated['name'];
+            $branch['code'] = strtoupper(trim((string) ($validated['code'] ?? $branch['code'] ?? '')));
+            $branch['manager'] = $validated['manager'] ?? '';
+            $branch['phone'] = $validated['phone'] ?? '';
+            $branch['address'] = $validated['address'] ?? '';
+            $branch['is_active'] = (bool) ($validated['is_active'] ?? true);
+
+            return $branch;
+        })->values();
+
+        $this->setCompanyScopedJsonSettingArray('branches_json', $branches->all());
+
+        if (session('active_branch_id') === $branchId) {
+            $active = $branches->firstWhere('id', $branchId);
+            session(['active_branch_name' => $active['name'] ?? '']);
+        }
+
+        return redirect()->route('branches.index')->with('success', 'Branch updated successfully.');
+    }
+
+    public function destroyBranch(string $branchId)
+    {
+        $branches = collect($this->getCompanyScopedJsonSettingArray('branches_json'))
+            ->reject(fn ($branch) => (string) ($branch['id'] ?? '') === $branchId)
+            ->values();
+
+        $this->setCompanyScopedJsonSettingArray('branches_json', $branches->all());
+
+        if (session('active_branch_id') === $branchId) {
+            $nextBranch = $branches->first();
+            session([
+                'active_branch_id' => $nextBranch['id'] ?? null,
+                'active_branch_name' => $nextBranch['name'] ?? null,
+            ]);
+        }
+
+        return redirect()->route('branches.index')->with('success', 'Branch removed successfully.');
+    }
+
+    public function activateBranch(Request $request)
+    {
+        $validated = $request->validate([
+            'branch_id' => 'required|string',
+        ]);
+
+        $branches = collect($this->getCompanyScopedJsonSettingArray('branches_json'));
+        $branch = $branches->firstWhere('id', $validated['branch_id']);
+
+        if (!$branch) {
+            return redirect()->back()->with('error', 'Selected branch could not be found.');
+        }
+
+        session([
+            'active_branch_id' => $branch['id'],
+            'active_branch_name' => $branch['name'],
+        ]);
+
+        return redirect()->back()->with('success', 'Active branch changed to ' . $branch['name'] . '.');
     }
 
     public function storeManualJournal(Request $request)

@@ -135,6 +135,11 @@
 
                 {{-- Payments --}}
                 <li><a href="{{ route('payments.index') }}"><i class="fe fe-credit-card"></i><span>Payments</span></a></li>
+                <li class="{{ request()->routeIs('branches.index') ? 'active' : '' }}">
+                    <a href="{{ route('branches.index') }}" class="{{ request()->routeIs('branches.index') ? 'active' : '' }}">
+                        <i class="fe fe-git-branch"></i><span>Branches</span>
+                    </a>
+                </li>
                 <li class="submenu {{ request()->routeIs('chart-of-accounts', 'bank-reconciliation', 'manual-journal') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-book-open"></i><span>Accounting</span><span class="menu-arrow"></span></a>
                     <ul>

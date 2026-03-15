@@ -35,6 +35,11 @@
             </a>
         </li>
         <li class="nav-item">
+            <a href="{{ route('branches.index') }}" class="nav-link {{ Request::routeIs('branches.index') ? 'active' : '' }}">
+                <i class="fe fe-git-branch"></i> <span>Branches</span>
+            </a>
+        </li>
+        <li class="nav-item">
             <a href="{{ route('chart-of-accounts') }}" class="nav-link {{ Request::routeIs('chart-of-accounts') ? 'active' : '' }}">
                 <i class="fe fe-grid"></i> <span>Chart of Accounts</span>
             </a>
