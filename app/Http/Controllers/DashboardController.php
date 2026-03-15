@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\{Product, Expense, Sale, Company, Subscription, User, Plan};
+use App\Models\{Product, Expense, Sale, Company, Subscription, User, Plan, ProductBranchStock};
 use Illuminate\Support\Facades\{DB, Auth, Schema, Cache, Log};
 use Illuminate\Database\QueryException;
 use Carbon\Carbon;
@@ -34,6 +34,7 @@ class DashboardController extends Controller
         $user = Auth::user();
         $workspaceContext = (string) $request->session()->get('workspace_context', 'platform');
         $isBusinessWorkspace = $workspaceContext === 'business';
+        $activeBranch = $isBusinessWorkspace ? $this->activeBranchContext() : ['id' => null, 'name' => null];
         $currentHost = $request->getHost();
         $mainDomain = ltrim(config('app.domain', 'smartprobook.com'), '.');
         $centralHosts = [
@@ -80,23 +81,24 @@ class DashboardController extends Controller
         });
 
         // 3. CACHED ANALYTICS (Scoped to Company)
-        $cacheKey = "metrics_co_" . ($company->id ?? 'global');
-        $metrics = Cache::remember($cacheKey, 300, function() use ($company) {
-            $todayRevenue = $this->getTodayRevenue($company);
-            $totalSales = $this->getTotalSales($company);
-            $totalProfit = $this->getTotalProfit($company);
-            $totalExpenses = $this->getTotalExpenses($company);
-            $activeStock = $this->getTotalStock($company);
-            $inventoryValue = $this->getInventoryValue($company);
-            $totalInvoices = $this->getTotalInvoices($company);
+        $branchCacheKey = $isBusinessWorkspace ? ('_branch_' . ($activeBranch['id'] ?? 'all')) : '_global';
+        $cacheKey = "metrics_co_" . ($company->id ?? 'global') . $branchCacheKey;
+        $metrics = Cache::remember($cacheKey, 300, function() use ($company, $activeBranch) {
+            $todayRevenue = $this->getTodayRevenue($company, $activeBranch);
+            $totalSales = $this->getTotalSales($company, $activeBranch);
+            $totalProfit = $this->getTotalProfit($company, $activeBranch);
+            $totalExpenses = $this->getTotalExpenses($company, $activeBranch);
+            $activeStock = $this->getTotalStock($company, $activeBranch);
+            $inventoryValue = $this->getInventoryValue($company, $activeBranch);
+            $totalInvoices = $this->getTotalInvoices($company, $activeBranch);
             $activeCustomers = $this->getActiveCustomers($company);
-            $lowStockCount = $this->getLowStockCount($company);
-            $pendingBalance = $this->getPendingBalance($company);
-            $itemsSold = $this->getItemsSold($company);
-            $todayOrders = $this->getTodayOrders($company);
-            $paymentStatus = $this->getPaymentStatusCounts($company);
-            $currentMonthSales = $this->getCurrentMonthSales($company);
-            $previousMonthSales = $this->getPreviousMonthSales($company);
+            $lowStockCount = $this->getLowStockCount($company, $activeBranch);
+            $pendingBalance = $this->getPendingBalance($company, $activeBranch);
+            $itemsSold = $this->getItemsSold($company, $activeBranch);
+            $todayOrders = $this->getTodayOrders($company, $activeBranch);
+            $paymentStatus = $this->getPaymentStatusCounts($company, $activeBranch);
+            $currentMonthSales = $this->getCurrentMonthSales($company, $activeBranch);
+            $previousMonthSales = $this->getPreviousMonthSales($company, $activeBranch);
             $avgOrderValue = $totalInvoices > 0 ? ($totalSales / $totalInvoices) : 0;
             $profitMargin = $totalSales > 0 ? (($totalProfit / $totalSales) * 100) : 0;
             $expenseRatio = $totalSales > 0 ? (($totalExpenses / $totalSales) * 100) : 0;
@@ -134,11 +136,11 @@ class DashboardController extends Controller
         });
 
      // 4. PACKAGING DATA FOR DEEP SAPPHIRE VIEW
-        $monthlySalesData = $this->getMonthlySalesData($company);
+        $monthlySalesData = $this->getMonthlySalesData($company, $activeBranch);
         $monthlyExpenseData = $this->getMonthlyExpensesData($company);
         $monthlyProfitData = $this->getMonthlyProfitData($monthlySalesData, $monthlyExpenseData);
-        $salesCountByMonth = $this->getSalesCountByMonth($company);
-        $topCustomers = $this->getTopCustomers($company);
+        $salesCountByMonth = $this->getSalesCountByMonth($company, $activeBranch);
+        $topCustomers = $this->getTopCustomers($company, $activeBranch);
 
         $currentSubscription = Subscription::resolveCurrentForUser($user);
         $seatLimit = $currentSubscription?->resolvedUserLimit();
@@ -151,16 +153,17 @@ class DashboardController extends Controller
             'monthlyExpenseData' => $monthlyExpenseData,
             'monthlyProfitData' => $monthlyProfitData,
             'salesCountByMonth' => $salesCountByMonth,
-            'topProducts'      => $this->getTopProducts($company),
+            'topProducts'      => $this->getTopProducts($company, $activeBranch),
             'topCustomers'     => $topCustomers,
-            'latestInvoices'   => $this->getLatestInvoices($company),
-            'lowStockProducts' => $this->getLowStockProducts($company),
-            'activities'       => $this->getRecentActivity($company),
+            'latestInvoices'   => $this->getLatestInvoices($company, $activeBranch),
+            'lowStockProducts' => $this->getLowStockProducts($company, $activeBranch),
+            'activities'       => $this->getRecentActivity($company, $activeBranch),
             'dashboardHealth'  => $this->getDashboardHealth($metrics),
             'userRole'         => $userRole,
             'permissions'      => $permissions,
             'currentSubscription' => $currentSubscription,
             'subscriptionStatus' => $this->subscriptionStatusPayload($currentSubscription, $seatCount, $seatLimit),
+            'activeBranch'     => $activeBranch,
             // FIX: Added '?? []' to handle missing keys in old cache
             'countryHeatMap'   => $metrics['countryHeatMap'] ?? [], 
         ];
@@ -256,21 +259,21 @@ class DashboardController extends Controller
     }
 
     /* --- REST OF SCOPED HELPERS (Kept from your original logic) --- */
-    private function getTodayRevenue($company) {
+    private function getTodayRevenue($company, ?array $activeBranch = null) {
         if (!Schema::hasTable('sales')) return 0;
-        return $this->scopeByCompany(Sale::query(), 'sales', $company)
+        return $this->scopeSalesByContext(Sale::query(), $company, $activeBranch)
             ->whereDate('created_at', Carbon::today())
             ->sum('total') ?? 0;
     }
 
-    private function getTotalSales($company) {
+    private function getTotalSales($company, ?array $activeBranch = null) {
         if (!Schema::hasTable('sales')) return 0;
-        return $this->scopeByCompany(Sale::query(), 'sales', $company)->sum('total') ?? 0;
+        return $this->scopeSalesByContext(Sale::query(), $company, $activeBranch)->sum('total') ?? 0;
     }
 
-    private function getTotalProfit($company) {
+    private function getTotalProfit($company, ?array $activeBranch = null) {
         if (!Schema::hasTable('sales')) return 0;
-        $salesQuery = $this->scopeByCompany(Sale::query(), 'sales', $company);
+        $salesQuery = $this->scopeSalesByContext(Sale::query(), $company, $activeBranch);
         $totalRevenue = (clone $salesQuery)->sum('total') ?? 0;
         $totalCost = 0;
 
@@ -287,21 +290,7 @@ class DashboardController extends Controller
                 ->join('sales', 'sales.id', '=', 'sale_items.sale_id')
                 ->join('products', 'products.id', '=', 'sale_items.product_id');
 
-            if ($company?->id) {
-                if ($salesTableHasCompany) {
-                    $costQuery->where(function ($nested) use ($company, $salesTableHasUser, $companyUserIds) {
-                        $nested->where('sales.company_id', $company->id);
-                        if ($salesTableHasUser) {
-                            $nested->orWhere(function ($legacy) use ($companyUserIds) {
-                                $legacy->whereNull('sales.company_id')
-                                    ->whereIn('sales.user_id', $companyUserIds);
-                            });
-                        }
-                    });
-                } elseif ($salesTableHasUser) {
-                    $costQuery->whereIn('sales.user_id', $companyUserIds);
-                }
-            }
+            $costQuery = $this->scopeSalesByContext($costQuery, $company, $activeBranch, 'sales');
 
             $totalCost = (float) ($costQuery->selectRaw("SUM(COALESCE({$qtyColumn}, 0) * COALESCE({$costColumn}, 0)) as total_cost")->value('total_cost') ?? 0);
         }
@@ -309,7 +298,7 @@ class DashboardController extends Controller
         return $totalRevenue - $totalCost;
     }
 
-    private function getTotalExpenses($company) {
+    private function getTotalExpenses($company, ?array $activeBranch = null) {
         if (!Schema::hasTable('expenses')) return 0;
         return $this->scopeByCompany(Expense::query(), 'expenses', $company)
             ->where(function ($q) {
@@ -318,8 +307,14 @@ class DashboardController extends Controller
             ->sum('amount') ?? 0;
     }
 
-    private function getTotalStock($company) {
+    private function getTotalStock($company, ?array $activeBranch = null) {
         if (!Schema::hasTable('products')) return 0;
+        if (!empty($activeBranch['id']) && Schema::hasTable('product_branch_stocks')) {
+            return (float) ($this->scopeByCompany(ProductBranchStock::query(), 'product_branch_stocks', $company)
+                ->where('branch_id', (string) $activeBranch['id'])
+                ->sum('quantity') ?? 0);
+        }
+
         $stockColumn = Schema::hasColumn('products', 'stock') ? 'stock' : (Schema::hasColumn('products', 'stock_quantity') ? 'stock_quantity' : null);
         if (!$stockColumn) {
             return 0;
@@ -327,41 +322,21 @@ class DashboardController extends Controller
         return $this->scopeByCompany(Product::query(), 'products', $company)->sum($stockColumn) ?? 0;
     }
 
-    private function getMonthlySalesData($company) {
+    private function getMonthlySalesData($company, ?array $activeBranch = null) {
         if (!Schema::hasTable('sales')) return collect();
-        return $this->scopeByCompany(Sale::query(), 'sales', $company)
+        return $this->scopeSalesByContext(Sale::query(), $company, $activeBranch)
             ->select(DB::raw('MONTHNAME(created_at) as month'), DB::raw('SUM(total) as total_sales'), DB::raw('MONTH(created_at) as month_num'))
             ->whereYear('created_at', date('Y'))
             ->groupBy('month', 'month_num')->orderBy('month_num', 'asc')->get();
     }
 
-    private function getTopProducts($company) {
+    private function getTopProducts($company, ?array $activeBranch = null) {
         if (!Schema::hasTable('products') || !Schema::hasTable('sale_items')) return collect();
-        $salesTableHasCompany = Schema::hasColumn('sales', 'company_id');
-        $salesTableHasUser = Schema::hasColumn('sales', 'user_id');
-        $companyUserIds = $this->companyUserIds($company);
-
-        return DB::table('sale_items')
+        $query = DB::table('sale_items')
             ->join('products', 'products.id', '=', 'sale_items.product_id')
-            ->join('sales', 'sales.id', '=', 'sale_items.sale_id')
-            ->when($company?->id, function ($query) use ($company, $salesTableHasCompany, $salesTableHasUser, $companyUserIds) {
-                if ($salesTableHasCompany) {
-                    $query->where(function ($nested) use ($company, $salesTableHasUser, $companyUserIds) {
-                        $nested->where('sales.company_id', $company->id);
-                        if ($salesTableHasUser) {
-                            $nested->orWhere(function ($legacy) use ($companyUserIds) {
-                                $legacy->whereNull('sales.company_id')
-                                    ->whereIn('sales.user_id', $companyUserIds);
-                            });
-                        }
-                    });
-                    return;
-                }
+            ->join('sales', 'sales.id', '=', 'sale_items.sale_id');
 
-                if ($salesTableHasUser) {
-                    $query->whereIn('sales.user_id', $companyUserIds);
-                }
-            })
+        return $this->scopeSalesByContext($query, $company, $activeBranch, 'sales')
             ->select('products.id', 'products.name', DB::raw('SUM(COALESCE(sale_items.qty, 0)) as total_qty'))
             ->groupBy('products.id', 'products.name')
             ->orderByDesc('total_qty')
@@ -369,8 +344,19 @@ class DashboardController extends Controller
             ->get();
     }
 
-    private function getLowStockProducts($company) {
+    private function getLowStockProducts($company, ?array $activeBranch = null) {
         if (!Schema::hasTable('products')) return collect();
+        if (!empty($activeBranch['id']) && Schema::hasTable('product_branch_stocks')) {
+            return $this->scopeByCompany(ProductBranchStock::query(), 'product_branch_stocks', $company)
+                ->join('products', 'products.id', '=', 'product_branch_stocks.product_id')
+                ->where('product_branch_stocks.branch_id', (string) $activeBranch['id'])
+                ->select('products.id', 'products.name', DB::raw('product_branch_stocks.quantity as stock'))
+                ->where('product_branch_stocks.quantity', '<=', 15)
+                ->orderBy('product_branch_stocks.quantity', 'asc')
+                ->limit(10)
+                ->get();
+        }
+
         $stockColumn = Schema::hasColumn('products', 'stock') ? 'stock' : (Schema::hasColumn('products', 'stock_quantity') ? 'stock_quantity' : null);
         if (!$stockColumn) {
             return collect();
@@ -383,8 +369,15 @@ class DashboardController extends Controller
             ->get();
     }
 
-    private function getLowStockCount($company) {
+    private function getLowStockCount($company, ?array $activeBranch = null) {
         if (!Schema::hasTable('products')) return 0;
+        if (!empty($activeBranch['id']) && Schema::hasTable('product_branch_stocks')) {
+            return $this->scopeByCompany(ProductBranchStock::query(), 'product_branch_stocks', $company)
+                ->where('branch_id', (string) $activeBranch['id'])
+                ->where('quantity', '<=', 15)
+                ->count();
+        }
+
         $stockColumn = Schema::hasColumn('products', 'stock') ? 'stock' : (Schema::hasColumn('products', 'stock_quantity') ? 'stock_quantity' : null);
         if (!$stockColumn) {
             return 0;
@@ -394,9 +387,9 @@ class DashboardController extends Controller
             ->count();
     }
 
-    private function getTotalInvoices($company) {
+    private function getTotalInvoices($company, ?array $activeBranch = null) {
         if (!Schema::hasTable('sales')) return 0;
-        return $this->scopeByCompany(Sale::query(), 'sales', $company)->count();
+        return $this->scopeSalesByContext(Sale::query(), $company, $activeBranch)->count();
     }
 
     private function getActiveCustomers($company) {
@@ -418,18 +411,18 @@ class DashboardController extends Controller
         return 0;
     }
 
-    private function getLatestInvoices($company) {
+    private function getLatestInvoices($company, ?array $activeBranch = null) {
         if (!Schema::hasTable('sales')) return collect();
-        return $this->scopeByCompany(Sale::query(), 'sales', $company)
+        return $this->scopeSalesByContext(Sale::query(), $company, $activeBranch)
             ->select('id', 'order_number', 'invoice_no', 'customer_name', 'total', 'balance', 'payment_status', 'created_at')
             ->orderByDesc('created_at')
             ->limit(10)
             ->get();
     }
 
-    private function getRecentActivity($company) {
+    private function getRecentActivity($company, ?array $activeBranch = null) {
         if (!Schema::hasTable('sales')) return collect();
-        return $this->scopeByCompany(Sale::query(), 'sales', $company)
+        return $this->scopeSalesByContext(Sale::query(), $company, $activeBranch)
             ->latest()
             ->limit(8)
             ->get()
@@ -480,9 +473,9 @@ class DashboardController extends Controller
         return $rows;
     }
 
-    private function getSalesCountByMonth($company) {
+    private function getSalesCountByMonth($company, ?array $activeBranch = null) {
         if (!Schema::hasTable('sales')) return collect();
-        return $this->scopeByCompany(Sale::query(), 'sales', $company)
+        return $this->scopeSalesByContext(Sale::query(), $company, $activeBranch)
             ->select(
                 DB::raw('MONTHNAME(created_at) as month'),
                 DB::raw('MONTH(created_at) as month_num'),
@@ -494,9 +487,9 @@ class DashboardController extends Controller
             ->get();
     }
 
-    private function getTopCustomers($company) {
+    private function getTopCustomers($company, ?array $activeBranch = null) {
         if (!Schema::hasTable('sales')) return collect();
-        return $this->scopeByCompany(Sale::query(), 'sales', $company)
+        return $this->scopeSalesByContext(Sale::query(), $company, $activeBranch)
             ->whereNotNull('customer_name')
             ->select('customer_name', DB::raw('SUM(total) as total_spend'), DB::raw('COUNT(*) as invoices_count'))
             ->groupBy('customer_name')
@@ -505,62 +498,44 @@ class DashboardController extends Controller
             ->get();
     }
 
-    private function getPendingBalance($company): float
+    private function getPendingBalance($company, ?array $activeBranch = null): float
     {
         if (!Schema::hasTable('sales')) return 0;
 
-        return (float) ($this->scopeByCompany(Sale::query(), 'sales', $company)
+        return (float) ($this->scopeSalesByContext(Sale::query(), $company, $activeBranch)
             ->where('balance', '>', 0)
             ->sum('balance') ?? 0);
     }
 
-    private function getItemsSold($company): int
+    private function getItemsSold($company, ?array $activeBranch = null): int
     {
         if (!Schema::hasTable('sale_items') || !Schema::hasTable('sales')) return 0;
-
-        $salesTableHasCompany = Schema::hasColumn('sales', 'company_id');
-        $salesTableHasUser = Schema::hasColumn('sales', 'user_id');
-        $companyUserIds = $this->companyUserIds($company);
 
         $query = DB::table('sale_items')
             ->join('sales', 'sales.id', '=', 'sale_items.sale_id')
             ->whereDate('sales.created_at', Carbon::today());
 
-        if ($company?->id) {
-            if ($salesTableHasCompany) {
-                $query->where(function ($nested) use ($company, $salesTableHasUser, $companyUserIds) {
-                    $nested->where('sales.company_id', $company->id);
-                    if ($salesTableHasUser) {
-                        $nested->orWhere(function ($legacy) use ($companyUserIds) {
-                            $legacy->whereNull('sales.company_id')
-                                ->whereIn('sales.user_id', $companyUserIds);
-                        });
-                    }
-                });
-            } elseif ($salesTableHasUser) {
-                $query->whereIn('sales.user_id', $companyUserIds);
-            }
-        }
+        $query = $this->scopeSalesByContext($query, $company, $activeBranch, 'sales');
 
         return (int) ($query->sum('sale_items.qty') ?? 0);
     }
 
-    private function getTodayOrders($company): int
+    private function getTodayOrders($company, ?array $activeBranch = null): int
     {
         if (!Schema::hasTable('sales')) return 0;
 
-        return (int) ($this->scopeByCompany(Sale::query(), 'sales', $company)
+        return (int) ($this->scopeSalesByContext(Sale::query(), $company, $activeBranch)
             ->whereDate('created_at', Carbon::today())
             ->count() ?? 0);
     }
 
-    private function getPaymentStatusCounts($company): array
+    private function getPaymentStatusCounts($company, ?array $activeBranch = null): array
     {
         if (!Schema::hasTable('sales')) {
             return ['paid' => 0, 'partial' => 0, 'unpaid' => 0];
         }
 
-        $statusData = $this->scopeByCompany(Sale::query(), 'sales', $company)
+        $statusData = $this->scopeSalesByContext(Sale::query(), $company, $activeBranch)
             ->select('payment_status', DB::raw('COUNT(*) as total'))
             ->groupBy('payment_status')
             ->pluck('total', 'payment_status');
@@ -594,10 +569,23 @@ class DashboardController extends Controller
         return round(min(100, max(0, ($todayRevenue / $projectedMonthRevenue) * 100)), 1);
     }
 
-    private function getInventoryValue($company): float
+    private function getInventoryValue($company, ?array $activeBranch = null): float
     {
         if (!Schema::hasTable('products')) {
             return 0;
+        }
+
+        if (!empty($activeBranch['id']) && Schema::hasTable('product_branch_stocks')) {
+            $priceColumn = Schema::hasColumn('products', 'price') ? 'products.price' : (Schema::hasColumn('products', 'product_price') ? 'products.product_price' : null);
+            if (!$priceColumn) {
+                return 0;
+            }
+
+            return (float) ($this->scopeByCompany(ProductBranchStock::query(), 'product_branch_stocks', $company)
+                ->join('products', 'products.id', '=', 'product_branch_stocks.product_id')
+                ->where('product_branch_stocks.branch_id', (string) $activeBranch['id'])
+                ->selectRaw("SUM(COALESCE(product_branch_stocks.quantity, 0) * COALESCE({$priceColumn}, 0)) as inventory_value")
+                ->value('inventory_value') ?? 0);
         }
 
         $stockColumn = Schema::hasColumn('products', 'stock') ? 'stock' : (Schema::hasColumn('products', 'stock_quantity') ? 'stock_quantity' : null);
@@ -612,19 +600,19 @@ class DashboardController extends Controller
             ->value('inventory_value') ?? 0);
     }
 
-    private function getCurrentMonthSales($company): float
+    private function getCurrentMonthSales($company, ?array $activeBranch = null): float
     {
         if (!Schema::hasTable('sales')) {
             return 0;
         }
 
-        return (float) ($this->scopeByCompany(Sale::query(), 'sales', $company)
+        return (float) ($this->scopeSalesByContext(Sale::query(), $company, $activeBranch)
             ->whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year)
             ->sum('total') ?? 0);
     }
 
-    private function getPreviousMonthSales($company): float
+    private function getPreviousMonthSales($company, ?array $activeBranch = null): float
     {
         if (!Schema::hasTable('sales')) {
             return 0;
@@ -632,7 +620,7 @@ class DashboardController extends Controller
 
         $previousMonth = now()->copy()->subMonth();
 
-        return (float) ($this->scopeByCompany(Sale::query(), 'sales', $company)
+        return (float) ($this->scopeSalesByContext(Sale::query(), $company, $activeBranch)
             ->whereMonth('created_at', $previousMonth->month)
             ->whereYear('created_at', $previousMonth->year)
             ->sum('total') ?? 0);
@@ -712,5 +700,32 @@ class DashboardController extends Controller
         }
 
         return array_values(array_unique(array_filter($ids)));
+    }
+
+    private function activeBranchContext(): array
+    {
+        return [
+            'id' => session('active_branch_id') ? (string) session('active_branch_id') : null,
+            'name' => session('active_branch_name') ? (string) session('active_branch_name') : null,
+        ];
+    }
+
+    private function scopeSalesByContext($query, $company, ?array $activeBranch = null, string $table = 'sales')
+    {
+        $query = $this->scopeByCompany($query, $table, $company);
+
+        if (empty($activeBranch['id']) && empty($activeBranch['name'])) {
+            return $query;
+        }
+
+        if (Schema::hasColumn($table, 'branch_id') && !empty($activeBranch['id'])) {
+            return $query->where($table . '.branch_id', (string) $activeBranch['id']);
+        }
+
+        if (Schema::hasColumn($table, 'branch_name') && !empty($activeBranch['name'])) {
+            return $query->where($table . '.branch_name', (string) $activeBranch['name']);
+        }
+
+        return $query;
     }
 }
