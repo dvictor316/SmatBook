@@ -63,6 +63,12 @@
                         <li class="breadcrumb-item"><a href="{{ url('index') }}">{{ __('Dashboard') }}</a></li>
                         <li class="breadcrumb-item active">{{ __('Reports') }}</li>
                     </ul>
+                    <div class="mt-2">
+                        <span class="badge bg-light border text-primary px-3 py-2">
+                            <i class="fas fa-code-branch me-2"></i>
+                            Active Branch: {{ $activeBranch['name'] ?? 'All Recorded Payments' }}
+                        </span>
+                    </div>
                 </div>
                 <div class="col-auto d-flex gap-2 no-print">
                     <button id="emailReport" class="btn btn-outline-primary btn-sm rounded-pill">

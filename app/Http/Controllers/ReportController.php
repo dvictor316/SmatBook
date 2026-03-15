@@ -29,8 +29,47 @@ use App\Support\LedgerService;
     {
         // ... rest of the code
 
+        private function getActiveBranchContext(): array
+        {
+            return [
+                'id' => session('active_branch_id') ? (string) session('active_branch_id') : null,
+                'name' => session('active_branch_name') ? (string) session('active_branch_name') : null,
+            ];
+        }
+
+        private function applySaleBranchFilter($query, string $salesTable = 'sales')
+        {
+            $branchName = trim((string) ($this->getActiveBranchContext()['name'] ?? ''));
+
+            if ($branchName === '') {
+                return $query;
+            }
+
+            return $query->where(function ($sub) use ($salesTable, $branchName) {
+                $sub->whereRaw(
+                    "JSON_UNQUOTE(JSON_EXTRACT(COALESCE({$salesTable}.payment_details, '{}'), '$.branch_name')) = ?",
+                    [$branchName]
+                )->orWhereRaw(
+                    "JSON_UNQUOTE(JSON_EXTRACT(COALESCE({$salesTable}.payment_details, '{}'), '$.branch.name')) = ?",
+                    [$branchName]
+                );
+            });
+        }
+
+        private function applyInventoryHistoryBranchFilter($query, string $historyTable = 'inventory_history')
+        {
+            $branchName = trim((string) ($this->getActiveBranchContext()['name'] ?? ''));
+
+            if ($branchName === '') {
+                return $query;
+            }
+
+            return $query->where("{$historyTable}.reference", 'like', '%' . $branchName . '%');
+        }
+
         public function index(Request $request)
     {
+        $activeBranch = $this->getActiveBranchContext();
         // 1. Parse Dates
         $start = $request->start_date ? \Carbon\Carbon::parse($request->start_date) : \Carbon\Carbon::now()->startOfMonth();
         $end = $request->end_date ? \Carbon\Carbon::parse($request->end_date) : \Carbon\Carbon::now()->endOfDay();
@@ -78,7 +117,7 @@ use App\Support\LedgerService;
         $endDate = $end->toDateString();
 
         return view('Reports.Reports.trial-balance', compact(
-            'startDate', 'endDate', 'accounts', 'totalDebits', 'totalCredits'
+            'startDate', 'endDate', 'accounts', 'totalDebits', 'totalCredits', 'activeBranch'
         ));
     }
         /**
@@ -396,6 +435,7 @@ public function purchase_report(Request $request)
     {
         // Use the Model with relationships to get Sale and Creator info
         $query = Payment::with(['sale', 'creator']);
+        $activeBranch = $this->getActiveBranchContext();
 
         if ($request->filled('from_date')) {
             $query->whereDate('created_at', '>=', $request->from_date);
@@ -404,12 +444,18 @@ public function purchase_report(Request $request)
             $query->whereDate('created_at', '<=', $request->to_date);
         }
 
+        if (!empty($activeBranch['name'])) {
+            $query->whereHas('sale', function ($saleQuery) {
+                $this->applySaleBranchFilter($saleQuery, 'sales');
+            });
+        }
+
         $totalAmount = (clone $query)->sum('amount');
         
         // Increased to 25 for better report viewing, preserved filters
         $payments = $query->latest()->paginate(25)->withQueryString(); 
 
-        return view('Reports.Reports.payment-report', compact('payments', 'totalAmount'));
+        return view('Reports.Reports.payment-report', compact('payments', 'totalAmount', 'activeBranch'));
     }
         public function process_report_data(Request $request)
     {
@@ -419,8 +465,15 @@ public function purchase_report(Request $request)
  
  public function paymentSummary(Request $request)
 {
+    $activeBranch = $this->getActiveBranchContext();
     $baseQuery = Payment::with(['sale.customer', 'creator', 'account']);
     $this->scopePaymentsForActor($baseQuery);
+
+    if (!empty($activeBranch['name'])) {
+        $baseQuery->whereHas('sale', function ($saleQuery) {
+            $this->applySaleBranchFilter($saleQuery, 'sales');
+        });
+    }
 
     $query = clone $baseQuery;
 
@@ -496,7 +549,7 @@ public function purchase_report(Request $request)
         return $payment;
     });
 
-    return view('Reports.payment-summary', compact('payments', 'totalRevenue', 'summary', 'methodOptions', 'statusOptions'));
+    return view('Reports.payment-summary', compact('payments', 'totalRevenue', 'summary', 'methodOptions', 'statusOptions', 'activeBranch'));
 }
 
 public function show($id)
@@ -687,6 +740,7 @@ public function destroy($id)
         /** 7. Sales Report **/
         public function sales_report(Request $request)
         {
+            $activeBranch = $this->getActiveBranchContext();
             $query = DB::table('sale_items')
                 ->leftJoin('sales', 'sale_items.sale_id', '=', 'sales.id')
                 ->leftJoin('products', 'sale_items.product_id', '=', 'products.id')
@@ -697,8 +751,9 @@ public function destroy($id)
                     'sale_items.qty as SoldQty', 'products.stock as InstockQty', 'sales.created_at as DueDate'
                 ]);
 
+            $this->applySaleBranchFilter($query, 'sales');
             $salesreports = $this->process_report($query, $request, 'sales.created_at', ['products.name', 'products.sku']);
-            return $this->renderReportView('sales-report', compact('salesreports'));
+            return $this->renderReportView('sales-report', compact('salesreports', 'activeBranch'));
         }
 
         /** 8. Sales Return Report **/
@@ -735,6 +790,7 @@ public function destroy($id)
 
     public function stock_report(Request $request)
     {
+        $activeBranch = $this->getActiveBranchContext();
         $fromDate = $request->input('from_date') ?: now()->startOfMonth()->toDateString();
         $toDate = $request->input('to_date') ?: now()->toDateString();
         $productId = $request->input('product_id');
@@ -776,6 +832,7 @@ public function destroy($id)
                 'toDate' => $toDate,
                 'products' => $products,
                 'productId' => $productId,
+                'activeBranch' => $activeBranch,
             ])->with('error', 'Inventory movement tables are missing.');
         }
 
@@ -867,6 +924,8 @@ public function destroy($id)
                     )
                     ->groupBy('log_date');
 
+                $this->applyInventoryHistoryBranchFilter($historyStockIn, 'inventory_history');
+
                 $stockIn = DB::query()->fromSub($historyStockIn, 'stk_in');
             } elseif (Schema::hasTable('purchases')) {
                 $headerStockIn = DB::table('purchases')
@@ -899,6 +958,8 @@ public function destroy($id)
             ->tap(fn ($q) => $applyTenantScope($q, 'sales'))
             ->groupBy('log_date');
 
+        $this->applySaleBranchFilter($stockOut, 'sales');
+
         $stockOutExists = (clone $stockOut)->exists();
 
         if (!$stockOutExists) {
@@ -920,6 +981,8 @@ public function destroy($id)
                         fn ($q) => $q->where('products.company_id', $companyId)
                     )
                     ->groupBy('log_date');
+
+                $this->applyInventoryHistoryBranchFilter($historyStockOut, 'inventory_history');
 
                 $stockOut = DB::query()->fromSub($historyStockOut, 'stk_out');
             } elseif (Schema::hasTable('sales')) {
@@ -960,7 +1023,7 @@ public function destroy($id)
             'NetValue' => (float)$item->total_val_in - (float)$item->total_val_out,
         ]);
 
-        return view('Reports.Reports.stock-report', compact('stockreports', 'fromDate', 'toDate', 'products', 'productId'));
+        return view('Reports.Reports.stock-report', compact('stockreports', 'fromDate', 'toDate', 'products', 'productId', 'activeBranch'));
     }
 
     public function email_low_stock_report(Request $request)

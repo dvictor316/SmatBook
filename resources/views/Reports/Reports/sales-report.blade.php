@@ -31,7 +31,15 @@
             {{-- Page Header --}}
             <div class="page-header">
                 <div class="content-page-header">
-                    <h5>{{ __('Sales Report') }}</h5>
+                    <div>
+                        <h5>{{ __('Sales Report') }}</h5>
+                        <div class="mt-2">
+                            <span class="badge bg-light border text-primary px-3 py-2">
+                                <i class="fas fa-code-branch me-2"></i>
+                                Active Branch: {{ $activeBranch['name'] ?? 'All Business Activity' }}
+                            </span>
+                        </div>
+                    </div>
                     <div class="list-btn">
                         <ul class="filter-list">
                             <li>

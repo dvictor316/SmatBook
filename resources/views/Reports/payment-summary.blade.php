@@ -32,6 +32,12 @@
                     System Date: <span class="font-bold">{{ now()->format('M d, Y') }}</span> | Total Revenue:
                     <span class="text-green-600 font-bold text-lg">{{ $currencySymbol }}{{ number_format($totalRevenue ?? 0, 2) }}</span>
                 </p>
+                <div class="mt-3">
+                    <span class="inline-flex items-center px-4 py-2 rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-700 text-sm font-semibold">
+                        <i class="fe fe-git-branch mr-2"></i>
+                        Active Branch: {{ $activeBranch['name'] ?? 'All Recorded Payments' }}
+                    </span>
+                </div>
             </div>
             
             <div class="flex items-center space-x-2 no-print">

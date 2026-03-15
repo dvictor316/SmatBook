@@ -11,6 +11,12 @@
                 <div class="col">
                     <h4 class="fw-bold mb-0" style="color: #1b2559; font-size: 16px;">Stock & Valuation Ledger</h4>
                     <p class="text-muted mb-0" style="font-size: 11px;">Consolidated Purchase vs Sales Analysis</p>
+                    <div class="mt-2">
+                        <span class="badge bg-light border text-primary px-3 py-2">
+                            <i class="fas fa-code-branch me-2"></i>
+                            Active Branch: {{ $activeBranch['name'] ?? 'All Recorded Movements' }}
+                        </span>
+                    </div>
                 </div>
                 <div class="col-auto">
                     <div class="btn-group btn-group-sm shadow-sm">
