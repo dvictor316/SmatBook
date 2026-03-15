@@ -743,7 +743,9 @@ class AuthController extends Controller
 
                 $user->forceFill([
                     'password' => Hash::make($password)
-                ])->setRememberToken(Str::random(60))->save();
+                ]);
+                $user->setRememberToken(Str::random(60));
+                $user->save();
 
                 $passwordWasUpdated = true;
                 event(new PasswordReset($user));
