@@ -94,6 +94,12 @@
         <div>
             <h3 class="fw-bold mb-0" style="color: #0369a1;">Sales Transactions</h3>
             <p class="text-muted small mb-0">Manage history and track invoice statuses.</p>
+            <div class="mt-2">
+                <span class="badge bg-light border text-primary px-3 py-2">
+                    <i class="fas fa-code-branch me-2"></i>
+                    Active Branch: {{ $activeBranch['name'] ?? 'All Business Activity' }}
+                </span>
+            </div>
         </div>
         
         <div class="d-none d-md-flex gap-3 align-items-center">
@@ -153,6 +159,7 @@
                         <tr>
                             <th class="ps-4">Invoice Info</th>
                             <th>Customer Name</th>
+                            <th>Branch</th>
                             <th class="text-end">Total Amount</th>
                             <th class="text-center">Status</th>
                             <th>Date / Time</th>
@@ -173,6 +180,11 @@
                                     </div>
                                     <span class="fw-medium text-dark">{{ $sale->customer_name ?? 'Walk-in Customer' }}</span>
                                 </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-light border text-primary">
+                                    {{ $sale->branch_label ?? 'Workspace Default' }}
+                                </span>
                             </td>
                             <td class="text-end fw-bold text-primary" style="font-size: 15px;">
                                 ₦{{ number_format($sale->total, 2) }}

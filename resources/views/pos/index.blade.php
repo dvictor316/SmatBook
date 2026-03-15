@@ -1123,18 +1123,25 @@ label {
                 <span class="util-pill">Shelf: <span id="hdr-shelf-count">{{ $products->count() }}</span></span>
                 <span class="util-pill">Selected: <span id="hdr-selected-product">None</span></span>
                 <span class="util-pill">Cart Items: <span id="hdr-cart-count">0</span></span>
+                <span class="util-pill">
+                    Branch:
+                    <span id="hdr-branch-name">{{ $activeBranch['name'] ?? 'Main Workspace' }}</span>
+                </span>
             </div>
             <div class="header-util-note">Use <span class="accent">search</span> to quickly find products not visible on shelf.</div>
         </div>
 
         <!-- Header -->
         <div class="pos-header-bar">
-            <div class="d-flex align-items-center gap-3">
-                <h5 class="pos-header-title">SALES <span class="gradient-text">TERMINAL</span></h5>
-                <div class="clock-badge">
-                    <i class="far fa-clock me-1"></i><span id="live-clock" class="tabular-nums">00:00:00</span>
+                <div class="d-flex align-items-center gap-3">
+                    <h5 class="pos-header-title">SALES <span class="gradient-text">TERMINAL</span></h5>
+                    <div class="clock-badge">
+                        <i class="far fa-clock me-1"></i><span id="live-clock" class="tabular-nums">00:00:00</span>
+                    </div>
+                    <div class="clock-badge" style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); color: #1d4ed8; border-color: rgba(37, 99, 235, 0.16); box-shadow: 0 8px 18px rgba(59, 130, 246, 0.14);">
+                        <i class="fas fa-code-branch me-1"></i>{{ $activeBranch['name'] ?? 'Main Workspace' }}
+                    </div>
                 </div>
-            </div>
 
             <div class="d-flex align-items-center gap-3">
                 <div class="search-wrapper">

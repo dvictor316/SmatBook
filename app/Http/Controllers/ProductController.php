@@ -15,6 +15,14 @@ use Illuminate\Support\Str;
 
 class ProductController extends Controller
 {
+    private function getActiveBranchContext(): array
+    {
+        return [
+            'id' => session('active_branch_id') ? (string) session('active_branch_id') : null,
+            'name' => session('active_branch_name') ? (string) session('active_branch_name') : null,
+        ];
+    }
+
     /**
      * Product List View with Search and Database Falling Check
      */
@@ -476,7 +484,10 @@ public function inventory(Request $request)
                 $payload['user_id'] = auth()->id() ?? (int) DB::table('users')->min('id');
             }
             if (Schema::hasColumn('inventory_history', 'reference')) {
-                $payload['reference'] = 'Manual Adjustment';
+                $activeBranch = $this->getActiveBranchContext();
+                $payload['reference'] = $activeBranch['name']
+                    ? 'Manual Adjustment - ' . $activeBranch['name']
+                    : 'Manual Adjustment';
             }
 
             $historyId = DB::table('inventory_history')->insertGetId($payload);
@@ -548,6 +559,7 @@ public function inventory(Request $request)
      */
     public function inventory_history($id)
     {
+        $activeBranch = $this->getActiveBranchContext();
         $inventoryHistories = DB::table('inventory_history')
             ->join('products', 'inventory_history.product_id', '=', 'products.id')
             ->select('inventory_history.*', 'products.name', 'products.sku', 'products.purchase_price')
@@ -555,7 +567,7 @@ public function inventory(Request $request)
             ->orderByDesc('inventory_history.created_at')
             ->get();
 
-        return view('inventory.inventory-history', compact('inventoryHistories'));
+        return view('inventory.inventory-history', compact('inventoryHistories', 'activeBranch'));
     }
 
     public function downloadImportTemplate()

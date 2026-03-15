@@ -24,6 +24,7 @@ class SaleController extends Controller
     {
         // 1. Start the query with relationships
         $query = Sale::with(['customer', 'user']);
+        $activeBranch = $this->getActiveBranchContext();
 
         // 2. Apply Filters
         if ($request->invoice_no) {
@@ -45,7 +46,7 @@ class SaleController extends Controller
         // 4. Paginate
         $sales = $query->orderBy('created_at', 'desc')->paginate(10);
 
-        return view('sales.index', compact('sales', 'totalRevenue', 'totalSalesCount'));
+        return view('sales.index', compact('sales', 'totalRevenue', 'totalSalesCount', 'activeBranch'));
     }
 
     public function report(Request $request)
@@ -154,6 +155,7 @@ public function customerDetails($id = null)
 
     public function showPos()
     {
+        $activeBranch = $this->getActiveBranchContext();
         $products = Product::with('category')
             ->where('stock', '>', 0)
             ->orderBy('name', 'asc')
@@ -161,13 +163,15 @@ public function customerDetails($id = null)
         $customers = Customer::orderBy('customer_name', 'asc')->get();
         $sales = Sale::with('customer')->latest()->take(10)->get();
 
-        return view('pos.index', compact('products', 'customers', 'sales'));
+        return view('pos.index', compact('products', 'customers', 'sales', 'activeBranch'));
     }
 
     public function showSale($id)
     {
         $sale = Sale::with(['customer', 'items.product', 'user'])->findOrFail($id);
-        return view('sales.show', compact('sale'));
+        $activeBranch = $this->getActiveBranchContext();
+
+        return view('sales.show', compact('sale', 'activeBranch'));
     }
 
     public function store(Request $request)
@@ -204,6 +208,9 @@ public function customerDetails($id = null)
             ?? $selectedCustomer?->name
             ?? 'Walk-in Customer';
 
+        $activeBranch = $this->getActiveBranchContext();
+        $splitDetails = $this->normalizeSplitDetails($request->input('split_details', []));
+
         // --- 2. CREATE THE SALE RECORD ---
 $sale = Sale::create([
     'company_id'     => auth()->user()?->company_id,
@@ -225,6 +232,14 @@ $sale = Sale::create([
     'currency'       => 'NGN',
     'payment_method' => $request->payment_method,
     'payment_status' => $paymentStatus,
+    'payment_details' => [
+        'source' => 'pos',
+        'cashier_id' => auth()->id(),
+        'cashier_name' => auth()->user()?->name,
+        'branch_id' => $activeBranch['id'],
+        'branch_name' => $activeBranch['name'],
+        'split' => $splitDetails,
+    ],
 ]);
 
         $runningSubtotal = 0;
@@ -285,6 +300,17 @@ $sale = Sale::create([
             'change_amount'  => $finalChange,
             'balance'        => $finalBalance,
             'payment_status' => $finalPaymentStatus,
+            'payment_details' => [
+                'source' => 'pos',
+                'cashier_id' => auth()->id(),
+                'cashier_name' => auth()->user()?->name,
+                'branch_id' => $activeBranch['id'],
+                'branch_name' => $activeBranch['name'],
+                'split' => $splitDetails,
+                'tendered' => round($amountPaid, 2),
+                'applied' => round($finalPaid, 2),
+                'change' => round($finalChange, 2),
+            ],
         ]);
 
         if ($finalPaid > 0) {
@@ -326,8 +352,9 @@ $sale = Sale::create([
             ?? auth()->user()?->company
             ?? new Company();
         $currencySymbol = '₦'; 
+        $activeBranch = $this->getActiveBranchContext();
 
-        return view('Sales.Invoices.index', compact('sale', 'company', 'currencySymbol'));
+        return view('Sales.Invoices.index', compact('sale', 'company', 'currencySymbol', 'activeBranch'));
     }
 
     private function generateInvoiceNo() {
@@ -457,5 +484,29 @@ public function create()
         });
 
         return redirect()->route('sales.index')->with('success', "Invoice #{$sale->invoice_no} updated.");
+    }
+
+    private function getActiveBranchContext(): array
+    {
+        $branchId = session('active_branch_id');
+        $branchName = session('active_branch_name');
+
+        return [
+            'id' => $branchId !== null ? (string) $branchId : null,
+            'name' => $branchName ? (string) $branchName : null,
+        ];
+    }
+
+    private function normalizeSplitDetails(mixed $splitDetails): array
+    {
+        if (!is_array($splitDetails)) {
+            return [];
+        }
+
+        return [
+            'cash' => (float) ($splitDetails['cash'] ?? 0),
+            'card' => (float) ($splitDetails['pos'] ?? $splitDetails['card'] ?? 0),
+            'transfer' => (float) ($splitDetails['bank'] ?? $splitDetails['transfer'] ?? 0),
+        ];
     }
 }

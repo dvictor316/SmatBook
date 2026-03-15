@@ -40,6 +40,7 @@ class Sale extends Model
         'total'           => 'decimal:2',
         'amount_paid'     => 'decimal:2',
         'balance'         => 'decimal:2',
+        'payment_details' => 'array',
     ];
 
     /**
@@ -150,6 +151,41 @@ class Sale extends Model
             ?? $this->customer?->name
             ?? $this->customer_name
             ?? 'Walk-in Customer';
+    }
+
+    public function getBranchLabelAttribute(): ?string
+    {
+        $details = $this->payment_details;
+
+        if (is_string($details)) {
+            $details = json_decode($details, true);
+        }
+
+        if (!is_array($details)) {
+            return null;
+        }
+
+        return $details['branch_name']
+            ?? data_get($details, 'branch.name')
+            ?? null;
+    }
+
+    public function getBranchIdAttribute(): ?string
+    {
+        $details = $this->payment_details;
+
+        if (is_string($details)) {
+            $details = json_decode($details, true);
+        }
+
+        if (!is_array($details)) {
+            return null;
+        }
+
+        $branchId = $details['branch_id']
+            ?? data_get($details, 'branch.id');
+
+        return $branchId !== null ? (string) $branchId : null;
     }
 
     public function getAmountInWordsDisplayAttribute(): string

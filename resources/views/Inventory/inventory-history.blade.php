@@ -10,6 +10,12 @@
                     <div class="col">
                         <h4 class="fw-bold mb-1" style="color: #4e5d78;">Inventory History</h4>
                         <p class="text-muted mb-0" style="font-size: 12px;">Detailed log of stock movements</p>
+                        <div class="mt-2">
+                            <span class="badge bg-light border text-primary px-3 py-2">
+                                <i class="fas fa-code-branch me-2"></i>
+                                Active Branch: {{ $activeBranch['name'] ?? 'Workspace Default' }}
+                            </span>
+                        </div>
                     </div>
                     <div class="col-auto">
                         <div class="btn-group shadow-sm bg-white">
@@ -40,6 +46,7 @@
                                             <th>Item</th>
                                             <th>Code</th>
                                             <th class="text-center">Type</th>
+                                            <th>Reference</th>
                                             <th class="text-end">Quantity</th>
                                             <th class="text-end">Purchase Price</th>
                                             <th class="text-center no-print">Action</th>
@@ -61,6 +68,7 @@
                                                         {{ $isStockIn ? 'Stock In' : 'Stock Out' }}
                                                     </span>
                                                 </td>
+                                                <td>{{ $history->reference ?? 'System Movement' }}</td>
                                                 <td class="text-end fw-bold {{ $isStockIn ? 'text-success' : 'text-danger' }}">
                                                     {{ $isStockIn ? '+' : '-' }}{{ number_format($history->quantity) }}
                                                 </td>
@@ -88,7 +96,7 @@
                                             </tr>
                                         @empty
                                             <tr>
-                                                <td colspan="8" class="text-center p-5 text-muted">
+                                                <td colspan="9" class="text-center p-5 text-muted">
                                                     No movement history found for this item.
                                                 </td>
                                             </tr>

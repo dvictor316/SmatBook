@@ -105,6 +105,12 @@
             <div>
                 <h3 class="fw-bold mb-0" style="color: #0369a1;">Sale Details</h3>
                 <p class="text-muted small mb-0">Invoice Information & Payment Tracking</p>
+                <div class="mt-2">
+                    <span class="badge bg-light border text-primary px-3 py-2">
+                        <i class="fas fa-code-branch me-2"></i>
+                        Active Branch: {{ $sale->branch_label ?? $activeBranch['name'] ?? 'Workspace Default' }}
+                    </span>
+                </div>
             </div>
             
             <div class="d-flex gap-2">
@@ -137,6 +143,12 @@
                         <div class="stat-box">
                             <div class="stat-label">Customer</div>
                             <div class="stat-value text-dark" style="font-size: 0.9rem;">{{ $sale->customer_name }}</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="stat-box">
+                            <div class="stat-label">Branch</div>
+                            <div class="stat-value text-dark" style="font-size: 0.9rem;">{{ $sale->branch_label ?? 'Workspace Default' }}</div>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
