@@ -374,6 +374,8 @@ Route::middleware(['auth'])
     // HELP & EXPORT
     // ----------------------------------------------------------
     Route::get('/help',   [DeploymentManagerController::class, 'helpCenter']) ->name('help');
+    Route::get('/help/category/{category}', [DeploymentManagerController::class, 'helpCategory'])->name('help.category');
+    Route::get('/help/article/{slug}', [DeploymentManagerController::class, 'helpArticle'])->name('help.article');
     Route::get('/export', [DeploymentManagerController::class, 'exportData']) ->name('export');
     Route::post('/export/generate', [DeploymentManagerController::class, 'generateExport']) ->name('export.generate');
 });

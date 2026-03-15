@@ -707,6 +707,26 @@
                 </a>
             </li>
 
+            <li class="dm-menu-item has-submenu {{ request()->routeIs('deployment.invoices.*', 'deployment.payments.*') ? 'open' : '' }}">
+                <a href="#" class="dm-menu-link {{ request()->routeIs('deployment.invoices.*', 'deployment.payments.*') ? 'active' : '' }}" onclick="toggleSubmenu(event, this)">
+                    <span class="dm-menu-icon"><i class="fas fa-file-invoice-dollar"></i></span>
+                    <span class="dm-menu-text">Billing Desk</span>
+                    <span class="dm-menu-arrow"><i class="fas fa-chevron-right"></i></span>
+                </a>
+                <ul class="dm-submenu">
+                    <li>
+                        <a href="{{ route('deployment.invoices.index') }}" class="dm-submenu-link {{ request()->routeIs('deployment.invoices.index', 'deployment.invoices.view', 'deployment.invoices.create') ? 'active' : '' }}">
+                            <i class="fas fa-receipt"></i> Invoices
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('deployment.payments.index') }}" class="dm-submenu-link {{ request()->routeIs('deployment.payments.*') ? 'active' : '' }}">
+                            <i class="fas fa-credit-card"></i> Payments
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
             <!-- Commissions -->
             <li class="dm-menu-item has-submenu {{ request()->routeIs('deployment.commissions.*') ? 'open' : '' }}">
                 <a href="#" class="dm-menu-link {{ request()->routeIs('deployment.commissions.*') ? 'active' : '' }}" onclick="toggleSubmenu(event, this)">
@@ -728,6 +748,91 @@
                     <li>
                         <a href="{{ route('deployment.commissions.paid') }}" class="dm-submenu-link {{ request()->routeIs('deployment.commissions.paid') ? 'active' : '' }}">
                             <i class="fas fa-check"></i> Paid
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+            <li class="dm-menu-item has-submenu {{ request()->routeIs('deployment.reports.*', 'deployment.stats') ? 'open' : '' }}">
+                <a href="#" class="dm-menu-link {{ request()->routeIs('deployment.reports.*', 'deployment.stats') ? 'active' : '' }}" onclick="toggleSubmenu(event, this)">
+                    <span class="dm-menu-icon"><i class="fas fa-chart-line"></i></span>
+                    <span class="dm-menu-text">Reports</span>
+                    <span class="dm-menu-arrow"><i class="fas fa-chevron-right"></i></span>
+                </a>
+                <ul class="dm-submenu">
+                    <li>
+                        <a href="{{ route('deployment.stats') }}" class="dm-submenu-link {{ request()->routeIs('deployment.stats') ? 'active' : '' }}">
+                            <i class="fas fa-chart-area"></i> Analytics
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('deployment.reports.performance') }}" class="dm-submenu-link {{ request()->routeIs('deployment.reports.performance') ? 'active' : '' }}">
+                            <i class="fas fa-tachometer-alt"></i> Performance
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('deployment.reports.client-activity') }}" class="dm-submenu-link {{ request()->routeIs('deployment.reports.client-activity') ? 'active' : '' }}">
+                            <i class="fas fa-history"></i> Client Activity
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('deployment.reports.revenue') }}" class="dm-submenu-link {{ request()->routeIs('deployment.reports.revenue') ? 'active' : '' }}">
+                            <i class="fas fa-coins"></i> Revenue
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('deployment.reports.custom') }}" class="dm-submenu-link {{ request()->routeIs('deployment.reports.custom') ? 'active' : '' }}">
+                            <i class="fas fa-sliders-h"></i> Custom Summary
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+            <li class="dm-menu-item has-submenu {{ request()->routeIs('deployment.notifications', 'deployment.support.*', 'deployment.help*') ? 'open' : '' }}">
+                <a href="#" class="dm-menu-link {{ request()->routeIs('deployment.notifications', 'deployment.support.*', 'deployment.help*') ? 'active' : '' }}" onclick="toggleSubmenu(event, this)">
+                    <span class="dm-menu-icon"><i class="fas fa-life-ring"></i></span>
+                    <span class="dm-menu-text">Support Hub</span>
+                    <span class="dm-menu-arrow"><i class="fas fa-chevron-right"></i></span>
+                </a>
+                <ul class="dm-submenu">
+                    <li>
+                        <a href="{{ route('deployment.notifications') }}" class="dm-submenu-link {{ request()->routeIs('deployment.notifications') ? 'active' : '' }}">
+                            <i class="fas fa-bell"></i> Notifications
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('deployment.support.tickets') }}" class="dm-submenu-link {{ request()->routeIs('deployment.support.tickets', 'deployment.support.view-ticket') ? 'active' : '' }}">
+                            <i class="fas fa-ticket-alt"></i> Tickets
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('deployment.support.create-ticket') }}" class="dm-submenu-link {{ request()->routeIs('deployment.support.create-ticket') ? 'active' : '' }}">
+                            <i class="fas fa-plus-circle"></i> New Ticket
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('deployment.help') }}" class="dm-submenu-link {{ request()->routeIs('deployment.help') || request()->routeIs('deployment.help.*') ? 'active' : '' }}">
+                            <i class="fas fa-book-open"></i> Help Center
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+            <li class="dm-menu-item has-submenu {{ request()->routeIs('deployment.profile', 'deployment.settings', 'deployment.settings.*') ? 'open' : '' }}">
+                <a href="#" class="dm-menu-link {{ request()->routeIs('deployment.profile', 'deployment.settings', 'deployment.settings.*') ? 'active' : '' }}" onclick="toggleSubmenu(event, this)">
+                    <span class="dm-menu-icon"><i class="fas fa-user-cog"></i></span>
+                    <span class="dm-menu-text">My Account</span>
+                    <span class="dm-menu-arrow"><i class="fas fa-chevron-right"></i></span>
+                </a>
+                <ul class="dm-submenu">
+                    <li>
+                        <a href="{{ route('deployment.profile') }}" class="dm-submenu-link {{ request()->routeIs('deployment.profile') ? 'active' : '' }}">
+                            <i class="fas fa-id-badge"></i> Profile
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('deployment.settings') }}" class="dm-submenu-link {{ request()->routeIs('deployment.settings', 'deployment.settings.*') ? 'active' : '' }}">
+                            <i class="fas fa-cogs"></i> Settings
                         </a>
                     </li>
                 </ul>

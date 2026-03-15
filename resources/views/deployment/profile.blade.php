@@ -2,101 +2,81 @@
 @extends('layout.mainlayout')
 
 @section('content')
-<style>
-    /* Prevent Infringement: Match the 250px sidebar */
-    #profile-content {
-        width: 100%;
-        min-height: 100vh;
-        background-color: #f4f7f6;
-        transition: all 0.3s ease;
-    }
+<div class="sb-shell page-content-wrapper">
+<div class="container-fluid py-4">
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <img src="{{ $user->avatar_url }}" class="rounded-circle mb-3" alt="Profile" style="width:120px;height:120px;object-fit:cover;">
+                    <h4 class="mb-1">{{ $user->name }}</h4>
+                    <div class="text-muted small mb-3">{{ $manager->business_name ?? 'Deployment Manager' }}</div>
+                    <form action="{{ route('deployment.profile.avatar') }}" method="POST" enctype="multipart/form-data" class="mb-3">
+                        @csrf
+                        <label class="form-label small text-muted">Update Avatar</label>
+                        <input type="file" name="profile_photo" class="form-control mb-2" accept="image/*">
+                        <button type="submit" class="btn btn-sm btn-outline-primary">Upload Avatar</button>
+                    </form>
+                    <a href="{{ route('deployment.settings') }}" class="btn btn-primary btn-sm">Open Settings</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="mb-3">Profile Details</h5>
+                    <form method="POST" action="{{ route('deployment.profile.update') }}" class="row g-3">
+                        @csrf
+                        @method('PUT')
+                        <div class="col-md-6">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" name="name" class="form-control" value="{{ old('name', $user->name) }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Email</label>
+                            <input type="email" name="email" class="form-control" value="{{ old('email', $user->email) }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Business Name</label>
+                            <input type="text" name="business_name" class="form-control" value="{{ old('business_name', $manager->business_name ?? '') }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Phone</label>
+                            <input type="text" name="phone" class="form-control" value="{{ old('phone', $manager->phone ?? '') }}">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Address</label>
+                            <textarea name="address" rows="3" class="form-control">{{ old('address', $manager->address ?? '') }}</textarea>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">Save Profile</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
 
-    .profile-header {
-        background: linear-gradient(to right, #4e73df, #224abe);
-        height: 150px;
-        border-radius: 0 0 15px 15px;
-    }
-
-    .profile-img-container {
-        margin-top: -75px;
-    }
-
-    .profile-img {
-        width: 150px;
-        height: 150px;
-        border: 5px solid #fff;
-        object-fit: cover;
-    }
-
-    @media print {
-        #profile-content { margin-left: 0 !important; }
-        .no-print { display: none !important; }
-    }
-</style>
-
-<div id="layout-wrapper">
-    <div id="profile-content">
-        <div class="profile-header no-print"></div>
-        
-        <div class="container-fluid">
-            <div class="row justify-content-center">
-                <div class="col-lg-8">
-                    <div class="card border-0 shadow-sm profile-img-container mb-4">
-                        <div class="card-body text-center">
-                            <img src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&background=random&size=150" 
-                                 class="rounded-circle profile-img mb-3" alt="Profile">
-                            
-                            <h3 class="fw-bold mb-1">{{ auth()->user()->name }}</h3>
-                            <p class="text-muted small">
-                                <i class="fas fa-shield-alt me-1"></i> 
-                                Super Admin Manager @ {{ env('SESSION_DOMAIN', 'System') }}
-                            </p>
-                            
-                            <div class="d-flex justify-content-center gap-2 no-print">
-                                <button onclick="window.print()" class="btn btn-outline-secondary btn-sm">
-                                    <i class="fas fa-print me-1"></i> Print Profile
-                                </button>
-                                <a href="{{ route('settings.index') }}" class="btn btn-primary btn-sm">
-                                    <i class="fas fa-edit me-1"></i> Edit Settings
-                                </a>
-                            </div>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="small text-uppercase text-muted fw-bold mb-2">Managed Clients</div>
+                            <h4 class="mb-0">{{ number_format($stats['managed_companies'] ?? 0) }}</h4>
                         </div>
                     </div>
-
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="card border-0 shadow-sm mb-4">
-                                <div class="card-header bg-white py-3">
-                                    <h6 class="mb-0 fw-bold">Account Details</h6>
-                                </div>
-                                <div class="card-body">
-                                    <div class="mb-3">
-                                        <label class="small text-muted d-block">Email Address</label>
-                                        <span class="fw-medium">{{ auth()->user()->email }}</span>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="small text-muted d-block">Role Permissions</label>
-                                        <span class="badge bg-soft-primary text-primary">Full Access</span>
-                                    </div>
-                                    <div>
-                                        <label class="small text-muted d-block">Member Since</label>
-                                        <span class="fw-medium">{{ auth()->user()->created_at->format('M d, Y') }}</span>
-                                    </div>
-                                </div>
-                            </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="small text-uppercase text-muted fw-bold mb-2">Active Subscriptions</div>
+                            <h4 class="mb-0">{{ number_format($stats['active_subscriptions'] ?? 0) }}</h4>
                         </div>
-                        
-                        <div class="col-md-6">
-                            <div class="card border-0 shadow-sm mb-4">
-                                <div class="card-header bg-white py-3">
-                                    <h6 class="mb-0 fw-bold">Domain Environment</h6>
-                                </div>
-                                <div class="card-body text-center py-4">
-                                    <i class="fas fa-globe fa-3x text-light mb-3"></i>
-                                    <p class="mb-0">Current Session Domain:</p>
-                                    <code class="d-block h5 text-primary mt-2">{{ env('SESSION_DOMAIN', 'localhost') }}</code>
-                                </div>
-                            </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="small text-uppercase text-muted fw-bold mb-2">Pending Payments</div>
+                            <h4 class="mb-0">{{ number_format($stats['pending_payments'] ?? 0) }}</h4>
                         </div>
                     </div>
                 </div>
@@ -104,11 +84,5 @@
         </div>
     </div>
 </div>
-
-<script>
-    // Custom print handling for your pages
-    window.onbeforeprint = function() {
-        console.log("Printing profile for user on {{ env('SESSION_DOMAIN') }}");
-    };
-</script>
+</div>
 @endsection

@@ -9,6 +9,7 @@ use Illuminate\Support\{Str, Carbon};
 use Illuminate\Validation\Rule;
 use App\Models\{Company, User, Subscription, ActivityLog, DeploymentManager, DeploymentCompany, Plan};
 use App\Models\DeploymentManagerPayout;
+use App\Models\Role;
 use App\Support\{SystemEventMailer, DeploymentCommissionPayoutService};
 
 class DeploymentManagerController extends Controller
@@ -52,6 +53,79 @@ class DeploymentManagerController extends Controller
     private function managedSubscriptions(): \Illuminate\Database\Eloquent\Builder
     {
         return Subscription::whereIn('company_id', $this->managedCompanyIds());
+    }
+
+    private function deploymentRoleOptions(): array
+    {
+        if (Schema::hasTable('roles')) {
+            $roles = Role::query()
+                ->orderBy('name')
+                ->pluck('name')
+                ->filter()
+                ->values()
+                ->all();
+
+            if ($roles !== []) {
+                return $roles;
+            }
+        }
+
+        return [
+            'Administrator',
+            'Store Manager',
+            'Sales Manager',
+            'Finance Manager',
+            'Account Officer',
+            'Cashier',
+        ];
+    }
+
+    private function deploymentHelpArticles(): array
+    {
+        return [
+            'onboarding' => [
+                [
+                    'slug' => 'registering-a-new-client',
+                    'title' => 'Registering a New Client',
+                    'summary' => 'Walk through customer registration, plan selection, workspace setup, and payment handoff.',
+                    'content' => 'Use the Register Customer flow to create the customer account, assign a valid subscription plan, and generate the secure checkout handoff. Confirm the company name, subdomain, customer email, and billing cycle before completing the setup.',
+                ],
+                [
+                    'slug' => 'tracking-subscription-renewals',
+                    'title' => 'Tracking Subscription Renewals',
+                    'summary' => 'Monitor expiring subscriptions and follow up before workspace access is interrupted.',
+                    'content' => 'Open the Subscriptions area to review active, expiring, and renewal-ready clients. Focus first on subscriptions expiring within the next 7 days and confirm payment status before starting any renewal conversation.',
+                ],
+            ],
+            'payments' => [
+                [
+                    'slug' => 'understanding-commission-payouts',
+                    'title' => 'Understanding Commission Payouts',
+                    'summary' => 'See how available, processing, and paid commissions move through the payout pipeline.',
+                    'content' => 'Commissions move from available to processing to paid. Keep payout profile details complete and verified so the system can prepare payout requests without manual cleanup.',
+                ],
+                [
+                    'slug' => 'reviewing-client-payments',
+                    'title' => 'Reviewing Client Payments',
+                    'summary' => 'Use the payments view to verify successful payments and follow up on pending ones.',
+                    'content' => 'The payments views show completed and pending transactions tied to your managed clients. Review pending items daily and confirm whether the customer needs a fresh payment link, invoice, or renewal assistance.',
+                ],
+            ],
+            'support' => [
+                [
+                    'slug' => 'opening-a-support-ticket',
+                    'title' => 'Opening a Support Ticket',
+                    'summary' => 'Log deployment issues with enough detail for quick follow-up.',
+                    'content' => 'Create a support ticket when a client setup, payment flow, or workspace activation needs internal follow-up. Include the client name, affected workspace, and the exact issue observed so the team can respond quickly.',
+                ],
+                [
+                    'slug' => 'using-deployment-reports',
+                    'title' => 'Using Deployment Reports',
+                    'summary' => 'Read the deployment reports to monitor performance, activity, and revenue quality.',
+                    'content' => 'Use the performance, activity, and revenue reports together. Performance shows throughput, activity shows operational actions, and revenue highlights successful monetization across the clients you manage.',
+                ],
+            ],
+        ];
     }
 
     // =============================================================
@@ -905,12 +979,19 @@ private function resolvePlanIdFromCatalog(string $planName, string $billingCycle
     public function editUser($id) {
         $user = User::whereIn('company_id', $this->managedCompanyIds())->findOrFail($id);
         $companies = $this->managedCompanies()->get();
-        return view('deployment.users.edit', compact('user', 'companies'));
+        $roles = $this->deploymentRoleOptions();
+        return view('deployment.users.edit', compact('user', 'companies', 'roles'));
     }
 
     public function updateUser(Request $request, $id) {
         $user = User::whereIn('company_id', $this->managedCompanyIds())->findOrFail($id);
-        $user->update($request->only(['name', 'email', 'role']));
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255|unique:users,email,' . $user->id,
+            'role' => 'required|string|max:80',
+        ]);
+
+        $user->update($validated);
         return redirect()->route('deployment.users.view', $id)->with('success', 'User Updated.');
     }
 
@@ -1049,7 +1130,16 @@ private function resolvePlanIdFromCatalog(string $planName, string $billingCycle
             ->join('companies', 'deployment_commissions.company_id', '=', 'companies.id')
             ->where('deployment_commissions.id', $id)
             ->where('deployment_commissions.manager_id', Auth::id())
-            ->select('deployment_commissions.*', 'subscriptions.plan', 'companies.name as company_name')->first();
+            ->select(
+                'deployment_commissions.*',
+                'subscriptions.plan',
+                'subscriptions.billing_cycle',
+                'subscriptions.payment_status',
+                'subscriptions.start_date',
+                'subscriptions.end_date',
+                'companies.name as company_name',
+                'companies.domain_prefix as company_domain'
+            )->first();
         return view('deployment.commissions.details', compact('commission'));
     }
 
@@ -1292,38 +1382,227 @@ private function resolvePlanIdFromCatalog(string $planName, string $billingCycle
     // 9. SUPPORT & SETTINGS
     // =============================================================
 
-    public function supportTickets() { return view('deployment.support.tickets'); }
-    public function createTicket() { return view('deployment.support.create-ticket'); }
-    public function storeTicket(Request $request) { return redirect()->route('deployment.support.tickets')->with('success', 'Ticket created'); }
-    public function viewTicket($id) { return view('deployment.support.view-ticket', compact('id')); }
+    public function supportTickets()
+    {
+        $tickets = ActivityLog::query()
+            ->where('user_id', Auth::id())
+            ->where('module', 'deployment_support')
+            ->latest()
+            ->paginate(15);
+
+        return view('deployment.support.tickets', compact('tickets'));
+    }
+
+    public function createTicket()
+    {
+        $managedCompanies = $this->managedCompanies()->orderBy('name')->get();
+        return view('deployment.support.create-ticket', compact('managedCompanies'));
+    }
+
+    public function storeTicket(Request $request)
+    {
+        $validated = $request->validate([
+            'subject' => 'required|string|max:255',
+            'priority' => 'required|in:low,medium,high,urgent',
+            'company_id' => 'nullable|integer',
+            'message' => 'required|string|min:10',
+        ]);
+
+        ActivityLog::create([
+            'user_id' => Auth::id(),
+            'module' => 'deployment_support',
+            'description' => $validated['subject'],
+            'action' => 'ticket_created',
+            'properties' => json_encode([
+                'priority' => $validated['priority'],
+                'company_id' => $validated['company_id'] ?? null,
+                'message' => $validated['message'],
+            ]),
+        ]);
+
+        return redirect()->route('deployment.support.tickets')->with('success', 'Support ticket created successfully.');
+    }
+
+    public function viewTicket($id)
+    {
+        $ticket = ActivityLog::query()
+            ->where('user_id', Auth::id())
+            ->where('module', 'deployment_support')
+            ->findOrFail($id);
+
+        return view('deployment.support.view-ticket', compact('ticket'));
+    }
     public function replyTicket(Request $request, $id) { return back()->with('success', 'Reply sent'); }
-    public function helpCenter() { return view('deployment.help.index'); }
-    public function helpCategory($category) { return view('deployment.help.category', compact('category')); }
-    public function helpArticle($slug) { return view('deployment.help.article', compact('slug')); }
-    public function notifications() { return view('deployment.notifications.index'); }
-    public function markNotificationRead($id) { return back()->with('success', 'Read'); }
-    public function markAllNotificationsRead() { return back()->with('success', 'All Read'); }
+    public function helpCenter()
+    {
+        $articles = $this->deploymentHelpArticles();
+        return view('deployment.help.index', compact('articles'));
+    }
+
+    public function helpCategory($category)
+    {
+        $articles = $this->deploymentHelpArticles();
+        $categoryKey = strtolower((string) $category);
+        abort_unless(array_key_exists($categoryKey, $articles), 404);
+
+        $categoryArticles = $articles[$categoryKey];
+        return view('deployment.help.category', compact('category', 'categoryArticles'));
+    }
+
+    public function helpArticle($slug)
+    {
+        $article = collect($this->deploymentHelpArticles())
+            ->flatten(1)
+            ->firstWhere('slug', $slug);
+
+        abort_unless($article, 404);
+
+        return view('deployment.help.article', compact('article'));
+    }
+
+    public function notifications()
+    {
+        $user = Auth::user();
+        $notifications = $user->notifications()->latest()->paginate(15);
+        $unreadCount = $user->unreadNotifications()->count();
+
+        return view('deployment.notifications.index', compact('notifications', 'unreadCount'));
+    }
+
+    public function markNotificationRead($id)
+    {
+        $notification = Auth::user()->notifications()->where('id', $id)->firstOrFail();
+        if (!$notification->read_at) {
+            $notification->markAsRead();
+        }
+
+        return back()->with('success', 'Notification marked as read.');
+    }
+
+    public function markAllNotificationsRead()
+    {
+        Auth::user()->unreadNotifications->markAsRead();
+        return back()->with('success', 'All notifications marked as read.');
+    }
     public function deleteNotification($id) { return back()->with('success', 'Deleted'); }
 
     public function profile() {
+        $user = Auth::user();
+        $manager = DeploymentManager::where('user_id', Auth::id())->first();
+        $stats = [
+            'managed_companies' => count($this->managedCompanyIds()),
+            'active_subscriptions' => $this->managedSubscriptions()->whereRaw("LOWER(COALESCE(status, '')) IN ('active','trial')")->count(),
+            'pending_payments' => $this->managedSubscriptions()->whereRaw("LOWER(COALESCE(payment_status, '')) IN ('pending','unpaid')")->count(),
+        ];
+
         return view('deployment.profile', [
-            'user' => Auth::user(), 
-            'manager' => DeploymentManager::where('user_id', Auth::id())->first()
+            'user' => $user,
+            'manager' => $manager,
+            'stats' => $stats,
         ]);
     }
 
     public function updateProfile(Request $request) {
-        Auth::user()->update($request->only(['name', 'email']));
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255|unique:users,email,' . Auth::id(),
+            'business_name' => 'nullable|string|max:255',
+            'phone' => 'nullable|string|max:25',
+            'address' => 'nullable|string|max:500',
+        ]);
+
+        $user = Auth::user();
+        $user->update([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+        ]);
+
+        $manager = DeploymentManager::where('user_id', $user->id)->first();
+        if ($manager) {
+            $manager->update([
+                'business_name' => $validated['business_name'] ?? $manager->business_name,
+                'phone' => $validated['phone'] ?? $manager->phone,
+                'address' => $validated['address'] ?? $manager->address,
+            ]);
+        }
+
         return back()->with('success', 'Profile Updated.');
     }
 
-    public function updateAvatar(Request $request) { return back()->with('success', 'Avatar updated'); }
+    public function updateAvatar(Request $request)
+    {
+        $request->validate([
+            'profile_photo' => 'required|image|max:2048',
+        ]);
 
-    public function settings() { return view('deployment.settings'); }
+        $user = Auth::user();
 
-    public function updateSettings(Request $request) { return back()->with('success', 'Settings updated'); }
+        if (!empty($user->profile_photo)) {
+            Storage::disk('public')->delete($user->profile_photo);
+        }
 
-    public function updatePassword(Request $request) { return back()->with('success', 'Password updated'); }
+        $user->update([
+            'profile_photo' => $request->file('profile_photo')->store('profiles', 'public'),
+        ]);
+
+        return back()->with('success', 'Avatar updated successfully.');
+    }
+
+    public function settings()
+    {
+        $user = Auth::user();
+        $manager = DeploymentManager::where('user_id', $user->id)->first();
+        $settings = [
+            'notify_deploy' => Schema::hasColumn('users', 'notify_deploy') ? (bool) ($user->notify_deploy ?? false) : false,
+            'auto_payout_enabled' => (bool) ($manager->auto_payout_enabled ?? false),
+            'minimum_payout_amount' => (float) ($manager->minimum_payout_amount ?? 5000),
+            'payout_provider' => $manager->payout_provider ?? 'paystack',
+        ];
+
+        return view('deployment.settings', compact('user', 'manager', 'settings'));
+    }
+
+    public function updateSettings(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'notify_deploy' => 'nullable|boolean',
+            'auto_payout_enabled' => 'nullable|boolean',
+            'minimum_payout_amount' => 'nullable|numeric|min:0',
+            'payout_provider' => 'nullable|in:paystack,flutterwave',
+        ]);
+
+        $user = Auth::user();
+        $user->name = $validated['name'];
+        if (Schema::hasColumn('users', 'notify_deploy')) {
+            $user->notify_deploy = $request->boolean('notify_deploy');
+        }
+        $user->save();
+
+        $manager = DeploymentManager::where('user_id', $user->id)->first();
+        if ($manager) {
+            $manager->update([
+                'auto_payout_enabled' => $request->boolean('auto_payout_enabled'),
+                'minimum_payout_amount' => $validated['minimum_payout_amount'] ?? ($manager->minimum_payout_amount ?? 5000),
+                'payout_provider' => $validated['payout_provider'] ?? ($manager->payout_provider ?? 'paystack'),
+            ]);
+        }
+
+        return back()->with('success', 'Settings updated');
+    }
+
+    public function updatePassword(Request $request)
+    {
+        $validated = $request->validate([
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        Auth::user()->update([
+            'password' => Hash::make($validated['password']),
+        ]);
+
+        return back()->with('success', 'Password updated');
+    }
 
     // =============================================================
     // 10. ROUTE-COMPATIBILITY ALIASES

@@ -1,5 +1,3 @@
-// Page: resources/views/deployment/settings.blade.php
-
 @extends('layout.mainlayout')
 
 @section('title', 'Manager Settings')
@@ -121,11 +119,11 @@
                     <div class="row g-3 mb-4">
                         <div class="col-md-6">
                             <label class="form-label fw-bold small text-uppercase text-muted">Full Name</label>
-                            <input type="text" name="name" class="form-control" value="{{ auth()->user()->name }}" required>
+                            <input type="text" name="name" class="form-control" value="{{ old('name', $user->name) }}" required>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-bold small text-uppercase text-muted">Email Address</label>
-                            <input type="email" class="form-control bg-light" value="{{ auth()->user()->email }}" disabled>
+                            <input type="email" class="form-control bg-light" value="{{ $user->email }}" disabled>
                         </div>
                     </div>
 
@@ -139,7 +137,33 @@
                                     <span class="d-block fw-bold text-dark">Deployment Alerts</span>
                                     <span class="small text-muted">Receive email notifications when new tenants are provisioned.</span>
                                 </label>
-                                <input class="form-check-input ms-3" type="checkbox" role="switch" id="notifyDeploy" name="notify_deploy" {{ auth()->user()->notify_deploy ? 'checked' : '' }} style="width: 3em; height: 1.5em;">
+                                <input class="form-check-input ms-3" type="checkbox" role="switch" id="notifyDeploy" name="notify_deploy" value="1" {{ !empty($settings['notify_deploy']) ? 'checked' : '' }} style="width: 3em; height: 1.5em;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-uppercase text-muted">Payout Provider</label>
+                            <select name="payout_provider" class="form-select">
+                                @foreach(['paystack', 'flutterwave'] as $provider)
+                                    <option value="{{ $provider }}" {{ ($settings['payout_provider'] ?? 'paystack') === $provider ? 'selected' : '' }}>{{ ucfirst($provider) }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-uppercase text-muted">Minimum Payout Amount</label>
+                            <input type="number" min="0" step="0.01" name="minimum_payout_amount" class="form-control" value="{{ old('minimum_payout_amount', $settings['minimum_payout_amount'] ?? 5000) }}">
+                        </div>
+                        <div class="col-12">
+                            <div class="card bg-light border-0 p-3">
+                                <div class="form-check form-switch d-flex justify-content-between ps-0 align-items-center">
+                                    <label class="form-check-label ms-2" for="autoPayout">
+                                        <span class="d-block fw-bold text-dark">Auto Payout</span>
+                                        <span class="small text-muted">Allow the payout engine to prepare commission payouts automatically when your account is eligible.</span>
+                                    </label>
+                                    <input class="form-check-input ms-3" type="checkbox" role="switch" id="autoPayout" name="auto_payout_enabled" value="1" {{ !empty($settings['auto_payout_enabled']) ? 'checked' : '' }} style="width: 3em; height: 1.5em;">
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -148,6 +172,33 @@
                         <button type="submit" class="btn btn-primary px-5 py-2 shadow-sm fw-bold">
                             <i class="fas fa-save me-2"></i> Save Changes
                         </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="settings-card p-4 mt-4">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-danger-subtle text-danger rounded-circle p-3 me-3">
+                        <i class="fas fa-lock fa-lg"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0">Password Update</h5>
+                        <p class="text-muted small mb-0">Change the deployment manager login password.</p>
+                    </div>
+                </div>
+                <form action="{{ route('deployment.settings.password') }}" method="POST" class="row g-3">
+                    @csrf
+                    @method('PUT')
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small text-uppercase text-muted">New Password</label>
+                        <input type="password" name="password" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small text-uppercase text-muted">Confirm Password</label>
+                        <input type="password" name="password_confirmation" class="form-control" required>
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-outline-danger px-4">Update Password</button>
                     </div>
                 </form>
             </div>

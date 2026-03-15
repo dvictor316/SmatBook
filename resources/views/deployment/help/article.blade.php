@@ -1,19 +1,22 @@
 @extends('layout.mainlayout')
 
-@section('page-title', 'Deploymenthelparticle')
+@section('page-title', $article['title'])
 
 @section('content')
 <div class="sb-shell page-content-wrapper">
 <div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <div class="small text-uppercase text-muted fw-bold mb-1">Help Article</div>
+            <h4 class="mb-1">{{ $article['title'] }}</h4>
+            <p class="text-muted mb-0">{{ $article['summary'] }}</p>
+        </div>
+        <a href="{{ route('deployment.help') }}" class="btn btn-light border">Back to Help Center</a>
+    </div>
+
     <div class="card border-0 shadow-sm">
         <div class="card-body">
-            <h4 class="mb-2">Deploymenthelparticle</h4>
-            <p class="text-muted mb-3">This module page is now wired and reachable. Replace content with final business UI as needed.</p>
-            <div class="small text-muted">View file: <code>deployment/help/article.blade.php</code></div>
-            <div class="mt-3">
-                <a href="{{ url()->previous() }}" class="btn btn-light border">Go Back</a>
-                <a href="{{ route('home') }}" class="btn btn-primary">Home</a>
-            </div>
+            <div class="lh-lg text-dark">{{ $article['content'] }}</div>
         </div>
     </div>
 </div>
