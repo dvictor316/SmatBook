@@ -650,6 +650,7 @@ class DashboardController extends Controller
         }
 
         $targetColumn = $column ?? 'company_id';
+        $qualifiedTargetColumn = str_contains($targetColumn, '.') ? $targetColumn : ($table . '.' . $targetColumn);
         $hasCompanyColumn = Schema::hasColumn($table, 'company_id');
         $hasUserColumn = Schema::hasColumn($table, 'user_id');
 
@@ -658,8 +659,8 @@ class DashboardController extends Controller
             // Legacy fallback: include records created by company users where company_id is null.
             if ($hasUserColumn) {
                 $userIds = $this->companyUserIds($company);
-                return $query->where(function ($q) use ($targetColumn, $company, $table, $userIds) {
-                    $q->where($targetColumn, $company->id)
+                return $query->where(function ($q) use ($qualifiedTargetColumn, $company, $table, $userIds) {
+                    $q->where($qualifiedTargetColumn, $company->id)
                       ->orWhere(function ($legacy) use ($table, $userIds) {
                           $legacy->whereNull($table . '.company_id')
                                  ->whereIn($table . '.user_id', $userIds);
@@ -667,7 +668,7 @@ class DashboardController extends Controller
                 });
             }
 
-            return $query->where($targetColumn, $company->id);
+            return $query->where($qualifiedTargetColumn, $company->id);
         }
 
         // Fallback for legacy tables with no company_id.
