@@ -88,7 +88,7 @@
                     <i class="fas fa-print me-2 text-secondary"></i> Print Directory
                 </button>
                 <a href="{{ route('deployment.customers.create') }}" class="btn btn-primary btn-sm shadow-sm">
-                    <i class="fas fa-plus me-2"></i> Add Company
+                    <i class="fas fa-user-plus me-2"></i> Register Customer
                 </a>
             </div>
         </div>
@@ -155,17 +155,15 @@
                                     <a href="{{ route('deployment.companies.view', $company->id) }}" class="btn btn-sm btn-outline-dark border no-print shadow-sm">
                                         <i class="fas fa-eye me-1"></i> View
                                     </a>
+                                    @if(in_array(strtolower((string) $company->status), ['pending', 'awaiting payment', 'awaiting_payment'], true))
+                                        <a href="{{ route('deployment.companies.edit', $company->id) }}" class="btn btn-sm btn-outline-primary no-print shadow-sm">
+                                            <i class="fas fa-pen me-1"></i> Edit
+                                        </a>
+                                    @endif
                                     @if(strtolower((string) $company->status) === 'pending' && !empty($company->subscription?->id))
                                         <a href="{{ route('saas.checkout', $company->subscription->id) }}" class="btn btn-sm btn-primary text-white no-print shadow-sm">
                                             <i class="fas fa-credit-card me-1"></i> Proceed to Payment
                                         </a>
-                                        <form action="{{ route('deployment.companies.delete', $company->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this pending customer and all related records?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-danger no-print shadow-sm">
-                                                <i class="fas fa-trash me-1"></i> Delete
-                                            </button>
-                                        </form>
                                     @endif
                                 </td>
                             </tr>
