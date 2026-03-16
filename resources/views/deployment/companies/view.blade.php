@@ -22,15 +22,14 @@
             </div>
 
             <div class="mt-4 d-flex gap-2">
-                <a href="{{ route('deployment.companies.edit', $company->id) }}" class="btn btn-primary">Edit</a>
-                <form action="{{ route('deployment.companies.suspend', $company->id) }}" method="POST">
-                    @csrf
-                    <button class="btn btn-warning" type="submit">Suspend</button>
-                </form>
-                <form action="{{ route('deployment.companies.activate', $company->id) }}" method="POST">
-                    @csrf
-                    <button class="btn btn-success" type="submit">Activate</button>
-                </form>
+                @if(in_array(strtolower((string) ($company->status ?? '')), ['pending', 'awaiting payment', 'awaiting_payment'], true))
+                    <a href="{{ route('deployment.companies.edit', $company->id) }}" class="btn btn-primary">Edit</a>
+                    @if(!empty($company->subscription?->id))
+                        <a href="{{ route('saas.checkout', $company->subscription->id) }}" class="btn btn-success">Proceed to Payment</a>
+                    @endif
+                @else
+                    <span class="btn btn-light border disabled">Deployment Locked</span>
+                @endif
             </div>
         </div>
     </div>
