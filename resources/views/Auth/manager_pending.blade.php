@@ -38,7 +38,7 @@
         <div class="row justify-content-center">
             <div class="col-md-8 col-lg-5">
                 <div class="text-center mb-4">
-                    <img src="{{ asset('assets/img/logos.png') }}" alt="Logo" style="max-width: 360px;">
+                    <x-auth-brand-lockup :logo="asset('assets/img/logos.png')" size="lg" :tagline="'Deployment Hub'" />
                 </div>
 
                 <div class="card shadow-lg border-0">

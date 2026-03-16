@@ -114,7 +114,9 @@
 <div class="landscape-card" data-aos="zoom-in">
     {{-- Left Side: Summary Panel --}}
     <div class="summary-side">
-        <img src="{{ asset('assets/img/logos.png') }}" alt="Logo" height="70" class="mb-5 align-self-start">
+        <div class="mb-5 align-self-start">
+            <x-auth-brand-lockup :logo="asset('assets/img/logos.png')" theme="dark" size="lg" :tagline="'Business Stack'" />
+        </div>
         
         <span class="gold-label">Institutional Uplink</span>
         <h2 class="fw-bold mb-1 text-white">Finalize Setup</h2>

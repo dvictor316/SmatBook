@@ -274,13 +274,7 @@
             {{-- Left Side: Branding --}}
             <div class="col-lg-6 d-none d-lg-block branding-side">
                 <div class="h-100 d-flex flex-column justify-content-center text-white">
-                    <div class="brand-lockup">
-                        <img src="{{ asset('/assets/img/logos.png') }}" class="logo-img" alt="SmartProbook">
-                        <div class="brand-panel">
-                            <span class="brand-name">SmartProbook</span>
-                            <span class="brand-tagline">Secure Business Stack</span>
-                        </div>
-                    </div>
+                    <x-auth-brand-lockup :logo="asset('/assets/img/logos.png')" theme="dark" size="lg" :tagline="'Secure Business Stack'" />
                     <h2 class="branding-title">Recover your access without leaving the blue flow.</h2>
                     <p class="branding-copy">Enter the email attached to your workspace and we will send a secure reset link to continue onboarding or return to your dashboard.</p>
                     <div class="branding-points">
@@ -305,11 +299,7 @@
             {{-- Right Side: Form --}}
             <div class="col-lg-6 form-panel">
                 <div class="mobile-brand-lockup">
-                    <img src="{{ asset('/assets/img/logos.png') }}" class="logo-img" alt="SmartProbook">
-                    <div class="brand-panel">
-                        <span class="brand-name">SmartProbook</span>
-                        <span class="brand-tagline">Secure Business Stack</span>
-                    </div>
+                    <x-auth-brand-lockup :logo="asset('/assets/img/logos.png')" size="md" :tagline="'Secure Business Stack'" />
                 </div>
                 <span class="panel-kicker">Protected recovery</span>
                 <div class="form-shell">

@@ -14,7 +14,9 @@
     <div class="login-card-custom" style="background: #fff; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); overflow: hidden; max-width: 500px; width: 100%; border: 1px solid #eee;">
         <div class="p-5">
             <div class="text-center mb-4">
-                <img src="{{ URL::asset('/assets/img/logos.png') }}" class="mb-4" style="max-height: 100px;" alt="Logo">
+                <div class="mb-4">
+                    <x-auth-brand-lockup :logo="URL::asset('/assets/img/logos.png')" size="md" :tagline="'Secure Access'" />
+                </div>
                 
                 <div class="lock-user mb-4">
                     <div class="position-relative d-inline-block">

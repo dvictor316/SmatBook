@@ -18,7 +18,7 @@
                 // Fallback to smat14 if no client logo is found
                 $clientLogo = isset($company) && $company->logo ? asset('storage/' . $company->logo) : URL::asset('/assets/img/logos.png');
             @endphp
-            <img class="img-fluid logo-dark mb-2 logo-color" src="{{ $clientLogo }}" alt="Company Logo" style="max-height: 60px;">
+            <x-auth-brand-lockup :logo="$clientLogo" size="md" />
         </div>
         
         <div class="loginbox">

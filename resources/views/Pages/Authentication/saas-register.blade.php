@@ -511,13 +511,7 @@
     <div class="smat-card">
         <div class="smat-aside">
             <div>
-                <div class="brand-lockup">
-                    <img src="{{ asset('assets/img/logos.png') }}" alt="SmartProbook" class="logo-img">
-                    <div class="brand-panel">
-                        <span class="brand-name">SmartProbook</span>
-                        <span class="brand-tagline">Secure Business Stack</span>
-                    </div>
-                </div>
+                <x-auth-brand-lockup :logo="asset('assets/img/logos.png')" theme="dark" size="lg" :tagline="'Secure Business Stack'" />
                 <span class="step-badge">Step 01: Enrollment</span>
                 <h2 class="aside-title">
                     {{ $isManager ? 'Deployment' : 'Administrator' }}<br>Registration
@@ -569,11 +563,7 @@
 
         <div class="smat-main">
             <div class="mobile-brand-lockup">
-                <img src="{{ asset('assets/img/logos.png') }}" alt="SmartProbook" class="logo-img">
-                <div class="brand-panel">
-                    <span class="brand-name">SmartProbook</span>
-                    <span class="brand-tagline">Secure Business Stack</span>
-                </div>
+                <x-auth-brand-lockup :logo="asset('assets/img/logos.png')" size="md" :tagline="'Secure Business Stack'" />
             </div>
             <span class="panel-kicker">Protected onboarding</span>
             <h1 class="form-title">Create Account</h1>

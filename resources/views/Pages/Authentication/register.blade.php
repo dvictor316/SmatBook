@@ -57,6 +57,7 @@
     .btn-google { background-color: #ffffff; color: #444; border: 1px solid #ddd; }
     .btn-facebook { background-color: #3b5998; color: white; border: none; }
     .btn-google:hover { background-color: #f8f9fa; }
+    .register-brand { margin-bottom: 1.75rem; }
 
     /* Responsive */
     @media (max-width: 991px) {
@@ -68,7 +69,9 @@
 <div class="auth-container">
     <div class="loginbox">
         <div class="login-left-panel">
-            <img class="img-fluid mb-4" src="{{ asset('/assets/img/logos.png') }}" alt="SmartProbook" style="max-height: 280px;">
+            <div class="register-brand">
+                <x-auth-brand-lockup :logo="asset('/assets/img/logos.png')" theme="dark" size="lg" :tagline="'Business Stack'" />
+            </div>
             <h2 class="fw-bold">Scale Your Business</h2>
             <p class="opacity-75">Join thousands of businesses managing their finances with SmartProbook's intelligent invoicing system.</p>
             <div class="mt-4">
@@ -78,6 +81,9 @@
 
         <div class="login-right-panel">
             <div class="mb-4">
+                <div class="d-inline-block mb-3 d-lg-none">
+                    <x-auth-brand-lockup :logo="asset('/assets/img/logos.png')" size="md" />
+                </div>
                 <h2 class="fw-bold text-dark mb-1">Create Account</h2>
                 <p class="text-muted">Start your journey with us today.</p>
             </div>

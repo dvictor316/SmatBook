@@ -4,7 +4,9 @@
 <div class="container d-flex align-items-center justify-content-center" style="min-height: 80vh;">
     <div class="text-center" style="max-width: 500px;">
         {{-- Branding --}}
-        <img src="{{ asset('assets/img/logos.png') }}" alt="SmartProbook" style="height: 80px; margin-bottom: 30px;">
+        <div class="mb-4">
+            <x-auth-brand-lockup :logo="asset('assets/img/logos.png')" size="lg" :tagline="'Business Stack'" />
+        </div>
         
         {{-- Animated Icon --}}
         <div class="mb-4">

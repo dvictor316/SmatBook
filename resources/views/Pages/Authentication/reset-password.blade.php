@@ -238,13 +238,7 @@
         <div class="row g-0">
             <div class="col-lg-6 d-none d-lg-block branding-side">
                 <div class="h-100 d-flex flex-column justify-content-center p-5 text-white">
-                    <div class="brand-lockup">
-                        <img src="{{ asset('/assets/img/logos.png') }}" class="logo-img" alt="SmartProbook">
-                        <div class="brand-panel">
-                            <span class="brand-name">SmartProbook</span>
-                            <span class="brand-tagline">Secure Business Stack</span>
-                        </div>
-                    </div>
+                    <x-auth-brand-lockup :logo="asset('/assets/img/logos.png')" theme="dark" size="lg" :tagline="'Secure Business Stack'" />
                     <h2 class="branding-title">Set a new password and return to the login page.</h2>
                     <p class="branding-copy">Create a stronger password for your SmartProbook workspace, then sign back in from the login page with your updated credentials.</p>
                 </div>
@@ -252,11 +246,7 @@
 
             <div class="col-lg-6 form-panel">
                 <div class="mobile-brand-lockup">
-                    <img src="{{ asset('/assets/img/logos.png') }}" class="logo-img" alt="SmartProbook">
-                    <div class="brand-panel">
-                        <span class="brand-name">SmartProbook</span>
-                        <span class="brand-tagline">Secure Business Stack</span>
-                    </div>
+                    <x-auth-brand-lockup :logo="asset('/assets/img/logos.png')" size="md" :tagline="'Secure Business Stack'" />
                 </div>
 
                 <span class="panel-kicker">Protected reset</span>

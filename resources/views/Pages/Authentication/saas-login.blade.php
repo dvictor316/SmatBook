@@ -533,13 +533,7 @@
         <!-- Sidebar Branding -->
         <div class="smat-aside">
             <div>
-                <div class="brand-lockup">
-                    <img src="{{ asset('/assets/img/logos.png') }}" alt="SmartProbook" class="logo-img">
-                    <div class="brand-panel">
-                        <span class="brand-name">SmartProbook</span>
-                        <span class="brand-tagline">Secure Business Stack</span>
-                    </div>
-                </div>
+                <x-auth-brand-lockup :logo="asset('/assets/img/logos.png')" theme="dark" size="lg" :tagline="'Secure Business Stack'" />
                 <div class="status-badge"><span class="status-dot"></span> Secure Node Active</div>
                 <h2 class="aside-title">Authorized<br>Login</h2>
                 <p class="aside-copy">Connect to your accounting nodes through a cleaner, secure sign-in channel built for finance teams.</p>
@@ -569,11 +563,7 @@
         <!-- Login Form Panel -->
         <div class="smat-main">
             <div class="mobile-brand-lockup">
-                <img src="{{ asset('/assets/img/logos.png') }}" alt="SmartProbook" class="logo-img">
-                <div class="brand-panel">
-                    <span class="brand-name">SmartProbook</span>
-                    <span class="brand-tagline">Secure Business Stack</span>
-                </div>
+                <x-auth-brand-lockup :logo="asset('/assets/img/logos.png')" size="md" :tagline="'Secure Business Stack'" />
             </div>
             <span class="panel-kicker">Protected access</span>
             <form action="{{ route('saas-login.post') }}" method="POST" class="form-shell">
