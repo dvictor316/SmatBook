@@ -199,10 +199,10 @@ function showUpgradeModal(planName, featureName) {
         cancelButtonColor: '#6b7280'
     }).then((result) => {
         if (result.isConfirmed) {
-            @if(Route::has('plan-billing'))
-                window.location.href = '{{ route("plan-billing") }}';
+            @if(Route::has('membership-plans'))
+                window.location.href = '{{ route("membership-plans") }}';
             @else
-                window.location.href = '/settings/plan-billing';
+                window.location.href = '/membership-plans';
             @endif
         }
     });

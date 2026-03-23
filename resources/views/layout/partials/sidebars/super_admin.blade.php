@@ -636,7 +636,7 @@ function showUpgradeModal(planName) {
         cancelButtonColor: '#6b7280'
     }).then((result) => {
         if (result.isConfirmed) {
-            window.location.href = '{{ route("plan-billing") }}';
+            window.location.href = '{{ route("membership-plans") }}';
         }
     });
 }
@@ -770,7 +770,7 @@ function showUpgradeModal(planName) {
         cancelButtonColor: '#6b7280'
     }).then((result) => {
         if (result.isConfirmed) {
-            window.location.href = '{{ route("plan-billing") }}';
+            window.location.href = '{{ route("membership-plans") }}';
         }
     });
 }
