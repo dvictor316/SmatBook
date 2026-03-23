@@ -159,7 +159,7 @@ Route::controller(SubscriptionController::class)->group(function () {
 */
 
 Route::middleware(['auth'])->group(function () {
-    Route::get('/manager/pending-approval', fn() => view('auth.manager_pending'))->name('manager.pending.notice');
+    Route::get('/manager/pending-approval', fn() => view('Auth.manager_pending'))->name('manager.pending.notice');
     Route::get('/manager/verify-profile', [DeploymentManagerController::class, 'showVerificationForm'])->name('manager.verification.form');
     Route::post('/manager/verify-profile', [DeploymentManagerController::class, 'submitVerification'])->name('manager.submit.verification'); 
     Route::post('/verify', [DeploymentManagerController::class, 'submitVerification'])->name('submit.verification'); 
