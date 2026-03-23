@@ -208,12 +208,6 @@
         @include('layout.partials.ai-quick-agent')
     @endif
 
-    <div class="settings-icon">
-        <span data-bs-toggle="offcanvas" data-bs-target="#theme-settings-offcanvas">
-            <img src="{{ asset('assets/img/icons/siderbar-icon2.svg') }}" class="feather-five" alt="layout">
-        </span>
-    </div>
-
     <script src="{{ asset('assets/js/jquery-3.7.1.min.js') }}"></script>
     <script src="{{ asset('assets/js/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ asset('assets/plugins/feather/feather.min.js') }}"></script>
