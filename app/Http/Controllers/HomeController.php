@@ -427,14 +427,14 @@ class HomeController extends Controller
     public function updateProfileImages(Request $request)
     {
         $request->validate([
-            'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-            'cover_photo'   => 'nullable|image|mimes:jpeg,png,jpg|max:5120',
+            'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'cover_photo'   => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
         ]);
 
         $user = Auth::user();
 
         if ($request->hasFile('profile_photo')) {
-            if ($user->profile_photo) {
+            if ($user->profile_photo && Storage::disk('public')->exists($user->profile_photo)) {
                 Storage::disk('public')->delete($user->profile_photo);
             }
             $user->profile_photo = $request->file('profile_photo')
@@ -442,7 +442,7 @@ class HomeController extends Controller
         }
 
         if ($request->hasFile('cover_photo')) {
-            if ($user->cover_photo) {
+            if ($user->cover_photo && Storage::disk('public')->exists($user->cover_photo)) {
                 Storage::disk('public')->delete($user->cover_photo);
             }
             $user->cover_photo = $request->file('cover_photo')

@@ -4,25 +4,8 @@
 
     @php
         $user = auth()->user();
-        
-        // 1. Unified Image Logic (Matching SQL Columns: profile_photo, cover_photo)
-        // Profile Photo
-        $profilePhoto = asset('assets/img/profiles/avatar-02.jpg');
-        if ($user && $user->profile_photo) {
-            $photoPath = 'storage/' . $user->profile_photo;
-            if (file_exists(public_path($photoPath))) { 
-                $profilePhoto = asset($photoPath); 
-            }
-        }
-
-        // Cover Photo
-        $coverPhoto = asset('assets/img/profiles/avatar-02.jpg'); // Fallback background
-        if ($user && $user->cover_photo) {
-            $coverPath = 'storage/' . $user->cover_photo;
-            if (file_exists(public_path($coverPath))) { 
-                $coverPhoto = asset($coverPath); 
-            }
-        }
+        $profilePhoto = $user?->profile_photo_url ?? asset('assets/img/profiles/avatar-02.jpg');
+        $coverPhoto = $user?->cover_photo_url ?? asset('assets/img/profiles/avatar-02.jpg');
 
         // 2. Calculate Profile Completeness based on actual Database Schema
         $profileFields = ['name', 'email', 'profile_photo', 'cover_photo', 'role']; 
@@ -49,7 +32,7 @@
                         @csrf
                         <div class="profile-cover">
                             <div class="profile-cover-wrap">
-                                <img class="profile-cover-img" id="cover-preview" src="{{ $coverPhoto }}" alt="Cover Image">
+                                <img class="profile-cover-img" id="cover-preview" src="{{ $coverPhoto }}" alt="Cover Image" onerror="this.src='{{ asset('assets/img/profiles/avatar-02.jpg') }}'">
 
                                 <div class="cover-content">
                                     <div class="custom-file-btn">
@@ -66,7 +49,7 @@
 
                         <div class="text-center mb-5">
                             <label class="avatar avatar-xxl profile-cover-avatar" for="avatar_upload">
-                                <img class="avatar-img" id="avatar-preview" src="{{ $profilePhoto }}" alt="Profile Picture">
+                                <img class="avatar-img" id="avatar-preview" src="{{ $profilePhoto }}" alt="Profile Picture" onerror="this.src='{{ asset('assets/img/profiles/avatar-02.jpg') }}'">
                                 {{-- Input name matches controller: profile_photo --}}
                                 <input type="file" name="profile_photo" id="avatar_upload" hidden onchange="this.form.submit()">
                                 <span class="avatar-edit">

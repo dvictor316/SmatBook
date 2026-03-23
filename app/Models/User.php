@@ -97,8 +97,8 @@ class User extends Authenticatable
                 }
 
                 // 2. Check Storage for profile_photo
-                if ($this->profile_photo && Storage::disk('public')->exists($this->profile_photo)) {
-                    return Storage::url($this->profile_photo);
+                if ($profilePhotoUrl = $this->resolveStoredMediaUrl($this->profile_photo)) {
+                    return $profilePhotoUrl;
                 }
 
                 // 3. Check legacy local asset 'avatar' column
@@ -109,6 +109,20 @@ class User extends Authenticatable
                 // 4. Generate Deterministic UI Avatar
                 return $this->generateUiAvatar();
             }
+        );
+    }
+
+    protected function profilePhotoUrl(): Attribute
+    {
+        return Attribute::make(
+            get: fn (): string => $this->resolveStoredMediaUrl($this->profile_photo) ?: $this->avatar_url
+        );
+    }
+
+    protected function coverPhotoUrl(): Attribute
+    {
+        return Attribute::make(
+            get: fn (): string => $this->resolveStoredMediaUrl($this->cover_photo) ?: asset('assets/img/profiles/avatar-02.jpg')
         );
     }
 
@@ -292,6 +306,35 @@ class User extends Authenticatable
         $index = abs(crc32(strtolower($name))) % count($fallbacks);
 
         return asset('assets/img/profiles/' . $fallbacks[$index]);
+    }
+
+    private function resolveStoredMediaUrl(?string $path): ?string
+    {
+        $path = trim((string) $path);
+
+        if ($path === '') {
+            return null;
+        }
+
+        if (filter_var($path, FILTER_VALIDATE_URL)) {
+            return $path;
+        }
+
+        if (Str::startsWith($path, ['assets/', '/assets/'])) {
+            return asset(ltrim($path, '/'));
+        }
+
+        $normalizedPath = preg_replace('#^storage/#', '', ltrim($path, '/'));
+
+        if ($normalizedPath && Storage::disk('public')->exists($normalizedPath)) {
+            return Storage::url($normalizedPath);
+        }
+
+        if (file_exists(public_path(ltrim($path, '/')))) {
+            return asset(ltrim($path, '/'));
+        }
+
+        return null;
     }
 
     /* =========================================================================
