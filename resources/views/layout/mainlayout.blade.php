@@ -184,6 +184,85 @@
             padding-right: 12px !important;
         }
 
+        body:not(.login-body):not(.landing-page-body) .page-wrapper {
+            background:
+                radial-gradient(circle at top right, rgba(59, 130, 246, 0.06), transparent 24%),
+                radial-gradient(circle at left 20%, rgba(245, 158, 11, 0.05), transparent 20%),
+                linear-gradient(180deg, #f8fbff 0%, #f4f8ff 46%, #f9fbff 100%);
+        }
+
+        body:not(.login-body):not(.landing-page-body) .page-wrapper .content,
+        body:not(.login-body):not(.landing-page-body) .page-wrapper .content.container-fluid {
+            width: 100%;
+            max-width: 1560px;
+            margin: 0 auto;
+            padding: 20px 18px 32px !important;
+        }
+
+        body:not(.login-body):not(.landing-page-body) .page-wrapper .page-header {
+            margin-bottom: 18px;
+        }
+
+        body:not(.login-body):not(.landing-page-body) .page-wrapper .page-header h3,
+        body:not(.login-body):not(.landing-page-body) .page-wrapper .page-title,
+        body:not(.login-body):not(.landing-page-body) .page-wrapper h1:first-child,
+        body:not(.login-body):not(.landing-page-body) .page-wrapper h2:first-child {
+            letter-spacing: -0.02em;
+        }
+
+        body:not(.login-body):not(.landing-page-body) .page-wrapper .card,
+        body:not(.login-body):not(.landing-page-body) .page-wrapper .metric-card,
+        body:not(.login-body):not(.landing-page-body) .page-wrapper .chart-card,
+        body:not(.login-body):not(.landing-page-body) .page-wrapper .stat-card,
+        body:not(.login-body):not(.landing-page-body) .page-wrapper .kpi-card {
+            border-radius: 22px;
+            border: 1px solid rgba(191, 219, 254, 0.82);
+            box-shadow: 0 18px 42px rgba(37, 99, 235, 0.08);
+            overflow: hidden;
+        }
+
+        body:not(.login-body):not(.landing-page-body) .page-wrapper .card .card-header {
+            padding: 1rem 1.3rem;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(246, 250, 255, 0.92));
+            border-bottom: 1px solid rgba(191, 219, 254, 0.65);
+        }
+
+        body:not(.login-body):not(.landing-page-body) .page-wrapper .card .card-body {
+            padding: 1.2rem 1.35rem;
+        }
+
+        body:not(.login-body):not(.landing-page-body) .page-wrapper .table-responsive {
+            border-radius: 18px;
+        }
+
+        body:not(.login-body):not(.landing-page-body) .page-wrapper .table > :not(caption) > * > * {
+            padding-top: 0.88rem;
+            padding-bottom: 0.88rem;
+            vertical-align: middle;
+        }
+
+        body:not(.login-body):not(.landing-page-body) .page-wrapper .table thead th {
+            font-size: 0.78rem;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: #607495;
+        }
+
+        body:not(.login-body):not(.landing-page-body) .page-wrapper .table tbody td {
+            color: #183153;
+        }
+
+        @media (max-width: 991.98px) {
+            body:not(.login-body):not(.landing-page-body) .page-wrapper .content,
+            body:not(.login-body):not(.landing-page-body) .page-wrapper .content.container-fluid {
+                padding: 16px 14px 26px !important;
+            }
+
+            body:not(.login-body):not(.landing-page-body) .page-wrapper .card .card-body {
+                padding: 1rem 1rem;
+            }
+        }
+
         :root {
             --spb-sidebar-bg-top: #f8fbff;
             --spb-sidebar-bg-mid: #f2f7ff;
