@@ -2050,7 +2050,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
             <div class="impact-story-grid">
                 <div class="impact-story-media">
                     <div class="impact-story-image-wrap">
-                        <img src="https://images.pexels.com/photos/30677714/pexels-photo-30677714.jpeg?auto=compress&cs=tinysrgb&w=1200" alt="Young Nigerian business professional supporting a smooth SmartProbook sales workflow" loading="lazy">
+                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1200&auto=format&fit=crop" alt="Young business professional supporting a smooth SmartProbook sales workflow" loading="lazy">
                         <div class="impact-story-note-card">
                             <strong>Sell easily</strong>
                             <span>Manage your business with SmartProbook.</span>
