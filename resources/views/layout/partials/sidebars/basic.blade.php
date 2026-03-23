@@ -135,28 +135,28 @@
     <li class="menu-title"><span>Upgrade for More</span></li>
     
     <li>
-        <a href="javascript:void(0);" onclick="showUpgradeModal('Professional', 'Vendors')">
+        <a href="{{ Route::has('membership-plans') ? route('membership-plans') : url('/membership-plans') }}">
             <i class="fe fe-lock"></i>
             <span>Vendors</span>
             <span class="badge bg-info">Pro</span>
         </a>
     </li>
     <li>
-        <a href="javascript:void(0);" onclick="showUpgradeModal('Professional', 'Categories & Units')">
+        <a href="{{ Route::has('membership-plans') ? route('membership-plans') : url('/membership-plans') }}">
             <i class="fe fe-lock"></i>
             <span>Categories & Units</span>
             <span class="badge bg-info">Pro</span>
         </a>
     </li>
     <li>
-        <a href="javascript:void(0);" onclick="showUpgradeModal('Professional', 'Full Inventory')">
+        <a href="{{ Route::has('membership-plans') ? route('membership-plans') : url('/membership-plans') }}">
             <i class="fe fe-lock"></i>
             <span>Inventory Management</span>
             <span class="badge bg-info">Pro</span>
         </a>
     </li>
     <li>
-        <a href="javascript:void(0);" onclick="showUpgradeModal('Enterprise', 'Advanced Reports')">
+        <a href="{{ Route::has('membership-plans') ? route('membership-plans') : url('/membership-plans') }}">
             <i class="fe fe-lock"></i>
             <span>Cash Flow Reports</span>
             <span class="badge bg-warning">Enterprise</span>
