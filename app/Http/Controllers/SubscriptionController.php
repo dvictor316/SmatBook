@@ -22,14 +22,20 @@ class SubscriptionController extends Controller
     | PLANS
     |--------------------------------------------------------------------------
     */
-    public function plans()
+    public function plans(Request $request)
     {
         $plans = Plan::where('status', 'active')
             ->where('is_active', 1)
             ->orderBy('price', 'asc')
             ->get();
 
-        return view('Membership.membership-plans', compact('plans'));
+        $isLegacyPricingRoute = $request->routeIs('pricing');
+
+        return view('Membership.membership-plans', [
+            'plans' => $plans,
+            'seoCanonical' => route('membership-plans'),
+            'seoNoIndex' => $isLegacyPricingRoute,
+        ]);
     }
 
     /*

@@ -4,12 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     @php
-        $seoNoIndex = false;
+        $seoNoIndex = $seoNoIndex ?? false;
         $seoType = 'website';
         $seoTitle = 'Membership Plans and Pricing';
         $seoDescription = 'Compare SmartProbook membership plans, pricing tiers, accounting tools, ERP modules, reporting features, and business upgrade options.';
         $seoKeywords = 'SmartProbook pricing, membership plans, accounting software pricing, ERP pricing, invoicing software plans, business software subscriptions';
-        $seoCanonical = route('membership-plans');
+        $seoCanonical = $seoCanonical ?? route('membership-plans');
     @endphp
     @include('layout.partials.seo-meta')
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
