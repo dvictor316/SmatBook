@@ -206,6 +206,13 @@
         gap: 8px;
         min-width: 0;
     }
+    .header-logo a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 0;
+        flex-shrink: 0;
+    }
 
     .header-logo img { height: 56px; width: auto; }
     .spb-wordmark {
@@ -473,6 +480,7 @@
     .country-selector {
         display: flex;
         align-items: center;
+        justify-content: center;
         gap: 8px;
         padding: 8px 12px;
         border-radius: 8px;
@@ -514,6 +522,7 @@
     .user-profile {
         display: flex;
         align-items: center;
+        justify-content: center;
         gap: 10px;
         padding: 6px 12px 6px 6px;
         border-radius: 8px;
@@ -561,39 +570,38 @@
     @media (max-width: 991.98px) {
 
         /* ── Header layout ── */
-        .header-logo    { width: auto; margin-right: auto; max-width: 172px; }
+        .header-logo    { width: auto; margin-right: auto; max-width: 196px; }
         .header-toggle  { display: none; }
         #mobile_btn     { display: flex; }
         .header-search-container { display: none; }
         .mobile-search-btn       { display: flex; }
         .user-info, .country-name { display: none; }
         .country-currency { display: none; }
-        .header-actions { margin-left: auto; gap: 6px; }
+        .header-actions { margin-left: auto; gap: 4px; }
         .workspace-switcher { display: none; }
         .branch-pill { display: none; }
         .country-selector {
-            padding: 6px 8px;
-            gap: 4px;
+            padding: 4px 6px;
+            gap: 3px;
         }
         .country-selector img {
-            height: 15px;
-            width: 22px;
+            height: 16px;
+            width: 24px;
         }
         .notification-bell,
         .mobile-search-btn {
-            width: 34px;
-            height: 34px;
-            font-size: 15px;
+            width: 32px;
+            height: 32px;
+            font-size: 14px;
         }
         .user-profile {
             gap: 0;
-            padding: 2px;
-            min-width: 34px;
-            justify-content: center;
+            padding: 1px;
+            min-width: 32px;
         }
         .user-avatar {
-            width: 34px;
-            height: 34px;
+            width: 32px;
+            height: 32px;
         }
 
         /* ── Regular sidebar (#sidebar) ── */
@@ -679,18 +687,18 @@
 
     @media (max-width: 991px) {
         .header {
-            padding: 0 10px;
+            padding: 0 9px;
             margin-bottom: 10px;
             height: 70px;
         }
         .header-logo {
-            gap: 5px;
+            gap: 7px;
             min-width: 0;
         }
-        .header-logo img { height: 38px; }
+        .header-logo img { height: 42px; }
         .spb-wordmark {
-            font-size: 0.84rem;
-            letter-spacing: -0.2px;
+            font-size: 0.96rem;
+            letter-spacing: -0.24px;
             white-space: nowrap;
             line-height: 1;
         }
@@ -701,47 +709,47 @@
             padding: 0 8px;
         }
         .header-logo {
-            gap: 3px;
+            gap: 5px;
             width: auto;
-            max-width: 130px;
+            max-width: 154px;
         }
-        .header-logo img { height: 28px; }
+        .header-logo img { height: 34px; }
         .spb-wordmark {
             display: block;
-            font-size: 0.6rem;
-            letter-spacing: -0.16px;
+            font-size: 0.78rem;
+            letter-spacing: -0.18px;
             overflow: visible;
             text-overflow: clip;
             max-width: none;
         }
         .header-actions {
             gap: 2px;
-            margin-left: 4px;
+            margin-left: 3px;
         }
         #mobile_btn {
             width: 34px;
             height: 34px;
-            margin-right: 6px;
+            margin-right: 4px;
         }
         .country-selector {
-            padding: 4px 5px;
+            padding: 3px 4px;
         }
         .country-selector img {
-            height: 13px;
-            width: 19px;
+            height: 14px;
+            width: 20px;
         }
         .notification-bell,
         .mobile-search-btn,
         .user-avatar {
-            width: 30px;
-            height: 30px;
+            width: 29px;
+            height: 29px;
         }
         .notification-bell,
         .mobile-search-btn {
             font-size: 13px;
         }
         .user-profile {
-            min-width: 30px;
+            min-width: 29px;
             padding: 1px;
         }
     }
@@ -752,12 +760,12 @@
         }
         .header-logo {
             gap: 2px;
-            max-width: 114px;
+            max-width: 132px;
         }
-        .header-logo img { height: 25px; }
+        .header-logo img { height: 29px; }
         .spb-wordmark {
-            font-size: 0.5rem;
-            letter-spacing: -0.08px;
+            font-size: 0.62rem;
+            letter-spacing: -0.1px;
         }
         .header-actions {
             gap: 1px;
