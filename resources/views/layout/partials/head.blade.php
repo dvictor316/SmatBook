@@ -128,3 +128,53 @@
 {{--  5. MAIN THEME CSS (Loaded last to override plugins)           --}}
 {{-- ============================================================== --}}
 <link rel="stylesheet" href="{{ asset('assets/css/style.css') }}">
+
+<style>
+    /* Keep legacy sidebar/header Feather class names rendering even when the old font pack is unavailable. */
+    .sidebar .sidebar-menu i.fe,
+    .header i.fe,
+    .top-nav-search i.fe {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.15rem;
+        min-width: 1.15rem;
+        text-align: center;
+    }
+
+    .sidebar .sidebar-menu i.fe::before,
+    .header i.fe::before,
+    .top-nav-search i.fe::before {
+        font-family: "Font Awesome 6 Free" !important;
+        font-weight: 900 !important;
+        font-style: normal;
+        line-height: 1;
+    }
+
+    .fe-home::before { content: "\f015"; }
+    .fe-grid::before { content: "\f00a"; }
+    .fe-command::before { content: "\f120"; }
+    .fe-users::before { content: "\f0c0"; }
+    .fe-package::before { content: "\f466"; }
+    .fe-archive::before { content: "\f187"; }
+    .fe-file::before { content: "\f15b"; }
+    .fe-clipboard::before { content: "\f328"; }
+    .fe-file-text::before { content: "\f15c"; }
+    .fe-shopping-cart::before { content: "\f07a"; }
+    .fe-shopping-bag::before { content: "\f290"; }
+    .fe-file-plus::before { content: "\f0fe"; }
+    .fe-credit-card::before { content: "\f09d"; }
+    .fe-dollar-sign::before { content: "\24"; }
+    .fe-lock::before { content: "\f023"; }
+    .fe-settings::before { content: "\f013"; }
+    .fe-shield::before { content: "\f3ed"; }
+    .fe-user::before { content: "\f007"; }
+    .fe-trending-up::before { content: "\f201"; }
+    .fe-briefcase::before { content: "\f0b1"; }
+    .fe-bar-chart::before { content: "\f080"; }
+    .fe-book-open::before { content: "\f518"; }
+    .fe-percent::before { content: "\25"; }
+    .fe-git-branch::before { content: "\f126"; }
+    .fe-activity::before { content: "\f201"; }
+    .fe-check::before { content: "\f00c"; }
+</style>

@@ -855,7 +855,7 @@
         @auth
         <div class="dropdown">
             <a href="#" class="user-profile" data-bs-toggle="dropdown">
-                <img src="{{ $profileImagePath }}" alt="{{ $user->name }}" class="user-avatar">
+                <img src="{{ $profileImagePath }}" alt="{{ $user->name }}" class="user-avatar" onerror="this.onerror=null;this.src='{{ $defaultAvatar }}';">
                 <div class="user-info">
                     <div class="user-role">{{ $user->role ?? 'Staff' }}</div>
                     <div class="user-name">{{ $user->name }}</div>
