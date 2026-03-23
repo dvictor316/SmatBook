@@ -9,6 +9,8 @@
         || request()->is('*report*')
         || in_array($requestPath, ['cash-flow', 'balance-sheet', 'trial-balance', 'general-ledger', 'tax-sales', 'tax-purchase'], true)
         || str_contains($requestPath, 'report');
+    $isDashboardWorkspace = request()->routeIs('home', 'dashboard', 'super_admin.dashboard', 'deployment.dashboard')
+        || in_array($requestPath, ['home', 'dashboard', 'superadmin/dashboard', 'deployment/dashboard'], true);
 
     // Initialize visibility variables to prevent "undefined" errors
     $hideNavbar = $hideNavbar ?? false;
@@ -29,6 +31,10 @@
 
     if ($isReportWorkspace) {
         $bodyClasses[] = 'report-workspace';
+    }
+
+    if ($isDashboardWorkspace) {
+        $bodyClasses[] = 'dashboard-workspace';
     }
 @endphp
 
@@ -394,6 +400,122 @@
             .btn {
                 min-height: 40px;
             }
+        }
+
+        .dashboard-workspace {
+            --dash-bg-top: #f7fbff;
+            --dash-bg-mid: #f5f7ff;
+            --dash-bg-bottom: #fffdf7;
+            --dash-card-border: rgba(172, 193, 255, 0.24);
+            --dash-card-shadow: 0 18px 38px rgba(37, 99, 235, 0.10);
+            --dash-title: #20335f;
+            --dash-muted: #7b88a6;
+        }
+
+        .dashboard-workspace .page-wrapper {
+            background:
+                radial-gradient(920px 280px at 8% 0%, rgba(96, 165, 250, 0.12) 0%, rgba(96, 165, 250, 0) 58%),
+                radial-gradient(900px 260px at 92% 4%, rgba(250, 204, 21, 0.10) 0%, rgba(250, 204, 21, 0) 56%),
+                linear-gradient(180deg, var(--dash-bg-top) 0%, var(--dash-bg-mid) 50%, var(--dash-bg-bottom) 100%) !important;
+        }
+
+        .dashboard-workspace .card,
+        .dashboard-workspace .metric-card,
+        .dashboard-workspace .chart-card,
+        .dashboard-workspace .stat-card,
+        .dashboard-workspace .kpi-card,
+        .dashboard-workspace .metric-node {
+            border: 1px solid var(--dash-card-border) !important;
+            border-radius: 22px !important;
+            box-shadow: var(--dash-card-shadow) !important;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 251, 255, 0.96) 100%) !important;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .dashboard-workspace .card::before,
+        .dashboard-workspace .metric-card::before,
+        .dashboard-workspace .chart-card::before,
+        .dashboard-workspace .stat-card::before,
+        .dashboard-workspace .kpi-card::before,
+        .dashboard-workspace .metric-node::before {
+            content: "";
+            position: absolute;
+            inset: 0 auto auto 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, #2563eb 0%, #7c3aed 42%, #f59e0b 100%);
+            opacity: 0.9;
+        }
+
+        .dashboard-workspace .dash-title,
+        .dashboard-workspace .metric-title,
+        .dashboard-workspace .metric-label,
+        .dashboard-workspace .kpi-label {
+            color: var(--dash-muted) !important;
+            font-weight: 800 !important;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .dashboard-workspace .dash-counts p,
+        .dashboard-workspace .metric-value,
+        .dashboard-workspace .kpi-value,
+        .dashboard-workspace .stat-card h3,
+        .dashboard-workspace .stat-card h4,
+        .dashboard-workspace .stat-card .value {
+            color: var(--dash-title) !important;
+            font-weight: 900 !important;
+            letter-spacing: -0.03em;
+        }
+
+        .dashboard-workspace .dash-widget-icon,
+        .dashboard-workspace .kpi-icon {
+            border-radius: 18px !important;
+            box-shadow: 0 12px 24px rgba(59, 130, 246, 0.18);
+        }
+
+        .dashboard-workspace .dash-widget-icon.bg-primary,
+        .dashboard-workspace .kpi-card.blue .kpi-icon {
+            background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%) !important;
+            color: #fff !important;
+        }
+
+        .dashboard-workspace .dash-widget-icon.bg-success,
+        .dashboard-workspace .kpi-card.green .kpi-icon {
+            background: linear-gradient(135deg, #10b981 0%, #22c55e 100%) !important;
+            color: #fff !important;
+        }
+
+        .dashboard-workspace .dash-widget-icon.bg-warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%) !important;
+            color: #fff !important;
+        }
+
+        .dashboard-workspace .dash-widget-icon.bg-info,
+        .dashboard-workspace .kpi-card.red .kpi-icon {
+            background: linear-gradient(135deg, #ec4899 0%, #ef4444 100%) !important;
+            color: #fff !important;
+        }
+
+        .dashboard-workspace .metric-node:nth-child(1),
+        .dashboard-workspace .card:nth-child(4n+1) {
+            background: linear-gradient(180deg, #ffffff 0%, #eef6ff 100%) !important;
+        }
+
+        .dashboard-workspace .metric-node:nth-child(2),
+        .dashboard-workspace .card:nth-child(4n+2) {
+            background: linear-gradient(180deg, #ffffff 0%, #f5f0ff 100%) !important;
+        }
+
+        .dashboard-workspace .metric-node:nth-child(3),
+        .dashboard-workspace .card:nth-child(4n+3) {
+            background: linear-gradient(180deg, #ffffff 0%, #fff6e9 100%) !important;
+        }
+
+        .dashboard-workspace .metric-node:nth-child(4),
+        .dashboard-workspace .card:nth-child(4n+4) {
+            background: linear-gradient(180deg, #ffffff 0%, #edfdf4 100%) !important;
         }
 
         .report-workspace {
