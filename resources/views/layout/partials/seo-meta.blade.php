@@ -1,9 +1,6 @@
 @php
     $siteName = config('app.name', 'SmartProbook');
-    $pageTitle = trim((string) ($seoTitle ?? $__env->yieldContent('meta_title') ?? ''));
-    $resolvedTitle = $pageTitle !== ''
-        ? ($pageTitle === $siteName ? $pageTitle : ($pageTitle . ' | ' . $siteName))
-        : $siteName;
+    $resolvedTitle = 'SmartProbook';
 
     $resolvedDescription = trim((string) ($seoDescription ?? $__env->yieldContent('meta_description') ?? ''));
     if ($resolvedDescription === '') {
