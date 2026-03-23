@@ -91,6 +91,43 @@
 
     .logo-img { height: 76px; width: auto; margin-bottom: 20px; }
 
+    .smat-brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 14px;
+    }
+
+    .smat-wordmark {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+    }
+
+    .smat-wordmark-title {
+        font-size: 1.85rem;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        line-height: 1;
+        color: #0f172a;
+    }
+
+    .smat-wordmark-title .brand-main {
+        color: #143b8f;
+    }
+
+    .smat-wordmark-title .brand-accent {
+        color: #dc2626;
+    }
+
+    .smat-wordmark-tagline {
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: #64748b;
+    }
+
     .step-badge {
         display: inline-block;
         padding: 5px 12px;
@@ -164,6 +201,20 @@
         .smat-card { flex-direction: column; width: 95%; height: auto; margin: 20px 0; }
         .smat-aside, .smat-main { width: 100%; padding: 35px; }
         .smat-viewport { padding: 14px; align-items: flex-start; }
+        .smat-brand {
+            gap: 10px;
+        }
+        .logo-img {
+            height: 64px;
+            margin-bottom: 0;
+        }
+        .smat-wordmark-title {
+            font-size: 1.55rem;
+        }
+        .smat-wordmark-tagline {
+            font-size: 10px;
+            letter-spacing: 0.18em;
+        }
     }
 </style>
 
@@ -181,8 +232,15 @@
         <!-- Summary Panel -->
         <div class="smat-aside">
             <div>
-                <img src="{{ asset('/assets/img/logos.png') }}" alt="SmartProbook" class="logo-img">
-                <br>
+                <div class="smat-brand">
+                    <img src="{{ asset('/assets/img/logos.png') }}" alt="SmartProbook" class="logo-img">
+                    <div class="smat-wordmark" aria-label="SmartProbook">
+                        <div class="smat-wordmark-title">
+                            <span class="brand-main">SmartPro</span><span class="brand-accent">book</span>
+                        </div>
+                        <div class="smat-wordmark-tagline">Secure Business Stack</div>
+                    </div>
+                </div>
                 <span class="step-badge">Step 02: Identity</span>
                 <h2 class="fw-bold mt-4 mb-2" style="font-size: 1.5rem; color: #0f172a; line-height: 1.2;">Node<br>Configuration</h2>
                 <p class="small text-muted">Initialize your dedicated node on our secure infrastructure.</p>

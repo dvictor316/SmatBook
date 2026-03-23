@@ -49,6 +49,48 @@
         border-bottom: 1px solid var(--spa-border);
     }
 
+    .payment-brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .payment-brand img {
+        height: 68px;
+        width: auto;
+        flex-shrink: 0;
+    }
+
+    .payment-wordmark {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+    }
+
+    .payment-wordmark-title {
+        font-size: 1.85rem;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        line-height: 1;
+        color: #0f172a;
+    }
+
+    .payment-wordmark-title .brand-main {
+        color: #143b8f;
+    }
+
+    .payment-wordmark-title .brand-accent {
+        color: #dc2626;
+    }
+
+    .payment-wordmark-tagline {
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: #64748b;
+    }
+
     .payment-summary h2 {
         font-size: 1.2rem;
         font-weight: 700;
@@ -263,13 +305,38 @@
         .gateway-grid {
             grid-template-columns: 1fr;
         }
+
+        .payment-brand {
+            gap: 10px;
+        }
+
+        .payment-brand img {
+            height: 60px;
+        }
+
+        .payment-wordmark-title {
+            font-size: 1.55rem;
+        }
+
+        .payment-wordmark-tagline {
+            font-size: 10px;
+            letter-spacing: 0.18em;
+        }
     }
 </style>
 
 <div class="payment-shell">
     <div class="payment-card">
         <aside class="payment-summary">
-            <img src="{{ asset('assets/img/logos.png') }}" alt="SmartProbook" style="height: 68px; width: auto;">
+            <div class="payment-brand">
+                <img src="{{ asset('assets/img/logos.png') }}" alt="SmartProbook">
+                <div class="payment-wordmark" aria-label="SmartProbook">
+                    <div class="payment-wordmark-title">
+                        <span class="brand-main">SmartPro</span><span class="brand-accent">book</span>
+                    </div>
+                    <div class="payment-wordmark-tagline">Secure Business Stack</div>
+                </div>
+            </div>
             <h2>Workspace Activation</h2>
             <p>Complete your payment to activate your workspace instantly.</p>
 

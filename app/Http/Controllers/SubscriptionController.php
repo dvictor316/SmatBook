@@ -653,6 +653,8 @@ class SubscriptionController extends Controller
     private function handleRegularPayment($subscription, $reference)
     {
         DB::beginTransaction();
+        $provisioningWarning = false;
+        $notificationWarning = false;
         try {
             $startDate = now();
             $endDate   = strtolower($subscription->billing_cycle) === 'yearly'
@@ -695,16 +697,40 @@ class SubscriptionController extends Controller
                 ]);
             }
 
-            // Ensure workspace/subdomain records are provisioned immediately after payment.
-            $this->deployWorkspace($subscription);
+            // Payment success should not be rolled back by retryable provisioning issues.
+            try {
+                $this->deployWorkspace($subscription);
+            } catch (\Throwable $workspaceError) {
+                $provisioningWarning = true;
+                Log::warning('Workspace provisioning failed after regular payment activation', [
+                    'subscription_id' => $subscription->id,
+                    'error' => $workspaceError->getMessage(),
+                ]);
+            }
 
             DB::commit();
 
-            $this->sendWelcomeEmail($subscription->user, $subscription, $subscription->company);
+            try {
+                $this->sendWelcomeEmail($subscription->user, $subscription, $subscription->company);
+            } catch (\Throwable $mailError) {
+                $notificationWarning = true;
+                Log::warning('Welcome email failed after regular payment activation', [
+                    'subscription_id' => $subscription->id,
+                    'error' => $mailError->getMessage(),
+                ]);
+            }
 
             session(['last_paid_subscription_id' => $subscription->id]);
 
-            return redirect()->route('saas.success', ['id' => $subscription->id]);
+            $successRedirect = redirect()->route('saas.success', ['id' => $subscription->id]);
+            if ($provisioningWarning || $notificationWarning) {
+                return $successRedirect->with(
+                    'warning',
+                    'Payment was confirmed. Your workspace is being finalized in the background.'
+                );
+            }
+
+            return $successRedirect;
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -722,6 +748,8 @@ class SubscriptionController extends Controller
     private function handleDeploymentPayment($subscription, $reference)
     {
         DB::beginTransaction();
+        $provisioningWarning = false;
+        $notificationWarning = false;
         try {
             $managerId = $this->resolveDeploymentManagerId($subscription);
 
@@ -782,21 +810,37 @@ class SubscriptionController extends Controller
                 ]);
             }
 
-            // Ensure workspace/subdomain records are provisioned immediately after payment.
-            $this->deployWorkspace($subscription);
+            // Payment success should not be rolled back by retryable provisioning issues.
+            try {
+                $this->deployWorkspace($subscription);
+            } catch (\Throwable $workspaceError) {
+                $provisioningWarning = true;
+                Log::warning('Workspace provisioning failed after deployment payment activation', [
+                    'subscription_id' => $subscription->id,
+                    'error' => $workspaceError->getMessage(),
+                ]);
+            }
 
             // 4. Record commission across configured commission tables.
             $commissionAmount = $this->recordDeploymentCommission($subscription, $managerId, $company?->id);
 
-            // 5. Send credentials email
             $regData = session('pending_registration', []);
-            if (!empty($regData['password'])) {
-                $this->sendDeploymentWelcomeEmail($company, $customer, $regData['password']);
-            } else {
-                $this->sendWelcomeEmail($customer, $subscription, $company);
-            }
 
             DB::commit();
+
+            try {
+                if (!empty($regData['password'])) {
+                    $this->sendDeploymentWelcomeEmail($company, $customer, $regData['password']);
+                } else {
+                    $this->sendWelcomeEmail($customer, $subscription, $company);
+                }
+            } catch (\Throwable $mailError) {
+                $notificationWarning = true;
+                Log::warning('Welcome email failed after deployment payment activation', [
+                    'subscription_id' => $subscription->id,
+                    'error' => $mailError->getMessage(),
+                ]);
+            }
 
             // Store for success page
             session([
@@ -823,8 +867,17 @@ class SubscriptionController extends Controller
             ]);
 
             // Go directly to unified success page
-            return redirect()->route('saas.success', ['id' => $subscription->id])
+            $successRedirect = redirect()->route('saas.success', ['id' => $subscription->id])
                 ->with('success', 'Payment confirmed! Customer workspace is now live.');
+
+            if ($provisioningWarning || $notificationWarning) {
+                return $successRedirect->with(
+                    'warning',
+                    'Payment was confirmed. Workspace finishing steps are being completed in the background.'
+                );
+            }
+
+            return $successRedirect;
 
         } catch (\Exception $e) {
             DB::rollBack();
