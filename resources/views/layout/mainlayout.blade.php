@@ -1066,6 +1066,41 @@
 
     <script>
         (function () {
+            const printState = {
+                active: false,
+                lastTriggeredAt: 0,
+                releaseTimer: null,
+                afterPrintBound: false,
+            };
+
+            function releasePrintLock() {
+                printState.active = false;
+                if (printState.releaseTimer) {
+                    clearTimeout(printState.releaseTimer);
+                    printState.releaseTimer = null;
+                }
+            }
+
+            function triggerPrint() {
+                const now = Date.now();
+                if (printState.active || (now - printState.lastTriggeredAt) < 1500) {
+                    return;
+                }
+
+                printState.active = true;
+                printState.lastTriggeredAt = now;
+
+                if (!printState.afterPrintBound) {
+                    window.addEventListener('afterprint', releasePrintLock);
+                    printState.afterPrintBound = true;
+                }
+
+                printState.releaseTimer = window.setTimeout(releasePrintLock, 3000);
+                window.print();
+            }
+
+            window.smartProbookTriggerPrint = triggerPrint;
+
             function isDummyHref(el) {
                 const href = (el.getAttribute('href') || '').trim().toLowerCase();
                 return href === '' || href === '#' || href === 'javascript:void(0);' || href === 'javascript:void(0)';
@@ -1103,7 +1138,7 @@
                 const table = firstVisibleTable();
                 if (!table) {
                     if (format === 'pdf') {
-                        window.print();
+                        triggerPrint();
                     }
                     return;
                 }
@@ -1126,7 +1161,7 @@
                     return;
                 }
 
-                window.print();
+                triggerPrint();
             }
 
             function findFilterPanel(link) {
@@ -1193,11 +1228,18 @@
                 const hasPrintIcon = !!link.querySelector('.fe-printer, .fa-print, .feather-printer');
                 const title = ((link.getAttribute('title') || link.getAttribute('data-bs-original-title') || '')).toLowerCase();
                 const text = (link.textContent || '').toLowerCase();
+                const inlineHandler = ((link.getAttribute('onclick') || '')).toLowerCase();
+                const hasInlinePrintHandler = inlineHandler.includes('window.print')
+                    || inlineHandler.includes('printpage(')
+                    || inlineHandler.includes('print(');
                 const looksLikePrint = title.includes('print') || text.includes('print') || hasPrintIcon;
 
                 if (looksLikePrint && isDummyHref(link)) {
+                    if (hasInlinePrintHandler) {
+                        return;
+                    }
                     event.preventDefault();
-                    window.print();
+                    triggerPrint();
                     return;
                 }
 

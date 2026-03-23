@@ -4,7 +4,11 @@
      * Used for Super Admin and Manager reports
      */
     function printPage() {
-        // Hide sidebar and navbar if necessary for a clean print
+        if (typeof window.smartProbookTriggerPrint === 'function') {
+            window.smartProbookTriggerPrint();
+            return;
+        }
+
         window.print();
     }
 
