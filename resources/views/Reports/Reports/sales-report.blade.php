@@ -65,7 +65,7 @@
             </div>
             @include('Reports.partials.context-strip', [
                 'reportLabel' => 'Sales Analytics Report',
-                'periodLabel' => request('from_date') || request('to_date')
+                'periodLabel' => request('start_date') || request('end_date')
                     ? 'Filtered Business Window'
                     : 'Current Workspace Activity',
             ])
