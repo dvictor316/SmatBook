@@ -11,7 +11,7 @@ $isLocalHost = in_array($appHost, ['localhost', '127.0.0.1'], true)
     || in_array($requestHost, ['localhost', '127.0.0.1'], true)
     || in_array($appEnv, ['local', 'development', 'testing'], true);
 
-$explicitSessionDomain = trim((string) env('SESSION_DOMAIN', ''));
+$explicitSessionDomain = ltrim(trim((string) env('SESSION_DOMAIN', '')), '.');
 $effectiveHost = $requestHost !== '' ? $requestHost : $appHost;
 $hostSegments = array_values(array_filter(explode('.', $effectiveHost)));
 $derivedSessionDomain = null;
@@ -20,9 +20,16 @@ if (!$isLocalHost && $effectiveHost !== '' && filter_var($effectiveHost, FILTER_
     $derivedSessionDomain = '.' . implode('.', array_slice($hostSegments, -2));
 }
 
+$explicitDomainIsUsable = $explicitSessionDomain !== ''
+    && $effectiveHost !== ''
+    && (
+        $effectiveHost === $explicitSessionDomain
+        || str_ends_with($effectiveHost, '.' . $explicitSessionDomain)
+    );
+
 $sessionDomain = $isLocalHost
     ? null
-    : ($explicitSessionDomain !== '' ? ltrim($explicitSessionDomain, '.') : $derivedSessionDomain);
+    : ($explicitDomainIsUsable ? $explicitSessionDomain : $derivedSessionDomain);
 
 if (filled($sessionDomain) && !str_starts_with($sessionDomain, '.')) {
     $sessionDomain = '.' . $sessionDomain;
