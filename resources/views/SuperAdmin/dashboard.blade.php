@@ -51,6 +51,12 @@
         overflow-x: hidden;
         padding-top: 16px;
         color: var(--dash-ink);
+        background:
+            radial-gradient(1200px 320px at 4% 0%, rgba(96, 165, 250, 0.12) 0%, rgba(96, 165, 250, 0) 58%),
+            radial-gradient(880px 260px at 96% 4%, rgba(251, 191, 36, 0.12) 0%, rgba(251, 191, 36, 0) 54%),
+            radial-gradient(760px 240px at 50% 100%, rgba(244, 114, 182, 0.06) 0%, rgba(244, 114, 182, 0) 58%),
+            linear-gradient(180deg, #f8fbff 0%, #f5f9ff 46%, #fffdf7 100%);
+        border-radius: 28px 0 0 0;
     }
 
     /* DESKTOP: Fixed 250px Sidebar Offset */
@@ -75,6 +81,7 @@
             margin-left: 0;
             width: 100%;
             padding-top: 12px;
+            border-radius: 0;
         }
     }
 
@@ -403,6 +410,13 @@
         border-color: rgba(165, 180, 252, 0.34);
         color: #f8fafc;
     }
+    .tone-cobalt {
+        background:
+            radial-gradient(circle at top right, rgba(255,255,255,0.18), transparent 34%),
+            linear-gradient(135deg, #1d4ed8 0%, #38bdf8 100%);
+        border-color: rgba(125, 211, 252, 0.34);
+        color: #f8fbff;
+    }
     .tone-sky {
         background:
             radial-gradient(circle at top right, rgba(255,255,255,0.18), transparent 34%),
@@ -417,12 +431,26 @@
         border-color: rgba(110, 231, 183, 0.34);
         color: #ecfdf5;
     }
+    .tone-mint {
+        background:
+            radial-gradient(circle at top right, rgba(255,255,255,0.18), transparent 34%),
+            linear-gradient(135deg, #0f766e 0%, #34d399 100%);
+        border-color: rgba(110, 231, 183, 0.32);
+        color: #ecfdf5;
+    }
     .tone-amber {
         background:
             radial-gradient(circle at top right, rgba(255,255,255,0.18), transparent 34%),
             linear-gradient(135deg, var(--kpi-amber-start) 0%, var(--kpi-amber-end) 100%);
         border-color: rgba(253, 230, 138, 0.36);
         color: #fffbeb;
+    }
+    .tone-gold {
+        background:
+            radial-gradient(circle at top right, rgba(255,255,255,0.20), transparent 34%),
+            linear-gradient(135deg, #b45309 0%, #fbbf24 100%);
+        border-color: rgba(252, 211, 77, 0.34);
+        color: #fffaf0;
     }
     .tone-rose {
         background:
@@ -448,10 +476,10 @@
     .executive-kpi {
         border: none !important;
         border-radius: 22px !important;
-        min-height: 156px;
+        min-height: 122px;
         overflow: hidden;
         position: relative;
-        box-shadow: 0 18px 34px rgba(15, 23, 42, 0.14) !important;
+        box-shadow: 0 14px 28px rgba(15, 23, 42, 0.12) !important;
     }
     .executive-kpi::before {
         content: "";
@@ -463,12 +491,12 @@
     .executive-kpi .card-body {
         position: relative;
         z-index: 1;
-        padding: 1.05rem 1.1rem;
+        padding: 0.82rem 0.88rem;
     }
     .executive-kpi .kpi-icon-shell {
-        width: 48px;
-        height: 48px;
-        border-radius: 15px;
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -479,8 +507,8 @@
     }
     .executive-kpi .kpi-icon-shell svg,
     .executive-kpi .kpi-icon-shell i {
-        width: 24px;
-        height: 24px;
+        width: 18px;
+        height: 18px;
         stroke: currentColor;
         fill: none;
         stroke-width: 2;
@@ -493,13 +521,13 @@
         justify-content: center;
         width: auto;
         height: auto;
-        font-size: 1.2rem;
+        font-size: 0.95rem;
         stroke: none;
         fill: currentColor;
     }
     .executive-kpi .kpi-kicker {
         font-family: var(--kpi-ui-font);
-        font-size: 0.64rem;
+        font-size: 0.54rem;
         font-weight: 800;
         letter-spacing: 0.08em;
         text-transform: uppercase;
@@ -507,7 +535,7 @@
     }
     .executive-kpi .kpi-value {
         font-family: var(--kpi-display-font);
-        font-size: clamp(1.55rem, 2vw, 2.1rem);
+        font-size: clamp(1.12rem, 1.35vw, 1.65rem);
         line-height: 1;
         letter-spacing: -0.05em;
         color: #fff !important;
@@ -515,13 +543,14 @@
     .executive-kpi .kpi-note {
         font-family: var(--kpi-ui-font);
         color: rgba(255,255,255,0.78) !important;
-        font-size: 0.8rem;
+        font-size: 0.64rem;
+        line-height: 1.35;
     }
     .executive-kpi .kpi-badge {
         font-family: var(--kpi-ui-font);
         border-radius: 999px;
-        padding: 0.28rem 0.58rem;
-        font-size: 0.62rem;
+        padding: 0.22rem 0.48rem;
+        font-size: 0.52rem;
         font-weight: 800;
         letter-spacing: 0.06em;
         text-transform: uppercase;
@@ -550,16 +579,22 @@
             linear-gradient(135deg, #7c2d12 0%, #f59e0b 52%, #fde68a 100%);
     }
     .summary-fill.tone-indigo .label,
+    .summary-fill.tone-cobalt .label,
     .summary-fill.tone-sky .label,
     .summary-fill.tone-emerald .label,
+    .summary-fill.tone-mint .label,
     .summary-fill.tone-amber .label,
+    .summary-fill.tone-gold .label,
     .summary-fill.tone-rose .label,
     .summary-fill.tone-slate .label,
     .summary-fill.tone-violet .label,
     .kpi-compact.tone-indigo .label,
+    .kpi-compact.tone-cobalt .label,
     .kpi-compact.tone-sky .label,
     .kpi-compact.tone-emerald .label,
+    .kpi-compact.tone-mint .label,
     .kpi-compact.tone-amber .label,
+    .kpi-compact.tone-gold .label,
     .kpi-compact.tone-rose .label,
     .kpi-compact.tone-slate .label,
     .kpi-compact.tone-violet .label {
@@ -567,16 +602,22 @@
         opacity: 0.82;
     }
     .summary-fill.tone-indigo .value,
+    .summary-fill.tone-cobalt .value,
     .summary-fill.tone-sky .value,
     .summary-fill.tone-emerald .value,
+    .summary-fill.tone-mint .value,
     .summary-fill.tone-amber .value,
+    .summary-fill.tone-gold .value,
     .summary-fill.tone-rose .value,
     .summary-fill.tone-slate .value,
     .summary-fill.tone-violet .value,
     .kpi-compact.tone-indigo .value,
+    .kpi-compact.tone-cobalt .value,
     .kpi-compact.tone-sky .value,
     .kpi-compact.tone-emerald .value,
+    .kpi-compact.tone-mint .value,
     .kpi-compact.tone-amber .value,
+    .kpi-compact.tone-gold .value,
     .kpi-compact.tone-rose .value,
     .kpi-compact.tone-slate .value,
     .kpi-compact.tone-violet .value {
@@ -815,13 +856,13 @@
             font-size: 0.88rem;
         }
         .executive-kpi {
-            min-height: 138px;
+            min-height: 126px;
         }
         .executive-kpi .kpi-value {
-            font-size: 1.45rem;
+            font-size: 1.32rem;
         }
         .executive-kpi .kpi-note {
-            font-size: 0.74rem;
+            font-size: 0.68rem;
         }
         .tone-card .tone-value {
             font-size: 1.3rem;
@@ -1007,7 +1048,7 @@
                                 </div>
                             </div>
                             <div class="col-md-3 grid-margin stretch-card">
-                                <div class="card card-rounded tone-card tone-indigo shadow-sm">
+                                <div class="card card-rounded tone-card tone-violet shadow-sm">
                                     <div class="card-body p-3">
                                         <div class="d-flex align-items-center">
                                             <i class="mdi mdi-account-tie fs-2 me-3"></i>
@@ -1020,7 +1061,7 @@
                                 </div>
                             </div>
                             <div class="col-md-3 grid-margin stretch-card">
-                                <div class="card card-rounded tone-card tone-sky shadow-sm">
+                                <div class="card card-rounded tone-card tone-cobalt shadow-sm">
                                     <div class="card-body p-3">
                                         <div class="d-flex align-items-center">
                                             <i class="mdi mdi-server-network-off fs-2 me-3"></i>
@@ -1033,7 +1074,7 @@
                                 </div>
                             </div>
                             <div class="col-md-3 grid-margin stretch-card">
-                                <div class="card card-rounded tone-card tone-emerald shadow-sm">
+                                <div class="card card-rounded tone-card tone-mint shadow-sm">
                                     <div class="card-body p-3">
                                         <div class="d-flex align-items-center">
                                             <i class="mdi mdi-package-variant-closed fs-2 me-3"></i>
@@ -1050,7 +1091,7 @@
                         {{-- ROW 2B: Extra KPI Density (reduce dead white space) --}}
                         <div class="row mt-2">
                             <div class="col-md-3 grid-margin stretch-card">
-                                <div class="card card-rounded tone-card tone-indigo shadow-sm">
+                                <div class="card card-rounded tone-card tone-cobalt shadow-sm">
                                     <div class="card-body p-3">
                                         <div class="d-flex align-items-center">
                                             <i class="mdi mdi-cash-check fs-2 me-3"></i>
@@ -1063,7 +1104,7 @@
                                 </div>
                             </div>
                             <div class="col-md-3 grid-margin stretch-card">
-                                <div class="card card-rounded tone-card tone-amber shadow-sm">
+                                <div class="card card-rounded tone-card tone-gold shadow-sm">
                                     <div class="card-body p-3">
                                         <div class="d-flex align-items-center">
                                             <i class="mdi mdi-credit-card-outline fs-2 me-3"></i>
