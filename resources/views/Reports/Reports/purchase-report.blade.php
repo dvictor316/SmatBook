@@ -2,6 +2,37 @@
 @extends('layout.mainlayout')
 
 @section('content')
+    <style>
+        .purchase-report-metric .dash-widget-header {
+            align-items: center;
+            gap: 0.9rem;
+        }
+        .purchase-report-metric .dash-widget-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .purchase-report-metric .dash-count p {
+            font-size: 0.76rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #64748b !important;
+        }
+        .purchase-report-metric .dash-count h4 {
+            font-size: 1.25rem;
+            color: #102a5a;
+            letter-spacing: -0.02em;
+        }
+        #purchase-report-table thead th {
+            font-size: 0.75rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #102a5a;
+        }
+    </style>
     <div class="page-wrapper">
         <div class="content container-fluid">
 
@@ -18,7 +49,7 @@
             {{-- Summary Card: Now calculates based on the paginated data or total --}}
             <div class="row">
                 <div class="col-xl-4 col-sm-6 col-12">
-                    <div class="card shadow-sm border-0 mb-4">
+                    <div class="card shadow-sm border-0 mb-4 purchase-report-metric">
                         <div class="card-body">
                             <div class="dash-widget-header">
                                 <span class="dash-widget-icon bg-info-light">

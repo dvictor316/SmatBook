@@ -4,26 +4,34 @@
     <style>
         .sales-summary-card {
             border: 0;
-            border-radius: 12px;
-            box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+            border-radius: 18px;
+            box-shadow: 0 12px 24px rgba(15, 23, 42, 0.05);
         }
         .sales-summary-card h6 {
-            font-size: 12px;
+            font-size: 0.76rem;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: .3px;
+            letter-spacing: 0.08em;
+        }
+        .sales-summary-card h5 {
+            font-size: 1.2rem;
+            color: #102a5a;
+            letter-spacing: -0.02em;
         }
         .sales-table-card {
             border: 0;
-            border-radius: 14px;
-            box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+            border-radius: 20px;
+            box-shadow: 0 12px 24px rgba(15, 23, 42, 0.05);
         }
         .sales-table-card .table thead th {
             background: #f8fafc;
-            font-size: 12px;
+            font-size: 0.75rem;
             text-transform: uppercase;
-            color: #334155;
-            letter-spacing: .2px;
+            color: #102a5a;
+            letter-spacing: 0.08em;
+        }
+        .pagination-wrapper {
+            padding-top: 1rem;
         }
     </style>
     <div class="page-wrapper">

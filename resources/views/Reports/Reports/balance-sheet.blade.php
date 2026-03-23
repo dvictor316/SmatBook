@@ -12,67 +12,66 @@
         --border-blue: #e0f2fe;
     }
 
-    .page-wrapper { background: #f8fafc; min-height: 100vh; color: var(--text-dark); }
-
     .report-container {
         max-width: 1280px;
         margin: 0 auto 24px auto;
         background: #fff;
         border: 1px solid #e2e8f0;
-        border-radius: 14px;
-        box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+        border-radius: 22px;
+        box-shadow: 0 16px 34px rgba(15, 23, 42, 0.06);
         padding: 1.5rem;
     }
 
-    /* Header Styling */
     .report-header {
-        border-bottom: 1.5px solid var(--brand-blue);
+        border-bottom: 1px solid #dbe7f5;
         padding-bottom: 1rem;
-        margin-bottom: 2rem;
+        margin-bottom: 1.5rem;
     }
 
     .company-name {
-        font-size: 1.05rem;
+        font-size: 1.35rem;
         font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.03em;
+        text-transform: none;
+        letter-spacing: -0.02em;
         margin: 0;
+        color: #102a5a;
     }
 
     .report-title {
-        font-size: 0.7rem;
-        font-weight: 600;
+        font-size: 0.74rem;
+        font-weight: 800;
         color: var(--brand-blue);
         text-transform: uppercase;
         letter-spacing: 0.12em;
     }
 
-    /* Summary Snapshot */
     .summary-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
-        gap: 0.75rem;
-        margin-bottom: 2.5rem;
+        gap: 1rem;
+        margin-bottom: 1.75rem;
     }
 
     .summary-card {
-        padding: 0.75rem 1rem;
-        border-radius: 4px;
-        background: var(--bg-alice);
-        border: 1px solid var(--border-blue);
+        padding: 1rem 1.1rem;
+        border-radius: 18px;
+        background: #ffffff;
+        border: 1px solid #dbe7f5;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
     }
 
     .summary-label {
-        font-size: 0.62rem;
+        font-size: 0.72rem;
         font-weight: 700;
         color: var(--text-light);
         text-transform: uppercase;
         margin-bottom: 2px;
         display: block;
+        letter-spacing: 0.08em;
     }
 
     .summary-amount {
-        font-size: 0.95rem;
+        font-size: 1.15rem;
         font-weight: 800;
     }
 
@@ -225,11 +224,11 @@
     .not-balanced { background: #fef2f2; color: #991b1b; border: 1px solid #fee2e2; }
 
     .btn-mini {
-        font-size: 0.62rem;
-        padding: 0.3rem 0.7rem;
+        font-size: 0.76rem;
+        padding: 0.65rem 1rem;
         font-weight: 700;
         text-transform: uppercase;
-        border-radius: 3px;
+        border-radius: 999px;
     }
 
     .empty-state-row {
@@ -250,6 +249,17 @@
 
         .status-strip {
             grid-column: span 1;
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .report-container {
+            padding: 1rem;
+            border-radius: 18px;
+        }
+
+        .company-name {
+            font-size: 1.15rem;
         }
     }
 
@@ -285,7 +295,7 @@
             <div>
                 <div class="report-title">Statement of Financial Position</div>
                 <h1 class="company-name">{{ $reportCompanyName }}</h1>
-                <div class="text-muted" style="font-size: 0.62rem;">Date: {{ \Carbon\Carbon::parse($reportDate ?? now())->format('d F Y') }}</div>
+                <div class="text-muted" style="font-size: 0.82rem;">Date: {{ \Carbon\Carbon::parse($reportDate ?? now())->format('d F Y') }}</div>
             </div>
             <div class="d-flex gap-1 no-print">
                 <button onclick="window.print()" class="btn btn-light border btn-mini">Print</button>

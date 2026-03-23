@@ -2,21 +2,12 @@
 
 @section('content')
 <style>
-    /* Professional Report Styling */
-    .page-wrapper { 
-        padding: 2rem; 
-        padding-top: 5.5rem; 
-        background: #ffffff; 
-        min-height: 100vh; 
-        font-family: 'Inter', sans-serif; 
-        color: #1e293b;
-    }
     .report-container { max-width: 1100px; margin: 0 auto; }
     
     .report-header { 
-        border-bottom: 2px solid #2563eb; 
+        border-bottom: 1px solid #dbe7f5; 
         padding-bottom: 1rem; 
-        margin-bottom: 2rem; 
+        margin-bottom: 1.5rem; 
     }
     
     /* Summary Cards */
@@ -28,43 +19,68 @@
     }
     .summary-card {
         padding: 1.25rem;
-        border-radius: 8px;
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
+        border-radius: 18px;
+        background: #ffffff;
+        border: 1px solid #dbe7f5;
         text-align: center;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
     }
     .summary-label {
-        font-size: 0.65rem;
+        font-size: 0.72rem;
         font-weight: 700;
         color: #64748b;
         text-transform: uppercase;
         display: block;
         margin-bottom: 4px;
+        letter-spacing: 0.08em;
     }
-    .summary-amount { font-size: 1.1rem; font-weight: 800; }
+    .summary-amount { font-size: 1.2rem; font-weight: 800; }
 
-    /* Tables & Sections */
     .section-title { 
-        background: #2563eb; 
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
         color: #fff; 
-        padding: 6px 12px; 
-        font-size: 0.75rem; 
+        padding: 0.7rem 1rem; 
+        font-size: 0.78rem; 
         font-weight: 800; 
         text-transform: uppercase; 
-        margin-top: 2rem;
+        margin-top: 1.5rem;
+        border-radius: 14px 14px 0 0;
+        letter-spacing: 0.06em;
     }
-    .cash-table { width: 100%; border-collapse: collapse; }
+    .cash-table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #dbe7f5; border-top: 0; border-radius: 0 0 18px 18px; overflow: hidden; }
     .cash-table tr { border-bottom: 1px solid #f1f5f9; }
-    .cash-table td { padding: 10px 8px; font-size: 0.75rem; }
+    .cash-table td { padding: 0.95rem 0.85rem; font-size: 0.94rem; }
     .amt-col { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
 
     .total-row {
         font-weight: 800;
         border-top: 1.5px solid #1e293b;
         border-bottom: 3.5px double #1e293b;
-        padding: 12px 8px;
-        margin-top: 2rem;
-        font-size: 0.85rem;
+        padding: 1rem 0.25rem;
+        margin-top: 1.5rem;
+        font-size: 1rem;
+    }
+
+    .cash-report-company {
+        font-size: 1.35rem;
+        font-weight: 800;
+        color: #102a5a;
+        letter-spacing: -0.02em;
+    }
+
+    .cash-report-kicker {
+        letter-spacing: 0.08em !important;
+        font-size: 0.74rem !important;
+    }
+
+    @media (max-width: 767.98px) {
+        .summary-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .cash-report-company {
+            font-size: 1.15rem;
+        }
     }
 
     @media print {
@@ -89,9 +105,9 @@
         
         <div class="report-header d-flex justify-content-between align-items-end">
             <div>
-                <div class="text-primary fw-bold small text-uppercase" style="letter-spacing: 0.05em;">Statement of Cash Flows</div>
-                <h1 class="h3 fw-800 text-uppercase m-0">{{ $cashFlowCompanyName }}</h1>
-                <div class="text-muted small">Period: <strong>{{ $start->format('d M Y') }}</strong> to <strong>{{ $end->format('d M Y') }}</strong></div>
+                <div class="text-primary fw-bold small text-uppercase cash-report-kicker">Statement of Cash Flows</div>
+                <h1 class="cash-report-company m-0">{{ $cashFlowCompanyName }}</h1>
+                <div class="text-muted small" style="font-size: 0.82rem;">Period: <strong>{{ $start->format('d M Y') }}</strong> to <strong>{{ $end->format('d M Y') }}</strong></div>
             </div>
             
             <div class="d-flex gap-2 no-print">
@@ -148,7 +164,7 @@
             </tr>
         </table>
 
-        <div class="section-title" style="background: #64748b;">02. Cash Outflows (Payments)</div>
+        <div class="section-title" style="background: linear-gradient(135deg, #64748b 0%, #475569 100%);">02. Cash Outflows (Payments)</div>
         <table class="cash-table">
             @forelse($outflows as $outflow)
             <tr>

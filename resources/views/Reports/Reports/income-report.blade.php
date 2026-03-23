@@ -8,32 +8,36 @@
         <div class="page-header mb-3 no-print">
             <div class="row align-items-center">
                 <div class="col">
-                    <h4 class="fw-bold mb-0" style="color: #1b2559; font-size: 16px;">Executive Cash Flow Report</h4>
-                    <p class="text-muted mb-0" style="font-size: 11px;">Revenue & Expenditure Analysis</p>
+                    <h4 class="fw-bold mb-1 report-page-title">Executive Cash Flow Report</h4>
+                    <p class="text-muted mb-0 report-page-subtitle">Revenue and expenditure analysis.</p>
                 </div>
                 <div class="col-auto">
                     <div class="btn-group btn-group-sm shadow-sm">
-                        <button onclick="window.print()" class="btn btn-white border"><i class="feather-printer"></i> Print</button>
-                        <button id="export_pdf" class="btn btn-white border text-danger"><i class="feather-file-text"></i> PDF</button>
-                        <button id="export_excel" class="btn btn-white border text-success"><i class="feather-file"></i> Excel</button>
+                        <button onclick="window.print()" class="btn btn-white border report-action-btn"><i class="feather-printer"></i> Print</button>
+                        <button id="export_pdf" class="btn btn-white border text-danger report-action-btn"><i class="feather-file-text"></i> PDF</button>
+                        <button id="export_excel" class="btn btn-white border text-success report-action-btn"><i class="feather-file"></i> Excel</button>
                     </div>
                 </div>
             </div>
         </div>
+        @include('Reports.partials.context-strip', [
+            'reportLabel' => 'Income and Outflow Report',
+            'periodLabel' => 'Window: ' . $fromDate . ' to ' . $toDate,
+        ])
 
         <div class="card shadow-none border mb-3 no-print">
             <div class="card-body p-2">
                 <form action="{{ route('reports.income') }}" method="GET" class="row gx-2 align-items-end">
                     <div class="col-md-4">
-                        <label class="fw-bold text-muted mb-1" style="font-size: 10px;">START DATE</label>
+                        <label class="report-filter-label">Start Date</label>
                         <input type="date" name="from_date" class="form-control form-control-sm border-0 bg-light" value="{{ $fromDate }}">
                     </div>
                     <div class="col-md-4">
-                        <label class="fw-bold text-muted mb-1" style="font-size: 10px;">END DATE</label>
+                        <label class="report-filter-label">End Date</label>
                         <input type="date" name="to_date" class="form-control form-control-sm border-0 bg-light" value="{{ $toDate }}">
                     </div>
                     <div class="col-md-4">
-                        <button type="submit" class="btn btn-primary btn-sm w-100 fw-bold" style="background: #1b2559; height: 31px;">UPDATE ANALYSIS</button>
+                        <button type="submit" class="btn btn-primary btn-sm w-100 fw-bold report-filter-action">Update Analysis</button>
                     </div>
                 </form>
             </div>
@@ -47,22 +51,22 @@
 
         <div class="row g-2 mb-3">
             <div class="col-md-4">
-                <div class="card border shadow-none mb-0"><div class="card-body p-3">
-                    <p class="text-muted mb-0 fw-bold uppercase" style="font-size: 10px;">Total Inflow</p>
-                    <h4 class="text-success fw-bold mb-0" style="font-size: 16px;">₦{{ number_format($tIn, 2) }}</h4>
+                <div class="card border shadow-none mb-0 report-metric-card"><div class="card-body p-3">
+                    <p class="text-muted mb-1 fw-bold uppercase report-metric-label">Total Inflow</p>
+                    <h4 class="text-success fw-bold mb-0 report-metric-value">₦{{ number_format($tIn, 2) }}</h4>
                 </div></div>
             </div>
             <div class="col-md-4">
-                <div class="card border shadow-none mb-0"><div class="card-body p-3">
-                    <p class="text-muted mb-0 fw-bold uppercase" style="font-size: 10px;">Total Outflow</p>
-                    <h4 class="text-danger fw-bold mb-0" style="font-size: 16px;">₦{{ number_format($tOut, 2) }}</h4>
+                <div class="card border shadow-none mb-0 report-metric-card"><div class="card-body p-3">
+                    <p class="text-muted mb-1 fw-bold uppercase report-metric-label">Total Outflow</p>
+                    <h4 class="text-danger fw-bold mb-0 report-metric-value">₦{{ number_format($tOut, 2) }}</h4>
                 </div></div>
             </div>
             <div class="col-md-4">
                 <div class="card border-0 {{ $tNet >= 0 ? 'bg-indigo' : 'bg-danger' }} mb-0 text-white">
                     <div class="card-body p-3">
-                        <p class="text-white mb-0 fw-bold uppercase" style="font-size: 10px; opacity: 1;">Net Profit Amount</p>
-                        <h4 class="text-white fw-bold mb-0" style="font-size: 16px;">₦{{ number_format($tNet, 2) }}</h4>
+                        <p class="text-white mb-1 fw-bold uppercase report-metric-label report-metric-label--light">Net Profit Amount</p>
+                        <h4 class="text-white fw-bold mb-0 report-metric-value">₦{{ number_format($tNet, 2) }}</h4>
                     </div>
                 </div>
             </div>
@@ -71,22 +75,22 @@
         <div class="card border shadow-none">
             <div class="table-responsive">
                 <table class="table table-sm mb-0" id="incomeTable">
-                    <thead style="background: #f8f9fc;">
+                    <thead>
                         <tr>
-                            <th class="ps-3 py-2 text-muted" style="font-size: 11px;">Date</th>
-                            <th class="py-2 text-muted" style="font-size: 11px;">Transaction Types</th>
-                            <th class="py-2 text-end text-muted" style="font-size: 11px;">Inflow</th>
-                            <th class="py-2 text-end text-muted" style="font-size: 11px;">Outflow</th>
-                            <th class="pe-3 py-2 text-end text-muted" style="font-size: 11px;">Net</th>
+                            <th class="ps-3 py-2 text-muted">Date</th>
+                            <th class="py-2 text-muted">Transaction Types</th>
+                            <th class="py-2 text-end text-muted">Inflow</th>
+                            <th class="py-2 text-end text-muted">Outflow</th>
+                            <th class="pe-3 py-2 text-end text-muted">Net</th>
                         </tr>
                     </thead>
-                    <tbody style="font-size: 12px;">
+                    <tbody>
                         @foreach($incomereports as $report)
                         <tr class="accounting-row">
                             <td class="ps-3 py-2 fw-bold text-dark">{{ $report['Date'] }}</td>
                             <td class="py-2">
                                 @foreach(explode(', ', $report['TypeLabel']) as $label)
-                                    <span class="badge border bg-white text-muted fw-normal" style="font-size: 9px;">{{ strtoupper($label) }}</span>
+                                    <span class="badge border bg-white text-muted fw-normal report-type-badge">{{ strtoupper($label) }}</span>
                                 @endforeach
                             </td>
                             <td class="py-2 text-end text-success fw-bold">₦{{ number_format($report['IncomeAmount'], 0) }}</td>
@@ -105,6 +109,56 @@
     .bg-indigo { background: #1b2559 !important; }
     .text-indigo { color: #1b2559 !important; }
     .accounting-row:hover { background-color: #f0f4ff !important; cursor: pointer; }
+    .report-page-title {
+        color: #102a5a;
+        font-size: 1.35rem;
+        letter-spacing: -0.02em;
+    }
+    .report-page-subtitle {
+        font-size: 0.95rem;
+    }
+    .report-action-btn {
+        font-size: 0.82rem;
+    }
+    .report-filter-label {
+        display: block;
+        margin-bottom: 0.45rem;
+        color: #102a5a;
+        font-size: 0.74rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+    .report-filter-action {
+        min-height: 38px;
+    }
+    .report-metric-card {
+        min-height: 100%;
+    }
+    .report-metric-label {
+        font-size: 0.74rem;
+        letter-spacing: 0.08em;
+    }
+    .report-metric-label--light {
+        color: rgba(255, 255, 255, 0.86);
+    }
+    .report-metric-value {
+        font-size: 1.35rem;
+        letter-spacing: -0.02em;
+    }
+    .report-type-badge {
+        font-size: 0.68rem;
+        padding: 0.35rem 0.55rem;
+        letter-spacing: 0.04em;
+    }
+    #incomeTable thead th {
+        font-size: 0.74rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+    #incomeTable tbody td {
+        font-size: 0.94rem;
+    }
     @media print { 
         .no-print { display: none !important; } 
         .table td, .table th { font-size: 10pt !important; border: 1px solid #eee !important; } 

@@ -9,10 +9,16 @@
 
 @section('style')
 <style>
-    .page-wrapper { background-color: #f4f7f6; }
     .pagination { margin-bottom: 0; }
-    .page-link { padding: 0.5rem 0.85rem; color: #6366f1; }
-    .page-item.active .page-link { background-color: #6366f1; border-color: #6366f1; }
+    .page-link { padding: 0.5rem 0.85rem; color: #0f2d5c; }
+    .page-item.active .page-link { background-color: #2563eb; border-color: #2563eb; }
+
+    .quotation-report-filter .form-label {
+        font-size: 0.76rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #102a5a;
+    }
     
     @media print {
         .no-print, .pagination-container, .dt-buttons { display: none !important; }
@@ -45,16 +51,16 @@
         ])
 
         {{-- Filter Card --}}
-        <div class="card mb-4 border-0 shadow-sm no-print">
+        <div class="card mb-4 border-0 shadow-sm no-print quotation-report-filter">
             <div class="card-body">
                 <form action="{{ \Illuminate\Support\Facades\Route::has('reports.quotation') ? route('reports.quotation') : route('quotation') }}" method="GET">
                     <div class="row g-3 align-items-end">
                         <div class="col-md-3">
-                            <label class="small fw-bold">From Date</label>
+                            <label class="form-label small fw-bold">From Date</label>
                             <input type="date" name="from_date" class="form-control" value="{{ request('from_date') }}">
                         </div>
                         <div class="col-md-3">
-                            <label class="small fw-bold">To Date</label>
+                            <label class="form-label small fw-bold">To Date</label>
                             <input type="date" name="to_date" class="form-control" value="{{ request('to_date') }}">
                         </div>
                         <div class="col-md-2">
@@ -91,7 +97,7 @@
                                 <td>{{ \Carbon\Carbon::parse($quotation->created_at)->format('d M, Y') }}</td>
                                 <td class="fw-bold text-dark">₦{{ number_format($quotation->total, 2) }}</td>
                                 <td>
-                                    <span class="badge {{ $quotation->status == 'Sent' ? 'bg-info' : 'bg-secondary' }}">
+                                    <span class="badge {{ $quotation->status == 'Sent' ? 'bg-info-subtle text-info border border-info-subtle' : 'bg-secondary-subtle text-secondary border border-secondary-subtle' }}">
                                         {{ $quotation->status }}
                                     </span>
                                 </td>
