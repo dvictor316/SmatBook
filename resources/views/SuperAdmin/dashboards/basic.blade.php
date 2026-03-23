@@ -97,6 +97,13 @@
         position: absolute; right: -20px; bottom: -20px;
         font-size: 8rem; opacity: 0.1;
     }
+    .upgrade-banner h4 {
+        color: #fcd34d;
+        text-shadow: 0 1px 0 rgba(15, 23, 42, 0.18);
+    }
+    .upgrade-banner p strong {
+        color: #fde68a;
+    }
 
     .status-dot {
         height: 8px; width: 8px; border-radius: 50%; display: inline-block; margin-right: 5px;
