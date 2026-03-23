@@ -3,10 +3,33 @@
     $route = Route::currentRouteName();
     $siteTitle = \App\Models\Setting::where('key', 'company_name')->value('value') ?: 'SmartProbook';
     $faviconPath = \App\Models\Setting::where('key', 'favicon')->value('value');
+    $requestPath = request()->path();
+    $isReportWorkspace = request()->routeIs('reports.*')
+        || request()->is('reports*')
+        || request()->is('*report*')
+        || in_array($requestPath, ['cash-flow', 'balance-sheet', 'trial-balance', 'general-ledger', 'tax-sales', 'tax-purchase'], true)
+        || str_contains($requestPath, 'report');
 
     // Initialize visibility variables to prevent "undefined" errors
     $hideNavbar = $hideNavbar ?? false;
     $hideSidebar = $hideSidebar ?? false;
+    $bodyClasses = [];
+
+    if ($route === 'chat') {
+        $bodyClasses[] = 'chat-page';
+    } elseif ($route === 'mail-pay-invoice') {
+        $bodyClasses[] = 'invoice-center-pay';
+    } elseif (in_array($route, ['cashreceipt-1', 'cashreceipt-2', 'cashreceipt-3', 'cashreceipt-4', 'invoice-five', 'invoice-four-a', 'invoice-three', 'invoice-two', 'invoice-one-a'], true)) {
+        $bodyClasses[] = 'no-stickybar';
+    } elseif ($route === 'error-404') {
+        $bodyClasses[] = 'error-page';
+    } elseif ($route === 'landing.index') {
+        $bodyClasses[] = 'landing-page-body';
+    }
+
+    if ($isReportWorkspace) {
+        $bodyClasses[] = 'report-workspace';
+    }
 @endphp
 
 <!DOCTYPE html>
@@ -182,6 +205,250 @@
             }
         }
 
+        .report-workspace {
+            --report-bg: #f4f7fb;
+            --report-card-bg: #ffffff;
+            --report-card-border: #d9e3f0;
+            --report-shadow: 0 16px 38px rgba(15, 23, 42, 0.06);
+            --report-accent: #1d4ed8;
+            --report-accent-deep: #0f2d5c;
+            --report-accent-soft: #eef4ff;
+            --report-gold: #b9872f;
+            --report-text: #1e293b;
+            --report-muted: #64748b;
+        }
+
+        .report-workspace .page-wrapper {
+            background: linear-gradient(180deg, #f8fbff 0%, var(--report-bg) 100%) !important;
+            min-height: calc(100vh - var(--sb-header-h, 76px));
+        }
+
+        .report-workspace .page-wrapper .content.container-fluid {
+            padding-top: 20px !important;
+            padding-bottom: 32px !important;
+        }
+
+        .report-workspace .page-header {
+            margin-bottom: 1rem;
+        }
+
+        .report-workspace .page-header > .content-page-header,
+        .report-workspace .page-header > .row {
+            padding: 1.15rem 1.25rem;
+            background: rgba(255, 255, 255, 0.96);
+            border: 1px solid var(--report-card-border);
+            border-radius: 22px;
+            box-shadow: var(--report-shadow);
+            margin: 0;
+        }
+
+        .report-workspace .page-header h3,
+        .report-workspace .page-header h4,
+        .report-workspace .page-header h5,
+        .report-workspace .content-page-header h5,
+        .report-workspace .page-title {
+            margin: 0;
+            color: var(--report-accent-deep);
+            font-size: clamp(1.2rem, 1.1rem + 0.5vw, 1.7rem);
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+
+        .report-workspace .page-header p,
+        .report-workspace .page-header .breadcrumb,
+        .report-workspace .page-header .text-muted,
+        .report-workspace .page-header .small {
+            color: var(--report-muted) !important;
+        }
+
+        .report-workspace .list-btn .filter-list {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.65rem;
+            margin: 0;
+        }
+
+        .report-workspace .card,
+        .report-workspace .card-table,
+        .report-workspace .report-container,
+        .report-workspace .filter-card,
+        .report-workspace .smart-filter-card {
+            border-radius: 22px !important;
+            border: 1px solid var(--report-card-border) !important;
+            background: var(--report-card-bg) !important;
+            box-shadow: var(--report-shadow) !important;
+        }
+
+        .report-workspace .card-body,
+        .report-workspace .card-footer {
+            padding: 1.2rem 1.25rem;
+        }
+
+        .report-workspace .card-footer {
+            border-top: 1px solid #e6edf7 !important;
+            background: transparent !important;
+        }
+
+        .report-workspace .table-responsive {
+            border-radius: 20px;
+        }
+
+        .report-workspace .table {
+            color: var(--report-text);
+            margin-bottom: 0;
+        }
+
+        .report-workspace .table thead th {
+            background: #f5f9ff !important;
+            color: var(--report-accent-deep) !important;
+            font-size: 0.75rem !important;
+            font-weight: 800 !important;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            border-bottom: 1px solid #dbe7f5 !important;
+            padding-top: 0.95rem !important;
+            padding-bottom: 0.95rem !important;
+            vertical-align: middle;
+        }
+
+        .report-workspace .table tbody td,
+        .report-workspace .table tfoot td {
+            padding-top: 0.95rem !important;
+            padding-bottom: 0.95rem !important;
+            border-color: #ebf1f7 !important;
+            vertical-align: middle;
+            font-size: 0.95rem;
+        }
+
+        .report-workspace .table tbody tr:hover {
+            background: #f8fbff !important;
+        }
+
+        .report-workspace .form-control,
+        .report-workspace .form-select {
+            min-height: 46px;
+            border-radius: 14px;
+            border-color: #d6e0ec;
+            color: var(--report-text);
+            background: #fbfdff;
+            box-shadow: none;
+        }
+
+        .report-workspace .form-control:focus,
+        .report-workspace .form-select:focus {
+            border-color: rgba(29, 78, 216, 0.4);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.08);
+            background: #fff;
+        }
+
+        .report-workspace .form-label,
+        .report-workspace label.small,
+        .report-workspace .small.fw-bold {
+            color: var(--report-accent-deep) !important;
+            font-size: 0.76rem !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .report-workspace .btn-primary,
+        .report-workspace .btn.btn-primary,
+        .report-workspace .btn.btn-dark,
+        .report-workspace .btn-outline-primary:hover {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+            border-color: #1d4ed8 !important;
+            color: #fff !important;
+        }
+
+        .report-workspace .btn-secondary,
+        .report-workspace .btn-outline-secondary,
+        .report-workspace .btn-light,
+        .report-workspace .btn-white,
+        .report-workspace .btn-filters {
+            background: #ffffff !important;
+            border: 1px solid #d7e2f0 !important;
+            color: var(--report-accent-deep) !important;
+        }
+
+        .report-workspace .btn-success,
+        .report-workspace .btn-outline-success:hover {
+            background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%) !important;
+            border-color: #0f766e !important;
+            color: #fff !important;
+        }
+
+        .report-workspace .badge,
+        .report-workspace .status-badge,
+        .report-workspace .badge-soft-secondary {
+            border-radius: 999px;
+            padding: 0.45rem 0.7rem;
+            font-weight: 700;
+        }
+
+        .report-workspace .pagination {
+            gap: 0.35rem;
+        }
+
+        .report-workspace .pagination .page-link {
+            border-radius: 12px;
+            border-color: #d7e2f0;
+            color: var(--report-accent-deep);
+            min-width: 40px;
+            text-align: center;
+            box-shadow: none;
+        }
+
+        .report-workspace .pagination .page-item.active .page-link {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            border-color: #1d4ed8;
+            color: #fff;
+        }
+
+        .report-workspace .dataTables_filter input,
+        .report-workspace .dataTables_length select {
+            border-radius: 14px !important;
+            border-color: #d7e2f0 !important;
+        }
+
+        .report-workspace .dt-buttons .btn {
+            margin-right: 0.45rem;
+        }
+
+        @media (max-width: 991.98px) {
+            .report-workspace .page-header > .content-page-header,
+            .report-workspace .page-header > .row {
+                padding: 1rem;
+                border-radius: 18px;
+            }
+        }
+
+        @media (max-width: 575.98px) {
+            .report-workspace .page-wrapper .content.container-fluid {
+                padding-top: 14px !important;
+                padding-bottom: 24px !important;
+            }
+
+            .report-workspace .card,
+            .report-workspace .card-table,
+            .report-workspace .report-container,
+            .report-workspace .filter-card,
+            .report-workspace .smart-filter-card {
+                border-radius: 18px !important;
+            }
+
+            .report-workspace .card-body,
+            .report-workspace .card-footer {
+                padding: 1rem;
+            }
+
+            .report-workspace .table thead th,
+            .report-workspace .table tbody td,
+            .report-workspace .table tfoot td {
+                font-size: 0.85rem !important;
+            }
+        }
+
         /* Keep the Livewire/NProgress busy spinner visible on mobile */
         #nprogress .spinner {
             top: calc(env(safe-area-inset-top, 0px) + 14px) !important;
@@ -210,17 +477,7 @@
     </style>
 </head>
 
-<body
-    @if ($route === 'chat') class="chat-page"
-    @elseif ($route === 'mail-pay-invoice') class="invoice-center-pay"
-    @elseif (in_array($route, ['cashreceipt-1', 'cashreceipt-2', 'cashreceipt-3', 'cashreceipt-4', 'invoice-five', 'invoice-four-a', 'invoice-three', 'invoice-two', 'invoice-one-a']))
-        class="no-stickybar"
-    @elseif ($route === 'error-404')
-        class="error-page"
-    @elseif ($route === 'landing.index')
-        class="landing-page-body"
-    @endif
->
+<body @if(!empty($bodyClasses)) class="{{ implode(' ', $bodyClasses) }}" @endif>
 
     {{-- MAIN WRAPPER --}}
     @if (!in_array($route, [

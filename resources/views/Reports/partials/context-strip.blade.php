@@ -26,62 +26,66 @@
     </div>
 </div>
 
+@once
 <style>
     .report-context-strip {
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 1rem;
-        padding: 0.9rem 1rem;
-        background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
-        border: 1px solid #dbeafe;
-        border-radius: 14px;
-        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
+        padding: 1rem 1.1rem;
+        background: linear-gradient(135deg, #f3f8ff 0%, #ffffff 60%, #fffaf0 100%);
+        border: 1px solid #dbe6f4;
+        border-radius: 20px;
+        box-shadow: 0 14px 30px rgba(15, 23, 42, 0.05);
     }
     .report-context-kicker {
         display: inline-block;
-        margin-bottom: 0.2rem;
+        margin-bottom: 0.28rem;
         color: #2563eb;
-        font-size: 0.68rem;
+        font-size: 0.7rem;
         font-weight: 800;
-        letter-spacing: 0.08em;
+        letter-spacing: 0.12em;
         text-transform: uppercase;
     }
     .report-context-company {
-        color: #0f172a;
-        font-size: 1rem;
+        color: #102a5a;
+        font-size: 1.05rem;
         font-weight: 800;
+        letter-spacing: -0.02em;
     }
     .report-context-meta {
         display: flex;
         flex-wrap: wrap;
         justify-content: flex-end;
-        gap: 0.55rem;
+        gap: 0.6rem;
     }
     .report-context-pill {
         display: inline-flex;
         align-items: center;
-        padding: 0.5rem 0.8rem;
+        padding: 0.58rem 0.9rem;
         border-radius: 999px;
-        background: #2563eb;
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
         color: #fff;
         font-size: 0.74rem;
         font-weight: 700;
-        box-shadow: 0 8px 14px rgba(37, 99, 235, 0.16);
+        box-shadow: 0 10px 18px rgba(37, 99, 235, 0.15);
     }
     .report-context-pill--light {
-        background: #fff;
-        color: #334155;
-        border: 1px solid #dbeafe;
+        background: #fffdf8;
+        color: #7a5a1d;
+        border: 1px solid #f1dfb4;
         box-shadow: none;
     }
     @media (max-width: 767.98px) {
         .report-context-strip {
             flex-direction: column;
             align-items: flex-start;
+            border-radius: 18px;
         }
         .report-context-meta {
             justify-content: flex-start;
         }
     }
 </style>
+@endonce

@@ -12,8 +12,6 @@
 
 @section('style')
 <style>
-    /* Bootstrap 5.3 Customizations */
-    .page-wrapper { background-color: #f4f7f6; }
     #paymentReportTable { font-size: 0.875rem !important; }
     .money-sm { font-size: 0.92rem; font-variant-numeric: tabular-nums; }
     .money-cell { font-size: 0.82rem; font-variant-numeric: tabular-nums; }
@@ -33,7 +31,7 @@
     
     /* Summary Card Styling */
     .card-total {
-        background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
+        background: linear-gradient(135deg, #0f2d5c 0%, #2563eb 100%);
         color: white;
         border: none;
     }

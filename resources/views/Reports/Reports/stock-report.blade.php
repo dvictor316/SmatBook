@@ -9,18 +9,18 @@
         <div class="page-header mb-3 no-print">
             <div class="row align-items-center">
                 <div class="col">
-                    <h4 class="fw-bold mb-0" style="color: #1b2559; font-size: 16px;">Stock & Valuation Ledger</h4>
-                    <p class="text-muted mb-0" style="font-size: 11px;">Consolidated Purchase vs Sales Analysis</p>
+                    <h4 class="fw-bold mb-1 report-page-title">Stock & Valuation Ledger</h4>
+                    <p class="text-muted mb-0 report-page-subtitle">Consolidated purchase versus sales analysis.</p>
                 </div>
                 <div class="col-auto">
                     <div class="btn-group btn-group-sm shadow-sm">
-                        <button onclick="window.print()" class="btn btn-white border" style="font-size: 12px;">
+                        <button onclick="window.print()" class="btn btn-white border report-action-btn">
                             <i class="feather-printer me-1"></i> Print
                         </button>
-                        <button id="export_pdf" class="btn btn-white border text-danger" style="font-size: 12px;">
+                        <button id="export_pdf" class="btn btn-white border text-danger report-action-btn">
                             <i class="feather-file-text me-1"></i> PDF
                         </button>
-                        <button id="export_excel" class="btn btn-white border text-success" style="font-size: 12px;">
+                        <button id="export_excel" class="btn btn-white border text-success report-action-btn">
                             <i class="feather-file me-1"></i> Excel
                         </button>
                     </div>
@@ -43,15 +43,15 @@
                 <form action="{{ $stockRouteName ? route($stockRouteName) : url('/stock-report') }}" method="GET">
                     <div class="row gx-2 align-items-end">
                         <div class="col-md-3">
-                            <label class="fw-bold text-muted mb-1" style="font-size: 9px;">START DATE</label>
+                            <label class="report-filter-label">Start Date</label>
                             <input type="date" name="from_date" class="form-control form-control-sm border-0 bg-light" value="{{ $fromDate }}">
                         </div>
                         <div class="col-md-3">
-                            <label class="fw-bold text-muted mb-1" style="font-size: 9px;">END DATE</label>
+                            <label class="report-filter-label">End Date</label>
                             <input type="date" name="to_date" class="form-control form-control-sm border-0 bg-light" value="{{ $toDate }}">
                         </div>
                         <div class="col-md-4">
-                            <label class="fw-bold text-muted mb-1" style="font-size: 9px;">PRODUCT FILTER</label>
+                            <label class="report-filter-label">Product Filter</label>
                             <select name="product_id" class="form-select form-select-sm border-0 bg-light">
                                 <option value="">All Inventory Items</option>
                                 @foreach($products as $p)
@@ -60,7 +60,7 @@
                             </select>
                         </div>
                         <div class="col-md-2">
-                            <button type="submit" class="btn btn-primary btn-sm w-100 fw-bold" style="background: #1b2559; height: 31px; font-size: 11px;">FILTER</button>
+                            <button type="submit" class="btn btn-primary btn-sm w-100 fw-bold report-filter-action">Filter</button>
                         </div>
                     </div>
                 </form>
@@ -76,22 +76,22 @@
         {{-- Summary Cards --}}
         <div class="row g-2 mb-3">
             <div class="col-md-4">
-                <div class="card border shadow-none mb-0"><div class="card-body p-3">
-                    <p class="text-muted mb-0 fw-bold uppercase" style="font-size: 10px;">Total Purchases (In)</p>
-                    <h4 class="text-success fw-bold mb-0" style="font-size: 16px;">₦{{ number_format($tValIn, 2) }}</h4>
+                <div class="card border shadow-none mb-0 report-metric-card"><div class="card-body p-3">
+                    <p class="text-muted mb-1 fw-bold uppercase report-metric-label">Total Purchases (In)</p>
+                    <h4 class="text-success fw-bold mb-0 report-metric-value">₦{{ number_format($tValIn, 2) }}</h4>
                 </div></div>
             </div>
             <div class="col-md-4">
-                <div class="card border shadow-none mb-0"><div class="card-body p-3">
-                    <p class="text-muted mb-0 fw-bold uppercase" style="font-size: 10px;">Total Sales (Out)</p>
-                    <h4 class="text-danger fw-bold mb-0" style="font-size: 16px;">₦{{ number_format($tValOut, 2) }}</h4>
+                <div class="card border shadow-none mb-0 report-metric-card"><div class="card-body p-3">
+                    <p class="text-muted mb-1 fw-bold uppercase report-metric-label">Total Sales (Out)</p>
+                    <h4 class="text-danger fw-bold mb-0 report-metric-value">₦{{ number_format($tValOut, 2) }}</h4>
                 </div></div>
             </div>
             <div class="col-md-4">
-                <div class="card border-0 {{ $tNet >= 0 ? 'bg-indigo' : 'bg-danger' }} mb-0 shadow-sm">
+                <div class="card border-0 {{ $tNet >= 0 ? 'bg-indigo' : 'bg-danger' }} mb-0 shadow-sm report-metric-card report-metric-card--emphasis">
                     <div class="card-body p-3 text-white">
-                        <p class="text-white mb-0 fw-bold uppercase" style="font-size: 10px; opacity: 1;">Net Valuation Change</p>
-                        <h4 class="text-white fw-bold mb-0" style="font-size: 16px;">₦{{ number_format($tNet, 2) }}</h4>
+                        <p class="text-white mb-1 fw-bold uppercase report-metric-label report-metric-label--light">Net Valuation Change</p>
+                        <h4 class="text-white fw-bold mb-0 report-metric-value">₦{{ number_format($tNet, 2) }}</h4>
                     </div>
                 </div>
             </div>
@@ -101,16 +101,16 @@
         <div class="card border shadow-none overflow-hidden">
             <div class="table-responsive">
                 <table class="table table-sm mb-0" id="stockTable">
-                    <thead style="background: #f8f9fc;">
+                    <thead>
                         <tr>
-                            <th class="ps-3 py-2 text-muted" style="font-size: 10px;">DATE</th>
-                            <th class="py-2 text-center text-muted" style="font-size: 10px;">ORDERS</th>
-                            <th class="py-2 text-end text-muted" style="font-size: 10px;">PURCHASE VALUE</th>
-                            <th class="py-2 text-end text-muted" style="font-size: 10px;">SALES VALUE</th>
-                            <th class="pe-3 py-2 text-end text-muted" style="font-size: 10px;">NET FLOW</th>
+                            <th class="ps-3 py-2 text-muted">Date</th>
+                            <th class="py-2 text-center text-muted">Orders</th>
+                            <th class="py-2 text-end text-muted">Purchase Value</th>
+                            <th class="py-2 text-end text-muted">Sales Value</th>
+                            <th class="pe-3 py-2 text-end text-muted">Net Flow</th>
                         </tr>
                     </thead>
-                    <tbody style="font-size: 11px;">
+                    <tbody>
                         @forelse($stockreports as $report)
                         <tr class="accounting-row">
                             <td class="ps-3 py-2 fw-bold text-dark">{{ $report['Date'] }}</td>
@@ -135,6 +135,51 @@
     .bg-indigo { background: #1b2559 !important; }
     .text-indigo { color: #1b2559 !important; }
     .accounting-row:hover { background-color: #f8faff !important; cursor: pointer; }
+    .report-page-title {
+        color: #102a5a;
+        font-size: 1.35rem;
+        letter-spacing: -0.02em;
+    }
+    .report-page-subtitle {
+        font-size: 0.95rem;
+    }
+    .report-action-btn {
+        font-size: 0.82rem;
+    }
+    .report-filter-label {
+        display: block;
+        margin-bottom: 0.45rem;
+        color: #102a5a;
+        font-size: 0.74rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+    .report-filter-action {
+        min-height: 38px;
+    }
+    .report-metric-card {
+        min-height: 100%;
+    }
+    .report-metric-label {
+        font-size: 0.74rem;
+        letter-spacing: 0.08em;
+    }
+    .report-metric-label--light {
+        color: rgba(255, 255, 255, 0.86);
+    }
+    .report-metric-value {
+        font-size: 1.35rem;
+        letter-spacing: -0.02em;
+    }
+    #stockTable thead th {
+        font-size: 0.74rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+    #stockTable tbody td {
+        font-size: 0.94rem;
+    }
     @media print { .no-print { display: none !important; } }
 </style>
 @endsection

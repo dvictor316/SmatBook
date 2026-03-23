@@ -19,92 +19,91 @@
         margin: 0 auto 24px auto;
         background: #fff;
         border: 1px solid #e2e8f0;
-        border-radius: 14px;
-        box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
-        padding: 1.25rem;
+        border-radius: 22px;
+        box-shadow: 0 16px 34px rgba(15, 23, 42, 0.06);
+        padding: 1.5rem;
     }
 
-    /* Minimalist Header */
     .report-header {
-        border-bottom: 2px solid var(--brand-blue);
+        border-bottom: 1px solid #dbe7f5;
         padding-bottom: 1rem;
-        margin-bottom: 2rem;
+        margin-bottom: 1.5rem;
     }
 
     .company-name {
-        font-size: 1.05rem;
+        font-size: 1.35rem;
         font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.03em;
+        text-transform: none;
+        letter-spacing: -0.02em;
         margin: 0;
+        color: #102a5a;
     }
 
     .report-title {
-        font-size: 0.7rem;
-        font-weight: 600;
+        font-size: 0.74rem;
+        font-weight: 800;
         color: var(--brand-blue);
         text-transform: uppercase;
         letter-spacing: 0.12em;
     }
 
-    /* Filters - Subtle Styling */
     .filter-card {
-        background: var(--bg-alice);
-        border: 1px solid var(--border-blue);
-        border-radius: 4px;
-        padding: 1rem;
-        margin-bottom: 2rem;
+        background: #f8fbff;
+        border: 1px solid #dbe7f5;
+        border-radius: 18px;
+        padding: 1.1rem;
+        margin-bottom: 1.5rem;
     }
 
-    /* Summary Grid */
     .summary-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
-        gap: 0.75rem;
-        margin-bottom: 2rem;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
     }
 
     .summary-card {
-        padding: 0.75rem 1rem;
-        border-radius: 4px;
-        background: var(--bg-alice);
-        border: 1px solid var(--border-blue);
+        padding: 1rem 1.1rem;
+        border-radius: 18px;
+        background: #ffffff;
+        border: 1px solid #dbe7f5;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
     }
 
     .summary-label {
-        font-size: 0.62rem;
+        font-size: 0.72rem;
         font-weight: 700;
         color: var(--text-light);
         text-transform: uppercase;
         display: block;
+        letter-spacing: 0.08em;
     }
 
     .summary-amount {
-        font-size: 0.95rem;
+        font-size: 1.15rem;
         font-weight: 800;
         font-family: 'JetBrains Mono', monospace;
     }
 
-    /* Table with Faint Lines */
     .table-card {
-        border-top: 1px solid var(--text-dark);
+        border-top: 1px solid #dbe7f5;
     }
 
     .table thead th {
-        background: transparent;
-        color: var(--brand-blue);
+        background: #f5f9ff;
+        color: #102a5a;
         text-transform: uppercase;
-        font-size: 0.65rem;
+        font-size: 0.74rem;
         font-weight: 800;
-        letter-spacing: 0.5px;
-        border-bottom: 1.5px solid var(--brand-blue) !important;
-        padding: 10px 5px;
+        letter-spacing: 0.08em;
+        border-bottom: 1px solid #dbe7f5 !important;
+        padding: 0.95rem 0.75rem;
     }
 
     .table tbody td {
-        font-size: 0.72rem;
-        padding: 8px 5px;
-        border-bottom: 1px solid var(--border-faint); /* The faint line */
+        font-size: 0.95rem;
+        padding: 0.95rem 0.75rem;
+        border-bottom: 1px solid var(--border-faint);
         vertical-align: middle;
     }
 
@@ -112,9 +111,9 @@
         font-weight: 700;
         color: var(--brand-blue);
         background: #eff6ff;
-        padding: 2px 6px;
-        border-radius: 3px;
-        font-size: 0.65rem;
+        padding: 0.3rem 0.6rem;
+        border-radius: 999px;
+        font-size: 0.74rem;
     }
 
     .total-row {
@@ -124,19 +123,18 @@
 
     .total-row td {
         font-weight: 800 !important;
-        font-size: 0.78rem !important;
+        font-size: 0.96rem !important;
         border-bottom: 3.5px double var(--text-dark) !important; /* Accounting double line */
-        padding: 12px 5px !important;
+        padding: 1rem 0.75rem !important;
     }
 
-    /* Export Buttons */
     .btn-export {
-        font-size: 0.62rem;
-        padding: 0.35rem 0.75rem;
+        font-size: 0.76rem;
+        padding: 0.65rem 1rem;
         font-weight: 700;
         text-transform: uppercase;
-        border-radius: 3px;
-        border: 1px solid var(--border-blue);
+        border-radius: 999px;
+        border: 1px solid #dbe7f5;
         background: white;
         transition: 0.2s;
     }
@@ -145,11 +143,11 @@
 
     .status-banner {
         margin-top: 2rem;
-        padding: 0.6rem;
-        font-size: 0.65rem;
+        padding: 0.75rem;
+        font-size: 0.75rem;
         font-weight: 800;
         text-align: center;
-        border-radius: 2px;
+        border-radius: 16px;
         text-transform: uppercase;
     }
 
@@ -157,6 +155,22 @@
     .unbalanced { background: #fef2f2; color: #991b1b; border: 1px solid #fee2e2; }
 
     .dt-buttons { display: none !important; }
+    @media (max-width: 767.98px) {
+        .report-container {
+            padding: 1rem;
+            border-radius: 18px;
+        }
+        .summary-grid {
+            grid-template-columns: 1fr;
+        }
+        .company-name {
+            font-size: 1.15rem;
+        }
+        .table thead th,
+        .table tbody td {
+            font-size: 0.85rem !important;
+        }
+    }
     @media print { .no-print { display: none !important; } .page-wrapper { padding-top: 0; } }
 </style>
 
@@ -184,8 +198,8 @@
         <div class="report-header d-flex justify-content-between align-items-end no-print">
             <div>
                 <div class="report-title">Financial Audit Report</div>
-                <h1 class="company-name text-uppercase">{{ $reportCompanyName }}</h1>
-                <div class="text-muted small mt-1" style="font-size: 0.62rem;">
+                <h1 class="company-name">{{ $reportCompanyName }}</h1>
+                <div class="text-muted small mt-1" style="font-size: 0.82rem;">
                     Period: {{ $startDate }} — {{ $endDate }}
                     @if(!empty($activeBranch['name'] ?? null))
                         <span class="ms-2">· Branch: {{ $activeBranch['name'] }}</span>
@@ -203,15 +217,15 @@
         <div class="filter-card no-print">
             <form action="" method="GET" class="row g-2 align-items-end">
                 <div class="col-md-4">
-                    <label class="form-label small fw-bold text-muted" style="font-size: 0.65rem;">START DATE</label>
+                    <label class="form-label small fw-bold text-muted">Start Date</label>
                     <input type="date" name="start_date" class="form-control form-control-sm" value="{{ $startDate }}">
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label small fw-bold text-muted" style="font-size: 0.65rem;">END DATE</label>
+                    <label class="form-label small fw-bold text-muted">End Date</label>
                     <input type="date" name="end_date" class="form-control form-control-sm" value="{{ $endDate }}">
                 </div>
                 <div class="col-md-2">
-                    <button type="submit" class="btn btn-dark btn-sm w-100 fw-bold" style="font-size: 0.7rem;">REFRESH</button>
+                    <button type="submit" class="btn btn-dark btn-sm w-100 fw-bold">Refresh</button>
                 </div>
             </form>
         </div>
