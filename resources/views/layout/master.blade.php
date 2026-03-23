@@ -61,6 +61,87 @@
     @include('layout.partials.design-system')
     
     <style>
+        .spb-page-loader {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background:
+                radial-gradient(circle at top left, rgba(37, 99, 235, 0.16), transparent 28%),
+                radial-gradient(circle at bottom right, rgba(251, 191, 36, 0.12), transparent 28%),
+                rgba(248, 251, 255, 0.96);
+            backdrop-filter: blur(8px);
+            z-index: 100000;
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.28s ease, visibility 0.28s ease;
+        }
+
+        .spb-page-loader.is-hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .spb-page-loader__card {
+            min-width: min(88vw, 320px);
+            max-width: 360px;
+            padding: 22px 20px;
+            border-radius: 22px;
+            border: 1px solid rgba(191, 219, 254, 0.92);
+            background: rgba(255, 255, 255, 0.94);
+            box-shadow: 0 22px 48px rgba(37, 99, 235, 0.12);
+            text-align: center;
+        }
+
+        .spb-page-loader__brand {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 14px;
+            color: #143b85;
+            font-size: clamp(1rem, 2.6vw, 1.18rem);
+            font-weight: 800;
+        }
+
+        .spb-page-loader__brand img {
+            width: clamp(34px, 7vw, 46px);
+            height: auto;
+        }
+
+        .spb-page-loader__spinner {
+            width: clamp(44px, 10vw, 56px);
+            height: clamp(44px, 10vw, 56px);
+            margin: 0 auto 14px;
+            border-radius: 50%;
+            border: 4px solid rgba(37, 99, 235, 0.16);
+            border-top-color: #2563eb;
+            border-right-color: #f59e0b;
+            animation: spb-loader-spin 0.8s linear infinite;
+        }
+
+        .spb-page-loader__title {
+            color: #183153;
+            font-size: clamp(0.96rem, 2.5vw, 1.05rem);
+            font-weight: 800;
+        }
+
+        .spb-page-loader__text {
+            margin-top: 6px;
+            color: #5e7294;
+            font-size: clamp(0.82rem, 2.15vw, 0.9rem);
+            line-height: 1.5;
+        }
+
+        @keyframes spb-loader-spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
         .subscription-banner {
             background: linear-gradient(90deg, #fff3cd 0%, #ffeeba 100%);
             color: #856404;
@@ -78,6 +159,17 @@
     </style>
 </head>
 <body class="{{ ($domainRecord && $daysRemaining <= 7 && $daysRemaining >= 0) ? 'has-banner' : '' }}">
+    <div id="spbPageLoader" class="spb-page-loader" aria-live="polite" aria-busy="true">
+        <div class="spb-page-loader__card">
+            <div class="spb-page-loader__brand">
+                <img src="{{ asset('assets/img/logos.png') }}" alt="SmartProbook logo">
+                <span>SmartProbook</span>
+            </div>
+            <div class="spb-page-loader__spinner" aria-hidden="true"></div>
+            <div class="spb-page-loader__title">Loading page</div>
+            <div class="spb-page-loader__text">Preparing your workspace and content.</div>
+        </div>
+    </div>
 
     <div class="main-wrapper">
         
@@ -223,6 +315,64 @@
         document.addEventListener("DOMContentLoaded", function() {
             if (typeof feather !== 'undefined') { feather.replace(); }
         });
+    </script>
+
+    <script>
+        (function () {
+            const loader = document.getElementById('spbPageLoader');
+            if (!loader) return;
+
+            const hideLoader = () => loader.classList.add('is-hidden');
+            const showLoader = () => loader.classList.remove('is-hidden');
+
+            const isRealNavigation = (element) => {
+                if (!element) return false;
+
+                if (element.closest('[data-bs-toggle], [data-toggle], [data-bs-dismiss], [data-dismiss], .dropdown-toggle, .mobile_btn, #toggle_btn, #mobile_btn')) {
+                    return false;
+                }
+
+                if (element.tagName === 'A') {
+                    const href = (element.getAttribute('href') || '').trim();
+                    if (!href || href === '#' || href.startsWith('javascript:') || href.startsWith('mailto:') || href.startsWith('tel:')) {
+                        return false;
+                    }
+                    if (element.hasAttribute('download') || element.target === '_blank' || element.dataset.noLoader !== undefined) {
+                        return false;
+                    }
+                    return true;
+                }
+
+                if (element.tagName === 'BUTTON') {
+                    const form = element.form;
+                    if (!form || element.type === 'button' || element.dataset.noLoader !== undefined) {
+                        return false;
+                    }
+                    return !element.closest('.modal, .offcanvas');
+                }
+
+                return false;
+            };
+
+            document.addEventListener('DOMContentLoaded', hideLoader, { once: true });
+            window.addEventListener('load', hideLoader, { once: true });
+            window.addEventListener('pageshow', hideLoader);
+            window.addEventListener('beforeunload', showLoader);
+
+            document.addEventListener('click', function (event) {
+                const target = event.target.closest('a, button');
+                if (!isRealNavigation(target)) return;
+                showLoader();
+            }, true);
+
+            document.addEventListener('submit', function (event) {
+                const form = event.target;
+                if (!(form instanceof HTMLFormElement) || form.dataset.noLoader !== undefined) return;
+                showLoader();
+            }, true);
+
+            setTimeout(hideLoader, 1600);
+        })();
     </script>
 
     @stack('scripts')
