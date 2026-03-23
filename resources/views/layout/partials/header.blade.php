@@ -247,6 +247,8 @@
         flex-shrink: 0;
         position: relative;
         z-index: 1042;
+        align-self: center;
+        top: 1px;
     }
     #mobile_btn:hover { background: #f1f5f9; }
 
@@ -707,6 +709,9 @@
             white-space: nowrap;
             line-height: 1;
         }
+        #mobile_btn {
+            top: 2px;
+        }
     }
 
     @media (max-width: 767px) {
@@ -771,6 +776,7 @@
             width: 34px;
             height: 34px;
             margin-right: 4px;
+            top: 2px;
         }
         .country-selector {
             padding: 3px 4px;
@@ -817,6 +823,7 @@
             width: 32px;
             height: 32px;
             margin-right: 3px;
+            top: 2px;
         }
         .notification-bell,
         .mobile-search-btn,
@@ -871,6 +878,9 @@
         .header-actions {
             gap: 1px;
             margin-left: 2px;
+        }
+        #mobile_btn {
+            top: 1px;
         }
         .country-selector {
             padding: 3px 4px;
