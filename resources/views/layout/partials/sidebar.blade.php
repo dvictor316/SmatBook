@@ -8,6 +8,7 @@
 
 @php
     $user = auth()->user();
+    $workspaceContext = session('workspace_context', 'platform');
     
     // If no user, don't show sidebar
     if (!$user) { return; } 
@@ -27,7 +28,9 @@
     
     // PRIORITY 3: Determine plan for regular tenants
     $plan = 'basic'; // default
-    if (!$isDeploymentManager && !$isSuperAdmin) {
+    $shouldResolveBusinessPlan = !$isDeploymentManager && (!$isSuperAdmin || $workspaceContext === 'business');
+
+    if ($shouldResolveBusinessPlan) {
         $companyId = $user->company_id ?? optional($user->company)->id;
 
         // Get active paid subscription, preferring company-scoped records.
@@ -68,8 +71,6 @@
             }
         }
     }
-
-    $workspaceContext = session('workspace_context', 'platform');
 @endphp
 
 @unless(Route::is(['index-two', 'index-three', 'index-four', 'index-five']))
@@ -77,7 +78,19 @@
     @if($isDeploymentManager)
         @include('layout.partials.sidebars.deployment_manager')
     @elseif($isSuperAdmin && $workspaceContext === 'business')
-        @include('layout.partials.sidebars.enterprise')
+        @if($plan === 'enterprise')
+            @include('layout.partials.sidebars.enterprise')
+        @elseif($plan === 'pro')
+            @include('layout.partials.sidebars.pro')
+        @else
+            <div class="sidebar" id="sidebar">
+                <div class="sidebar-inner slimscroll">
+                    <div id="sidebar-menu" class="sidebar-menu">
+                        @include('layout.partials.sidebars.basic')
+                    </div>
+                </div>
+            </div>
+        @endif
     @elseif($isSuperAdmin)
         @include('layout.partials.sidebars.super_admin')
     @elseif($plan === 'enterprise')
