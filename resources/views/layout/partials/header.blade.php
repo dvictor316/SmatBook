@@ -204,6 +204,7 @@
         flex-shrink: 0;
         order: 1;
         gap: 8px;
+        min-width: 0;
     }
 
     .header-logo img { height: 56px; width: auto; }
@@ -214,6 +215,7 @@
         line-height: 1;
         color: #0b2a63;
         white-space: nowrap;
+        flex: 0 1 auto;
     }
     .spb-wordmark .book { color: #dc2626; }
 
@@ -658,23 +660,49 @@
         }
         .header-logo img { height: 36px; }
         .spb-wordmark {
-            font-size: 0.82rem;
+            font-size: 0.8rem;
             letter-spacing: -0.2px;
-            white-space: normal;
-            line-height: 1.05;
+            white-space: nowrap;
+            line-height: 1;
         }
     }
 
     @media (max-width: 480px) {
-        .header-logo img { height: 30px; }
+        .header {
+            padding: 0 10px;
+        }
+        .header-logo {
+            gap: 4px;
+            width: auto;
+            max-width: 128px;
+        }
+        .header-logo img { height: 28px; }
         .spb-wordmark {
             display: block;
-            font-size: 0.72rem;
-            max-width: 86px;
+            font-size: 0.62rem;
+            letter-spacing: -0.16px;
+            overflow: visible;
+            text-overflow: clip;
+            max-width: none;
         }
         .header-actions {
             gap: 4px;
             margin-left: 8px;
+        }
+    }
+
+    @media (max-width: 360px) {
+        .header {
+            padding: 0 8px;
+        }
+        .header-logo {
+            gap: 3px;
+            max-width: 116px;
+        }
+        .header-logo img { height: 25px; }
+        .spb-wordmark {
+            font-size: 0.55rem;
+            letter-spacing: -0.12px;
         }
     }
 

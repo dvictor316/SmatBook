@@ -15,7 +15,7 @@
         'lg' => ['logo' => '56px', 'brand' => '2.3rem', 'tag' => '0.84rem'],
     ];
     $config = $sizeMap[$size] ?? $sizeMap['md'];
-    $brandColor = $isDark ? '#ffffff' : '#0f172a';
+    $brandColor = $isDark ? '#ffffff' : '#0b2a63';
     $accentColor = '#dc2626';
     $tagColor = $isDark ? 'rgba(255,255,255,0.74)' : '#64748b';
 @endphp
@@ -79,5 +79,43 @@
         letter-spacing: 0.16em;
         text-transform: uppercase;
         color: {{ $tagColor }};
+    }
+
+    @media (max-width: 480px) {
+        .spb-auth-lockup {
+            gap: 10px;
+        }
+
+        .spb-auth-lockup__logo {
+            height: calc({{ $config['logo'] }} * 0.82);
+        }
+
+        .spb-auth-lockup__brand {
+            font-size: calc({{ $config['brand'] }} * 0.76);
+            letter-spacing: -0.025em;
+        }
+
+        .spb-auth-lockup__tagline {
+            font-size: calc({{ $config['tag'] }} * 0.92);
+        }
+    }
+
+    @media (max-width: 360px) {
+        .spb-auth-lockup {
+            gap: 8px;
+        }
+
+        .spb-auth-lockup__logo {
+            height: calc({{ $config['logo'] }} * 0.72);
+        }
+
+        .spb-auth-lockup__brand {
+            font-size: calc({{ $config['brand'] }} * 0.66);
+            letter-spacing: -0.02em;
+        }
+
+        .spb-auth-lockup__tagline {
+            font-size: calc({{ $config['tag'] }} * 0.84);
+        }
     }
 </style>

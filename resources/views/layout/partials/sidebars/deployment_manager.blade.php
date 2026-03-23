@@ -146,6 +146,10 @@
         line-height: 1.2;
     }
 
+    .dm-brand-title .book {
+        color: #dc2626;
+    }
+
     .dm-brand-subtitle {
         font-size: 10px;
         color: var(--dm-primary);
@@ -589,7 +593,7 @@
                 <img src="{{ asset('assets/img/logos.png') }}" alt="SmartProbook">
             </div>
             <div class="dm-brand-text">
-                <h1 class="dm-brand-title">SmartProbook</h1>
+                <h1 class="dm-brand-title">SmartPro<span class="book">book</span></h1>
                 <p class="dm-brand-subtitle">Deployment Hub</p>
             </div>
         </a>

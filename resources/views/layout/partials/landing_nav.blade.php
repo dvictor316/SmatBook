@@ -19,8 +19,20 @@
             .spb-nav-wordmark { font-size: .84rem; }
         }
         @media (max-width: 480px) {
-            .brand-img { height: 36px !important; }
-            .spb-nav-wordmark { display: none; }
+            .brand-img { height: 32px !important; }
+            .logo-container { gap: 4px; }
+            .spb-nav-wordmark {
+                display: inline-block;
+                font-size: .62rem;
+                letter-spacing: -0.15px;
+            }
+        }
+        @media (max-width: 360px) {
+            .brand-img { height: 28px !important; }
+            .spb-nav-wordmark {
+                font-size: .54rem;
+                letter-spacing: -0.1px;
+            }
         }
     </style>
     <div class="nav-container" style="max-width: 1400px; margin: 0 auto; width: 100%; padding: 0 40px; display: flex; justify-content: space-between; align-items: center;">

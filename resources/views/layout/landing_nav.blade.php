@@ -813,10 +813,15 @@
             }
 
             .logo-text {
-                font-size: 0.9rem;
+                font-size: 0.72rem;
+                letter-spacing: -0.18px;
             }
 
-            .brand-img { height: 44px; }
+            .brand-img { height: 36px; }
+
+            .logo-container {
+                gap: 6px;
+            }
 
             .hamburger span {
                 width: 26px;
@@ -886,10 +891,15 @@
         /* ===== SMALL PHONE ===== */
         @media (max-width: 360px) {
             .logo-text {
-                font-size: 0.82rem;
+                font-size: 0.6rem;
+                letter-spacing: -0.12px;
             }
 
-            .brand-img { height: 36px; }
+            .brand-img { height: 30px; }
+
+            .logo-container {
+                gap: 4px;
+            }
 
             .hero-content h1 {
                 font-size: 1.2rem;
