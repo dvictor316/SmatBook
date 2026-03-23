@@ -52,6 +52,8 @@
         margin: 0;
         overflow-x: hidden !important;
         overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-y;
     }
 
     .main-wrapper,
@@ -88,6 +90,7 @@
         font-family: 'Plus Jakarta Sans', sans-serif;
         overflow: visible;
         transform: translateX(-50%);
+        -webkit-overflow-scrolling: touch;
     }
 
     /* Force hide standard layout elements for a clean portal experience */

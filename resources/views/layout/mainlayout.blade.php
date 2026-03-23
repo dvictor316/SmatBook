@@ -138,14 +138,41 @@
         }
 
         @media (max-width: 991.98px) {
+            html, body {
+                overflow-x: hidden;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            body {
+                touch-action: pan-y;
+                overscroll-behavior-y: auto;
+            }
+
             .page-wrapper {
                 margin-left: 0 !important;
+                -webkit-overflow-scrolling: touch;
             }
 
             .page-wrapper .content.container-fluid {
                 padding-top: 0 !important;
                 padding-left: 10px !important;
                 padding-right: 10px !important;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .main-wrapper,
+            .mobile-search-overlay,
+            #sidebar,
+            #deploymentSidebar,
+            .deployment-sidebar {
+                -webkit-overflow-scrolling: touch;
+            }
+
+            #sidebar,
+            #deploymentSidebar,
+            .deployment-sidebar,
+            .mobile-search-overlay {
+                overscroll-behavior: contain;
             }
         }
 

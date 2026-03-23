@@ -17,6 +17,8 @@
         min-height: 100%;
         overflow-x: hidden !important;
         overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-y;
         background:
             radial-gradient(circle at top left, rgba(40, 195, 243, 0.28), transparent 24%),
             radial-gradient(circle at bottom right, rgba(29, 109, 255, 0.2), transparent 28%),
@@ -37,6 +39,7 @@
         display: flex;
         justify-content: center;
         padding: 20px 14px 40px;
+        -webkit-overflow-scrolling: touch;
     }
 
     .login-card-custom {

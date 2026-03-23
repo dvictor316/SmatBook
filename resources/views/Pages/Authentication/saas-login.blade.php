@@ -48,6 +48,8 @@
         margin: 0;
         overflow-x: hidden !important;
         overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-y;
     }
 
     /* 1. VIEWPORT & CENTERING FIX */
@@ -67,6 +69,7 @@
         place-items: center !important;
         overflow: visible;
         transform: translateX(-50%);
+        -webkit-overflow-scrolling: touch;
     }
 
     /* Hard reset wrapper overrides to prevent theme conflict */

@@ -59,6 +59,11 @@
             padding-top: 68px;
         }
 
+        body,
+        .nav-links {
+            -webkit-overflow-scrolling: touch;
+        }
+
         /* ===== NAVIGATION ===== */
         nav {
             position: fixed; 
@@ -682,8 +687,15 @@
 
         /* ===== TABLET LAYOUT ===== */
         @media (max-width: 991px) {
+            html, body {
+                overflow-x: hidden;
+                -webkit-overflow-scrolling: touch;
+            }
+
             body {
                 padding-top: 64px;
+                touch-action: pan-y;
+                overscroll-behavior-y: auto;
             }
 
             nav {
@@ -712,6 +724,8 @@
                 transition: left 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
                 overflow-y: auto;
                 overflow-x: hidden;
+                overscroll-behavior: contain;
+                -webkit-overflow-scrolling: touch;
                 z-index: 9998;
                 box-shadow: inset 0 2px 15px rgba(0, 0, 0, 0.05);
             }
