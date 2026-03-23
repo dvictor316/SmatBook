@@ -269,17 +269,29 @@ class User extends Authenticatable
     }
 
     /**
-     * Generate a colorful avatar based on the user's name.
+     * Generate a deterministic local avatar fallback.
      */
     private function generateUiAvatar(): string
     {
-        $colors = ['FF6B8B', '4ECDC4', '9D50BB', 'FF8E53', '44A08D', '6E48AA'];
-        // Pick a color deterministically based on name length
-        $bg = $colors[strlen($this->name) % count($colors)];
-        $fg = 'ffffff';
-        
-        return "https://ui-avatars.com/api/?name=" . urlencode($this->name) . 
-               "&background={$bg}&color={$fg}&size=128&bold=true";
+        $fallbacks = [
+            'avatar-01.jpg',
+            'avatar-02.jpg',
+            'avatar-03.jpg',
+            'avatar-04.jpg',
+            'avatar-05.jpg',
+            'avatar-06.jpg',
+            'avatar-07.jpg',
+            'avatar-08.jpg',
+            'avatar-09.jpg',
+            'avatar-10.jpg',
+            'avatar-11.jpg',
+            'avatar-12.jpg',
+        ];
+
+        $name = trim((string) ($this->name ?? 'SmartProbook User'));
+        $index = abs(crc32(strtolower($name))) % count($fallbacks);
+
+        return asset('assets/img/profiles/' . $fallbacks[$index]);
     }
 
     /* =========================================================================
