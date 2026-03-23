@@ -175,8 +175,7 @@ class HomeController extends Controller
                 'subscription_id' => $subscription->id,
                 'end_date' => (string) $subscription->end_date,
             ]);
-            return redirect()->route('membership-plans')
-                ->with('error', 'Your subscription has expired. Please renew to continue.');
+            return redirect()->route('subscription.expired');
         }
 
         // Paid but subscription not yet Active
@@ -263,8 +262,7 @@ class HomeController extends Controller
         }
 
         if ($subscription->isExpired()) {
-            return redirect()->route('membership-plans')
-                ->with('error', 'Your subscription expired on ' . optional($subscription->end_date)->format('M d, Y') . '. Please renew.');
+            return redirect()->route('subscription.expired');
         }
 
         if (strtolower((string) $subscription->status) !== 'active') {
@@ -277,6 +275,29 @@ class HomeController extends Controller
         session(['user_plan' => $planName]);
 
         return view('dashboard', compact('user', 'company', 'subscription'));
+    }
+
+    public function subscriptionExpired()
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return redirect()->route('login');
+        }
+
+        $subscription = Subscription::resolveCurrentForUser($user)
+            ?? Subscription::where('user_id', $user->id)->latest()->first();
+
+        if (!$subscription) {
+            return redirect()->route('membership-plans')
+                ->with('info', 'Please select a plan to continue.');
+        }
+
+        if (!$subscription->isExpired()) {
+            return redirect()->route('home');
+        }
+
+        return view('subscription.expired', compact('subscription'));
     }
 
     // Quotations / Delivery pages used by sidebar links

@@ -25,6 +25,7 @@ class SubscriptionActive
         $allowedRoutes = [
             'management.review',
             'membership-plans',
+            'subscription.expired',
             'logout',
             'emergency.logout',
             'user.dashboard',
@@ -54,8 +55,7 @@ class SubscriptionActive
         }
 
         if ($subscription->isExpired()) {
-            return redirect()->route('user.dashboard')
-                ->with('error', 'Your subscription has expired. Renew your plan to restore full access.');
+            return redirect()->route('subscription.expired');
         }
 
         if (!$subscription->isValid()) {

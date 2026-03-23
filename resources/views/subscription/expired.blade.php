@@ -1,6 +1,11 @@
 @extends('layout.mainlayout')
 
 @section('content')
+@php
+    $companyName = auth()->user()->company->name ?? auth()->user()->name ?? 'your workspace';
+    $expiryDate = optional($subscription?->end_date)->format('d M, Y') ?? 'N/A';
+    $planLabel = $subscription?->planLabel() ?? 'Current';
+@endphp
 <div class="main-wrapper">
     <div class="account-content">
         <div class="container">
@@ -13,21 +18,25 @@
                     <div class="display-1 text-danger mb-3">
                         <i class="fas fa-calendar-times"></i>
                     </div>
-                    <h3 class="account-title">Subscription Expired</h3>
+                    <h3 class="account-title">Plan Expired</h3>
                     <p class="text-muted">
-                        Access to <strong>{{ auth()->user()->company->name }}</strong> has been suspended because your subscription ended on 
+                        Access to <strong>{{ $companyName }}</strong> is currently paused because your
+                        <strong>{{ $planLabel }}</strong> plan ended on
                         <span class="text-danger font-weight-bold">
-                            {{ auth()->user()->company->subscription_end->format('d M, Y') }}
+                            {{ $expiryDate }}
                         </span>.
                     </p>
 
                     <div class="renewal-actions mt-4 p-4 bg-light rounded border">
-                        <h5>Ready to get back to work?</h5>
-                        <p class="small text-muted">Your data is safe and exactly where you left it. Renew now to restore full access to your modules.</p>
+                        <h5>Ready to restore full access?</h5>
+                        <p class="small text-muted">Your data is safe. Renew your subscription now to reopen reports, operations, dashboards, and workspace tools without losing anything.</p>
                         
                         <div class="d-grid gap-2 d-md-block">
                             <a href="{{ route('membership-plans') }}" class="btn btn-primary btn-rounded btn-lg px-5 shadow">
-                                <i class="fas fa-rocket"></i> Renew Subscription
+                                <i class="fas fa-rocket"></i> Renew Plan
+                            </a>
+                            <a href="{{ route('plan-billing') }}" class="btn btn-outline-secondary btn-rounded btn-lg px-4">
+                                <i class="fas fa-receipt"></i> View Billing
                             </a>
                         </div>
                     </div>

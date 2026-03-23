@@ -102,6 +102,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/workspace/business/dashboard', [DashboardController::class, 'businessDashboard'])->name('workspace.business.dashboard');
     Route::get('/workspace/business', [DashboardController::class, 'switchToBusinessWorkspace'])->name('workspace.business');
     Route::get('/workspace/platform', [DashboardController::class, 'switchToPlatformWorkspace'])->name('workspace.platform');
+    Route::get('/subscription/expired', [HomeController::class, 'subscriptionExpired'])->name('subscription.expired');
 });
 
 /*
