@@ -31,6 +31,21 @@
                 'description' => 'Read SmartProbook company policies, compliance standards, user obligations, and platform governance information.',
                 'keywords' => 'SmartProbook policy, company policy, software terms, platform compliance',
             ],
+            'landing.projects.lahome' => [
+                'title' => 'Lahome Properties Project',
+                'description' => 'See how SmartProbook supports Lahome Properties with real estate operations, listings workflows, and digital business infrastructure.',
+                'keywords' => 'Lahome Properties, real estate platform, property management software, SmartProbook projects',
+            ],
+            'landing.projects.master-jamb' => [
+                'title' => 'Master JAMB CBT Platform Project',
+                'description' => 'Explore the Master JAMB CBT project delivered through SmartProbook for exam readiness, practice testing, grading, and student performance analysis.',
+                'keywords' => 'Master JAMB, CBT platform, exam software, e-learning assessment platform, SmartProbook projects',
+            ],
+            'landing.projects.payplus' => [
+                'title' => 'PayPlus Payment Gateway Project',
+                'description' => 'Discover the PayPlus payment gateway project and how SmartProbook supports secure transaction workflows and financial operations.',
+                'keywords' => 'PayPlus, payment gateway, payment processing software, fintech platform, SmartProbook projects',
+            ],
             'membership-plans' => [
                 'title' => 'Membership Plans and Pricing',
                 'description' => 'Compare SmartProbook membership plans, pricing tiers, accounting features, ERP modules, and business upgrade options.',

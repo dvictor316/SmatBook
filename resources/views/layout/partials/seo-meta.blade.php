@@ -18,6 +18,7 @@
     $resolvedType = trim((string) ($seoType ?? 'website'));
     $resolvedImage = trim((string) ($seoImage ?? asset('assets/img/logos.png')));
     $resolvedUrl = url()->current();
+    $resolvedCanonical = trim((string) ($seoCanonical ?? $resolvedUrl));
 
     $resolvedNoIndex = (bool) ($seoNoIndex ?? false);
     $robotsContent = $resolvedNoIndex ? 'noindex,nofollow' : 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1';
@@ -65,13 +66,13 @@
 <meta name="description" content="{{ $resolvedDescription }}">
 <meta name="keywords" content="{{ $resolvedKeywords }}">
 <meta name="robots" content="{{ $robotsContent }}">
-<link rel="canonical" href="{{ $resolvedUrl }}">
+<link rel="canonical" href="{{ $resolvedCanonical }}">
 
 <meta property="og:site_name" content="{{ $siteName }}">
 <meta property="og:type" content="{{ $resolvedType }}">
 <meta property="og:title" content="{{ $resolvedTitle }}">
 <meta property="og:description" content="{{ $resolvedDescription }}">
-<meta property="og:url" content="{{ $resolvedUrl }}">
+<meta property="og:url" content="{{ $resolvedCanonical }}">
 <meta property="og:image" content="{{ $resolvedImage }}">
 <meta property="og:image:alt" content="{{ $resolvedTitle }}">
 <meta property="og:locale" content="en_US">
@@ -80,7 +81,7 @@
 <meta name="twitter:title" content="{{ $resolvedTitle }}">
 <meta name="twitter:description" content="{{ $resolvedDescription }}">
 <meta name="twitter:image" content="{{ $resolvedImage }}">
-<meta name="twitter:url" content="{{ $resolvedUrl }}">
+<meta name="twitter:url" content="{{ $resolvedCanonical }}">
 <link rel="icon" type="image/png" href="{{ asset('assets/img/logos.png') }}">
 <link rel="shortcut icon" href="{{ asset('assets/img/logos.png') }}">
 
