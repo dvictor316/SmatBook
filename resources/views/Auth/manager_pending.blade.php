@@ -6,6 +6,8 @@
     $hideHeader = true;
     /* Attempt to capture subdomain from route or host */
     $currentSubdomain = request()->route('subdomain') ?? explode('.', request()->getHost())[0];
+    $supportChatUrl = Route::has('messages.index') ? route('messages.index', ['type' => 'chat']) : '#';
+    $supportEmailUrl = Route::has('messages.index') ? route('messages.index', ['type' => 'email']) : '#';
 @endphp
 
 @section('content')
@@ -94,9 +96,9 @@
                         <div class="mt-5 text-center pt-3 border-top">
                             <span class="text-muted small">Need to speak with us?</span><br>
                             {{-- [2026-01-17] Support Links - Corrected with Subdomain parameter --}}
-                            <a href="{{ route('messages.index', ['subdomain' => $currentSubdomain, 'type' => 'chat']) }}" class="btn btn-sm btn-link font-weight-bold">Live Chat</a>
+                            <a href="{{ $supportChatUrl }}" class="btn btn-sm btn-link font-weight-bold">Live Chat</a>
                             <span class="text-muted">|</span>
-                            <a href="{{ route('messages.index', ['subdomain' => $currentSubdomain, 'type' => 'email']) }}" class="btn btn-sm btn-link font-weight-bold">Email Support</a>
+                            <a href="{{ $supportEmailUrl }}" class="btn btn-sm btn-link font-weight-bold">Email Support</a>
                         </div>
                     </div>
                 </div>
