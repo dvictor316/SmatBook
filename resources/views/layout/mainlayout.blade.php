@@ -147,28 +147,28 @@
         }
 
         :root {
-            --spb-sidebar-bg-top: #f2f8ff;
-            --spb-sidebar-bg-mid: #e8f2ff;
-            --spb-sidebar-bg-bottom: #f9fcff;
-            --spb-sidebar-border: rgba(148, 184, 255, 0.28);
+            --spb-sidebar-bg-top: #f8fbff;
+            --spb-sidebar-bg-mid: #f2f7ff;
+            --spb-sidebar-bg-bottom: #fcfeff;
+            --spb-sidebar-border: rgba(148, 184, 255, 0.22);
             --spb-sidebar-text: #17315f;
             --spb-sidebar-muted: #7b8cab;
             --spb-sidebar-icon: #2f63d9;
-            --spb-sidebar-hover-bg: rgba(255, 255, 255, 0.72);
-            --spb-sidebar-active-bg: linear-gradient(135deg, rgba(55, 114, 255, 0.16) 0%, rgba(139, 92, 246, 0.10) 100%);
-            --spb-sidebar-active-border: rgba(59, 130, 246, 0.28);
+            --spb-sidebar-hover-bg: rgba(255, 255, 255, 0.88);
+            --spb-sidebar-active-bg: linear-gradient(135deg, rgba(55, 114, 255, 0.12) 0%, rgba(139, 92, 246, 0.07) 100%);
+            --spb-sidebar-active-border: rgba(59, 130, 246, 0.22);
             --spb-sidebar-active-text: #0f2f6e;
-            --spb-sidebar-shadow: 0 18px 40px rgba(66, 109, 194, 0.12);
+            --spb-sidebar-shadow: 0 18px 40px rgba(66, 109, 194, 0.09);
         }
 
         .sidebar,
         .deployment-sidebar {
             background:
-                radial-gradient(circle at 18% 16%, rgba(255, 255, 255, 0.82) 0, rgba(255, 255, 255, 0.82) 38px, transparent 39px),
-                radial-gradient(circle at 82% 11%, rgba(147, 197, 253, 0.28) 0, rgba(147, 197, 253, 0.28) 58px, transparent 59px),
-                radial-gradient(circle at 78% 36%, rgba(255, 255, 255, 0.72) 0, rgba(255, 255, 255, 0.72) 48px, transparent 49px),
-                radial-gradient(circle at 14% 70%, rgba(191, 219, 254, 0.34) 0, rgba(191, 219, 254, 0.34) 64px, transparent 65px),
-                radial-gradient(circle at 88% 82%, rgba(224, 231, 255, 0.54) 0, rgba(224, 231, 255, 0.54) 70px, transparent 71px),
+                radial-gradient(circle at 18% 16%, rgba(255, 255, 255, 0.92) 0, rgba(255, 255, 255, 0.92) 38px, transparent 39px),
+                radial-gradient(circle at 82% 11%, rgba(191, 219, 254, 0.18) 0, rgba(191, 219, 254, 0.18) 58px, transparent 59px),
+                radial-gradient(circle at 78% 36%, rgba(255, 255, 255, 0.84) 0, rgba(255, 255, 255, 0.84) 48px, transparent 49px),
+                radial-gradient(circle at 14% 70%, rgba(219, 234, 254, 0.22) 0, rgba(219, 234, 254, 0.22) 64px, transparent 65px),
+                radial-gradient(circle at 88% 82%, rgba(238, 242, 255, 0.36) 0, rgba(238, 242, 255, 0.36) 70px, transparent 71px),
                 linear-gradient(180deg, var(--spb-sidebar-bg-top) 0%, var(--spb-sidebar-bg-mid) 48%, var(--spb-sidebar-bg-bottom) 100%) !important;
             border-right: 1px solid var(--spb-sidebar-border) !important;
             box-shadow: var(--spb-sidebar-shadow);
@@ -182,11 +182,11 @@
             inset: 0;
             pointer-events: none;
             background:
-                radial-gradient(circle at 28% 24%, rgba(255, 255, 255, 0.45) 0, rgba(255, 255, 255, 0.45) 6px, transparent 7px),
-                radial-gradient(circle at 72% 42%, rgba(96, 165, 250, 0.14) 0, rgba(96, 165, 250, 0.14) 5px, transparent 6px),
-                radial-gradient(circle at 46% 78%, rgba(255, 255, 255, 0.32) 0, rgba(255, 255, 255, 0.32) 5px, transparent 6px),
-                radial-gradient(circle at 18% 88%, rgba(147, 197, 253, 0.16) 0, rgba(147, 197, 253, 0.16) 4px, transparent 5px);
-            opacity: 0.95;
+                radial-gradient(circle at 28% 24%, rgba(255, 255, 255, 0.34) 0, rgba(255, 255, 255, 0.34) 6px, transparent 7px),
+                radial-gradient(circle at 72% 42%, rgba(96, 165, 250, 0.10) 0, rgba(96, 165, 250, 0.10) 5px, transparent 6px),
+                radial-gradient(circle at 46% 78%, rgba(255, 255, 255, 0.24) 0, rgba(255, 255, 255, 0.24) 5px, transparent 6px),
+                radial-gradient(circle at 18% 88%, rgba(147, 197, 253, 0.10) 0, rgba(147, 197, 253, 0.10) 4px, transparent 5px);
+            opacity: 0.78;
         }
 
         .sidebar .sidebar-inner,
