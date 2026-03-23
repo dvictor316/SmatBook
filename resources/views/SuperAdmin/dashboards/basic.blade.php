@@ -201,6 +201,33 @@
         width: 100% !important;
         height: 54px !important;
     }
+
+    .metric-card-basic:not(.metric-sky):not(.metric-violet):not(.metric-cyan):not(.metric-amber),
+    .panel-card,
+    .mini-metric,
+    .insight-band,
+    .insight-item,
+    .spark-box {
+        color: #0f172a !important;
+    }
+
+    .metric-card-basic:not(.metric-sky):not(.metric-violet):not(.metric-cyan):not(.metric-amber) .text-white,
+    .panel-card .text-white,
+    .mini-metric .text-white,
+    .insight-band .text-white,
+    .insight-item .text-white,
+    .spark-box .text-white {
+        color: #0f172a !important;
+    }
+
+    .metric-card-basic:not(.metric-sky):not(.metric-violet):not(.metric-cyan):not(.metric-amber) .text-muted,
+    .panel-card .text-muted,
+    .mini-metric .text-muted,
+    .insight-band .text-muted,
+    .insight-item .text-muted,
+    .spark-box .text-muted {
+        color: #64748b !important;
+    }
     @media (max-width: 767.98px) {
         .spark-row {
             grid-template-columns: 1fr;

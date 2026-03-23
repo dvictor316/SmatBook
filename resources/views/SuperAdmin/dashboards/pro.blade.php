@@ -192,6 +192,36 @@
         width: 100% !important;
         height: 54px !important;
     }
+
+    .glass-card-pro:not(.metric-indigo):not(.metric-emerald):not(.metric-rose):not(.metric-cyan),
+    .panel-card,
+    .mini-metric,
+    .insight-band,
+    .insight-item,
+    .spark-box,
+    .teaser-lock {
+        color: #0f172a !important;
+    }
+
+    .glass-card-pro:not(.metric-indigo):not(.metric-emerald):not(.metric-rose):not(.metric-cyan) .text-white,
+    .panel-card .text-white,
+    .mini-metric .text-white,
+    .insight-band .text-white,
+    .insight-item .text-white,
+    .spark-box .text-white,
+    .teaser-lock .text-white {
+        color: #0f172a !important;
+    }
+
+    .glass-card-pro:not(.metric-indigo):not(.metric-emerald):not(.metric-rose):not(.metric-cyan) .text-muted,
+    .panel-card .text-muted,
+    .mini-metric .text-muted,
+    .insight-band .text-muted,
+    .insight-item .text-muted,
+    .spark-box .text-muted,
+    .teaser-lock .text-muted {
+        color: #64748b !important;
+    }
     @media (max-width: 767.98px) {
         .spark-row {
             grid-template-columns: 1fr;

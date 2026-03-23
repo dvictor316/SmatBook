@@ -123,6 +123,24 @@
         color: #64748b;
     }
 
+    .enterprise-card,
+    .mini-metric,
+    .insight-card {
+        color: #0f172a !important;
+    }
+
+    .enterprise-card .text-white,
+    .mini-metric .text-white,
+    .insight-card .text-white {
+        color: #0f172a !important;
+    }
+
+    .enterprise-card .text-muted,
+    .mini-metric .text-muted,
+    .insight-card .text-muted {
+        color: #64748b !important;
+    }
+
     @media (max-width: 991.98px) {
         .insight-grid {
             grid-template-columns: 1fr;

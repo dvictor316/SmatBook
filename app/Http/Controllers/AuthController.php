@@ -140,7 +140,16 @@ class AuthController extends Controller
                 ]));
 
                 if ($request->hasFile('profile_photo') && Schema::hasColumn('users', 'profile_photo')) {
-                    $user->profile_photo = $request->file('profile_photo')->store('users/profiles', 'public');
+                    $profileDirectory = public_path('assets/img/profiles/registrations');
+                    if (!is_dir($profileDirectory)) {
+                        mkdir($profileDirectory, 0755, true);
+                    }
+
+                    $profileExtension = $request->file('profile_photo')->getClientOriginalExtension() ?: 'jpg';
+                    $profileFilename = 'reg-' . $user->id . '-' . Str::lower(Str::random(12)) . '.' . $profileExtension;
+
+                    $request->file('profile_photo')->move($profileDirectory, $profileFilename);
+                    $user->profile_photo = 'assets/img/profiles/registrations/' . $profileFilename;
                     $user->save();
                 }
 
