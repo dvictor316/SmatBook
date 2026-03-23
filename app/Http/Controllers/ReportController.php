@@ -765,67 +765,72 @@ public function destroy($id)
         public function sales_report(Request $request)
         {
             $activeBranch = $this->getActiveBranchContext();
-            $user = Auth::user();
-            $companyId = (int) ($user?->company_id ?? 0);
+            $stockExpression = Schema::hasColumn('products', 'stock')
+                ? 'COALESCE(products.stock, 0)'
+                : (Schema::hasColumn('products', 'stock_quantity') ? 'COALESCE(products.stock_quantity, 0)' : '0');
+            $saleQtyExpression = Schema::hasColumn('sale_items', 'qty')
+                ? 'COALESCE(sale_items.qty, 0)'
+                : (Schema::hasColumn('sale_items', 'quantity') ? 'COALESCE(sale_items.quantity, 0)' : '0');
+            $saleLineTotalExpression = Schema::hasColumn('sale_items', 'total_price')
+                ? 'COALESCE(sale_items.total_price, 0)'
+                : (Schema::hasColumn('sale_items', 'subtotal')
+                    ? 'COALESCE(sale_items.subtotal, 0)'
+                    : '(' . $saleQtyExpression . ' * COALESCE(sale_items.unit_price, 0))');
 
-            $saleQtyExpr = match (true) {
-                Schema::hasColumn('sale_items', 'qty') && Schema::hasColumn('sale_items', 'quantity') =>
-                    'COALESCE(NULLIF(sale_items.qty, 0), sale_items.quantity, 0)',
-                Schema::hasColumn('sale_items', 'qty') => 'COALESCE(sale_items.qty, 0)',
-                Schema::hasColumn('sale_items', 'quantity') => 'COALESCE(sale_items.quantity, 0)',
-                default => '0',
-            };
-
-            $saleUnitPriceExpr = match (true) {
-                Schema::hasColumn('sale_items', 'unit_price') && Schema::hasColumn('sale_items', 'rate') =>
-                    'COALESCE(NULLIF(sale_items.unit_price, 0), sale_items.rate, 0)',
-                Schema::hasColumn('sale_items', 'unit_price') => 'COALESCE(sale_items.unit_price, 0)',
-                Schema::hasColumn('sale_items', 'rate') => 'COALESCE(sale_items.rate, 0)',
-                default => '0',
-            };
-
-            $saleLineTotalExpr = match (true) {
-                Schema::hasColumn('sale_items', 'total_price') =>
-                    "COALESCE(sale_items.total_price, ({$saleQtyExpr} * {$saleUnitPriceExpr}))",
-                Schema::hasColumn('sale_items', 'subtotal') =>
-                    "COALESCE(sale_items.subtotal, ({$saleQtyExpr} * {$saleUnitPriceExpr}))",
-                default => "({$saleQtyExpr} * {$saleUnitPriceExpr})",
-            };
-
-            $query = DB::table('sale_items')
-                ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
-                ->leftJoin('products', 'sale_items.product_id', '=', 'products.id')
+            $query = \App\Models\Product::query()
                 ->leftJoin('categories', 'products.category_id', '=', 'categories.id')
-                ->select([
-                    DB::raw('MIN(sales.id) as Id'),
-                    DB::raw("COALESCE(products.name, CONCAT('POS Item #', sale_items.product_id)) as Product"),
-                    DB::raw("COALESCE(products.sku, CONCAT('POS-', sale_items.product_id)) as SKU"),
-                    DB::raw("COALESCE(categories.name, 'Uncategorized') as Category"),
-                    DB::raw("SUM({$saleLineTotalExpr}) as SoldAmount"),
-                    DB::raw("SUM({$saleQtyExpr}) as SoldQty"),
-                    DB::raw('COALESCE(MAX(products.stock), 0) as InstockQty'),
-                    DB::raw('MAX(sales.created_at) as DueDate'),
-                ])
-                ->whereNull('sales.deleted_at')
-                ->groupBy('sale_items.product_id', 'products.name', 'products.sku', 'categories.name');
+                ->leftJoin('sale_items', 'products.id', '=', 'sale_items.product_id')
+                ->leftJoin('sales', 'sale_items.sale_id', '=', 'sales.id')
+                ->selectRaw('
+                    products.id as Id,
+                    products.name as Product,
+                    products.sku as SKU,
+                    COALESCE(categories.name, "Uncategorized") as Category,
+                    COALESCE(SUM(' . $saleLineTotalExpression . '), 0) as SoldAmount,
+                    COALESCE(SUM(' . $saleQtyExpression . '), 0) as SoldQty,
+                    ' . $stockExpression . ' as InstockQty,
+                    MAX(sales.created_at) as DueDate
+                ')
+                ->groupBy(
+                    'products.id',
+                    'products.name',
+                    'products.sku',
+                    'categories.name',
+                    DB::raw($stockExpression)
+                );
 
-            if ($companyId > 0 && Schema::hasColumn('sales', 'company_id')) {
-                $query->where(function ($sub) use ($companyId, $user) {
-                    $sub->where('sales.company_id', $companyId);
-
-                    if ($user && Schema::hasColumn('sales', 'user_id')) {
-                        $sub->orWhere(function ($fallback) use ($user) {
-                            $fallback->whereNull('sales.company_id')
-                                ->where('sales.user_id', $user->id);
-                        });
-                    }
+            if ($request->filled('search')) {
+                $search = trim((string) $request->search);
+                $query->where(function ($builder) use ($search) {
+                    $builder->where('products.name', 'like', "%{$search}%")
+                        ->orWhere('products.sku', 'like', "%{$search}%")
+                        ->orWhere('categories.name', 'like', "%{$search}%");
                 });
-            } elseif ($user && Schema::hasColumn('sales', 'user_id')) {
-                $query->where('sales.user_id', $user->id);
             }
 
-            $this->applySaleBranchFilter($query, 'sales');
-            $salesreports = $this->process_report($query, $request, 'sales.created_at', ['products.name', 'products.sku', 'categories.name']);
+            $startDate = $request->input('start_date') ?: $request->input('from_date');
+            $endDate = $request->input('end_date') ?: $request->input('to_date');
+
+            if ($startDate) {
+                $query->where(function ($builder) use ($startDate) {
+                    $builder->whereNull('sales.created_at')
+                        ->orWhereDate('sales.created_at', '>=', $startDate);
+                });
+            }
+
+            if ($endDate) {
+                $query->where(function ($builder) use ($endDate) {
+                    $builder->whereNull('sales.created_at')
+                        ->orWhereDate('sales.created_at', '<=', $endDate);
+                });
+            }
+
+            $salesreports = $query
+                ->orderByDesc('SoldAmount')
+                ->orderBy('products.name')
+                ->paginate(15)
+                ->withQueryString();
+
             return $this->renderReportView('sales-report', compact('salesreports', 'activeBranch'));
         }
 
