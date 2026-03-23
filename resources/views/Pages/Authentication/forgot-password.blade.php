@@ -51,7 +51,7 @@
         border-radius: 24px;
         box-shadow: 0 30px 90px rgba(15, 23, 42, 0.12), 0 10px 24px rgba(37, 99, 235, 0.08);
         overflow: hidden;
-        max-width: 940px;
+        max-width: 900px;
         width: 100%;
         border: 1px solid rgba(255, 255, 255, 0.8);
         backdrop-filter: blur(18px);
@@ -60,7 +60,7 @@
 
     .branding-side {
         background: var(--spa-aside);
-        padding: 42px 34px;
+        padding: 30px 26px;
         position: relative;
     }
 
@@ -81,7 +81,7 @@
         display: inline-flex;
         align-items: center;
         gap: 12px;
-        padding: 10px 14px;
+        padding: 8px 12px;
         border-radius: 18px;
         background: rgba(255, 255, 255, 0.97);
         box-shadow: 0 18px 40px rgba(7, 27, 77, 0.18);
@@ -105,7 +105,7 @@
     }
 
     .brand-name {
-        font-size: 1.15rem;
+        font-size: 1.02rem;
         font-weight: 900;
         line-height: 1;
         color: #0b2b6d;
@@ -113,8 +113,8 @@
 
     .brand-tagline {
         margin-top: 4px;
-        font-size: 0.68rem;
-        letter-spacing: 0.14em;
+        font-size: 0.62rem;
+        letter-spacing: 0.12em;
         text-transform: uppercase;
         color: #2563eb;
         font-weight: 700;
@@ -122,31 +122,31 @@
 
     .branding-title {
         color: #fff;
-        font-size: 1.9rem;
+        font-size: 1.58rem;
         line-height: 1.1;
         font-weight: 800;
-        margin: 22px 0 10px;
+        margin: 18px 0 8px;
     }
 
     .branding-copy {
         color: rgba(255, 255, 255, 0.9);
-        line-height: 1.7;
-        font-size: 0.94rem;
+        line-height: 1.55;
+        font-size: 0.84rem;
         max-width: 32ch;
         margin: 0;
     }
 
     .branding-points {
         display: grid;
-        gap: 12px;
-        margin-top: 20px;
+        gap: 10px;
+        margin-top: 16px;
     }
 
     .branding-point {
         display: flex;
         gap: 10px;
         align-items: flex-start;
-        padding: 12px 13px;
+        padding: 10px 11px;
         border-radius: 14px;
         background: rgba(255, 255, 255, 0.08);
         border: 1px solid rgba(255, 255, 255, 0.1);
@@ -156,18 +156,18 @@
     .branding-point strong {
         display: block;
         color: #fff;
-        font-size: 0.88rem;
+        font-size: 0.8rem;
         margin-bottom: 2px;
     }
 
     .form-panel {
-        padding: 36px 32px;
+        padding: 28px 26px;
         background: #fff;
     }
 
     .form-control {
         border-radius: 14px;
-        padding: 13px 16px;
+        padding: 11px 14px;
         border: 1px solid #dbe5f2;
         background: #fcfdfe;
     }

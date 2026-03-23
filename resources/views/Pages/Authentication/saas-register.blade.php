@@ -125,9 +125,9 @@
 
     .smat-card {
         background: var(--spa-surface);
-        width: min(calc(100vw - 40px), 980px) !important;
-        max-width: 980px !important;
-        min-height: 560px;
+        width: min(calc(100vw - 40px), 920px) !important;
+        max-width: 920px !important;
+        min-height: 0;
         border-radius: 24px;
         box-shadow: 0 30px 90px rgba(15, 23, 42, 0.12), 0 10px 24px rgba(37, 99, 235, 0.08);
         display: flex;
@@ -141,11 +141,11 @@
     .smat-aside {
         width: 40%;
         background: var(--spa-aside);
-        padding: 32px 26px;
+        padding: 24px 22px;
         display: flex;
         flex-direction: column;
         justify-content: flex-start;
-        gap: 18px;
+        gap: 14px;
         overflow: hidden;
         color: #fff;
         position: relative;
@@ -179,10 +179,10 @@
         display: flex;
         align-items: center;
         gap: 12px;
-        margin-bottom: 8px;
+        margin-bottom: 6px;
         width: fit-content;
         max-width: 100%;
-        padding: 10px 14px;
+        padding: 8px 12px;
         border-radius: 18px;
         background: rgba(255, 255, 255, 0.97);
         box-shadow: 0 18px 40px rgba(7, 27, 77, 0.18);
@@ -193,16 +193,16 @@
         min-width: 0;
     }
     .brand-name {
-        font-size: clamp(1.08rem, 1.45vw, 1.4rem);
+        font-size: clamp(1rem, 1.18vw, 1.24rem);
         font-weight: 900;
         line-height: 1;
         white-space: nowrap;
         color: #0b2b6d;
     }
     .brand-tagline {
-        margin-top: 4px;
-        font-size: 0.7rem;
-        letter-spacing: 0.14em;
+        margin-top: 3px;
+        font-size: 0.62rem;
+        letter-spacing: 0.12em;
         text-transform: uppercase;
         color: #2563eb;
         font-weight: 700;
@@ -221,21 +221,21 @@
 
     .step-badge {
         display: inline-block;
-        padding: 6px 12px;
+        padding: 5px 11px;
         background: rgba(255, 255, 255, 0.1);
         color: #ffffff;
         border: 1px solid rgba(255, 255, 255, 0.32);
         border-radius: 100px;
-        font-size: 10px;
+        font-size: 9px;
         font-weight: 800;
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
 
     .aside-title {
-        margin: 18px 0 10px;
-        font-size: 1.72rem;
-        line-height: 1.14;
+        margin: 14px 0 8px;
+        font-size: 1.48rem;
+        line-height: 1.12;
         color: #ffffff;
         font-weight: 800;
         letter-spacing: -0.03em;
@@ -243,13 +243,13 @@
 
     .aside-copy {
         color: rgba(255, 255, 255, 0.92);
-        font-size: 0.94rem;
-        line-height: 1.75;
+        font-size: 0.84rem;
+        line-height: 1.55;
         margin: 0;
         max-width: 28ch;
     }
 
-    .info-row { display: flex; justify-content: space-between; font-size: 11px; padding: 10px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+    .info-row { display: flex; justify-content: space-between; font-size: 10px; padding: 8px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
     .info-label { color: rgba(255, 255, 255, 0.58); font-size: 9px; text-transform: uppercase; font-weight: 700; }
     .info-value { color: #ffffff; font-weight: 700; }
 
@@ -258,31 +258,31 @@
     }
 
     .amount-display {
-        margin-top: 14px;
-        padding: 16px;
+        margin-top: 12px;
+        padding: 14px;
         background: rgba(255, 255, 255, 0.12);
-        border-radius: 18px;
+        border-radius: 16px;
         border: 1px solid rgba(255, 255, 255, 0.14);
         box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
     }
-    .amount-value { font-size: 1.6rem; font-weight: 800; color: #ffffff; letter-spacing: -0.04em; }
-    .aside-points { margin-top: 18px; display: grid; gap: 10px; }
+    .amount-value { font-size: 1.38rem; font-weight: 800; color: #ffffff; letter-spacing: -0.04em; }
+    .aside-points { margin-top: 14px; display: grid; gap: 8px; }
     .aside-point {
         display: flex;
-        gap: 10px;
+        gap: 8px;
         align-items: flex-start;
-        padding: 12px 13px;
-        border-radius: 14px;
+        padding: 10px 11px;
+        border-radius: 13px;
         background: rgba(255, 255, 255, 0.08);
         border: 1px solid rgba(255, 255, 255, 0.1);
     }
     .aside-point i { color: #ffffff; margin-top: 2px; }
-    .aside-point strong { display: block; color: #ffffff; font-size: 0.88rem; margin-bottom: 2px; }
-    .aside-point span { color: rgba(255, 250, 240, 0.92); font-size: 0.78rem; line-height: 1.55; }
+    .aside-point strong { display: block; color: #ffffff; font-size: 0.8rem; margin-bottom: 2px; }
+    .aside-point span { color: rgba(255, 250, 240, 0.92); font-size: 0.72rem; line-height: 1.45; }
 
     .smat-main {
         width: 60%;
-        padding: 34px 34px 30px;
+        padding: 26px 26px 22px;
         background: #ffffff;
         display: flex;
         flex-direction: column;
@@ -296,16 +296,16 @@
         align-items: center;
         gap: 8px;
         align-self: flex-start;
-        padding: 6px 12px;
+        padding: 5px 10px;
         border-radius: 999px;
         background: #eff6ff;
         color: #173b92;
         border: 1px solid #dbeafe;
-        font-size: 0.72rem;
+        font-size: 0.66rem;
         font-weight: 800;
         letter-spacing: 0.08em;
         text-transform: uppercase;
-        margin-bottom: 14px;
+        margin-bottom: 10px;
     }
     .panel-kicker::before {
         content: '';
@@ -315,43 +315,43 @@
         background: #173b92;
         box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
     }
-    .form-title { font-weight: 800; color: #0f172a; font-size: 1.7rem; margin-bottom: 6px; letter-spacing: -0.03em; }
-    .form-subtitle { color: #64748b; font-size: 0.95rem; margin-bottom: 18px; line-height: 1.7; max-width: 44ch; }
+    .form-title { font-weight: 800; color: #0f172a; font-size: 1.46rem; margin-bottom: 4px; letter-spacing: -0.03em; }
+    .form-subtitle { color: #64748b; font-size: 0.86rem; margin-bottom: 14px; line-height: 1.55; max-width: 44ch; }
     .form-shell {
         border: 1px solid #e5edf8;
-        border-radius: 22px;
+        border-radius: 20px;
         background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
-        padding: 22px 22px 20px;
+        padding: 18px 18px 16px;
         box-shadow: 0 18px 38px rgba(15, 23, 42, 0.05);
     }
     .info-banner {
         display: flex;
         align-items: center;
         gap: 10px;
-        padding: 12px 14px;
+        padding: 10px 12px;
         border-radius: 14px;
         background: #f8fbff;
         border: 1px solid #e0ecff;
         color: #173b92;
-        font-size: 0.82rem;
-        line-height: 1.6;
-        margin-bottom: 18px;
+        font-size: 0.76rem;
+        line-height: 1.5;
+        margin-bottom: 14px;
     }
     .info-banner i { color: #173b92; }
     .field-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 14px;
+        gap: 12px;
     }
 
     .label-caps {
-        font-size: 11px; font-weight: 700; text-transform: uppercase;
-        color: #173b92; margin-bottom: 6px; display: block; letter-spacing: 0.6px;
+        font-size: 10px; font-weight: 700; text-transform: uppercase;
+        color: #173b92; margin-bottom: 5px; display: block; letter-spacing: 0.5px;
     }
 
     .input-smat {
-        padding: 13px 16px; border-radius: 14px; border: 1px solid #dbe5f2;
-        background: #fcfdfe; font-size: 13px; transition: all 0.2s; font-weight: 500;
+        padding: 11px 14px; border-radius: 14px; border: 1px solid #dbe5f2;
+        background: #fcfdfe; font-size: 12.5px; transition: all 0.2s; font-weight: 500;
     }
 
     .input-smat:focus {
@@ -363,23 +363,23 @@
     .pass-container { position: relative; }
     .toggle-eye { 
         position: absolute; right: 15px; top: 50%; transform: translateY(-50%); 
-        cursor: pointer; color: #94a3b8; font-size: 14px;
+        cursor: pointer; color: #94a3b8; font-size: 13px;
     }
 
     .btn-smat-red {
         background: linear-gradient(180deg, #edf4ff 0%, #dce9ff 100%);
         color: #173b92;
         border: 1px solid #c7d8f8;
-        padding: 14px;
+        padding: 12px;
         border-radius: 16px;
         width: 100%;
         font-weight: 800;
-        font-size: 13px;
+        font-size: 12px;
         box-shadow: 0 14px 28px rgba(37, 99, 235, 0.12);
         transition: 0.3s;
-        margin-top: 10px;
+        margin-top: 8px;
         text-transform: uppercase;
-        letter-spacing: 1px;
+        letter-spacing: 0.8px;
     }
 
     .btn-smat-red:hover {
@@ -391,14 +391,14 @@
 
     .error-pill {
         background: #fff1f1; border-left: 4px solid #e11d48;
-        color: #e11d48; padding: 12px; border-radius: 8px;
-        margin-bottom: 20px; font-size: 13px; font-weight: 600; list-style: none;
+        color: #e11d48; padding: 10px; border-radius: 8px;
+        margin-bottom: 16px; font-size: 12px; font-weight: 600; list-style: none;
     }
 
-    .bottom-link { margin-top: 18px; text-align: center; font-size: 12px; color: #64748b; }
+    .bottom-link { margin-top: 14px; text-align: center; font-size: 11px; color: #64748b; }
     .bottom-link a { color: var(--spa-primary); text-decoration: none; font-weight: 800; }
     .bottom-actions {
-        margin-top: 14px;
+        margin-top: 12px;
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 10px;
@@ -406,10 +406,10 @@
     .bottom-action-link {
         border: 1px solid #cfe0fb;
         border-radius: 14px;
-        padding: 12px 14px;
+        padding: 10px 12px;
         text-decoration: none;
         color: #173b92 !important;
-        font-size: 11px;
+        font-size: 10px;
         font-weight: 800;
         background: linear-gradient(180deg, #eef5ff 0%, #dce9ff 100%);
         box-shadow: 0 12px 24px rgba(37, 99, 235, 0.1);
@@ -430,7 +430,7 @@
     .divider {
         position: relative;
         text-align: center;
-        margin: 22px 0;
+        margin: 18px 0;
         border-top: 1px solid #f1f5f9;
     }
     .divider span {
@@ -439,8 +439,8 @@
         left: 50%;
         transform: translate(-50%, -50%);
         background: #fff;
-        padding: 0 12px;
-        font-size: 10px;
+        padding: 0 10px;
+        font-size: 9px;
         color: #94a3b8;
         font-weight: 700;
         text-transform: uppercase;
@@ -448,13 +448,13 @@
     .btn-social {
         background: linear-gradient(180deg, #f6faff 0%, #e8f0ff 100%);
         border: 1px solid #d4e2fa;
-        padding: 11px;
+        padding: 10px;
         border-radius: 14px;
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 10px;
-        font-size: 13px;
+        font-size: 12px;
         font-weight: 800;
         color: #173b92;
         text-decoration: none;
@@ -481,6 +481,16 @@
     .social-mark.facebook {
         color: #1877f2;
         font-size: 15px;
+    }
+
+    @media (max-width: 1199px) {
+        .smat-card { width: min(calc(100vw - 32px), 860px) !important; max-width: 860px !important; }
+        .smat-aside { padding: 22px 18px; }
+        .smat-main { padding: 24px 22px 20px; }
+        .aside-title { font-size: 1.34rem; }
+        .aside-copy { font-size: 0.8rem; }
+        .form-title { font-size: 1.34rem; }
+        .form-shell { padding: 16px; }
     }
 
     @media (max-width: 991px) {

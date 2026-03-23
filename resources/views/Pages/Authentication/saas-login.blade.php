@@ -128,8 +128,8 @@
     /* 3. COMPACT PROFESSIONAL CARD */
     .smat-card {
         background: var(--spa-surface);
-        width: min(calc(100vw - 40px), 940px) !important;
-        max-width: 940px !important;
+        width: min(calc(100vw - 40px), 900px) !important;
+        max-width: 900px !important;
         min-height: 0;
         height: auto;
         border-radius: 24px;
@@ -148,7 +148,7 @@
     .smat-aside {
         width: 38%;
         background: var(--spa-aside);
-        padding: 32px 26px;
+        padding: 24px 22px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
@@ -185,10 +185,10 @@
         display: flex;
         align-items: center;
         gap: 12px;
-        margin-bottom: 8px;
+        margin-bottom: 6px;
         width: fit-content;
         max-width: 100%;
-        padding: 10px 14px;
+        padding: 8px 12px;
         border-radius: 18px;
         background: rgba(255, 255, 255, 0.97);
         box-shadow: 0 18px 40px rgba(7, 27, 77, 0.18);
@@ -199,7 +199,7 @@
         min-width: 0;
     }
     .brand-name {
-        font-size: clamp(1.08rem, 1.35vw, 1.35rem);
+        font-size: clamp(1rem, 1.14vw, 1.22rem);
         font-weight: 900;
         line-height: 1;
         white-space: nowrap;
@@ -207,8 +207,8 @@
     }
     .brand-tagline {
         margin-top: 4px;
-        font-size: 0.7rem;
-        letter-spacing: 0.14em;
+        font-size: 0.62rem;
+        letter-spacing: 0.12em;
         text-transform: uppercase;
         color: #2563eb;
         font-weight: 700;
