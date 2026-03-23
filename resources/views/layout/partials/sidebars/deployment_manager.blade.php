@@ -112,6 +112,11 @@
         align-items: center;
         gap: 12px;
         text-decoration: none;
+        padding: 12px 14px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.96);
+        border: 1px solid rgba(255, 255, 255, 0.72);
+        box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12);
     }
 
     .dm-brand-icon {

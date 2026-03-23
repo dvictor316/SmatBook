@@ -102,7 +102,7 @@
         }
 
         .spb-auth-lockup__logo {
-            height: min({{ $config['logo'] }}, 44px);
+            height: max({{ $config['logo'] }}, 44px);
         }
 
         .spb-auth-lockup__brand {
@@ -127,7 +127,7 @@
         }
 
         .spb-auth-lockup__logo {
-            height: min({{ $config['logo'] }}, 40px);
+            height: max(calc({{ $config['logo'] }} * 0.88), 40px);
         }
 
         .spb-auth-lockup__brand {
