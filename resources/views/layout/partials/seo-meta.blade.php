@@ -67,6 +67,12 @@
 <meta name="keywords" content="{{ $resolvedKeywords }}">
 <meta name="robots" content="{{ $robotsContent }}">
 <link rel="canonical" href="{{ $resolvedCanonical }}">
+@if(config('app.google_site_verification'))
+<meta name="google-site-verification" content="{{ config('app.google_site_verification') }}">
+@endif
+@if(config('app.bing_site_verification'))
+<meta name="msvalidate.01" content="{{ config('app.bing_site_verification') }}">
+@endif
 
 <meta property="og:site_name" content="{{ $siteName }}">
 <meta property="og:type" content="{{ $resolvedType }}">

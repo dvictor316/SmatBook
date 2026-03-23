@@ -22,6 +22,8 @@ return [
     'phone'   => env('COMPANY_PHONE', '+0 000 000 000'),
     'email'   => env('COMPANY_EMAIL', 'info@company.com'),
     'domain' => env('SESSION_DOMAIN', parse_url(env('APP_URL', 'https://smartprobook.com'), PHP_URL_HOST) ?: 'smartprobook.com'),
+    'google_site_verification' => env('GOOGLE_SITE_VERIFICATION'),
+    'bing_site_verification' => env('BING_SITE_VERIFICATION'),
     /*
     |--------------------------------------------------------------------------
     | Application Environment
