@@ -88,6 +88,7 @@
         z-index: 9999;
         display: grid !important;
         place-items: center !important;
+        align-content: start;
         font-family: 'Plus Jakarta Sans', sans-serif;
         overflow-x: hidden;
         overflow-y: auto;
@@ -491,6 +492,118 @@
         .aside-copy { font-size: 0.8rem; }
         .form-title { font-size: 1.34rem; }
         .form-shell { padding: 16px; }
+    }
+
+    @media (max-height: 920px) {
+        .smat-viewport {
+            place-items: start center !important;
+            padding: 10px 10px 20px;
+        }
+        .smat-card {
+            width: min(calc(100vw - 28px), 840px) !important;
+            max-width: 840px !important;
+            margin: 8px auto 18px !important;
+        }
+        .smat-aside {
+            padding: 18px 16px;
+            gap: 10px;
+        }
+        .smat-main {
+            padding: 20px 20px 18px;
+        }
+        .aside-title {
+            font-size: 1.26rem;
+            margin: 10px 0 6px;
+        }
+        .aside-copy {
+            font-size: 0.78rem;
+            line-height: 1.45;
+        }
+        .amount-display {
+            margin-top: 10px;
+            padding: 12px;
+        }
+        .aside-points {
+            margin-top: 10px;
+            gap: 6px;
+        }
+        .aside-point {
+            padding: 8px 10px;
+        }
+        .aside-point strong {
+            font-size: 0.75rem;
+        }
+        .aside-point span {
+            font-size: 0.69rem;
+        }
+        .form-title {
+            font-size: 1.18rem;
+            margin-bottom: 4px;
+        }
+        .form-subtitle {
+            font-size: 0.76rem;
+            margin-bottom: 14px;
+        }
+        .form-shell {
+            padding: 14px;
+            border-radius: 18px;
+        }
+        .info-banner {
+            padding: 12px 14px;
+            margin-bottom: 14px;
+            font-size: 0.76rem;
+        }
+        .field-grid {
+            gap: 10px;
+        }
+        .input-smat {
+            padding: 10px 12px;
+            font-size: 12px;
+        }
+        .btn-smat-red,
+        .bottom-action-link,
+        .btn-social {
+            min-height: 42px;
+            padding-top: 10px;
+            padding-bottom: 10px;
+        }
+        .divider {
+            margin: 14px 0;
+        }
+    }
+
+    @media (max-height: 760px) {
+        .smat-viewport {
+            padding-top: 6px;
+            padding-bottom: 16px;
+        }
+        .smat-card {
+            width: min(calc(100vw - 20px), 800px) !important;
+            max-width: 800px !important;
+            border-radius: 20px;
+        }
+        .smat-aside {
+            padding: 16px 14px;
+        }
+        .smat-main {
+            padding: 18px 18px 16px;
+        }
+        .logo-img {
+            height: 46px;
+        }
+        .brand-lockup {
+            padding: 7px 10px;
+        }
+        .step-badge {
+            font-size: 8px;
+            padding: 4px 10px;
+        }
+        .form-shell {
+            padding: 12px;
+        }
+        .bottom-link {
+            margin-top: 10px;
+        }
     }
 
     @media (max-width: 991px) {
