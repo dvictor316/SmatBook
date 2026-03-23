@@ -10,6 +10,8 @@
         :root {
             --muji-blue-deep: #0f172a; 
             --muji-blue-accent: #2563eb;
+            --muji-blue-soft: #3b82f6;
+            --muji-blue-soft-end: #4f46e5;
             --muji-blue-light: #f8fafc; 
             --muji-gold: #c5a059; 
             --muji-red: #e11d48; 
@@ -139,16 +141,33 @@
         .feature-list li.unavailable i { color: #cbd5e1; }
 
         .btn-uplink {
-            background: var(--muji-blue-deep); color: #fff; text-decoration: none;
+            background: linear-gradient(135deg, #14213d 0%, #1e3a5f 100%);
+            color: #fff; text-decoration: none;
             padding: 16px; text-align: center; font-weight: 700; font-size: 0.9rem;
-            border-radius: 12px; border: none; cursor: pointer; transition: 0.3s;
+            border-radius: 16px; border: none; cursor: pointer; transition: 0.3s;
+            box-shadow: 0 12px 22px -16px rgba(15, 23, 42, 0.7);
         }
-        .btn-uplink:hover { background: var(--muji-blue-accent); transform: scale(1.02); }
+        .btn-uplink:hover {
+            background: linear-gradient(135deg, #1d3557 0%, #2563eb 100%);
+            transform: translateY(-1px) scale(1.01);
+            box-shadow: 0 18px 28px -18px rgba(37, 99, 235, 0.5);
+        }
         
-        .btn-outline { background: var(--muji-blue-accent); color: #fff; }
-        .btn-outline:hover { background: #1d4ed8; color: #fff; }
+        .btn-outline {
+            background: linear-gradient(135deg, var(--muji-blue-soft) 0%, var(--muji-blue-soft-end) 100%);
+            color: #fff;
+            box-shadow: 0 16px 26px -18px rgba(79, 70, 229, 0.5);
+        }
+        .btn-outline:hover {
+            background: linear-gradient(135deg, #4f46e5 0%, #2563eb 100%);
+            color: #fff;
+            box-shadow: 0 20px 30px -18px rgba(37, 99, 235, 0.55);
+        }
 
-        .plan-card.featured .btn-uplink { background: var(--muji-blue-accent); box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3); }
+        .plan-card.featured .btn-uplink {
+            background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+            box-shadow: 0 18px 30px -18px rgba(79, 70, 229, 0.45);
+        }
 
         /* Responsive */
         @media (max-width: 1100px) { .pricing-grid { grid-template-columns: repeat(2, 1fr); } }
