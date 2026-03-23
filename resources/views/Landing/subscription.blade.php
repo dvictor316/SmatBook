@@ -33,9 +33,8 @@
         }
         .nav-container { max-width: 1400px; margin: 0 auto; width: 100%; padding: 0 40px; display: flex; justify-content: space-between; align-items: center; }
         .logo-container { display: inline-flex; align-items: center; gap: 10px; min-width: 0; }
-        .logo-text { font-size: 1.2rem; font-weight: 800; color: #0b2a63; text-decoration: none; letter-spacing: -0.3px; line-height: 1; white-space: nowrap; }
-        .logo-text .brand-main { color: #0b2a63 !important; }
-        .logo-text .brand-accent { color: #dc2626 !important; }
+        .spb-nav-wordmark { font-size: 1.2rem; font-weight: 800; letter-spacing: -0.3px; color: #0b2a63; line-height: 1; white-space: nowrap; text-decoration: none; }
+        .spb-nav-wordmark .book { color: #dc2626 !important; }
         .nav-links { display: flex; list-style: none; gap: 25px; margin: 0; align-items: center; }
         .nav-links a { text-decoration: none; color: var(--dark-navy); font-weight: 700; font-size: 0.85rem; text-transform: uppercase; transition: 0.3s; }
         .nav-links a:hover { color: var(--executive-red); }
@@ -67,13 +66,13 @@
             .nav-links { display: none; }
             .carousel-caption h1 { font-size: 2.5rem; }
             .brand-img { height: 48px; }
-            .logo-text { font-size: 1.08rem; }
+            .spb-nav-wordmark { font-size: 1.08rem; }
         }
         @media (max-width: 480px) {
             .nav-container { padding: 0 14px; }
             .logo-container { gap: 8px; }
             .brand-img { height: 44px; }
-            .logo-text {
+            .spb-nav-wordmark {
                 font-size: 0.98rem;
                 letter-spacing: -0.22px;
             }
@@ -82,7 +81,7 @@
             .nav-container { padding: 0 10px; }
             .logo-container { gap: 6px; }
             .brand-img { height: 40px; }
-            .logo-text {
+            .spb-nav-wordmark {
                 font-size: 0.86rem;
                 letter-spacing: -0.18px;
             }
@@ -95,7 +94,7 @@
     <div class="nav-container">
         <a href="{{ url('/') }}" class="logo-container text-decoration-none">
             <img src="{{ asset('assets/img/logos.png') }}" class="brand-img" alt="SmartProbook">
-            <span class="logo-text"><span class="brand-main">SmartPro</span><span class="brand-accent">book</span></span>
+            <span class="spb-nav-wordmark"><span style="color:#0b2a63;">SmartPro</span><span class="book" style="color:#dc2626;">book</span></span>
         </a>
         <ul class="nav-links" id="mainMenu">
             <li><a href="{{ url('/#home') }}">Home</a></li>
