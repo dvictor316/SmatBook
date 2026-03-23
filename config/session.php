@@ -11,6 +11,33 @@ $isLocalHost = in_array($appHost, ['localhost', '127.0.0.1'], true)
     || in_array($requestHost, ['localhost', '127.0.0.1'], true)
     || in_array($appEnv, ['local', 'development', 'testing'], true);
 
+$explicitSessionDomain = trim((string) env('SESSION_DOMAIN', ''));
+$effectiveHost = $requestHost !== '' ? $requestHost : $appHost;
+$hostSegments = array_values(array_filter(explode('.', $effectiveHost)));
+$derivedSessionDomain = null;
+
+if (!$isLocalHost && $effectiveHost !== '' && filter_var($effectiveHost, FILTER_VALIDATE_IP) === false && count($hostSegments) >= 2) {
+    $derivedSessionDomain = '.' . implode('.', array_slice($hostSegments, -2));
+}
+
+$sessionDomain = $isLocalHost
+    ? null
+    : ($explicitSessionDomain !== '' ? ltrim($explicitSessionDomain, '.') : $derivedSessionDomain);
+
+if (filled($sessionDomain) && !str_starts_with($sessionDomain, '.')) {
+    $sessionDomain = '.' . $sessionDomain;
+}
+
+$sessionSecure = $isLocalHost
+    ? false
+    : filter_var(env('SESSION_SECURE_COOKIE', null), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+
+if ($sessionSecure === null) {
+    $forwardedProto = strtolower((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? ''));
+    $https = strtolower((string) ($_SERVER['HTTPS'] ?? ''));
+    $sessionSecure = $forwardedProto === 'https' || in_array($https, ['on', '1'], true);
+}
+
 return [
 
     /*
@@ -164,7 +191,7 @@ return [
     |
     */
 
-    'domain' => $isLocalHost ? null : env('SESSION_DOMAIN', null),
+    'domain' => $sessionDomain,
 
     /*
     |--------------------------------------------------------------------------
@@ -177,7 +204,7 @@ return [
     |
     */
 
-    'secure' => $isLocalHost ? false : env('SESSION_SECURE_COOKIE'),
+    'secure' => $sessionSecure,
 
     /*
     |--------------------------------------------------------------------------
@@ -205,6 +232,6 @@ return [
     |
     */
 
-    'same_site' => 'lax',
+    'same_site' => env('SESSION_SAME_SITE', 'lax'),
 
 ];

@@ -16,12 +16,12 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Smatprobook'),
+    'name' => env('APP_NAME', 'SmartProbook'),
     'address' => env('COMPANY_ADDRESS', '234 Default St'),
     'city'    => env('COMPANY_CITY', 'City, State, Zip'),
     'phone'   => env('COMPANY_PHONE', '+0 000 000 000'),
     'email'   => env('COMPANY_EMAIL', 'info@company.com'),
-    'domain' => env('SESSION_DOMAIN', 'smatbook.com'),
+    'domain' => env('SESSION_DOMAIN', parse_url(env('APP_URL', 'https://smartprobook.com'), PHP_URL_HOST) ?: 'smartprobook.com'),
     /*
     |--------------------------------------------------------------------------
     | Application Environment

@@ -36,13 +36,31 @@ class Handler extends ExceptionHandler
                 ], 419);
             }
 
+            $safeInput = $request->except(['password', 'password_confirmation', 'current_password']);
+            $isAuthScreen = $request->routeIs([
+                'login',
+                'login-account',
+                'saas-login',
+                'register',
+                'saas-register',
+                'forgot-password',
+                'password.reset',
+            ]);
+
+            $request->session()->invalidate();
             $request->session()->regenerateToken();
 
-            $safeInput = $request->except(['password', 'password_confirmation', 'current_password']);
+            $message = 'Your session expired. Please try again.';
+
+            if ($isAuthScreen) {
+                return redirect()->to($request->url())
+                    ->withInput($safeInput)
+                    ->withErrors(['error' => $message]);
+            }
 
             return back()
                 ->withInput($safeInput)
-                ->withErrors(['error' => 'Your session expired. Please submit the form again.']);
+                ->withErrors(['error' => $message]);
         });
     }
 }

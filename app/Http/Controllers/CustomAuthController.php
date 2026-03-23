@@ -29,13 +29,19 @@ class CustomAuthController extends Controller
      *
      * @return \Illuminate\Http\RedirectResponse|\Illuminate\View\View
      */
-    public function showLoginForm()
+    public function showLoginForm(Request $request)
     {
         if (Auth::check()) {
             return redirect()->route('super_admin.dashboard');
         }
 
-        return view('Pages.Authentication.login');
+        $request->session()->regenerateToken();
+
+        return response()
+            ->view('Pages.Authentication.login')
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', 'Sat, 01 Jan 2000 00:00:00 GMT');
     }
 
     /**
@@ -92,13 +98,19 @@ class CustomAuthController extends Controller
      *
      * @return \Illuminate\Http\RedirectResponse|\Illuminate\View\View
      */
-    public function showRegistrationForm()
+    public function showRegistrationForm(Request $request)
     {
         if (Auth::check()) {
             return redirect()->route('super_admin.dashboard');
         }
 
-        return view('Pages.Authentication.register');
+        $request->session()->regenerateToken();
+
+        return response()
+            ->view('Pages.Authentication.register')
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', 'Sat, 01 Jan 2000 00:00:00 GMT');
     }
 
     /**
