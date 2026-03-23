@@ -44,8 +44,8 @@
     );
     $workspaceContext = session('workspace_context', 'platform');
     $isBusinessWorkspace = $workspaceContext === 'business';
-    $headerHomeUrl = $isBusinessWorkspace && Route::has('workspace.business.dashboard')
-        ? route('workspace.business.dashboard')
+    $headerHomeUrl = $isBusinessWorkspace && Route::has('workspace.business')
+        ? route('workspace.business')
         : route('super_admin.dashboard', $routeParams);
     $headerBranchOptions = collect();
     $activeBranchId = session('active_branch_id');

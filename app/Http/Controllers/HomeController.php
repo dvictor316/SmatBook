@@ -41,7 +41,7 @@ class HomeController extends Controller
         if ($this->isTempOpenAccess()) {
             if ($this->isSuperAdmin($user)) {
                 if (session('workspace_context') === 'business') {
-                    return redirect()->route('workspace.business.dashboard');
+                    return redirect()->route('workspace.business');
                 }
                 return redirect()->route('super_admin.dashboard');
             }
@@ -73,7 +73,7 @@ class HomeController extends Controller
             Log::info('User is SUPER ADMIN', ['user_id' => $user->id]);
             if (session('workspace_context') === 'business') {
                 Log::info('Super admin requested BUSINESS WORKSPACE context', ['user_id' => $user->id]);
-                return redirect()->route('workspace.business.dashboard');
+                return redirect()->route('workspace.business');
             }
             return redirect()->route('super_admin.dashboard');
         }

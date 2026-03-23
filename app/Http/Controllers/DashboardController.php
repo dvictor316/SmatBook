@@ -14,8 +14,7 @@ class DashboardController extends Controller
     {
         $request->session()->put('workspace_context', 'business');
 
-        return redirect()->route('workspace.business.dashboard')
-            ->with('success', 'Business workspace is now active.');
+        return $this->index($request);
     }
 
     public function switchToPlatformWorkspace(Request $request)
