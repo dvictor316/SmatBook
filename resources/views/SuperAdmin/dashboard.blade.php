@@ -974,10 +974,6 @@
                 {{-- Header Section --}}
                 <div class="header-responsive-flex border-bottom pb-3 mb-4">
                     <div class="d-flex align-items-center">
-                        {{-- Mobile Toggle Button --}}
-                        <button class="btn btn-light d-lg-none me-3" type="button" onclick="toggleSidebarMobile()">
-                            <i class="mdi mdi-menu"></i>
-                        </button>
                         <div>
                             <h3 class="fw-bold text-dark mb-1">Master Command Center</h3>
                             <p class="text-muted mb-0">
