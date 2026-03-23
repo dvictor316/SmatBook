@@ -185,6 +185,7 @@
     .header {
         display: flex;
         align-items: center;
+        justify-content: flex-start;
         padding: 0 20px;
         background: #fff;
         border-bottom: 1px solid #e2e8f0;
@@ -205,6 +206,7 @@
         order: 1;
         gap: 8px;
         min-width: 0;
+        flex: 1 1 auto;
     }
     .header-logo a {
         display: inline-flex;
@@ -420,6 +422,9 @@
         flex-shrink: 0;
         margin-left: 20px;
         order: 4;
+    }
+    .header-actions > * {
+        flex-shrink: 0;
     }
 
     .workspace-switcher {
@@ -704,6 +709,42 @@
         }
     }
 
+    @media (max-width: 767px) {
+        .header {
+            padding: 0 8px;
+            height: 68px;
+        }
+        .header-logo {
+            max-width: 172px;
+            gap: 6px;
+        }
+        .header-logo img { height: 38px; }
+        .spb-wordmark {
+            font-size: 0.88rem;
+            letter-spacing: -0.22px;
+        }
+        .header-actions {
+            gap: 3px;
+            margin-left: 3px;
+        }
+        .country-selector {
+            padding: 3px 5px;
+        }
+        .country-selector img {
+            height: 15px;
+            width: 22px;
+        }
+        .notification-bell,
+        .mobile-search-btn,
+        .user-avatar {
+            width: 31px;
+            height: 31px;
+        }
+        .user-profile {
+            min-width: 31px;
+        }
+    }
+
     @media (max-width: 480px) {
         .header {
             padding: 0 8px;
@@ -751,6 +792,66 @@
         .user-profile {
             min-width: 29px;
             padding: 1px;
+        }
+    }
+
+    @media (max-width: 430px) {
+        .header {
+            padding: 0 7px;
+            height: 66px;
+        }
+        .header-logo {
+            max-width: 144px;
+            gap: 4px;
+        }
+        .header-logo img { height: 31px; }
+        .spb-wordmark {
+            font-size: 0.69rem;
+            letter-spacing: -0.16px;
+        }
+        .header-actions {
+            gap: 1px;
+            margin-left: 2px;
+        }
+        #mobile_btn {
+            width: 32px;
+            height: 32px;
+            margin-right: 3px;
+        }
+        .notification-bell,
+        .mobile-search-btn,
+        .user-avatar {
+            width: 28px;
+            height: 28px;
+        }
+        .notification-bell,
+        .mobile-search-btn {
+            font-size: 12px;
+        }
+        .user-profile {
+            min-width: 28px;
+        }
+    }
+
+    @media (max-width: 389px) {
+        .header-logo {
+            max-width: 124px;
+            gap: 3px;
+        }
+        .header-logo img { height: 28px; }
+        .spb-wordmark {
+            font-size: 0.6rem;
+            letter-spacing: -0.1px;
+        }
+        .country-selector {
+            padding: 3px;
+        }
+        .country-selector img {
+            height: 13px;
+            width: 18px;
+        }
+        .mobile-search-btn {
+            display: none;
         }
     }
 
