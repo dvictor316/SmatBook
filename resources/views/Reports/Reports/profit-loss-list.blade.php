@@ -25,32 +25,30 @@
 
 @section('style')
 <style>
-    /* Professional Typography & Font Reduction */
-    .page-wrapper { background-color: #f8f9fa; }
     #profitLossTable { font-size: 12.5px !important; border-collapse: separate; border-spacing: 0; }
     #profitLossTable thead th { 
-        font-size: 11px !important; 
+        font-size: 0.75rem !important; 
         text-transform: uppercase; 
-        letter-spacing: 0.5px; 
+        letter-spacing: 0.08em; 
         background-color: #f1f5f9; 
-        color: #475569;
-        border-bottom: 2px solid #e2e8f0;
+        color: #102a5a;
+        border-bottom: 1px solid #dbe7f5;
     }
-    .card-body h3 { font-size: 1.08rem; font-weight: 800; letter-spacing: -0.2px; }
-    .badge { font-size: 10px; padding: 5px 10px; }
+    .card-body h3 { font-size: 1.18rem; font-weight: 800; letter-spacing: -0.2px; }
+    .badge { font-size: 0.72rem; padding: 0.4rem 0.7rem; }
     .money-sm { font-size: 0.9rem !important; font-variant-numeric: tabular-nums; }
     .table-money { font-size: 0.82rem; font-variant-numeric: tabular-nums; }
+    .report-metric-title { letter-spacing: 0.08em; }
 
-    /* DataTables Button Styling */
     .dt-buttons { margin-bottom: 15px; gap: 5px; display: flex; }
     .dt-button { 
         border: 1px solid #d1d5db !important;
         background: #fff !important;
-        font-size: 11px !important;
+        font-size: 0.76rem !important;
         font-weight: 600 !important;
-        border-radius: 4px !important;
-        padding: 4px 12px !important;
-        color: #374151 !important;
+        border-radius: 999px !important;
+        padding: 0.5rem 0.9rem !important;
+        color: #102a5a !important;
     }
     .dt-button:hover { background: #f9fafb !important; }
 
@@ -99,7 +97,7 @@
             <div class="col-md-3">
                 <div class="card bg-success-light border-0 shadow-sm">
                     <div class="card-body">
-                        <h6 class="text-success small text-uppercase fw-bold">{{ __('Overall Revenue') }}</h6>
+                        <h6 class="text-success small text-uppercase fw-bold report-metric-title">{{ __('Overall Revenue') }}</h6>
                         <h3 class="mb-0 text-success money-sm">₦{{ number_format($grandIncome, 2) }}</h3>
                     </div>
                 </div>
@@ -107,7 +105,7 @@
             <div class="col-md-3">
                 <div class="card bg-info-light border-0 shadow-sm">
                     <div class="card-body">
-                        <h6 class="text-info small text-uppercase fw-bold">{{ __('Purchase Cost') }}</h6>
+                        <h6 class="text-info small text-uppercase fw-bold report-metric-title">{{ __('Purchase Cost') }}</h6>
                         <h3 class="mb-0 text-info money-sm">₦{{ number_format($grandPurchaseExpense, 2) }}</h3>
                     </div>
                 </div>
@@ -115,7 +113,7 @@
             <div class="col-md-3">
                 <div class="card bg-danger-light border-0 shadow-sm">
                     <div class="card-body">
-                        <h6 class="text-danger small text-uppercase fw-bold">{{ __('Total Expenses') }}</h6>
+                        <h6 class="text-danger small text-uppercase fw-bold report-metric-title">{{ __('Total Expenses') }}</h6>
                         <div class="small text-muted mb-1">OpEx: ₦{{ number_format($grandOperatingExpense, 2) }}</div>
                         <h3 class="mb-0 text-danger money-sm">₦{{ number_format($grandExpense, 2) }}</h3>
                     </div>
@@ -124,7 +122,7 @@
             <div class="col-md-3">
                 <div class="card {{ $grandNet >= 0 ? 'bg-primary-light' : 'bg-warning-light' }} border-0 shadow-sm">
                     <div class="card-body">
-                        <h6 class="{{ $grandNet >= 0 ? 'text-primary' : 'text-warning' }} small text-uppercase fw-bold">{{ __('Net Profit/Loss') }}</h6>
+                        <h6 class="{{ $grandNet >= 0 ? 'text-primary' : 'text-warning' }} small text-uppercase fw-bold report-metric-title">{{ __('Net Profit/Loss') }}</h6>
                         <h3 class="mb-0 {{ $grandNet >= 0 ? 'text-primary' : 'text-warning' }} money-sm">₦{{ number_format($grandNet, 2) }}</h3>
                     </div>
                 </div>

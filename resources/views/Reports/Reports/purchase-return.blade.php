@@ -3,11 +3,22 @@
 
 @section('style')
 <style>
-    .page-wrapper { background-color: #f4f7f6; }
     .card-table { border-radius: 15px; overflow: hidden; border: none; }
     .pagination { margin-bottom: 0; gap: 4px; }
-    .page-link { border-radius: 8px !important; border: none; background: #f8f9fa; color: #495057; }
-    .page-item.active .page-link { background-color: #0d6efd; color: white; box-shadow: 0 4px 10px rgba(13, 110, 253, 0.3); }
+    .page-link { border-radius: 12px !important; border: 1px solid #d7e2f0; background: #f8f9fa; color: #102a5a; }
+    .page-item.active .page-link { background-color: #2563eb; color: white; box-shadow: 0 4px 10px rgba(37, 99, 235, 0.24); border-color: #2563eb; }
+    .purchase-return-summary h3 {
+        color: #102a5a;
+        font-size: 1.2rem;
+        letter-spacing: -0.02em;
+    }
+    .purchase-return-summary .dash-widget-icon {
+        width: 52px;
+        height: 52px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
 
     @media print {
         .no-print, .dt-buttons, .dataTables_filter, .breadcrumb, .btn, .pagination-container { 
@@ -39,7 +50,7 @@
 
             <div class="row mb-4">
                 <div class="col-xl-4 col-sm-6 col-12">
-                    <div class="card shadow-sm border-0">
+                    <div class="card shadow-sm border-0 purchase-return-summary">
                         <div class="card-body">
                             <div class="d-flex align-items-center">
                                 <div class="dash-widget-icon bg-primary-light rounded-circle p-3">

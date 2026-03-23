@@ -8,28 +8,34 @@
 
 @section('style')
 <style>
-    /* Professional Typography & Font Reduction */
-    .page-wrapper { background-color: #f8f9fa; }
     #taxPurchaseTable { font-size: 12.5px !important; }
     #taxPurchaseTable thead th { 
-        font-size: 11px !important; 
+        font-size: 0.75rem !important; 
         text-transform: uppercase; 
-        letter-spacing: 0.5px; 
+        letter-spacing: 0.08em; 
         background-color: #f1f5f9; 
-        color: #475569;
-        border-bottom: 2px solid #e2e8f0;
+        color: #102a5a;
+        border-bottom: 1px solid #dbe7f5;
     }
-    .card-body h3 { font-size: 1.6rem; font-weight: 800; }
+    .card-body h3 { font-size: 1.25rem; font-weight: 800; letter-spacing: -0.02em; }
     
-    /* DataTables Button Styling */
     .dt-buttons { margin-bottom: 15px; gap: 5px; display: flex; }
     .dt-button { 
         border: 1px solid #d1d5db !important;
         background: #fff !important;
-        font-size: 11px !important;
+        font-size: 0.76rem !important;
         font-weight: 600 !important;
-        border-radius: 4px !important;
-        padding: 4px 12px !important;
+        border-radius: 999px !important;
+        padding: 0.5rem 0.9rem !important;
+    }
+    .tax-report-tabs .nav-link {
+        border-radius: 999px;
+        font-weight: 700;
+        color: #102a5a;
+    }
+    .tax-report-tabs .nav-link.active {
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        color: #fff;
     }
 
     @media print {
@@ -64,7 +70,7 @@
         ])
 
         {{-- Tabs --}}
-        <div class="report-tabs mb-4 no-print">
+        <div class="report-tabs mb-4 no-print tax-report-tabs">
             <ul class="nav nav-pills">
                 <li class="nav-item">
                     <a href="{{ route('reports.tax-purchase') }}" class="nav-link active shadow-sm">{{ __('Purchase Tax Report') }}</a>

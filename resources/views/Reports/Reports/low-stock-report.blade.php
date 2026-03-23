@@ -9,8 +9,8 @@
         <div class="page-header mb-4 no-print">
             <div class="row align-items-center">
                 <div class="col">
-                    <h4 class="fw-bold mb-1" style="color: #4e5d78;">Inventory Analysis</h4>
-                    <p class="text-muted mb-0" style="font-size: 12px;">Monitoring items below threshold ({{ $threshold }})</p>
+                    <h4 class="fw-bold mb-1 report-page-title">Inventory Analysis</h4>
+                    <p class="text-muted mb-0 report-page-subtitle">Monitoring items below threshold ({{ $threshold }}).</p>
                 </div>
                 <div class="col-auto">
                     <div class="btn-group shadow-sm bg-white">
@@ -31,17 +31,17 @@
         @php $totalValuation = $products->sum(fn($p) => $p->stock * $p->purchase_price); @endphp
         <div class="row g-3 mb-4 no-print">
             <div class="col-md-4">
-                <div class="card border shadow-none mb-0" style="border-left: 4px solid #3b82f6 !important;">
+                <div class="card border shadow-none mb-0 low-stock-metric-card" style="border-left: 4px solid #3b82f6 !important;">
                     <div class="card-body p-3">
-                        <small class="text-muted fw-bold" style="font-size: 10px;">TOTAL CRITICAL ITEMS</small>
+                        <small class="text-muted fw-bold low-stock-metric-label">Total Critical Items</small>
                         <h4 class="mb-0 fw-bold">{{ $products->count() }}</h4>
                     </div>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="card border shadow-none mb-0" style="border-left: 4px solid #10b981 !important;">
+                <div class="card border shadow-none mb-0 low-stock-metric-card" style="border-left: 4px solid #10b981 !important;">
                     <div class="card-body p-3">
-                        <small class="text-muted fw-bold" style="font-size: 10px;">VALUATION AT RISK</small>
+                        <small class="text-muted fw-bold low-stock-metric-label">Valuation At Risk</small>
                         <h4 class="mb-0 fw-bold">{{ number_format($totalValuation, 2) }}</h4>
                     </div>
                 </div>
@@ -52,7 +52,7 @@
         <div class="card border shadow-none overflow-hidden">
             <div class="table-responsive">
                 <table class="table table-hover mb-0 align-middle" id="reportTable">
-                    <thead style="background: #f9fafb;">
+                    <thead>
                         <tr class="text-uppercase" style="font-size: 10px; letter-spacing: 0.5px;">
                             <th class="ps-4 py-3 text-muted">Product Name</th>
                             <th class="py-3 text-muted">SKU</th>
@@ -62,7 +62,7 @@
                             <th class="pe-4 py-3 text-center text-muted">Action</th>
                         </tr>
                     </thead>
-                    <tbody style="font-size: 12px;">
+                    <tbody>
                         @forelse ($products as $product)
                             @php $needed = max(0, $target - $product->stock); @endphp
                             <tr>
@@ -94,6 +94,32 @@
 <style>
     .btn-white { background: #fff; }
     .btn-xs { padding: 2px 8px; border-radius: 4px; }
+    .report-page-title {
+        color: #102a5a;
+        font-size: 1.35rem;
+        letter-spacing: -0.02em;
+    }
+    .report-page-subtitle {
+        font-size: 0.95rem;
+    }
+    .low-stock-metric-card h4 {
+        color: #102a5a;
+        font-size: 1.2rem;
+        letter-spacing: -0.02em;
+    }
+    .low-stock-metric-label {
+        font-size: 0.72rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+    #reportTable thead th {
+        font-size: 0.74rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+    #reportTable tbody td {
+        font-size: 0.94rem;
+    }
     @media print { .no-print { display: none !important; } }
 </style>
 @endsection
