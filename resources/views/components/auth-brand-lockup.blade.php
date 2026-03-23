@@ -10,9 +10,9 @@
     $logoSrc = $logo ?: asset('assets/img/logos.png');
     $isDark = $theme === 'dark';
     $sizeMap = [
-        'sm' => ['logo' => '34px', 'brand' => '1.55rem', 'tag' => '0.72rem'],
-        'md' => ['logo' => '42px', 'brand' => '1.9rem', 'tag' => '0.78rem'],
-        'lg' => ['logo' => '56px', 'brand' => '2.3rem', 'tag' => '0.84rem'],
+        'sm' => ['logo' => '34px', 'brand' => '1.28rem', 'tag' => '0.62rem'],
+        'md' => ['logo' => '42px', 'brand' => '1.58rem', 'tag' => '0.68rem'],
+        'lg' => ['logo' => '56px', 'brand' => '1.92rem', 'tag' => '0.74rem'],
     ];
     $config = $sizeMap[$size] ?? $sizeMap['md'];
     $brandColor = $isDark ? '#ffffff' : '#0b2a63';
@@ -83,10 +83,10 @@
     }
 
     .spb-auth-lockup__tagline {
-        margin-top: 6px;
+        margin-top: 5px;
         font-size: {{ $config['tag'] }};
         font-weight: 700;
-        letter-spacing: 0.16em;
+        letter-spacing: 0.13em;
         text-transform: uppercase;
         color: {{ $tagColor }};
     }
@@ -106,13 +106,13 @@
         }
 
         .spb-auth-lockup__brand {
-            font-size: min({{ $config['brand'] }}, 1.55rem);
-            letter-spacing: -0.028em;
+            font-size: min({{ $config['brand'] }}, 1.36rem);
+            letter-spacing: -0.024em;
         }
 
         .spb-auth-lockup__tagline {
-            font-size: min({{ $config['tag'] }}, 0.72rem);
-            letter-spacing: 0.14em;
+            font-size: min({{ $config['tag'] }}, 0.6rem);
+            letter-spacing: 0.11em;
         }
     }
 
@@ -131,14 +131,14 @@
         }
 
         .spb-auth-lockup__brand {
-            font-size: min({{ $config['brand'] }}, 1.32rem);
-            letter-spacing: -0.024em;
+            font-size: min({{ $config['brand'] }}, 1.18rem);
+            letter-spacing: -0.02em;
             white-space: nowrap;
         }
 
         .spb-auth-lockup__tagline {
-            font-size: min({{ $config['tag'] }}, 0.66rem);
-            letter-spacing: 0.12em;
+            font-size: min({{ $config['tag'] }}, 0.55rem);
+            letter-spacing: 0.09em;
         }
     }
 </style>
