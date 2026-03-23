@@ -10,7 +10,7 @@
             'password.request', 'password.reset', 'password.update',
             'saas.checkout', 'saas.setup', 'saas.success', 'saas.payment.success', 'saas.payment.cancel',
         ], true);
-        $seoTitle = 'Smatprobook';
+        $seoTitle = 'SmartProbook';
     @endphp
     @include('layout.partials.seo-meta')
 
@@ -41,7 +41,7 @@
         $daysRemaining = $domainRecord ? now()->diffInDays($domainRecord->expiry_date, false) : 99;
     @endphp
 
-    <link rel="shortcut icon" href="{{ asset('assets/img/logos.png') }}">
+    <link rel="shortcut icon" href="{{ asset('assets/img/favicon.png') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/bootstrap.min.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/plugins/feather/feather.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/plugins/select2/css/select2.min.css') }}">

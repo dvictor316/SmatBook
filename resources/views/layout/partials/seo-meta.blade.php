@@ -17,6 +17,7 @@
 
     $resolvedType = trim((string) ($seoType ?? 'website'));
     $resolvedImage = trim((string) ($seoImage ?? asset('assets/img/logos.png')));
+    $resolvedFavicon = asset('assets/img/favicon.png');
     $resolvedUrl = url()->current();
     $resolvedCanonical = trim((string) ($seoCanonical ?? $resolvedUrl));
 
@@ -88,8 +89,8 @@
 <meta name="twitter:description" content="{{ $resolvedDescription }}">
 <meta name="twitter:image" content="{{ $resolvedImage }}">
 <meta name="twitter:url" content="{{ $resolvedCanonical }}">
-<link rel="icon" type="image/png" href="{{ asset('assets/img/logos.png') }}">
-<link rel="shortcut icon" href="{{ asset('assets/img/logos.png') }}">
+<link rel="icon" type="image/png" href="{{ $resolvedFavicon }}">
+<link rel="shortcut icon" href="{{ $resolvedFavicon }}">
 
 <script type="application/ld+json">{!! json_encode($organizationJsonLd, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE) !!}</script>
 <script type="application/ld+json">{!! json_encode($websiteJsonLd, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE) !!}</script>
