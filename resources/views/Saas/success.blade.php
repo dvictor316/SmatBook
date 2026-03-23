@@ -349,6 +349,9 @@
                     {{-- ── CUSTOMER VIEW ── --}}
                     <h3 class="fw-bold mb-1" style="color:#1f2937">Payment Successful! 🎉</h3>
                     <p class="text-muted mb-0">Your dashboard is now active and ready to use.</p>
+                    @php
+                        $isWorkspaceOwner = auth()->check() && $subscription && (int) auth()->id() === (int) $subscription->user_id;
+                    @endphp
 
                     @if($subscription)
                     <div class="steps-done mt-3">
@@ -367,7 +370,7 @@
                         </a>
                         <div class="text-muted small mt-2">
                             <i class="fas fa-info-circle me-1"></i>
-                            Login with the credentials you set during registration
+                            {{ $isWorkspaceOwner ? "You're already signed in to this workspace." : 'Login with the credentials you set during registration' }}
                         </div>
                     </div>
                     @endif

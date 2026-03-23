@@ -852,10 +852,17 @@ class SubscriptionController extends Controller
                 ]);
             }
 
-            // Store for success page
+            if ($customer) {
+                Auth::loginUsingId((int) $customer->id);
+                session()->regenerate();
+            }
+
+            // Store for success page / optional manager return
             session([
                 'last_paid_subscription_id'    => $subscription->id,
                 'deployment_return_manager_id' => $managerId,
+                'current_tenant_id'            => $company?->id,
+                'current_tenant_name'          => $company?->name,
             ]);
 
             // Clear all deployment session data
@@ -873,7 +880,9 @@ class SubscriptionController extends Controller
             Log::info('Deployment payment activated', [
                 'subscription_id' => $subscription->id,
                 'manager_id'      => $managerId,
+                'customer_id'     => $customer?->id,
                 'commission'      => $commissionAmount,
+                'authenticated_as'=> auth()->id(),
             ]);
 
             // Go directly to unified success page
