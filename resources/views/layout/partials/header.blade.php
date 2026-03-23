@@ -276,13 +276,17 @@
     #toggle_btn.header-toggle {
         width: 40px !important;
         height: 40px !important;
-        margin: 3px 10px 0 -40px !important;
+        margin: 0 !important;
         font-size: inherit !important;
-        top: 0 !important;
+        position: absolute !important;
+        left: 250px !important;
+        top: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        z-index: 1041;
     }
     body.sidebar-collapsed #toggle_btn.header-toggle,
     body.mini-sidebar #toggle_btn.header-toggle {
-        margin-left: -36px !important;
+        left: 70px !important;
     }
     .header-toggle:hover { background: #f1f5f9; color: #1e293b; }
 
