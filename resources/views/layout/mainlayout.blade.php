@@ -1484,9 +1484,16 @@
         (function () {
             const loader = document.getElementById('spbPageLoader');
             if (!loader) return;
+            const originalTitle = document.title || 'SmartProbook';
 
             const hideLoader = () => loader.classList.add('is-hidden');
             const showLoader = () => loader.classList.remove('is-hidden');
+            const showLoadingTitle = () => {
+                document.title = 'Loading SmartProbook...';
+            };
+            const restoreTitle = () => {
+                document.title = originalTitle;
+            };
 
             const isRealNavigation = (element) => {
                 if (!element) return false;
@@ -1522,24 +1529,41 @@
                 hide: hideLoader,
             };
 
-            document.addEventListener('DOMContentLoaded', hideLoader, { once: true });
-            window.addEventListener('load', hideLoader, { once: true });
-            window.addEventListener('pageshow', hideLoader);
-            window.addEventListener('beforeunload', showLoader);
+            document.addEventListener('DOMContentLoaded', function () {
+                hideLoader();
+                restoreTitle();
+            }, { once: true });
+            window.addEventListener('load', function () {
+                hideLoader();
+                restoreTitle();
+            }, { once: true });
+            window.addEventListener('pageshow', function () {
+                hideLoader();
+                restoreTitle();
+            });
+            window.addEventListener('beforeunload', function () {
+                showLoader();
+                showLoadingTitle();
+            });
 
             document.addEventListener('click', function (event) {
                 const target = event.target.closest('a, button');
                 if (!isRealNavigation(target)) return;
                 showLoader();
+                showLoadingTitle();
             }, true);
 
             document.addEventListener('submit', function (event) {
                 const form = event.target;
                 if (!(form instanceof HTMLFormElement) || form.dataset.noLoader !== undefined) return;
                 showLoader();
+                showLoadingTitle();
             }, true);
 
-            setTimeout(hideLoader, 1600);
+            setTimeout(function () {
+                hideLoader();
+                restoreTitle();
+            }, 1600);
         })();
     </script>
 
