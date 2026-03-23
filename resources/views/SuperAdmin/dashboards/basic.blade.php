@@ -78,6 +78,13 @@
     .metric-card-basic.metric-amber .text-muted {
         color: rgba(255,255,255,0.72) !important;
     }
+    .metric-card-basic.metric-sky h3,
+    .metric-card-basic.metric-violet h3,
+    .metric-card-basic.metric-cyan h3,
+    .metric-card-basic.metric-amber h3 {
+        color: #fde68a !important;
+        text-shadow: 0 1px 0 rgba(15, 23, 42, 0.16);
+    }
 
     .upgrade-banner {
         background: linear-gradient(135deg, var(--deep-sapphire) 0%, #004a8f 100%);
