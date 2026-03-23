@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smatprobook</title>
+    <title>SmartProbook</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -30,6 +30,24 @@
 
         .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
         .flex-between { display: flex; justify-content: space-between; align-items: center; }
+        .brand-lockup { display: inline-flex; align-items: center; gap: 12px; min-width: 0; text-decoration: none; }
+        .brand-logo { height: 60px; width: auto; display: block; flex-shrink: 0; }
+        .spb-nav-wordmark {
+            font-weight: 800;
+            color: #0b2a63;
+            font-size: 2rem;
+            letter-spacing: -0.8px;
+            line-height: 1;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: baseline;
+        }
+        .spb-nav-wordmark .smartpro {
+            color: #0b2a63 !important;
+        }
+        .spb-nav-wordmark .book {
+            color: #dc2626 !important;
+        }
 
         /* Refined Hero */
         .membership-hero {
@@ -134,7 +152,21 @@
 
         /* Responsive */
         @media (max-width: 1100px) { .pricing-grid { grid-template-columns: repeat(2, 1fr); } }
-        @media (max-width: 650px) { .pricing-grid { grid-template-columns: 1fr; } .hero-title { font-size: 2.5rem; } }
+        @media (max-width: 650px) {
+            .pricing-grid { grid-template-columns: 1fr; }
+            .hero-title { font-size: 2.5rem; }
+            .brand-logo { height: 48px; }
+            .spb-nav-wordmark { font-size: 1.55rem; }
+        }
+        @media (max-width: 420px) {
+            .container { padding: 0 14px; }
+            .brand-lockup { gap: 8px; }
+            .brand-logo { height: 46px; }
+            .spb-nav-wordmark {
+                font-size: 1.35rem;
+                letter-spacing: -0.5px;
+            }
+        }
 
         /* Loader */
         #loadingModal {
@@ -255,10 +287,10 @@
 
     <nav class="spa-nav">
         <div class="container flex-between">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <img src="{{ asset('assets/img/logos.png') }}" alt="SmartProbook Logo" style="height: 60px;">
-                <span style="font-weight: 800; color: var(--muji-blue-deep); font-size: 1.1rem; letter-spacing: -0.5px;">SmartProbook</span>
-            </div>
+            <a href="{{ url('/') }}" class="brand-lockup">
+                <img src="{{ asset('assets/img/logos.png') }}" alt="SmartProbook Logo" class="brand-logo">
+                <span class="spb-nav-wordmark"><span class="smartpro">SmartPro</span><span class="book">book</span></span>
+            </a>
             <a href="{{ url()->previous() !== url()->current() ? url()->previous() : url('/') }}" onclick="return exitSetup(event)" style="text-decoration: none; color: #64748b; font-weight: 600; font-size: 0.85rem; transition: 0.3s;">
                 <i class="fas fa-arrow-left me-2"></i> Exit Setup
             </a>
