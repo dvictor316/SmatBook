@@ -52,7 +52,7 @@ class LandingController extends Controller
                     ]);
 
                     return Auth::check()
-                        ? redirect()->route('home')
+                        ? redirect('/dashboard')
                         : redirect()->route('login');
                 }
             }
