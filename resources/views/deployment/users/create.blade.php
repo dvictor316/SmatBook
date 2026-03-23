@@ -3,6 +3,37 @@
 @section('page-title', 'Register New Customer')
 
 @section('content')
+@php
+    $deploymentPlans = $deploymentPlans ?? [];
+    $planMeta = function (string $key, string $name, float $price, string $cycle, ?string $saveLabel = null) use ($deploymentPlans) {
+        $commission = $price * 0.35;
+
+        return $deploymentPlans[$key] ?? [
+            'catalog_key' => $key,
+            'plan_id' => $key,
+            'name' => $name,
+            'price' => $price,
+            'price_label' => number_format($price, 0),
+            'billing_cycle' => $cycle,
+            'commission_label' => number_format($commission, 0),
+            'save_label' => $saveLabel,
+        ];
+    };
+
+    $basicSoloMonthly = $planMeta('basic-solo-monthly', 'Basic Solo', 3000, 'monthly');
+    $basicMonthly = $planMeta('basic-monthly', 'Basic', 5500, 'monthly');
+    $proSoloMonthly = $planMeta('professional-solo-monthly', 'Professional Solo', 7000, 'monthly');
+    $proMonthly = $planMeta('professional-monthly', 'Professional', 19500, 'monthly');
+    $enterpriseSoloMonthly = $planMeta('enterprise-solo-monthly', 'Enterprise Solo', 15000, 'monthly');
+    $enterpriseMonthly = $planMeta('enterprise-monthly', 'Enterprise', 28500, 'monthly');
+
+    $basicSoloYearly = $planMeta('basic-solo-yearly', 'Basic Solo', 30000, 'yearly', '6,000');
+    $basicYearly = $planMeta('basic-yearly', 'Basic', 55000, 'yearly', '11,000');
+    $proSoloYearly = $planMeta('professional-solo-yearly', 'Professional Solo', 70000, 'yearly', '14,000');
+    $proYearly = $planMeta('professional-yearly', 'Professional', 195000, 'yearly', '39,000');
+    $enterpriseSoloYearly = $planMeta('enterprise-solo-yearly', 'Enterprise Solo', 150000, 'yearly', '30,000');
+    $enterpriseYearly = $planMeta('enterprise-yearly', 'Enterprise', 285000, 'yearly', '57,000');
+@endphp
 <style>
     :root {
         --blue: var(--sb-primary);
@@ -505,12 +536,12 @@
                             <div id="wrapMonthly" class="plans-wrap active">
                                 <div class="row g-4">
                                     <div class="col-lg-4 col-md-6">
-                                        <div class="plan-card" data-pid="basic-solo-monthly"
-                                             onclick="pickPlan('basic-solo-monthly','Basic Solo',3000,'monthly')">
+                                        <div class="plan-card" data-pid="{{ $basicSoloMonthly['plan_id'] }}"
+                                             onclick="pickPlan(@js((string) $basicSoloMonthly['plan_id']), @js($basicSoloMonthly['name']), {{ $basicSoloMonthly['price'] }}, 'monthly')">
                                             <div class="plan-tick"><i class="fas fa-check"></i></div>
                                             <div class="plan-tier">Basic Solo</div>
-                                            <div class="plan-amount">₦3,000 <small>/mo</small></div>
-                                            <div class="plan-cycle">Billed monthly · Earn ₦1,050</div>
+                                            <div class="plan-amount">₦{{ $basicSoloMonthly['price_label'] }} <small>/mo</small></div>
+                                            <div class="plan-cycle">Billed monthly · Earn ₦{{ $basicSoloMonthly['commission_label'] }}</div>
                                             <ul class="plan-features">
                                                 <li><i class="fas fa-check-circle"></i> 1 user</li>
                                                 <li><i class="fas fa-check-circle"></i> 5 GB storage</li>
@@ -521,12 +552,12 @@
                                         </div>
                                     </div>
                                     <div class="col-lg-4 col-md-6">
-                                        <div class="plan-card" data-pid="basic-monthly"
-                                             onclick="pickPlan('basic-monthly','Basic',5500,'monthly')">
+                                        <div class="plan-card" data-pid="{{ $basicMonthly['plan_id'] }}"
+                                             onclick="pickPlan(@js((string) $basicMonthly['plan_id']), @js($basicMonthly['name']), {{ $basicMonthly['price'] }}, 'monthly')">
                                             <div class="plan-tick"><i class="fas fa-check"></i></div>
                                             <div class="plan-tier">Basic</div>
-                                            <div class="plan-amount">₦5,500 <small>/mo</small></div>
-                                            <div class="plan-cycle">Billed monthly · Earn ₦1,925</div>
+                                            <div class="plan-amount">₦{{ $basicMonthly['price_label'] }} <small>/mo</small></div>
+                                            <div class="plan-cycle">Billed monthly · Earn ₦{{ $basicMonthly['commission_label'] }}</div>
                                             <ul class="plan-features">
                                                 <li><i class="fas fa-check-circle"></i> Up to 2 users</li>
                                                 <li><i class="fas fa-check-circle"></i> 5 GB storage</li>
@@ -537,12 +568,12 @@
                                         </div>
                                     </div>
                                     <div class="col-lg-4 col-md-6">
-                                        <div class="plan-card" data-pid="professional-solo-monthly"
-                                             onclick="pickPlan('professional-solo-monthly','Professional Solo',7000,'monthly')">
+                                        <div class="plan-card" data-pid="{{ $proSoloMonthly['plan_id'] }}"
+                                             onclick="pickPlan(@js((string) $proSoloMonthly['plan_id']), @js($proSoloMonthly['name']), {{ $proSoloMonthly['price'] }}, 'monthly')">
                                             <div class="plan-tick"><i class="fas fa-check"></i></div>
                                             <div class="plan-tier">Professional Solo</div>
-                                            <div class="plan-amount">₦7,000 <small>/mo</small></div>
-                                            <div class="plan-cycle">Billed monthly · Earn ₦2,450</div>
+                                            <div class="plan-amount">₦{{ $proSoloMonthly['price_label'] }} <small>/mo</small></div>
+                                            <div class="plan-cycle">Billed monthly · Earn ₦{{ $proSoloMonthly['commission_label'] }}</div>
                                             <ul class="plan-features">
                                                 <li><i class="fas fa-check-circle"></i> 1 user</li>
                                                 <li><i class="fas fa-check-circle"></i> 50 GB storage</li>
@@ -553,13 +584,13 @@
                                         </div>
                                     </div>
                                     <div class="col-lg-4 col-md-6">
-                                        <div class="plan-card" data-pid="professional-monthly"
-                                             onclick="pickPlan('professional-monthly','Professional',19500,'monthly')">
+                                        <div class="plan-card" data-pid="{{ $proMonthly['plan_id'] }}"
+                                             onclick="pickPlan(@js((string) $proMonthly['plan_id']), @js($proMonthly['name']), {{ $proMonthly['price'] }}, 'monthly')">
                                             <div class="plan-tick"><i class="fas fa-check"></i></div>
                                             <span class="plan-pill pill-popular">Most Popular</span>
                                             <div class="plan-tier">Professional</div>
-                                            <div class="plan-amount">₦19,500 <small>/mo</small></div>
-                                            <div class="plan-cycle">Billed monthly · Earn ₦6,825</div>
+                                            <div class="plan-amount">₦{{ $proMonthly['price_label'] }} <small>/mo</small></div>
+                                            <div class="plan-cycle">Billed monthly · Earn ₦{{ $proMonthly['commission_label'] }}</div>
                                             <ul class="plan-features">
                                                 <li><i class="fas fa-check-circle"></i> Up to 3 users</li>
                                                 <li><i class="fas fa-check-circle"></i> 50 GB storage</li>
@@ -570,12 +601,12 @@
                                         </div>
                                     </div>
                                     <div class="col-lg-4 col-md-6">
-                                        <div class="plan-card" data-pid="enterprise-solo-monthly"
-                                             onclick="pickPlan('enterprise-solo-monthly','Enterprise Solo',15000,'monthly')">
+                                        <div class="plan-card" data-pid="{{ $enterpriseSoloMonthly['plan_id'] }}"
+                                             onclick="pickPlan(@js((string) $enterpriseSoloMonthly['plan_id']), @js($enterpriseSoloMonthly['name']), {{ $enterpriseSoloMonthly['price'] }}, 'monthly')">
                                             <div class="plan-tick"><i class="fas fa-check"></i></div>
                                             <div class="plan-tier">Enterprise Solo</div>
-                                            <div class="plan-amount">₦15,000 <small>/mo</small></div>
-                                            <div class="plan-cycle">Billed monthly · Earn ₦5,250</div>
+                                            <div class="plan-amount">₦{{ $enterpriseSoloMonthly['price_label'] }} <small>/mo</small></div>
+                                            <div class="plan-cycle">Billed monthly · Earn ₦{{ $enterpriseSoloMonthly['commission_label'] }}</div>
                                             <ul class="plan-features">
                                                 <li><i class="fas fa-check-circle"></i> 1 user</li>
                                                 <li><i class="fas fa-check-circle"></i> 500 GB storage</li>
@@ -586,13 +617,13 @@
                                         </div>
                                     </div>
                                     <div class="col-lg-4 col-md-6">
-                                        <div class="plan-card" data-pid="enterprise-monthly"
-                                             onclick="pickPlan('enterprise-monthly','Enterprise',28500,'monthly')">
+                                        <div class="plan-card" data-pid="{{ $enterpriseMonthly['plan_id'] }}"
+                                             onclick="pickPlan(@js((string) $enterpriseMonthly['plan_id']), @js($enterpriseMonthly['name']), {{ $enterpriseMonthly['price'] }}, 'monthly')">
                                             <div class="plan-tick"><i class="fas fa-check"></i></div>
                                             <span class="plan-pill pill-recommended">Best Value</span>
                                             <div class="plan-tier">Enterprise</div>
-                                            <div class="plan-amount">₦28,500 <small>/mo</small></div>
-                                            <div class="plan-cycle">Billed monthly · Earn ₦9,975</div>
+                                            <div class="plan-amount">₦{{ $enterpriseMonthly['price_label'] }} <small>/mo</small></div>
+                                            <div class="plan-cycle">Billed monthly · Earn ₦{{ $enterpriseMonthly['commission_label'] }}</div>
                                             <ul class="plan-features">
                                                 <li><i class="fas fa-check-circle"></i> Unlimited users</li>
                                                 <li><i class="fas fa-check-circle"></i> 500 GB storage</li>
@@ -609,12 +640,12 @@
                             <div id="wrapYearly" class="plans-wrap">
                                 <div class="row g-4">
                                     <div class="col-lg-4 col-md-6">
-                                        <div class="plan-card" data-pid="basic-solo-yearly"
-                                             onclick="pickPlan('basic-solo-yearly','Basic Solo',30000,'yearly')">
+                                        <div class="plan-card" data-pid="{{ $basicSoloYearly['plan_id'] }}"
+                                             onclick="pickPlan(@js((string) $basicSoloYearly['plan_id']), @js($basicSoloYearly['name']), {{ $basicSoloYearly['price'] }}, 'yearly')">
                                             <div class="plan-tick"><i class="fas fa-check"></i></div>
                                             <div class="plan-tier">Basic Solo</div>
-                                            <div class="plan-amount">₦30,000 <small>/yr</small></div>
-                                            <div class="plan-cycle">Save ₦6,000 · Earn ₦10,500</div>
+                                            <div class="plan-amount">₦{{ $basicSoloYearly['price_label'] }} <small>/yr</small></div>
+                                            <div class="plan-cycle">Save ₦{{ $basicSoloYearly['save_label'] }} · Earn ₦{{ $basicSoloYearly['commission_label'] }}</div>
                                             <ul class="plan-features">
                                                 <li><i class="fas fa-check-circle"></i> 1 user</li>
                                                 <li><i class="fas fa-check-circle"></i> 5 GB storage</li>
@@ -625,12 +656,12 @@
                                         </div>
                                     </div>
                                     <div class="col-lg-4 col-md-6">
-                                        <div class="plan-card" data-pid="basic-yearly"
-                                             onclick="pickPlan('basic-yearly','Basic',55000,'yearly')">
+                                        <div class="plan-card" data-pid="{{ $basicYearly['plan_id'] }}"
+                                             onclick="pickPlan(@js((string) $basicYearly['plan_id']), @js($basicYearly['name']), {{ $basicYearly['price'] }}, 'yearly')">
                                             <div class="plan-tick"><i class="fas fa-check"></i></div>
                                             <div class="plan-tier">Basic</div>
-                                            <div class="plan-amount">₦55,000 <small>/yr</small></div>
-                                            <div class="plan-cycle">Save ₦11,000 · Earn ₦19,250</div>
+                                            <div class="plan-amount">₦{{ $basicYearly['price_label'] }} <small>/yr</small></div>
+                                            <div class="plan-cycle">Save ₦{{ $basicYearly['save_label'] }} · Earn ₦{{ $basicYearly['commission_label'] }}</div>
                                             <ul class="plan-features">
                                                 <li><i class="fas fa-check-circle"></i> Up to 2 users</li>
                                                 <li><i class="fas fa-check-circle"></i> 5 GB storage</li>
@@ -641,12 +672,12 @@
                                         </div>
                                     </div>
                                     <div class="col-lg-4 col-md-6">
-                                        <div class="plan-card" data-pid="professional-solo-yearly"
-                                             onclick="pickPlan('professional-solo-yearly','Professional Solo',70000,'yearly')">
+                                        <div class="plan-card" data-pid="{{ $proSoloYearly['plan_id'] }}"
+                                             onclick="pickPlan(@js((string) $proSoloYearly['plan_id']), @js($proSoloYearly['name']), {{ $proSoloYearly['price'] }}, 'yearly')">
                                             <div class="plan-tick"><i class="fas fa-check"></i></div>
                                             <div class="plan-tier">Professional Solo</div>
-                                            <div class="plan-amount">₦70,000 <small>/yr</small></div>
-                                            <div class="plan-cycle">Save ₦14,000 · Earn ₦24,500</div>
+                                            <div class="plan-amount">₦{{ $proSoloYearly['price_label'] }} <small>/yr</small></div>
+                                            <div class="plan-cycle">Save ₦{{ $proSoloYearly['save_label'] }} · Earn ₦{{ $proSoloYearly['commission_label'] }}</div>
                                             <ul class="plan-features">
                                                 <li><i class="fas fa-check-circle"></i> 1 user</li>
                                                 <li><i class="fas fa-check-circle"></i> 50 GB storage</li>
@@ -657,13 +688,13 @@
                                         </div>
                                     </div>
                                     <div class="col-lg-4 col-md-6">
-                                        <div class="plan-card" data-pid="professional-yearly"
-                                             onclick="pickPlan('professional-yearly','Professional',195000,'yearly')">
+                                        <div class="plan-card" data-pid="{{ $proYearly['plan_id'] }}"
+                                             onclick="pickPlan(@js((string) $proYearly['plan_id']), @js($proYearly['name']), {{ $proYearly['price'] }}, 'yearly')">
                                             <div class="plan-tick"><i class="fas fa-check"></i></div>
                                             <span class="plan-pill pill-popular">Most Popular</span>
                                             <div class="plan-tier">Professional</div>
-                                            <div class="plan-amount">₦195,000 <small>/yr</small></div>
-                                            <div class="plan-cycle">Save ₦39,000 · Earn ₦68,250</div>
+                                            <div class="plan-amount">₦{{ $proYearly['price_label'] }} <small>/yr</small></div>
+                                            <div class="plan-cycle">Save ₦{{ $proYearly['save_label'] }} · Earn ₦{{ $proYearly['commission_label'] }}</div>
                                             <ul class="plan-features">
                                                 <li><i class="fas fa-check-circle"></i> Up to 3 users</li>
                                                 <li><i class="fas fa-check-circle"></i> 50 GB storage</li>
@@ -674,12 +705,12 @@
                                         </div>
                                     </div>
                                     <div class="col-lg-4 col-md-6">
-                                        <div class="plan-card" data-pid="enterprise-solo-yearly"
-                                             onclick="pickPlan('enterprise-solo-yearly','Enterprise Solo',150000,'yearly')">
+                                        <div class="plan-card" data-pid="{{ $enterpriseSoloYearly['plan_id'] }}"
+                                             onclick="pickPlan(@js((string) $enterpriseSoloYearly['plan_id']), @js($enterpriseSoloYearly['name']), {{ $enterpriseSoloYearly['price'] }}, 'yearly')">
                                             <div class="plan-tick"><i class="fas fa-check"></i></div>
                                             <div class="plan-tier">Enterprise Solo</div>
-                                            <div class="plan-amount">₦150,000 <small>/yr</small></div>
-                                            <div class="plan-cycle">Save ₦30,000 · Earn ₦52,500</div>
+                                            <div class="plan-amount">₦{{ $enterpriseSoloYearly['price_label'] }} <small>/yr</small></div>
+                                            <div class="plan-cycle">Save ₦{{ $enterpriseSoloYearly['save_label'] }} · Earn ₦{{ $enterpriseSoloYearly['commission_label'] }}</div>
                                             <ul class="plan-features">
                                                 <li><i class="fas fa-check-circle"></i> 1 user</li>
                                                 <li><i class="fas fa-check-circle"></i> 500 GB storage</li>
@@ -690,13 +721,13 @@
                                         </div>
                                     </div>
                                     <div class="col-lg-4 col-md-6">
-                                        <div class="plan-card" data-pid="enterprise-yearly"
-                                             onclick="pickPlan('enterprise-yearly','Enterprise',285000,'yearly')">
+                                        <div class="plan-card" data-pid="{{ $enterpriseYearly['plan_id'] }}"
+                                             onclick="pickPlan(@js((string) $enterpriseYearly['plan_id']), @js($enterpriseYearly['name']), {{ $enterpriseYearly['price'] }}, 'yearly')">
                                             <div class="plan-tick"><i class="fas fa-check"></i></div>
                                             <span class="plan-pill pill-recommended">Best Value</span>
                                             <div class="plan-tier">Enterprise</div>
-                                            <div class="plan-amount">₦285,000 <small>/yr</small></div>
-                                            <div class="plan-cycle">Save ₦57,000 · Earn ₦99,750</div>
+                                            <div class="plan-amount">₦{{ $enterpriseYearly['price_label'] }} <small>/yr</small></div>
+                                            <div class="plan-cycle">Save ₦{{ $enterpriseYearly['save_label'] }} · Earn ₦{{ $enterpriseYearly['commission_label'] }}</div>
                                             <ul class="plan-features">
                                                 <li><i class="fas fa-check-circle"></i> Unlimited users</li>
                                                 <li><i class="fas fa-check-circle"></i> 500 GB storage</li>

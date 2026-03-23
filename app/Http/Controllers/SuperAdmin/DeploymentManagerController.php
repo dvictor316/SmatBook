@@ -394,7 +394,9 @@ class DeploymentManagerController extends Controller
                 ->with('warning', "Deployment limit reached ({$currentCount}/{$limit}).");
         }
 
-        return view('deployment.users.create', compact('limit', 'currentCount'));
+        $deploymentPlans = $this->deploymentPlanOptions();
+
+        return view('deployment.users.create', compact('limit', 'currentCount', 'deploymentPlans'));
     }
 
     /**
@@ -680,20 +682,15 @@ private function normalizeDeploymentPlanPayload(array $validated): array
     $submittedName   = trim((string) ($validated['plan_name'] ?? ''));
     $submittedPrice  = (float) ($validated['plan_price'] ?? 0);
 
-    $allowedPlans = [
-        'basic-solo-monthly' => ['name' => 'Basic Solo', 'price' => 3000.0, 'billing_cycle' => 'monthly'],
-        'basic-monthly' => ['name' => 'Basic',        'price' => 5500.0,   'billing_cycle' => 'monthly'],
-        'professional-solo-monthly' => ['name' => 'Professional Solo', 'price' => 7000.0, 'billing_cycle' => 'monthly'],
-        'professional-monthly' => ['name' => 'Professional', 'price' => 19500.0,   'billing_cycle' => 'monthly'],
-        'enterprise-solo-monthly' => ['name' => 'Enterprise Solo', 'price' => 15000.0, 'billing_cycle' => 'monthly'],
-        'enterprise-monthly' => ['name' => 'Enterprise',   'price' => 28500.0,  'billing_cycle' => 'monthly'],
-        'basic-solo-yearly' => ['name' => 'Basic Solo', 'price' => 30000.0, 'billing_cycle' => 'yearly'],
-        'basic-yearly' => ['name' => 'Basic',        'price' => 55000.0,  'billing_cycle' => 'yearly'],
-        'professional-solo-yearly' => ['name' => 'Professional Solo', 'price' => 70000.0, 'billing_cycle' => 'yearly'],
-        'professional-yearly' => ['name' => 'Professional', 'price' => 195000.0,  'billing_cycle' => 'yearly'],
-        'enterprise-solo-yearly' => ['name' => 'Enterprise Solo', 'price' => 150000.0, 'billing_cycle' => 'yearly'],
-        'enterprise-yearly' => ['name' => 'Enterprise',   'price' => 285000.0, 'billing_cycle' => 'yearly'],
-    ];
+    $allowedPlans = collect($this->deploymentPlanOptions())
+        ->mapWithKeys(fn (array $plan, string $key) => [
+            $key => [
+                'name' => $plan['name'],
+                'price' => (float) $plan['price'],
+                'billing_cycle' => $plan['billing_cycle'],
+            ],
+        ])
+        ->all();
 
     // Preferred path: known UI plan ids.
     if (isset($allowedPlans[$submittedPlanId])) {
@@ -751,6 +748,68 @@ private function resolvePlanIdFromCatalog(string $planName, string $billingCycle
     $plan = Plan::findByCatalogName($planName, $billingCycle);
 
     return $plan?->id ? (int) $plan->id : null;
+}
+
+private function deploymentPlanDefinitions(): array
+{
+    return [
+        'basic-solo-monthly' => ['name' => 'Basic Solo', 'price' => 3000.0, 'billing_cycle' => 'monthly'],
+        'basic-monthly' => ['name' => 'Basic', 'price' => 5500.0, 'billing_cycle' => 'monthly'],
+        'professional-solo-monthly' => ['name' => 'Professional Solo', 'price' => 7000.0, 'billing_cycle' => 'monthly'],
+        'professional-monthly' => ['name' => 'Professional', 'price' => 19500.0, 'billing_cycle' => 'monthly'],
+        'enterprise-solo-monthly' => ['name' => 'Enterprise Solo', 'price' => 15000.0, 'billing_cycle' => 'monthly'],
+        'enterprise-monthly' => ['name' => 'Enterprise', 'price' => 28500.0, 'billing_cycle' => 'monthly'],
+        'basic-solo-yearly' => ['name' => 'Basic Solo', 'price' => 30000.0, 'billing_cycle' => 'yearly'],
+        'basic-yearly' => ['name' => 'Basic', 'price' => 55000.0, 'billing_cycle' => 'yearly'],
+        'professional-solo-yearly' => ['name' => 'Professional Solo', 'price' => 70000.0, 'billing_cycle' => 'yearly'],
+        'professional-yearly' => ['name' => 'Professional', 'price' => 195000.0, 'billing_cycle' => 'yearly'],
+        'enterprise-solo-yearly' => ['name' => 'Enterprise Solo', 'price' => 150000.0, 'billing_cycle' => 'yearly'],
+        'enterprise-yearly' => ['name' => 'Enterprise', 'price' => 285000.0, 'billing_cycle' => 'yearly'],
+    ];
+}
+
+private function deploymentPlanOptions(): array
+{
+    $definitions = $this->deploymentPlanDefinitions();
+    $plans = [];
+
+    foreach ($definitions as $key => $definition) {
+        $resolvedPlan = Plan::findByCatalogName($definition['name'], $definition['billing_cycle']);
+        $price = (float) ($resolvedPlan?->price ?? $definition['price']);
+        $commission = round(($price * self::COMMISSION_RATE) / 100, 2);
+
+        $plans[$key] = [
+            'catalog_key' => $key,
+            'plan_id' => $resolvedPlan?->id ? (string) $resolvedPlan->id : $key,
+            'name' => $resolvedPlan?->name ?? $definition['name'],
+            'price' => $price,
+            'price_label' => $this->formatDeploymentAmount($price),
+            'billing_cycle' => $definition['billing_cycle'],
+            'commission_label' => $this->formatDeploymentAmount($commission),
+            'save_label' => null,
+        ];
+    }
+
+    foreach ($plans as $key => &$plan) {
+        if ($plan['billing_cycle'] !== 'yearly') {
+            continue;
+        }
+
+        $monthlyKey = str_replace('-yearly', '-monthly', $key);
+        $monthlyPrice = (float) ($plans[$monthlyKey]['price'] ?? 0);
+        $saveAmount = max(0, ($monthlyPrice * 12) - (float) $plan['price']);
+        $plan['save_label'] = $this->formatDeploymentAmount($saveAmount);
+    }
+    unset($plan);
+
+    return $plans;
+}
+
+private function formatDeploymentAmount(float $amount): string
+{
+    $precision = abs($amount - round($amount)) < 0.01 ? 0 : 2;
+
+    return number_format($amount, $precision);
 }
 
 
@@ -926,7 +985,8 @@ private function resolvePlanIdFromCatalog(string $planName, string $billingCycle
 
     public function createUser() {
         $companies = $this->managedCompanies()->get();
-        return view('deployment.users.create', compact('companies'));
+        $deploymentPlans = $this->deploymentPlanOptions();
+        return view('deployment.users.create', compact('companies', 'deploymentPlans'));
     }
 
     public function storeUser(Request $request) {
