@@ -689,12 +689,17 @@ class SubscriptionController extends Controller
             }
 
             if ($subscription->user) {
-                $subscription->user->update([
-                    'status'            => 'active',
+                $userUpdateData = [
                     'is_verified'       => 1,
                     'email_verified_at' => now(),
                     'company_id'        => $subscription->company_id,
-                ]);
+                ];
+
+                if (Schema::hasColumn('users', 'status')) {
+                    $userUpdateData['status'] = 'active';
+                }
+
+                $subscription->user->update($userUpdateData);
             }
 
             // Payment success should not be rolled back by retryable provisioning issues.
@@ -802,12 +807,17 @@ class SubscriptionController extends Controller
             // 3. Activate customer
             $customer = $subscription->user;
             if ($customer) {
-                $customer->update([
+                $customerUpdateData = [
                     'is_verified'       => 1,
-                    'status'            => 'active',
                     'email_verified_at' => now(),
                     'company_id'        => $company?->id,
-                ]);
+                ];
+
+                if (Schema::hasColumn('users', 'status')) {
+                    $customerUpdateData['status'] = 'active';
+                }
+
+                $customer->update($customerUpdateData);
             }
 
             // Payment success should not be rolled back by retryable provisioning issues.
