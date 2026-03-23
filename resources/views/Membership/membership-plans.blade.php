@@ -164,7 +164,7 @@
             box-shadow: 0 20px 30px -18px rgba(37, 99, 235, 0.55);
         }
 
-        .plan-card.featured .btn-uplink {
+        .plan-card.featured .btn-uplink:not(.btn-gold) {
             background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
             box-shadow: 0 18px 30px -18px rgba(79, 70, 229, 0.45);
         }
