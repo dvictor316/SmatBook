@@ -200,7 +200,7 @@ class HomeController extends Controller
         }
 
         // All good — send to workspace subdomain
-        $mainDomain   = config('session.domain', env('SESSION_DOMAIN', 'smatbook.com'));
+        $mainDomain   = trim((string) config('session.domain', env('SESSION_DOMAIN', 'smatbook.com')), ". \t\n\r\0\x0B");
         $workspaceUrl = 'https://' . $company->domain_prefix . '.' . $mainDomain;
 
         Log::info('→ Redirecting to workspace', [
