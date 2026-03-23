@@ -403,6 +403,70 @@
     .tone-card .mdi {
         opacity: 0.9;
     }
+    .tone-card.tone-rose {
+        background: linear-gradient(135deg, #fff1f5 0%, #ffe4eb 100%);
+        border-color: rgba(244, 114, 182, 0.28);
+        color: #9f1239;
+    }
+    .tone-card.tone-violet {
+        background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+        border-color: rgba(139, 92, 246, 0.24);
+        color: #5b21b6;
+    }
+    .tone-card.tone-cobalt {
+        background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+        border-color: rgba(59, 130, 246, 0.24);
+        color: #1d4ed8;
+    }
+    .tone-card.tone-mint {
+        background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+        border-color: rgba(16, 185, 129, 0.22);
+        color: #047857;
+    }
+    .tone-card.tone-gold {
+        background: linear-gradient(135deg, #fff8e7 0%, #fef3c7 100%);
+        border-color: rgba(245, 158, 11, 0.26);
+        color: #b45309;
+    }
+    .tone-card.tone-slate {
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        border-color: rgba(100, 116, 139, 0.22);
+        color: #334155;
+    }
+    .tone-card.tone-rose .mini-label,
+    .tone-card.tone-violet .mini-label,
+    .tone-card.tone-cobalt .mini-label,
+    .tone-card.tone-mint .mini-label,
+    .tone-card.tone-gold .mini-label,
+    .tone-card.tone-slate .mini-label,
+    .tone-card.tone-rose small,
+    .tone-card.tone-violet small,
+    .tone-card.tone-cobalt small,
+    .tone-card.tone-mint small,
+    .tone-card.tone-gold small,
+    .tone-card.tone-slate small {
+        opacity: 0.88;
+    }
+    .tone-card.tone-rose .tone-value,
+    .tone-card.tone-violet .tone-value,
+    .tone-card.tone-cobalt .tone-value,
+    .tone-card.tone-mint .tone-value,
+    .tone-card.tone-gold .tone-value,
+    .tone-card.tone-slate .tone-value,
+    .tone-card.tone-rose h5,
+    .tone-card.tone-violet h5,
+    .tone-card.tone-cobalt h5,
+    .tone-card.tone-mint h5,
+    .tone-card.tone-gold h5,
+    .tone-card.tone-slate h5,
+    .tone-card.tone-rose .mdi,
+    .tone-card.tone-violet .mdi,
+    .tone-card.tone-cobalt .mdi,
+    .tone-card.tone-mint .mdi,
+    .tone-card.tone-gold .mdi,
+    .tone-card.tone-slate .mdi {
+        color: inherit !important;
+    }
     .tone-indigo {
         background:
             radial-gradient(circle at top right, rgba(255,255,255,0.18), transparent 34%),
