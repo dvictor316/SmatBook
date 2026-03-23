@@ -448,6 +448,26 @@
             opacity: 0.9;
         }
 
+        .dashboard-workspace .card .card-body,
+        .dashboard-workspace .metric-card,
+        .dashboard-workspace .chart-card,
+        .dashboard-workspace .stat-card,
+        .dashboard-workspace .kpi-card,
+        .dashboard-workspace .metric-node,
+        .dashboard-workspace .dash-count,
+        .dashboard-workspace .dash-widget-header {
+            color: var(--dash-title) !important;
+        }
+
+        .dashboard-workspace .card .card-body .text-white,
+        .dashboard-workspace .metric-card .text-white,
+        .dashboard-workspace .chart-card .text-white,
+        .dashboard-workspace .stat-card .text-white,
+        .dashboard-workspace .kpi-card .text-white,
+        .dashboard-workspace .metric-node .text-white {
+            color: var(--dash-title) !important;
+        }
+
         .dashboard-workspace .dash-title,
         .dashboard-workspace .metric-title,
         .dashboard-workspace .metric-label,
@@ -473,6 +493,13 @@
         .dashboard-workspace .kpi-icon {
             border-radius: 18px !important;
             box-shadow: 0 12px 24px rgba(59, 130, 246, 0.18);
+        }
+
+        .dashboard-workspace .dash-widget-icon,
+        .dashboard-workspace .dash-widget-icon *,
+        .dashboard-workspace .kpi-icon,
+        .dashboard-workspace .kpi-icon * {
+            color: #fff !important;
         }
 
         .dashboard-workspace .dash-widget-icon.bg-primary,
