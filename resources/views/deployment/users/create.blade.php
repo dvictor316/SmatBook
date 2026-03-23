@@ -33,6 +33,16 @@
     $proYearly = $planMeta('professional-yearly', 'Professional', 195000, 'yearly', '39,000');
     $enterpriseSoloYearly = $planMeta('enterprise-solo-yearly', 'Enterprise Solo', 150000, 'yearly', '30,000');
     $enterpriseYearly = $planMeta('enterprise-yearly', 'Enterprise', 285000, 'yearly', '57,000');
+
+    $seatLabel = function (string $key): string {
+        return match ($key) {
+            'basic-solo-monthly', 'basic-solo-yearly', 'professional-solo-monthly', 'professional-solo-yearly', 'enterprise-solo-monthly', 'enterprise-solo-yearly' => '1 User',
+            'basic-monthly', 'basic-yearly' => '2 Users',
+            'professional-monthly', 'professional-yearly' => '3 Users',
+            'enterprise-monthly', 'enterprise-yearly' => 'Unlimited',
+            default => 'Plan',
+        };
+    };
 @endphp
 <style>
     :root {
@@ -176,6 +186,20 @@
     }
     .plan-card.selected .plan-tick { display: flex; }
     .plan-tier    { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 4px; }
+    .plan-seat {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 10px;
+        padding: 0.35rem 0.7rem;
+        border-radius: 999px;
+        background: rgba(37, 99, 235, 0.08);
+        color: var(--blue);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
     .plan-amount  { font-size: 32px; font-weight: 800; color: var(--blue); line-height: 1; }
     .plan-amount small { font-size: 13px; color: var(--muted); font-weight: 500; }
     .plan-cycle   { font-size: 12px; color: var(--muted); margin: 4px 0 14px; }
@@ -539,7 +563,8 @@
                                         <div class="plan-card" data-pid="{{ $basicSoloMonthly['plan_id'] }}"
                                              onclick="pickPlan(@js((string) $basicSoloMonthly['plan_id']), @js($basicSoloMonthly['name']), {{ $basicSoloMonthly['price'] }}, 'monthly')">
                                             <div class="plan-tick"><i class="fas fa-check"></i></div>
-                                            <div class="plan-tier">Basic Solo</div>
+                                            <div class="plan-tier">Basic Core</div>
+                                            <div class="plan-seat">{{ $seatLabel('basic-solo-monthly') }}</div>
                                             <div class="plan-amount">₦{{ $basicSoloMonthly['price_label'] }} <small>/mo</small></div>
                                             <div class="plan-cycle">Billed monthly · Earn ₦{{ $basicSoloMonthly['commission_label'] }}</div>
                                             <ul class="plan-features">
@@ -555,7 +580,8 @@
                                         <div class="plan-card" data-pid="{{ $basicMonthly['plan_id'] }}"
                                              onclick="pickPlan(@js((string) $basicMonthly['plan_id']), @js($basicMonthly['name']), {{ $basicMonthly['price'] }}, 'monthly')">
                                             <div class="plan-tick"><i class="fas fa-check"></i></div>
-                                            <div class="plan-tier">Basic</div>
+                                            <div class="plan-tier">Basic Core</div>
+                                            <div class="plan-seat">{{ $seatLabel('basic-monthly') }}</div>
                                             <div class="plan-amount">₦{{ $basicMonthly['price_label'] }} <small>/mo</small></div>
                                             <div class="plan-cycle">Billed monthly · Earn ₦{{ $basicMonthly['commission_label'] }}</div>
                                             <ul class="plan-features">
@@ -571,7 +597,8 @@
                                         <div class="plan-card" data-pid="{{ $proSoloMonthly['plan_id'] }}"
                                              onclick="pickPlan(@js((string) $proSoloMonthly['plan_id']), @js($proSoloMonthly['name']), {{ $proSoloMonthly['price'] }}, 'monthly')">
                                             <div class="plan-tick"><i class="fas fa-check"></i></div>
-                                            <div class="plan-tier">Professional Solo</div>
+                                            <div class="plan-tier">Pro Engine</div>
+                                            <div class="plan-seat">{{ $seatLabel('professional-solo-monthly') }}</div>
                                             <div class="plan-amount">₦{{ $proSoloMonthly['price_label'] }} <small>/mo</small></div>
                                             <div class="plan-cycle">Billed monthly · Earn ₦{{ $proSoloMonthly['commission_label'] }}</div>
                                             <ul class="plan-features">
@@ -588,7 +615,8 @@
                                              onclick="pickPlan(@js((string) $proMonthly['plan_id']), @js($proMonthly['name']), {{ $proMonthly['price'] }}, 'monthly')">
                                             <div class="plan-tick"><i class="fas fa-check"></i></div>
                                             <span class="plan-pill pill-popular">Most Popular</span>
-                                            <div class="plan-tier">Professional</div>
+                                            <div class="plan-tier">Pro Engine</div>
+                                            <div class="plan-seat">{{ $seatLabel('professional-monthly') }}</div>
                                             <div class="plan-amount">₦{{ $proMonthly['price_label'] }} <small>/mo</small></div>
                                             <div class="plan-cycle">Billed monthly · Earn ₦{{ $proMonthly['commission_label'] }}</div>
                                             <ul class="plan-features">
@@ -604,7 +632,8 @@
                                         <div class="plan-card" data-pid="{{ $enterpriseSoloMonthly['plan_id'] }}"
                                              onclick="pickPlan(@js((string) $enterpriseSoloMonthly['plan_id']), @js($enterpriseSoloMonthly['name']), {{ $enterpriseSoloMonthly['price'] }}, 'monthly')">
                                             <div class="plan-tick"><i class="fas fa-check"></i></div>
-                                            <div class="plan-tier">Enterprise Solo</div>
+                                            <div class="plan-tier">Institutional</div>
+                                            <div class="plan-seat">{{ $seatLabel('enterprise-solo-monthly') }}</div>
                                             <div class="plan-amount">₦{{ $enterpriseSoloMonthly['price_label'] }} <small>/mo</small></div>
                                             <div class="plan-cycle">Billed monthly · Earn ₦{{ $enterpriseSoloMonthly['commission_label'] }}</div>
                                             <ul class="plan-features">
@@ -621,7 +650,8 @@
                                              onclick="pickPlan(@js((string) $enterpriseMonthly['plan_id']), @js($enterpriseMonthly['name']), {{ $enterpriseMonthly['price'] }}, 'monthly')">
                                             <div class="plan-tick"><i class="fas fa-check"></i></div>
                                             <span class="plan-pill pill-recommended">Best Value</span>
-                                            <div class="plan-tier">Enterprise</div>
+                                            <div class="plan-tier">Institutional</div>
+                                            <div class="plan-seat">{{ $seatLabel('enterprise-monthly') }}</div>
                                             <div class="plan-amount">₦{{ $enterpriseMonthly['price_label'] }} <small>/mo</small></div>
                                             <div class="plan-cycle">Billed monthly · Earn ₦{{ $enterpriseMonthly['commission_label'] }}</div>
                                             <ul class="plan-features">
@@ -643,7 +673,8 @@
                                         <div class="plan-card" data-pid="{{ $basicSoloYearly['plan_id'] }}"
                                              onclick="pickPlan(@js((string) $basicSoloYearly['plan_id']), @js($basicSoloYearly['name']), {{ $basicSoloYearly['price'] }}, 'yearly')">
                                             <div class="plan-tick"><i class="fas fa-check"></i></div>
-                                            <div class="plan-tier">Basic Solo</div>
+                                            <div class="plan-tier">Basic Core</div>
+                                            <div class="plan-seat">{{ $seatLabel('basic-solo-yearly') }}</div>
                                             <div class="plan-amount">₦{{ $basicSoloYearly['price_label'] }} <small>/yr</small></div>
                                             <div class="plan-cycle">Save ₦{{ $basicSoloYearly['save_label'] }} · Earn ₦{{ $basicSoloYearly['commission_label'] }}</div>
                                             <ul class="plan-features">
@@ -659,7 +690,8 @@
                                         <div class="plan-card" data-pid="{{ $basicYearly['plan_id'] }}"
                                              onclick="pickPlan(@js((string) $basicYearly['plan_id']), @js($basicYearly['name']), {{ $basicYearly['price'] }}, 'yearly')">
                                             <div class="plan-tick"><i class="fas fa-check"></i></div>
-                                            <div class="plan-tier">Basic</div>
+                                            <div class="plan-tier">Basic Core</div>
+                                            <div class="plan-seat">{{ $seatLabel('basic-yearly') }}</div>
                                             <div class="plan-amount">₦{{ $basicYearly['price_label'] }} <small>/yr</small></div>
                                             <div class="plan-cycle">Save ₦{{ $basicYearly['save_label'] }} · Earn ₦{{ $basicYearly['commission_label'] }}</div>
                                             <ul class="plan-features">
@@ -675,7 +707,8 @@
                                         <div class="plan-card" data-pid="{{ $proSoloYearly['plan_id'] }}"
                                              onclick="pickPlan(@js((string) $proSoloYearly['plan_id']), @js($proSoloYearly['name']), {{ $proSoloYearly['price'] }}, 'yearly')">
                                             <div class="plan-tick"><i class="fas fa-check"></i></div>
-                                            <div class="plan-tier">Professional Solo</div>
+                                            <div class="plan-tier">Pro Engine</div>
+                                            <div class="plan-seat">{{ $seatLabel('professional-solo-yearly') }}</div>
                                             <div class="plan-amount">₦{{ $proSoloYearly['price_label'] }} <small>/yr</small></div>
                                             <div class="plan-cycle">Save ₦{{ $proSoloYearly['save_label'] }} · Earn ₦{{ $proSoloYearly['commission_label'] }}</div>
                                             <ul class="plan-features">
@@ -692,7 +725,8 @@
                                              onclick="pickPlan(@js((string) $proYearly['plan_id']), @js($proYearly['name']), {{ $proYearly['price'] }}, 'yearly')">
                                             <div class="plan-tick"><i class="fas fa-check"></i></div>
                                             <span class="plan-pill pill-popular">Most Popular</span>
-                                            <div class="plan-tier">Professional</div>
+                                            <div class="plan-tier">Pro Engine</div>
+                                            <div class="plan-seat">{{ $seatLabel('professional-yearly') }}</div>
                                             <div class="plan-amount">₦{{ $proYearly['price_label'] }} <small>/yr</small></div>
                                             <div class="plan-cycle">Save ₦{{ $proYearly['save_label'] }} · Earn ₦{{ $proYearly['commission_label'] }}</div>
                                             <ul class="plan-features">
@@ -708,7 +742,8 @@
                                         <div class="plan-card" data-pid="{{ $enterpriseSoloYearly['plan_id'] }}"
                                              onclick="pickPlan(@js((string) $enterpriseSoloYearly['plan_id']), @js($enterpriseSoloYearly['name']), {{ $enterpriseSoloYearly['price'] }}, 'yearly')">
                                             <div class="plan-tick"><i class="fas fa-check"></i></div>
-                                            <div class="plan-tier">Enterprise Solo</div>
+                                            <div class="plan-tier">Institutional</div>
+                                            <div class="plan-seat">{{ $seatLabel('enterprise-solo-yearly') }}</div>
                                             <div class="plan-amount">₦{{ $enterpriseSoloYearly['price_label'] }} <small>/yr</small></div>
                                             <div class="plan-cycle">Save ₦{{ $enterpriseSoloYearly['save_label'] }} · Earn ₦{{ $enterpriseSoloYearly['commission_label'] }}</div>
                                             <ul class="plan-features">
@@ -725,7 +760,8 @@
                                              onclick="pickPlan(@js((string) $enterpriseYearly['plan_id']), @js($enterpriseYearly['name']), {{ $enterpriseYearly['price'] }}, 'yearly')">
                                             <div class="plan-tick"><i class="fas fa-check"></i></div>
                                             <span class="plan-pill pill-recommended">Best Value</span>
-                                            <div class="plan-tier">Enterprise</div>
+                                            <div class="plan-tier">Institutional</div>
+                                            <div class="plan-seat">{{ $seatLabel('enterprise-yearly') }}</div>
                                             <div class="plan-amount">₦{{ $enterpriseYearly['price_label'] }} <small>/yr</small></div>
                                             <div class="plan-cycle">Save ₦{{ $enterpriseYearly['save_label'] }} · Earn ₦{{ $enterpriseYearly['commission_label'] }}</div>
                                             <ul class="plan-features">
