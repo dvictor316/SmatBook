@@ -32,8 +32,9 @@
             border-bottom: 1px solid #e2e8f0; height: 68px; display: flex; align-items: center;
         }
         .nav-container { max-width: 1400px; margin: 0 auto; width: 100%; padding: 0 40px; display: flex; justify-content: space-between; align-items: center; }
-        .logo-text { font-size: 1.6rem; font-weight: 800; color: var(--dark-navy); text-decoration: none; letter-spacing: -1px; }
-        .logo-text span { color: var(--executive-red); }
+        .logo-container { display: inline-flex; align-items: center; gap: 10px; min-width: 0; }
+        .logo-text { font-size: 1.2rem; font-weight: 800; color: #0b2a63; text-decoration: none; letter-spacing: -0.3px; line-height: 1; white-space: nowrap; }
+        .logo-text .book { color: var(--executive-red); }
         .nav-links { display: flex; list-style: none; gap: 25px; margin: 0; align-items: center; }
         .nav-links a { text-decoration: none; color: var(--dark-navy); font-weight: 700; font-size: 0.85rem; text-transform: uppercase; transition: 0.3s; }
         .nav-links a:hover { color: var(--executive-red); }
@@ -61,16 +62,39 @@
         .footer-link { color: #94a3b8; text-decoration: none; transition: 0.3s; display: block; margin-bottom: 12px; font-weight: 500; }
         .footer-link:hover { color: var(--gold); transform: translateX(5px); }
 
-        @media (max-width: 991px) { .nav-links { display: none; } .carousel-caption h1 { font-size: 2.5rem; } .brand-img { height: 48px; } }
-        @media (max-width: 480px) { .brand-img { height: 44px; } }
+        @media (max-width: 991px) {
+            .nav-links { display: none; }
+            .carousel-caption h1 { font-size: 2.5rem; }
+            .brand-img { height: 48px; }
+            .logo-text { font-size: 1.08rem; }
+        }
+        @media (max-width: 480px) {
+            .nav-container { padding: 0 14px; }
+            .logo-container { gap: 8px; }
+            .brand-img { height: 44px; }
+            .logo-text {
+                font-size: 0.98rem;
+                letter-spacing: -0.22px;
+            }
+        }
+        @media (max-width: 360px) {
+            .nav-container { padding: 0 10px; }
+            .logo-container { gap: 6px; }
+            .brand-img { height: 40px; }
+            .logo-text {
+                font-size: 0.86rem;
+                letter-spacing: -0.18px;
+            }
+        }
     </style>
 </head>
 <body>
 
 <nav>
     <div class="nav-container">
-        <a href="{{ url('/') }}" class="d-flex align-items-center text-decoration-none">
-            <img src="{{ asset('assets/img/logos.png') }}" class="brand-img me-2" alt="SmartProbook">
+        <a href="{{ url('/') }}" class="logo-container text-decoration-none">
+            <img src="{{ asset('assets/img/logos.png') }}" class="brand-img" alt="SmartProbook">
+            <span class="logo-text">SmartPro<span class="book">book</span></span>
         </a>
         <ul class="nav-links" id="mainMenu">
             <li><a href="{{ url('/#home') }}">Home</a></li>

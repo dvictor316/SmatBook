@@ -102,16 +102,16 @@
         }
 
         .spb-auth-lockup__logo {
-            height: calc({{ $config['logo'] }} * 0.8);
+            height: min({{ $config['logo'] }}, 44px);
         }
 
         .spb-auth-lockup__brand {
-            font-size: calc({{ $config['brand'] }} * 0.72);
-            letter-spacing: -0.024em;
+            font-size: min({{ $config['brand'] }}, 1.55rem);
+            letter-spacing: -0.028em;
         }
 
         .spb-auth-lockup__tagline {
-            font-size: calc({{ $config['tag'] }} * 0.82);
+            font-size: min({{ $config['tag'] }}, 0.72rem);
             letter-spacing: 0.14em;
         }
     }
@@ -127,16 +127,17 @@
         }
 
         .spb-auth-lockup__logo {
-            height: calc({{ $config['logo'] }} * 0.68);
+            height: min({{ $config['logo'] }}, 40px);
         }
 
         .spb-auth-lockup__brand {
-            font-size: calc({{ $config['brand'] }} * 0.62);
-            letter-spacing: -0.02em;
+            font-size: min({{ $config['brand'] }}, 1.32rem);
+            letter-spacing: -0.024em;
+            white-space: nowrap;
         }
 
         .spb-auth-lockup__tagline {
-            font-size: calc({{ $config['tag'] }} * 0.74);
+            font-size: min({{ $config['tag'] }}, 0.66rem);
             letter-spacing: 0.12em;
         }
     }
