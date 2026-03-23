@@ -279,14 +279,14 @@
         margin: 0 !important;
         font-size: inherit !important;
         position: absolute !important;
-        left: 266px !important;
+        left: 282px !important;
         top: calc(50% + 8px) !important;
         transform: translate(-50%, -50%) !important;
         z-index: 1041;
     }
     body.sidebar-collapsed #toggle_btn.header-toggle,
     body.mini-sidebar #toggle_btn.header-toggle {
-        left: 86px !important;
+        left: 96px !important;
     }
     .header-toggle:hover { background: #f1f5f9; color: #1e293b; }
 
