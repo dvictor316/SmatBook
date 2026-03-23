@@ -7,11 +7,15 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class Product extends Model
 {
     use \App\Traits\Multitenantable;
     use HasFactory;
+
+    protected $appends = ['image_url'];
 
     protected $fillable = [
         'name', 
@@ -64,5 +68,43 @@ class Product extends Model
                 $product->stock_quantity = $product->stock;
             }
         });
+    }
+
+    public function getImageUrlAttribute(): string
+    {
+        $fallback = asset('assets/img/products/product-01.png');
+        $image = trim((string) ($this->image ?? ''));
+
+        if ($image === '') {
+            return $fallback;
+        }
+
+        if (Str::startsWith($image, ['http://', 'https://'])) {
+            return $image;
+        }
+
+        $normalized = ltrim($image, '/');
+
+        if (Str::startsWith($normalized, 'storage/')) {
+            return asset($normalized);
+        }
+
+        if (Str::startsWith($normalized, 'assets/')) {
+            return asset($normalized);
+        }
+
+        if (Storage::disk('public')->exists($normalized)) {
+            return Storage::url($normalized);
+        }
+
+        if (file_exists(public_path('storage/' . $normalized))) {
+            return asset('storage/' . $normalized);
+        }
+
+        if (file_exists(public_path($normalized))) {
+            return asset($normalized);
+        }
+
+        return $fallback;
     }
 }

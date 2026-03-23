@@ -1194,11 +1194,7 @@ label {
                 data-barcode="{{ strtolower($p->barcode ?? '') }}"
                 data-category="{{ strtolower($p->category->name ?? 'uncategorized') }}">
                 <div class="product-card-img">
-                    @if($p->image)
-                    <img src="{{ asset('storage/' . $p->image) }}" alt="{{ $p->name }}">
-                    @else
-                    <i class="fas fa-box text-muted"></i>
-                    @endif
+                    <img src="{{ $p->image_url }}" alt="{{ $p->name }}" onerror="this.onerror=null;this.src='{{ asset('assets/img/products/product-01.png') }}';">
                 </div>
             </div>
             @endforeach
@@ -1258,7 +1254,7 @@ label {
                         data-category="{{ strtolower($categoryName) }}"
                         data-category-name="{{ $categoryName }}"
                         data-min-stock="{{ $minStockLevel }}"
-                        data-img="{{ $p->image ? asset('storage/' . $p->image) : '' }}">
+                        data-img="{{ $p->image_url }}">
                         {{ $p->sku }} | {{ $p->name }}
                     </option>
                     @endforeach

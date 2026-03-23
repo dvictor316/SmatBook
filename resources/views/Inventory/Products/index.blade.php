@@ -91,11 +91,7 @@
                                         <td>{{ $loop->iteration }}</td>
                                         <td>
                                             <div class="d-flex align-items-center">
-                                                @if($product->image)
-                                                    <img src="{{ asset('storage/'.$product->image) }}" class="rounded me-2" width="35" height="35" alt="img">
-                                                @else
-                                                    <div class="bg-light rounded me-2 d-flex align-items-center justify-content-center" style="width:35px; height:35px;"><i class="fas fa-box text-muted"></i></div>
-                                                @endif
+                                                <img src="{{ $product->image_url }}" class="rounded me-2" width="35" height="35" alt="{{ $product->name }}" onerror="this.onerror=null;this.src='{{ asset('assets/img/products/product-01.png') }}';">
                                                 <div>
                                                     <div class="fw-bold text-dark">{{ $product->name }}</div>
                                                     <small class="text-muted">{{ $product->sku }}</small>

@@ -128,7 +128,7 @@
                                     <input type="file" name="image" class="form-control">
                                     @if($product->image)
                                         <div class="mt-2">
-                                            <img src="{{ Storage::url($product->image) }}" alt="Current Image" width="80" class="img-thumbnail">
+                                            <img src="{{ $product->image_url }}" alt="Current Image" width="80" class="img-thumbnail" onerror="this.onerror=null;this.src='{{ asset('assets/img/products/product-01.png') }}';">
                                             <small class="d-block">Current Asset</small>
                                         </div>
                                     @endif
