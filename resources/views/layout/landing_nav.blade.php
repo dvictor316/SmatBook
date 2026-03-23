@@ -4,12 +4,54 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     @php
+        $routeName = Route::currentRouteName();
+        $publicSeoMap = [
+            'landing.index' => [
+                'title' => 'AI Accounting Software, ERP and Business Automation',
+                'description' => 'SmartProbook helps businesses manage accounting, invoicing, inventory, payments, reports, and operational workflows from one cloud platform.',
+                'keywords' => 'AI accounting software, ERP software, invoicing software, inventory management software, business automation, accounting platform',
+            ],
+            'landing.about' => [
+                'title' => 'About SmartProbook Accounting Platform',
+                'description' => 'Learn how SmartProbook powers accounting, ERP operations, reporting, and deployment workflows for modern businesses and institutions.',
+                'keywords' => 'about SmartProbook, accounting software company, ERP platform, business finance platform',
+            ],
+            'landing.contact' => [
+                'title' => 'Contact SmartProbook',
+                'description' => 'Contact SmartProbook for accounting software support, deployment partnerships, product demos, and enterprise onboarding.',
+                'keywords' => 'contact SmartProbook, accounting software support, ERP support, software demo, deployment partnership',
+            ],
+            'landing.team' => [
+                'title' => 'SmartProbook Team',
+                'description' => 'Meet the SmartProbook team behind our AI-powered accounting software, ERP tools, and deployment infrastructure services.',
+                'keywords' => 'SmartProbook team, accounting software leadership, ERP platform team',
+            ],
+            'landing.policy' => [
+                'title' => 'SmartProbook Company Policy',
+                'description' => 'Read SmartProbook company policies, compliance standards, user obligations, and platform governance information.',
+                'keywords' => 'SmartProbook policy, company policy, software terms, platform compliance',
+            ],
+            'membership-plans' => [
+                'title' => 'Membership Plans and Pricing',
+                'description' => 'Compare SmartProbook membership plans, pricing tiers, accounting features, ERP modules, and business upgrade options.',
+                'keywords' => 'SmartProbook pricing, membership plans, accounting software pricing, ERP pricing',
+            ],
+            'pricing' => [
+                'title' => 'Pricing for SmartProbook',
+                'description' => 'Explore SmartProbook pricing for accounting, ERP, inventory, invoicing, reporting, and business management workflows.',
+                'keywords' => 'pricing, SmartProbook plans, accounting software pricing, ERP subscriptions',
+            ],
+        ];
+        $publicSeo = $publicSeoMap[$routeName] ?? [];
         $seoNoIndex = false;
         $seoType = 'website';
-        $seoTitle = 'Smatprobook';
+        $seoTitle = $seoTitle ?? ($publicSeo['title'] ?? 'SmartProbook');
         $seoDescription = trim($__env->yieldContent('meta_description')) !== ''
             ? $__env->yieldContent('meta_description')
-            : 'SmartProbook provides AI-powered accounting, enterprise reporting, global deployment workflows, and institutional-grade financial operations.';
+            : ($publicSeo['description'] ?? 'SmartProbook provides AI-powered accounting, enterprise reporting, global deployment workflows, and institutional-grade financial operations.');
+        $seoKeywords = trim($__env->yieldContent('meta_keywords')) !== ''
+            ? $__env->yieldContent('meta_keywords')
+            : ($publicSeo['keywords'] ?? 'SmartProbook, accounting software, ERP software, invoicing, inventory, reporting');
     @endphp
     @include('layout.partials.seo-meta')
     <link rel="icon" type="image/png" href="{{ asset('assets/img/logos.png') }}">

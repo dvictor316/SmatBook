@@ -1,8 +1,9 @@
 @php
     $siteName = config('app.name', 'SmartProbook');
-
-    // User requested strict browser title branding.
-    $resolvedTitle = $siteName;
+    $pageTitle = trim((string) ($seoTitle ?? $__env->yieldContent('meta_title') ?? ''));
+    $resolvedTitle = $pageTitle !== ''
+        ? ($pageTitle === $siteName ? $pageTitle : ($pageTitle . ' | ' . $siteName))
+        : $siteName;
 
     $resolvedDescription = trim((string) ($seoDescription ?? $__env->yieldContent('meta_description') ?? ''));
     if ($resolvedDescription === '') {
@@ -41,6 +42,23 @@
             'query-input' => 'required name=search_term_string',
         ],
     ];
+
+    $softwareJsonLd = [
+        '@context' => 'https://schema.org',
+        '@type' => 'SoftwareApplication',
+        'name' => $siteName,
+        'applicationCategory' => 'BusinessApplication',
+        'operatingSystem' => 'Web',
+        'url' => config('app.url'),
+        'image' => $resolvedImage,
+        'description' => $resolvedDescription,
+        'offers' => [
+            '@type' => 'Offer',
+            'price' => '0',
+            'priceCurrency' => 'USD',
+            'availability' => 'https://schema.org/InStock',
+        ],
+    ];
 @endphp
 
 <title>{{ $resolvedTitle }}</title>
@@ -55,14 +73,19 @@
 <meta property="og:description" content="{{ $resolvedDescription }}">
 <meta property="og:url" content="{{ $resolvedUrl }}">
 <meta property="og:image" content="{{ $resolvedImage }}">
+<meta property="og:image:alt" content="{{ $resolvedTitle }}">
 <meta property="og:locale" content="en_US">
 
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="{{ $resolvedTitle }}">
 <meta name="twitter:description" content="{{ $resolvedDescription }}">
 <meta name="twitter:image" content="{{ $resolvedImage }}">
+<meta name="twitter:url" content="{{ $resolvedUrl }}">
 <link rel="icon" type="image/png" href="{{ asset('assets/img/logos.png') }}">
 <link rel="shortcut icon" href="{{ asset('assets/img/logos.png') }}">
 
 <script type="application/ld+json">{!! json_encode($organizationJsonLd, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE) !!}</script>
 <script type="application/ld+json">{!! json_encode($websiteJsonLd, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE) !!}</script>
+@unless($resolvedNoIndex)
+<script type="application/ld+json">{!! json_encode($softwareJsonLd, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE) !!}</script>
+@endunless
