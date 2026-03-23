@@ -585,28 +585,28 @@
                 {{-- LOCKED FEATURES - Upgrade to Enterprise --}}
                 <li class="menu-title"><span>Advanced Features</span></li>
                 <li>
-                    <a href="javascript:void(0);" onclick="showUpgradeModal('Enterprise')">
+                    <a href="{{ Route::has('membership-plans') ? route('membership-plans') : url('/membership-plans') }}">
                         <i class="fe fe-lock"></i>
                         <span>Profit & Loss</span>
                         <span class="badge bg-warning">Enterprise</span>
                     </a>
                 </li>
                 <li>
-                    <a href="javascript:void(0);" onclick="showUpgradeModal('Enterprise')">
+                    <a href="{{ Route::has('membership-plans') ? route('membership-plans') : url('/membership-plans') }}">
                         <i class="fe fe-lock"></i>
                         <span>Trial Balance</span>
                         <span class="badge bg-warning">Enterprise</span>
                     </a>
                 </li>
                 <li>
-                    <a href="javascript:void(0);" onclick="showUpgradeModal('Enterprise')">
+                    <a href="{{ Route::has('membership-plans') ? route('membership-plans') : url('/membership-plans') }}">
                         <i class="fe fe-lock"></i>
                         <span>Balance Sheet</span>
                         <span class="badge bg-warning">Enterprise</span>
                     </a>
                 </li>
                 <li>
-                    <a href="javascript:void(0);" onclick="showUpgradeModal('Enterprise')">
+                    <a href="{{ Route::has('membership-plans') ? route('membership-plans') : url('/membership-plans') }}">
                         <i class="fe fe-lock"></i>
                         <span>Cash Flow</span>
                         <span class="badge bg-warning">Enterprise</span>
@@ -691,56 +691,56 @@ function showUpgradeModal(planName) {
                 <li class="menu-title"><span>Premium Features</span></li>
                 
                 <li>
-                    <a href="javascript:void(0);" onclick="showUpgradeModal('Professional')">
+                    <a href="{{ Route::has('membership-plans') ? route('membership-plans') : url('/membership-plans') }}">
                         <i class="fe fe-lock"></i>
                         <span>Vendors</span>
                         <span class="badge bg-warning">Pro</span>
                     </a>
                 </li>
                 <li>
-                    <a href="javascript:void(0);" onclick="showUpgradeModal('Professional')">
+                    <a href="{{ Route::has('membership-plans') ? route('membership-plans') : url('/membership-plans') }}">
                         <i class="fe fe-lock"></i>
                         <span>Categories & Units</span>
                         <span class="badge bg-warning">Pro</span>
                     </a>
                 </li>
                 <li>
-                    <a href="javascript:void(0);" onclick="showUpgradeModal('Professional')">
+                    <a href="{{ Route::has('membership-plans') ? route('membership-plans') : url('/membership-plans') }}">
                         <i class="fe fe-lock"></i>
                         <span>Inventory Management</span>
                         <span class="badge bg-warning">Pro</span>
                     </a>
                 </li>
                 <li>
-                    <a href="javascript:void(0);" onclick="showUpgradeModal('Professional')">
+                    <a href="{{ Route::has('membership-plans') ? route('membership-plans') : url('/membership-plans') }}">
                         <i class="fe fe-lock"></i>
                         <span>Recurring Invoices</span>
                         <span class="badge bg-warning">Pro</span>
                     </a>
                 </li>
                 <li>
-                    <a href="javascript:void(0);" onclick="showUpgradeModal('Professional')">
+                    <a href="{{ Route::has('membership-plans') ? route('membership-plans') : url('/membership-plans') }}">
                         <i class="fe fe-lock"></i>
                         <span>Purchases</span>
                         <span class="badge bg-warning">Pro</span>
                     </a>
                 </li>
                 <li>
-                    <a href="javascript:void(0);" onclick="showUpgradeModal('Professional')">
+                    <a href="{{ Route::has('membership-plans') ? route('membership-plans') : url('/membership-plans') }}">
                         <i class="fe fe-lock"></i>
                         <span>Expenses</span>
                         <span class="badge bg-warning">Pro</span>
                     </a>
                 </li>
                 <li>
-                    <a href="javascript:void(0);" onclick="showUpgradeModal('Professional')">
+                    <a href="{{ Route::has('membership-plans') ? route('membership-plans') : url('/membership-plans') }}">
                         <i class="fe fe-lock"></i>
                         <span>Quotations</span>
                         <span class="badge bg-warning">Pro</span>
                     </a>
                 </li>
                 <li>
-                    <a href="javascript:void(0);" onclick="showUpgradeModal('Professional')">
+                    <a href="{{ Route::has('membership-plans') ? route('membership-plans') : url('/membership-plans') }}">
                         <i class="fe fe-lock"></i>
                         <span>Reports</span>
                         <span class="badge bg-warning">Pro</span>

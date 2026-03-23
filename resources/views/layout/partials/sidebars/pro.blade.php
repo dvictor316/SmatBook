@@ -186,28 +186,28 @@
                 <li class="menu-title"><span>Enterprise Features</span></li>
                 
                 <li>
-                    <a href="javascript:void(0);" onclick="showUpgradeModal('Enterprise', 'Trial Balance')">
+                    <a href="{{ Route::has('membership-plans') ? route('membership-plans') : url('/membership-plans') }}">
                         <i class="fe fe-lock"></i>
                         <span>Trial Balance</span>
                         <span class="badge bg-warning">Enterprise</span>
                     </a>
                 </li>
                 <li>
-                    <a href="javascript:void(0);" onclick="showUpgradeModal('Enterprise', 'Balance Sheet')">
+                    <a href="{{ Route::has('membership-plans') ? route('membership-plans') : url('/membership-plans') }}">
                         <i class="fe fe-lock"></i>
                         <span>Balance Sheet</span>
                         <span class="badge bg-warning">Enterprise</span>
                     </a>
                 </li>
                 <li>
-                    <a href="javascript:void(0);" onclick="showUpgradeModal('Enterprise', 'Cash Flow')">
+                    <a href="{{ Route::has('membership-plans') ? route('membership-plans') : url('/membership-plans') }}">
                         <i class="fe fe-lock"></i>
                         <span>Cash Flow</span>
                         <span class="badge bg-warning">Enterprise</span>
                     </a>
                 </li>
                 <li>
-                    <a href="javascript:void(0);" onclick="showUpgradeModal('Enterprise', 'User Management')">
+                    <a href="{{ Route::has('membership-plans') ? route('membership-plans') : url('/membership-plans') }}">
                         <i class="fe fe-lock"></i>
                         <span>User Management</span>
                         <span class="badge bg-warning">Enterprise</span>
