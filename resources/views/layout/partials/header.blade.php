@@ -269,6 +269,8 @@
         transform: none;
         transition: all 0.2s;
         order: 2;
+        position: relative;
+        top: 0;
     }
     /* Override theme #toggle_btn spacing so the icon sits near sidebar edge line */
     #toggle_btn.header-toggle {
@@ -276,6 +278,7 @@
         height: 40px !important;
         margin: 3px 10px 0 -12px !important;
         font-size: inherit !important;
+        top: 0 !important;
     }
     body.sidebar-collapsed #toggle_btn.header-toggle,
     body.mini-sidebar #toggle_btn.header-toggle {
