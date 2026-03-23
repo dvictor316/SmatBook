@@ -146,6 +146,197 @@
             padding-right: 12px !important;
         }
 
+        :root {
+            --spb-sidebar-bg-top: #f2f8ff;
+            --spb-sidebar-bg-mid: #e8f2ff;
+            --spb-sidebar-bg-bottom: #f9fcff;
+            --spb-sidebar-border: rgba(148, 184, 255, 0.28);
+            --spb-sidebar-text: #17315f;
+            --spb-sidebar-muted: #7b8cab;
+            --spb-sidebar-icon: #2f63d9;
+            --spb-sidebar-hover-bg: rgba(255, 255, 255, 0.72);
+            --spb-sidebar-active-bg: linear-gradient(135deg, rgba(55, 114, 255, 0.16) 0%, rgba(139, 92, 246, 0.10) 100%);
+            --spb-sidebar-active-border: rgba(59, 130, 246, 0.28);
+            --spb-sidebar-active-text: #0f2f6e;
+            --spb-sidebar-shadow: 0 18px 40px rgba(66, 109, 194, 0.12);
+        }
+
+        .sidebar,
+        .deployment-sidebar {
+            background:
+                radial-gradient(circle at 18% 16%, rgba(255, 255, 255, 0.82) 0, rgba(255, 255, 255, 0.82) 38px, transparent 39px),
+                radial-gradient(circle at 82% 11%, rgba(147, 197, 253, 0.28) 0, rgba(147, 197, 253, 0.28) 58px, transparent 59px),
+                radial-gradient(circle at 78% 36%, rgba(255, 255, 255, 0.72) 0, rgba(255, 255, 255, 0.72) 48px, transparent 49px),
+                radial-gradient(circle at 14% 70%, rgba(191, 219, 254, 0.34) 0, rgba(191, 219, 254, 0.34) 64px, transparent 65px),
+                radial-gradient(circle at 88% 82%, rgba(224, 231, 255, 0.54) 0, rgba(224, 231, 255, 0.54) 70px, transparent 71px),
+                linear-gradient(180deg, var(--spb-sidebar-bg-top) 0%, var(--spb-sidebar-bg-mid) 48%, var(--spb-sidebar-bg-bottom) 100%) !important;
+            border-right: 1px solid var(--spb-sidebar-border) !important;
+            box-shadow: var(--spb-sidebar-shadow);
+            overflow: hidden;
+        }
+
+        .sidebar::before,
+        .deployment-sidebar::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background:
+                radial-gradient(circle at 28% 24%, rgba(255, 255, 255, 0.45) 0, rgba(255, 255, 255, 0.45) 6px, transparent 7px),
+                radial-gradient(circle at 72% 42%, rgba(96, 165, 250, 0.14) 0, rgba(96, 165, 250, 0.14) 5px, transparent 6px),
+                radial-gradient(circle at 46% 78%, rgba(255, 255, 255, 0.32) 0, rgba(255, 255, 255, 0.32) 5px, transparent 6px),
+                radial-gradient(circle at 18% 88%, rgba(147, 197, 253, 0.16) 0, rgba(147, 197, 253, 0.16) 4px, transparent 5px);
+            opacity: 0.95;
+        }
+
+        .sidebar .sidebar-inner,
+        .deployment-sidebar .sidebar-content,
+        .deployment-sidebar .sidebar-inner {
+            background: transparent !important;
+        }
+
+        .sidebar .sidebar-menu,
+        .deployment-sidebar .sidebar-menu {
+            background: transparent !important;
+            padding-top: 10px;
+            padding-bottom: 20px;
+        }
+
+        .sidebar .sidebar-menu .menu-title,
+        .deployment-sidebar .sidebar-menu .menu-title {
+            margin-top: 12px;
+            margin-bottom: 6px;
+            padding: 0 20px;
+        }
+
+        .sidebar .sidebar-menu .menu-title span,
+        .deployment-sidebar .sidebar-menu .menu-title span {
+            color: var(--spb-sidebar-muted) !important;
+            font-size: 0.74rem;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            text-transform: none;
+        }
+
+        .sidebar .sidebar-menu ul li > a,
+        .deployment-sidebar .sidebar-menu ul li > a,
+        .deployment-sidebar .dm-menu-link {
+            color: var(--spb-sidebar-text) !important;
+            border-radius: 16px !important;
+            margin: 4px 12px;
+            padding: 12px 14px !important;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            transition: background 0.22s ease, color 0.22s ease, transform 0.22s ease, box-shadow 0.22s ease;
+            position: relative;
+            z-index: 1;
+        }
+
+        .sidebar .sidebar-menu ul li > a i,
+        .sidebar .sidebar-menu ul li > a .menu-arrow,
+        .deployment-sidebar .sidebar-menu ul li > a i,
+        .deployment-sidebar .sidebar-menu ul li > a .menu-arrow,
+        .deployment-sidebar .dm-menu-icon,
+        .deployment-sidebar .dm-menu-arrow {
+            color: var(--spb-sidebar-icon) !important;
+        }
+
+        .sidebar .sidebar-menu ul li > a span,
+        .deployment-sidebar .sidebar-menu ul li > a span,
+        .deployment-sidebar .dm-menu-text {
+            color: inherit !important;
+        }
+
+        .sidebar .sidebar-menu ul li > a:hover,
+        .sidebar .sidebar-menu ul li > a.subdrop,
+        .sidebar .sidebar-menu ul li.active > a,
+        .deployment-sidebar .sidebar-menu ul li > a:hover,
+        .deployment-sidebar .sidebar-menu ul li > a.subdrop,
+        .deployment-sidebar .sidebar-menu ul li.active > a,
+        .deployment-sidebar .dm-menu-link:hover,
+        .deployment-sidebar .dm-menu-link.active {
+            background: var(--spb-sidebar-hover-bg) !important;
+            color: var(--spb-sidebar-active-text) !important;
+            box-shadow: 0 10px 24px rgba(83, 126, 210, 0.10);
+            transform: translateX(1px);
+        }
+
+        .sidebar .sidebar-menu ul li.submenu ul li a,
+        .deployment-sidebar .sidebar-menu ul li.submenu ul li a,
+        .deployment-sidebar .dm-submenu a {
+            margin-left: 22px;
+            margin-right: 12px;
+            padding-top: 10px !important;
+            padding-bottom: 10px !important;
+            color: #3c527f !important;
+            font-weight: 600;
+            border-radius: 14px !important;
+            background: rgba(255, 255, 255, 0.34);
+        }
+
+        .sidebar .sidebar-menu ul li.submenu ul li a:hover,
+        .sidebar .sidebar-menu ul li.submenu ul li a.active,
+        .deployment-sidebar .sidebar-menu ul li.submenu ul li a:hover,
+        .deployment-sidebar .sidebar-menu ul li.submenu ul li a.active,
+        .deployment-sidebar .dm-submenu a:hover,
+        .deployment-sidebar .dm-submenu a.active {
+            background: rgba(255, 255, 255, 0.76) !important;
+            color: var(--spb-sidebar-active-text) !important;
+        }
+
+        .sidebar .sidebar-menu ul li.active > a,
+        .sidebar .sidebar-menu ul li > a.subdrop,
+        .deployment-sidebar .sidebar-menu ul li.active > a,
+        .deployment-sidebar .sidebar-menu ul li > a.subdrop,
+        .deployment-sidebar .dm-menu-link.active {
+            background: var(--spb-sidebar-active-bg) !important;
+            border: 1px solid var(--spb-sidebar-active-border);
+        }
+
+        .sidebar .sidebar-menu ul li.active > a::before,
+        .deployment-sidebar .sidebar-menu ul li.active > a::before,
+        .deployment-sidebar .dm-menu-link.active::before {
+            content: "";
+            position: absolute;
+            left: -1px;
+            top: 12px;
+            bottom: 12px;
+            width: 4px;
+            border-radius: 999px;
+            background: linear-gradient(180deg, #2563eb 0%, #7c3aed 100%);
+        }
+
+        .sidebar .sidebar-menu::-webkit-scrollbar,
+        .sidebar .sidebar-inner::-webkit-scrollbar,
+        .deployment-sidebar::-webkit-scrollbar,
+        .deployment-sidebar .sidebar-content::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .sidebar .sidebar-menu::-webkit-scrollbar-track,
+        .sidebar .sidebar-inner::-webkit-scrollbar-track,
+        .deployment-sidebar::-webkit-scrollbar-track,
+        .deployment-sidebar .sidebar-content::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.42);
+            border-radius: 999px;
+        }
+
+        .sidebar .sidebar-menu::-webkit-scrollbar-thumb,
+        .sidebar .sidebar-inner::-webkit-scrollbar-thumb,
+        .deployment-sidebar::-webkit-scrollbar-thumb,
+        .deployment-sidebar .sidebar-content::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, rgba(96, 165, 250, 0.72) 0%, rgba(129, 140, 248, 0.72) 100%);
+            border-radius: 999px;
+            border: 2px solid rgba(255, 255, 255, 0.58);
+        }
+
+        @media (max-width: 991.98px) {
+            .sidebar,
+            .deployment-sidebar {
+                box-shadow: 0 24px 48px rgba(30, 64, 175, 0.22);
+            }
+        }
+
         .btn {
             border-radius: 999px !important;
             font-weight: 700 !important;
