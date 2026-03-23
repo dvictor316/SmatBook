@@ -20,7 +20,7 @@
     $tagColor = $isDark ? 'rgba(255,255,255,0.74)' : '#64748b';
 @endphp
 
-<div class="spb-auth-lockup{{ $stacked ? ' is-stacked' : '' }}">
+<div class="spb-auth-lockup{{ $stacked ? ' is-stacked' : '' }}{{ $isDark ? ' is-on-dark' : '' }}">
     <img src="{{ $logoSrc }}" alt="SmartProbook" class="spb-auth-lockup__logo">
     <div class="spb-auth-lockup__copy">
         <div class="spb-auth-lockup__brand">
@@ -37,12 +37,21 @@
         display: inline-flex;
         align-items: center;
         gap: 14px;
+        max-width: 100%;
     }
 
     .spb-auth-lockup.is-stacked {
         flex-direction: column;
         text-align: center;
         gap: 10px;
+    }
+
+    .spb-auth-lockup.is-on-dark {
+        padding: 14px 18px;
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.98);
+        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
+        border: 1px solid rgba(255, 255, 255, 0.74);
     }
 
     .spb-auth-lockup__logo {
@@ -54,6 +63,7 @@
 
     .spb-auth-lockup__copy {
         line-height: 1;
+        min-width: 0;
     }
 
     .spb-auth-lockup__brand {
@@ -86,17 +96,23 @@
             gap: 10px;
         }
 
+        .spb-auth-lockup.is-on-dark {
+            padding: 12px 14px;
+            border-radius: 18px;
+        }
+
         .spb-auth-lockup__logo {
-            height: calc({{ $config['logo'] }} * 0.82);
+            height: calc({{ $config['logo'] }} * 0.8);
         }
 
         .spb-auth-lockup__brand {
-            font-size: calc({{ $config['brand'] }} * 0.76);
-            letter-spacing: -0.025em;
+            font-size: calc({{ $config['brand'] }} * 0.72);
+            letter-spacing: -0.024em;
         }
 
         .spb-auth-lockup__tagline {
-            font-size: calc({{ $config['tag'] }} * 0.92);
+            font-size: calc({{ $config['tag'] }} * 0.82);
+            letter-spacing: 0.14em;
         }
     }
 
@@ -105,17 +121,23 @@
             gap: 8px;
         }
 
+        .spb-auth-lockup.is-on-dark {
+            padding: 10px 12px;
+            border-radius: 16px;
+        }
+
         .spb-auth-lockup__logo {
-            height: calc({{ $config['logo'] }} * 0.72);
+            height: calc({{ $config['logo'] }} * 0.68);
         }
 
         .spb-auth-lockup__brand {
-            font-size: calc({{ $config['brand'] }} * 0.66);
+            font-size: calc({{ $config['brand'] }} * 0.62);
             letter-spacing: -0.02em;
         }
 
         .spb-auth-lockup__tagline {
-            font-size: calc({{ $config['tag'] }} * 0.84);
+            font-size: calc({{ $config['tag'] }} * 0.74);
+            letter-spacing: 0.12em;
         }
     }
 </style>
