@@ -90,20 +90,52 @@
         @endif
 
         @media print {
-            .header, .sidebar, .settings-icon, .btn, .footer, .theme-settings-offcanvas, .sidebar-settings {
+            .header,
+            .sidebar,
+            .two-col-bar,
+            .settings-icon,
+            .ai-agent-launcher,
+            #sidebar-overlay,
+            .btn,
+            .footer,
+            .theme-settings-offcanvas,
+            .sidebar-settings,
+            .modal,
+            .modal-backdrop,
+            .offcanvas,
+            .dropdown-menu,
+            .tooltip,
+            .popover,
+            .no-print,
+            .d-print-none {
                 display: none !important;
+            }
+            html,
+            body {
+                background: #fff !important;
+                overflow: visible !important;
+                height: auto !important;
             }
             .main-wrapper {
                 margin: 0 !important;
                 padding: 0 !important;
                 width: 100% !important;
-            }
-            body {
-                background: #fff !important;
+                overflow: visible !important;
             }
             .page-wrapper {
                 margin: 0 !important;
                 padding: 0 !important;
+                width: 100% !important;
+                overflow: visible !important;
+            }
+            .content,
+            .container-fluid,
+            .container {
+                margin: 0 !important;
+                padding: 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                overflow: visible !important;
             }
         }
 
@@ -1066,6 +1098,7 @@
 
     <script>
         (function () {
+            const nativePrint = typeof window.print === 'function' ? window.print.bind(window) : null;
             const printState = {
                 active: false,
                 lastTriggeredAt: 0,
@@ -1082,6 +1115,10 @@
             }
 
             function triggerPrint() {
+                if (!nativePrint) {
+                    return;
+                }
+
                 const now = Date.now();
                 if (printState.active || (now - printState.lastTriggeredAt) < 1500) {
                     return;
@@ -1096,10 +1133,11 @@
                 }
 
                 printState.releaseTimer = window.setTimeout(releasePrintLock, 3000);
-                window.print();
+                nativePrint();
             }
 
             window.smartProbookTriggerPrint = triggerPrint;
+            window.print = triggerPrint;
 
             function isDummyHref(el) {
                 const href = (el.getAttribute('href') || '').trim().toLowerCase();
