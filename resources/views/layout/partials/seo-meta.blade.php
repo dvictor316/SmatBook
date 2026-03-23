@@ -17,7 +17,7 @@
 
     $resolvedType = trim((string) ($seoType ?? 'website'));
     $resolvedImage = trim((string) ($seoImage ?? asset('assets/img/logos.png')));
-    $resolvedFavicon = asset('assets/img/favicon.png');
+    $resolvedFavicon = asset('assets/img/logos.png');
     $resolvedUrl = url()->current();
     $resolvedCanonical = trim((string) ($seoCanonical ?? $resolvedUrl));
 
