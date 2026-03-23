@@ -168,6 +168,16 @@
             background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
             box-shadow: 0 18px 30px -18px rgba(79, 70, 229, 0.45);
         }
+        .btn-gold {
+            background: linear-gradient(135deg, #f6d690 0%, #d4a34a 100%);
+            color: #402b05;
+            box-shadow: 0 16px 28px -18px rgba(197, 160, 89, 0.58);
+        }
+        .btn-gold:hover {
+            background: linear-gradient(135deg, #f2ca6a 0%, #c58b2d 100%);
+            color: #2f1f04;
+            box-shadow: 0 20px 32px -18px rgba(197, 160, 89, 0.68);
+        }
 
         /* Responsive */
         @media (max-width: 1100px) { .pricing-grid { grid-template-columns: repeat(2, 1fr); } }
@@ -361,7 +371,7 @@
                     </ul>
                     <div style="display:grid; gap:10px;">
                         <button onclick="handleSubscription('basic-solo')" class="btn-uplink btn-outline">Start 1 User</button>
-                        <button onclick="handleSubscription('basic')" class="btn-uplink">Start 2 Users</button>
+                        <button onclick="handleSubscription('basic')" class="btn-uplink btn-gold">Start 2 Users</button>
                     </div>
                 </div>
 
@@ -383,7 +393,7 @@
                     </ul>
                     <div style="display:grid; gap:10px;">
                         <button onclick="handleSubscription('pro-solo')" class="btn-uplink btn-outline">Start 1 User</button>
-                        <button onclick="handleSubscription('pro')" class="btn-uplink">Start 3 Users</button>
+                        <button onclick="handleSubscription('pro')" class="btn-uplink btn-gold">Start 3 Users</button>
                     </div>
                 </div>
 
@@ -404,7 +414,7 @@
                     </ul>
                     <div style="display:grid; gap:10px;">
                         <button onclick="handleSubscription('enterprise-solo')" class="btn-uplink btn-outline">Start 1 User</button>
-                        <button onclick="handleSubscription('enterprise')" class="btn-uplink">Deploy Unlimited</button>
+                        <button onclick="handleSubscription('enterprise')" class="btn-uplink btn-gold">Deploy Unlimited</button>
                     </div>
                 </div>
 
