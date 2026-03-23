@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\{DB, Auth, Schema, Cache, Log};
 use Illuminate\Database\QueryException;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class DashboardController extends Controller
 {
@@ -43,14 +44,29 @@ class DashboardController extends Controller
         $activeBranch = $isBusinessWorkspace ? $this->activeBranchContext() : ['id' => null, 'name' => null];
         $currentHost = $request->getHost();
         $mainDomain = ltrim(config('app.domain', 'smartprobook.com'), '.');
+        $appUrlHost = parse_url((string) config('app.url'), PHP_URL_HOST);
         $centralHosts = [
             $mainDomain,
+            'www.' . $mainDomain,
             'localhost',
             '127.0.0.1',
         ];
 
+        if ($appUrlHost) {
+            $centralHosts[] = $appUrlHost;
+            $centralHosts[] = preg_replace('/^www\./i', '', $appUrlHost);
+            $centralHosts[] = 'www.' . preg_replace('/^www\./i', '', $appUrlHost);
+        }
+
+        $centralHosts = collect($centralHosts)
+            ->filter(fn ($host) => filled($host))
+            ->map(fn ($host) => Str::lower((string) $host))
+            ->unique()
+            ->values()
+            ->all();
+
         // 1. TENANT IDENTIFICATION VIA SUBDOMAIN
-        $subdomain = in_array($currentHost, $centralHosts, true) ? null : explode('.', $currentHost)[0];
+        $subdomain = in_array(Str::lower($currentHost), $centralHosts, true) ? null : explode('.', $currentHost)[0];
 
         if ($subdomain) {
             $subscription = Subscription::where('domain_prefix', $subdomain)->first();
