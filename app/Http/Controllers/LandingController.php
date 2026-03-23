@@ -4,16 +4,60 @@ namespace App\Http\Controllers;
 
 use App\Models\Sale;
 use App\Models\LandingSetting;
+use App\Models\Company;
 use App\Models\Plan; // Added Plan model
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class LandingController extends Controller
 {
     public function index()
     {
+        $host = Str::lower((string) request()->getHost());
+        $mainDomain = trim((string) config('session.domain', env('SESSION_DOMAIN', 'smartprobook.com')), ". \t\n\r\0\x0B");
+        $appUrlHost = parse_url((string) config('app.url'), PHP_URL_HOST);
+
+        $centralHosts = collect([
+            $mainDomain,
+            'www.' . $mainDomain,
+            'localhost',
+            '127.0.0.1',
+            $appUrlHost,
+            $appUrlHost ? preg_replace('/^www\./i', '', $appUrlHost) : null,
+            $appUrlHost ? 'www.' . preg_replace('/^www\./i', '', $appUrlHost) : null,
+        ])
+            ->filter(fn ($value) => filled($value))
+            ->map(fn ($value) => Str::lower((string) $value))
+            ->unique()
+            ->values()
+            ->all();
+
+        if (!in_array($host, $centralHosts, true)) {
+            $subdomain = explode('.', $host)[0] ?? null;
+
+            if ($subdomain) {
+                $company = Company::query()
+                    ->where('domain_prefix', $subdomain)
+                    ->orWhere('subdomain', $subdomain)
+                    ->first();
+
+                if ($company) {
+                    session([
+                        'current_tenant_id' => $company->id,
+                        'current_tenant_name' => $company->domain_prefix ?: $company->subdomain,
+                    ]);
+
+                    return Auth::check()
+                        ? redirect()->route('home')
+                        : redirect()->route('login');
+                }
+            }
+        }
+
         $totalInvoices = Sale::count() ?? 0;
 
         try {
