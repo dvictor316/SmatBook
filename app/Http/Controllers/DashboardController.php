@@ -26,6 +26,13 @@ class DashboardController extends Controller
             ->with('success', 'Partnership workspace is now active.');
     }
 
+    public function businessDashboard(Request $request)
+    {
+        $request->session()->put('workspace_context', 'business');
+
+        return $this->index($request);
+    }
+
     /**
      * Main Dashboard View (Multi-Tenant & Subdomain Optimized)
      */
