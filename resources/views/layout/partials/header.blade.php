@@ -561,7 +561,7 @@
     @media (max-width: 991.98px) {
 
         /* ── Header layout ── */
-        .header-logo    { width: auto; margin-right: auto; max-width: 148px; }
+        .header-logo    { width: auto; margin-right: auto; max-width: 172px; }
         .header-toggle  { display: none; }
         #mobile_btn     { display: flex; }
         .header-search-container { display: none; }
@@ -687,9 +687,9 @@
             gap: 5px;
             min-width: 0;
         }
-        .header-logo img { height: 34px; }
+        .header-logo img { height: 38px; }
         .spb-wordmark {
-            font-size: 0.74rem;
+            font-size: 0.84rem;
             letter-spacing: -0.2px;
             white-space: nowrap;
             line-height: 1;
@@ -703,12 +703,12 @@
         .header-logo {
             gap: 3px;
             width: auto;
-            max-width: 108px;
+            max-width: 130px;
         }
-        .header-logo img { height: 24px; }
+        .header-logo img { height: 28px; }
         .spb-wordmark {
             display: block;
-            font-size: 0.5rem;
+            font-size: 0.6rem;
             letter-spacing: -0.16px;
             overflow: visible;
             text-overflow: clip;
@@ -752,11 +752,11 @@
         }
         .header-logo {
             gap: 2px;
-            max-width: 92px;
+            max-width: 114px;
         }
-        .header-logo img { height: 22px; }
+        .header-logo img { height: 25px; }
         .spb-wordmark {
-            font-size: 0.43rem;
+            font-size: 0.5rem;
             letter-spacing: -0.08px;
         }
         .header-actions {
