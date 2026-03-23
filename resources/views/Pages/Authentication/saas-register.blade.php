@@ -48,10 +48,10 @@
     }
 
     html, body {
-        min-height: 100%;
+        height: 100%;
         margin: 0;
         overflow-x: hidden !important;
-        overflow-y: auto !important;
+        overflow-y: hidden !important;
         -webkit-overflow-scrolling: touch;
         touch-action: pan-y;
     }
@@ -60,8 +60,9 @@
     .main-wrapper.login-body {
         margin: 0 !important;
         padding: 0 !important;
+        height: 100% !important;
         min-height: 100% !important;
-        overflow: visible !important;
+        overflow: hidden !important;
     }
 
     .page-wrapper,
@@ -74,11 +75,11 @@
     }
 
     .smat-viewport {
-        position: relative;
-        top: 0;
-        left: 50%;
-        width: 100vw;
-        min-height: 100vh;
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        min-height: 100%;
         padding: 16px 12px 40px;
         background:
             radial-gradient(circle at top left, rgba(40, 195, 243, 0.28), transparent 24%),
@@ -88,8 +89,8 @@
         display: grid !important;
         place-items: center !important;
         font-family: 'Plus Jakarta Sans', sans-serif;
-        overflow: visible;
-        transform: translateX(-50%);
+        overflow-x: hidden;
+        overflow-y: auto;
         -webkit-overflow-scrolling: touch;
     }
 
@@ -486,7 +487,7 @@
         .smat-card { width: min(calc(100vw - 28px), 560px) !important; max-width: 560px !important; height: auto; margin: 0 auto !important; min-height: 0; }
         .smat-aside { display: none; }
         .smat-main { width: 100%; padding: 24px 20px; }
-        .smat-viewport { padding-bottom: 24px; }
+        .smat-viewport { padding: 14px 10px 24px; align-items: flex-start !important; }
         .logo-img { height: 46px; }
         .brand-lockup { gap: 7px; margin-bottom: 6px; }
         .brand-name { font-size: 1.12rem; }
