@@ -103,7 +103,7 @@ class LandingController extends Controller
                     $user->restore();
                 }
 
-                $user->fill([
+                $userPayload = $this->onlyExistingColumns('users', [
                     'name' => 'SmartProbook Demo',
                     'password' => Hash::make('DemoAccess2026'),
                     'role' => 'admin',
@@ -113,11 +113,16 @@ class LandingController extends Controller
                     'verified_at' => now(),
                     'phone' => '+2348000000000',
                 ]);
+
+                if (!empty($userPayload)) {
+                    $user->fill($userPayload);
+                }
                 $user->save();
 
                 $company = Company::updateOrCreate(
-                    ['user_id' => $user->id],
-                    [
+                    $this->onlyExistingColumns('companies', ['user_id' => $user->id]),
+                    $this->onlyExistingColumns('companies', [
+                        'user_id' => $user->id,
                         'owner_id' => $user->id,
                         'name' => $demoCompanyName,
                         'company_name' => $demoCompanyName,
@@ -135,7 +140,7 @@ class LandingController extends Controller
                         'industry' => 'Technology',
                         'subscription_start' => now()->subDays(7),
                         'subscription_end' => now()->addDays(30),
-                    ]
+                    ])
                 );
 
                 if ((int) $user->company_id !== (int) $company->id) {
@@ -143,11 +148,19 @@ class LandingController extends Controller
                     $user->save();
                 }
 
+                $professionalPlanId = null;
+                if (Schema::hasTable('plans')) {
+                    $professionalPlanId = Plan::query()
+                        ->whereRaw('LOWER(name) like ?', ['%professional%'])
+                        ->value('id');
+                }
+
                 Subscription::updateOrCreate(
-                    ['user_id' => $user->id],
-                    [
+                    $this->onlyExistingColumns('subscriptions', ['user_id' => $user->id]),
+                    $this->onlyExistingColumns('subscriptions', [
+                        'user_id' => $user->id,
                         'company_id' => $company->id,
-                        'plan_id' => Plan::query()->whereRaw('LOWER(name) like ?', ['%professional%'])->value('id'),
+                        'plan_id' => $professionalPlanId,
                         'plan' => 'Professional',
                         'plan_name' => 'Professional',
                         'subscriber_name' => $demoCompanyName,
@@ -166,7 +179,7 @@ class LandingController extends Controller
                         'initialized_at' => now()->subDays(7),
                         'paid_at' => now()->subDays(7),
                         'payment_date' => now()->subDays(7),
-                    ]
+                    ])
                 );
 
                 $this->seedDemoWorkspace($user, $company);
