@@ -186,28 +186,28 @@
                 <li class="menu-title"><span>Enterprise Features</span></li>
                 
                 <li>
-                    <a href="{{ Route::has('membership-plans') ? route('membership-plans') : url('/membership-plans') }}">
+                    <a href="{{ Route::has('membership-plans') ? route('membership-plans', ['plan' => 'enterprise']) : url('/membership-plans?plan=enterprise') }}">
                         <i class="fe fe-lock"></i>
                         <span>Trial Balance</span>
                         <span class="badge bg-warning">Enterprise</span>
                     </a>
                 </li>
                 <li>
-                    <a href="{{ Route::has('membership-plans') ? route('membership-plans') : url('/membership-plans') }}">
+                    <a href="{{ Route::has('membership-plans') ? route('membership-plans', ['plan' => 'enterprise']) : url('/membership-plans?plan=enterprise') }}">
                         <i class="fe fe-lock"></i>
                         <span>Balance Sheet</span>
                         <span class="badge bg-warning">Enterprise</span>
                     </a>
                 </li>
                 <li>
-                    <a href="{{ Route::has('membership-plans') ? route('membership-plans') : url('/membership-plans') }}">
+                    <a href="{{ Route::has('membership-plans') ? route('membership-plans', ['plan' => 'enterprise']) : url('/membership-plans?plan=enterprise') }}">
                         <i class="fe fe-lock"></i>
                         <span>Cash Flow</span>
                         <span class="badge bg-warning">Enterprise</span>
                     </a>
                 </li>
                 <li>
-                    <a href="{{ Route::has('membership-plans') ? route('membership-plans') : url('/membership-plans') }}">
+                    <a href="{{ Route::has('membership-plans') ? route('membership-plans', ['plan' => 'enterprise']) : url('/membership-plans?plan=enterprise') }}">
                         <i class="fe fe-lock"></i>
                         <span>User Management</span>
                         <span class="badge bg-warning">Enterprise</span>
@@ -241,7 +241,7 @@ function showUpgradeModal(planName, featureName) {
         cancelButtonColor: '#6b7280'
     }).then((result) => {
         if (result.isConfirmed) {
-            window.location.href = '{{ route("membership-plans") }}';
+            window.location.href = '{{ route("membership-plans") }}?plan=enterprise';
         }
     });
 }

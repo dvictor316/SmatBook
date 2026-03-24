@@ -519,6 +519,8 @@
     
     // The base URL for your registration endpoint
     const registerUrl = "{{ route('saas-register-initial') }}";
+    const upgradeUrl = "{{ route('subscription.upgrade.redirect') }}";
+    const userIsAuthenticated = @json(auth()->check());
     
     const prices = {
         monthly: {
@@ -576,32 +578,19 @@
             return;
         }
 
-        const modal = document.getElementById('loadingModal');
         const isAnnual = document.getElementById('billingSwitch').checked;
-        
-        // CRITICAL FIX: The Controller expects 'cycle', not 'billing_cycle' in some methods.
-        // We provide both to be 100% safe.
         const cycleValue = isAnnual ? 'yearly' : 'monthly'; 
 
         isNavigatingToPlan = true;
 
-        if (modal) {
-            modal.style.display = 'flex';
-        }
-        document.getElementById('loadingText').innerText = `Syncing ${plan.toUpperCase()} Node...`;
-
-        /**
-         * REDIRECT LOGIC
-         * Ensures smatbook.com/register?plan=pro&cycle=yearly
-         * This hits SubscriptionController@showRegister
-         */
         const queryParams = new URLSearchParams({ 
             plan: plan, 
             cycle: cycleValue,
-            billing_cycle: cycleValue // Double-mapped for compatibility
+            billing_cycle: cycleValue
         });
 
-        window.location.assign(`${registerUrl}?${queryParams.toString()}`);
+        const destination = userIsAuthenticated ? upgradeUrl : registerUrl;
+        window.location.assign(`${destination}?${queryParams.toString()}`);
     }
 
     function exitSetup(event) {

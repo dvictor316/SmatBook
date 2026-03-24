@@ -135,28 +135,28 @@
     <li class="menu-title"><span>Upgrade for More</span></li>
     
     <li>
-        <a href="{{ Route::has('membership-plans') ? route('membership-plans') : url('/membership-plans') }}">
+        <a href="{{ Route::has('membership-plans') ? route('membership-plans', ['plan' => 'pro']) : url('/membership-plans?plan=pro') }}">
             <i class="fe fe-lock"></i>
             <span>Vendors</span>
             <span class="badge bg-info">Pro</span>
         </a>
     </li>
     <li>
-        <a href="{{ Route::has('membership-plans') ? route('membership-plans') : url('/membership-plans') }}">
+        <a href="{{ Route::has('membership-plans') ? route('membership-plans', ['plan' => 'pro']) : url('/membership-plans?plan=pro') }}">
             <i class="fe fe-lock"></i>
             <span>Categories & Units</span>
             <span class="badge bg-info">Pro</span>
         </a>
     </li>
     <li>
-        <a href="{{ Route::has('membership-plans') ? route('membership-plans') : url('/membership-plans') }}">
+        <a href="{{ Route::has('membership-plans') ? route('membership-plans', ['plan' => 'pro']) : url('/membership-plans?plan=pro') }}">
             <i class="fe fe-lock"></i>
             <span>Inventory Management</span>
             <span class="badge bg-info">Pro</span>
         </a>
     </li>
     <li>
-        <a href="{{ Route::has('membership-plans') ? route('membership-plans') : url('/membership-plans') }}">
+        <a href="{{ Route::has('membership-plans') ? route('membership-plans', ['plan' => 'enterprise']) : url('/membership-plans?plan=enterprise') }}">
             <i class="fe fe-lock"></i>
             <span>Cash Flow Reports</span>
             <span class="badge bg-warning">Enterprise</span>
@@ -180,6 +180,9 @@
 @push('scripts')
 <script>
 function showUpgradeModal(planName, featureName) {
+    const normalizedPlan = String(planName || '')
+        .toLowerCase()
+        .includes('enterprise') ? 'enterprise' : 'pro';
     Swal.fire({
         title: '🚀 Upgrade to ' + planName,
         html: 'Unlock <strong>' + featureName + '</strong> and many more features!<br><br>' +
@@ -200,9 +203,9 @@ function showUpgradeModal(planName, featureName) {
     }).then((result) => {
         if (result.isConfirmed) {
             @if(Route::has('membership-plans'))
-                window.location.href = '{{ route("membership-plans") }}';
+                window.location.href = '{{ route("membership-plans") }}?plan=' + encodeURIComponent(normalizedPlan);
             @else
-                window.location.href = '/membership-plans';
+                window.location.href = '/membership-plans?plan=' + encodeURIComponent(normalizedPlan);
             @endif
         }
     });

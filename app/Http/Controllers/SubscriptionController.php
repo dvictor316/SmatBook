@@ -38,6 +38,105 @@ class SubscriptionController extends Controller
         ]);
     }
 
+    public function redirectToUpgradeCheckout(Request $request)
+    {
+        $user = Auth::user();
+
+        if (! $user) {
+            return redirect()->route('saas-register-initial');
+        }
+
+        $requestedPlan = $this->normalizeCatalogPlanKey((string) $request->query('plan', ''));
+        $currentSubscription = Subscription::resolveCurrentForUser($user);
+        $requestedCycle = strtolower((string) $request->query(
+            'cycle',
+            $currentSubscription?->billing_cycle ?: session('selected_cycle', 'monthly')
+        ));
+        $requestedCycle = in_array($requestedCycle, ['monthly', 'yearly'], true) ? $requestedCycle : 'monthly';
+
+        if (! $requestedPlan) {
+            return redirect()->route('membership-plans')
+                ->with('error', 'Please choose a valid plan to continue.');
+        }
+
+        $planDefinition = $this->upgradePlanCatalog()[$requestedPlan] ?? null;
+        $plan = $planDefinition
+            ? Plan::findByCatalogName($planDefinition['label'], $requestedCycle)
+            : null;
+
+        if (! $plan) {
+            return redirect()->route('membership-plans')
+                ->with('error', 'That plan is not available right now. Please try another billing cycle.');
+        }
+
+        $currentPlanName = (string) (
+            $currentSubscription?->plan_name
+            ?: $currentSubscription?->plan
+            ?: optional($currentSubscription?->plan_relationship)->name
+            ?: ''
+        );
+        $currentTier = $this->planTierWeight(Plan::normalizeTier($currentPlanName));
+        $targetTier = $this->planTierWeight(Plan::normalizeTier($plan->name));
+        $sameCycle = strtolower((string) ($currentSubscription?->billing_cycle ?? '')) === $requestedCycle;
+        $samePlan = $currentSubscription
+            && $currentTier === $targetTier
+            && $sameCycle
+            && str_contains(strtolower($currentPlanName), 'solo') === str_contains(strtolower((string) $plan->name), 'solo');
+
+        if ($samePlan && in_array(strtolower((string) $currentSubscription->payment_status), ['paid', 'free'], true)) {
+            return redirect()->route('membership-plans')
+                ->with('success', 'You are already on that plan.');
+        }
+
+        $companyId = (int) ($currentSubscription?->company_id ?: $user->company_id ?: 0);
+        $domainPrefix = (string) (
+            $currentSubscription?->domain_prefix
+            ?: optional($currentSubscription?->company)->domain_prefix
+            ?: optional($currentSubscription?->company)->subdomain
+            ?: ''
+        );
+
+        $pendingSubscription = Subscription::query()
+            ->where('user_id', $user->id)
+            ->whereIn(DB::raw("LOWER(COALESCE(status, ''))"), ['pending', 'awaiting payment'])
+            ->orderByDesc('id')
+            ->first();
+
+        $payload = $this->filterPayloadForTable('subscriptions', [
+            'user_id' => $user->id,
+            'company_id' => $companyId ?: null,
+            'plan_id' => $plan->id,
+            'plan' => $plan->name,
+            'plan_name' => $plan->name,
+            'billing_cycle' => ucfirst($requestedCycle),
+            'amount' => (float) $plan->price,
+            'status' => 'Pending',
+            'payment_status' => 'unpaid',
+            'domain_prefix' => $domainPrefix !== '' ? $domainPrefix : null,
+        ]);
+
+        if ($pendingSubscription) {
+            $pendingSubscription->fill($payload);
+            $pendingSubscription->save();
+            $subscription = $pendingSubscription->fresh();
+        } else {
+            $subscription = Subscription::create($payload);
+        }
+
+        session([
+            'selected_plan_id' => $plan->id,
+            'selected_plan' => $plan->name,
+            'selected_cycle' => ucfirst($requestedCycle),
+            'selected_amount' => (float) $plan->price,
+            'billing_cycle' => ucfirst($requestedCycle),
+            'plan' => $requestedPlan,
+            'reg_role' => 'admin',
+        ]);
+
+        return redirect()->route('saas.checkout', ['id' => $subscription->id])
+            ->with('success', 'Upgrade plan selected. Complete payment to activate it.');
+    }
+
     /*
     |--------------------------------------------------------------------------
     | SETUP WIZARD — domain config
@@ -67,6 +166,54 @@ class SubscriptionController extends Controller
             'selectedPrice'  => $subscription->amount,
             'session_domain' => env('SESSION_DOMAIN', 'smatprobook.com'),
         ]);
+    }
+
+    private function upgradePlanCatalog(): array
+    {
+        return [
+            'basic-solo' => ['label' => 'Basic Solo'],
+            'basic' => ['label' => 'Basic'],
+            'pro-solo' => ['label' => 'Professional Solo'],
+            'pro' => ['label' => 'Professional'],
+            'enterprise-solo' => ['label' => 'Enterprise Solo'],
+            'enterprise' => ['label' => 'Enterprise'],
+        ];
+    }
+
+    private function normalizeCatalogPlanKey(string $plan): ?string
+    {
+        $value = strtolower(trim($plan));
+
+        return match (true) {
+            $value === 'basic-solo',
+            $value === 'basicsolo' => 'basic-solo',
+            $value === 'basic' => 'basic',
+            in_array($value, ['pro-solo', 'professional-solo', 'premium-solo'], true) => 'pro-solo',
+            in_array($value, ['pro', 'professional', 'premium'], true) => 'pro',
+            in_array($value, ['enterprise-solo', 'institutional-solo'], true) => 'enterprise-solo',
+            in_array($value, ['enterprise', 'institutional'], true) => 'enterprise',
+            default => null,
+        };
+    }
+
+    private function planTierWeight(?string $tier): int
+    {
+        return match (strtolower((string) $tier)) {
+            'enterprise' => 3,
+            'professional' => 2,
+            default => 1,
+        };
+    }
+
+    private function filterPayloadForTable(string $table, array $payload): array
+    {
+        if (! Schema::hasTable($table)) {
+            return $payload;
+        }
+
+        return collect($payload)
+            ->filter(fn ($_value, $column) => Schema::hasColumn($table, (string) $column))
+            ->all();
     }
 
     /*
