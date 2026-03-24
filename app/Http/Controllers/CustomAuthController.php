@@ -32,7 +32,7 @@ class CustomAuthController extends Controller
     public function showLoginForm(Request $request)
     {
         if (Auth::check()) {
-            return redirect()->route('super_admin.dashboard');
+            return redirect()->route('home');
         }
 
         $request->session()->regenerateToken();
@@ -61,7 +61,7 @@ class CustomAuthController extends Controller
             $request->session()->regenerate();
 
             return redirect()
-                ->intended(route('super_admin.dashboard'))
+                ->intended(route('home'))
                 ->with('success', 'Welcome back, ' . Auth::user()->name . '!');
         }
 
@@ -101,7 +101,7 @@ class CustomAuthController extends Controller
     public function showRegistrationForm(Request $request)
     {
         if (Auth::check()) {
-            return redirect()->route('super_admin.dashboard');
+            return redirect()->route('home');
         }
 
         $request->session()->regenerateToken();
@@ -157,7 +157,7 @@ class CustomAuthController extends Controller
             Auth::login($user);
 
             return redirect()
-                ->intended(route('super_admin.dashboard'))
+                ->intended(route('home'))
                 ->with('success', 'Registration successful! Welcome to our platform.');
 
         } catch (\Exception $e) {
@@ -292,7 +292,7 @@ class CustomAuthController extends Controller
             Auth::login($user);
 
             return redirect()
-                ->intended(route('super_admin.dashboard'))
+                ->intended(route('home'))
                 ->with('success', 'Successfully logged in via ' . ucfirst($provider) . '!');
 
         } catch (\Exception $e) {
@@ -366,7 +366,7 @@ class CustomAuthController extends Controller
             ]);
 
             return redirect()
-                ->intended(route('super_admin.dashboard'))
+                ->intended(route('home'))
                 ->with('success', 'Screen unlocked successfully!');
         }
 

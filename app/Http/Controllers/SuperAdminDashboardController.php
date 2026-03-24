@@ -541,24 +541,21 @@ class SuperAdminDashboardController extends Controller
     }
 
     /**
-     * Check if user is super admin
-     * CRITICAL: This is more inclusive than the old check
+     * Check if user is a true platform super admin.
+     * Plan administrators must not pass this gate.
      */
     private function isSuperAdmin($user): bool
     {
         $role = strtolower($user->role ?? '');
-        
-        // Check multiple possible super admin roles
+
         $validRoles = [
             'super_admin',
-            'superadmin', 
-            'administrator',
-            'admin'
+            'superadmin',
         ];
-        
-        $isValidRole = in_array($role, $validRoles);
+
+        $isValidRole = in_array($role, $validRoles, true);
         $isVictorEmail = ($user->email === 'donvictorlive@gmail.com');
-        
+
         return $isValidRole || $isVictorEmail;
     }
 

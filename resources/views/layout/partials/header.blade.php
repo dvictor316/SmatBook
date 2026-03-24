@@ -39,14 +39,16 @@
     $routeParams = ['subdomain' => $currentSubdomain];
     $headerLogoUrl = asset('assets/img/logos.png');
     $isWorkspaceSwitcherVisible = $user && (
-        in_array(strtolower((string) ($user->role ?? '')), ['super_admin', 'superadmin', 'administrator', 'admin'], true)
+        in_array(strtolower((string) ($user->role ?? '')), ['super_admin', 'superadmin'], true)
         || $user->email === 'donvictorlive@gmail.com'
     );
     $workspaceContext = session('workspace_context', 'platform');
     $isBusinessWorkspace = $workspaceContext === 'business';
-    $headerHomeUrl = $isBusinessWorkspace && Route::has('workspace.business')
-        ? route('workspace.business')
-        : route('super_admin.dashboard', $routeParams);
+    $headerHomeUrl = $isWorkspaceSwitcherVisible
+        ? ($isBusinessWorkspace && Route::has('workspace.business')
+            ? route('workspace.business')
+            : route('super_admin.dashboard', $routeParams))
+        : route('home');
     $headerBranchOptions = collect();
     $activeBranchId = session('active_branch_id');
     $activeBranchName = session('active_branch_name');

@@ -390,7 +390,7 @@ Route::middleware(['auth'])
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth', 'role:super_admin,administrator'])->prefix('superadmin')->name('super_admin.')->group(function () {
+Route::middleware(['auth', 'role:super_admin'])->prefix('superadmin')->name('super_admin.')->group(function () {
     
     Route::get('/dashboard', [SuperAdminDashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/export', [SuperAdminDashboardController::class, 'exportStats'])->name('dashboard.export');
