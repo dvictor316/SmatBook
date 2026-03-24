@@ -11,8 +11,6 @@
 --}}
 <style>
     :root {
-        --side-w: 270px;
-        --side-w-collapsed: 70px;
         --primary-color: #2563eb;
         --glass-border: #e2e8f0;
     }
@@ -22,17 +20,27 @@
         padding: 1.5rem;
         min-height: 100vh;
         background: #f8fafc;
+        max-width: 100%;
+        overflow-x: clip;
     }
 
     @media (min-width: 992px) {
-        #deployment-wrapper { margin-left: var(--side-w); width: calc(100% - var(--side-w)); }
+        #deployment-wrapper {
+            margin-left: var(--sb-sidebar-w, 270px);
+            width: calc(100% - var(--sb-sidebar-w, 270px));
+            max-width: calc(100% - var(--sb-sidebar-w, 270px));
+        }
         body.mini-sidebar #deployment-wrapper,
         body.sidebar-collapsed #deployment-wrapper,
-        body.sidebar-icon-only #deployment-wrapper { margin-left: var(--side-w-collapsed); width: calc(100% - var(--side-w-collapsed)); }
+        body.sidebar-icon-only #deployment-wrapper {
+            margin-left: var(--sb-sidebar-collapsed, 80px);
+            width: calc(100% - var(--sb-sidebar-collapsed, 80px));
+            max-width: calc(100% - var(--sb-sidebar-collapsed, 80px));
+        }
     }
 
     @media (max-width: 991.98px) {
-        #deployment-wrapper { margin-left: 0; width: 100%; }
+        #deployment-wrapper { margin-left: 0; width: 100%; max-width: 100%; }
     }
 
     .glass-card {
