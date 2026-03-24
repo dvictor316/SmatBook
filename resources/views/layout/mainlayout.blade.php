@@ -580,6 +580,54 @@
             color: var(--dash-title) !important;
         }
 
+        .dashboard-workspace .card .text-white:not(.btn):not(.badge):not(.page-link):not(.dropdown-item):not(.nav-link):not(.dash-widget-icon):not(.kpi-icon),
+        .dashboard-workspace .metric-card .text-white:not(.btn):not(.badge):not(.page-link):not(.dropdown-item):not(.nav-link):not(.dash-widget-icon):not(.kpi-icon),
+        .dashboard-workspace .chart-card .text-white:not(.btn):not(.badge):not(.page-link):not(.dropdown-item):not(.nav-link):not(.dash-widget-icon):not(.kpi-icon),
+        .dashboard-workspace .stat-card .text-white:not(.btn):not(.badge):not(.page-link):not(.dropdown-item):not(.nav-link):not(.dash-widget-icon):not(.kpi-icon),
+        .dashboard-workspace .kpi-card .text-white:not(.btn):not(.badge):not(.page-link):not(.dropdown-item):not(.nav-link):not(.dash-widget-icon):not(.kpi-icon),
+        .dashboard-workspace .metric-node .text-white:not(.btn):not(.badge):not(.page-link):not(.dropdown-item):not(.nav-link):not(.dash-widget-icon):not(.kpi-icon),
+        .dashboard-workspace .panel-card .text-white:not(.btn):not(.badge):not(.page-link):not(.dropdown-item):not(.nav-link),
+        .dashboard-workspace .mini-metric .text-white:not(.btn):not(.badge):not(.page-link):not(.dropdown-item):not(.nav-link),
+        .dashboard-workspace .insight-band .text-white:not(.btn):not(.badge):not(.page-link):not(.dropdown-item):not(.nav-link),
+        .dashboard-workspace .insight-item .text-white:not(.btn):not(.badge):not(.page-link):not(.dropdown-item):not(.nav-link),
+        .dashboard-workspace .spark-box .text-white:not(.btn):not(.badge):not(.page-link):not(.dropdown-item):not(.nav-link),
+        .dashboard-workspace .teaser-lock .text-white:not(.btn):not(.badge):not(.page-link):not(.dropdown-item):not(.nav-link),
+        .dashboard-workspace .enterprise-card .text-white:not(.btn):not(.badge):not(.page-link):not(.dropdown-item):not(.nav-link),
+        .dashboard-workspace .insight-card .text-white:not(.btn):not(.badge):not(.page-link):not(.dropdown-item):not(.nav-link) {
+            color: var(--dash-title) !important;
+        }
+
+        .dashboard-workspace .card .text-white-50,
+        .dashboard-workspace .metric-card .text-white-50,
+        .dashboard-workspace .chart-card .text-white-50,
+        .dashboard-workspace .stat-card .text-white-50,
+        .dashboard-workspace .kpi-card .text-white-50,
+        .dashboard-workspace .metric-node .text-white-50,
+        .dashboard-workspace .panel-card .text-white-50,
+        .dashboard-workspace .mini-metric .text-white-50,
+        .dashboard-workspace .insight-band .text-white-50,
+        .dashboard-workspace .insight-item .text-white-50,
+        .dashboard-workspace .spark-box .text-white-50,
+        .dashboard-workspace .teaser-lock .text-white-50,
+        .dashboard-workspace .enterprise-card .text-white-50,
+        .dashboard-workspace .insight-card .text-white-50,
+        .dashboard-workspace .card .text-light:not(.btn):not(.badge),
+        .dashboard-workspace .metric-card .text-light:not(.btn):not(.badge),
+        .dashboard-workspace .chart-card .text-light:not(.btn):not(.badge),
+        .dashboard-workspace .stat-card .text-light:not(.btn):not(.badge),
+        .dashboard-workspace .kpi-card .text-light:not(.btn):not(.badge),
+        .dashboard-workspace .metric-node .text-light:not(.btn):not(.badge),
+        .dashboard-workspace .panel-card .text-light:not(.btn):not(.badge),
+        .dashboard-workspace .mini-metric .text-light:not(.btn):not(.badge),
+        .dashboard-workspace .insight-band .text-light:not(.btn):not(.badge),
+        .dashboard-workspace .insight-item .text-light:not(.btn):not(.badge),
+        .dashboard-workspace .spark-box .text-light:not(.btn):not(.badge),
+        .dashboard-workspace .teaser-lock .text-light:not(.btn):not(.badge),
+        .dashboard-workspace .enterprise-card .text-light:not(.btn):not(.badge),
+        .dashboard-workspace .insight-card .text-light:not(.btn):not(.badge) {
+            color: var(--dash-muted) !important;
+        }
+
         .dashboard-workspace .dash-title,
         .dashboard-workspace .metric-title,
         .dashboard-workspace .metric-label,
