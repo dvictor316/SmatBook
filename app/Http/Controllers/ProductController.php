@@ -110,7 +110,7 @@ class ProductController extends Controller
     public function units()
     {
         $units = [
-            (object)['name' => 'Unit', 'short_name' => 'pc'],
+            (object)['name' => 'Unit', 'short_name' => 'unit'],
             (object)['name' => 'Roll', 'short_name' => 'rl'],
             (object)['name' => 'Carton', 'short_name' => 'ctn'],
         ];
@@ -143,11 +143,13 @@ class ProductController extends Controller
                 'purchase_price'   => 'required|numeric|min:0', 
                 'stock'            => 'nullable|integer|min:0', 
                 'stock_cartons'    => 'nullable|numeric|min:0',
+                'stock_rolls'      => 'nullable|numeric|min:0',
+                'stock_units'      => 'nullable|numeric|min:0',
                 'units_per_carton' => 'nullable|integer|min:0',
                 'units_per_roll'   => 'nullable|integer|min:0',
                 'base_unit_name'   => 'required|string|max:100',
                 'category_id'      => 'required|exists:categories,id',
-                'unit_type'        => 'required|in:unit,sachet,roll,carton',
+                'unit_type'        => 'required|in:unit,roll,carton',
                 'description'      => 'nullable|string',
                 'barcode'          => 'nullable|string|max:191',
                 'image'            => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
@@ -155,22 +157,41 @@ class ProductController extends Controller
 
             $validated['units_per_carton'] = (int) ($validated['units_per_carton'] ?? 0);
             $validated['units_per_roll'] = (int) ($validated['units_per_roll'] ?? 0);
+            $validated['stock_cartons'] = (float) ($validated['stock_cartons'] ?? 0);
+            $validated['stock_rolls'] = (float) ($validated['stock_rolls'] ?? 0);
+            $validated['stock_units'] = (float) ($validated['stock_units'] ?? 0);
             $validated['sku'] = $this->generateUniqueSku($validated['sku'] ?? null, $validated['name']);
 
             $calculatedStock = $validated['stock'] ?? null;
-            if ($calculatedStock === null && isset($validated['stock_cartons']) && $validated['units_per_carton'] > 0) {
-                $calculatedStock = (int) round(((float) $validated['stock_cartons']) * $validated['units_per_carton']);
+            $unitsPerCarton = max($validated['units_per_carton'], 0);
+            $unitsPerRoll = max($validated['units_per_roll'], 0);
+
+            if ($calculatedStock === null) {
+                $cartonUnits = ($unitsPerCarton > 0 && $unitsPerRoll > 0)
+                    ? ($validated['stock_cartons'] * $unitsPerCarton * $unitsPerRoll)
+                    : 0;
+                $rollUnits = $unitsPerRoll > 0
+                    ? ($validated['stock_rolls'] * $unitsPerRoll)
+                    : 0;
+                $unitUnits = $validated['stock_units'];
+
+                $calculatedStock = (int) round($cartonUnits + $rollUnits + $unitUnits);
             }
             $validated['stock'] = (int) ($calculatedStock ?? 0);
 
             if ($validated['unit_type'] === 'carton' && $validated['units_per_carton'] < 1) {
                 return back()->withErrors([
-                    'units_per_carton' => 'Units per carton must be at least 1 when default unit type is Carton.'
+                    'units_per_carton' => 'Rolls per carton must be at least 1 when default sale unit is Carton.'
+                ])->withInput();
+            }
+            if ($validated['unit_type'] === 'carton' && $validated['units_per_roll'] < 1) {
+                return back()->withErrors([
+                    'units_per_roll' => 'Units per roll must be at least 1 when carton sales are enabled.'
                 ])->withInput();
             }
             if ($validated['unit_type'] === 'roll' && $validated['units_per_roll'] < 1) {
                 return back()->withErrors([
-                    'units_per_roll' => 'Units per roll must be at least 1 when default unit type is Roll.'
+                    'units_per_roll' => 'Units per roll must be at least 1 when default sale unit is Roll.'
                 ])->withInput();
             }
 
@@ -180,6 +201,8 @@ class ProductController extends Controller
 
             $validated['status'] = 'active';
             $validated['stock_quantity'] = $validated['stock'];
+            $validated['user_id'] = auth()->id();
+            $validated['company_id'] = (int) (auth()->user()?->company_id ?? 0);
             $product = Product::create($validated);
             $this->branchInventory->seedOpeningStock(
                 $product,
@@ -445,7 +468,7 @@ public function inventory(Request $request)
             'units_per_roll'   => 'nullable|integer|min:0',
             'base_unit_name'   => 'required|string|max:100',
             'category_id'      => 'required|exists:categories,id',
-            'unit_type'        => 'required|in:unit,sachet,roll,carton',
+            'unit_type'        => 'required|in:unit,roll,carton',
             'status'           => 'required|in:active,inactive',
             'description'      => 'nullable|string',
             'barcode'          => 'nullable|string|max:191',
@@ -454,22 +477,39 @@ public function inventory(Request $request)
 
         $validated['units_per_carton'] = (int) ($validated['units_per_carton'] ?? 0);
         $validated['units_per_roll'] = (int) ($validated['units_per_roll'] ?? 0);
+        $validated['stock_cartons'] = (float) ($validated['stock_cartons'] ?? 0);
+        $validated['stock_rolls'] = (float) ($validated['stock_rolls'] ?? 0);
+        $validated['stock_units'] = (float) ($validated['stock_units'] ?? 0);
         $validated['sku'] = $this->generateUniqueSku($validated['sku'] ?? null, $validated['name'], $product->id);
 
         $calculatedStock = $validated['stock'] ?? null;
-        if ($calculatedStock === null && isset($validated['stock_cartons']) && $validated['units_per_carton'] > 0) {
-            $calculatedStock = (int) round(((float) $validated['stock_cartons']) * $validated['units_per_carton']);
+        $unitsPerCarton = max($validated['units_per_carton'], 0);
+        $unitsPerRoll = max($validated['units_per_roll'], 0);
+        if ($calculatedStock === null) {
+            $cartonUnits = ($unitsPerCarton > 0 && $unitsPerRoll > 0)
+                ? ($validated['stock_cartons'] * $unitsPerCarton * $unitsPerRoll)
+                : 0;
+            $rollUnits = $unitsPerRoll > 0
+                ? ($validated['stock_rolls'] * $unitsPerRoll)
+                : 0;
+            $unitUnits = $validated['stock_units'];
+            $calculatedStock = (int) round($cartonUnits + $rollUnits + $unitUnits);
         }
         $validated['stock'] = (int) ($calculatedStock ?? (int) $product->stock);
 
         if ($validated['unit_type'] === 'carton' && $validated['units_per_carton'] < 1) {
             return back()->withErrors([
-                'units_per_carton' => 'Units per carton must be at least 1 when default unit type is Carton.'
+                'units_per_carton' => 'Rolls per carton must be at least 1 when default sale unit is Carton.'
+            ])->withInput();
+        }
+        if ($validated['unit_type'] === 'carton' && $validated['units_per_roll'] < 1) {
+            return back()->withErrors([
+                'units_per_roll' => 'Units per roll must be at least 1 when carton sales are enabled.'
             ])->withInput();
         }
         if ($validated['unit_type'] === 'roll' && $validated['units_per_roll'] < 1) {
             return back()->withErrors([
-                'units_per_roll' => 'Units per roll must be at least 1 when default unit type is Roll.'
+                'units_per_roll' => 'Units per roll must be at least 1 when default sale unit is Roll.'
             ])->withInput();
         }
 
@@ -712,7 +752,7 @@ public function inventory(Request $request)
                 ]);
 
                 $unitType = strtolower($rowData['unit_type'] ?: 'unit');
-                if (!in_array($unitType, ['unit', 'sachet', 'roll', 'carton'], true)) {
+                if (!in_array($unitType, ['unit', 'roll', 'carton'], true)) {
                     $unitType = 'unit';
                 }
 

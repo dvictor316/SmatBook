@@ -1230,15 +1230,13 @@ label {
                     @foreach($products as $p)
                     @php
                         $unitPrice = (float) ($p->price ?? 0);
-                        $unitsPerCarton = max((int) ($p->units_per_carton ?? 0), 0);
+                        $rollsPerCarton = max((int) ($p->units_per_carton ?? 0), 0);
                         $unitsPerRoll = max((int) ($p->units_per_roll ?? 0), 0);
+                        $unitsPerCarton = $rollsPerCarton > 0 && $unitsPerRoll > 0 ? ($rollsPerCarton * $unitsPerRoll) : 0;
                         $categoryName = $p->category->name ?? 'Uncategorized';
                         $minStockLevel = (int) ($p->min_stock_level ?? 15);
                         $cartonPrice = $unitsPerCarton > 0 ? ($unitPrice * $unitsPerCarton) : 0;
                         $rollPrice = $unitsPerRoll > 0 ? ($unitPrice * $unitsPerRoll) : 0;
-                        $sachetPrice = isset($p->sachet_price) && (float) $p->sachet_price > 0
-                            ? (float) $p->sachet_price
-                            : $unitPrice;
                     @endphp
                     <option value="{{ $p->id }}" 
                         data-sku="{{ $p->sku }}" 
@@ -1247,10 +1245,10 @@ label {
                         data-price="{{ $unitPrice }}" 
                         data-stock="{{ (float) ($p->available_stock ?? $p->stock) }}" 
                         data-roll="{{ $rollPrice }}" 
-                        data-sachet="{{ $sachetPrice }}" 
                         data-carton="{{ $cartonPrice }}" 
-                        data-upc="{{ $unitsPerCarton }}"
+                        data-upc="{{ $rollsPerCarton }}"
                         data-upr="{{ $unitsPerRoll }}"
+                        data-base-unit="{{ strtolower($p->base_unit_name ?? 'unit') }}"
                         data-category="{{ strtolower($categoryName) }}"
                         data-category-name="{{ $categoryName }}"
                         data-min-stock="{{ $minStockLevel }}"
@@ -1262,15 +1260,12 @@ label {
 
                 <label class="mt-2">Unit Type</label>
                 <div class="unit-grid mb-2">
-                    <input type="radio" class="btn-check" name="unit_type" id="unit-type-price" value="price" checked>
-                    <label class="btn unit-btn" for="unit-type-price">Unit<small id="unit-meta-price">1 item</small></label>
-                    
-                    <input type="radio" class="btn-check" name="unit_type" id="unit-type-sachet" value="sachet">
-                    <label class="btn unit-btn" for="unit-type-sachet">Sachet<small id="unit-meta-sachet">Ready</small></label>
-                    
+                    <input type="radio" class="btn-check" name="unit_type" id="unit-type-unit" value="unit" checked>
+                    <label class="btn unit-btn" for="unit-type-unit">Unit<small id="unit-meta-unit">1 unit</small></label>
+
                     <input type="radio" class="btn-check" name="unit_type" id="unit-type-roll" value="roll">
                     <label class="btn unit-btn" for="unit-type-roll">Roll<small id="unit-meta-roll">Set by product</small></label>
-                    
+
                     <input type="radio" class="btn-check" name="unit_type" id="unit-type-carton" value="carton">
                     <label class="btn unit-btn" for="unit-type-carton">Carton<small id="unit-meta-carton">Set by product</small></label>
                 </div>
@@ -1510,10 +1505,10 @@ $(document).ready(function() {
         const rollInput = $('#unit-type-roll');
         const cartonLabel = $('label[for="unit-type-carton"]');
         const rollLabel = $('label[for="unit-type-roll"]');
-        const sachetLabel = $('label[for="unit-type-sachet"]');
-        const priceLabel = $('label[for="unit-type-price"]');
+        const unitLabel = $('label[for="unit-type-unit"]');
 
-        const cartonEnabled = !hasProduct || unitsPerCarton > 0;
+        const baseUnit = hasProduct ? String(selectedOption.data('base-unit') || 'unit') : 'unit';
+        const cartonEnabled = !hasProduct || (unitsPerCarton > 0 && unitsPerRoll > 0);
         const rollEnabled = !hasProduct || unitsPerRoll > 0;
 
         cartonInput.prop('disabled', !cartonEnabled);
@@ -1521,37 +1516,36 @@ $(document).ready(function() {
         cartonLabel.toggleClass('disabled', !cartonEnabled);
         rollLabel.toggleClass('disabled', !rollEnabled);
 
-        $('#unit-meta-price').text(hasProduct ? `${stock} in stock` : '1 item');
-        $('#unit-meta-sachet').text(hasProduct ? 'Ready to sell' : 'Ready');
-        $('#unit-meta-roll').text(rollEnabled ? `${unitsPerRoll} units / roll` : 'Unavailable');
-        $('#unit-meta-carton').text(cartonEnabled ? `${unitsPerCarton} units / carton` : 'Unavailable');
-        priceLabel.toggleClass('disabled', false);
-        sachetLabel.toggleClass('disabled', false);
+        $('#unit-meta-unit').text(hasProduct ? `1 ${baseUnit}` : '1 unit');
+        $('#unit-meta-roll').text(rollEnabled ? `${unitsPerRoll} ${baseUnit}${unitsPerRoll === 1 ? '' : 's'} / roll` : 'Unavailable');
+        $('#unit-meta-carton').text(cartonEnabled ? `${unitsPerCarton} ${baseUnit}${unitsPerCarton === 1 ? '' : 's'} / carton` : 'Unavailable');
+        unitLabel.toggleClass('disabled', false);
 
         const currentType = $('input[name="unit_type"]:checked').val();
         if ((currentType === 'carton' && !cartonEnabled) || (currentType === 'roll' && !rollEnabled)) {
-            $('#unit-type-price').prop('checked', true);
+            $('#unit-type-unit').prop('checked', true);
         }
     }
 
     function resolveUnitMetrics(selectedOption) {
-        const type = $('input[name="unit_type"]:checked').val() || 'price';
+        const type = $('input[name="unit_type"]:checked').val() || 'unit';
         const stock = parseInt(selectedOption.data('stock')) || 0;
-        const unitsPerCarton = Math.max(parseInt(selectedOption.data('upc')) || 0, 0);
+        const rollsPerCarton = Math.max(parseInt(selectedOption.data('upc')) || 0, 0);
         const unitsPerRoll = Math.max(parseInt(selectedOption.data('upr')) || 0, 0);
+        const baseUnit = String(selectedOption.data('base-unit') || 'unit');
+        const cartonUnits = rollsPerCarton > 0 && unitsPerRoll > 0 ? (rollsPerCarton * unitsPerRoll) : 0;
 
         let multiplier = 1;
-        let unitName = 'units';
+        let unitName = `${baseUnit}s`;
 
-        if (type === 'carton' && unitsPerCarton > 0) {
-            multiplier = unitsPerCarton;
+        if (type === 'carton' && cartonUnits > 0) {
+            multiplier = cartonUnits;
             unitName = 'cartons';
         } else if (type === 'roll' && unitsPerRoll > 0) {
             multiplier = unitsPerRoll;
             unitName = 'rolls';
-        } else if (type === 'sachet') {
-            multiplier = 1;
-            unitName = 'sachets';
+        } else {
+            unitName = `${baseUnit}${baseUnit.endsWith('s') ? '' : 's'}`;
         }
 
         const maxQty = multiplier > 0 ? Math.max(Math.floor(stock / multiplier), 0) : stock;
@@ -1561,7 +1555,11 @@ $(document).ready(function() {
             stock,
             multiplier,
             unitName,
-            maxQty: type === 'price' || type === 'sachet' ? stock : maxQty
+            maxQty,
+            baseUnit,
+            rollsPerCarton,
+            unitsPerRoll,
+            cartonUnits
         };
     }
 
@@ -1732,7 +1730,7 @@ $(document).ready(function() {
         const unitMeta = resolveUnitMetrics(opt);
         
         let type = $('input[name="unit_type"]:checked').val();
-        let typePrice = parseFloat(opt.data(type));
+        let typePrice = parseFloat(opt.data(type === 'unit' ? 'price' : type));
         let fallbackPrice = parseFloat(opt.data('price')) || 0;
         let price = typePrice > 0 ? typePrice : fallbackPrice;
         $('#unit-price-input').val(price);
@@ -1742,9 +1740,9 @@ $(document).ready(function() {
             $('#quantity').val(Math.max(unitMeta.maxQty, 1));
         }
         $('#unit-helper-copy').text(
-            unitMeta.type === 'price' || unitMeta.type === 'sachet'
-                ? `Selling in single ${unitMeta.type === 'sachet' ? 'sachets' : 'units'} with live item pricing.`
-                : `Each ${unitMeta.type} uses ${unitMeta.multiplier} stock unit(s). Available: ${unitMeta.maxQty} ${unitMeta.unitName}.`
+            unitMeta.type === 'unit'
+                ? `Selling in single ${unitMeta.baseUnit}${unitMeta.baseUnit.endsWith('s') ? '' : 's'} with live unit pricing.`
+                : `Each ${unitMeta.type} uses ${unitMeta.multiplier} unit(s). Available: ${unitMeta.maxQty} ${unitMeta.unitName}.`
         );
         $('#product-search').val(String(opt.val())).trigger('change.select2');
         $('#hdr-selected-product').text(opt.data('name'));
@@ -1804,6 +1802,9 @@ $(document).ready(function() {
             id: opt.val(),
             name: opt.data('name'),
             qty: qty,
+            unitType: unitMeta.type,
+            unitLabel: unitMeta.type === 'unit' ? unitMeta.baseUnit : unitMeta.type,
+            stockUnits: unitMeta.multiplier * qty,
             price: parseFloat($('#unit-price-input').val()),
             discount: parseFloat($('#discount').val()) || 0,
             tax: parseFloat($('#tax').val()) || 0,
@@ -1838,7 +1839,7 @@ $(document).ready(function() {
                     <tr>
                         <td class="ps-3">
                             <div class="fw-bold" style="color: var(--text-primary);">${item.name}</div>
-                            <small style="color: var(--text-secondary); font-size: 0.75rem;">${item.qty} × ${fmt.format(item.price)}</small>
+                            <small style="color: var(--text-secondary); font-size: 0.75rem;">${item.qty} ${item.unitLabel || 'unit'}${item.qty === 1 ? '' : 's'} × ${fmt.format(item.price)}</small>
                         </td>
                         <td class="text-center">
                             <input
@@ -1900,6 +1901,7 @@ $(document).ready(function() {
         if (!item) return;
 
         $('#product-select').val(String(item.id)).trigger('change');
+        $(`#unit-type-${item.unitType || 'unit'}`).prop('checked', true);
         $('#quantity').val(item.qty);
         $('#discount').val(item.discount || 0);
         $('#tax').val(item.tax || 0);
@@ -1963,7 +1965,7 @@ $(document).ready(function() {
         $('#barcode-input').val('');
         $('#quantity').val(1);
         $('#discount, #tax').val(0);
-        $('#unit-type-price').prop('checked', true);
+        $('#unit-type-unit').prop('checked', true).trigger('change');
 
         filterProductCards();
         renderCart();

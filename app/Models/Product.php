@@ -18,6 +18,8 @@ class Product extends Model
     protected $appends = ['image_url'];
 
     protected $fillable = [
+        'user_id',
+        'company_id',
         'name', 
         'sku', 
         'price', 
@@ -34,6 +36,23 @@ class Product extends Model
         'description',
         'barcode'
     ];
+
+
+
+    public function rollsPerCarton(): int
+    {
+        return max((int) ($this->units_per_carton ?? 0), 0);
+    }
+
+    public function unitsPerRoll(): int
+    {
+        return max((int) ($this->units_per_roll ?? 0), 0);
+    }
+
+    public function unitsPerCarton(): int
+    {
+        return $this->rollsPerCarton() * $this->unitsPerRoll();
+    }
 
     /**
      * Get the category that owns the product.

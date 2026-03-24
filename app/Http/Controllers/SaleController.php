@@ -204,6 +204,8 @@ public function customerDetails($id = null)
         'items'          => 'required|array|min:1',
         'items.*.id'     => 'required|exists:products,id',
         'items.*.qty'    => 'required|numeric|min:1',
+        'items.*.unitType' => 'nullable|in:unit,roll,carton',
+        'items.*.stockUnits' => 'nullable|numeric|min:1',
     ]);
 
     DB::beginTransaction();
@@ -272,13 +274,14 @@ $sale = Sale::create([
         foreach ($request->items as $itemData) {
             $product = Product::lockForUpdate()->find($itemData['id']);
             $availableStock = $this->branchInventory->getAvailableStock($product, $activeBranch);
+            $qty = (float) $itemData['qty'];
+            $requestedStockUnits = $this->resolveStockUnitsForSale($product, $itemData, $qty);
 
-            if ($availableStock < $itemData['qty']) {
+            if ($availableStock < $requestedStockUnits) {
                 throw new \Exception("Insufficient stock for {$product->name}.");
             }
 
             $unitPrice   = (float) ($itemData['price'] ?? $product->price);
-            $qty         = (float) $itemData['qty'];
             $discPercent = (float) ($itemData['discount'] ?? 0);
             $taxPercent  = (float) ($itemData['tax'] ?? 0);
 
@@ -303,13 +306,13 @@ $sale = Sale::create([
             $runningDiscount += $itemDiscAmount;
             $runningTax      += $itemTaxAmount;
 
-            $product->decrement('stock', $qty);
+            $product->decrement('stock', $requestedStockUnits);
             if (Schema::hasColumn('products', 'stock_quantity')) {
-                $product->decrement('stock_quantity', $qty);
+                $product->decrement('stock_quantity', $requestedStockUnits);
             }
             $this->branchInventory->adjustBranchStock(
                 $product,
-                -$qty,
+                -$requestedStockUnits,
                 $activeBranch,
                 (int) ($product->company_id ?? auth()->user()?->company_id ?? 0)
             );
@@ -391,6 +394,26 @@ $sale = Sale::create([
         $activeBranch = $this->getActiveBranchContext();
 
         return view('Sales.Invoices.index', compact('sale', 'company', 'currencySymbol', 'activeBranch'));
+    }
+
+    private function resolveStockUnitsForSale(Product $product, array $itemData, float $qty): float
+    {
+        $type = strtolower((string) ($itemData['unitType'] ?? 'unit'));
+        $rollsPerCarton = max((int) ($product->units_per_carton ?? 0), 0);
+        $unitsPerRoll = max((int) ($product->units_per_roll ?? 0), 0);
+
+        $multiplier = match ($type) {
+            'carton' => ($rollsPerCarton > 0 && $unitsPerRoll > 0) ? ($rollsPerCarton * $unitsPerRoll) : 1,
+            'roll' => $unitsPerRoll > 0 ? $unitsPerRoll : 1,
+            default => 1,
+        };
+
+        $stockUnits = (float) ($itemData['stockUnits'] ?? 0);
+        if ($stockUnits > 0) {
+            return $stockUnits;
+        }
+
+        return max($qty * $multiplier, $qty);
     }
 
     private function generateInvoiceNo() {

@@ -76,22 +76,22 @@
                         <div class="row">
                             <div class="col-md-3">
                                 <div class="form-group">
-                                    <label>Base Unit Name * (e.g., Pcs, Kg)</label>
+                                    <label>Base Unit Name * (e.g., Unit, Tablet, Bottle)</label>
                                     <input type="text" name="base_unit_name" class="form-control" value="{{ old('base_unit_name', $product->base_unit_name) }}" placeholder="e.g. Pcs" required>
                                 </div>
                             </div>
                             <div class="col-md-3">
                                 <div class="form-group">
-                                    <label>Units Per Carton</label>
+                                    <label>Rolls Per Carton</label>
                                     <input type="number" name="units_per_carton" min="0" class="form-control" value="{{ old('units_per_carton', $product->units_per_carton ?? 0) }}">
-                                    <small class="text-muted">Set `0` if this product is not sold in cartons.</small>
+                                    <small class="text-muted">How many rolls are inside one carton?</small>
                                 </div>
                             </div>
                             <div class="col-md-3">
                                 <div class="form-group">
-                                    <label>Units Per Roll (Optional)</label>
+                                    <label>Units Per Roll</label>
                                     <input type="number" name="units_per_roll" min="0" class="form-control" value="{{ old('units_per_roll', $product->units_per_roll ?? 0) }}">
-                                    <small class="text-muted">Use `0` if this product is not sold by roll.</small>
+                                    <small class="text-muted">How many units are inside one roll?</small>
                                 </div>
                             </div>
                             <div class="col-md-3">
@@ -99,8 +99,8 @@
                                     <label>Default Unit Type *</label>
                                     <select name="unit_type" class="form-control" required>
                                         <option value="unit" {{ $product->unit_type == 'unit' ? 'selected' : '' }}>Unit</option>
-                                        <option value="carton" {{ $product->unit_type == 'carton' ? 'selected' : '' }}>Carton</option>
                                         <option value="roll" {{ $product->unit_type == 'roll' ? 'selected' : '' }}>Roll</option>
+                                        <option value="carton" {{ $product->unit_type == 'carton' ? 'selected' : '' }}>Carton</option>
                                     </select>
                                 </div>
                             </div>

@@ -85,24 +85,23 @@
 
                         {{-- Conversion Logic --}}
                         <div class="col-md-3 mb-3">
-                            <label class="form-label fw-bold text-danger">Units per Carton</label>
+                            <label class="form-label fw-bold text-danger">Rolls per Carton</label>
                             <input type="number" name="units_per_carton" id="upc" class="form-control bg-light-danger @error('units_per_carton') is-invalid @enderror" value="{{ old('units_per_carton', 0) }}" min="0">
-                            <small class="text-muted">How many pieces in 1 Carton?</small>
+                            <small class="text-muted">How many rolls are inside 1 carton?</small>
                         </div>
                         <div class="col-md-3 mb-3">
                             <label class="form-label fw-bold text-warning">Units per Roll</label>
                             <input type="number" name="units_per_roll" id="upr" class="form-control bg-light-warning @error('units_per_roll') is-invalid @enderror" value="{{ old('units_per_roll', 0) }}" min="0">
-                            <small class="text-muted">Use 0 if this product is not sold in rolls.</small>
+                            <small class="text-muted">How many units are inside 1 roll? Use 0 only if you do not sell rolls.</small>
                         </div>
                         <div class="col-md-3 mb-3">
                             <label class="form-label fw-bold">Base Unit Name</label>
-                            <input type="text" name="base_unit_name" class="form-control @error('base_unit_name') is-invalid @enderror" value="{{ old('base_unit_name', 'Pcs') }}" placeholder="e.g. Pcs, Sachet, Bottle">
+                            <input type="text" name="base_unit_name" class="form-control @error('base_unit_name') is-invalid @enderror" value="{{ old('base_unit_name', 'Unit') }}" placeholder="e.g. Unit, Tablet, Bottle">
                         </div>
                         <div class="col-md-3 mb-3">
                             <label class="form-label fw-bold">Default Sale Unit</label>
                             <select name="unit_type" id="unit_type" class="form-control @error('unit_type') is-invalid @enderror" required>
-                                <option value="unit" @selected(old('unit_type', 'unit') === 'unit')>Unit / Piece</option>
-                                <option value="sachet" @selected(old('unit_type') === 'sachet')>Sachet</option>
+                                <option value="unit" @selected(old('unit_type', 'unit') === 'unit')>Unit</option>
                                 <option value="roll" @selected(old('unit_type') === 'roll')>Roll</option>
                                 <option value="carton" @selected(old('unit_type') === 'carton')>Carton</option>
                             </select>
@@ -117,21 +116,25 @@
                             <input type="number" name="stock_cartons" id="stock_cartons" class="form-control" value="{{ old('stock_cartons', 0) }}">
                         </div>
                         <div class="col-md-3 mb-3">
-                            <label class="form-label">Initial Stock (Units)</label>
-                            <input type="number" id="stock_units" class="form-control" value="{{ old('stock_units', 0) }}">
+                            <label class="form-label">Initial Stock (Rolls)</label>
+                            <input type="number" name="stock_rolls" id="stock_rolls" class="form-control" value="{{ old('stock_rolls', 0) }}">
                         </div>
                         <div class="col-md-3 mb-3">
-                            <label class="form-label">Purchase Price (Per Carton)</label>
+                            <label class="form-label">Purchase Price (Per Unit)</label>
                             <input type="number" step="0.01" name="purchase_price" class="form-control @error('purchase_price') is-invalid @enderror" value="{{ old('purchase_price') }}" required>
                         </div>
                         <div class="col-md-3 mb-3">
-                            <label class="form-label">Selling Price (Per Unit/Pc)</label>
+                            <label class="form-label">Selling Price (Per Unit)</label>
                             <input type="number" step="0.01" name="price" class="form-control @error('price') is-invalid @enderror" value="{{ old('price') }}" required>
                         </div>
                         
                         {{-- Automated Calculation Preview --}}
                         <div class="col-md-3 mb-3">
-                            <label class="form-label fw-bold text-primary">Total Inventory (Pieces)</label>
+                            <label class="form-label">Initial Stock (Units)</label>
+                            <input type="number" name="stock_units" id="stock_units" class="form-control" value="{{ old('stock_units', 0) }}">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label fw-bold text-primary">Total Inventory (Units)</label>
                             <div class="form-control bg-dark text-white fw-bold" id="total_pieces_preview">0</div>
                             <input type="hidden" name="stock" id="final_stock_input" value="{{ old('stock', 0) }}">
                         </div>
@@ -167,17 +170,18 @@
         // Automatic Calculation Logic
         function calculateTotalPieces() {
             let cartons = parseFloat($('#stock_cartons').val()) || 0;
-            let upc = parseFloat($('#upc').val()) || 1; // Units Per Carton
+            let rolls = parseFloat($('#stock_rolls').val()) || 0;
             let units = parseFloat($('#stock_units').val()) || 0;
-            
-            let total = units + (cartons * upc);
-            
+            let rollsPerCarton = parseFloat($('#upc').val()) || 0;
+            let unitsPerRoll = parseFloat($('#upr').val()) || 0;
+
+            let total = units + (rolls * unitsPerRoll) + (cartons * rollsPerCarton * unitsPerRoll);
+
             $('#total_pieces_preview').text(total.toLocaleString() + " Units");
-            $('#final_stock_input').val(total); // This is what gets saved to 'stock' column
+            $('#final_stock_input').val(total);
         }
 
-        // Trigger calculation on any input change
-        $('#stock_cartons, #stock_units, #upc').on('input', function() {
+        $('#stock_cartons, #stock_rolls, #stock_units, #upc, #upr').on('input', function() {
             calculateTotalPieces();
         });
     });
