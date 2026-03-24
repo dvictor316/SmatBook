@@ -349,17 +349,20 @@ class PaymentController extends Controller
 
     public function show(Payment $payment)
     {
-        return redirect()->route('payments.receipt', $payment->id);
+        return redirect()->route('payments.receipt', $payment->id)
+            ->with('info', 'Payment receipt opened.');
     }
 
     public function create()
     {
-        return redirect()->route('payments.index');
+        return redirect()->route('payments.index')
+            ->with('info', 'Use the payment form on this page to record a new payment.');
     }
 
     public function edit(Payment $payment)
     {
-        return redirect()->route('payments.index');
+        return redirect()->route('payments.index')
+            ->with('info', 'Direct payment editing is not enabled yet. Use delete and recreate if needed.');
     }
 
     public function update(Request $request, Payment $payment)

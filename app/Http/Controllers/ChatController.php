@@ -72,7 +72,8 @@ class ChatController extends Controller
             'type'        => 'chat', // Distinguishes it from 'email'
         ]);
 
-        return redirect()->route('chat.index', $request->receiver_id);
+        return redirect()->route('chat.index', $request->receiver_id)
+            ->with('success', 'Message sent successfully.');
     }
 
     private function markSelectedChatAsRead($senderId)
