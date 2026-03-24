@@ -8,6 +8,57 @@
 <style>
     /* Hide default DataTables buttons as we trigger them via our custom dropdown */
     .dt-buttons { display: none !important; }
+
+    .product-action-trigger {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.55rem 0.95rem;
+        border: 1px solid rgba(13, 110, 253, 0.25);
+        border-radius: 999px;
+        background: #eef4ff;
+        color: #0d4fd6;
+        font-size: 0.875rem;
+        font-weight: 700;
+        text-decoration: none;
+        box-shadow: 0 8px 20px rgba(13, 110, 253, 0.12);
+        transition: all 0.2s ease;
+    }
+
+    .product-action-trigger:hover,
+    .product-action-trigger:focus {
+        background: #0d6efd;
+        color: #fff;
+        border-color: #0d6efd;
+    }
+
+    .product-action-menu {
+        min-width: 11rem;
+        border: 0;
+        border-radius: 1rem;
+        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.14);
+        overflow: hidden;
+    }
+
+    .product-action-menu .dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        padding: 0.8rem 1rem;
+        font-weight: 600;
+    }
+
+    .product-action-menu .dropdown-item.text-danger {
+        background: #fff7f7;
+    }
+
+    @media (max-width: 767.98px) {
+        .product-action-trigger {
+            width: 100%;
+            justify-content: center;
+            padding: 0.7rem 0.95rem;
+        }
+    }
     
     @media print {
         .no-print, .dt-buttons, .main-header, .sidebar { display: none !important; }
@@ -121,9 +172,12 @@
                                         <td>{{ number_format($product->price, 2) }}</td>
                                         <td>{{ number_format($product->purchase_price, 2) }}</td>
                                         <td class="text-center no-print">
-                                            <div class="dropdown dropdown-action">
-                                                <a href="#" class="action-icon dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-ellipsis-v"></i></a>
-                                                <div class="dropdown-menu dropdown-menu-right">
+                                            <div class="dropdown">
+                                                <a href="#" class="product-action-trigger dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="fas fa-bolt"></i>
+                                                    <span>Manage</span>
+                                                </a>
+                                                <div class="dropdown-menu dropdown-menu-end product-action-menu">
                                                     <a class="dropdown-item" href="{{ route('inventory.Products.edit', $product->id) }}"><i class="far fa-edit me-2"></i>Edit</a>
                                                     <form action="{{ route('inventory.Products.destroy', $product->id) }}" method="POST" onsubmit="return confirm('Delete this product?');">
                                                         @csrf @method('DELETE')
