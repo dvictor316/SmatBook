@@ -9,8 +9,8 @@
         || request()->is('*report*')
         || in_array($requestPath, ['cash-flow', 'balance-sheet', 'trial-balance', 'general-ledger', 'tax-sales', 'tax-purchase'], true)
         || str_contains($requestPath, 'report');
-    $isDashboardWorkspace = request()->routeIs('home', 'dashboard', 'deployment.dashboard')
-        || in_array($requestPath, ['home', 'dashboard', 'deployment/dashboard'], true);
+    $isDashboardWorkspace = request()->routeIs('home', 'dashboard', 'deployment.dashboard', 'workspace.business', 'workspace.business.dashboard')
+        || in_array($requestPath, ['home', 'dashboard', 'deployment/dashboard', 'workspace/business', 'workspace/business/dashboard'], true);
 
     // Initialize visibility variables to prevent "undefined" errors
     $hideNavbar = $hideNavbar ?? false;

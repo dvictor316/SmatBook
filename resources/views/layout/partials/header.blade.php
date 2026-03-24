@@ -45,8 +45,8 @@
     $workspaceContext = session('workspace_context', 'platform');
     $isBusinessWorkspace = $workspaceContext === 'business';
     $headerHomeUrl = $isWorkspaceSwitcherVisible
-        ? ($isBusinessWorkspace && Route::has('workspace.business')
-            ? route('workspace.business')
+        ? ($isBusinessWorkspace && Route::has('workspace.business.dashboard')
+            ? route('workspace.business.dashboard')
             : route('super_admin.dashboard', $routeParams))
         : route('home');
     $headerBranchOptions = collect();
@@ -961,7 +961,7 @@
         @if($isWorkspaceSwitcherVisible)
             <div class="workspace-switcher">
                 <a href="{{ route('workspace.platform') }}" class="{{ !$isBusinessWorkspace ? 'is-active' : '' }}">Partnership</a>
-                <a href="{{ route('workspace.business') }}" class="{{ $isBusinessWorkspace ? 'is-active' : '' }}">Business</a>
+                <a href="{{ Route::has('workspace.business.dashboard') ? route('workspace.business.dashboard') : route('workspace.business') }}" class="{{ $isBusinessWorkspace ? 'is-active' : '' }}">Business</a>
             </div>
         @endif
 
