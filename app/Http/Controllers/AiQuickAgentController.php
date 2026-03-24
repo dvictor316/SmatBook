@@ -13,6 +13,7 @@ use App\Models\Product;
 use App\Models\Payment;
 use App\Models\Project;
 use App\Models\ProjectTask;
+use App\Models\Subscription;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -1387,19 +1388,29 @@ class AiQuickAgentController extends Controller
     private function getCurrentPlan(Request $request): string
     {
         $user = $request->user();
+        $activeSubscription = $user ? Subscription::resolveCurrentForUser($user) : null;
+        $subscriptionPlan = (string) (
+            $activeSubscription?->plan_name
+            ?? $activeSubscription?->plan
+            ?? $activeSubscription?->planLabel()
+            ?? $user?->subscription?->plan_name
+            ?? $user?->subscription?->plan
+            ?? ''
+        );
         $companyPlan = (string) ($user?->company?->plan ?? '');
-        $subscriptionPlan = (string) ($user?->subscription?->plan_name ?? $user?->subscription?->plan ?? '');
 
-        $plan = $companyPlan !== '' ? $companyPlan : ($subscriptionPlan !== '' ? $subscriptionPlan : 'basic');
+        $plan = $subscriptionPlan !== '' ? $subscriptionPlan : ($companyPlan !== '' ? $companyPlan : 'basic');
         return $this->normalizePlan($plan);
     }
 
     private function normalizePlan(string $plan): string
     {
-        return match (strtolower(trim($plan))) {
-            'pro', 'professional' => 'professional',
-            'enterprise' => 'enterprise',
-            'basic' => 'basic',
+        $value = strtolower(trim($plan));
+
+        return match (true) {
+            str_contains($value, 'enterprise') => 'enterprise',
+            str_contains($value, 'professional'), str_contains($value, 'premium'), $value === 'pro' => 'professional',
+            str_contains($value, 'basic') => 'basic',
             default => 'basic',
         };
     }
