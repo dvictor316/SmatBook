@@ -13,11 +13,14 @@
 
     /* Page Container with Bubble Background */
     .pos-content-area {
-        margin-left: 250px; 
+        margin-left: var(--sb-sidebar-w, 270px); 
+        width: calc(100% - var(--sb-sidebar-w, 270px));
+        max-width: calc(100% - var(--sb-sidebar-w, 270px));
         padding: 40px;
         background-color: var(--crystal-blue); 
         min-height: 100vh;
         position: relative;
+        overflow-x: clip;
     }
 
     /* Aesthetic Bubbles */
@@ -29,10 +32,14 @@
     .pos-content-area::after { width: 350px; height: 350px; bottom: -50px; left: -80px; }
 
     body.mini-sidebar .pos-content-area,
-    body.sidebar-icon-only .pos-content-area { margin-left: 80px; }
+    body.sidebar-icon-only .pos-content-area {
+        margin-left: var(--sb-sidebar-collapsed, 80px);
+        width: calc(100% - var(--sb-sidebar-collapsed, 80px));
+        max-width: calc(100% - var(--sb-sidebar-collapsed, 80px));
+    }
 
-    @media (max-width: 1200px) {
-        .pos-content-area { margin-left: 0 !important; padding: 20px; }
+    @media (max-width: 991.98px) {
+        .pos-content-area { margin-left: 0 !important; width: 100% !important; max-width: 100% !important; padding: 20px; }
     }
 
     /* Enterprise Header Styling */
