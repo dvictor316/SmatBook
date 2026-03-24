@@ -70,9 +70,9 @@
                         <div class="col-md-4 mb-3">
                             <label class="form-label fw-bold d-flex justify-content-between">
                                 Category
-                                <a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#add_category_modal" class="text-primary small">+ New</a>
+                                <a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#addCategoryModal" class="text-primary small">+ New</a>
                             </label>
-                            <select name="category_id" class="form-control select2 @error('category_id') is-invalid @enderror" required>
+                            <select name="category_id" id="product_category_select" class="form-control select2 @error('category_id') is-invalid @enderror" required>
                                 <option value="">Select Category</option>
                                 @foreach($categories as $category)
                                     <option value="{{ $category->id }}" @selected((string) old('category_id') === (string) $category->id)>{{ $category->name }}</option>
@@ -154,7 +154,26 @@
     </div>
 </div>
 
-{{-- MODALS REMAIN THE SAME AS PER YOUR PREVIOUS CODE --}}
+<div class="modal fade" id="addCategoryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form id="ajaxAddCategoryForm">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title">Quick Category</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="text" name="name" id="new_category_name" class="form-control" placeholder="Category Name" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Add Category</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 <style>
     .bg-light-danger { background-color: #fff5f5; border: 1px solid #feb2b2; }
@@ -183,6 +202,44 @@
 
         $('#stock_cartons, #stock_rolls, #stock_units, #upc, #upr').on('input', function() {
             calculateTotalPieces();
+        });
+
+        $('#ajaxAddCategoryForm').on('submit', function(e) {
+            e.preventDefault();
+
+            const form = this;
+            const btn = $(this).find('button[type="submit"]');
+            btn.prop('disabled', true);
+
+            fetch("{{ route('categories.store') }}", {
+                method: "POST",
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ name: $('#new_category_name').val() })
+            })
+            .then(async (res) => {
+                const data = await res.json();
+                if (!res.ok) {
+                    const msg = data?.message || Object.values(data?.errors || {})?.[0]?.[0] || 'Failed to add category.';
+                    throw new Error(msg);
+                }
+
+                return data;
+            })
+            .then((data) => {
+                if (data?.data) {
+                    $('#product_category_select').append(new Option(data.data.name, data.data.id, true, true)).trigger('change');
+                    bootstrap.Modal.getInstance(document.getElementById('addCategoryModal'))?.hide();
+                    form.reset();
+                }
+            })
+            .catch((err) => {
+                alert(err.message || 'Unable to add category.');
+            })
+            .finally(() => btn.prop('disabled', false));
         });
     });
 </script>
