@@ -33,7 +33,7 @@ body,
 
 /* 2. PAGE LAYOUT */
 .report-page-wrapper { 
-    margin-left: 250px; 
+    margin-left: var(--sb-sidebar-w, 270px); 
     padding: 25px; 
     min-height: 100vh; 
     margin-top: 60px;
@@ -41,7 +41,7 @@ body,
     transition: all 0.3s ease;
 }
 
-body.mini-sidebar .report-page-wrapper { margin-left: 80px; }
+body.mini-sidebar .report-page-wrapper { margin-left: var(--sb-sidebar-collapsed, 80px); }
 
 /* 3. COMMAND HEADER */
 .report-header-bar {
@@ -141,7 +141,7 @@ body.mini-sidebar .report-page-wrapper { margin-left: 80px; }
     border: 1px solid currentColor;
 }
 
-@media(max-width: 1200px) { 
+@media(max-width: 1199.98px) { 
     .report-page-wrapper { margin-left: 0 !important; padding: 15px; } 
 }
 </style>

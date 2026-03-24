@@ -253,6 +253,23 @@
             color: #183153;
         }
 
+        @media (max-width: 1199.98px) {
+            .page-wrapper,
+            .pos-full-page-wrapper,
+            .pos-content-area,
+            .report-page-wrapper,
+            #main-content-wrapper {
+                margin-left: 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+
+            body:not(.login-body):not(.landing-page-body) .page-wrapper .content,
+            body:not(.login-body):not(.landing-page-body) .page-wrapper .content.container-fluid {
+                padding: 16px 14px 26px !important;
+            }
+        }
+
         @media (max-width: 991.98px) {
             body:not(.login-body):not(.landing-page-body) .page-wrapper .content,
             body:not(.login-body):not(.landing-page-body) .page-wrapper .content.container-fluid {

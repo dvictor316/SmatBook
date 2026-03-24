@@ -4,7 +4,7 @@
 <style>
     /* Dynamic Sidebar Adjustment */
     .pos-content-area {
-        margin-left: 250px; 
+        margin-left: var(--sb-sidebar-w, 270px); 
         padding: 30px;
         transition: all 0.3s ease-in-out;
         background-color: #fdfaf0; 
@@ -12,9 +12,9 @@
         margin-top: 60px;
     }
 
-    body.mini-sidebar .pos-content-area { margin-left: 80px; }
+    body.mini-sidebar .pos-content-area { margin-left: var(--sb-sidebar-collapsed, 80px); }
 
-    @media (max-width: 1200px) {
+    @media (max-width: 1199.98px) {
         .pos-content-area { margin-left: 0 !important; padding: 15px; }
     }
 

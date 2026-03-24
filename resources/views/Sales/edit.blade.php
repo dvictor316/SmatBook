@@ -3,10 +3,13 @@
 @section('content')
 <style>
     .pos-content-area {
-        margin-left: 250px; padding: 30px; transition: all 0.3s;
+        margin-left: var(--sb-sidebar-w, 270px); padding: 30px; transition: all 0.3s;
         background-color: #fdfaf0; min-height: 100vh; margin-top: 60px;
     }
-    body.mini-sidebar .pos-content-area { margin-left: 80px; }
+    body.mini-sidebar .pos-content-area { margin-left: var(--sb-sidebar-collapsed, 80px); }
+    @media (max-width: 1199.98px) {
+        .pos-content-area { margin-left: 0 !important; padding: 15px; }
+    }
     .edit-card { border: none; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); background: #fff; }
     .section-title { color: #0369a1; font-weight: 700; border-bottom: 2px solid #d4af37; padding-bottom: 10px; margin-bottom: 25px; }
     .table-thead-blue th { background-color: #0369a1 !important; color: white !important; text-transform: uppercase; font-size: 11px; }

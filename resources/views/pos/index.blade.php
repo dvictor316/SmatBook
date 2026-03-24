@@ -50,7 +50,7 @@
 
 /* Page Layout */
 .pos-full-page-wrapper { 
-    margin-left: 250px; 
+    margin-left: var(--sb-sidebar-w, 270px); 
     padding: 20px; 
     background:
         radial-gradient(1200px 320px at 10% 0%, rgba(96, 165, 250, 0.10) 0%, rgba(96, 165, 250, 0) 55%),
@@ -62,10 +62,10 @@
 }
 
 body.mini-sidebar .pos-full-page-wrapper { 
-    margin-left: 80px; 
+    margin-left: var(--sb-sidebar-collapsed, 80px); 
 }
 
-@media(max-width: 1200px) { 
+@media(max-width: 1199.98px) { 
     .pos-full-page-wrapper { 
         margin-left: 0 !important; 
         padding: 16px; 
