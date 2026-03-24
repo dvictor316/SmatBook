@@ -30,9 +30,7 @@
 
         /** 2. USER DATA */
         $user = Auth::user();
-        $profileImg = ($user && $user->profile_picture) 
-            ? asset('storage/profiles/'.$user->profile_picture) 
-            : asset('assets/img/profiles/avatar-07.jpg');
+        $profileImg = $user?->avatar_url ?: asset('assets/img/profiles/avatar-07.jpg');
 
         /** 3. SUBSCRIPTION LOGIC */
         $host = request()->getHost();
