@@ -12,14 +12,18 @@
     --blue-light: #f4f8ff;
 }
 
+/* 
+   --------------------------------------------------
+   SIDEBAR & LAYOUT LOGIC 
+   --------------------------------------------------
+*/
 .payroll-shell {
+    padding: 1.5rem;
+    transition: all 0.3s ease; /* Smooth transition when toggling */
     width: 100%;
-    max-width: none;
-    margin: 0;
-    padding: 1rem 0.35rem 1.5rem;
     overflow-x: hidden;
-    transition: margin-left 0.3s ease, width 0.3s ease, padding 0.3s ease;
 }
+
 .payroll-shell .row {
     margin-left: 0;
     margin-right: 0;
@@ -28,6 +32,38 @@
     padding-left: calc(var(--bs-gutter-x, 1.5rem) * 0.5);
     padding-right: calc(var(--bs-gutter-x, 1.5rem) * 0.5);
 }
+
+/* Desktop: Standard State (Sidebar is 270px) */
+@media (min-width: 992px) {
+    /* When sidebar is OPEN (Default) */
+    body:not(.sidebar-icon-only):not(.sidebar-collapse):not(.sidebar-collapsed) .payroll-shell {
+        margin-left: 270px;
+        width: calc(100% - 270px);
+    }
+
+    /* When sidebar is COLLAPSED (Mini/Toggled) */
+    body.sidebar-icon-only .payroll-shell,
+    body.sidebar-collapse .payroll-shell,
+    body.sidebar-collapsed .payroll-shell {
+        margin-left: 70px; /* Standard collapsed sidebar width */
+        width: calc(100% - 70px);
+    }
+}
+
+/* Mobile/Tablet: Full Width */
+@media (max-width: 991.98px) {
+    .payroll-shell {
+        margin-left: 0 !important;
+        width: 100% !important;
+        padding: 1rem 0.75rem;
+    }
+}
+
+/* 
+   --------------------------------------------------
+   COMPONENT STYLES
+   --------------------------------------------------
+*/
 
 .payroll-header {
     background: linear-gradient(135deg, var(--blue-deep) 0%, #003d6b 100%);
@@ -54,7 +90,7 @@
     border-radius: 50%;
     border: 1px solid rgba(197,160,89,0.25);
 }
-.payroll-header h1 { font-size: 1.8rem; font-weight: 800; margin: 0; color: #ffffff; }
+.payroll-header h1 { font-size: 1.8rem; font-weight: 800; margin: 0; }
 .payroll-header p { color: rgba(255,255,255,0.7); margin: 6px 0 0; font-size: 0.9rem; }
 .header-badge {
     background: rgba(197,160,89,0.2);
@@ -262,45 +298,6 @@
 .bar-track { flex: 1; height: 8px; background: #f0f4f8; border-radius: 99px; overflow: hidden; }
 .bar-fill { height: 100%; border-radius: 99px; background: linear-gradient(to right, var(--blue-deep), var(--gold)); transition: width 1.2s ease; }
 .bar-val { font-size: 0.75rem; font-weight: 700; color: var(--blue-deep); width: 55px; }
-.payroll-main-grid {
-    align-items: stretch;
-}
-.chart-panel-body {
-    min-height: 300px;
-}
-.empty-insight {
-    min-height: 230px;
-    border: 1px dashed #cbd5e1;
-    border-radius: 18px;
-    background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 1.5rem;
-}
-.empty-insight-icon {
-    width: 58px;
-    height: 58px;
-    border-radius: 18px;
-    margin: 0 auto 0.9rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #dbeafe;
-    color: #1d4ed8;
-    font-size: 1.4rem;
-}
-.empty-insight h6 {
-    margin-bottom: 0.35rem;
-    font-weight: 800;
-    color: var(--blue-deep);
-}
-.empty-insight p {
-    margin: 0;
-    color: #64748b;
-    font-size: 0.86rem;
-}
 
 /* Modal */
 .modal-content { border: none; border-radius: 16px; overflow: hidden; }
@@ -345,49 +342,9 @@
     .payroll-table-header { flex-direction: column; align-items: flex-start; }
     .payroll-table td, .payroll-table th { padding: 10px 12px; font-size: 0.78rem; }
 }
-@media (min-width: 768px) {
-    .payroll-shell {
-        padding-left: 0.75rem;
-        padding-right: 0.75rem;
-    }
-}
-@media (min-width: 992px) {
-    .payroll-main-grid {
-        display: grid;
-        grid-template-columns: minmax(320px, 380px) minmax(0, 1fr);
-        gap: 1.25rem;
-    }
-    .payroll-main-grid > [class*="col-"] {
-        width: auto;
-        padding-left: 0;
-        padding-right: 0;
-    }
-    #main-content-wrapper.payroll-shell {
-        margin-left: 250px;
-        width: calc(100% - 250px);
-        padding-left: 0.85rem;
-        padding-right: 1rem;
-    }
-    body.sidebar-collapsed #main-content-wrapper.payroll-shell,
-    body.mini-sidebar #main-content-wrapper.payroll-shell,
-    body.sidebar-icon-only #main-content-wrapper.payroll-shell {
-        margin-left: var(--sb-sidebar-collapsed, 80px);
-        width: calc(100% - var(--sb-sidebar-collapsed, 80px));
-        padding-left: 0.85rem;
-        padding-right: 0.85rem;
-    }
-}
-@media (max-width: 991.98px) {
-    #main-content-wrapper.payroll-shell {
-        margin-left: 0 !important;
-        width: 100% !important;
-        padding-left: 0.5rem;
-        padding-right: 0.5rem;
-    }
-}
 </style>
 
-<div id="main-content-wrapper" class="payroll-shell">
+<div class="payroll-shell">
 
     {{-- Header --}}
     <div class="payroll-header mb-4">
@@ -453,7 +410,7 @@
     </div>
 
     {{-- Main Content Row --}}
-    <div class="row g-4 mb-4 payroll-main-grid">
+    <div class="row g-4 mb-4">
 
         {{-- Payroll Cycle Info --}}
         <div class="col-lg-4">
@@ -506,20 +463,14 @@
                     <h6><i class="fas fa-chart-bar me-2" style="color:var(--gold);"></i>Salary Distribution by Department</h6>
                     <span class="status-badge status-processing">{{ now()->format('M Y') }}</span>
                 </div>
-                <div class="p-4 chart-panel-body">
+                <div class="p-4">
                     <div class="bar-chart-wrap" id="deptChart">
                         @php
                         $departments = $deptBreakdown ?? [
                             ['name'=>'Management','amount'=>450000,'pct'=>90],
-                            ['name'=>'Sales','amount'=>320000,'pct'=>64],
-                            ['name'=>'IT','amount'=>380000,'pct'=>76],
-                            ['name'=>'Finance','amount'=>280000,'pct'=>56],
-                            ['name'=>'Operations','amount'=>210000,'pct'=>42],
-                            ['name'=>'HR','amount'=>175000,'pct'=>35],
+                            ['name'=>'Sales','amount'=>320000,'pct'=>64],['name'=>'IT','amount'=>380000,'pct'=>76],['name'=>'Finance','amount'=>280000,'pct'=>56],['name'=>'Operations','amount'=>210000,'pct'=>42],['name'=>'HR','amount'=>175000,'pct'=>35],
                         ];
-                        $hasDeptData = collect($departments)->sum(fn ($dept) => (float) ($dept['amount'] ?? 0)) > 0;
                         @endphp
-                        @if($hasDeptData)
                         @foreach($departments as $dept)
                         <div class="bar-row">
                             <div class="bar-label">{{ $dept['name'] }}</div>
@@ -529,17 +480,6 @@
                             <div class="bar-val">₦{{ number_format($dept['amount']/1000) }}K</div>
                         </div>
                         @endforeach
-                        @else
-                        <div class="empty-insight">
-                            <div>
-                                <div class="empty-insight-icon">
-                                    <i class="fas fa-chart-column"></i>
-                                </div>
-                                <h6>No salary distribution yet</h6>
-                                <p>Add employees and run payroll to populate this department breakdown.</p>
-                            </div>
-                        </div>
-                        @endif
                     </div>
 
                     <hr style="border-color:#e8ecf4; margin:20px 0;">
@@ -597,7 +537,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($payrolls ?? [] as $index => $payroll)
+                    @forelse($payrolls ??[] as $index => $payroll)
                     <tr data-status="{{ strtolower($payroll->status) }}">
                         <td style="color:#8a92a0;font-weight:700;">{{ $index + 1 }}</td>
                         <td>
@@ -675,7 +615,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse($recentRuns ?? [] as $run)
+                        @forelse($recentRuns ??[] as $run)
                         <tr>
                             <td style="font-weight:700;">{{ $run->period }}</td>
                             <td>{{ $run->staff_count }} staff</td>
@@ -696,11 +636,7 @@
                 </div>
                 <div class="p-4">
                     @php
-                    $deductions = $deductionSummary ?? [
-                        ['name'=>'PAYE Tax','amount'=>0,'color'=>'#ef4444'],
-                        ['name'=>'Pension (Employee 8%)','amount'=>0,'color'=>'#f59e0b'],
-                        ['name'=>'Pension (Employer 10%)','amount'=>0,'color'=>'#8b5cf6'],
-                        ['name'=>'NHF (2.5%)','amount'=>0,'color'=>'#06b6d4'],
+                    $deductions = $deductionSummary ?? [['name'=>'PAYE Tax','amount'=>0,'color'=>'#ef4444'],['name'=>'Pension (Employee 8%)','amount'=>0,'color'=>'#f59e0b'],['name'=>'Pension (Employer 10%)','amount'=>0,'color'=>'#8b5cf6'],['name'=>'NHF (2.5%)','amount'=>0,'color'=>'#06b6d4'],
                         ['name'=>'Other Deductions','amount'=>0,'color'=>'#6b7280'],
                     ];
                     @endphp
