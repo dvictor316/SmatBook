@@ -167,16 +167,21 @@
         .page-wrapper {
             position: relative;
             margin-left: var(--sb-sidebar-w, 270px) !important;
+            width: calc(100% - var(--sb-sidebar-w, 270px)) !important;
+            max-width: calc(100% - var(--sb-sidebar-w, 270px)) !important;
             padding-top: 0 !important;
             margin-top: 0 !important;
             min-height: calc(100vh - var(--sb-header-h, 76px));
             transition: margin-left 0.3s ease;
+            overflow-x: clip;
         }
 
         body.sidebar-collapsed .page-wrapper,
         body.mini-sidebar .page-wrapper,
         body.sidebar-icon-only .page-wrapper {
             margin-left: var(--sb-sidebar-collapsed, 80px) !important;
+            width: calc(100% - var(--sb-sidebar-collapsed, 80px)) !important;
+            max-width: calc(100% - var(--sb-sidebar-collapsed, 80px)) !important;
         }
 
         .page-wrapper .content.container-fluid {

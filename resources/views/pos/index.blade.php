@@ -306,6 +306,8 @@ body.mini-sidebar .pos-full-page-wrapper {
 .user-info {
     text-align: right;
     margin-right: 10px;
+    min-width: 0;
+    max-width: 180px;
 }
 
 .user-label {
@@ -323,6 +325,9 @@ body.mini-sidebar .pos-full-page-wrapper {
     font-size: 0.9rem;
     font-weight: 800;
     line-height: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .user-avatar {
@@ -1049,6 +1054,44 @@ label {
 }
 
 /* Responsive */
+@media (max-width: 1199.98px) and (min-width: 992px) {
+    .pos-header-bar {
+        padding: 10px 18px;
+        gap: 14px;
+    }
+
+    .pos-header-bar > .d-flex:first-child,
+    .pos-header-bar > .d-flex:last-child {
+        min-width: 0;
+        flex: 1 1 0;
+    }
+
+    .pos-header-bar > .d-flex:first-child {
+        gap: 10px !important;
+    }
+
+    .pos-header-bar > .d-flex:last-child {
+        justify-content: flex-end;
+        gap: 10px !important;
+    }
+
+    .search-wrapper {
+        min-width: 0;
+        max-width: 360px;
+    }
+
+    .user-info {
+        display: block !important;
+        margin-right: 0;
+        max-width: 120px;
+    }
+
+    .clock-badge {
+        padding: 6px 10px;
+        font-size: 0.7rem;
+    }
+}
+
 @media (max-width: 768px) {
     .pos-header-bar {
         height: auto;
