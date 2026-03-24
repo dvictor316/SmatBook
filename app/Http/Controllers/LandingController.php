@@ -6,8 +6,12 @@ use App\Models\Sale;
 use App\Models\LandingSetting;
 use App\Models\Company;
 use App\Models\Plan; // Added Plan model
+use App\Models\Subscription;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
@@ -78,6 +82,104 @@ class LandingController extends Controller
     public function contact()
     {
         return view('Landing.contact');
+    }
+
+    public function demo(Request $request)
+    {
+        $demoEmail = 'demo@smartprobook.local';
+        $demoCompanyName = 'SmartProbook Demo Company';
+        $demoPrefix = 'demo-hq';
+
+        try {
+            $user = DB::transaction(function () use ($demoEmail, $demoCompanyName, $demoPrefix) {
+                $user = User::withTrashed()->firstOrNew(['email' => $demoEmail]);
+
+                if (method_exists($user, 'trashed') && $user->trashed()) {
+                    $user->restore();
+                }
+
+                $user->fill([
+                    'name' => 'SmartProbook Demo',
+                    'password' => Hash::make('DemoAccess2026'),
+                    'role' => 'admin',
+                    'status' => 'active',
+                    'is_verified' => 1,
+                    'email_verified_at' => now(),
+                    'verified_at' => now(),
+                    'phone' => '+2348000000000',
+                ]);
+                $user->save();
+
+                $company = Company::updateOrCreate(
+                    ['user_id' => $user->id],
+                    [
+                        'owner_id' => $user->id,
+                        'name' => $demoCompanyName,
+                        'company_name' => $demoCompanyName,
+                        'email' => $demoEmail,
+                        'phone' => '+2348000000000',
+                        'address' => 'Demo HQ, Lagos',
+                        'status' => 'active',
+                        'country' => 'Nigeria',
+                        'currency_code' => 'NGN',
+                        'currency_symbol' => '₦',
+                        'subdomain' => $demoPrefix,
+                        'domain_prefix' => $demoPrefix,
+                        'domain' => $demoPrefix,
+                        'plan' => 'Professional',
+                        'industry' => 'Technology',
+                        'subscription_start' => now()->subDays(7),
+                        'subscription_end' => now()->addDays(30),
+                    ]
+                );
+
+                if ((int) $user->company_id !== (int) $company->id) {
+                    $user->company_id = $company->id;
+                    $user->save();
+                }
+
+                Subscription::updateOrCreate(
+                    ['user_id' => $user->id],
+                    [
+                        'company_id' => $company->id,
+                        'plan_id' => Plan::query()->whereRaw('LOWER(name) like ?', ['%professional%'])->value('id'),
+                        'plan' => 'Professional',
+                        'plan_name' => 'Professional',
+                        'subscriber_name' => $demoCompanyName,
+                        'domain_prefix' => $demoPrefix,
+                        'employee_size' => '25-50',
+                        'amount' => 19500,
+                        'billing_cycle' => 'Monthly',
+                        'start_date' => now()->subDays(7),
+                        'end_date' => now()->addDays(30),
+                        'status' => 'trial',
+                        'payment_status' => 'paid',
+                        'payment_gateway' => 'demo',
+                        'payment_reference' => 'demo-workspace',
+                        'transaction_reference' => 'demo-workspace',
+                        'activated_at' => now()->subDays(7),
+                        'initialized_at' => now()->subDays(7),
+                        'paid_at' => now()->subDays(7),
+                        'payment_date' => now()->subDays(7),
+                    ]
+                );
+
+                return $user->fresh();
+            });
+
+            Auth::logout();
+            Auth::login($user, true);
+            $request->session()->regenerate();
+            $request->session()->put('user_plan', 'professional');
+
+            return redirect()->route('user.dashboard')
+                ->with('success', 'Demo workspace is ready. Explore the app freely.');
+        } catch (\Throwable $e) {
+            Log::error('Demo launch failed', ['error' => $e->getMessage()]);
+
+            return redirect()->route('landing.contact')
+                ->with('error', 'The live demo could not be launched right now. Please try again shortly.');
+        }
     }
 
     public function storeContact(Request $request)

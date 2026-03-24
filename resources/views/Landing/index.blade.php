@@ -1443,9 +1443,14 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                 <li class="nav-item"><a class="sb-nav-link" href="{{ route('landing.index') }}#licensing">Licensing</a></li>
                 <li class="nav-item"><a class="sb-nav-link {{ request()->routeIs('landing.policy') ? 'active' : '' }}" href="{{ route('landing.policy') }}">Policy</a></li>
                 <li class="nav-item ms-lg-3">
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <a class="btn-outline-navy" href="{{ route('landing.demo') }}">
+                        <i class="fas fa-play-circle" style="font-size:.8rem;"></i> TRY DEMO
+                    </a>
                     <a class="btn-portal" href="{{ route('login', ['portal' => 1]) }}">
                         <i class="fas fa-lock" style="font-size:.75rem;"></i> CLIENT PORTAL
                     </a>
+                </div>
                 </li>
             </ul>
         </div>
@@ -1795,7 +1800,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                         </div>
                     </div>
                     <div class="impact-story-actions">
-                        <a href="{{ route('landing.contact') }}" class="btn-red">Request Demo</a>
+                        <a href="{{ route('landing.demo') }}" class="btn-red">Launch Demo</a>
                         <a href="{{ route('login', ['portal' => 1]) }}" class="btn-outline-navy">Open Portal</a>
                     </div>
                 </div>
@@ -2084,7 +2089,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                     </div>
                     <div class="impact-story-actions">
                         <a href="{{ url('/membership-plans') }}" class="btn-red">View Plans</a>
-                        <a href="{{ route('landing.contact') }}" class="btn-outline-navy">Book Consultation</a>
+                        <a href="{{ route('landing.demo') }}" class="btn-outline-navy">Try Live Demo</a>
                     </div>
                 </div>
             </div>
