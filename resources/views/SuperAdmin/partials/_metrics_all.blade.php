@@ -59,30 +59,30 @@
 
     .metric-glass.metric-theme-primary {
         background:
-            radial-gradient(circle at top right, rgba(255,255,255,0.2), transparent 42%),
-            linear-gradient(135deg, var(--metric-blue-start) 0%, var(--metric-blue-end) 100%);
-        color: #fff;
+            radial-gradient(circle at top right, rgba(37,99,235,0.10), transparent 42%),
+            linear-gradient(180deg, #ffffff 0%, #eef5ff 100%) !important;
+        color: #0f172a !important;
     }
 
     .metric-glass.metric-theme-success {
         background:
-            radial-gradient(circle at top right, rgba(255,255,255,0.2), transparent 42%),
-            linear-gradient(135deg, var(--metric-green-start) 0%, var(--metric-green-end) 100%);
-        color: #fff;
+            radial-gradient(circle at top right, rgba(16,185,129,0.10), transparent 42%),
+            linear-gradient(180deg, #ffffff 0%, #eefcf6 100%) !important;
+        color: #0f172a !important;
     }
 
     .metric-glass.metric-theme-danger {
         background:
-            radial-gradient(circle at top right, rgba(255,255,255,0.18), transparent 42%),
-            linear-gradient(135deg, var(--metric-orange-start) 0%, var(--metric-orange-end) 100%);
-        color: #fff;
+            radial-gradient(circle at top right, rgba(249,115,22,0.10), transparent 42%),
+            linear-gradient(180deg, #ffffff 0%, #fff5ed 100%) !important;
+        color: #0f172a !important;
     }
 
     .metric-glass.metric-theme-dark {
         background:
-            radial-gradient(circle at top right, rgba(255,255,255,0.16), transparent 42%),
-            linear-gradient(135deg, var(--metric-slate-start) 0%, var(--metric-slate-end) 100%);
-        color: #fff;
+            radial-gradient(circle at top right, rgba(15,23,42,0.08), transparent 42%),
+            linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%) !important;
+        color: #0f172a !important;
     }
 
     .metric-glass.metric-theme-primary small,
@@ -93,22 +93,42 @@
     .metric-glass.metric-theme-success h4,
     .metric-glass.metric-theme-danger h4,
     .metric-glass.metric-theme-dark h4 {
-        color: inherit !important;
+        color: #0f172a !important;
     }
 
     .metric-glass.metric-theme-primary .text-muted,
     .metric-glass.metric-theme-success .text-muted,
     .metric-glass.metric-theme-danger .text-muted,
     .metric-glass.metric-theme-dark .text-muted {
-        color: rgba(255,255,255,0.72) !important;
+        color: #64748b !important;
     }
 
     .metric-glass.metric-theme-primary .metric-icon-box,
     .metric-glass.metric-theme-success .metric-icon-box,
     .metric-glass.metric-theme-danger .metric-icon-box,
     .metric-glass.metric-theme-dark .metric-icon-box {
-        border: 1px solid rgba(255,255,255,0.16);
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);
+        border: none;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+    }
+
+    .metric-glass.metric-theme-primary .metric-icon-box {
+        background: linear-gradient(135deg, var(--metric-blue-start) 0%, var(--metric-blue-end) 100%) !important;
+        color: #fff !important;
+    }
+
+    .metric-glass.metric-theme-success .metric-icon-box {
+        background: linear-gradient(135deg, var(--metric-green-start) 0%, var(--metric-green-end) 100%) !important;
+        color: #fff !important;
+    }
+
+    .metric-glass.metric-theme-danger .metric-icon-box {
+        background: linear-gradient(135deg, var(--metric-orange-start) 0%, var(--metric-orange-end) 100%) !important;
+        color: #fff !important;
+    }
+
+    .metric-glass.metric-theme-dark .metric-icon-box {
+        background: linear-gradient(135deg, var(--metric-slate-start) 0%, var(--metric-slate-end) 100%) !important;
+        color: #fff !important;
     }
 
     .locked-blur {
@@ -133,7 +153,7 @@
     <div class="col-md-3">
         <div class="card metric-glass metric-theme-primary p-3">
             <div class="d-flex align-items-center gap-3">
-                <div class="metric-icon-box" style="background: rgba(255,255,255,0.16); color: #fff;">
+                <div class="metric-icon-box">
                     <i class="fas fa-wallet"></i>
                 </div>
                 <div>
@@ -153,7 +173,7 @@
                 </div>
             @endif
             <div class="d-flex align-items-center gap-3 {{ $isBasic ? 'locked-blur' : '' }}">
-                <div class="metric-icon-box" style="background: rgba(255,255,255,0.16); color: #fff;">
+                <div class="metric-icon-box">
                     <i class="fas fa-chart-line"></i>
                 </div>
                 <div>
@@ -173,7 +193,7 @@
                 </div>
             @endif
             <div class="d-flex align-items-center gap-3 {{ $isBasic ? 'locked-blur' : '' }}">
-                <div class="metric-icon-box" style="background: rgba(255,255,255,0.16); color: #fff;">
+                <div class="metric-icon-box">
                     <i class="fas fa-receipt"></i>
                 </div>
                 <div>
@@ -188,7 +208,7 @@
     <div class="col-md-3">
         <div class="card metric-glass metric-theme-dark p-3">
             <div class="d-flex align-items-center gap-3">
-                <div class="metric-icon-box" style="background: rgba(255,255,255,0.16); color: #fff;">
+                <div class="metric-icon-box">
                     <i class="fas fa-boxes"></i>
                 </div>
                 <div>
