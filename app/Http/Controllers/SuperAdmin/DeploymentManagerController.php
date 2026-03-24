@@ -138,7 +138,8 @@ class DeploymentManagerController extends Controller
         $manager = DeploymentManager::where('user_id', $user->id)->first();
 
         if (($manager && $manager->status === 'active') || $user->is_verified == 1) {
-            return redirect()->route('deployment.dashboard');
+            return redirect()->route('deployment.dashboard')
+                ->with('info', 'Your deployment workspace is already verified and active.');
         }
 
         return view('deployment.verify-profile', compact('user', 'manager'));
@@ -1670,7 +1671,8 @@ private function formatDeploymentAmount(float $amount): string
 
     public function createCompany()
     {
-        return redirect()->route('deployment.customers.create');
+        return redirect()->route('deployment.customers.create')
+            ->with('info', 'Complete the customer form below to create a new deployment workspace.');
     }
 
     public function show($id)
@@ -1710,6 +1712,7 @@ private function formatDeploymentAmount(float $amount): string
 
     public function receipt($id)
     {
-        return redirect()->route('saas.success', ['id' => $id]);
+        return redirect()->route('saas.success', ['id' => $id])
+            ->with('info', 'Subscription receipt opened successfully.');
     }
 }

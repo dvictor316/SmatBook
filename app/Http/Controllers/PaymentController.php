@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\{Payment, Sale, Account, Transaction, Subscription, User, Company};
 use App\Support\LedgerService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\{Auth, DB, Log, File, Http, Session, Str, Schema};
+use Illuminate\Support\Facades\{Auth, DB, Log, File, Http, Str, Schema};
 use Carbon\Carbon;
 use Unicodeveloper\Paystack\Facades\Paystack;
 use Flutterwave\Laravel\Facades\Flutterwave;
@@ -276,11 +276,8 @@ class PaymentController extends Controller
             }
 
             // 3. SECURE REDIRECT
-            // Success message for the user
-            Session::flash('success', 'Node Activated. Welcome to SmartProbook.');
-            
-            // FIXED: Using the named route 'user.dashboard' from your web.php
-            return redirect()->route('user.dashboard');
+            return redirect()->route('user.dashboard')
+                ->with('success', 'Payment confirmed. Your workspace is now active.');
         });
     }
 
