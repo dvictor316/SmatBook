@@ -1099,6 +1099,7 @@
     @endif
 
     {{-- MAIN PAGE CONTENT --}}
+    @include('layout.partials.flash-messages')
     @yield('content')
 
     @php

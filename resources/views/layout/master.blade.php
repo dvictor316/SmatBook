@@ -159,31 +159,10 @@
             </div>
         </div>
 
+        @include('layout.partials.flash-messages')
+
         <div class="page-wrapper">
             <div class="content container-fluid">
-                
-                {{-- Global Flash Notifications --}}
-                @if(session('success'))
-                    <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm" role="alert">
-                        <div class="d-flex align-items-center">
-                            <i class="fas fa-check-circle me-2"></i>
-                            <div>{{ session('success') }}</div>
-                        </div>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                @endif
-
-                @if(session('error'))
-                    <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm" role="alert">
-                        <div class="d-flex align-items-center">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            <div>{{ session('error') }}</div>
-                        </div>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                @endif
-
-                {{-- Page Content Injection --}}
                 @yield('content')
                 
             </div>
