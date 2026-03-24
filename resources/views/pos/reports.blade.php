@@ -141,7 +141,7 @@ body.mini-sidebar .report-page-wrapper { margin-left: var(--sb-sidebar-collapsed
     border: 1px solid currentColor;
 }
 
-@media(max-width: 1199.98px) { 
+@media(max-width: 991.98px) { 
     .report-page-wrapper { margin-left: 0 !important; padding: 15px; } 
 }
 </style>

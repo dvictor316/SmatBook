@@ -14,7 +14,7 @@
 
     body.mini-sidebar .pos-content-area { margin-left: var(--sb-sidebar-collapsed, 80px); }
 
-    @media (max-width: 1199.98px) {
+    @media (max-width: 991.98px) {
         .pos-content-area { margin-left: 0 !important; padding: 15px; }
     }
 

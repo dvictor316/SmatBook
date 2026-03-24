@@ -253,7 +253,7 @@
             color: #183153;
         }
 
-        @media (max-width: 1199.98px) {
+        @media (max-width: 991.98px) {
             .page-wrapper,
             .pos-full-page-wrapper,
             .pos-content-area,

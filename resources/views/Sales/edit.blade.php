@@ -7,7 +7,7 @@
         background-color: #fdfaf0; min-height: 100vh; margin-top: 60px;
     }
     body.mini-sidebar .pos-content-area { margin-left: var(--sb-sidebar-collapsed, 80px); }
-    @media (max-width: 1199.98px) {
+    @media (max-width: 991.98px) {
         .pos-content-area { margin-left: 0 !important; padding: 15px; }
     }
     .edit-card { border: none; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); background: #fff; }
