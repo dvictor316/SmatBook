@@ -135,60 +135,72 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'name'             => 'required|string|max:191',
-            'sku'              => 'nullable|string|max:191|unique:products,sku',
-            'price'            => 'required|numeric|min:0', 
-            'purchase_price'   => 'required|numeric|min:0', 
-            'stock'            => 'nullable|integer|min:0', 
-            'stock_cartons'    => 'nullable|numeric|min:0',
-            'units_per_carton' => 'nullable|integer|min:0',
-            'units_per_roll'   => 'nullable|integer|min:0',
-            'base_unit_name'   => 'required|string|max:100',
-            'category_id'      => 'required|exists:categories,id',
-            'unit_type'        => 'required|in:unit,sachet,roll,carton',
-            'description'      => 'nullable|string',
-            'barcode'          => 'nullable|string|max:191',
-            'image'            => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
-        ]);
+        try {
+            $validated = $request->validate([
+                'name'             => 'required|string|max:191',
+                'sku'              => 'nullable|string|max:191|unique:products,sku',
+                'price'            => 'required|numeric|min:0', 
+                'purchase_price'   => 'required|numeric|min:0', 
+                'stock'            => 'nullable|integer|min:0', 
+                'stock_cartons'    => 'nullable|numeric|min:0',
+                'units_per_carton' => 'nullable|integer|min:0',
+                'units_per_roll'   => 'nullable|integer|min:0',
+                'base_unit_name'   => 'required|string|max:100',
+                'category_id'      => 'required|exists:categories,id',
+                'unit_type'        => 'required|in:unit,sachet,roll,carton',
+                'description'      => 'nullable|string',
+                'barcode'          => 'nullable|string|max:191',
+                'image'            => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
+            ]);
 
-        $validated['units_per_carton'] = (int) ($validated['units_per_carton'] ?? 0);
-        $validated['units_per_roll'] = (int) ($validated['units_per_roll'] ?? 0);
-        $validated['sku'] = $this->generateUniqueSku($validated['sku'] ?? null, $validated['name']);
+            $validated['units_per_carton'] = (int) ($validated['units_per_carton'] ?? 0);
+            $validated['units_per_roll'] = (int) ($validated['units_per_roll'] ?? 0);
+            $validated['sku'] = $this->generateUniqueSku($validated['sku'] ?? null, $validated['name']);
 
-        $calculatedStock = $validated['stock'] ?? null;
-        if ($calculatedStock === null && isset($validated['stock_cartons']) && $validated['units_per_carton'] > 0) {
-            $calculatedStock = (int) round(((float) $validated['stock_cartons']) * $validated['units_per_carton']);
+            $calculatedStock = $validated['stock'] ?? null;
+            if ($calculatedStock === null && isset($validated['stock_cartons']) && $validated['units_per_carton'] > 0) {
+                $calculatedStock = (int) round(((float) $validated['stock_cartons']) * $validated['units_per_carton']);
+            }
+            $validated['stock'] = (int) ($calculatedStock ?? 0);
+
+            if ($validated['unit_type'] === 'carton' && $validated['units_per_carton'] < 1) {
+                return back()->withErrors([
+                    'units_per_carton' => 'Units per carton must be at least 1 when default unit type is Carton.'
+                ])->withInput();
+            }
+            if ($validated['unit_type'] === 'roll' && $validated['units_per_roll'] < 1) {
+                return back()->withErrors([
+                    'units_per_roll' => 'Units per roll must be at least 1 when default unit type is Roll.'
+                ])->withInput();
+            }
+
+            if ($request->hasFile('image')) {
+                $validated['image'] = $request->file('image')->store('products', 'public');
+            }
+
+            $validated['status'] = 'active';
+            $validated['stock_quantity'] = $validated['stock'];
+            $product = Product::create($validated);
+            $this->branchInventory->seedOpeningStock(
+                $product,
+                (float) $validated['stock'],
+                $this->getActiveBranchContext(),
+                (int) ($product->company_id ?? auth()->user()?->company_id ?? 0)
+            );
+
+            return redirect()->route('product-list')
+                ->with('success', 'Product added successfully.');
+        } catch (\Throwable $e) {
+            \Log::error('Product store failed', [
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id(),
+                'payload' => $request->except(['image']),
+            ]);
+
+            return back()
+                ->withInput()
+                ->with('error', 'Product could not be added. Please check the highlighted fields and try again.');
         }
-        $validated['stock'] = (int) ($calculatedStock ?? 0);
-
-        if ($validated['unit_type'] === 'carton' && $validated['units_per_carton'] < 1) {
-            return back()->withErrors([
-                'units_per_carton' => 'Units per carton must be at least 1 when default unit type is Carton.'
-            ])->withInput();
-        }
-        if ($validated['unit_type'] === 'roll' && $validated['units_per_roll'] < 1) {
-            return back()->withErrors([
-                'units_per_roll' => 'Units per roll must be at least 1 when default unit type is Roll.'
-            ])->withInput();
-        }
-
-        if ($request->hasFile('image')) {
-            $validated['image'] = $request->file('image')->store('products', 'public');
-        }
-
-        $validated['status'] = 'active';
-        $validated['stock_quantity'] = $validated['stock'];
-        $product = Product::create($validated);
-        $this->branchInventory->seedOpeningStock(
-            $product,
-            (float) $validated['stock'],
-            $this->getActiveBranchContext(),
-            (int) ($product->company_id ?? auth()->user()?->company_id ?? 0)
-        );
-
-        return redirect()->route('product-list')
-            ->with('success', 'Product synchronized successfully on ' . env('SESSION_DOMAIN', 'local'));
     }
 
     /**
