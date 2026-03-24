@@ -16,7 +16,8 @@ class TenantController extends Controller
     {
         // 1. Ensure user is authenticated
         if (!Auth::check()) {
-            return redirect()->route('saas-register-initial');
+            return redirect()->route('saas-register-initial')
+                ->with('info', 'Please create or sign in to your account before setting up a workspace.');
         }
 
         // 2. Find the subscription record
@@ -46,7 +47,8 @@ class TenantController extends Controller
 
         // 4. SMART REDIRECT: Check if Company (Workspace) is already created
         if ($company && !empty($company->domain_prefix)) {
-            return redirect()->route('saas.checkout', ['id' => $subscription->id]);
+            return redirect()->route('saas.checkout', ['id' => $subscription->id])
+                ->with('info', 'Workspace details are already saved. Continue to payment.');
         }
 
         return view('Saas.domain_setup', compact('subscription', 'company'));
@@ -132,7 +134,8 @@ class TenantController extends Controller
 
         // 2. If no company exists, they haven't even started Setup
         if (!$company) {
-            return redirect()->route('membership-plans');
+            return redirect()->route('membership-plans')
+                ->with('info', 'Choose a plan to begin setting up your workspace.');
         }
 
         // 3. Check if Fully active (Onboarding Complete)
@@ -148,16 +151,19 @@ class TenantController extends Controller
                 ->latest()
                 ->first();
                 
-            return redirect()->route('saas.checkout', ['id' => $sub->id ?? 0]);
+            return redirect()->route('saas.checkout', ['id' => $sub->id ?? 0])
+                ->with('info', 'Your workspace setup is saved. Complete payment to activate it.');
         }
 
         // 5. If stuck at Setup (Step 2)
         if ((int)$company->onboarding_step === 2) {
              $sub = Subscription::where('user_id', $user->id)->latest()->first();
-             return redirect()->route('saas.setup', ['id' => $sub->id ?? 0]);
+             return redirect()->route('saas.setup', ['id' => $sub->id ?? 0])
+                ->with('info', 'Continue your workspace setup to finish onboarding.');
         }
 
         // 6. Fallback: If they have a company but no step, send to setup
-        return redirect()->route('saas.setup');
+        return redirect()->route('saas.setup')
+            ->with('info', 'Continue your workspace setup to finish onboarding.');
     }
 }

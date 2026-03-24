@@ -165,7 +165,8 @@ class AuthController extends Controller
                         SystemEventMailer::notifyRegistration($user, 'deployment_manager');
                     });
                     $this->clearRegistrationSession();
-                    return redirect()->route('manager.verification.form');
+                    return redirect()->route('manager.verification.form')
+                        ->with('success', 'Registration successful. Complete your verification profile to continue.');
                 }
 
                 $requestedPlan = strtolower((string) ($request->plan ?? session('selected_plan', 'pro')));
@@ -208,7 +209,8 @@ class AuthController extends Controller
                 });
 
                 $this->clearRegistrationSession();
-                return redirect()->route('saas.setup', ['id' => $subscription->id]);
+                return redirect()->route('saas.setup', ['id' => $subscription->id])
+                    ->with('success', 'Registration successful. Set up your workspace to continue.');
             });
         } catch (\Throwable $e) {
             Log::error('Registration failed', [
