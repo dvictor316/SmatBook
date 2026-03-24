@@ -2,7 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Category;
+use App\Models\Customer;
+use App\Models\Expense;
+use App\Models\Product;
 use App\Models\Sale;
+use App\Models\SaleItem;
 use App\Models\LandingSetting;
 use App\Models\Company;
 use App\Models\Plan; // Added Plan model
@@ -164,6 +169,8 @@ class LandingController extends Controller
                     ]
                 );
 
+                $this->seedDemoWorkspace($user, $company);
+
                 return $user->fresh();
             });
 
@@ -270,4 +277,322 @@ class LandingController extends Controller
     {
         return view('Landing.projects.payplus');
     }
+
+    protected function seedDemoWorkspace(User $user, Company $company): void
+    {
+        $categoryId = $this->seedDemoCategory();
+        $productIds = $this->seedDemoProducts($user, $company, $categoryId);
+        $customerIds = $this->seedDemoCustomers($user, $company);
+
+        $this->seedDemoExpenses($user, $company);
+        $this->seedDemoSales($user, $company, $customerIds, $productIds);
+    }
+
+    protected function seedDemoCategory(): ?int
+    {
+        if (!Schema::hasTable('categories')) {
+            return null;
+        }
+
+        $category = Category::query()->firstOrCreate(
+            ['name' => 'Demo Essentials'],
+            ['description' => 'Sample inventory used for the SmartProbook live demo.']
+        );
+
+        return $category->id;
+    }
+
+    protected function seedDemoProducts(User $user, Company $company, ?int $categoryId): array
+    {
+        if (!$categoryId || !Schema::hasTable('products')) {
+            return [];
+        }
+
+        $records = [
+            [
+                'sku' => 'DEMO-CARTON-TISSUE',
+                'name' => 'Premium Tissue Carton',
+                'barcode' => '9001001001',
+                'price' => 18500,
+                'purchase_price' => 14200,
+                'stock' => 480,
+                'stock_quantity' => 480,
+                'base_unit_name' => 'pcs',
+                'unit_type' => 'carton',
+                'units_per_carton' => 48,
+                'units_per_roll' => 6,
+                'description' => 'Fast-moving carton demo product for retail and wholesale flows.',
+                'status' => 'active',
+            ],
+            [
+                'sku' => 'DEMO-ROLL-FILM',
+                'name' => 'Stretch Film Roll',
+                'barcode' => '9001001002',
+                'price' => 7500,
+                'purchase_price' => 5100,
+                'stock' => 180,
+                'stock_quantity' => 180,
+                'base_unit_name' => 'roll',
+                'unit_type' => 'roll',
+                'units_per_carton' => 12,
+                'units_per_roll' => 1,
+                'description' => 'Packaging roll demo product for warehouse workflows.',
+                'status' => 'active',
+            ],
+            [
+                'sku' => 'DEMO-UNIT-DETERGENT',
+                'name' => 'Liquid Detergent Sachet Pack',
+                'barcode' => '9001001003',
+                'price' => 950,
+                'purchase_price' => 600,
+                'stock' => 960,
+                'stock_quantity' => 960,
+                'base_unit_name' => 'pcs',
+                'unit_type' => 'sachet',
+                'units_per_carton' => 120,
+                'units_per_roll' => 12,
+                'description' => 'Small-ticket demo item for fast checkout examples.',
+                'status' => 'active',
+            ],
+        ];
+
+        $ids = [];
+
+        foreach ($records as $record) {
+            $payload = $this->onlyExistingColumns('products', array_merge($record, [
+                'user_id' => $user->id,
+                'company_id' => $company->id,
+                'category_id' => $categoryId,
+            ]));
+
+            Product::query()->updateOrCreate(['sku' => $record['sku']], $payload);
+            $ids[] = Product::query()->where('sku', $record['sku'])->value('id');
+        }
+
+        return array_values(array_filter($ids));
+    }
+
+    protected function seedDemoCustomers(User $user, Company $company): array
+    {
+        if (!Schema::hasTable('customers')) {
+            return [];
+        }
+
+        $records = [
+            [
+                'name' => 'Afro Retail Mart',
+                'customer_name' => 'Afro Retail Mart',
+                'email' => 'buyer@afroretail.demo',
+                'phone' => '+2348011111111',
+                'address' => '12 Adeola Odeku, Victoria Island, Lagos',
+                'status' => 'active',
+                'balance' => 0,
+                'currency' => '₦',
+                'notes' => 'Flagship walk-in and wholesale customer for demo sales.',
+            ],
+            [
+                'name' => 'Nordic Home Store',
+                'customer_name' => 'Nordic Home Store',
+                'email' => 'accounts@nordichome.demo',
+                'phone' => '+2348022222222',
+                'address' => '5 Admiralty Way, Lekki Phase 1, Lagos',
+                'status' => 'active',
+                'balance' => 24500,
+                'currency' => '₦',
+                'notes' => 'Credit customer used to demonstrate balances and follow-up.',
+            ],
+            [
+                'name' => 'Walk-in Corporate Desk',
+                'customer_name' => 'Walk-in Corporate Desk',
+                'email' => 'walkin@smartprobook.demo',
+                'phone' => '+2348033333333',
+                'address' => 'Demo reception counter',
+                'status' => 'active',
+                'balance' => 0,
+                'currency' => '₦',
+                'notes' => 'Generic walk-in profile kept for instant counter sales.',
+            ],
+        ];
+
+        $ids = [];
+
+        foreach ($records as $record) {
+            $payload = $this->onlyExistingColumns('customers', array_merge($record, [
+                'user_id' => $user->id,
+                'company_id' => $company->id,
+                'created_by' => $user->id,
+            ]));
+
+            DB::table('customers')->updateOrInsert(
+                ['email' => $record['email']],
+                $this->stampTimestamps('customers', $payload)
+            );
+
+            $ids[] = DB::table('customers')->where('email', $record['email'])->value('id');
+        }
+
+        return array_values(array_filter($ids));
+    }
+
+    protected function seedDemoExpenses(User $user, Company $company): void
+    {
+        if (!Schema::hasTable('expenses')) {
+            return;
+        }
+
+        $records = [
+            [
+                'reference' => 'DEMO-EXP-001',
+                'expense_id' => 'DEMO-EXP-001',
+                'company_name' => $company->name ?? 'SmartProbook Demo Company',
+                'email' => 'ops@smartprobook.demo',
+                'amount' => 125000,
+                'payment_mode' => 'Bank Transfer',
+                'payment_status' => 'paid',
+                'category' => 'Operations',
+                'status' => 'Paid',
+                'notes' => 'Monthly logistics and dispatch support.',
+                'created_by' => $user->id,
+                'company_id' => $company->id,
+            ],
+            [
+                'reference' => 'DEMO-EXP-002',
+                'expense_id' => 'DEMO-EXP-002',
+                'company_name' => $company->name ?? 'SmartProbook Demo Company',
+                'email' => 'growth@smartprobook.demo',
+                'amount' => 68000,
+                'payment_mode' => 'Card',
+                'payment_status' => 'pending',
+                'category' => 'Marketing',
+                'status' => 'Pending',
+                'notes' => 'Campaign spend for seasonal promotion.',
+                'created_by' => $user->id,
+                'company_id' => $company->id,
+            ],
+        ];
+
+        foreach ($records as $record) {
+            $payload = $this->stampTimestamps('expenses', $this->onlyExistingColumns('expenses', $record));
+            $match = ['company_name' => $record['company_name'], 'amount' => $record['amount']];
+            if (Schema::hasColumn('expenses', 'reference')) {
+                $match = ['reference' => $record['reference']];
+            } elseif (Schema::hasColumn('expenses', 'expense_id')) {
+                $match = ['expense_id' => $record['expense_id']];
+            }
+
+            DB::table('expenses')->updateOrInsert($match, $payload);
+        }
+    }
+
+    protected function seedDemoSales(User $user, Company $company, array $customerIds, array $productIds): void
+    {
+        if (!Schema::hasTable('sales')) {
+            return;
+        }
+
+        $sales = [
+            [
+                'invoice_no' => 'DEMO-INV-1001',
+                'receipt_no' => 'DEMO-RCP-1001',
+                'customer_id' => $customerIds[0] ?? null,
+                'customer_name' => 'Afro Retail Mart',
+                'user_id' => $user->id,
+                'terminal_id' => 'POS1',
+                'subtotal' => 55500,
+                'discount' => 2500,
+                'tax' => 3975,
+                'total' => 56975,
+                'payment_method' => 'transfer',
+                'payment_status' => 'paid',
+                'paid' => 56975,
+                'amount_paid' => 56975,
+                'balance' => 0,
+                'currency' => 'NGN',
+                'order_status' => 'completed',
+                'branch_name' => 'Head Office',
+                'company_id' => $company->id,
+            ],
+            [
+                'invoice_no' => 'DEMO-INV-1002',
+                'receipt_no' => 'DEMO-RCP-1002',
+                'customer_id' => $customerIds[1] ?? null,
+                'customer_name' => 'Nordic Home Store',
+                'user_id' => $user->id,
+                'terminal_id' => 'POS2',
+                'subtotal' => 28800,
+                'discount' => 0,
+                'tax' => 2160,
+                'total' => 30960,
+                'payment_method' => 'card',
+                'payment_status' => 'partial',
+                'paid' => 15000,
+                'amount_paid' => 15000,
+                'balance' => 15960,
+                'currency' => 'NGN',
+                'order_status' => 'pending',
+                'branch_name' => 'Lekki Outlet',
+                'company_id' => $company->id,
+            ],
+        ];
+
+        foreach ($sales as $index => $record) {
+            $payload = $this->stampTimestamps('sales', $this->onlyExistingColumns('sales', $record));
+            $sale = Sale::query()->updateOrCreate(['invoice_no' => $record['invoice_no']], $payload);
+
+            if (!Schema::hasTable('sale_items') || empty($productIds)) {
+                continue;
+            }
+
+            $lineItems = [
+                [
+                    'sale_id' => $sale->id,
+                    'product_id' => $productIds[$index % count($productIds)],
+                    'quantity' => 3,
+                    'qty' => 3,
+                    'unit_price' => $index === 0 ? 18500 : 7500,
+                    'discount' => $index === 0 ? 2.5 : 0,
+                    'tax' => 7.5,
+                    'subtotal' => $index === 0 ? 55500 : 22500,
+                    'total_price' => $index === 0 ? 56975 : 24187.5,
+                ],
+            ];
+
+            foreach ($lineItems as $item) {
+                $match = ['sale_id' => $sale->id, 'product_id' => $item['product_id']];
+                $payload = $this->stampTimestamps('sale_items', $this->onlyExistingColumns('sale_items', $item));
+                DB::table('sale_items')->updateOrInsert($match, $payload);
+            }
+        }
+    }
+
+    protected function onlyExistingColumns(string $table, array $attributes): array
+    {
+        if (!Schema::hasTable($table)) {
+            return [];
+        }
+
+        $columns = array_flip(Schema::getColumnListing($table));
+
+        return array_filter(
+            $attributes,
+            static fn ($value, $key) => isset($columns[$key]),
+            ARRAY_FILTER_USE_BOTH
+        );
+    }
+
+    protected function stampTimestamps(string $table, array $attributes): array
+    {
+        $now = now();
+
+        if (Schema::hasColumn($table, 'updated_at')) {
+            $attributes['updated_at'] = $now;
+        }
+
+        if (Schema::hasColumn($table, 'created_at')) {
+            $attributes['created_at'] = $attributes['created_at'] ?? $now;
+        }
+
+        return $attributes;
+    }
+
 }
