@@ -105,6 +105,8 @@
 
         html { 
             scroll-behavior: smooth; 
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
         }
 
         body { 
@@ -114,6 +116,8 @@
             line-height: 1.8; 
             overflow-x: hidden;
             padding-top: 68px;
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
         }
 
         body,
@@ -199,6 +203,8 @@
             text-transform: uppercase; 
             transition: 0.3s ease; 
             letter-spacing: 0.5px; 
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
         }
 
         .nav-links a:hover, 
@@ -260,6 +266,8 @@
             font-size: 0.8rem;
             letter-spacing: 0.2px;
             white-space: nowrap;
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
         }
 
         .btn-portal:hover {
