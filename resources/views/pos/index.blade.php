@@ -1447,6 +1447,16 @@ label {
                             <label>Amount Paid</label>
                             <input type="number" id="amount-paid" class="form-control form-control-lg fw-bold text-end tabular-nums" style="font-size: 1rem; color: var(--success-500);">
                         </div>
+                        <div class="col-md-12" id="payment-channel-wrap">
+                            <label>Payment Channel</label>
+                            <select id="payment-channel" class="form-select">
+                                <option value="">Auto / Not specified</option>
+                                @foreach(($bankAccounts ?? []) as $account)
+                                    <option value="{{ $account->id }}">{{ $account->name }}{{ $account->account_number ? ' - ' . $account->account_number : '' }}</option>
+                                @endforeach
+                            </select>
+                            <small class="text-muted">Pick the bank, POS terminal, wallet, or channel that received the payment.</small>
+                        </div>
                     </div>
 
                     <!-- Split -->
@@ -1463,6 +1473,24 @@ label {
                             <div class="col-4">
                                 <label>Transfer</label>
                                 <input type="number" id="split-transfer" class="form-control split-input" value="0">
+                            </div>
+                            <div class="col-md-6">
+                                <label>Card Channel</label>
+                                <select id="split-card-account" class="form-select">
+                                    <option value="">Select card channel</option>
+                                    @foreach(($bankAccounts ?? []) as $account)
+                                        <option value="{{ $account->id }}">{{ $account->name }}{{ $account->account_number ? ' - ' . $account->account_number : '' }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label>Transfer Channel</label>
+                                <select id="split-transfer-account" class="form-select">
+                                    <option value="">Select transfer channel</option>
+                                    @foreach(($bankAccounts ?? []) as $account)
+                                        <option value="{{ $account->id }}">{{ $account->name }}{{ $account->account_number ? ' - ' . $account->account_number : '' }}</option>
+                                    @endforeach
+                                </select>
                             </div>
                         </div>
                     </div>
@@ -2015,11 +2043,13 @@ $(document).ready(function() {
         
         if($(this).val() === 'Split') {
             $('#split-box').slideDown(200);
+            $('#payment-channel-wrap').slideUp(150);
             $('#amount-paid').prop('readonly', true).val(total.toFixed(2));
             $('#split-cash').val(total.toFixed(2));
             $('#split-card, #split-transfer').val(0);
         } else {
             $('#split-box').slideUp(200);
+            $('#payment-channel-wrap').slideDown(150);
             $('#amount-paid').prop('readonly', false).val(total.toFixed(2));
         }
         
@@ -2054,6 +2084,8 @@ $(document).ready(function() {
 
         $('#customer-select').val(null).trigger('change');
         $('#payment-method').val('Cash').trigger('change');
+        $('#payment-channel').val('');
+        $('#split-card-account, #split-transfer-account').val('');
         $('#split-cash, #split-card, #split-transfer').val(0);
         $('#split-box').hide();
         $('#amount-paid').prop('readonly', false).val('0.00');
@@ -2108,10 +2140,13 @@ $(document).ready(function() {
                 discount: cart.reduce((s, i) => s + i.discVal, 0),
                 total: total,
                 paid: paid,
+                payment_account_id: $('#payment-channel').val() || '',
                 split_details: {
                     cash: $('#split-cash').val() || 0,
                     pos: $('#split-card').val() || 0,
-                    bank: $('#split-transfer').val() || 0
+                    bank: $('#split-transfer').val() || 0,
+                    card_account_id: $('#split-card-account').val() || '',
+                    transfer_account_id: $('#split-transfer-account').val() || ''
                 }
             },
             success: function(res) {

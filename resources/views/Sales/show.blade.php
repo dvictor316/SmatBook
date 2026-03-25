@@ -265,6 +265,16 @@
                             <option value="pos">POS</option>
                         </select>
                     </div>
+                    <div class="text-start mb-4">
+                        <label class="small fw-bold">Payment Channel</label>
+                        <select name="payment_account_id" class="form-select">
+                            <option value="">Auto / Not specified</option>
+                            @foreach(($bankAccounts ?? []) as $account)
+                                <option value="{{ $account->id }}">{{ $account->name }}{{ $account->account_number ? ' - ' . $account->account_number : '' }}</option>
+                            @endforeach
+                        </select>
+                        <small class="text-muted">Choose the bank, POS terminal, wallet, or other collection channel that received this payment.</small>
+                    </div>
                     <button type="submit" class="btn btn-primary w-100 fw-bold">Save Payment</button>
                 </div>
             </form>

@@ -9,6 +9,7 @@ use Illuminate\Support\Str;
 use App\Models\Customer;
 use App\Models\Company;
 use App\Models\Payment;
+use App\Models\Bank;
 use App\Events\NewSaleRegistered; // The Pusher event we created
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -182,16 +183,22 @@ public function customerDetails($id = null)
             ->values();
         $customers = Customer::orderBy('customer_name', 'asc')->get();
         $sales = Sale::with('customer')->latest()->take(10)->get();
+        $bankAccounts = Schema::hasTable('banks')
+            ? Bank::query()->orderBy('name')->get()
+            : collect();
 
-        return view('pos.index', compact('products', 'customers', 'sales', 'activeBranch'));
+        return view('pos.index', compact('products', 'customers', 'sales', 'activeBranch', 'bankAccounts'));
     }
 
     public function showSale($id)
     {
         $sale = Sale::with(['customer', 'items.product', 'user'])->findOrFail($id);
         $activeBranch = $this->getActiveBranchContext();
+        $bankAccounts = Schema::hasTable('banks')
+            ? Bank::query()->orderBy('name')->get()
+            : collect();
 
-        return view('sales.show', compact('sale', 'activeBranch'));
+        return view('sales.show', compact('sale', 'activeBranch', 'bankAccounts'));
     }
 
     public function store(Request $request)
@@ -207,6 +214,9 @@ public function customerDetails($id = null)
         'items.*.unitType' => 'nullable|in:unit,roll,carton',
         'items.*.stockUnits' => 'nullable|numeric|min:1',
         'items.*.priceLevel' => 'nullable|in:retail,wholesale,special',
+        'payment_account_id' => 'nullable|exists:banks,id',
+        'split_details.card_account_id' => 'nullable|exists:banks,id',
+        'split_details.transfer_account_id' => 'nullable|exists:banks,id',
     ]);
 
     DB::beginTransaction();
@@ -233,6 +243,15 @@ public function customerDetails($id = null)
 
         $activeBranch = $this->getActiveBranchContext();
         $splitDetails = $this->normalizeSplitDetails($request->input('split_details', []));
+        $paymentAccount = $request->filled('payment_account_id') && Schema::hasTable('banks')
+            ? Bank::query()->find($request->input('payment_account_id'))
+            : null;
+        $cardSplitAccount = !empty($splitDetails['card_account_id']) && Schema::hasTable('banks')
+            ? Bank::query()->find($splitDetails['card_account_id'])
+            : null;
+        $transferSplitAccount = !empty($splitDetails['transfer_account_id']) && Schema::hasTable('banks')
+            ? Bank::query()->find($splitDetails['transfer_account_id'])
+            : null;
 
         // --- 2. CREATE THE SALE RECORD ---
 $sale = Sale::create([
@@ -257,12 +276,14 @@ $sale = Sale::create([
     'currency'       => 'NGN',
     'payment_method' => $request->payment_method,
     'payment_status' => $paymentStatus,
-    'payment_details' => [
+        'payment_details' => [
         'source' => 'pos',
         'cashier_id' => auth()->id(),
         'cashier_name' => auth()->user()?->name,
         'branch_id' => $activeBranch['id'],
         'branch_name' => $activeBranch['name'],
+        'payment_account_id' => $paymentAccount?->id,
+        'payment_account_name' => $paymentAccount?->name,
         'split' => $splitDetails,
     ],
 ]);
@@ -345,6 +366,12 @@ $sale = Sale::create([
                 'branch_id' => $activeBranch['id'],
                 'branch_name' => $activeBranch['name'],
                 'split' => $splitDetails,
+                'payment_account_id' => $paymentAccount?->id,
+                'payment_account_name' => $paymentAccount?->name,
+                'card_account_id' => $cardSplitAccount?->id,
+                'card_account_name' => $cardSplitAccount?->name,
+                'transfer_account_id' => $transferSplitAccount?->id,
+                'transfer_account_name' => $transferSplitAccount?->name,
                 'tendered' => round($amountPaid, 2),
                 'applied' => round($finalPaid, 2),
                 'change' => round($finalChange, 2),
@@ -352,14 +379,18 @@ $sale = Sale::create([
         ]);
 
         if ($finalPaid > 0) {
-            Payment::create([
+            $paymentPayload = [
                 'sale_id' => $sale->id,
                 'branch_id' => $activeBranch['id'],
                 'branch_name' => $activeBranch['name'],
                 'amount'  => $finalPaid,
                 'method'  => $request->payment_method,
-                'note'    => 'Initial POS Payment',
-            ]);
+                'note'    => $paymentAccount?->name ? 'Initial POS Payment via ' . $paymentAccount->name : 'Initial POS Payment',
+            ];
+            if (Schema::hasColumn('payments', 'payment_account_id')) {
+                $paymentPayload['payment_account_id'] = $paymentAccount?->id;
+            }
+            Payment::create($paymentPayload);
         }
 
         LedgerService::postSale($sale->fresh());
@@ -566,6 +597,8 @@ public function create()
             'cash' => (float) ($splitDetails['cash'] ?? 0),
             'card' => (float) ($splitDetails['pos'] ?? $splitDetails['card'] ?? 0),
             'transfer' => (float) ($splitDetails['bank'] ?? $splitDetails['transfer'] ?? 0),
+            'card_account_id' => !empty($splitDetails['card_account_id']) ? (int) $splitDetails['card_account_id'] : null,
+            'transfer_account_id' => !empty($splitDetails['transfer_account_id']) ? (int) $splitDetails['transfer_account_id'] : null,
         ];
     }
 }
