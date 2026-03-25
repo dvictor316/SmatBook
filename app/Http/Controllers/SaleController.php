@@ -454,13 +454,20 @@ $sale = Sale::create([
     }
 
     private function generateInvoiceNo() {
-        $latest = Sale::latest('id')->first();
-        $number = $latest ? $latest->id + 1 : 1;
-        return 'INV-' . strtoupper(Carbon::now()->format('ymd')) . '-' . str_pad($number, 4, '0', STR_PAD_LEFT);
+        return $this->generateUniqueSaleReference('invoice_no', 'INV-' . strtoupper(Carbon::now()->format('ymd')) . '-');
     }
 
     private function generateReceiptNo() {
-        return 'REC-' . time();
+        return $this->generateUniqueSaleReference('receipt_no', 'REC-' . strtoupper(Carbon::now()->format('ymd')) . '-');
+    }
+
+    private function generateUniqueSaleReference(string $column, string $prefix): string
+    {
+        do {
+            $candidate = $prefix . strtoupper(Str::random(6));
+        } while (Sale::withTrashed()->where($column, $candidate)->exists());
+
+        return $candidate;
     }
 
     public function convertNumberToWords($number) {
