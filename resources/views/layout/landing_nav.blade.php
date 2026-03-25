@@ -177,8 +177,13 @@
             list-style: none; 
             gap: 35px; 
             align-items: center; 
+            flex-wrap: nowrap;
             margin: 0;
             padding: 0;
+        }
+
+        .nav-links li {
+            flex: 0 0 auto;
         }
 
         .nav-links a { 
@@ -761,42 +766,43 @@
         }
 
         /* ===== TABLET LANDSCAPE / SMALL LAPTOP NAV TUNING ===== */
-        @media (min-width: 992px) and (max-width: 1220px) {
+        @media (min-width: 992px) and (max-width: 1320px) {
             .nav-container {
-                padding: 0 22px;
+                padding: 0 18px;
             }
 
             .logo-container {
-                gap: 9px;
+                gap: 8px;
             }
 
             .brand-img {
-                height: 48px;
+                height: 44px;
             }
 
             .logo-text {
-                font-size: 1rem;
+                font-size: 0.92rem;
             }
 
             .nav-links {
-                gap: 18px;
+                gap: 12px;
                 flex-wrap: nowrap;
             }
 
             .nav-links a {
-                font-size: 0.76rem;
-                letter-spacing: 0.24px;
+                font-size: 0.72rem;
+                letter-spacing: 0.14px;
                 white-space: nowrap;
             }
 
             .nav-demo-link {
-                padding: 8px 12px !important;
+                padding: 8px 10px !important;
             }
 
             .btn-portal {
-                padding: 10px 16px;
-                font-size: 0.78rem;
+                padding: 9px 12px;
+                font-size: 0.72rem;
                 white-space: nowrap;
+                border-radius: 9px;
             }
         }
 
