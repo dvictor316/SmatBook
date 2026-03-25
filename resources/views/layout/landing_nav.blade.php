@@ -760,6 +760,46 @@
             }
         }
 
+        /* ===== TABLET LANDSCAPE / SMALL LAPTOP NAV TUNING ===== */
+        @media (min-width: 992px) and (max-width: 1220px) {
+            .nav-container {
+                padding: 0 22px;
+            }
+
+            .logo-container {
+                gap: 9px;
+            }
+
+            .brand-img {
+                height: 48px;
+            }
+
+            .logo-text {
+                font-size: 1rem;
+            }
+
+            .nav-links {
+                gap: 18px;
+                flex-wrap: nowrap;
+            }
+
+            .nav-links a {
+                font-size: 0.76rem;
+                letter-spacing: 0.24px;
+                white-space: nowrap;
+            }
+
+            .nav-demo-link {
+                padding: 8px 12px !important;
+            }
+
+            .btn-portal {
+                padding: 10px 16px;
+                font-size: 0.78rem;
+                white-space: nowrap;
+            }
+        }
+
         /* ===== TABLET LAYOUT ===== */
         @media (max-width: 991px) {
             html, body {
