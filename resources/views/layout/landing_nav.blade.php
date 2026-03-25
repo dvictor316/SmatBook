@@ -812,6 +812,77 @@
             }
         }
 
+        @media (min-width: 992px) and (max-width: 1120px) {
+            .nav-container {
+                padding: 0 14px;
+            }
+
+            .brand-img {
+                height: 40px;
+            }
+
+            .logo-text {
+                font-size: 0.82rem;
+            }
+
+            .nav-links {
+                gap: 9px;
+            }
+
+            .nav-links a {
+                font-size: 0.68rem;
+                letter-spacing: 0.08px;
+            }
+
+            .nav-demo-link {
+                padding: 6px 8px !important;
+                font-size: 0.68rem;
+            }
+
+            .btn-portal {
+                padding: 8px 10px;
+                font-size: 0.68rem;
+                letter-spacing: 0.08px;
+            }
+        }
+
+        @media (min-width: 992px) and (max-width: 1045px) {
+            .nav-container {
+                padding: 0 10px;
+            }
+
+            .logo-container {
+                gap: 6px;
+            }
+
+            .brand-img {
+                height: 36px;
+            }
+
+            .logo-text {
+                font-size: 0.74rem;
+            }
+
+            .nav-links {
+                gap: 7px;
+            }
+
+            .nav-links a {
+                font-size: 0.63rem;
+                letter-spacing: 0.04px;
+            }
+
+            .nav-demo-link {
+                padding: 6px 7px !important;
+                font-size: 0.63rem;
+            }
+
+            .btn-portal {
+                padding: 7px 8px;
+                font-size: 0.63rem;
+            }
+        }
+
         /* ===== TABLET LAYOUT ===== */
         @media (max-width: 991px) {
             html, body {
