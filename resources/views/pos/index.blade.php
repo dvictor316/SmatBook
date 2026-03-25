@@ -1335,7 +1335,7 @@ label {
                     </div>
                     <div class="col-6">
                         <label id="qty-label">Quantity</label>
-                        <input type="number" id="quantity" class="form-control fw-bold tabular-nums" value="1" min="1">
+                        <input type="number" id="quantity" class="form-control fw-bold tabular-nums" value="1" min="0.01" step="0.01">
                     </div>
                     <div class="col-6">
                         <label style="color: var(--danger-500);">Discount %</label>
@@ -1854,9 +1854,9 @@ $(document).ready(function() {
         const unitMeta = pricingState ? pricingState.unitMeta : resolveUnitMetrics(opt);
         const basePrice = pricingState ? pricingState.basePrice : getSelectedBasePrice(opt);
         $('#qty-label').text(`Quantity (${unitMeta.maxQty || 0} ${unitMeta.unitName} available)`);
-        $('#quantity').attr('max', Math.max(unitMeta.maxQty, 1));
-        if ((parseFloat($('#quantity').val()) || 1) > Math.max(unitMeta.maxQty, 1)) {
-            $('#quantity').val(Math.max(unitMeta.maxQty, 1));
+        $('#quantity').attr('max', Math.max(unitMeta.maxQty, 0.01));
+        if ((parseFloat($('#quantity').val()) || 0.01) > Math.max(unitMeta.maxQty, 0.01)) {
+            $('#quantity').val(Math.max(unitMeta.maxQty, 0.01));
         }
         $('#unit-helper-copy').text(
             unitMeta.type === 'unit'
@@ -1970,8 +1970,8 @@ $(document).ready(function() {
                         <td class="text-center">
                             <input
                                 type="number"
-                                min="1"
-                                step="1"
+                                min="0.01"
+                                step="0.01"
                                 value="${item.qty}"
                                 class="cart-qty-input"
                                 onchange="updateCartQty(${i}, this.value)"
@@ -2014,7 +2014,7 @@ $(document).ready(function() {
     };
 
     window.updateCartQty = function(i, value) {
-        const nextQty = Math.max(1, parseFloat(value) || 1);
+        const nextQty = Math.max(0.01, parseFloat(value) || 0.01);
         if (!cart[i]) return;
 
         cart[i].qty = nextQty;
