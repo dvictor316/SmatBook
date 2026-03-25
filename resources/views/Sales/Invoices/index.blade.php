@@ -627,7 +627,11 @@
             ?? config('app.name', 'SmartProbook');
         $companyAddress = $resolvedCompany?->address
             ?? \App\Models\Setting::where('key', 'company_address')->value('value')
-            ?? 'Company Address Not Set';
+            ?? null;
+        $companyAddressDisplay = $companyAddress
+            ?: ($resolvedCompany?->email
+                ?? \App\Models\Setting::where('key', 'company_email')->value('value')
+                ?? 'Address available in company settings');
         $companyPhone = $resolvedCompany?->phone
             ?? \App\Models\Setting::where('key', 'company_phone')->value('value')
             ?? '';
@@ -660,7 +664,7 @@
         <div class="invoice-header">
             <div class="company-info">
                 <h4>{{ $companyDisplayName }}</h4>
-                <p>{{ $companyAddress }}</p>
+                <p>{{ $companyAddressDisplay }}</p>
                 <p>
                     {{ $companyPhone }}
                     @if($companyPhone && $companyEmail)
@@ -754,6 +758,7 @@
 
                     $changeAmount = (float) ($sale->change_amount ?? 0);
                     $tenderedAmount = $appliedAmount + max(0, $changeAmount);
+                    $balanceDue = max(0, $grandTotal - $appliedAmount);
                 @endphp
 
                 @forelse($sale->items ?? [] as $item)
@@ -848,6 +853,12 @@
                         <tr class="change-row">
                             <td class="label">Change</td>
                             <td class="value">₦{{ number_format($changeAmount, 2) }}</td>
+                        </tr>
+                        <tr class="change-row">
+                            <td class="label">Balance Due</td>
+                            <td class="value" style="color: {{ $balanceDue > 0 ? 'var(--sweet-red)' : 'var(--success-green)' }};">
+                                ₦{{ number_format($balanceDue, 2) }}
+                            </td>
                         </tr>
                     </table>
                 </div>
