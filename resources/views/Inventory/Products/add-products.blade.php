@@ -95,14 +95,14 @@
 
                         {{-- Conversion Logic --}}
                         <div class="col-md-3 mb-3">
-                            <label class="form-label fw-bold text-danger">Carton Content</label>
+                            <label class="form-label fw-bold text-danger">Carton Content <span class="text-muted fw-normal d-block small" id="carton_content_hint">Rolls per carton or units per carton</span></label>
                             <input type="number" name="units_per_carton" id="upc" class="form-control bg-light-danger @error('units_per_carton') is-invalid @enderror" value="{{ old('units_per_carton', 0) }}" min="0">
-                            <small class="text-muted">Enter rolls per carton for roll-based items, or pieces per carton for carton-to-piece items like Indomie.</small>
+                            <small class="text-muted" id="carton_content_help">Enter how many rolls are inside one carton, or how many units are inside one carton if this item does not use rolls.</small>
                         </div>
                         <div class="col-md-3 mb-3">
-                            <label class="form-label fw-bold text-warning">Roll Content</label>
+                            <label class="form-label fw-bold text-warning">Roll Content <span class="text-muted fw-normal d-block small" id="roll_content_hint">Units per roll</span></label>
                             <input type="number" name="units_per_roll" id="upr" class="form-control bg-light-warning @error('units_per_roll') is-invalid @enderror" value="{{ old('units_per_roll', 0) }}" min="0">
-                            <small class="text-muted">Enter sachets or loose pieces in one roll. Leave this at 0 if the product does not use rolls.</small>
+                            <small class="text-muted" id="roll_content_help">Enter how many sellable units are inside one roll. Leave this at 0 if the product does not use rolls.</small>
                         </div>
                         <div class="col-md-3 mb-3">
                             <label class="form-label fw-bold">Base Unit Name</label>
@@ -149,7 +149,7 @@
                         
                         {{-- Automated Calculation Preview --}}
                         <div class="col-md-3 mb-3">
-                            <label class="form-label">Opening Sachet Quantity</label>
+                            <label class="form-label" id="opening_unit_label">Opening Unit Quantity</label>
                             <input type="number" name="stock_units" id="stock_units" class="form-control" value="{{ old('stock_units', 0) }}">
                         </div>
                         <div class="col-md-3 mb-3">
@@ -205,6 +205,19 @@
 @push('scripts')
 <script>
     $(document).ready(function() {
+        function refreshPackagingLabels() {
+            const baseUnitName = ($('input[name="base_unit_name"]').val() || 'unit').trim();
+            const unitLabel = baseUnitName.length ? baseUnitName : 'unit';
+            const titleUnit = unitLabel.charAt(0).toUpperCase() + unitLabel.slice(1);
+
+            $('#carton_content_hint').text('Rolls per carton or ' + unitLabel + 's per carton');
+            $('#carton_content_help').text('Enter how many rolls are inside one carton, or how many ' + unitLabel + 's are inside one carton if this item does not use rolls.');
+            $('#roll_content_hint').text(unitLabel + 's per roll');
+            $('#roll_content_help').text('Enter how many sellable ' + unitLabel + 's are inside one roll. Leave this at 0 if the product does not use rolls.');
+            $('#opening_unit_label').text('Opening ' + titleUnit + ' Quantity');
+        }
+
+        refreshPackagingLabels();
         calculateTotalPieces();
         // Automatic Calculation Logic
         function calculateTotalPieces() {
@@ -224,6 +237,10 @@
 
         $('#stock_cartons, #stock_rolls, #stock_units, #upc, #upr').on('input', function() {
             calculateTotalPieces();
+        });
+
+        $('input[name="base_unit_name"]').on('input', function() {
+            refreshPackagingLabels();
         });
 
         $('#add_product_form').on('submit', function() {

@@ -341,14 +341,14 @@
                             </select>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">Carton Content</label>
+                            <label class="form-label">Carton Content <span class="text-muted d-block small" id="quick_carton_content_hint">Rolls per carton or units per carton</span></label>
                             <input type="number" name="units_per_carton" min="0" class="form-control" value="0">
-                            <small class="text-muted">Use rolls per carton, or pieces per carton if this item does not use rolls.</small>
+                            <small class="text-muted" id="quick_carton_content_help">Use rolls per carton, or units per carton if this item does not use rolls.</small>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">Roll Content</label>
+                            <label class="form-label">Roll Content <span class="text-muted d-block small" id="quick_roll_content_hint">Units per roll</span></label>
                             <input type="number" name="units_per_roll" min="0" class="form-control" value="0">
-                            <small class="text-muted">Leave `0` if the product is sold in cartons and pieces only.</small>
+                            <small class="text-muted" id="quick_roll_content_help">Leave `0` if the product is sold in cartons and units only.</small>
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Retail / Default Price</label>
@@ -376,7 +376,7 @@
                             <small class="text-muted">Cartons convert through rolls when present, or directly to pieces when rolls are not used.</small>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Opening Sachet Quantity</label>
+                            <label class="form-label" id="quick_opening_unit_label">Opening Unit Quantity</label>
                             <input type="number" step="0.01" name="stock_units" class="form-control" value="0">
                         </div>
                         <div class="col-md-6">
@@ -498,6 +498,18 @@
             }
         });
 
+        function refreshQuickPackagingLabels() {
+            const baseUnitName = ($('input[name="base_unit_name"]').val() || 'unit').trim();
+            const unitLabel = baseUnitName.length ? baseUnitName : 'unit';
+            const titleUnit = unitLabel.charAt(0).toUpperCase() + unitLabel.slice(1);
+
+            $('#quick_carton_content_hint').text('Rolls per carton or ' + unitLabel + 's per carton');
+            $('#quick_carton_content_help').text('Use rolls per carton, or ' + unitLabel + 's per carton if this item does not use rolls.');
+            $('#quick_roll_content_hint').text(unitLabel + 's per roll');
+            $('#quick_roll_content_help').text('Leave `0` if the product is sold in cartons and ' + unitLabel + 's only.');
+            $('#quick_opening_unit_label').text('Opening ' + titleUnit + ' Quantity');
+        }
+
         function calculateQuickStock() {
             const cartons = parseFloat($('input[name="stock_cartons"]').val()) || 0;
             const rolls = parseFloat($('input[name="stock_rolls"]').val()) || 0;
@@ -517,6 +529,11 @@
             calculateQuickStock();
         });
 
+        $('#quick_add_product_form').find('input[name="base_unit_name"]').on('input', function() {
+            refreshQuickPackagingLabels();
+        });
+
+        refreshQuickPackagingLabels();
         calculateQuickStock();
 
         // AJAX Category Store

@@ -94,16 +94,16 @@
                             </div>
                             <div class="col-md-3">
                                 <div class="form-group">
-                                    <label>Carton Content</label>
+                                    <label>Carton Content <small class="d-block text-muted" id="edit_carton_content_hint">Rolls per carton or units per carton</small></label>
                                     <input type="number" name="units_per_carton" min="0" class="form-control" value="{{ old('units_per_carton', $product->units_per_carton ?? 0) }}">
-                                    <small class="text-muted">Use rolls per carton, or pieces per carton if this item does not use rolls.</small>
+                                    <small class="text-muted" id="edit_carton_content_help">Use rolls per carton, or units per carton if this item does not use rolls.</small>
                                 </div>
                             </div>
                             <div class="col-md-3">
                                 <div class="form-group">
-                                    <label>Roll Content</label>
+                                    <label>Roll Content <small class="d-block text-muted" id="edit_roll_content_hint">Units per roll</small></label>
                                     <input type="number" name="units_per_roll" min="0" class="form-control" value="{{ old('units_per_roll', $product->units_per_roll ?? 0) }}">
-                                    <small class="text-muted">Leave 0 when the item is sold in cartons and pieces only.</small>
+                                    <small class="text-muted" id="edit_roll_content_help">Leave 0 when the item is sold in cartons and units only.</small>
                                 </div>
                             </div>
                             <div class="col-md-3">
@@ -171,3 +171,24 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+<script>
+    $(document).ready(function () {
+        function refreshEditPackagingLabels() {
+            const baseUnitName = ($('input[name="base_unit_name"]').val() || 'unit').trim();
+            const unitLabel = baseUnitName.length ? baseUnitName : 'unit';
+
+            $('#edit_carton_content_hint').text('Rolls per carton or ' + unitLabel + 's per carton');
+            $('#edit_carton_content_help').text('Use rolls per carton, or ' + unitLabel + 's per carton if this item does not use rolls.');
+            $('#edit_roll_content_hint').text(unitLabel + 's per roll');
+            $('#edit_roll_content_help').text('Leave 0 when the item is sold in cartons and ' + unitLabel + 's only.');
+        }
+
+        refreshEditPackagingLabels();
+        $('input[name="base_unit_name"]').on('input', function () {
+            refreshEditPackagingLabels();
+        });
+    });
+</script>
+@endpush
