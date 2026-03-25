@@ -199,16 +199,18 @@ class ProductController extends Controller
                 $validated['image'] = $request->file('image')->store('products', 'public');
             }
 
+            $resolvedCompanyId = auth()->user()?->company_id;
+
             $validated['status'] = 'active';
             $validated['stock_quantity'] = $validated['stock'];
             $validated['user_id'] = auth()->id();
-            $validated['company_id'] = (int) (auth()->user()?->company_id ?? 0);
+            $validated['company_id'] = $resolvedCompanyId ?: null;
             $product = Product::create($validated);
             $this->branchInventory->seedOpeningStock(
                 $product,
                 (float) $validated['stock'],
                 $this->getActiveBranchContext(),
-                (int) ($product->company_id ?? auth()->user()?->company_id ?? 0)
+                $product->company_id ?: ($resolvedCompanyId ?: null)
             );
 
             return redirect()->route('product-list')
