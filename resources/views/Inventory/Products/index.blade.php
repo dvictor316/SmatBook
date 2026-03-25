@@ -201,7 +201,7 @@
 <div class="modal fade" id="addProductModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <form method="POST" action="{{ route('inventory.Products.store') }}" enctype="multipart/form-data">
+            <form method="POST" action="{{ route('inventory.Products.store') }}" enctype="multipart/form-data" id="quick_add_product_form">
                 @csrf
                 <div class="modal-header">
                     <h5 class="modal-title">Add New Product</h5>
@@ -271,7 +271,7 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Product Image</label>
-                            <input type="file" name="image" class="form-control">
+                            <input type="file" name="image" id="quick_add_product_image" class="form-control">
                         </div>
                     </div>
                 </div>
@@ -365,6 +365,13 @@
         $('#export_excel').on('click', function(e) { e.preventDefault(); table.button('.dt-excel').trigger(); });
         $('#export_pdf').on('click', function(e) { e.preventDefault(); table.button('.dt-pdf').trigger(); });
         $('#export_print').on('click', function(e) { e.preventDefault(); table.button('.dt-print').trigger(); });
+
+        $('#quick_add_product_form').on('submit', function() {
+            const imageInput = document.getElementById('quick_add_product_image');
+            if (imageInput && (!imageInput.files || imageInput.files.length === 0)) {
+                imageInput.disabled = true;
+            }
+        });
 
         // AJAX Category Store
         $('#ajaxAddCategoryForm').on('submit', function(e) {
