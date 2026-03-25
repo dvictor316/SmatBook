@@ -205,12 +205,15 @@
             display: inline-flex !important;
             align-items: center;
             justify-content: center;
-            padding: 10px 16px !important;
+            padding: 8px 12px !important;
             border-radius: 999px;
             background: rgba(0, 98, 255, 0.08);
             color: var(--primary) !important;
             border: 1px solid rgba(0, 98, 255, 0.16);
             white-space: nowrap;
+            font-size: 0.8rem;
+            font-weight: 800;
+            letter-spacing: 0.3px;
         }
 
         .nav-demo-link:hover,
@@ -238,13 +241,16 @@
         .btn-portal {
             background: var(--grad-blue);
             color: white !important;
-            padding: 12px 28px;
+            padding: 10px 18px;
             border-radius: 8px;
             font-weight: 700;
             text-decoration: none;
             display: inline-block;
             transition: 0.3s ease;
             box-shadow: 0 8px 20px rgba(0, 98, 255, 0.2);
+            font-size: 0.8rem;
+            letter-spacing: 0.2px;
+            white-space: nowrap;
         }
 
         .btn-portal:hover {
@@ -766,9 +772,9 @@
         }
 
         /* ===== TABLET LANDSCAPE / SMALL LAPTOP NAV TUNING ===== */
-        @media (min-width: 1181px) and (max-width: 1320px) {
+        @media (min-width: 992px) and (max-width: 1320px) {
             .nav-container {
-                padding: 0 18px;
+                padding: 0 20px;
             }
 
             .logo-container {
@@ -784,30 +790,30 @@
             }
 
             .nav-links {
-                gap: 12px;
+                gap: 14px;
                 flex-wrap: nowrap;
             }
 
             .nav-links a {
-                font-size: 0.72rem;
-                letter-spacing: 0.14px;
+                font-size: 0.74rem;
+                letter-spacing: 0.18px;
                 white-space: nowrap;
             }
 
             .nav-demo-link {
-                padding: 8px 10px !important;
+                padding: 7px 10px !important;
             }
 
             .btn-portal {
-                padding: 9px 12px;
-                font-size: 0.72rem;
+                padding: 9px 14px;
+                font-size: 0.74rem;
                 white-space: nowrap;
                 border-radius: 9px;
             }
         }
 
         /* ===== TABLET LAYOUT ===== */
-        @media (max-width: 1180px) {
+        @media (max-width: 991px) {
             html, body {
                 overflow-x: hidden;
                 -webkit-overflow-scrolling: touch;
@@ -1102,7 +1108,7 @@
             border-width: 2px;
         }
 
-        @media (max-width: 1180px) {
+        @media (max-width: 991.98px) {
             #nprogress .spinner {
                 top: calc(env(safe-area-inset-top, 0px) + 76px) !important;
                 right: 12px !important;
@@ -1140,7 +1146,7 @@
             <li><a href="{{ route('landing.contact') }}" class="{{ Route::is('landing.contact') ? 'active' : '' }}">Contact</a></li>
             <li><a href="{{ url('/#licensing') }}">Licensing</a></li>
             <li><a href="{{ route('landing.policy') }}" class="{{ Route::is('landing.policy') ? 'active' : '' }}">Policy</a></li>
-            <li><a href="{{ route('landing.demo') }}" class="nav-demo-link {{ Route::is('landing.demo') ? 'active' : '' }}">Demo</a></li>
+            <li><a href="{{ route('landing.demo') }}" class="nav-demo-link {{ Route::is('landing.demo') ? 'active' : '' }}">Try Demo</a></li>
           
             <li><a href="{{ route('saas-login') }}" class="btn-portal">Client Portal</a></li>
         </ul>
