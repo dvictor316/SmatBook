@@ -379,14 +379,17 @@ $sale = Sale::create([
         ]);
 
         if ($finalPaid > 0) {
+            $paymentRecordStatus = $finalBalance <= 0 ? 'Completed' : 'Pending';
             $paymentPayload = [
                 'sale_id' => $sale->id,
                 'branch_id' => $activeBranch['id'],
                 'branch_name' => $activeBranch['name'],
                 'amount'  => $finalPaid,
                 'method'  => $request->payment_method,
-                'status'  => $finalBalance <= 0 ? 'Completed' : 'Partial',
-                'note'    => $paymentAccount?->name ? 'Initial POS Payment via ' . $paymentAccount->name : 'Initial POS Payment',
+                'status'  => $paymentRecordStatus,
+                'note'    => $finalBalance <= 0
+                    ? ($paymentAccount?->name ? 'Initial POS Payment via ' . $paymentAccount->name : 'Initial POS Payment')
+                    : ($paymentAccount?->name ? 'Deposit received via ' . $paymentAccount->name : 'Deposit received'),
                 'created_by' => auth()->id(),
             ];
             if (Schema::hasColumn('payments', 'payment_account_id')) {

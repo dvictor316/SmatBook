@@ -51,7 +51,7 @@ class PaymentController extends Controller
                 'reference' => $request->reference,
                 'amount' => (float) $request->amount,
                 'method' => $request->method ?: 'cash',
-                'status' => $request->status ?: 'Completed',
+                'status' => $request->status ?: 'Pending',
                 'note' => $request->note,
                 'attachment' => $attachmentName,
                 'created_by' => Auth::id(),
@@ -72,6 +72,11 @@ class PaymentController extends Controller
                     'balance' => $newBalance,
                     'payment_status' => $newBalance <= 0 ? 'paid' : 'partial',
                     'order_status' => $newBalance <= 0 ? 'completed' : ($sale->order_status ?? 'pending'),
+                ]);
+
+                $payment->update([
+                    'status' => $newBalance <= 0 ? 'Completed' : 'Pending',
+                    'note' => $request->note ?: ($newBalance <= 0 ? 'Payment completed' : 'Deposit received'),
                 ]);
 
                 LedgerService::postSalePayment($sale->fresh(), $payment, $request->reference);

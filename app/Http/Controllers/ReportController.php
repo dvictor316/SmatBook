@@ -703,6 +703,9 @@ private function resolvePaymentStatus(Payment $payment): string
     if (in_array($raw, ['completed', 'paid', 'success', 'successful'], true)) {
         return 'Completed';
     }
+    if (in_array($raw, ['pending', 'deposit'], true)) {
+        return 'Pending';
+    }
     if (in_array($raw, ['partial', 'partially paid'], true)) {
         return 'Partial';
     }
