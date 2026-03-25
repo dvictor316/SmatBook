@@ -700,6 +700,19 @@ private function resolvePaymentStatus(Payment $payment): string
     $raw = strtolower(trim((string) ($payment->status ?? '')));
     $sale = $payment->sale;
 
+    if (in_array($raw, ['completed', 'paid', 'success', 'successful'], true)) {
+        return 'Completed';
+    }
+    if (in_array($raw, ['partial', 'partially paid'], true)) {
+        return 'Partial';
+    }
+    if (in_array($raw, ['cancelled', 'canceled'], true)) {
+        return 'Cancelled';
+    }
+    if (in_array($raw, ['failed', 'error'], true)) {
+        return 'Failed';
+    }
+
     if ($sale) {
         $salePaymentStatus = strtolower(trim((string) ($sale->payment_status ?? '')));
         $saleBalance = (float) ($sale->balance ?? 0);
@@ -713,19 +726,6 @@ private function resolvePaymentStatus(Payment $payment): string
         if (in_array($salePaymentStatus, ['partial', 'partially paid'], true) || ($salePaid > 0 && $saleBalance > 0)) {
             return 'Partial';
         }
-    }
-
-    if (in_array($raw, ['completed', 'paid', 'success', 'successful'], true)) {
-        return 'Completed';
-    }
-    if (in_array($raw, ['partial', 'partially paid'], true)) {
-        return 'Partial';
-    }
-    if (in_array($raw, ['cancelled', 'canceled'], true)) {
-        return 'Cancelled';
-    }
-    if (in_array($raw, ['failed', 'error'], true)) {
-        return 'Failed';
     }
 
     return 'Pending';

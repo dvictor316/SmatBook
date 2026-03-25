@@ -36,16 +36,16 @@
             
             <div class="flex items-center space-x-2 no-print">
                 <button onclick="generatePDF()" class="inline-flex items-center px-3 py-2 bg-white border border-gray-200 rounded-xl font-semibold text-red-500 hover:bg-gray-50 transition text-sm">
-                    <i class="fe fe-file-text mr-2"></i> PDF
+                    <i class="fas fa-file-pdf mr-2"></i> PDF
                 </button>
                 <button onclick="generateExcel()" class="inline-flex items-center px-3 py-2 bg-white border border-gray-200 rounded-xl font-semibold text-green-600 hover:bg-gray-50 transition text-sm">
-                    <i class="fe fe-download mr-2"></i> Excel
+                    <i class="fas fa-file-excel mr-2"></i> Excel
                 </button>
                 <button onclick="generateCSV()" class="inline-flex items-center px-3 py-2 bg-white border border-gray-200 rounded-xl font-semibold text-blue-600 hover:bg-gray-50 transition text-sm">
-                    <i class="fe fe-list mr-2"></i> CSV
+                    <i class="fas fa-list mr-2"></i> CSV
                 </button>
                 <button onclick="window.print()" class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-xl font-bold shadow-lg shadow-primary/20 hover:bg-indigo-700 transition text-sm">
-                    <i class="fe fe-printer mr-2"></i> Print All
+                    <i class="fas fa-print mr-2"></i> Print All
                 </button>
             </div>
         </div>
@@ -119,7 +119,7 @@
                         Reset
                     </a>
                     <button type="submit" class="inline-flex items-center justify-center px-5 py-3 bg-gray-900 text-white rounded-xl font-bold hover:bg-black transition shadow-sm">
-                        <i class="fe fe-search mr-2"></i> Apply Filters
+                        <i class="fas fa-search mr-2"></i> Apply Filters
                     </button>
                 </div>
             </form>
@@ -197,9 +197,9 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right no-print">
                                 <div class="flex justify-end space-x-1">
-                                    <button onclick="viewPayment({{ $payment->id }})" class="p-2 text-gray-400 hover:text-indigo-600 transition hover:bg-indigo-50 rounded-lg" title="View Receipt"><i class="fe fe-eye"></i></button>
-                                    <button onclick="editPayment({{ $payment->id }})" class="p-2 text-gray-400 hover:text-green-600 transition hover:bg-green-50 rounded-lg" title="Edit Record"><i class="fe fe-edit"></i></button>
-                                    <button onclick="deleteRow({{ $payment->id }})" class="p-2 text-gray-400 hover:text-red-600 transition hover:bg-red-50 rounded-lg" title="Delete"><i class="fe fe-trash-2"></i></button>
+                                    <button onclick="viewPayment({{ $payment->id }})" class="p-2 text-gray-400 hover:text-indigo-600 transition hover:bg-indigo-50 rounded-lg" title="View Receipt"><i class="fas fa-eye"></i></button>
+                                    <button onclick="editPayment({{ $payment->id }})" class="p-2 text-gray-400 hover:text-green-600 transition hover:bg-green-50 rounded-lg" title="Edit Record"><i class="fas fa-pen"></i></button>
+                                    <button onclick="deleteRow({{ $payment->id }})" class="p-2 text-gray-400 hover:text-red-600 transition hover:bg-red-50 rounded-lg" title="Delete"><i class="fas fa-trash"></i></button>
                                 </div>
                             </td>
                         </tr>
@@ -225,7 +225,7 @@
 </div>
 
 <div id="toast" class="hidden fixed bottom-8 right-8 z-[100] bg-gray-900 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center space-x-3 transition-all duration-300 animate-slide-up">
-    <div class="bg-green-500 rounded-full p-1"><i class="fe fe-check text-white"></i></div>
+    <div class="bg-green-500 rounded-full p-1"><i class="fas fa-check text-white"></i></div>
     <p id="toast-message" class="text-sm font-bold tracking-wide"></p>
 </div>
 
@@ -237,14 +237,14 @@
             <div class="flex justify-between items-center mb-6 no-print">
                 <h3 class="text-xl font-bold text-gray-900" id="modalTitle">Details</h3>
                 <div class="flex space-x-2">
-                    <button onclick="closeModal()" class="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-full text-gray-400 hover:text-gray-600 transition"><i class="fe fe-x"></i></button>
+                    <button onclick="closeModal()" class="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-full text-gray-400 hover:text-gray-600 transition"><i class="fas fa-times"></i></button>
                 </div>
             </div>
 
             <div id="receipt-view" class="receipt-sheet hidden pt-2 border-t border-gray-100">
                 <div class="receipt-actions no-print flex justify-end mb-5">
                     <button onclick="printReceipt()" id="printReceiptBtn" class="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-900 text-white rounded-xl text-xs font-black uppercase tracking-[0.18em] shadow-lg shadow-gray-900/10 hover:bg-black transition">
-                        <i class="fe fe-printer text-sm"></i>
+                        <i class="fas fa-print text-sm"></i>
                         <span>Print Receipt</span>
                     </button>
                 </div>

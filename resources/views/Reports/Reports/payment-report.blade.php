@@ -64,10 +64,10 @@
                 </div>
                 <div class="col-auto d-flex gap-2 no-print">
                     <button id="emailReport" class="btn btn-outline-primary btn-sm rounded-pill">
-                        <i class="feather-mail me-1"></i> {{ __('Email') }}
+                        <i class="fas fa-envelope me-1"></i> {{ __('Email') }}
                     </button>
                     <button onclick="window.print()" class="btn btn-primary btn-sm rounded-pill shadow-sm">
-                        <i class="feather-printer me-1"></i> {{ __('Print Report') }}
+                        <i class="fas fa-print me-1"></i> {{ __('Print Report') }}
                     </button>
                 </div>
             </div>
@@ -90,7 +90,7 @@
                                 <h3 class="mb-0 fw-bold money-sm">₦{{ number_format($totalAmount, 2) }}</h3>
                             </div>
                             <div class="rounded-circle bg-white bg-opacity-25 p-2">
-                                <i class="feather-database text-white"></i>
+                                <i class="fas fa-database text-white"></i>
                             </div>
                         </div>
                     </div>
@@ -113,7 +113,7 @@
                         </div>
                         <div class="col-md-4">
                             <button type="submit" class="btn btn-dark btn-sm px-4">
-                                <i class="feather-filter me-1"></i> {{ __('Filter Results') }}
+                                <i class="fas fa-filter me-1"></i> {{ __('Filter Results') }}
                             </button>
                             <a href="{{ route('reports.payment') }}" class="btn btn-light btn-sm px-4 border">
                                 {{ __('Reset') }}
@@ -157,15 +157,22 @@
                                 <td class="fw-bold text-dark money-cell">₦{{ number_format($payment->amount, 2) }}</td>
                                 <td>
                                     <span class="text-secondary small">
-                                        <i class="feather-credit-card me-1"></i> {{ $payment->method }}
+                                        <i class="fas fa-credit-card me-1"></i> {{ $payment->method }}
                                     </span>
                                 </td>
                                 <td class="small text-muted">
                                     {{ $payment->resolved_channel ?? 'Not specified' }}
                                 </td>
                                 <td>
-                                    @if($payment->status == 'Completed')
+                                    @php
+                                        $rowStatus = $payment->resolved_status ?? $payment->status ?? 'Pending';
+                                    @endphp
+                                    @if($rowStatus === 'Completed')
                                         <span class="badge bg-success-subtle text-success border border-success-subtle px-2">Completed</span>
+                                    @elseif($rowStatus === 'Partial')
+                                        <span class="badge bg-info-subtle text-info border border-info-subtle px-2">Partial</span>
+                                    @elseif(in_array($rowStatus, ['Failed', 'Cancelled'], true))
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2">{{ $rowStatus }}</span>
                                     @else
                                         <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2">Pending</span>
                                     @endif
@@ -178,7 +185,7 @@
                             <tr>
                                 <td colspan="8" class="text-center py-5">
                                     <div class="text-muted">
-                                        <i class="feather-alert-circle display-4 d-block mb-3"></i>
+                                        <i class="fas fa-circle-exclamation display-4 d-block mb-3"></i>
                                         <p>{{ __('No payment records found for the selected range.') }}</p>
                                     </div>
                                 </td>
