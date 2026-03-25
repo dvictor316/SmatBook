@@ -136,7 +136,7 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         try {
-            $validated = $request->validate([
+            $rules = [
                 'name'             => 'required|string|max:191',
                 'sku'              => 'nullable|string|max:191|unique:products,sku',
                 'price'            => 'required|numeric|min:0', 
@@ -152,8 +152,15 @@ class ProductController extends Controller
                 'unit_type'        => 'required|in:unit,roll,carton',
                 'description'      => 'nullable|string',
                 'barcode'          => 'nullable|string|max:191',
-                'image'            => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
-            ]);
+            ];
+
+            if ($request->hasFile('image')) {
+                $rules['image'] = 'image|mimes:jpeg,png,jpg,gif|max:5120';
+            } else {
+                $request->request->remove('image');
+            }
+
+            $validated = $request->validate($rules);
 
             $validated['units_per_carton'] = (int) ($validated['units_per_carton'] ?? 0);
             $validated['units_per_roll'] = (int) ($validated['units_per_roll'] ?? 0);
