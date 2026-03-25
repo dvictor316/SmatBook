@@ -484,12 +484,10 @@ $sale = Sale::create([
 
 public function create()
 {
-    // 1. Fetch customers for the tenant
-    $customers = Customer::all(); 
+    $customers = Customer::all();
+    $products = Product::orderBy('name', 'asc')->get();
 
-    // 2. Return the view with the required data
-    // Update the path below to match your folder: Sales/Invoices/create-invoices
-    return view('Sales.Invoices.create-invoices', compact('customers'));
+    return view('Sales.Invoices.create-invoices', compact('customers', 'products'));
 }
 
     public function edit($id)
@@ -511,6 +509,7 @@ public function create()
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.quantity' => 'required|numeric|min:1',
             'items.*.rate' => 'required|numeric',
+            'items.*.price_level' => 'nullable|in:retail,wholesale,special',
         ]);
 
         DB::transaction(function () use ($request, $sale) {

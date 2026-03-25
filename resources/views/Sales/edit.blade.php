@@ -59,6 +59,7 @@
                             <thead class="table-thead-blue">
                                 <tr>
                                     <th style="width: 35%;">Product</th>
+                                    <th style="width: 18%;">Price Level</th>
                                     <th style="width: 15%;">Qty</th>
                                     <th style="width: 15%;">Rate (₦)</th>
                                     <th style="width: 15%;">Disc (%)</th>
@@ -72,8 +73,35 @@
                                     <td>
                                         <select name="items[{{ $index }}][product_id]" class="form-select form-select-sm product-select" required>
                                             @foreach($products as $product)
-                                                <option value="{{ $product->id }}" data-price="{{ $product->price }}" {{ $item->product_id == $product->id ? 'selected' : '' }}>{{ $product->name }}</option>
+                                                <option
+                                                    value="{{ $product->id }}"
+                                                    data-price="{{ $product->retail_price ?? $product->price ?? 0 }}"
+                                                    data-retail="{{ $product->retail_price ?? $product->price ?? 0 }}"
+                                                    data-wholesale="{{ $product->wholesale_price ?? 0 }}"
+                                                    data-special="{{ $product->special_price ?? 0 }}"
+                                                    data-name="{{ $product->name }}"
+                                                    {{ $item->product_id == $product->id ? 'selected' : '' }}>
+                                                    {{ $product->name }}
+                                                </option>
                                             @endforeach
+                                        </select>
+                                    </td>
+                                    <td>
+                                        @php
+                                            $matchedProduct = $products->firstWhere('id', $item->product_id);
+                                            $selectedPriceLevel = 'retail';
+                                            if ($matchedProduct) {
+                                                if (!is_null($matchedProduct->special_price) && (float) $item->unit_price == (float) $matchedProduct->special_price) {
+                                                    $selectedPriceLevel = 'special';
+                                                } elseif (!is_null($matchedProduct->wholesale_price) && (float) $item->unit_price == (float) $matchedProduct->wholesale_price) {
+                                                    $selectedPriceLevel = 'wholesale';
+                                                }
+                                            }
+                                        @endphp
+                                        <select name="items[{{ $index }}][price_level]" class="form-select form-select-sm price-level-select">
+                                            <option value="retail" {{ $selectedPriceLevel === 'retail' ? 'selected' : '' }}>Retail</option>
+                                            <option value="wholesale" {{ $selectedPriceLevel === 'wholesale' ? 'selected' : '' }}>Wholesale</option>
+                                            <option value="special" {{ $selectedPriceLevel === 'special' ? 'selected' : '' }}>Special</option>
                                         </select>
                                     </td>
                                     <td><input type="number" name="items[{{ $index }}][quantity]" class="form-control form-control-sm qty" value="{{ $item->qty }}" min="1"></td>
@@ -122,8 +150,23 @@ $(document).ready(function() {
                 <select name="items[${rowCount}][product_id]" class="form-select form-select-sm product-select" required>
                     <option value="">Select Item</option>
                     @foreach($products as $p)
-                        <option value="{{$p->id}}" data-price="{{$p->price}}">{{$p->name}}</option>
+                        <option
+                            value="{{$p->id}}"
+                            data-price="{{ $p->retail_price ?? $p->price ?? 0 }}"
+                            data-retail="{{ $p->retail_price ?? $p->price ?? 0 }}"
+                            data-wholesale="{{ $p->wholesale_price ?? 0 }}"
+                            data-special="{{ $p->special_price ?? 0 }}"
+                            data-name="{{$p->name}}">
+                            {{$p->name}}
+                        </option>
                     @endforeach
+                </select>
+            </td>
+            <td>
+                <select name="items[${rowCount}][price_level]" class="form-select form-select-sm price-level-select">
+                    <option value="retail">Retail</option>
+                    <option value="wholesale">Wholesale</option>
+                    <option value="special">Special</option>
                 </select>
             </td>
             <td><input type="number" name="items[${rowCount}][quantity]" class="form-control form-control-sm qty" value="1" min="1"></td>
@@ -141,10 +184,23 @@ $(document).ready(function() {
         calculateGrandTotal(); 
     });
 
-    $(document).on('change', '.product-select', function() { 
-        let price = $(this).find(':selected').data('price') || 0;
-        $(this).closest('tr').find('.rate').val(price); 
-        calculateRowTotal($(this).closest('tr')); 
+    function resolveSelectedRate(row) {
+        const productOption = row.find('.product-select option:selected');
+        const level = row.find('.price-level-select').val() || 'retail';
+        const retail = parseFloat(productOption.data('retail')) || parseFloat(productOption.data('price')) || 0;
+        const wholesale = parseFloat(productOption.data('wholesale')) || 0;
+        const special = parseFloat(productOption.data('special')) || 0;
+
+        if (level === 'wholesale' && wholesale > 0) return wholesale;
+        if (level === 'special' && special > 0) return special;
+        return retail;
+    }
+
+    $(document).on('change', '.product-select, .price-level-select', function() { 
+        const row = $(this).closest('tr');
+        let price = resolveSelectedRate(row);
+        row.find('.rate').val(price);
+        calculateRowTotal(row); 
     });
 
     $(document).on('input', '.qty, .rate, .discount', function() { 
