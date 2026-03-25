@@ -59,6 +59,19 @@
             padding: 0.7rem 0.95rem;
         }
     }
+
+    .product-thumb-empty {
+        width: 35px;
+        height: 35px;
+        border-radius: 10px;
+        background: #eef2ff;
+        color: #4f46e5;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 0.5rem;
+        font-size: 0.9rem;
+    }
     
     @media print {
         .no-print, .dt-buttons, .main-header, .sidebar { display: none !important; }
@@ -104,7 +117,7 @@
                                     <i class="fas fa-upload me-1"></i> Import
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end">
-                                    <li><a class="dropdown-item" href="{{ route('inventory.Products.import.template') }}"><i class="far fa-file-lines me-2 text-primary"></i>Download CSV Template</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('inventory.Products.import.template') }}"><i class="far fa-file-lines me-2 text-primary"></i>Download Spreadsheet Template</a></li>
                                     <li><button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#importProductsModal"><i class="fas fa-file-upload me-2 text-success"></i>Import Products</button></li>
                                 </ul>
                             </div>
@@ -112,6 +125,11 @@
                             <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addProductModal">
                                 <i class="fa fa-plus"></i> Add Product
                             </button>
+                            @if(($stockTransferEnabled ?? false) && count($availableBranches ?? []) > 1)
+                                <button type="button" class="btn btn-outline-dark" data-bs-toggle="modal" data-bs-target="#transferStockModal">
+                                    <i class="fas fa-right-left"></i> Transfer Stock
+                                </button>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -142,7 +160,11 @@
                                         <td>{{ $loop->iteration }}</td>
                                         <td>
                                             <div class="d-flex align-items-center">
-                                                <img src="{{ $product->image_url }}" class="rounded me-2" width="35" height="35" alt="{{ $product->name }}" onerror="this.onerror=null;this.src='{{ asset('assets/img/products/product-01.png') }}';">
+                                                @if($product->image_url)
+                                                    <img src="{{ $product->image_url }}" class="rounded me-2" width="35" height="35" alt="{{ $product->name }}">
+                                                @else
+                                                    <span class="product-thumb-empty"><i class="fas fa-box-open"></i></span>
+                                                @endif
                                                 <div>
                                                     <div class="fw-bold text-dark">{{ $product->name }}</div>
                                                     <small class="text-muted">{{ $product->sku }}</small>
@@ -152,8 +174,13 @@
                                         <td>{{ $product->category->name ?? 'N/A' }}</td>
                                         <td><span class="badge bg-soft-info text-info">{{ $product->base_unit_name }}</span></td>
                                         <td>
-                                                <small class="d-block text-nowrap">Rolls / Carton: <strong>{{ $product->units_per_carton }}</strong></small>
-                                                <small class="d-block text-nowrap">Sachets / Roll: <strong>{{ $product->units_per_roll }}</strong></small>
+                                                @if((int) ($product->units_per_roll ?? 0) > 0)
+                                                    <small class="d-block text-nowrap">Rolls / Carton: <strong>{{ $product->units_per_carton }}</strong></small>
+                                                    <small class="d-block text-nowrap">Sachets / Roll: <strong>{{ $product->units_per_roll }}</strong></small>
+                                                @else
+                                                    <small class="d-block text-nowrap">Pieces / Carton: <strong>{{ $product->units_per_carton }}</strong></small>
+                                                    <small class="d-block text-nowrap">Roll Layer: <strong>Not used</strong></small>
+                                                @endif
                                         </td>
                                         <td>
                                             @php
@@ -167,7 +194,13 @@
                                                 <div class="small text-muted mt-1">{{ $activeBranch['name'] }}</div>
                                             @endif
                                         </td>
-                                        <td>{{ number_format($product->price, 2) }}</td>
+                                        <td>
+                                            <div>{{ number_format($product->price, 2) }}</div>
+                                            @if(!is_null($product->wholesale_price) || !is_null($product->special_price))
+                                                <small class="d-block text-muted">Wholesale: {{ !is_null($product->wholesale_price) ? number_format($product->wholesale_price, 2) : '—' }}</small>
+                                                <small class="d-block text-muted">Special: {{ !is_null($product->special_price) ? number_format($product->special_price, 2) : '—' }}</small>
+                                            @endif
+                                        </td>
                                         <td>{{ number_format($product->purchase_price, 2) }}</td>
                                         <td class="text-center no-print">
                                             <div class="dropdown">
@@ -194,6 +227,62 @@
         </div>
     </div>
 </div>
+
+@if(($stockTransferEnabled ?? false) && count($availableBranches ?? []) > 1)
+<div class="modal fade" id="transferStockModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ route('inventory.transfer') }}">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title">Transfer Stock Between Branches</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted mb-3">Use this on higher plans to move stock from one branch to another without changing total company stock.</p>
+                    <div class="mb-3">
+                        <label class="form-label">Product</label>
+                        <select name="product_id" class="form-select" required>
+                            <option value="">Select product</option>
+                            @foreach($products as $product)
+                                <option value="{{ $product->id }}">{{ $product->name }} ({{ $product->sku }})</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">From Branch</label>
+                            <select name="from_branch_id" class="form-select" required>
+                                <option value="">Select source</option>
+                                @foreach(($availableBranches ?? []) as $branch)
+                                    <option value="{{ $branch['id'] }}">{{ $branch['name'] }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">To Branch</label>
+                            <select name="to_branch_id" class="form-select" required>
+                                <option value="">Select destination</option>
+                                @foreach(($availableBranches ?? []) as $branch)
+                                    <option value="{{ $branch['id'] }}">{{ $branch['name'] }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label">Quantity</label>
+                        <input type="number" step="0.01" min="0.01" name="quantity" class="form-control" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Transfer Stock</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
 
 {{-- MODAL: ADD PRODUCT --}}
 <div class="modal fade" id="addProductModal" tabindex="-1" aria-hidden="true">
@@ -242,21 +331,40 @@
                                 <option value="carton">Carton</option>
                             </select>
                         </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Stock Branch</label>
+                            <select name="branch_id" class="form-select">
+                                <option value="">Use Active Branch</option>
+                                @foreach(($availableBranches ?? []) as $branch)
+                                    <option value="{{ $branch['id'] }}">{{ $branch['name'] }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                         <div class="col-md-3">
-                            <label class="form-label">Roll Count in One Carton</label>
+                            <label class="form-label">Carton Content</label>
                             <input type="number" name="units_per_carton" min="0" class="form-control" value="0">
+                            <small class="text-muted">Use rolls per carton, or pieces per carton if this item does not use rolls.</small>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">Sachet Count in One Roll</label>
+                            <label class="form-label">Roll Content</label>
                             <input type="number" name="units_per_roll" min="0" class="form-control" value="0">
+                            <small class="text-muted">Leave `0` if the product is sold in cartons and pieces only.</small>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">Selling Price</label>
+                            <label class="form-label">Retail / Default Price</label>
                             <input type="number" step="0.01" name="price" class="form-control" required>
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Purchase Price</label>
                             <input type="number" step="0.01" name="purchase_price" class="form-control" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Wholesale Price</label>
+                            <input type="number" step="0.01" name="wholesale_price" class="form-control">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Special Discount Price</label>
+                            <input type="number" step="0.01" name="special_price" class="form-control">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Opening Roll Quantity</label>
@@ -265,7 +373,7 @@
                         <div class="col-md-6">
                             <label class="form-label">Opening Carton Quantity</label>
                             <input type="number" step="0.01" name="stock_cartons" class="form-control" value="0">
-                            <small class="text-muted">Cartons convert through rolls and sachets automatically.</small>
+                            <small class="text-muted">Cartons convert through rolls when present, or directly to pieces when rolls are not used.</small>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Opening Sachet Quantity</label>
@@ -309,8 +417,17 @@
                         </a>
                     </div>
                     <div>
-                        <label class="form-label">CSV File</label>
-                        <input type="file" name="import_file" class="form-control" accept=".csv,text/csv" required>
+                        <label class="form-label">Spreadsheet File</label>
+                        <input type="file" name="import_file" class="form-control" accept=".csv,.txt,.xls,.xlsx,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
+                    </div>
+                    <div>
+                        <label class="form-label">Apply Opening Stock To Branch</label>
+                        <select name="branch_id" class="form-select">
+                            <option value="">Use Active Branch</option>
+                            @foreach(($availableBranches ?? []) as $branch)
+                                <option value="{{ $branch['id'] }}">{{ $branch['name'] }}</option>
+                            @endforeach
+                        </select>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -388,8 +505,8 @@
             const rollsPerCarton = parseFloat($('input[name="units_per_carton"]').val()) || 0;
             const sachetsPerRoll = parseFloat($('input[name="units_per_roll"]').val()) || 0;
 
-            const fromCartons = rollsPerCarton > 0 && sachetsPerRoll > 0 ? cartons * rollsPerCarton * sachetsPerRoll : 0;
-            const fromRolls = sachetsPerRoll > 0 ? rolls * sachetsPerRoll : 0;
+            const fromCartons = sachetsPerRoll > 0 ? cartons * rollsPerCarton * sachetsPerRoll : cartons * rollsPerCarton;
+            const fromRolls = sachetsPerRoll > 0 ? rolls * sachetsPerRoll : rolls;
             const total = fromCartons + fromRolls + sachets;
 
             $('#quick_stock_preview').val(total.toLocaleString() + ' Units');

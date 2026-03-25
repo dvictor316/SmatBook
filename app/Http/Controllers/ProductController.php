@@ -6,6 +6,8 @@ use App\Models\Product;
 use App\Models\Category;
 use App\Models\Purchase;
 use App\Models\PurchaseItem;
+use App\Models\Setting;
+use App\Models\Subscription;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -15,6 +17,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use App\Support\BranchInventoryService;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class ProductController extends Controller
 {
@@ -28,6 +31,106 @@ class ProductController extends Controller
             'id' => session('active_branch_id') ? (string) session('active_branch_id') : null,
             'name' => session('active_branch_name') ? (string) session('active_branch_name') : null,
         ];
+    }
+
+    private function companyScopedSettingKey(string $baseKey): string
+    {
+        $companyId = (int) (auth()->user()?->company_id ?? optional(auth()->user()?->company)->id ?? 0);
+
+        return $companyId > 0 ? "{$baseKey}_company_{$companyId}" : $baseKey;
+    }
+
+    private function getAvailableBranches(): array
+    {
+        $raw = Setting::where('key', $this->companyScopedSettingKey('branches_json'))->value('value');
+        $decoded = json_decode((string) $raw, true);
+
+        return collect(is_array($decoded) ? $decoded : [])
+            ->filter(fn ($branch) => !empty($branch['id']) && !empty($branch['name']))
+            ->values()
+            ->all();
+    }
+
+    private function resolveBranchContext(?string $branchId = null): array
+    {
+        $branches = collect($this->getAvailableBranches());
+
+        if ($branchId) {
+            $branch = $branches->firstWhere('id', $branchId);
+            if ($branch) {
+                return [
+                    'id' => (string) $branch['id'],
+                    'name' => (string) ($branch['name'] ?? ''),
+                ];
+            }
+        }
+
+        return $this->getActiveBranchContext();
+    }
+
+    private function currentPlanName(): string
+    {
+        $currentPlan = strtolower((string) session('user_plan'));
+
+        if ($currentPlan === '' && auth()->check() && Schema::hasTable('subscriptions')) {
+            $subscription = Subscription::resolveCurrentForUser(auth()->user())
+                ?? Subscription::where('user_id', auth()->id())->latest()->first();
+
+            $currentPlan = strtolower((string) ($subscription?->plan ?? $subscription?->plan_name ?? ''));
+        }
+
+        return $currentPlan;
+    }
+
+    private function planSupportsStockTransfer(): bool
+    {
+        $plan = $this->currentPlanName();
+
+        return $plan === '' || !str_contains($plan, 'basic');
+    }
+
+    private function calculateStockFromPackaging(array $validated): int
+    {
+        $unitsPerCarton = max((int) ($validated['units_per_carton'] ?? 0), 0);
+        $unitsPerRoll = max((int) ($validated['units_per_roll'] ?? 0), 0);
+        $stockCartons = (float) ($validated['stock_cartons'] ?? 0);
+        $stockRolls = (float) ($validated['stock_rolls'] ?? 0);
+        $stockUnits = (float) ($validated['stock_units'] ?? 0);
+
+        $cartonUnits = $unitsPerRoll > 0
+            ? ($stockCartons * $unitsPerCarton * $unitsPerRoll)
+            : ($stockCartons * $unitsPerCarton);
+
+        $rollUnits = $unitsPerRoll > 0
+            ? ($stockRolls * $unitsPerRoll)
+            : $stockRolls;
+
+        return (int) round($cartonUnits + $rollUnits + $stockUnits);
+    }
+
+    private function spreadsheetRows(UploadedFile $file): array
+    {
+        $extension = strtolower((string) $file->getClientOriginalExtension());
+
+        if (in_array($extension, ['csv', 'txt'], true)) {
+            $handle = fopen($file->getRealPath(), 'r');
+            if ($handle === false) {
+                return [];
+            }
+
+            $rows = [];
+            while (($row = fgetcsv($handle)) !== false) {
+                $rows[] = $row;
+            }
+            fclose($handle);
+
+            return $rows;
+        }
+
+        $spreadsheet = IOFactory::load($file->getRealPath());
+        $sheet = $spreadsheet->getActiveSheet();
+
+        return $sheet->toArray(null, false, false, false);
     }
 
     /**
@@ -48,6 +151,7 @@ class ProductController extends Controller
             return view('Inventory.Products.index', [
                 'products' => collect(),
                 'categories' => collect(),
+                'availableBranches' => $this->getAvailableBranches(),
                 'search' => trim((string) $request->input('search', '')),
                 'session_domain' => env('SESSION_DOMAIN', null)
             ]);
@@ -100,6 +204,8 @@ class ProductController extends Controller
         return view('Inventory.Products.index', [
             'products' => $products,
             'categories' => $categories,
+            'availableBranches' => $this->getAvailableBranches(),
+            'stockTransferEnabled' => $this->planSupportsStockTransfer(),
             'search' => $search,
             'activeBranch' => $activeBranch,
             'session_domain' => env('SESSION_DOMAIN', null)
@@ -129,7 +235,8 @@ class ProductController extends Controller
         $categories = Schema::hasTable('categories')
             ? Category::orderBy('name')->get()
             : collect();
-        return view('Inventory.Products.add-products', compact('categories'));
+        $availableBranches = $this->getAvailableBranches();
+        return view('Inventory.Products.add-products', compact('categories', 'availableBranches'));
     }
 
     /**
@@ -142,6 +249,9 @@ class ProductController extends Controller
                 'name'             => 'required|string|max:191',
                 'sku'              => 'nullable|string|max:191|unique:products,sku',
                 'price'            => 'required|numeric|min:0', 
+                'retail_price'     => 'nullable|numeric|min:0',
+                'wholesale_price'  => 'nullable|numeric|min:0',
+                'special_price'    => 'nullable|numeric|min:0',
                 'purchase_price'   => 'required|numeric|min:0', 
                 'stock'            => 'nullable|integer|min:0', 
                 'stock_cartons'    => 'nullable|numeric|min:0',
@@ -152,6 +262,7 @@ class ProductController extends Controller
                 'base_unit_name'   => 'required|string|max:100',
                 'category_id'      => 'required|exists:categories,id',
                 'unit_type'        => 'required|in:unit,sachet,roll,carton',
+                'branch_id'        => 'nullable|string',
                 'description'      => 'nullable|string',
                 'barcode'          => 'nullable|string|max:191',
             ];
@@ -165,38 +276,44 @@ class ProductController extends Controller
             $validated['stock_cartons'] = (float) ($validated['stock_cartons'] ?? 0);
             $validated['stock_rolls'] = (float) ($validated['stock_rolls'] ?? 0);
             $validated['stock_units'] = (float) ($validated['stock_units'] ?? 0);
+            $retailPrice = (float) ($validated['retail_price'] ?? $validated['price']);
+            $validated['price'] = $retailPrice;
+            if (Schema::hasColumn('products', 'retail_price')) {
+                $validated['retail_price'] = $retailPrice;
+            } else {
+                unset($validated['retail_price']);
+            }
+            if (Schema::hasColumn('products', 'wholesale_price')) {
+                $validated['wholesale_price'] = isset($validated['wholesale_price']) && $validated['wholesale_price'] !== null && $validated['wholesale_price'] !== ''
+                    ? (float) $validated['wholesale_price']
+                    : null;
+            } else {
+                unset($validated['wholesale_price']);
+            }
+            if (Schema::hasColumn('products', 'special_price')) {
+                $validated['special_price'] = isset($validated['special_price']) && $validated['special_price'] !== null && $validated['special_price'] !== ''
+                    ? (float) $validated['special_price']
+                    : null;
+            } else {
+                unset($validated['special_price']);
+            }
             $validated['sku'] = $this->generateUniqueSku($validated['sku'] ?? null, $validated['name']);
 
             $calculatedStock = $validated['stock'] ?? null;
-            $unitsPerCarton = max($validated['units_per_carton'], 0);
-            $unitsPerRoll = max($validated['units_per_roll'], 0);
 
             if ($calculatedStock === null) {
-                $cartonUnits = ($unitsPerCarton > 0 && $unitsPerRoll > 0)
-                    ? ($validated['stock_cartons'] * $unitsPerCarton * $unitsPerRoll)
-                    : 0;
-                $rollUnits = $unitsPerRoll > 0
-                    ? ($validated['stock_rolls'] * $unitsPerRoll)
-                    : 0;
-                $unitUnits = $validated['stock_units'];
-
-                $calculatedStock = (int) round($cartonUnits + $rollUnits + $unitUnits);
+                $calculatedStock = $this->calculateStockFromPackaging($validated);
             }
             $validated['stock'] = (int) ($calculatedStock ?? 0);
 
             if ($validated['unit_type'] === 'carton' && $validated['units_per_carton'] < 1) {
                 return back()->withErrors([
-                    'units_per_carton' => 'Rolls per carton must be at least 1 when default sale unit is Carton.'
-                ])->withInput();
-            }
-            if ($validated['unit_type'] === 'carton' && $validated['units_per_roll'] < 1) {
-                return back()->withErrors([
-                    'units_per_roll' => 'Units per roll must be at least 1 when carton sales are enabled.'
+                    'units_per_carton' => 'Enter the number of rolls per carton or the number of loose pieces per carton before saving this carton product.'
                 ])->withInput();
             }
             if ($validated['unit_type'] === 'roll' && $validated['units_per_roll'] < 1) {
                 return back()->withErrors([
-                    'units_per_roll' => 'Units per roll must be at least 1 when default sale unit is Roll.'
+                    'units_per_roll' => 'Enter the number of sachets or loose pieces inside one roll before saving this roll product.'
                 ])->withInput();
             }
             if ($validated['unit_type'] === 'sachet' && $validated['stock_units'] < 1 && $validated['stock_rolls'] < 1 && $validated['stock_cartons'] < 1) {
@@ -210,16 +327,18 @@ class ProductController extends Controller
             }
 
             $resolvedCompanyId = auth()->user()?->company_id;
+            $selectedBranch = $this->resolveBranchContext($validated['branch_id'] ?? null);
 
             $validated['status'] = 'active';
             $validated['stock_quantity'] = $validated['stock'];
             $validated['user_id'] = auth()->id();
             $validated['company_id'] = $resolvedCompanyId ?: null;
+            unset($validated['branch_id']);
             $product = Product::create($validated);
             $this->branchInventory->seedOpeningStock(
                 $product,
                 (float) $validated['stock'],
-                $this->getActiveBranchContext(),
+                $selectedBranch,
                 $product->company_id ?: ($resolvedCompanyId ?: null)
             );
 
@@ -473,6 +592,9 @@ public function inventory(Request $request)
             'name'             => 'required|string|max:191',
             'sku'              => 'nullable|string|max:191|unique:products,sku,' . $id,
             'price'            => 'required|numeric|min:0',
+            'retail_price'     => 'nullable|numeric|min:0',
+            'wholesale_price'  => 'nullable|numeric|min:0',
+            'special_price'    => 'nullable|numeric|min:0',
             'purchase_price'   => 'required|numeric|min:0',
             'stock'            => 'nullable|integer|min:0',
             'stock_cartons'    => 'nullable|numeric|min:0',
@@ -493,36 +615,43 @@ public function inventory(Request $request)
         $validated['stock_cartons'] = (float) ($validated['stock_cartons'] ?? 0);
         $validated['stock_rolls'] = (float) ($validated['stock_rolls'] ?? 0);
         $validated['stock_units'] = (float) ($validated['stock_units'] ?? 0);
+        $retailPrice = (float) ($validated['retail_price'] ?? $validated['price']);
+        $validated['price'] = $retailPrice;
+        if (Schema::hasColumn('products', 'retail_price')) {
+            $validated['retail_price'] = $retailPrice;
+        } else {
+            unset($validated['retail_price']);
+        }
+        if (Schema::hasColumn('products', 'wholesale_price')) {
+            $validated['wholesale_price'] = isset($validated['wholesale_price']) && $validated['wholesale_price'] !== null && $validated['wholesale_price'] !== ''
+                ? (float) $validated['wholesale_price']
+                : null;
+        } else {
+            unset($validated['wholesale_price']);
+        }
+        if (Schema::hasColumn('products', 'special_price')) {
+            $validated['special_price'] = isset($validated['special_price']) && $validated['special_price'] !== null && $validated['special_price'] !== ''
+                ? (float) $validated['special_price']
+                : null;
+        } else {
+            unset($validated['special_price']);
+        }
         $validated['sku'] = $this->generateUniqueSku($validated['sku'] ?? null, $validated['name'], $product->id);
 
         $calculatedStock = $validated['stock'] ?? null;
-        $unitsPerCarton = max($validated['units_per_carton'], 0);
-        $unitsPerRoll = max($validated['units_per_roll'], 0);
         if ($calculatedStock === null) {
-            $cartonUnits = ($unitsPerCarton > 0 && $unitsPerRoll > 0)
-                ? ($validated['stock_cartons'] * $unitsPerCarton * $unitsPerRoll)
-                : 0;
-            $rollUnits = $unitsPerRoll > 0
-                ? ($validated['stock_rolls'] * $unitsPerRoll)
-                : 0;
-            $unitUnits = $validated['stock_units'];
-            $calculatedStock = (int) round($cartonUnits + $rollUnits + $unitUnits);
+            $calculatedStock = $this->calculateStockFromPackaging($validated);
         }
         $validated['stock'] = (int) ($calculatedStock ?? (int) $product->stock);
 
         if ($validated['unit_type'] === 'carton' && $validated['units_per_carton'] < 1) {
             return back()->withErrors([
-                'units_per_carton' => 'Rolls per carton must be at least 1 when default sale unit is Carton.'
-            ])->withInput();
-        }
-        if ($validated['unit_type'] === 'carton' && $validated['units_per_roll'] < 1) {
-            return back()->withErrors([
-                'units_per_roll' => 'Units per roll must be at least 1 when carton sales are enabled.'
+                'units_per_carton' => 'Enter the number of rolls per carton or the number of loose pieces per carton before saving this carton product.'
             ])->withInput();
         }
         if ($validated['unit_type'] === 'roll' && $validated['units_per_roll'] < 1) {
             return back()->withErrors([
-                'units_per_roll' => 'Units per roll must be at least 1 when default sale unit is Roll.'
+                'units_per_roll' => 'Enter the number of sachets or loose pieces inside one roll before saving this roll product.'
             ])->withInput();
         }
         if ($validated['unit_type'] === 'sachet' && $validated['stock_units'] < 1 && $validated['stock_rolls'] < 1 && $validated['stock_cartons'] < 1) {
@@ -632,6 +761,82 @@ public function inventory(Request $request)
         return redirect()->back()->with('success', 'Inventory state updated on ' . env('SESSION_DOMAIN'));
     }
 
+    public function transferStock(Request $request)
+    {
+        if (!$this->planSupportsStockTransfer()) {
+            return redirect()->back()->with('error', 'Stock transfer is available on higher plans only.');
+        }
+
+        $validated = $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'from_branch_id' => 'required|string',
+            'to_branch_id' => 'required|string|different:from_branch_id',
+            'quantity' => 'required|numeric|min:0.01',
+        ]);
+
+        $branches = collect($this->getAvailableBranches());
+        $fromBranch = $branches->firstWhere('id', $validated['from_branch_id']);
+        $toBranch = $branches->firstWhere('id', $validated['to_branch_id']);
+
+        if (!$fromBranch || !$toBranch) {
+            return redirect()->back()->with('error', 'Select valid source and destination branches.');
+        }
+
+        try {
+            DB::transaction(function () use ($validated, $fromBranch, $toBranch) {
+                $product = Product::query()->lockForUpdate()->findOrFail($validated['product_id']);
+                $quantity = (float) $validated['quantity'];
+                $sourceContext = ['id' => (string) $fromBranch['id'], 'name' => (string) ($fromBranch['name'] ?? '')];
+                $destinationContext = ['id' => (string) $toBranch['id'], 'name' => (string) ($toBranch['name'] ?? '')];
+
+                if ($this->branchInventory->getAvailableStock($product, $sourceContext) < $quantity) {
+                    throw new \RuntimeException("Insufficient stock in {$sourceContext['name']} for this transfer.");
+                }
+
+                $companyId = (int) ($product->company_id ?? auth()->user()?->company_id ?? 0);
+                $this->branchInventory->adjustBranchStock($product, -1 * $quantity, $sourceContext, $companyId);
+                $this->branchInventory->adjustBranchStock($product, $quantity, $destinationContext, $companyId);
+
+                if (Schema::hasTable('inventory_history')) {
+                    $basePayload = [
+                        'product_id' => $product->id,
+                        'quantity' => $quantity,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+
+                    if (Schema::hasColumn('inventory_history', 'user_id')) {
+                        $basePayload['user_id'] = auth()->id() ?? (int) DB::table('users')->min('id');
+                    }
+
+                    $sourcePayload = $basePayload + ['type' => 'out'];
+                    $destinationPayload = $basePayload + ['type' => 'in'];
+
+                    if (Schema::hasColumn('inventory_history', 'branch_id')) {
+                        $sourcePayload['branch_id'] = $sourceContext['id'];
+                        $destinationPayload['branch_id'] = $destinationContext['id'];
+                    }
+                    if (Schema::hasColumn('inventory_history', 'branch_name')) {
+                        $sourcePayload['branch_name'] = $sourceContext['name'];
+                        $destinationPayload['branch_name'] = $destinationContext['name'];
+                    }
+
+                    if (Schema::hasColumn('inventory_history', 'reference')) {
+                        $sourcePayload['reference'] = 'Branch Transfer to ' . $destinationContext['name'];
+                        $destinationPayload['reference'] = 'Branch Transfer from ' . $sourceContext['name'];
+                    }
+
+                    DB::table('inventory_history')->insert($sourcePayload);
+                    DB::table('inventory_history')->insert($destinationPayload);
+                }
+            });
+        } catch (\Throwable $exception) {
+            return redirect()->back()->withInput()->with('error', $exception->getMessage());
+        }
+
+        return redirect()->back()->with('success', 'Stock transferred successfully between branches.');
+    }
+
     /**
      * Breakdown Logic (Carton to Units)
      */
@@ -690,15 +895,21 @@ public function inventory(Request $request)
             'unit_type',
             'units_per_carton',
             'units_per_roll',
+            'stock_cartons',
+            'stock_rolls',
+            'stock_units',
             'price',
+            'retail_price',
+            'wholesale_price',
+            'special_price',
             'purchase_price',
             'stock',
             'description',
         ];
 
         $rows = [
-            ['Indomie Chicken', '', '1234567890123', 'Noodles', 'pcs', 'carton', '40', '0', '250', '180', '400', 'Fast moving carton item'],
-            ['Tissue Roll Premium', '', '8800112233445', 'Toiletries', 'roll', 'roll', '12', '1', '1500', '1100', '120', 'Can be sold as roll or carton'],
+            ['Indomie Chicken', '', '1234567890123', 'Noodles', 'pcs', 'carton', '40', '0', '10', '0', '0', '250', '250', '230', '220', '180', '400', 'Fast moving carton item'],
+            ['Tissue Roll Premium', '', '8800112233445', 'Toiletries', 'roll', 'roll', '12', '1', '5', '12', '0', '1500', '1500', '1400', '1350', '1100', '120', 'Can be sold as roll or carton'],
         ];
 
         $content = implode(',', $headers) . "\n";
@@ -718,7 +929,8 @@ public function inventory(Request $request)
     public function import(Request $request)
     {
         $request->validate([
-            'import_file' => 'required|file|mimes:csv,txt|max:10240',
+            'import_file' => 'required|file|mimes:csv,txt,xls,xlsx|max:20480',
+            'branch_id' => 'nullable|string',
         ]);
 
         if (!Schema::hasTable('products') || !Schema::hasTable('categories')) {
@@ -726,22 +938,16 @@ public function inventory(Request $request)
         }
 
         $file = $request->file('import_file');
-        $handle = fopen($file->getRealPath(), 'r');
-        if ($handle === false) {
-            return redirect()->back()->with('error', 'Unable to read the uploaded file.');
-        }
-
-        $header = fgetcsv($handle);
+        $rows = $this->spreadsheetRows($file);
+        $header = $rows[0] ?? null;
         if (!$header) {
-            fclose($handle);
-            return redirect()->back()->with('error', 'The CSV file is empty.');
+            return redirect()->back()->with('error', 'The import file is empty.');
         }
 
         $header = array_map(fn ($value) => strtolower(trim((string) $value)), $header);
         $required = ['name', 'category', 'base_unit_name', 'unit_type', 'price', 'purchase_price'];
         foreach ($required as $column) {
             if (!in_array($column, $header, true)) {
-                fclose($handle);
                 return redirect()->back()->with('error', 'Missing required import column: ' . $column);
             }
         }
@@ -750,9 +956,9 @@ public function inventory(Request $request)
         $updated = 0;
         $skipped = 0;
 
-        DB::transaction(function () use ($handle, $header, &$created, &$updated, &$skipped) {
-            $activeBranch = $this->getActiveBranchContext();
-            while (($row = fgetcsv($handle)) !== false) {
+        DB::transaction(function () use ($rows, $header, &$created, &$updated, &$skipped, $request) {
+            $activeBranch = $this->resolveBranchContext($request->input('branch_id'));
+            foreach (array_slice($rows, 1) as $row) {
                 $rowData = [];
                 foreach ($header as $index => $column) {
                     $rowData[$column] = trim((string) ($row[$index] ?? ''));
@@ -770,7 +976,7 @@ public function inventory(Request $request)
                 ]);
 
                 $unitType = strtolower($rowData['unit_type'] ?: 'unit');
-                if (!in_array($unitType, ['unit', 'roll', 'carton'], true)) {
+                if (!in_array($unitType, ['unit', 'sachet', 'roll', 'carton'], true)) {
                     $unitType = 'unit';
                 }
 
@@ -779,7 +985,15 @@ public function inventory(Request $request)
                 $isNew = $product === null;
                 $product = $product ?: new Product();
 
-                $stock = is_numeric($rowData['stock'] ?? null) ? (int) $rowData['stock'] : 0;
+                $stock = is_numeric($rowData['stock'] ?? null)
+                    ? (int) $rowData['stock']
+                    : $this->calculateStockFromPackaging([
+                        'stock_cartons' => (float) ($rowData['stock_cartons'] ?? 0),
+                        'stock_rolls' => (float) ($rowData['stock_rolls'] ?? 0),
+                        'stock_units' => (float) ($rowData['stock_units'] ?? 0),
+                        'units_per_carton' => max(0, (int) ($rowData['units_per_carton'] ?: 0)),
+                        'units_per_roll' => max(0, (int) ($rowData['units_per_roll'] ?: 0)),
+                    ]);
                 $product->fill([
                     'name' => $rowData['name'],
                     'sku' => $sku,
@@ -789,13 +1003,28 @@ public function inventory(Request $request)
                     'unit_type' => $unitType,
                     'units_per_carton' => max(0, (int) ($rowData['units_per_carton'] ?: 0)),
                     'units_per_roll' => max(0, (int) ($rowData['units_per_roll'] ?: 0)),
-                    'price' => (float) ($rowData['price'] ?: 0),
+                    'price' => (float) (($rowData['retail_price'] ?? $rowData['price']) ?: 0),
                     'purchase_price' => (float) ($rowData['purchase_price'] ?: 0),
                     'stock' => $stock,
                     'stock_quantity' => $stock,
                     'status' => 'active',
                     'description' => $rowData['description'] ?: null,
                 ]);
+                if (Schema::hasColumn('products', 'retail_price')) {
+                    $product->retail_price = (float) (($rowData['retail_price'] ?? $rowData['price']) ?: 0);
+                }
+                if (Schema::hasColumn('products', 'wholesale_price')) {
+                    $product->wholesale_price = ($rowData['wholesale_price'] ?? '') !== '' ? (float) $rowData['wholesale_price'] : null;
+                }
+                if (Schema::hasColumn('products', 'special_price')) {
+                    $product->special_price = ($rowData['special_price'] ?? '') !== '' ? (float) $rowData['special_price'] : null;
+                }
+                if (Schema::hasColumn('products', 'company_id')) {
+                    $product->company_id = auth()->user()?->company_id ?: null;
+                }
+                if (Schema::hasColumn('products', 'user_id')) {
+                    $product->user_id = auth()->id();
+                }
                 $product->save();
                 $this->branchInventory->seedOpeningStock(
                     $product,
@@ -811,8 +1040,6 @@ public function inventory(Request $request)
                 }
             }
         });
-
-        fclose($handle);
 
         return redirect()->route('product-list')->with(
             'success',

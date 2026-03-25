@@ -79,20 +79,30 @@
                                 @endforeach
                             </select>
                         </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">Stock Branch</label>
+                            <select name="branch_id" class="form-control">
+                                <option value="">Use Active Branch</option>
+                                @foreach(($availableBranches ?? []) as $branch)
+                                    <option value="{{ $branch['id'] }}" @selected((string) old('branch_id') === (string) ($branch['id'] ?? ''))>{{ $branch['name'] }}</option>
+                                @endforeach
+                            </select>
+                            <small class="text-muted">Choose the branch that should receive the opening stock for this product. Basic plan stays on a single branch.</small>
+                        </div>
 
                         <hr class="my-3 text-muted">
                         <h5 class="mb-3 text-primary"><i class="feather-package me-2"></i>Packaging & Conversion Rules</h5>
 
                         {{-- Conversion Logic --}}
                         <div class="col-md-3 mb-3">
-                            <label class="form-label fw-bold text-danger">Roll Count in One Carton</label>
+                            <label class="form-label fw-bold text-danger">Carton Content</label>
                             <input type="number" name="units_per_carton" id="upc" class="form-control bg-light-danger @error('units_per_carton') is-invalid @enderror" value="{{ old('units_per_carton', 0) }}" min="0">
-                            <small class="text-muted">Enter the number of rolls contained in one carton.</small>
+                            <small class="text-muted">Enter rolls per carton for roll-based items, or pieces per carton for carton-to-piece items like Indomie.</small>
                         </div>
                         <div class="col-md-3 mb-3">
-                            <label class="form-label fw-bold text-warning">Sachet Count in One Roll</label>
+                            <label class="form-label fw-bold text-warning">Roll Content</label>
                             <input type="number" name="units_per_roll" id="upr" class="form-control bg-light-warning @error('units_per_roll') is-invalid @enderror" value="{{ old('units_per_roll', 0) }}" min="0">
-                            <small class="text-muted">Enter the number of sachets contained in one roll.</small>
+                            <small class="text-muted">Enter sachets or loose pieces in one roll. Leave this at 0 if the product does not use rolls.</small>
                         </div>
                         <div class="col-md-3 mb-3">
                             <label class="form-label fw-bold">Base Unit Name</label>
@@ -125,8 +135,16 @@
                             <input type="number" step="0.01" name="purchase_price" class="form-control @error('purchase_price') is-invalid @enderror" value="{{ old('purchase_price') }}" required>
                         </div>
                         <div class="col-md-3 mb-3">
-                            <label class="form-label">Selling Price (Per Unit)</label>
+                            <label class="form-label">Retail / Default Price</label>
                             <input type="number" step="0.01" name="price" class="form-control @error('price') is-invalid @enderror" value="{{ old('price') }}" required>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Wholesale Price</label>
+                            <input type="number" step="0.01" name="wholesale_price" class="form-control @error('wholesale_price') is-invalid @enderror" value="{{ old('wholesale_price') }}">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Special Discount Price</label>
+                            <input type="number" step="0.01" name="special_price" class="form-control @error('special_price') is-invalid @enderror" value="{{ old('special_price') }}">
                         </div>
                         
                         {{-- Automated Calculation Preview --}}
@@ -142,7 +160,7 @@
                         <div class="col-md-3 mb-3">
                             <label class="form-label fw-bold">Product Image</label>
                             <input type="file" name="image" id="product_image_input" class="form-control @error('image') is-invalid @enderror">
-                            <small class="text-muted">Any file extension can be uploaded. The system will store the file if the upload is valid.</small>
+                            <small class="text-muted">Leave this empty if the product has no image.</small>
                         </div>
                     </div>
 
@@ -196,7 +214,9 @@
             let rollsPerCarton = parseFloat($('#upc').val()) || 0;
             let unitsPerRoll = parseFloat($('#upr').val()) || 0;
 
-            let total = units + (rolls * unitsPerRoll) + (cartons * rollsPerCarton * unitsPerRoll);
+            let fromCartons = unitsPerRoll > 0 ? (cartons * rollsPerCarton * unitsPerRoll) : (cartons * rollsPerCarton);
+            let fromRolls = unitsPerRoll > 0 ? (rolls * unitsPerRoll) : rolls;
+            let total = units + fromRolls + fromCartons;
 
             $('#total_pieces_preview').text(total.toLocaleString() + " Units");
             $('#final_stock_input').val(total);

@@ -58,16 +58,17 @@
                             @endif
 
                             <div class="content-page-header p-0 mb-4 d-flex justify-content-between align-items-center">
-                                <h5>Bank Accounts</h5>
+                                <h5>Bank Accounts & Payment Channels</h5>
                                 <div class="list-btn d-flex gap-2">
                                     <button onclick="window.print()" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
                                         <i class="fas fa-print me-1"></i> Print
                                     </button>
                                     <a href="#" class="btn btn-primary btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#bank_details">
-                                        <i class="fa fa-plus-circle me-1"></i> Add Bank
+                                        <i class="fa fa-plus-circle me-1"></i> Add Channel
                                     </a>
                                 </div>
                             </div>
+                            <p class="text-muted mb-4">Use this page for bank accounts and settlement channels like Moniepoint, Opay, transfer wallets, or other collection accounts that should feed your books and balance sheet.</p>
 
                             <div class="row">
                                 <div class="col-sm-12">

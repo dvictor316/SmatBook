@@ -83,6 +83,14 @@
                                             <input type="text" class="form-control" name="notes" placeholder="Internal remarks" value="{{ old('notes') }}">
                                         </div>
                                     </div>
+                                    <div class="col-lg-4 col-md-6 col-sm-12">
+                                        <div class="input-block mb-3">
+                                            <label>Opening Balance</label>
+                                            <input type="number" step="0.01" min="0" class="form-control @error('balance') is-invalid @enderror" name="balance" placeholder="0.00" value="{{ old('balance', 0) }}">
+                                            <small class="text-muted">This opening balance will reflect on the customer credit report.</small>
+                                            @error('balance') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 

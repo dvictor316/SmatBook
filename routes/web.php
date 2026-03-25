@@ -566,6 +566,8 @@ Route::middleware(['auth', 'subscription.active'])->group(function () {
     // Customers
     Route::resource('customers', CustomerController::class);
     Route::get('/add-customer', [CustomerController::class, 'create'])->name('customers.add');
+    Route::get('/customers/import/template', [CustomerController::class, 'downloadImportTemplate'])->name('customers.import.template');
+    Route::post('/customers/import', [CustomerController::class, 'import'])->name('customers.import');
     Route::get('/active-customers', [CustomerController::class, 'activeView'])->name('active-customers');
     Route::get('/deactive-customers', [CustomerController::class, 'deactiveView'])->name('deactive-customers');
     Route::post('/customers/{id}/export', [CustomerController::class, 'export'])->name('customers.export');
@@ -604,6 +606,7 @@ Route::middleware(['auth', 'subscription.active'])->group(function () {
         Route::get('/inventory-history/{id}', 'inventory_history')->name('inventory.history');
         Route::post('/inventory-history/delete', 'delete_history')->name('inventory.history.delete');
         Route::post('/inventory/adjust', 'adjust_stock')->name('inventory.adjust');
+        Route::post('/inventory/transfer', 'transferStock')->name('inventory.transfer');
         Route::get('/units', 'units')->name('units');
         Route::post('/units/store', 'storeUnit')->name('units.store');
         Route::delete('/units/{id}', 'destroyUnit')->name('units.destroy');

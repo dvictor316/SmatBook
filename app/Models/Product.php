@@ -23,6 +23,9 @@ class Product extends Model
         'name', 
         'sku', 
         'price', 
+        'retail_price',
+        'wholesale_price',
+        'special_price',
         'purchase_price', 
         'stock', 
         'stock_quantity', // Added to maintain parity with controller logic
@@ -51,7 +54,11 @@ class Product extends Model
 
     public function unitsPerCarton(): int
     {
-        return $this->rollsPerCarton() * $this->unitsPerRoll();
+        $unitsPerRoll = $this->unitsPerRoll();
+
+        return $unitsPerRoll > 0
+            ? $this->rollsPerCarton() * $unitsPerRoll
+            : $this->rollsPerCarton();
     }
 
     /**
@@ -91,11 +98,10 @@ class Product extends Model
 
     public function getImageUrlAttribute(): string
     {
-        $fallback = asset('assets/img/products/product-01.png');
         $image = trim((string) ($this->image ?? ''));
 
         if ($image === '') {
-            return $fallback;
+            return '';
         }
 
         if (Str::startsWith($image, ['http://', 'https://'])) {
@@ -124,6 +130,6 @@ class Product extends Model
             return asset($normalized);
         }
 
-        return $fallback;
+        return '';
     }
 }
