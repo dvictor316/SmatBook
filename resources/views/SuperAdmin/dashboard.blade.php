@@ -151,6 +151,9 @@
         position: relative;
         height: 350px;
     }
+    .chart-container.chart-container-sm {
+        height: 220px;
+    }
 
     /* Pulse animation for live indicators */
     @keyframes pulse {
@@ -1789,6 +1792,75 @@
 
                                 <div class="card card-rounded shadow-sm">
                                     <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <div>
+                                                <h5 class="mb-0 fw-bold text-dark">Growth Comparison</h5>
+                                                <small class="text-muted">Companies, users, and paid plans moving together</small>
+                                            </div>
+                                            <span class="live-badge-soft">Live</span>
+                                        </div>
+                                        <div class="chart-container chart-container-sm mt-3">
+                                            <canvas id="growthComparisonChart"></canvas>
+                                        </div>
+                                        <div class="row g-2 mt-2">
+                                            <div class="col-sm-4">
+                                                <div class="summary-fill">
+                                                    <div class="label">Companies</div>
+                                                    <div class="value">{{ number_format(array_sum($dashboardChartSeries['companies'] ?? [])) }}</div>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-4">
+                                                <div class="summary-fill">
+                                                    <div class="label">Users</div>
+                                                    <div class="value">{{ number_format(array_sum($dashboardChartSeries['users'] ?? [])) }}</div>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-4">
+                                                <div class="summary-fill">
+                                                    <div class="label">Paid Plans</div>
+                                                    <div class="value">{{ number_format(array_sum($dashboardChartSeries['orders'] ?? [])) }}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="card card-rounded shadow-sm">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <div>
+                                                <h5 class="mb-0 fw-bold text-dark">Subscription Health Mix</h5>
+                                                <small class="text-muted">Readiness, paid conversions, and renewal pressure</small>
+                                            </div>
+                                            <span class="live-badge-soft">Live</span>
+                                        </div>
+                                        <div class="row g-3 align-items-center mt-1">
+                                            <div class="col-md-6">
+                                                <div class="chart-container chart-container-sm">
+                                                    <canvas id="subscriptionHealthMixChart"></canvas>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="d-grid gap-2">
+                                                    @foreach([
+                                                        ['label' => 'Paid', 'value' => number_format($metrics['paid_subs'] ?? 0), 'tone' => 'tone-emerald'],
+                                                        ['label' => 'Pending Setup', 'value' => number_format($metrics['pending_setups'] ?? 0), 'tone' => 'tone-violet'],
+                                                        ['label' => 'Expiring Soon', 'value' => number_format($metrics['expiring_soon_subs'] ?? 0), 'tone' => 'tone-amber'],
+                                                        ['label' => 'Expired', 'value' => number_format($metrics['expired_subs'] ?? 0), 'tone' => 'tone-rose'],
+                                                    ] as $subMix)
+                                                        <div class="summary-fill {{ $subMix['tone'] }}">
+                                                            <div class="label">{{ $subMix['label'] }}</div>
+                                                            <div class="value">{{ $subMix['value'] }}</div>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="card card-rounded shadow-sm">
+                                    <div class="card-body">
                                         <div class="d-flex justify-content-between align-items-center mb-3">
                                             <div>
                                                 <h5 class="mb-0 fw-bold text-dark">Plan Sales Snapshot</h5>
@@ -2540,6 +2612,110 @@
                             grid: { display: true, color: '#f0f0f0', drawBorder: false }
                         },
                         x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        const growthComparisonCtx = document.getElementById('growthComparisonChart');
+        if (growthComparisonCtx) {
+            new Chart(growthComparisonCtx.getContext("2d"), {
+                type: 'bar',
+                data: {
+                    labels: chartSeries.labels,
+                    datasets: [
+                        {
+                            label: 'Companies',
+                            data: chartSeries.companies,
+                            backgroundColor: 'rgba(37, 99, 235, 0.78)',
+                            borderRadius: 6,
+                            barPercentage: 0.7,
+                            categoryPercentage: 0.58
+                        },
+                        {
+                            label: 'Users',
+                            data: chartSeries.users,
+                            backgroundColor: 'rgba(14, 165, 233, 0.72)',
+                            borderRadius: 6,
+                            barPercentage: 0.7,
+                            categoryPercentage: 0.58
+                        },
+                        {
+                            label: 'Paid Plans',
+                            data: chartSeries.orders,
+                            type: 'line',
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                            borderWidth: 3,
+                            tension: 0.35,
+                            fill: false,
+                            pointRadius: 3,
+                            pointHoverRadius: 5
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: { usePointStyle: true, boxWidth: 10 }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: '#eef3f8', drawBorder: false }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        const subscriptionHealthMixCtx = document.getElementById('subscriptionHealthMixChart');
+        if (subscriptionHealthMixCtx) {
+            const subscriptionHealthValues = [
+                {{ (int) ($metrics['paid_subs'] ?? 0) }},
+                {{ (int) ($metrics['pending_setups'] ?? 0) }},
+                {{ (int) ($metrics['expiring_soon_subs'] ?? 0) }},
+                {{ (int) ($metrics['expired_subs'] ?? 0) }}
+            ];
+            const hasSubscriptionHealthData = subscriptionHealthValues.some(value => Number(value) > 0);
+
+            new Chart(subscriptionHealthMixCtx.getContext("2d"), {
+                type: 'doughnut',
+                data: {
+                    labels: hasSubscriptionHealthData ? ['Paid', 'Pending Setup', 'Expiring Soon', 'Expired'] : ['No subscription health data yet'],
+                    datasets: [{
+                        data: hasSubscriptionHealthData ? subscriptionHealthValues : [1],
+                        backgroundColor: hasSubscriptionHealthData
+                            ? ['#10b981', '#8b5cf6', '#f59e0b', '#ef4444']
+                            : ['#dbe4f0'],
+                        borderWidth: 0,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '66%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { usePointStyle: true, boxWidth: 10, padding: 14 }
+                        },
+                        tooltip: {
+                            enabled: hasSubscriptionHealthData,
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.label}: ${Number(context.parsed).toLocaleString()}`;
+                                }
+                            }
+                        }
                     }
                 }
             });

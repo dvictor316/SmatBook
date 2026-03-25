@@ -196,6 +196,24 @@
             color: var(--primary); 
         }
 
+        .nav-demo-link {
+            display: inline-flex !important;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 16px !important;
+            border-radius: 999px;
+            background: rgba(0, 98, 255, 0.08);
+            color: var(--primary) !important;
+            border: 1px solid rgba(0, 98, 255, 0.16);
+            white-space: nowrap;
+        }
+
+        .nav-demo-link:hover,
+        .nav-demo-link.active {
+            background: rgba(0, 98, 255, 0.14);
+            color: var(--primary) !important;
+        }
+
         .country-switcher {
             display: inline-flex;
             align-items: center;
@@ -808,6 +826,15 @@
                 color: var(--dark);
             }
 
+            .nav-demo-link {
+                display: block !important;
+                width: 100%;
+                text-align: center;
+                margin-top: 10px;
+                padding: 14px 16px !important;
+                border-radius: 12px;
+            }
+
             .nav-links a:hover {
                 background: rgba(0, 98, 255, 0.08);
                 color: var(--primary);
@@ -907,6 +934,11 @@
 
             .nav-links a {
                 padding: 14px 10px;
+                font-size: 0.8rem;
+            }
+
+            .nav-demo-link {
+                padding: 13px 12px !important;
                 font-size: 0.8rem;
             }
 
@@ -1041,6 +1073,7 @@
             <li><a href="{{ route('landing.contact') }}" class="{{ Route::is('landing.contact') ? 'active' : '' }}">Contact</a></li>
             <li><a href="{{ url('/#licensing') }}">Licensing</a></li>
             <li><a href="{{ route('landing.policy') }}" class="{{ Route::is('landing.policy') ? 'active' : '' }}">Policy</a></li>
+            <li><a href="{{ route('landing.demo') }}" class="nav-demo-link {{ Route::is('landing.demo') ? 'active' : '' }}">Demo</a></li>
           
             <li><a href="{{ route('saas-login') }}" class="btn-portal">Client Portal</a></li>
         </ul>
