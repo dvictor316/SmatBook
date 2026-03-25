@@ -341,9 +341,9 @@
                             </select>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">Carton Content <span class="text-muted d-block small" id="quick_carton_content_hint">Rolls per carton or units per carton</span></label>
-                            <input type="number" name="units_per_carton" min="0" class="form-control" value="0">
-                            <small class="text-muted" id="quick_carton_content_help">Use rolls per carton, or units per carton if this item does not use rolls.</small>
+                            <label class="form-label">Unit Total <span class="text-muted d-block small" id="quick_unit_total_hint">Total units inside one carton</span></label>
+                            <input type="number" id="quick_unit_total_per_carton" class="form-control" value="0" min="0" step="0.01">
+                            <small class="text-muted" id="quick_unit_total_help">Type the full number of sellable units inside one carton first.</small>
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Roll Content <span class="text-muted d-block small" id="quick_roll_content_hint">Units per roll</span></label>
@@ -351,9 +351,9 @@
                             <small class="text-muted" id="quick_roll_content_help">Leave `0` if the product is sold in cartons and units only.</small>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">Unit Layer <span class="text-muted d-block small" id="quick_unit_content_hint">Base unit / piece definition</span></label>
-                            <input type="text" class="form-control bg-light" id="quick_unit_content_value" value="1 unit = 1 sellable piece" readonly>
-                            <small class="text-muted" id="quick_unit_content_help">This is the base sellable unit. Roll and carton values should build on top of this.</small>
+                            <label class="form-label">Carton Content <span class="text-muted d-block small" id="quick_carton_content_hint">Auto-calculated rolls per carton</span></label>
+                            <input type="number" name="units_per_carton" min="0" step="0.01" class="form-control" value="0">
+                            <small class="text-muted" id="quick_carton_content_help">This is calculated from unit total and roll content. If rolls are not used, it matches the unit total.</small>
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Retail / Default Price</label>
@@ -512,15 +512,23 @@
             const unitLabel = baseUnitName.length ? baseUnitName : 'unit';
             const titleUnit = unitLabel.charAt(0).toUpperCase() + unitLabel.slice(1);
 
-            $('#quick_carton_content_hint').text('Rolls per carton or ' + unitLabel + 's per carton');
-            $('#quick_carton_content_help').text('Use rolls per carton, or ' + unitLabel + 's per carton if this item does not use rolls.');
+            $('#quick_unit_total_hint').text('Total ' + unitLabel + 's inside one carton');
+            $('#quick_unit_total_help').text('Type the full number of sellable ' + unitLabel + 's inside one carton first.');
             $('#quick_roll_content_hint').text(unitLabel + 's per roll');
             $('#quick_roll_content_help').text('Leave `0` if the product is sold in cartons and ' + unitLabel + 's only.');
-            $('#quick_unit_content_hint').text('Base ' + unitLabel + ' / piece definition');
-            $('#quick_unit_content_value').val('1 ' + unitLabel + ' = 1 sellable piece');
-            $('#quick_unit_content_help').text('This is the base sellable ' + unitLabel + '. Roll and carton values should build on top of this.');
+            $('#quick_carton_content_hint').text('Auto-calculated rolls per carton');
+            $('#quick_carton_content_help').text('This is calculated from total ' + unitLabel + 's and ' + unitLabel + 's per roll. If rolls are not used, it matches the unit total.');
             $('#quick_units_per_carton_label').text(titleUnit + 's Per Carton');
             $('#quick_opening_unit_label').text('Opening ' + titleUnit + ' Quantity');
+        }
+
+        function calculateQuickCartonContent() {
+            const unitTotal = parseFloat($('#quick_unit_total_per_carton').val()) || 0;
+            const unitsPerRoll = parseFloat($('#quick_add_product_form').find('input[name="units_per_roll"]').val()) || 0;
+            const cartonContent = unitsPerRoll > 0 ? (unitTotal / unitsPerRoll) : unitTotal;
+
+            $('#quick_add_product_form').find('input[name="units_per_carton"]').val(Number.isFinite(cartonContent) ? cartonContent : 0);
+            $('#quick_units_per_carton_preview').val(unitTotal.toLocaleString() + ' Units');
         }
 
         function calculateQuickStock() {
@@ -533,14 +541,14 @@
             const fromCartons = sachetsPerRoll > 0 ? cartons * rollsPerCarton * sachetsPerRoll : cartons * rollsPerCarton;
             const fromRolls = sachetsPerRoll > 0 ? rolls * sachetsPerRoll : rolls;
             const total = fromCartons + fromRolls + sachets;
-            const unitsPerCarton = sachetsPerRoll > 0 ? rollsPerCarton * sachetsPerRoll : rollsPerCarton;
-
             $('#quick_stock_preview').val(total.toLocaleString() + ' Units');
-            $('#quick_units_per_carton_preview').val(unitsPerCarton.toLocaleString() + ' Units');
             $('#quick_final_stock_input').val(Math.round(total));
         }
 
-        $('#quick_add_product_form').find('input[name="stock_cartons"], input[name="stock_rolls"], input[name="stock_units"], input[name="units_per_carton"], input[name="units_per_roll"]').on('input', function() {
+        $('#quick_add_product_form').find('input[name="stock_cartons"], input[name="stock_rolls"], input[name="stock_units"], input[name="units_per_carton"], input[name="units_per_roll"], #quick_unit_total_per_carton').on('input', function() {
+            if ($(this).attr('name') === 'units_per_roll' || this.id === 'quick_unit_total_per_carton') {
+                calculateQuickCartonContent();
+            }
             calculateQuickStock();
         });
 
@@ -549,6 +557,7 @@
         });
 
         refreshQuickPackagingLabels();
+        calculateQuickCartonContent();
         calculateQuickStock();
 
         // AJAX Category Store

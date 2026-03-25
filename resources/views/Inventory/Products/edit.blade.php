@@ -94,9 +94,9 @@
                             </div>
                             <div class="col-md-3">
                                 <div class="form-group">
-                                    <label>Carton Content <small class="d-block text-muted" id="edit_carton_content_hint">Rolls per carton or units per carton</small></label>
-                                    <input type="number" name="units_per_carton" min="0" class="form-control" value="{{ old('units_per_carton', $product->units_per_carton ?? 0) }}">
-                                    <small class="text-muted" id="edit_carton_content_help">Use rolls per carton, or units per carton if this item does not use rolls.</small>
+                                    <label>Unit Total <small class="d-block text-muted" id="edit_unit_total_hint">Total units inside one carton</small></label>
+                                    <input type="number" id="edit_unit_total_per_carton" min="0" step="0.01" class="form-control" value="{{ old('unit_total_per_carton', ((float) old('units_per_roll', $product->units_per_roll ?? 0) > 0) ? (float) old('units_per_carton', $product->units_per_carton ?? 0) * (float) old('units_per_roll', $product->units_per_roll ?? 0) : old('units_per_carton', $product->units_per_carton ?? 0)) }}">
+                                    <small class="text-muted" id="edit_unit_total_help">Type the full number of sellable units inside one carton first.</small>
                                 </div>
                             </div>
                             <div class="col-md-3">
@@ -108,9 +108,9 @@
                             </div>
                             <div class="col-md-3">
                                 <div class="form-group">
-                                    <label>Unit Layer <small class="d-block text-muted" id="edit_unit_content_hint">Base unit / piece definition</small></label>
-                                    <input type="text" class="form-control bg-light" id="edit_unit_content_value" value="1 unit = 1 sellable piece" readonly>
-                                    <small class="text-muted" id="edit_unit_content_help">This is the base sellable unit. Roll and carton values should build on top of this.</small>
+                                    <label>Carton Content <small class="d-block text-muted" id="edit_carton_content_hint">Auto-calculated rolls per carton</small></label>
+                                    <input type="number" name="units_per_carton" min="0" step="0.01" class="form-control" value="{{ old('units_per_carton', $product->units_per_carton ?? 0) }}">
+                                    <small class="text-muted" id="edit_carton_content_help">This is calculated from unit total and roll content. If rolls are not used, it matches the unit total.</small>
                                 </div>
                             </div>
                             <div class="col-md-3">
@@ -195,24 +195,24 @@
             const baseUnitName = ($('input[name="base_unit_name"]').val() || 'unit').trim();
             const unitLabel = baseUnitName.length ? baseUnitName : 'unit';
 
-            $('#edit_carton_content_hint').text('Rolls per carton or ' + unitLabel + 's per carton');
-            $('#edit_carton_content_help').text('Use rolls per carton, or ' + unitLabel + 's per carton if this item does not use rolls.');
+            const unitTotal = parseFloat($('#edit_unit_total_per_carton').val()) || 0;
+            const unitsPerRoll = parseFloat($('input[name="units_per_roll"]').val()) || 0;
+            const cartonContent = unitsPerRoll > 0 ? (unitTotal / unitsPerRoll) : unitTotal;
             $('#edit_roll_content_hint').text(unitLabel + 's per roll');
             $('#edit_roll_content_help').text('Leave 0 when the item is sold in cartons and ' + unitLabel + 's only.');
-            const rollsPerCarton = parseFloat($('input[name="units_per_carton"]').val()) || 0;
-            const unitsPerRoll = parseFloat($('input[name="units_per_roll"]').val()) || 0;
-            const unitsPerCarton = unitsPerRoll > 0 ? rollsPerCarton * unitsPerRoll : rollsPerCarton;
             const titleUnit = unitLabel.charAt(0).toUpperCase() + unitLabel.slice(1);
 
-            $('#edit_unit_content_hint').text('Base ' + unitLabel + ' / piece definition');
-            $('#edit_unit_content_value').val('1 ' + unitLabel + ' = 1 sellable piece');
-            $('#edit_unit_content_help').text('This is the base sellable ' + unitLabel + '. Roll and carton values should build on top of this.');
+            $('input[name="units_per_carton"]').val(Number.isFinite(cartonContent) ? cartonContent : 0);
+            $('#edit_unit_total_hint').text('Total ' + unitLabel + 's inside one carton');
+            $('#edit_unit_total_help').text('Type the full number of sellable ' + unitLabel + 's inside one carton first.');
+            $('#edit_carton_content_hint').text('Auto-calculated rolls per carton');
+            $('#edit_carton_content_help').text('This is calculated from total ' + unitLabel + 's and ' + unitLabel + 's per roll. If rolls are not used, it matches the unit total.');
             $('#edit_units_per_carton_label').text(titleUnit + 's Per Carton');
-            $('#edit_units_per_carton_preview').val(unitsPerCarton.toLocaleString() + ' Units');
+            $('#edit_units_per_carton_preview').val(unitTotal.toLocaleString() + ' Units');
         }
 
         refreshEditPackagingLabels();
-        $('input[name="base_unit_name"], input[name="units_per_carton"], input[name="units_per_roll"]').on('input', function () {
+        $('input[name="base_unit_name"], #edit_unit_total_per_carton, input[name="units_per_roll"]').on('input', function () {
             refreshEditPackagingLabels();
         });
     });
