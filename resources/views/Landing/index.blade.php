@@ -1195,15 +1195,46 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 @media (max-width: 1100px) {
     .hero-right { margin-left: clamp(88px,7vw,128px); }
     .hero-phone { width: clamp(220px,22vw,280px); }
+    .hero-circle {
+        width: clamp(340px, 40vw, 500px) !important;
+        height: clamp(340px, 40vw, 500px) !important;
+        padding: clamp(34px, 6.5%, 50px) !important;
+    }
+    .hero-h1 { font-size: clamp(1.02rem, 1.7vw, 1.8rem) !important; }
+    .hero-body { font-size: clamp(9.5px, 0.72vw, 11px) !important; max-width: 22ch !important; margin-bottom: 12px !important; }
+    .hero-cta-stack { max-width: clamp(168px, 16vw, 200px) !important; gap: 7px !important; }
+    .hero-btn-red,
+    .hero-btn-ghost {
+        padding: 8px 12px !important;
+        font-size: clamp(0.54rem, 0.56vw, 0.64rem) !important;
+        letter-spacing: 0.5px !important;
+    }
+    .hero-trust { margin-top: 8px !important; }
+    .trust-text { font-size: clamp(7.5px, 0.52vw, 8.5px) !important; }
 }
 @media (max-width: 991px) {
     :root { --nav-h: 64px; --announce-h: 34px; }
     .benefit-grid { grid-template-columns: repeat(2,1fr); }
     .hero-content { flex-direction: column; align-items: center; padding: 24px 20px 28px; gap: 40px; }
     .hero-right { margin-left: 0; }
-    .hero-circle { width: clamp(320px,82vw,460px) !important; height: clamp(320px,82vw,460px) !important; }
+    .hero-circle {
+        width: clamp(300px,76vw,400px) !important;
+        height: clamp(300px,76vw,400px) !important;
+        padding: clamp(30px, 9%, 42px) !important;
+    }
     .hero-phone { width: clamp(220px,50vw,300px); }
     .sb-brand img { height: 52px; }
+    .hero-h1 { font-size: clamp(1rem,4vw,1.55rem) !important; margin-bottom: 8px !important; }
+    .hero-body { font-size: clamp(9px,2.6vw,11px) !important; line-height: 1.45 !important; max-width: 21ch !important; margin-bottom: 10px !important; }
+    .hero-btn-red,
+    .hero-btn-ghost {
+        padding: 8px 12px !important;
+        font-size: clamp(0.56rem,2vw,0.68rem) !important;
+        letter-spacing: 0.45px !important;
+    }
+    .hero-cta-stack { max-width: min(190px,54vw) !important; gap: 7px !important; }
+    .hero-trust { margin-top: 7px !important; }
+    .trust-text { font-size: clamp(7px,1.9vw,8.5px) !important; }
     
     #mujiNav {
         position: fixed;
@@ -1296,12 +1327,14 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     .gadget-orbit { position: static; transform: none; width: 100%; margin-top: 14px; }
     .announce-label { font-size: 0 !important; padding: 0 12px !important; }
     .announce-msg { font-size: 0.65rem !important; }
-    .hero-circle { width: min(90vw,400px) !important; height: min(90vw,400px) !important; padding: min(48px,11%) !important; }
+    .hero-circle { width: min(88vw,340px) !important; height: min(88vw,340px) !important; padding: min(34px,9%) !important; }
     .hero-phone { width: clamp(230px,62vw,300px); }
-    .hero-h1 { font-size: clamp(1.3rem,5.5vw,1.9rem) !important; }
-    .hero-body { font-size: clamp(11px,3.2vw,13px) !important; }
-    .hero-btn-red, .hero-btn-ghost { padding: 10px 16px !important; font-size: clamp(0.62rem,2.6vw,0.72rem) !important; }
-    .hero-cta-stack { max-width: min(210px,56vw) !important; gap: 8px !important; }
+    .hero-h1 { font-size: clamp(0.96rem,4.6vw,1.35rem) !important; }
+    .hero-body { font-size: clamp(8.5px,2.5vw,10.5px) !important; line-height: 1.42 !important; max-width: 20ch !important; }
+    .hero-btn-red, .hero-btn-ghost { padding: 8px 12px !important; font-size: clamp(0.54rem,2.2vw,0.64rem) !important; letter-spacing: 0.35px !important; }
+    .hero-cta-stack { max-width: min(176px,52vw) !important; gap: 6px !important; }
+    .hero-trust { gap: 6px !important; margin-top: 6px !important; }
+    .trust-text { font-size: clamp(6.8px,1.9vw,8px) !important; }
     
     .circle-badge { display: none !important; } /* Hide flanking badges on mobile */
     
@@ -1311,6 +1344,26 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     .impact-story-image-wrap img {
         min-height: 300px;
     }
+@media (max-width: 480px) {
+    .hero-circle {
+        width: min(86vw, 300px) !important;
+        height: min(86vw, 300px) !important;
+        padding: 26px 20px !important;
+    }
+    .hero-h1 { font-size: clamp(0.88rem, 4.2vw, 1.12rem) !important; }
+    .hero-body { font-size: 8px !important; max-width: 19ch !important; margin-bottom: 8px !important; }
+    .hero-cta-stack { max-width: 160px !important; gap: 5px !important; }
+    .hero-btn-red,
+    .hero-btn-ghost {
+        padding: 7px 10px !important;
+        font-size: 0.5rem !important;
+        letter-spacing: 0.25px !important;
+        gap: 6px !important;
+    }
+    .hero-trust { margin-top: 5px !important; }
+    .trust-dot { width: 5px !important; height: 5px !important; }
+    .trust-text { font-size: 6.4px !important; }
+}
     .impact-story-badge {
         left: 14px;
         right: 14px;
