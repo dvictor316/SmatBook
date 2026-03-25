@@ -457,8 +457,18 @@ public function purchase_report(Request $request)
 
     public function payment_report(Request $request)
     {
-        // Use the Model with relationships to get Sale and Creator info
-        $query = Payment::with(['sale', 'creator']);
+        if (!Schema::hasTable('payments')) {
+            $payments = new LengthAwarePaginator([], 0, 25, 1, [
+                'path' => request()->url(),
+                'query' => request()->query(),
+            ]);
+            $totalAmount = 0;
+            $activeBranch = $this->getActiveBranchContext();
+
+            return view('Reports.Reports.payment-report', compact('payments', 'totalAmount', 'activeBranch'));
+        }
+
+        $query = Payment::with($this->paymentReportRelations());
         $activeBranch = $this->getActiveBranchContext();
 
         if ($request->filled('from_date')) {
@@ -494,7 +504,34 @@ public function purchase_report(Request $request)
  public function paymentSummary(Request $request)
 {
     $activeBranch = $this->getActiveBranchContext();
-    $baseQuery = Payment::with(['sale.customer', 'creator', 'account']);
+    if (!Schema::hasTable('payments')) {
+        $payments = new LengthAwarePaginator([], 0, 10, 1, [
+            'path' => request()->url(),
+            'query' => request()->query(),
+        ]);
+        $totalRevenue = 0;
+        $summary = [
+            'total_transactions' => 0,
+            'completed_count' => 0,
+            'pending_count' => 0,
+            'partial_count' => 0,
+            'failed_count' => 0,
+            'completed_amount' => 0,
+            'pending_amount' => 0,
+            'partial_amount' => 0,
+            'average_payment' => 0,
+            'largest_payment' => 0,
+            'top_method' => 'N/A',
+            'top_channel' => 'N/A',
+        ];
+        $methodOptions = collect();
+        $statusOptions = collect(['Completed', 'Pending', 'Partial', 'Failed', 'Cancelled']);
+
+        return view('Reports.payment-summary', compact('payments', 'totalRevenue', 'summary', 'methodOptions', 'statusOptions', 'activeBranch'));
+    }
+
+    $paymentColumns = $this->paymentReportColumns();
+    $baseQuery = Payment::with($this->paymentReportRelations());
     $this->scopePaymentsForActor($baseQuery);
 
     if (!empty($activeBranch['name'])) {
@@ -507,17 +544,47 @@ public function purchase_report(Request $request)
 
     if ($request->filled('search')) {
         $search = trim((string) $request->search);
-        $query->where(function($q) use ($search) {
-            $q->where('payment_id', 'like', "%$search%")
-              ->orWhere('reference', 'like', "%$search%")
-              ->orWhere('note', 'like', "%$search%")
-              ->orWhere('method', 'like', "%$search%")
-              ->orWhere('status', 'like', "%$search%")
-              ->orWhereHas('sale', function ($saleQuery) use ($search) {
-                  $saleQuery->where('invoice_no', 'like', "%$search%")
-                      ->orWhere('order_number', 'like', "%$search%")
-                      ->orWhere('customer_name', 'like', "%$search%");
-              });
+        $query->where(function($q) use ($search, $paymentColumns) {
+            $hasPaymentSearch = false;
+
+            foreach (['payment_id', 'reference', 'note', 'method', 'status'] as $column) {
+                if (!empty($paymentColumns[$column])) {
+                    if (!$hasPaymentSearch) {
+                        $q->where($column, 'like', "%$search%");
+                        $hasPaymentSearch = true;
+                    } else {
+                        $q->orWhere($column, 'like', "%$search%");
+                    }
+                }
+            }
+
+            if (Schema::hasTable('sales')) {
+                if ($hasPaymentSearch) {
+                    $q->orWhereHas('sale', function ($saleQuery) use ($search) {
+                        if (Schema::hasColumn('sales', 'invoice_no')) {
+                            $saleQuery->where('invoice_no', 'like', "%$search%");
+                        }
+                        if (Schema::hasColumn('sales', 'order_number')) {
+                            $saleQuery->orWhere('order_number', 'like', "%$search%");
+                        }
+                        if (Schema::hasColumn('sales', 'customer_name')) {
+                            $saleQuery->orWhere('customer_name', 'like', "%$search%");
+                        }
+                    });
+                } else {
+                    $q->whereHas('sale', function ($saleQuery) use ($search) {
+                        if (Schema::hasColumn('sales', 'invoice_no')) {
+                            $saleQuery->where('invoice_no', 'like', "%$search%");
+                        }
+                        if (Schema::hasColumn('sales', 'order_number')) {
+                            $saleQuery->orWhere('order_number', 'like', "%$search%");
+                        }
+                        if (Schema::hasColumn('sales', 'customer_name')) {
+                            $saleQuery->orWhere('customer_name', 'like', "%$search%");
+                        }
+                    });
+                }
+            }
         });
     }
 
@@ -527,16 +594,30 @@ public function purchase_report(Request $request)
     if ($request->filled('to')) {
         $query->whereDate('created_at', '<=', $request->to);
     }
-    if ($request->filled('method')) {
+    if ($request->filled('method') && !empty($paymentColumns['method'])) {
         $query->where('method', $request->method);
     }
     if ($request->filled('status')) {
         $status = strtolower(trim((string) $request->status));
         $query->where(function ($q) use ($status) {
-            $q->whereRaw('LOWER(COALESCE(status, "")) = ?', [$status])
-                ->orWhereHas('sale', function ($saleQuery) use ($status) {
-                    $saleQuery->whereRaw('LOWER(COALESCE(payment_status, "")) = ?', [$status]);
-                });
+            $hasStatusClause = false;
+
+            if (Schema::hasColumn('payments', 'status')) {
+                $q->whereRaw("LOWER(COALESCE(status, '')) = ?", [$status]);
+                $hasStatusClause = true;
+            }
+
+            if (Schema::hasTable('sales') && Schema::hasColumn('sales', 'payment_status')) {
+                if ($hasStatusClause) {
+                    $q->orWhereHas('sale', function ($saleQuery) use ($status) {
+                        $saleQuery->whereRaw("LOWER(COALESCE(payment_status, '')) = ?", [$status]);
+                    });
+                } else {
+                    $q->whereHas('sale', function ($saleQuery) use ($status) {
+                        $saleQuery->whereRaw("LOWER(COALESCE(payment_status, '')) = ?", [$status]);
+                    });
+                }
+            }
         });
     }
 
@@ -563,13 +644,15 @@ public function purchase_report(Request $request)
         'top_channel' => (string) ($filteredPayments->groupBy(fn ($payment) => $payment->resolved_channel ?: 'Not specified')->sortByDesc->count()->keys()->first() ?? 'N/A'),
     ];
 
-    $methodOptions = (clone $baseQuery)
-        ->get()
-        ->pluck('method')
-        ->filter()
-        ->unique()
-        ->sort()
-        ->values();
+    $methodOptions = !empty($paymentColumns['method'])
+        ? (clone $baseQuery)
+            ->get()
+            ->pluck('method')
+            ->filter()
+            ->unique()
+            ->sort()
+            ->values()
+        : collect();
 
     $statusOptions = collect(['Completed', 'Pending', 'Partial', 'Failed', 'Cancelled']);
 
@@ -585,7 +668,7 @@ public function purchase_report(Request $request)
 
 public function show($id)
 {
-    $payment = \App\Models\Payment::with(['sale.customer', 'creator', 'account'])->findOrFail($id);
+    $payment = \App\Models\Payment::with($this->paymentReportRelations())->findOrFail($id);
     $payment->resolved_status = $this->resolvePaymentStatus($payment);
     $payment->resolved_channel = $this->resolvePaymentChannel($payment);
     return response()->json($payment);
@@ -683,6 +766,37 @@ private function resolvePaymentChannel(Payment $payment): string
     }
 
     return 'Not specified';
+}
+
+private function paymentReportColumns(): array
+{
+    if (!Schema::hasTable('payments')) {
+        return [];
+    }
+
+    return [
+        'payment_id' => Schema::hasColumn('payments', 'payment_id'),
+        'reference' => Schema::hasColumn('payments', 'reference'),
+        'note' => Schema::hasColumn('payments', 'note'),
+        'method' => Schema::hasColumn('payments', 'method'),
+        'status' => Schema::hasColumn('payments', 'status'),
+        'payment_account_id' => Schema::hasColumn('payments', 'payment_account_id'),
+    ];
+}
+
+private function paymentReportRelations(): array
+{
+    $relations = ['creator'];
+
+    if (Schema::hasTable('sales')) {
+        $relations[] = 'sale.customer';
+    }
+
+    if (Schema::hasTable('accounts') && Schema::hasColumn('payments', 'payment_account_id')) {
+        $relations[] = 'account';
+    }
+
+    return $relations;
 }
 
 private function scopePaymentsForActor($query): void
