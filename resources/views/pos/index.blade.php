@@ -2106,7 +2106,7 @@ $(document).ready(function() {
         setTimeout(() => $('#barcode-input').trigger('focus'), 50);
     }
 
-    function submitPosSale(total, paid, receiptWindow) {
+    function submitPosSale(total, paid) {
         $('#process-btn').prop('disabled', true).addClass('processing');
         $('#btn-text').hide();
         $('#btn-loading').show();
@@ -2136,12 +2136,7 @@ $(document).ready(function() {
             success: function(res) {
                 const invoiceUrl = "{{ route('sales.invoice.show', ':id') }}".replace(':id', res.sale_id) + '?autoprint=1';
                 const balanceDue = Math.max(0, total - paid);
-
-                if (receiptWindow && !receiptWindow.closed) {
-                    receiptWindow.location = invoiceUrl;
-                } else {
-                    window.open(invoiceUrl, '_blank');
-                }
+                window.open(invoiceUrl, '_blank');
 
                 resetPosWorkspace();
 
@@ -2158,9 +2153,6 @@ $(document).ready(function() {
                 });
             },
             error: function(xhr) {
-                if (receiptWindow && !receiptWindow.closed) {
-                    receiptWindow.close();
-                }
                 restoreProcessButton();
                 Swal.fire({ icon: 'error', title: 'Error', text: xhr.responseJSON?.message || 'Failed', confirmButtonColor: '#ef4444' });
             }
@@ -2182,8 +2174,6 @@ $(document).ready(function() {
             return;
         }
 
-        const receiptWindow = window.open('', '_blank');
-
         if (paid < total) {
             const balanceDue = Math.max(0, total - paid);
 
@@ -2198,15 +2188,13 @@ $(document).ready(function() {
                 cancelButtonColor: '#9ca3af'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    submitPosSale(total, paid, receiptWindow);
-                } else if (receiptWindow && !receiptWindow.closed) {
-                    receiptWindow.close();
+                    submitPosSale(total, paid);
                 }
             });
             return;
         }
 
-        submitPosSale(total, paid, receiptWindow);
+        submitPosSale(total, paid);
     });
 
     syncCategoryToggle();

@@ -621,21 +621,27 @@
         $resolvedCompany = $company->company_name || $company->name || $company->address || $company->email || $company->phone
             ? $company
             : $workspaceCompany;
+        $companyOwner = $resolvedCompany?->user ?? optional(auth()->user());
         $companyDisplayName = $resolvedCompany?->company_name
             ?? $resolvedCompany?->name
+            ?? $companyOwner?->name
             ?? \App\Models\Setting::where('key', 'company_name')->value('value')
             ?? config('app.name', 'SmartProbook');
         $companyAddress = $resolvedCompany?->address
             ?? \App\Models\Setting::where('key', 'company_address')->value('value')
             ?? null;
         $companyAddressDisplay = $companyAddress
-            ?: ($resolvedCompany?->email
-                ?? \App\Models\Setting::where('key', 'company_email')->value('value')
-                ?? 'Address available in company settings');
+            ?: ($resolvedCompany?->phone
+                ?? $companyOwner?->location
+                ?? $resolvedCompany?->email
+                ?? $companyOwner?->email
+                ?? $companyDisplayName);
         $companyPhone = $resolvedCompany?->phone
+            ?? $companyOwner?->phone
             ?? \App\Models\Setting::where('key', 'company_phone')->value('value')
             ?? '';
         $companyEmail = $resolvedCompany?->email
+            ?? $companyOwner?->email
             ?? \App\Models\Setting::where('key', 'company_email')->value('value')
             ?? '';
     @endphp
