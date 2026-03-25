@@ -385,7 +385,9 @@ $sale = Sale::create([
                 'branch_name' => $activeBranch['name'],
                 'amount'  => $finalPaid,
                 'method'  => $request->payment_method,
+                'status'  => $finalBalance <= 0 ? 'Completed' : 'Partial',
                 'note'    => $paymentAccount?->name ? 'Initial POS Payment via ' . $paymentAccount->name : 'Initial POS Payment',
+                'created_by' => auth()->id(),
             ];
             if (Schema::hasColumn('payments', 'payment_account_id')) {
                 $paymentPayload['payment_account_id'] = $paymentAccount?->id;
