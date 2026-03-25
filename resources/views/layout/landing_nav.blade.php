@@ -216,6 +216,10 @@
             letter-spacing: 0.3px;
         }
 
+        .nav-label-short {
+            display: none;
+        }
+
         .nav-demo-link:hover,
         .nav-demo-link.active {
             background: rgba(0, 98, 255, 0.14);
@@ -844,6 +848,14 @@
                 font-size: 0.68rem;
                 letter-spacing: 0.08px;
             }
+
+            .nav-label-full {
+                display: none;
+            }
+
+            .nav-label-short {
+                display: inline;
+            }
         }
 
         @media (min-width: 992px) and (max-width: 1045px) {
@@ -1217,9 +1229,9 @@
             <li><a href="{{ route('landing.contact') }}" class="{{ Route::is('landing.contact') ? 'active' : '' }}">Contact</a></li>
             <li><a href="{{ url('/#licensing') }}">Licensing</a></li>
             <li><a href="{{ route('landing.policy') }}" class="{{ Route::is('landing.policy') ? 'active' : '' }}">Policy</a></li>
-            <li><a href="{{ route('landing.demo') }}" class="nav-demo-link {{ Route::is('landing.demo') ? 'active' : '' }}">Try Demo</a></li>
+            <li><a href="{{ route('landing.demo') }}" class="nav-demo-link {{ Route::is('landing.demo') ? 'active' : '' }}"><span class="nav-label-full">Try Demo</span><span class="nav-label-short">Demo</span></a></li>
           
-            <li><a href="{{ route('saas-login') }}" class="btn-portal">Client Portal</a></li>
+            <li><a href="{{ route('saas-login') }}" class="btn-portal"><span class="nav-label-full">Client Portal</span><span class="nav-label-short">Portal</span></a></li>
         </ul>
     </div>
 </nav>
