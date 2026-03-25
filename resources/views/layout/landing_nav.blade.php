@@ -186,6 +186,11 @@
             flex: 0 0 auto;
         }
 
+        .nav-action-item {
+            display: flex;
+            align-items: center;
+        }
+
         .nav-links a { 
             text-decoration: none; 
             color: var(--dark); 
@@ -816,37 +821,42 @@
             }
         }
 
-        @media (min-width: 992px) and (max-width: 1120px) {
+        @media (min-width: 992px) and (max-width: 1180px) {
             .nav-container {
-                padding: 0 14px;
+                padding: 0 12px;
             }
 
             .brand-img {
-                height: 40px;
+                height: 38px;
             }
 
             .logo-text {
-                font-size: 0.82rem;
+                font-size: 0.72rem;
             }
 
             .nav-links {
-                gap: 9px;
+                flex: 1 1 auto;
+                justify-content: flex-end;
+                gap: 6px;
+                min-width: 0;
             }
 
             .nav-links a {
-                font-size: 0.68rem;
-                letter-spacing: 0.08px;
+                font-size: 0.6rem;
+                letter-spacing: 0;
             }
 
             .nav-demo-link {
                 padding: 6px 8px !important;
-                font-size: 0.68rem;
+                font-size: 0.62rem;
+                min-height: 34px;
             }
 
             .btn-portal {
-                padding: 8px 10px;
-                font-size: 0.68rem;
-                letter-spacing: 0.08px;
+                padding: 7px 9px;
+                font-size: 0.62rem;
+                letter-spacing: 0;
+                min-height: 34px;
             }
 
             .nav-label-full {
@@ -858,7 +868,7 @@
             }
         }
 
-        @media (min-width: 992px) and (max-width: 1045px) {
+        @media (min-width: 992px) and (max-width: 1080px) {
             .nav-container {
                 padding: 0 10px;
             }
@@ -876,22 +886,22 @@
             }
 
             .nav-links {
-                gap: 7px;
+                gap: 4px;
             }
 
             .nav-links a {
-                font-size: 0.63rem;
-                letter-spacing: 0.04px;
+                font-size: 0.56rem;
+                letter-spacing: 0;
             }
 
             .nav-demo-link {
-                padding: 6px 7px !important;
-                font-size: 0.63rem;
+                padding: 5px 7px !important;
+                font-size: 0.58rem;
             }
 
             .btn-portal {
-                padding: 7px 8px;
-                font-size: 0.63rem;
+                padding: 6px 7px;
+                font-size: 0.58rem;
             }
         }
 
@@ -1229,9 +1239,9 @@
             <li><a href="{{ route('landing.contact') }}" class="{{ Route::is('landing.contact') ? 'active' : '' }}">Contact</a></li>
             <li><a href="{{ url('/#licensing') }}">Licensing</a></li>
             <li><a href="{{ route('landing.policy') }}" class="{{ Route::is('landing.policy') ? 'active' : '' }}">Policy</a></li>
-            <li><a href="{{ route('landing.demo') }}" class="nav-demo-link {{ Route::is('landing.demo') ? 'active' : '' }}"><span class="nav-label-full">Try Demo</span><span class="nav-label-short">Demo</span></a></li>
+            <li class="nav-action-item"><a href="{{ route('landing.demo') }}" class="nav-demo-link {{ Route::is('landing.demo') ? 'active' : '' }}"><span class="nav-label-full">Try Demo</span><span class="nav-label-short">Demo</span></a></li>
           
-            <li><a href="{{ route('saas-login') }}" class="btn-portal"><span class="nav-label-full">Client Portal</span><span class="nav-label-short">Portal</span></a></li>
+            <li class="nav-action-item"><a href="{{ route('saas-login') }}" class="btn-portal"><span class="nav-label-full">Client Portal</span><span class="nav-label-short">Portal</span></a></li>
         </ul>
     </div>
 </nav>
