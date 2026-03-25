@@ -76,7 +76,7 @@
                 <p class="summary-metric-label text-[11px] uppercase tracking-[0.2em] text-gray-400 font-black">Payment Mix</p>
                 <h2 class="summary-metric-value mt-3 font-black text-gray-900">{{ $summary['top_method'] ?? 'N/A' }}</h2>
                 <p class="summary-metric-note mt-2 text-sm text-gray-500">
-                    Pending {{ number_format($summary['pending_count'] ?? 0) }} | Partial {{ number_format($summary['partial_count'] ?? 0) }} | Failed {{ number_format($summary['failed_count'] ?? 0) }}
+                    Top channel: {{ $summary['top_channel'] ?? 'N/A' }}
                 </p>
             </div>
         </div>
@@ -152,6 +152,7 @@
                             <th class="px-6 py-4 text-left text-[11px] font-bold text-gray-500 uppercase tracking-widest">Payment ID</th>
                             <th class="px-6 py-4 text-left text-[11px] font-bold text-gray-500 uppercase tracking-widest">Reference</th>
                             <th class="px-6 py-4 text-left text-[11px] font-bold text-gray-500 uppercase tracking-widest">Method</th>
+                            <th class="px-6 py-4 text-left text-[11px] font-bold text-gray-500 uppercase tracking-widest">Channel</th>
                             <th class="px-6 py-4 text-left text-[11px] font-bold text-gray-500 uppercase tracking-widest">Amount</th>
                             <th class="px-6 py-4 text-left text-[11px] font-bold text-gray-500 uppercase tracking-widest">Status</th>
                             <th class="px-6 py-4 text-left text-[11px] font-bold text-gray-500 uppercase tracking-widest">Date</th>
@@ -172,6 +173,9 @@
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $payment->method ?: 'Not set' }}</td>
+                            <td class="px-6 py-4 min-w-[220px] text-sm text-gray-600">
+                                {{ $payment->resolved_channel ?? 'Not specified' }}
+                            </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-black text-gray-900">{{ $currencySymbol }}{{ number_format($payment->amount, 2) }}</td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 @php
@@ -200,7 +204,7 @@
                             </td>
                         </tr>
                         @empty
-                        <tr><td colspan="8" class="px-6 py-20 text-center text-gray-400 font-medium italic">No transactions found matching your search.</td></tr>
+                        <tr><td colspan="9" class="px-6 py-20 text-center text-gray-400 font-medium italic">No transactions found matching your search.</td></tr>
                         @endforelse
                     </tbody>
                 </table>

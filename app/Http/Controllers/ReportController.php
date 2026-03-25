@@ -477,7 +477,11 @@ public function purchase_report(Request $request)
         $totalAmount = (clone $query)->sum('amount');
         
         // Increased to 25 for better report viewing, preserved filters
-        $payments = $query->latest()->paginate(25)->withQueryString(); 
+        $payments = $query->latest()->paginate(25)->withQueryString();
+        $payments->getCollection()->transform(function ($payment) {
+            $payment->resolved_channel = $this->resolvePaymentChannel($payment);
+            return $payment;
+        });
 
         return view('Reports.Reports.payment-report', compact('payments', 'totalAmount', 'activeBranch'));
     }
@@ -539,6 +543,7 @@ public function purchase_report(Request $request)
     $filteredPayments = (clone $query)->orderBy('created_at', 'desc')->get();
     $filteredPayments->transform(function ($payment) {
         $payment->resolved_status = $this->resolvePaymentStatus($payment);
+        $payment->resolved_channel = $this->resolvePaymentChannel($payment);
         return $payment;
     });
 
@@ -555,6 +560,7 @@ public function purchase_report(Request $request)
         'average_payment' => $filteredPayments->count() > 0 ? ((float) $filteredPayments->sum('amount') / $filteredPayments->count()) : 0,
         'largest_payment' => (float) ($filteredPayments->max('amount') ?? 0),
         'top_method' => (string) ($filteredPayments->groupBy(fn ($payment) => $payment->method ?: 'Unknown')->sortByDesc->count()->keys()->first() ?? 'N/A'),
+        'top_channel' => (string) ($filteredPayments->groupBy(fn ($payment) => $payment->resolved_channel ?: 'Not specified')->sortByDesc->count()->keys()->first() ?? 'N/A'),
     ];
 
     $methodOptions = (clone $baseQuery)
@@ -570,6 +576,7 @@ public function purchase_report(Request $request)
     $payments = $query->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
     $payments->getCollection()->transform(function ($payment) {
         $payment->resolved_status = $this->resolvePaymentStatus($payment);
+        $payment->resolved_channel = $this->resolvePaymentChannel($payment);
         return $payment;
     });
 
@@ -580,6 +587,7 @@ public function show($id)
 {
     $payment = \App\Models\Payment::with(['sale.customer', 'creator', 'account'])->findOrFail($id);
     $payment->resolved_status = $this->resolvePaymentStatus($payment);
+    $payment->resolved_channel = $this->resolvePaymentChannel($payment);
     return response()->json($payment);
 }
 
@@ -638,6 +646,43 @@ private function resolvePaymentStatus(Payment $payment): string
     }
 
     return 'Pending';
+}
+
+private function resolvePaymentChannel(Payment $payment): string
+{
+    if (!empty($payment->account?->name)) {
+        return (string) $payment->account->name;
+    }
+
+    $details = $payment->sale?->payment_details;
+    if (is_string($details)) {
+        $decoded = json_decode($details, true);
+        $details = is_array($decoded) ? $decoded : [];
+    }
+
+    if (is_array($details)) {
+        $directChannel = trim((string) ($details['payment_account_name'] ?? ''));
+        if ($directChannel !== '') {
+            return $directChannel;
+        }
+
+        $splitParts = [];
+        $cardChannel = trim((string) ($details['card_account_name'] ?? ''));
+        $transferChannel = trim((string) ($details['transfer_account_name'] ?? ''));
+
+        if ($cardChannel !== '') {
+            $splitParts[] = 'Card: ' . $cardChannel;
+        }
+        if ($transferChannel !== '') {
+            $splitParts[] = 'Transfer: ' . $transferChannel;
+        }
+
+        if ($splitParts !== []) {
+            return implode(' | ', $splitParts);
+        }
+    }
+
+    return 'Not specified';
 }
 
 private function scopePaymentsForActor($query): void

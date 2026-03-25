@@ -136,6 +136,7 @@
                                 <th>{{ __('Date & Time') }}</th>
                                 <th>{{ __('Amount') }}</th>
                                 <th>{{ __('Method') }}</th>
+                                <th>{{ __('Channel') }}</th>
                                 <th>{{ __('Status') }}</th>
                                 <th class="no-print">{{ __('Created By') }}</th>
                             </tr>
@@ -159,6 +160,9 @@
                                         <i class="feather-credit-card me-1"></i> {{ $payment->method }}
                                     </span>
                                 </td>
+                                <td class="small text-muted">
+                                    {{ $payment->resolved_channel ?? 'Not specified' }}
+                                </td>
                                 <td>
                                     @if($payment->status == 'Completed')
                                         <span class="badge bg-success-subtle text-success border border-success-subtle px-2">Completed</span>
@@ -172,7 +176,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="7" class="text-center py-5">
+                                <td colspan="8" class="text-center py-5">
                                     <div class="text-muted">
                                         <i class="feather-alert-circle display-4 d-block mb-3"></i>
                                         <p>{{ __('No payment records found for the selected range.') }}</p>
@@ -184,12 +188,12 @@
                         @if($paymentsExists)
                         <tfoot class="table-light fw-bold">
                             <tr>
-                                <td colspan="3" class="text-end text-uppercase small text-muted">{{ __('Page Total') }}</td>
+                                <td colspan="4" class="text-end text-uppercase small text-muted">{{ __('Page Total') }}</td>
                                 <td class="text-primary money-cell">₦{{ number_format($pageTotal, 2) }}</td>
                                 <td colspan="3"></td>
                             </tr>
                             <tr class="table-primary border-top">
-                                <td colspan="3" class="text-end text-uppercase small">{{ __('Filtered Grand Total') }}</td>
+                                <td colspan="4" class="text-end text-uppercase small">{{ __('Filtered Grand Total') }}</td>
                                 <td class="text-dark money-cell">₦{{ number_format($totalAmount, 2) }}</td>
                                 <td colspan="3"></td>
                             </tr>
