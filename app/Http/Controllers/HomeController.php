@@ -20,7 +20,7 @@ class HomeController extends Controller
     |  2. Deployment Manager   → /deployment/dashboard
     |  3. New customer         → /saas/checkout/{id}   (unpaid subscription)
     |  4. Setup-pending tenant → /saas/setup/{id}      (no domain yet)
-    |  5. Active tenant        → https://subdomain.smatbook.com
+    |  5. Active tenant        → https://subdomain.smartprobook.com
     |--------------------------------------------------------------------------
     */
     public function index()
@@ -137,7 +137,7 @@ class HomeController extends Controller
     |  unpaid subscription       → /saas/checkout/{id}   ← handles deployment-created customers
     |  paid but inactive         → /saas/setup/{id}
     |  paid, active, no company  → /saas/setup/{id}
-    |  paid, active, has company → https://subdomain.smatbook.com
+    |  paid, active, has company → https://subdomain.smartprobook.com
     |--------------------------------------------------------------------------
     */
     private function handleRegularUserRedirect($user)
@@ -200,7 +200,7 @@ class HomeController extends Controller
         }
 
         // All good — send to workspace subdomain
-        $mainDomain   = trim((string) config('session.domain', env('SESSION_DOMAIN', 'smatbook.com')), ". \t\n\r\0\x0B");
+        $mainDomain   = trim((string) config('session.domain', env('SESSION_DOMAIN', 'smartprobook.com')), ". \t\n\r\0\x0B");
         $workspaceUrl = 'https://' . $company->domain_prefix . '.' . $mainDomain;
 
         Log::info('→ Redirecting to workspace', [

@@ -240,7 +240,7 @@
                                class="form-control input-smat @error('domain_prefix') is-invalid @enderror" 
                                placeholder="yourcompany" required
                                value="{{ old('domain_prefix', $subscription->domain_prefix ?? '') }}">
-                        <span class="input-group-text subdomain-tag">.smatbook.com</span>
+                        <span class="input-group-text subdomain-tag">.{{ config('session.domain', env('SESSION_DOMAIN', 'smartprobook.com')) }}</span>
                     </div>
                     @error('domain_prefix')
                         <div class="text-danger small mt-2 fw-bold"><i class="fas fa-info-circle me-1"></i> {{ $message }}</div>

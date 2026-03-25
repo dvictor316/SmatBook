@@ -123,7 +123,7 @@
                                 <label class="form-label">Subdomain Access</label>
                                 <div class="input-group">
                                     <input type="text" class="form-control" value="{{ $subscription->domain_prefix ?? 'pending' }}" disabled>
-                                    <span class="input-group-text">.smatbook.com</span>
+                                    <span class="input-group-text">.{{ config('session.domain', env('SESSION_DOMAIN', 'smartprobook.com')) }}</span>
                                 </div>
                             </div>
 

@@ -51,7 +51,7 @@
                                         <label>Subdomain (Tenant Prefix)</label>
                                         <div class="input-group">
                                             <input type="text" name="subdomain" class="form-control" value="{{ old('subdomain') }}" placeholder="companyname">
-                                            <span class="input-group-text">.smatbook.com</span>
+                                            <span class="input-group-text">.{{ config('session.domain', env('SESSION_DOMAIN', 'smartprobook.com')) }}</span>
                                         </div>
                                     </div>
                                     <div class="form-group mb-3">

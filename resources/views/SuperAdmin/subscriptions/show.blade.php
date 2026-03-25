@@ -41,7 +41,7 @@
                                 <ul class="list-unstyled mt-2">
                                     <li><strong>SmartProbook SaaS Platform</strong></li>
                                     <li>Onitsha, Anambra State, Nigeria</li>
-                                    <li>Support: chat@smatbook.com</li>
+                                    <li>Support: chat@smartprobook.com</li>
                                 </ul>
                             </div>
                             <div class="col-sm-6 text-sm-right">
@@ -67,7 +67,7 @@
                                     </div>
                                     <div class="col-md-4">
                                         <p class="text-muted mb-0">Workspace Slug</p>
-                                        <p class="h6 text-primary">{{ $subscription->domain_prefix }}.smatbook.com</p>
+                                        <p class="h6 text-primary">{{ $subscription->domain_prefix }}.{{ config('session.domain', env('SESSION_DOMAIN', 'smartprobook.com')) }}</p>
                                     </div>
                                     <div class="col-md-4">
                                         <p class="text-muted mb-0">Payment Method</p>

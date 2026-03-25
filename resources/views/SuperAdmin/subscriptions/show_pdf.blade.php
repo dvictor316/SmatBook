@@ -41,7 +41,7 @@
                 <td>
                     <h4 style="margin-bottom: 5px;">Billed To:</h4>
                     <strong>{{ $subscription->tenant->name ?? 'Valued Subscriber' }}</strong><br>
-                    Workspace: {{ $subscription->domain_prefix }}.smatbook.com<br>
+                    Workspace: {{ $subscription->domain_prefix }}.{{ config('session.domain', env('SESSION_DOMAIN', 'smartprobook.com')) }}<br>
                     Payment: {{ strtoupper($subscription->payment_gateway ?? 'Paystack') }}
                 </td>
                 <td class="text-right">
@@ -94,7 +94,7 @@
 
         <div class="footer">
             <p>Thank you for choosing SmartProbook. This is a computer-generated receipt and requires no signature.</p>
-            <p>Support: chat@smatbook.com | Onitsha, Anambra State, Nigeria</p>
+            <p>Support: chat@smartprobook.com | Onitsha, Anambra State, Nigeria</p>
         </div>
     </div>
 </body>
