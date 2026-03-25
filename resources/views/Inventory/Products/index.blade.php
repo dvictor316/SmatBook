@@ -128,7 +128,7 @@
                                 <th>Item / SKU</th>
                                 <th>Category</th>
                                 <th>Base Unit</th>
-                                <th>Pkg (Ctn/Roll)</th>
+                                <th>Packaging</th>
                                 <th>Stock</th>
                                 <th>S. Price</th>
                                 <th>P. Price</th>
@@ -152,10 +152,8 @@
                                         <td>{{ $product->category->name ?? 'N/A' }}</td>
                                         <td><span class="badge bg-soft-info text-info">{{ $product->base_unit_name }}</span></td>
                                         <td>
-                                            <small class="text-nowrap">
-                                                Ctn: <strong>{{ $product->units_per_carton }}</strong> | 
-                                                Roll: <strong>{{ $product->units_per_roll }}</strong>
-                                            </small>
+                                                <small class="d-block text-nowrap">Rolls / Carton: <strong>{{ $product->units_per_carton }}</strong></small>
+                                                <small class="d-block text-nowrap">Sachets / Roll: <strong>{{ $product->units_per_roll }}</strong></small>
                                         </td>
                                         <td>
                                             @php
@@ -245,11 +243,11 @@
                             </select>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">Rolls/Carton</label>
+                            <label class="form-label">Roll Count in One Carton</label>
                             <input type="number" name="units_per_carton" min="0" class="form-control" value="0">
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">Sachets/Roll</label>
+                            <label class="form-label">Sachet Count in One Roll</label>
                             <input type="number" name="units_per_roll" min="0" class="form-control" value="0">
                         </div>
                         <div class="col-md-3">
@@ -261,16 +259,16 @@
                             <input type="number" step="0.01" name="purchase_price" class="form-control" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Opening Stock (Rolls)</label>
+                            <label class="form-label">Opening Roll Quantity</label>
                             <input type="number" step="0.01" name="stock_rolls" class="form-control" value="0">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Opening Stock (Cartons)</label>
+                            <label class="form-label">Opening Carton Quantity</label>
                             <input type="number" step="0.01" name="stock_cartons" class="form-control" value="0">
                             <small class="text-muted">Cartons convert through rolls and sachets automatically.</small>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Opening Stock (Sachets / Loose Units)</label>
+                            <label class="form-label">Opening Sachet Quantity</label>
                             <input type="number" step="0.01" name="stock_units" class="form-control" value="0">
                         </div>
                         <div class="col-md-6">
@@ -281,6 +279,7 @@
                         <div class="col-md-6">
                             <label class="form-label">Product Image</label>
                             <input type="file" name="image" id="quick_add_product_image" class="form-control">
+                            <small class="text-muted">Any file extension can be uploaded if the browser sends it as a valid file.</small>
                         </div>
                     </div>
                 </div>

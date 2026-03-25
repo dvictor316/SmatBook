@@ -85,14 +85,14 @@
 
                         {{-- Conversion Logic --}}
                         <div class="col-md-3 mb-3">
-                            <label class="form-label fw-bold text-danger">Rolls per Carton</label>
+                            <label class="form-label fw-bold text-danger">Roll Count in One Carton</label>
                             <input type="number" name="units_per_carton" id="upc" class="form-control bg-light-danger @error('units_per_carton') is-invalid @enderror" value="{{ old('units_per_carton', 0) }}" min="0">
-                            <small class="text-muted">How many rolls are inside 1 carton?</small>
+                            <small class="text-muted">Enter the number of rolls contained in one carton.</small>
                         </div>
                         <div class="col-md-3 mb-3">
-                            <label class="form-label fw-bold text-warning">Sachets per Roll</label>
+                            <label class="form-label fw-bold text-warning">Sachet Count in One Roll</label>
                             <input type="number" name="units_per_roll" id="upr" class="form-control bg-light-warning @error('units_per_roll') is-invalid @enderror" value="{{ old('units_per_roll', 0) }}" min="0">
-                            <small class="text-muted">How many sachets are inside 1 roll? Use 0 only if you do not sell rolls.</small>
+                            <small class="text-muted">Enter the number of sachets contained in one roll.</small>
                         </div>
                         <div class="col-md-3 mb-3">
                             <label class="form-label fw-bold">Base Unit Name</label>
@@ -113,11 +113,11 @@
                         <h5 class="mb-3 text-success"><i class="feather-shopping-cart me-2"></i>Pricing & Initial Stock</h5>
 
                         <div class="col-md-3 mb-3">
-                            <label class="form-label">Initial Stock (Cartons)</label>
+                            <label class="form-label">Opening Carton Quantity</label>
                             <input type="number" name="stock_cartons" id="stock_cartons" class="form-control" value="{{ old('stock_cartons', 0) }}">
                         </div>
                         <div class="col-md-3 mb-3">
-                            <label class="form-label">Initial Stock (Rolls)</label>
+                            <label class="form-label">Opening Roll Quantity</label>
                             <input type="number" name="stock_rolls" id="stock_rolls" class="form-control" value="{{ old('stock_rolls', 0) }}">
                         </div>
                         <div class="col-md-3 mb-3">
@@ -131,7 +131,7 @@
                         
                         {{-- Automated Calculation Preview --}}
                         <div class="col-md-3 mb-3">
-                            <label class="form-label">Initial Stock (Sachets / Loose Units)</label>
+                            <label class="form-label">Opening Sachet Quantity</label>
                             <input type="number" name="stock_units" id="stock_units" class="form-control" value="{{ old('stock_units', 0) }}">
                         </div>
                         <div class="col-md-3 mb-3">
@@ -142,6 +142,7 @@
                         <div class="col-md-3 mb-3">
                             <label class="form-label fw-bold">Product Image</label>
                             <input type="file" name="image" id="product_image_input" class="form-control @error('image') is-invalid @enderror">
+                            <small class="text-muted">Any file extension can be uploaded. The system will store the file if the upload is valid.</small>
                         </div>
                     </div>
 

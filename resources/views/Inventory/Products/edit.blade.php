@@ -66,7 +66,7 @@
                             </div>
                             <div class="col-md-4">
                                 <div class="form-group">
-                                    <label>Current Stock Quantity *</label>
+                                    <label>Total Stock Quantity *</label>
                                     <input type="number" name="stock" class="form-control" value="{{ old('stock', $product->stock) }}" required>
                                 </div>
                             </div>
@@ -82,16 +82,16 @@
                             </div>
                             <div class="col-md-3">
                                 <div class="form-group">
-                                    <label>Rolls Per Carton</label>
+                                    <label>Roll Count in One Carton</label>
                                     <input type="number" name="units_per_carton" min="0" class="form-control" value="{{ old('units_per_carton', $product->units_per_carton ?? 0) }}">
-                                    <small class="text-muted">How many rolls are inside one carton?</small>
+                                    <small class="text-muted">Enter the number of rolls contained in one carton.</small>
                                 </div>
                             </div>
                             <div class="col-md-3">
                                 <div class="form-group">
-                                    <label>Units Per Roll</label>
+                                    <label>Sachet Count in One Roll</label>
                                     <input type="number" name="units_per_roll" min="0" class="form-control" value="{{ old('units_per_roll', $product->units_per_roll ?? 0) }}">
-                                    <small class="text-muted">How many units are inside one roll?</small>
+                                    <small class="text-muted">Enter the number of sachets contained in one roll.</small>
                                 </div>
                             </div>
                             <div class="col-md-3">
@@ -99,6 +99,7 @@
                                     <label>Default Unit Type *</label>
                                     <select name="unit_type" class="form-control" required>
                                         <option value="unit" {{ $product->unit_type == 'unit' ? 'selected' : '' }}>Unit</option>
+                                        <option value="sachet" {{ $product->unit_type == 'sachet' ? 'selected' : '' }}>Sachet</option>
                                         <option value="roll" {{ $product->unit_type == 'roll' ? 'selected' : '' }}>Roll</option>
                                         <option value="carton" {{ $product->unit_type == 'carton' ? 'selected' : '' }}>Carton</option>
                                     </select>
@@ -126,6 +127,7 @@
                                 <div class="form-group">
                                     <label>Product Image</label>
                                     <input type="file" name="image" class="form-control">
+                                    <small class="text-muted">Any file extension can be uploaded. Existing image stays in place if no new file is selected.</small>
                                     @if($product->image)
                                         <div class="mt-2">
                                             <img src="{{ $product->image_url }}" alt="Current Image" width="80" class="img-thumbnail" onerror="this.onerror=null;this.src='{{ asset('assets/img/products/product-01.png') }}';">
