@@ -766,7 +766,7 @@
         }
 
         /* ===== TABLET LANDSCAPE / SMALL LAPTOP NAV TUNING ===== */
-        @media (min-width: 992px) and (max-width: 1320px) {
+        @media (min-width: 1181px) and (max-width: 1320px) {
             .nav-container {
                 padding: 0 18px;
             }
@@ -807,7 +807,7 @@
         }
 
         /* ===== TABLET LAYOUT ===== */
-        @media (max-width: 991px) {
+        @media (max-width: 1180px) {
             html, body {
                 overflow-x: hidden;
                 -webkit-overflow-scrolling: touch;
@@ -1102,7 +1102,7 @@
             border-width: 2px;
         }
 
-        @media (max-width: 991.98px) {
+        @media (max-width: 1180px) {
             #nprogress .spinner {
                 top: calc(env(safe-area-inset-top, 0px) + 76px) !important;
                 right: 12px !important;
