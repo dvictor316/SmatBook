@@ -2106,24 +2106,8 @@ $(document).ready(function() {
         setTimeout(() => $('#barcode-input').trigger('focus'), 50);
     }
 
-    // Process Sale
-    $('#process-btn').on('click', function() {
-        if(!cart.length) {
-            Swal.fire({ icon: 'warning', title: 'Cart Empty', confirmButtonColor: '#f59e0b' });
-            return;
-        }
-
-        let total = parseFloat($('#grand-total').text().replace(/[^\d.]/g, '')) || 0;
-        let paid = parseFloat($('#amount-paid').val()) || 0;
-        
-        if(paid < total) {
-            Swal.fire({ icon: 'error', title: 'Insufficient Payment', confirmButtonColor: '#ef4444' });
-            return;
-        }
-
-        const receiptWindow = window.open('', '_blank');
-
-        $(this).prop('disabled', true).addClass('processing');
+    function submitPosSale(total, paid, receiptWindow) {
+        $('#process-btn').prop('disabled', true).addClass('processing');
         $('#btn-text').hide();
         $('#btn-loading').show();
 
@@ -2151,6 +2135,7 @@ $(document).ready(function() {
             },
             success: function(res) {
                 const invoiceUrl = "{{ route('sales.invoice.show', ':id') }}".replace(':id', res.sale_id) + '?autoprint=1';
+                const balanceDue = Math.max(0, total - paid);
 
                 if (receiptWindow && !receiptWindow.closed) {
                     receiptWindow.location = invoiceUrl;
@@ -2162,9 +2147,11 @@ $(document).ready(function() {
 
                 Swal.fire({
                     icon: 'success',
-                    title: 'Sale completed',
-                    text: 'Receipt opened. POS is ready for the next sale.',
-                    timer: 1600,
+                    title: balanceDue > 0 ? 'Deposit recorded' : 'Sale completed',
+                    text: balanceDue > 0
+                        ? 'Receipt opened. Remaining balance: ' + fmt.format(balanceDue)
+                        : 'Receipt opened. POS is ready for the next sale.',
+                    timer: 2000,
                     showConfirmButton: false,
                     toast: true,
                     position: 'top-end'
@@ -2178,6 +2165,48 @@ $(document).ready(function() {
                 Swal.fire({ icon: 'error', title: 'Error', text: xhr.responseJSON?.message || 'Failed', confirmButtonColor: '#ef4444' });
             }
         });
+    }
+
+    // Process Sale
+    $('#process-btn').on('click', function() {
+        if(!cart.length) {
+            Swal.fire({ icon: 'warning', title: 'Cart Empty', confirmButtonColor: '#f59e0b' });
+            return;
+        }
+
+        let total = parseFloat($('#grand-total').text().replace(/[^\d.]/g, '')) || 0;
+        let paid = parseFloat($('#amount-paid').val()) || 0;
+
+        if(paid <= 0) {
+            Swal.fire({ icon: 'warning', title: 'Enter Payment', text: 'Enter the amount received before processing this sale.', confirmButtonColor: '#f59e0b' });
+            return;
+        }
+
+        const receiptWindow = window.open('', '_blank');
+
+        if (paid < total) {
+            const balanceDue = Math.max(0, total - paid);
+
+            Swal.fire({
+                icon: 'warning',
+                title: 'Process As Deposit?',
+                text: 'Amount received is short by ' + fmt.format(balanceDue) + '. This sale will be saved as pending until fully paid.',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, Save Deposit',
+                cancelButtonText: 'Cancel',
+                confirmButtonColor: '#2563eb',
+                cancelButtonColor: '#9ca3af'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    submitPosSale(total, paid, receiptWindow);
+                } else if (receiptWindow && !receiptWindow.closed) {
+                    receiptWindow.close();
+                }
+            });
+            return;
+        }
+
+        submitPosSale(total, paid, receiptWindow);
     });
 
     syncCategoryToggle();
