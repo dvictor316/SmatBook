@@ -206,6 +206,7 @@ public function customerDetails($id = null)
         'items.*.qty'    => 'required|numeric|min:1',
         'items.*.unitType' => 'nullable|in:unit,roll,carton',
         'items.*.stockUnits' => 'nullable|numeric|min:1',
+        'items.*.priceLevel' => 'nullable|in:retail,wholesale,special',
     ]);
 
     DB::beginTransaction();

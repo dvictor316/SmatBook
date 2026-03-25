@@ -1237,7 +1237,13 @@ label {
                 data-barcode="{{ strtolower($p->barcode ?? '') }}"
                 data-category="{{ strtolower($p->category->name ?? 'uncategorized') }}">
                 <div class="product-card-img">
-                    <img src="{{ $p->image_url }}" alt="{{ $p->name }}" onerror="this.onerror=null;this.src='{{ asset('assets/img/products/product-01.png') }}';">
+                    @if($p->image_url)
+                        <img src="{{ $p->image_url }}" alt="{{ $p->name }}">
+                    @else
+                        <div class="d-flex align-items-center justify-content-center h-100 w-100 text-primary bg-light">
+                            <i class="fas fa-box-open"></i>
+                        </div>
+                    @endif
                 </div>
             </div>
             @endforeach
@@ -1272,23 +1278,23 @@ label {
                     <option value="">-- Choose Product --</option>
                     @foreach($products as $p)
                     @php
-                        $unitPrice = (float) ($p->price ?? 0);
+                        $retailPrice = (float) ($p->retail_price ?? $p->price ?? 0);
+                        $wholesalePrice = (float) ($p->wholesale_price ?? 0);
+                        $specialPrice = (float) ($p->special_price ?? 0);
                         $rollsPerCarton = max((int) ($p->units_per_carton ?? 0), 0);
                         $unitsPerRoll = max((int) ($p->units_per_roll ?? 0), 0);
-                        $unitsPerCarton = $rollsPerCarton > 0 && $unitsPerRoll > 0 ? ($rollsPerCarton * $unitsPerRoll) : 0;
                         $categoryName = $p->category->name ?? 'Uncategorized';
                         $minStockLevel = (int) ($p->min_stock_level ?? 15);
-                        $cartonPrice = $unitsPerCarton > 0 ? ($unitPrice * $unitsPerCarton) : 0;
-                        $rollPrice = $unitsPerRoll > 0 ? ($unitPrice * $unitsPerRoll) : 0;
                     @endphp
                     <option value="{{ $p->id }}" 
                         data-sku="{{ $p->sku }}" 
                         data-barcode="{{ $p->barcode }}" 
                         data-name="{{ $p->name }}" 
-                        data-price="{{ $unitPrice }}" 
+                        data-price="{{ $retailPrice }}" 
+                        data-retail="{{ $retailPrice }}"
+                        data-wholesale="{{ $wholesalePrice }}"
+                        data-special="{{ $specialPrice }}"
                         data-stock="{{ (float) ($p->available_stock ?? $p->stock) }}" 
-                        data-roll="{{ $rollPrice }}" 
-                        data-carton="{{ $cartonPrice }}" 
                         data-upc="{{ $rollsPerCarton }}"
                         data-upr="{{ $unitsPerRoll }}"
                         data-base-unit="{{ strtolower($p->base_unit_name ?? 'unit') }}"
@@ -1315,6 +1321,14 @@ label {
                 <div class="unit-helper" id="unit-helper-copy">Select a product to unlock the right unit packs and live pricing.</div>
 
                 <div class="row g-2 mb-2">
+                    <div class="col-12">
+                        <label>Price Level</label>
+                        <select id="price-tier" class="form-select">
+                            <option value="retail">Retail / Default</option>
+                            <option value="wholesale">Wholesale</option>
+                            <option value="special">Special Discount</option>
+                        </select>
+                    </div>
                     <div class="col-6">
                         <label>Price</label>
                         <input type="number" id="unit-price-input" class="form-control bg-light fw-bold tabular-nums" readonly>
@@ -1542,7 +1556,6 @@ $(document).ready(function() {
         const hasProduct = !!selectedOption && !!selectedOption.val();
         const unitsPerCarton = hasProduct ? (parseInt(selectedOption.data('upc')) || 0) : 0;
         const unitsPerRoll = hasProduct ? (parseInt(selectedOption.data('upr')) || 0) : 0;
-        const stock = hasProduct ? (parseInt(selectedOption.data('stock')) || 0) : 0;
 
         const cartonInput = $('#unit-type-carton');
         const rollInput = $('#unit-type-roll');
@@ -1551,7 +1564,7 @@ $(document).ready(function() {
         const unitLabel = $('label[for="unit-type-unit"]');
 
         const baseUnit = hasProduct ? String(selectedOption.data('base-unit') || 'unit') : 'unit';
-        const cartonEnabled = !hasProduct || (unitsPerCarton > 0 && unitsPerRoll > 0);
+        const cartonEnabled = !hasProduct || unitsPerCarton > 0;
         const rollEnabled = !hasProduct || unitsPerRoll > 0;
 
         cartonInput.prop('disabled', !cartonEnabled);
@@ -1561,7 +1574,13 @@ $(document).ready(function() {
 
         $('#unit-meta-unit').text(hasProduct ? `1 ${baseUnit}` : '1 unit');
         $('#unit-meta-roll').text(rollEnabled ? `${unitsPerRoll} ${baseUnit}${unitsPerRoll === 1 ? '' : 's'} / roll` : 'Unavailable');
-        $('#unit-meta-carton').text(cartonEnabled ? `${unitsPerCarton} ${baseUnit}${unitsPerCarton === 1 ? '' : 's'} / carton` : 'Unavailable');
+        $('#unit-meta-carton').text(
+            cartonEnabled
+                ? (unitsPerRoll > 0
+                    ? `${unitsPerCarton * unitsPerRoll} ${baseUnit}${(unitsPerCarton * unitsPerRoll) === 1 ? '' : 's'} / carton`
+                    : `${unitsPerCarton} ${baseUnit}${unitsPerCarton === 1 ? '' : 's'} / carton`)
+                : 'Unavailable'
+        );
         unitLabel.toggleClass('disabled', false);
 
         const currentType = $('input[name="unit_type"]:checked').val();
@@ -1576,7 +1595,9 @@ $(document).ready(function() {
         const rollsPerCarton = Math.max(parseInt(selectedOption.data('upc')) || 0, 0);
         const unitsPerRoll = Math.max(parseInt(selectedOption.data('upr')) || 0, 0);
         const baseUnit = String(selectedOption.data('base-unit') || 'unit');
-        const cartonUnits = rollsPerCarton > 0 && unitsPerRoll > 0 ? (rollsPerCarton * unitsPerRoll) : 0;
+        const cartonUnits = rollsPerCarton > 0
+            ? (unitsPerRoll > 0 ? (rollsPerCarton * unitsPerRoll) : rollsPerCarton)
+            : 0;
 
         let multiplier = 1;
         let unitName = `${baseUnit}s`;
@@ -1604,6 +1625,37 @@ $(document).ready(function() {
             unitsPerRoll,
             cartonUnits
         };
+    }
+
+    function getSelectedBasePrice(selectedOption) {
+        const tier = $('#price-tier').val() || 'retail';
+        const retailPrice = parseFloat(selectedOption.data('retail')) || parseFloat(selectedOption.data('price')) || 0;
+        const wholesalePrice = parseFloat(selectedOption.data('wholesale')) || 0;
+        const specialPrice = parseFloat(selectedOption.data('special')) || 0;
+
+        if (tier === 'wholesale' && wholesalePrice > 0) {
+            return { value: wholesalePrice, key: 'wholesale', label: 'Wholesale' };
+        }
+
+        if (tier === 'special' && specialPrice > 0) {
+            return { value: specialPrice, key: 'special', label: 'Special Discount' };
+        }
+
+        return { value: retailPrice, key: 'retail', label: 'Retail / Default' };
+    }
+
+    function applySelectedProductPricing(selectedOption) {
+        if (!selectedOption || !selectedOption.val()) {
+            $('#unit-price-input').val('');
+            return null;
+        }
+
+        const unitMeta = resolveUnitMetrics(selectedOption);
+        const basePrice = getSelectedBasePrice(selectedOption);
+        const computedPrice = unitMeta.multiplier > 1 ? (basePrice.value * unitMeta.multiplier) : basePrice.value;
+        $('#unit-price-input').val(computedPrice.toFixed(2));
+
+        return { unitMeta, basePrice, computedPrice };
     }
 
     $(document).on('click', '.category-pill', function() {
@@ -1770,13 +1822,9 @@ $(document).ready(function() {
         }
 
         setUnitTypeAvailability(opt);
-        const unitMeta = resolveUnitMetrics(opt);
-        
-        let type = $('input[name="unit_type"]:checked').val();
-        let typePrice = parseFloat(opt.data(type === 'unit' ? 'price' : type));
-        let fallbackPrice = parseFloat(opt.data('price')) || 0;
-        let price = typePrice > 0 ? typePrice : fallbackPrice;
-        $('#unit-price-input').val(price);
+        const pricingState = applySelectedProductPricing(opt);
+        const unitMeta = pricingState ? pricingState.unitMeta : resolveUnitMetrics(opt);
+        const basePrice = pricingState ? pricingState.basePrice : getSelectedBasePrice(opt);
         $('#qty-label').text(`Quantity (${unitMeta.maxQty || 0} ${unitMeta.unitName} available)`);
         $('#quantity').attr('max', Math.max(unitMeta.maxQty, 1));
         if ((parseFloat($('#quantity').val()) || 1) > Math.max(unitMeta.maxQty, 1)) {
@@ -1784,8 +1832,8 @@ $(document).ready(function() {
         }
         $('#unit-helper-copy').text(
             unitMeta.type === 'unit'
-                ? `Selling in single ${unitMeta.baseUnit}${unitMeta.baseUnit.endsWith('s') ? '' : 's'} with live unit pricing.`
-                : `Each ${unitMeta.type} uses ${unitMeta.multiplier} unit(s). Available: ${unitMeta.maxQty} ${unitMeta.unitName}.`
+                ? `Selling in single ${unitMeta.baseUnit}${unitMeta.baseUnit.endsWith('s') ? '' : 's'} using the ${basePrice.label.toLowerCase()} price.`
+                : `Each ${unitMeta.type} uses ${unitMeta.multiplier} unit(s) and the ${basePrice.label.toLowerCase()} price. Available: ${unitMeta.maxQty} ${unitMeta.unitName}.`
         );
         $('#product-search').val(String(opt.val())).trigger('change.select2');
         $('#hdr-selected-product').text(opt.data('name'));
@@ -1815,6 +1863,7 @@ $(document).ready(function() {
     });
 
     $('input[name="unit_type"]').on('change', () => $('#product-select').trigger('change'));
+    $('#price-tier').on('change', () => $('#product-select').trigger('change'));
     $(document).on('input', '#quantity, #discount, #tax', calculate);
 
     // Add to Cart
@@ -1841,10 +1890,14 @@ $(document).ready(function() {
         }
 
         let res = calculate();
+        const selectedPriceLevel = getSelectedBasePrice(opt);
+
         cart.push({
             id: opt.val(),
             name: opt.data('name'),
             qty: qty,
+            priceLevel: selectedPriceLevel.key,
+            priceLevelLabel: selectedPriceLevel.label,
             unitType: unitMeta.type,
             unitLabel: unitMeta.type === 'unit' ? unitMeta.baseUnit : unitMeta.type,
             stockUnits: unitMeta.multiplier * qty,
@@ -1861,6 +1914,7 @@ $(document).ready(function() {
         $('#product-select').val('').trigger('change');
         $('#quantity').val(1);
         $('#discount, #tax').val(0);
+        $('#price-tier').val('retail');
         $('#barcode-input').val('').focus();
         
         Swal.fire({ icon: 'success', title: 'Added', timer: 1000, toast: true, position: 'top-end', showConfirmButton: false });
@@ -1883,6 +1937,7 @@ $(document).ready(function() {
                         <td class="ps-3">
                             <div class="fw-bold" style="color: var(--text-primary);">${item.name}</div>
                             <small style="color: var(--text-secondary); font-size: 0.75rem;">${item.qty} ${item.unitLabel || 'unit'}${item.qty === 1 ? '' : 's'} × ${fmt.format(item.price)}</small>
+                            <small style="display:block; color: var(--text-tertiary); font-size: 0.7rem;">${item.priceLevelLabel || 'Retail / Default'} pricing</small>
                         </td>
                         <td class="text-center">
                             <input
@@ -1943,8 +1998,9 @@ $(document).ready(function() {
         const item = cart[i];
         if (!item) return;
 
-        $('#product-select').val(String(item.id)).trigger('change');
         $(`#unit-type-${item.unitType || 'unit'}`).prop('checked', true);
+        $('#price-tier').val(item.priceLevel || 'retail');
+        $('#product-select').val(String(item.id)).trigger('change');
         $('#quantity').val(item.qty);
         $('#discount').val(item.discount || 0);
         $('#tax').val(item.tax || 0);
@@ -2008,6 +2064,7 @@ $(document).ready(function() {
         $('#barcode-input').val('');
         $('#quantity').val(1);
         $('#discount, #tax').val(0);
+        $('#price-tier').val('retail');
         $('#unit-type-unit').prop('checked', true).trigger('change');
 
         filterProductCards();

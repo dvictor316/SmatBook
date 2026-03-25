@@ -81,7 +81,9 @@
                                         <table class="table table-center table-hover" id="invoice_table">
                                             <thead class="thead-light">
                                                 <tr>
+                                                    <th style="min-width: 170px;">Catalog Product</th>
                                                     <th>Product / Service</th>
+                                                    <th style="min-width: 150px;">Price Level</th>
                                                     <th>Quantity</th>
                                                     <th>Rate (₦)</th>
                                                     <th>Discount (₦)</th>
@@ -92,7 +94,28 @@
                                             </thead>
                                             <tbody>
                                                 <tr class="invoice-row">
+                                                    <td>
+                                                        <select name="items[0][product_id]" class="form-control product-select" onchange="syncInvoiceProduct(this)">
+                                                            <option value="">Custom item</option>
+                                                            @foreach($products as $product)
+                                                                <option value="{{ $product->id }}"
+                                                                    data-name="{{ $product->name }}"
+                                                                    data-retail="{{ $product->retail_price ?? $product->price ?? 0 }}"
+                                                                    data-wholesale="{{ $product->wholesale_price ?? 0 }}"
+                                                                    data-special="{{ $product->special_price ?? 0 }}">
+                                                                    {{ $product->name }}
+                                                                </option>
+                                                            @endforeach
+                                                        </select>
+                                                    </td>
                                                     <td><input type="text" name="items[0][name]" class="form-control" placeholder="Item Name" required></td>
+                                                    <td>
+                                                        <select name="items[0][price_level]" class="form-control price-level-select" onchange="syncInvoiceProduct(this)">
+                                                            <option value="retail">Retail / Default</option>
+                                                            <option value="wholesale">Wholesale</option>
+                                                            <option value="special">Special Discount</option>
+                                                        </select>
+                                                    </td>
                                                     <td><input type="number" name="items[0][qty]" class="form-control qty-input" value="1" min="1" oninput="calculateRow(this)"></td>
                                                     <td><input type="number" name="items[0][rate]" class="form-control rate-input" value="0.00" step="0.01" oninput="calculateRow(this)"></td>
                                                     <td><input type="number" name="items[0][discount]" class="form-control discount-input" value="0" oninput="calculateRow(this)"></td>
@@ -158,7 +181,28 @@
         const tableBody = document.querySelector('#invoice_table tbody');
         const newRow = `
             <tr class="invoice-row">
+                <td>
+                    <select name="items[${rowIndex}][product_id]" class="form-control product-select" onchange="syncInvoiceProduct(this)">
+                        <option value="">Custom item</option>
+                        @foreach($products as $product)
+                            <option value="{{ $product->id }}"
+                                data-name="{{ $product->name }}"
+                                data-retail="{{ $product->retail_price ?? $product->price ?? 0 }}"
+                                data-wholesale="{{ $product->wholesale_price ?? 0 }}"
+                                data-special="{{ $product->special_price ?? 0 }}">
+                                {{ $product->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </td>
                 <td><input type="text" name="items[${rowIndex}][name]" class="form-control" required></td>
+                <td>
+                    <select name="items[${rowIndex}][price_level]" class="form-control price-level-select" onchange="syncInvoiceProduct(this)">
+                        <option value="retail">Retail / Default</option>
+                        <option value="wholesale">Wholesale</option>
+                        <option value="special">Special Discount</option>
+                    </select>
+                </td>
                 <td><input type="number" name="items[${rowIndex}][qty]" class="form-control qty-input" value="1" min="1" oninput="calculateRow(this)"></td>
                 <td><input type="number" name="items[${rowIndex}][rate]" class="form-control rate-input" value="0.00" step="0.01" oninput="calculateRow(this)"></td>
                 <td><input type="number" name="items[${rowIndex}][discount]" class="form-control discount-input" value="0" oninput="calculateRow(this)"></td>
@@ -169,6 +213,37 @@
         tableBody.insertAdjacentHTML('beforeend', newRow);
         rowIndex++;
     });
+
+    function syncInvoiceProduct(element) {
+        const row = element.closest('.invoice-row');
+        if (!row) return;
+
+        const productSelect = row.querySelector('.product-select');
+        const priceLevelSelect = row.querySelector('.price-level-select');
+        if (!productSelect || !priceLevelSelect) return;
+
+        const selectedOption = productSelect.options[productSelect.selectedIndex];
+        if (!selectedOption || !selectedOption.value) {
+            return;
+        }
+
+        const productName = selectedOption.getAttribute('data-name') || '';
+        const retailPrice = parseFloat(selectedOption.getAttribute('data-retail')) || 0;
+        const wholesalePrice = parseFloat(selectedOption.getAttribute('data-wholesale')) || 0;
+        const specialPrice = parseFloat(selectedOption.getAttribute('data-special')) || 0;
+        const level = priceLevelSelect.value || 'retail';
+
+        let rate = retailPrice;
+        if (level === 'wholesale' && wholesalePrice > 0) {
+            rate = wholesalePrice;
+        } else if (level === 'special' && specialPrice > 0) {
+            rate = specialPrice;
+        }
+
+        row.querySelector('input[name$="[name]"]').value = productName;
+        row.querySelector('.rate-input').value = rate.toFixed(2);
+        calculateRow(row.querySelector('.rate-input'));
+    }
 
     // Delete Row Logic
     document.addEventListener('click', function(e) {
