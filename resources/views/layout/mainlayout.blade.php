@@ -138,6 +138,57 @@
                 max-width: 100% !important;
                 overflow: visible !important;
             }
+
+            body.print-scope-active * {
+                visibility: hidden !important;
+            }
+
+            body.print-scope-active .print-scope-target,
+            body.print-scope-active .print-scope-target * {
+                visibility: visible !important;
+            }
+
+            body.print-scope-active .print-scope-target {
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #fff !important;
+                border: 0 !important;
+                box-shadow: none !important;
+                overflow: visible !important;
+            }
+
+            body.print-scope-active .print-scope-target .no-print,
+            body.print-scope-active .print-scope-target .btn,
+            body.print-scope-active .print-scope-target button,
+            body.print-scope-active .print-scope-target input,
+            body.print-scope-active .print-scope-target select,
+            body.print-scope-active .print-scope-target textarea,
+            body.print-scope-active .print-scope-target .dt-buttons,
+            body.print-scope-active .print-scope-target .dataTables_filter,
+            body.print-scope-active .print-scope-target .dataTables_length,
+            body.print-scope-active .print-scope-target .dataTables_paginate,
+            body.print-scope-active .print-scope-target .pagination,
+            body.print-scope-active .print-scope-target .pagination-container,
+            body.print-scope-active .print-scope-target .modal,
+            body.print-scope-active .print-scope-target .modal-backdrop,
+            body.print-scope-active .print-scope-target .offcanvas,
+            body.print-scope-active .print-scope-target .dropdown-menu,
+            body.print-scope-active .print-scope-target .tooltip,
+            body.print-scope-active .print-scope-target .popover,
+            body.print-scope-active .print-scope-target .swal2-container {
+                display: none !important;
+            }
+
+            body.print-scope-active .print-scope-target i[class*="fa-"],
+            body.print-scope-active .print-scope-target i[class*="fe-"],
+            body.print-scope-active .print-scope-target i[class*="feather"] {
+                display: none !important;
+            }
         }
 
         /* NON-OBSTRUCTIVE LAYOUT: Let each view handle its own spacing */
@@ -1256,7 +1307,26 @@
                 lastTriggeredAt: 0,
                 releaseTimer: null,
                 afterPrintBound: false,
+                target: null,
             };
+
+            function isVisible(el) {
+                if (!el) {
+                    return false;
+                }
+
+                const style = window.getComputedStyle(el);
+                return style.display !== 'none' && style.visibility !== 'hidden' && el.offsetParent !== null;
+            }
+
+            function clearPrintScope() {
+                if (printState.target) {
+                    printState.target.classList.remove('print-scope-target');
+                    printState.target = null;
+                }
+
+                document.body.classList.remove('print-scope-active');
+            }
 
             function releasePrintLock() {
                 printState.active = false;
@@ -1264,9 +1334,123 @@
                     clearTimeout(printState.releaseTimer);
                     printState.releaseTimer = null;
                 }
+                clearPrintScope();
             }
 
-            function triggerPrint() {
+            function resolveTarget(target) {
+                if (!target) {
+                    return null;
+                }
+
+                if (target instanceof Element) {
+                    return target;
+                }
+
+                if (typeof target === 'string') {
+                    return document.querySelector(target);
+                }
+
+                return null;
+            }
+
+            function findBestPrintScope(explicitTarget) {
+                const resolvedExplicitTarget = resolveTarget(explicitTarget);
+                if (resolvedExplicitTarget && isVisible(resolvedExplicitTarget)) {
+                    return resolvedExplicitTarget;
+                }
+
+                const selectors = [
+                    '[data-print-scope]',
+                    '#report-container',
+                    '#invoice-content',
+                    '.report-container',
+                    '.receipt-sheet:not(.hidden)',
+                    '.invoice-content',
+                    '.invoice-item',
+                    '.card-table',
+                    '.table-responsive table',
+                ];
+
+                for (const selector of selectors) {
+                    const candidates = Array.from(document.querySelectorAll(selector));
+                    const match = candidates.find((el) => isVisible(el));
+                    if (match) {
+                        return match;
+                    }
+                }
+
+                return null;
+            }
+
+            function activatePrintScope(target) {
+                if (document.body.classList.contains('receipt-print-active')) {
+                    return null;
+                }
+
+                const scope = findBestPrintScope(target);
+                if (!scope) {
+                    return null;
+                }
+
+                clearPrintScope();
+                scope.classList.add('print-scope-target');
+                document.body.classList.add('print-scope-active');
+                printState.target = scope;
+
+                return scope;
+            }
+
+            function sanitizeExportClone(clone) {
+                clone.querySelectorAll([
+                    'script',
+                    'style',
+                    '.no-print',
+                    '.btn',
+                    'button',
+                    'input',
+                    'select',
+                    'textarea',
+                    '.dt-buttons',
+                    '.dataTables_filter',
+                    '.dataTables_length',
+                    '.dataTables_paginate',
+                    '.pagination',
+                    '.pagination-container',
+                    '.modal',
+                    '.modal-backdrop',
+                    '.offcanvas',
+                    '.dropdown-menu',
+                    '.tooltip',
+                    '.popover',
+                    '.swal2-container',
+                    '.ai-agent-launcher',
+                    '.sidebar',
+                    '.header',
+                    '.footer',
+                ].join(',')).forEach((node) => node.remove());
+
+                clone.querySelectorAll('i[class*="fa-"], i[class*="fe-"], i[class*="feather"]').forEach((icon) => icon.remove());
+
+                return clone;
+            }
+
+            function mountSanitizedExportNode(source) {
+                const mount = document.createElement('div');
+                mount.className = 'smartprobook-export-shell';
+                mount.style.position = 'fixed';
+                mount.style.left = '-100000px';
+                mount.style.top = '0';
+                mount.style.width = '1200px';
+                mount.style.background = '#ffffff';
+                mount.style.padding = '24px';
+                mount.style.zIndex = '-1';
+                mount.appendChild(sanitizeExportClone(source.cloneNode(true)));
+                document.body.appendChild(mount);
+
+                return mount;
+            }
+
+            function triggerPrint(target) {
                 if (!nativePrint) {
                     return;
                 }
@@ -1278,6 +1462,7 @@
 
                 printState.active = true;
                 printState.lastTriggeredAt = now;
+                activatePrintScope(target);
 
                 if (!printState.afterPrintBound) {
                     window.addEventListener('afterprint', releasePrintLock);
@@ -1289,7 +1474,39 @@
             }
 
             window.smartProbookTriggerPrint = triggerPrint;
-            window.print = triggerPrint;
+            window.smartProbookExportElementToPdf = function (target, options = {}) {
+                const source = findBestPrintScope(target);
+                if (!source) {
+                    return triggerPrint();
+                }
+
+                const filename = options.filename || ((document.title || 'report').replace(/\s+/g, '_') + '.pdf');
+                if (window.html2pdf) {
+                    const mount = mountSanitizedExportNode(source);
+                    const exportNode = mount.firstElementChild;
+
+                    return window.html2pdf()
+                        .set({
+                            margin: options.margin ?? 0.4,
+                            filename,
+                            image: { type: 'jpeg', quality: 0.98 },
+                            html2canvas: { scale: 2, useCORS: true },
+                            jsPDF: {
+                                unit: options.unit || 'in',
+                                format: options.format || 'a4',
+                                orientation: options.orientation || 'portrait',
+                            },
+                        })
+                        .from(exportNode)
+                        .save()
+                        .finally(() => mount.remove());
+                }
+
+                return triggerPrint(source);
+            };
+            window.print = function () {
+                triggerPrint();
+            };
 
             function isDummyHref(el) {
                 const href = (el.getAttribute('href') || '').trim().toLowerCase();
@@ -1324,6 +1541,17 @@
                 URL.revokeObjectURL(url);
             }
 
+            function findVisibleActionButton(selectors) {
+                for (const selector of selectors) {
+                    const button = Array.from(document.querySelectorAll(selector)).find((el) => isVisible(el));
+                    if (button) {
+                        return button;
+                    }
+                }
+
+                return null;
+            }
+
             function exportTable(format) {
                 const table = firstVisibleTable();
                 if (!table) {
@@ -1353,6 +1581,30 @@
 
                 triggerPrint();
             }
+
+            window.triggerAction = function (index) {
+                const actionMap = {
+                    0: ['.buttons-excel', '.buttons-excelHtml5', '.dt-button.buttons-excel'],
+                    1: ['.buttons-pdf', '.buttons-pdfHtml5', '.dt-button.buttons-pdf'],
+                    2: ['.buttons-print', '.dt-button.buttons-print'],
+                };
+
+                const button = findVisibleActionButton(actionMap[index] || []);
+                if (button) {
+                    button.click();
+                    return;
+                }
+
+                if (index === 0) {
+                    return exportTable('excel');
+                }
+
+                if (index === 1) {
+                    return window.smartProbookExportElementToPdf();
+                }
+
+                triggerPrint();
+            };
 
             function findFilterPanel(link) {
                 const wrapper = link.closest('.content') || document;

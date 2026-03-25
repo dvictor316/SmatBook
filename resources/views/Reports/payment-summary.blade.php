@@ -141,7 +141,7 @@
             </div>
         </div>
 
-        <div id="report-container" class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div id="report-container" data-print-scope class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full divide-y divide-gray-200" id="main-payment-table">
                     <thead class="bg-gray-50">
@@ -626,13 +626,31 @@
     }
 
     // 4. EXPORT LOGIC
-    function generatePDF() { html2pdf().set({ margin:0.5, filename:'Report.pdf', jsPDF:{orientation:'landscape'} }).from(document.getElementById('report-container')).save(); }
-    function generateExcel() { XLSX.writeFile(XLSX.utils.table_to_book(document.getElementById("main-payment-table")), "Report.xlsx"); }
+    function getExportablePaymentTable() {
+        const table = document.getElementById('main-payment-table');
+        const clone = table.cloneNode(true);
+        clone.querySelectorAll('.no-print').forEach((node) => node.remove());
+        return clone;
+    }
+
+    function generatePDF() {
+        window.smartProbookExportElementToPdf('#report-container', {
+            filename: 'Payment_Summary_Report.pdf',
+            orientation: 'landscape',
+        });
+    }
+
+    function generateExcel() {
+        const exportTable = getExportablePaymentTable();
+        XLSX.writeFile(XLSX.utils.table_to_book(exportTable), 'Payment_Summary_Report.xlsx');
+    }
+
     function generateCSV() { 
-        const csv = XLSX.utils.sheet_to_csv(XLSX.utils.table_to_sheet(document.getElementById("main-payment-table")));
+        const exportTable = getExportablePaymentTable();
+        const csv = XLSX.utils.sheet_to_csv(XLSX.utils.table_to_sheet(exportTable));
         const link = document.createElement("a");
         link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-        link.download = "Report.csv"; link.click();
+        link.download = "Payment_Summary_Report.csv"; link.click();
     }
 </script>
 @endsection

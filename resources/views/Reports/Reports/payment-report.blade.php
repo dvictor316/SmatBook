@@ -50,7 +50,7 @@
 
 @section('content')
 <div class="page-wrapper">
-    <div class="content container-fluid">
+    <div class="content container-fluid" data-print-scope>
 
         {{-- Page Header --}}
         <div class="page-header mb-4">
@@ -251,7 +251,10 @@
                         className: 'btn btn-outline-secondary btn-sm me-2',
                         text: '<i class="feather-download me-1"></i> Excel',
                         title: 'Payment_Report_{{ $reportDate }}',
-                        footer: true
+                        footer: true,
+                        exportOptions: {
+                            columns: ':not(.no-print)',
+                        }
                     },
                     {
                         extend: 'pdfHtml5',
@@ -259,6 +262,9 @@
                         text: '<i class="feather-file-text me-1"></i> PDF',
                         title: 'Payment Report - {{ $reportDate }}',
                         footer: true,
+                        exportOptions: {
+                            columns: ':not(.no-print)',
+                        },
                         customize: function(doc) {
                             doc.content[1].table.widths = Array(doc.content[1].table.body[0].length + 1).join('*').split('');
                         }

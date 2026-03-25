@@ -44,7 +44,7 @@
             </div>
 
             {{-- The Invoice Content (This ID 'invoice-content' is used for PDF generation) --}}
-            <div class="row justify-content-center" id="invoice-content">
+            <div class="row justify-content-center" id="invoice-content" data-print-scope>
                 <div class="col-lg-12">
                     <div class="card">
                         <div class="card-body">
@@ -178,15 +178,13 @@
     <script>
         // PDF LOGIC
         function generatePDF() {
-            const element = document.getElementById('invoice-content');
-            const opt = {
-                margin:       10,
-                filename:     'Purchase_{{ $purchase->purchase_no }}.pdf',
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, useCORS: true },
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
-            html2pdf().set(opt).from(element).save();
+            window.smartProbookExportElementToPdf('#invoice-content', {
+                filename: 'Purchase_{{ $purchase->purchase_no }}.pdf',
+                unit: 'mm',
+                format: 'a4',
+                orientation: 'portrait',
+                margin: 10,
+            });
         }
 
         // EXCEL LOGIC
