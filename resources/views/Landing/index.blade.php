@@ -1444,9 +1444,6 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                 <li class="nav-item"><a class="sb-nav-link {{ request()->routeIs('landing.policy') ? 'active' : '' }}" href="{{ route('landing.policy') }}">Policy</a></li>
                 <li class="nav-item ms-lg-3">
                     <div class="d-flex align-items-center gap-2 flex-wrap">
-                    <a class="btn-outline-navy" href="{{ route('landing.demo') }}">
-                        <i class="fas fa-play-circle" style="font-size:.8rem;"></i> TRY DEMO
-                    </a>
                     <a class="btn-portal" href="{{ route('login', ['portal' => 1]) }}">
                         <i class="fas fa-lock" style="font-size:.75rem;"></i> CLIENT PORTAL
                     </a>
@@ -1503,6 +1500,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                     <p class="hero-body">Accounting-first workflow for sales, invoices, expenses, payroll and tax — all in one platform.</p>
                     <div class="hero-cta-stack">
                         <a href="#licensing" class="hero-btn-red"><i class="fas fa-shopping-cart" style="font-size:.75rem;"></i> Start Today</a>
+                        <a href="{{ route('saas-register', ['type'=>'manager']) }}" class="hero-btn-ghost"><i class="fas fa-handshake" style="font-size:.75rem;"></i> Become a Manager</a>
                         <a href="{{ route('landing.demo') }}" class="hero-btn-ghost"><i class="fas fa-play-circle" style="font-size:.75rem;"></i> Try Demo</a>
                     </div>
                     <div class="hero-trust">
