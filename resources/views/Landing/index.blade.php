@@ -232,7 +232,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
         #040e6a 56%, #01083d 76%, #000210 100%);
     border: 2.5px solid rgba(243,206,132,0.80);
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    text-align: center; padding: clamp(48px,9%,80px);
+    text-align: center; padding: clamp(40px,7.5%,62px);
     position: relative; flex-shrink: 0; overflow: hidden;
     box-shadow:
         0 0 0 16px rgba(243,206,132,0.10), 0 0 0 32px rgba(243,206,132,0.06),
@@ -272,31 +272,31 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     font-family: var(--font-display); font-weight: 900;
     font-size: clamp(8px,0.75vw,11px); letter-spacing: clamp(4px,0.6vw,8px);
     text-transform: uppercase; color: #fce8be;
-    margin-bottom: clamp(12px,1.4vw,22px); white-space: nowrap;
+    margin-bottom: clamp(8px,1vw,14px); white-space: nowrap;
 }
 .hero-h1 {
-    font-family: var(--font-display); font-size: clamp(1.35rem,2.4vw,2.6rem);
+    font-family: var(--font-display); font-size: clamp(1.15rem,2vw,2.2rem);
     font-weight: 900; color: #fff; line-height: 1.13; letter-spacing: -1px;
-    margin-bottom: clamp(10px,1.2vw,18px);
+    margin-bottom: clamp(8px,0.9vw,12px);
 }
 .hero-h1 .gold-text {
     background: linear-gradient(135deg, #ffd98a 0%, #fff7cc 55%, #ffd98a 100%);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
 .hero-body {
-    font-size: clamp(11px,0.95vw,13.5px); color: rgba(255,255,255,0.78);
-    line-height: 1.75; margin-bottom: clamp(20px,2.2vw,36px); max-width: 28ch;
+    font-size: clamp(10px,0.82vw,12px); color: rgba(255,255,255,0.78);
+    line-height: 1.55; margin-bottom: clamp(12px,1.3vw,18px); max-width: 24ch;
 }
 .hero-cta-stack {
-    display: flex; flex-direction: column; gap: clamp(10px,1vw,14px);
-    width: 100%; max-width: clamp(200px,21vw,270px);
+    display: flex; flex-direction: column; gap: clamp(7px,0.8vw,10px);
+    width: 100%; max-width: clamp(180px,18vw,220px);
 }
 .hero-btn-red {
     display: flex; align-items: center; justify-content: center; gap: 9px;
     background: var(--crimson); color: #fff !important;
-    padding: clamp(12px,1.1vw,15px) clamp(20px,2.2vw,28px);
-    font-weight: 800; border-radius: 40px; font-size: clamp(0.70rem,0.78vw,0.84rem);
-    letter-spacing: 1.4px; text-transform: uppercase; text-decoration: none; border: none;
+    padding: clamp(9px,0.9vw,11px) clamp(13px,1.4vw,16px);
+    font-weight: 800; border-radius: 40px; font-size: clamp(0.58rem,0.64vw,0.72rem);
+    letter-spacing: 0.7px; text-transform: uppercase; text-decoration: none; border: none;
     transition: all 0.3s; box-shadow: 0 8px 24px rgba(188,0,45,0.45);
     white-space: nowrap; position: relative; overflow: hidden;
 }
@@ -306,15 +306,15 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 .hero-btn-ghost {
     display: flex; align-items: center; justify-content: center; gap: 9px;
     background: rgba(255,223,145,0.08); color: #fff8e0 !important;
-    padding: clamp(11px,1vw,14px) clamp(20px,2.2vw,28px);
-    font-weight: 800; border-radius: 40px; font-size: clamp(0.70rem,0.78vw,0.84rem);
-    letter-spacing: 1.4px; text-transform: uppercase; text-decoration: none;
+    padding: clamp(9px,0.9vw,11px) clamp(13px,1.4vw,16px);
+    font-weight: 800; border-radius: 40px; font-size: clamp(0.58rem,0.64vw,0.72rem);
+    letter-spacing: 0.7px; text-transform: uppercase; text-decoration: none;
     border: 1.5px solid rgba(255,223,145,0.50); transition: all 0.3s; white-space: nowrap;
 }
 .hero-btn-ghost:hover { background: rgba(255,223,145,0.18); border-color: var(--gold-bright); color: #fff8e0 !important; transform: translateY(-2px); }
-.hero-trust { display: flex; align-items: center; gap: 10px; margin-top: clamp(14px,1.5vw,22px); }
+.hero-trust { display: flex; align-items: center; gap: 8px; margin-top: clamp(9px,1vw,14px); }
 .trust-dot { width: 6px; height: 6px; border-radius: 50%; background: #22c55e; animation: blink 1.5s infinite; }
-.trust-text { font-size: clamp(9px,0.72vw,11px); color: rgba(255,255,255,0.55); font-weight: 600; }
+.trust-text { font-size: clamp(8px,0.6vw,9.5px); color: rgba(255,255,255,0.55); font-weight: 600; }
 
 /* ── FLOATING CIRCLE BADGES (FLANKING THE CIRCLE) ── */
 .circle-badge {
@@ -1296,12 +1296,12 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     .gadget-orbit { position: static; transform: none; width: 100%; margin-top: 14px; }
     .announce-label { font-size: 0 !important; padding: 0 12px !important; }
     .announce-msg { font-size: 0.65rem !important; }
-    .hero-circle { width: min(90vw,400px) !important; height: min(90vw,400px) !important; padding: min(58px,14%) !important; }
+    .hero-circle { width: min(90vw,400px) !important; height: min(90vw,400px) !important; padding: min(48px,11%) !important; }
     .hero-phone { width: clamp(230px,62vw,300px); }
     .hero-h1 { font-size: clamp(1.3rem,5.5vw,1.9rem) !important; }
     .hero-body { font-size: clamp(11px,3.2vw,13px) !important; }
-    .hero-btn-red, .hero-btn-ghost { padding: 13px 24px !important; font-size: clamp(0.70rem,3vw,0.80rem) !important; }
-    .hero-cta-stack { max-width: min(240px,62vw) !important; gap: 10px !important; }
+    .hero-btn-red, .hero-btn-ghost { padding: 10px 16px !important; font-size: clamp(0.62rem,2.6vw,0.72rem) !important; }
+    .hero-cta-stack { max-width: min(210px,56vw) !important; gap: 8px !important; }
     
     .circle-badge { display: none !important; } /* Hide flanking badges on mobile */
     
