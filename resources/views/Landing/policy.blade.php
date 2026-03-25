@@ -509,9 +509,9 @@
             <div class="contact-box">
                 <p><strong>SmartProbook Global Infrastructure Inc.</strong></p>
                 <p>Enugu Tech Hub, Independence Layout<br>Enugu, Nigeria</p>
-                <p><strong>Email:</strong> <a href="mailto:legal@smatbook.com">legal@smatbook.com</a></p>
-                <p><strong>Compliance:</strong> <a href="mailto:compliance@smatbook.com">compliance@smatbook.com</a></p>
-                <p><strong>Support:</strong> <a href="mailto:support@smatbook.com">support@smatbook.com</a></p>
+                <p><strong>Email:</strong> <a href="mailto:legal@smartprobook.com">legal@smartprobook.com</a></p>
+                <p><strong>Compliance:</strong> <a href="mailto:compliance@smartprobook.com">compliance@smartprobook.com</a></p>
+                <p><strong>Support:</strong> <a href="mailto:support@smartprobook.com">support@smartprobook.com</a></p>
                 <p><strong>Phone:</strong> <a href="tel:+234800728626226">+234 (0) 800 SmartProbook</a></p>
             </div>
 

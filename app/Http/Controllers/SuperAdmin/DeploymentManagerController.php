@@ -1024,7 +1024,9 @@ private function formatDeploymentAmount(float $amount): string
                 'name' => $user->name,
                 'workspaceUrl' => $loginUrl,
                 'companyName' => $company?->company_name ?? $company?->name ?? 'SmartProbook',
-            ], fn($m) => $m->to($user->email, $user->name)->subject('Your SmartProbook Login Credentials'));
+            ], fn($m) => $m->from((string) config('mail.from.address'), (string) config('mail.from.name'))
+                ->to($user->email, $user->name)
+                ->subject('Your SmartProbook Login Credentials'));
         } catch (\Exception $e) {
             Log::error('Deployment user welcome email failed', ['error' => $e->getMessage(), 'user_id' => $user->id]);
         }

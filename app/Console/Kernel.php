@@ -70,7 +70,7 @@ class Kernel extends ConsoleKernel
                 'sources'          => 'Automated System Check'
             ];
 
-            Mail::to('support@smatbook.com')->send(new \App\Mail\DailyBusinessSummary($data));
+            Mail::to('support@smartprobook.com')->send(new \App\Mail\DailyBusinessSummary($data));
             
         })->dailyAt('21:00');
     }

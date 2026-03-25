@@ -1873,7 +1873,9 @@ class SubscriptionController extends Controller
                 'userName'     => $user->name,
                 'workspaceUrl' => $url,
                 'planName'     => $subscription->plan_name ?? $subscription->plan,
-            ], fn($m) => $m->to($user->email, $user->name)->subject('Your SmartProbook Workspace is Ready!'));
+            ], fn($m) => $m->from((string) config('mail.from.address'), (string) config('mail.from.name'))
+                ->to($user->email, $user->name)
+                ->subject('Your SmartProbook Workspace is Ready!'));
         } catch (\Exception $e) {
             Log::error('Welcome email failed', ['error' => $e->getMessage()]);
         }
@@ -1892,7 +1894,9 @@ class SubscriptionController extends Controller
                 'name'         => $user->name,
                 'workspaceUrl' => $url,
                 'companyName'  => $company?->company_name ?? $company?->name,
-            ], fn($m) => $m->to($user->email, $user->name)->subject('Your SmartProbook Login Credentials'));
+            ], fn($m) => $m->from((string) config('mail.from.address'), (string) config('mail.from.name'))
+                ->to($user->email, $user->name)
+                ->subject('Your SmartProbook Login Credentials'));
         } catch (\Exception $e) {
             Log::error('Deployment welcome email failed', ['error' => $e->getMessage()]);
         }
@@ -1932,7 +1936,9 @@ class SubscriptionController extends Controller
                 'intro' => $message,
                 'details' => $details,
             ], function ($m) use ($user, $subject) {
-                $m->to($user->email, $user->name)->subject($subject);
+                $m->from((string) config('mail.from.address'), (string) config('mail.from.name'))
+                    ->to($user->email, $user->name)
+                    ->subject($subject);
             });
         } catch (\Throwable $e) {
             Log::error('Transfer decision email failed', [

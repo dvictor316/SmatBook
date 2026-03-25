@@ -94,7 +94,9 @@ class SystemEventMailer
                     'intro' => $intro,
                     'details' => $details,
                 ], function ($message) use ($email, $subject) {
-                    $message->to($email)->subject($subject);
+                    $message->from((string) config('mail.from.address'), (string) config('mail.from.name'))
+                        ->to($email)
+                        ->subject($subject);
                 });
                 self::markAudit($auditId, 'sent');
             } catch (\Throwable $e) {

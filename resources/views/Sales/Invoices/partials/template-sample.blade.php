@@ -6,7 +6,7 @@
         ?: $invoiceCompany?->name
         ?: \App\Models\Setting::where('key', 'company_name')->value('value')
         ?: config('app.name', 'SmartProbook');
-    $brandEmail = \App\Models\Setting::where('key', 'company_email')->value('value') ?: 'support@smatbook.com';
+    $brandEmail = \App\Models\Setting::where('key', 'company_email')->value('value') ?: 'support@smartprobook.com';
     $brandPhone = \App\Models\Setting::where('key', 'company_phone')->value('value') ?: '+234-000-0000';
     $currency = \App\Models\Setting::where('key', 'pref_currency')->value('value') ?: 'NGN';
     $logoUrl = $logoPath ? asset($logoPath) : asset('assets/img/settings-logo1.png');

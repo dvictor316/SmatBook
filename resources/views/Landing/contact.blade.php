@@ -33,7 +33,7 @@
                         <i class="fas fa-envelope"></i>
                         <div>
                             <h6>Email</h6>
-                            <a href="mailto:compliance@smatbook.com">compliance@smatbook.com</a>
+                            <a href="mailto:compliance@smartprobook.com">compliance@smartprobook.com</a>
                         </div>
                     </div>
 

@@ -247,7 +247,9 @@ class LandingController extends Controller
             $deliveryMailer = ($preferredMailer === 'log' && $smtpReady) ? 'smtp' : $preferredMailer;
 
             Mail::mailer($deliveryMailer)->raw($body, function ($message) use ($recipients, $validated, $subject) {
-                $message->to($recipients)->subject($subject);
+                $message->from((string) config('mail.from.address'), (string) config('mail.from.name'))
+                    ->to($recipients)
+                    ->subject($subject);
                 $message->replyTo($validated['email'], $validated['fullname']);
             });
 

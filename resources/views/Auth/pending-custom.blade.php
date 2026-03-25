@@ -33,7 +33,7 @@
         <hr>
         
         <div class="d-flex justify-content-center gap-3">
-            <a href="mailto:management@smatbook.com" class="btn btn-outline-dark btn-sm">Contact Management</a>
+            <a href="mailto:management@smartprobook.com" class="btn btn-outline-dark btn-sm">Contact Management</a>
             <form action="{{ route('logout') }}" method="POST">
                 @csrf
                 <button type="submit" class="btn btn-link btn-sm text-danger text-decoration-none">Sign Out</button>

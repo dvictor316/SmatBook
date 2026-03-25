@@ -168,7 +168,7 @@
             <div class="col-lg-4">
                 <h5 class="text-white fw-bold mb-4">Global HQ</h5>
                 <p>Enugu Tech Hub, Independence Layout,<br>Enugu, Nigeria.</p>
-                <p>Email: info@smatbook.com</p>
+                <p>Email: info@smartprobook.com</p>
             </div>
         </div>
         <hr style="border-color: rgba(255,255,255,0.1); margin: 60px 0 30px;">
