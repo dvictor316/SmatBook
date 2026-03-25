@@ -237,8 +237,21 @@ class AuthController extends Controller
 
     public function showLogin(Request $request)
     {
-        if ($request->boolean('portal') && Auth::check()) {
+        $currentUser = Auth::user();
+        $isDemoSession = $currentUser
+            && (
+                strtolower((string) $currentUser->email) === 'demo@smartprobook.local'
+                || $request->session()->boolean('is_demo_workspace')
+            );
+
+        if (($request->boolean('portal') || $isDemoSession) && Auth::check()) {
             Auth::logout();
+            $request->session()->forget([
+                'is_demo_workspace',
+                'user_plan',
+                'current_tenant_id',
+                'current_tenant_name',
+            ]);
             $request->session()->invalidate();
             $request->session()->regenerateToken();
         }

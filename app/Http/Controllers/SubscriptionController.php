@@ -24,10 +24,26 @@ class SubscriptionController extends Controller
     */
     public function plans(Request $request)
     {
-        $plans = Plan::where('status', 'active')
-            ->where('is_active', 1)
-            ->orderBy('price', 'asc')
-            ->get();
+        $plansQuery = Plan::query();
+
+        if (Schema::hasColumn('plans', 'status')) {
+            $plansQuery->where(function ($query) {
+                $query->where('status', 'active')
+                    ->orWhere('status', 'Active');
+            });
+        }
+
+        if (Schema::hasColumn('plans', 'is_active')) {
+            $plansQuery->where('is_active', 1);
+        }
+
+        if (Schema::hasColumn('plans', 'price')) {
+            $plansQuery->orderBy('price', 'asc');
+        } else {
+            $plansQuery->orderBy('id', 'asc');
+        }
+
+        $plans = Schema::hasTable('plans') ? $plansQuery->get() : collect();
 
         $isLegacyPricingRoute = $request->routeIs('pricing');
 

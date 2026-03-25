@@ -170,7 +170,7 @@ class LandingController extends Controller
                         'billing_cycle' => 'Monthly',
                         'start_date' => now()->subDays(7),
                         'end_date' => now()->addDays(30),
-                        'status' => 'trial',
+                        'status' => 'Active',
                         'payment_status' => 'paid',
                         'payment_gateway' => 'demo',
                         'payment_reference' => 'demo-workspace',
@@ -191,6 +191,7 @@ class LandingController extends Controller
             Auth::login($user, true);
             $request->session()->regenerate();
             $request->session()->put('user_plan', 'professional');
+            $request->session()->put('is_demo_workspace', true);
 
             return redirect()->route('user.dashboard')
                 ->with('success', 'Demo workspace is ready. Explore the app freely.');

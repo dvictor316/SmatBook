@@ -1247,7 +1247,7 @@
             <li><a href="{{ route('landing.contact') }}" class="{{ Route::is('landing.contact') ? 'active' : '' }}">Contact</a></li>
             <li><a href="{{ url('/#licensing') }}">Licensing</a></li>
             <li><a href="{{ route('landing.policy') }}" class="{{ Route::is('landing.policy') ? 'active' : '' }}">Policy</a></li>
-            <li class="nav-action-item"><a href="{{ route('saas-login') }}" class="btn-portal"><span class="nav-label-full">Client Portal</span><span class="nav-label-short">Portal</span></a></li>
+            <li class="nav-action-item"><a href="{{ route('saas-login', ['portal' => 1]) }}" class="btn-portal"><span class="nav-label-full">Client Portal</span><span class="nav-label-short">Portal</span></a></li>
         </ul>
     </div>
 </nav>
