@@ -6,11 +6,13 @@ use App\Models\Product;
 use App\Models\Category;
 use App\Models\Purchase;
 use App\Models\PurchaseItem;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use App\Support\BranchInventoryService;
 
@@ -154,13 +156,15 @@ class ProductController extends Controller
                 'barcode'          => 'nullable|string|max:191',
             ];
 
-            if ($request->hasFile('image')) {
-                $rules['image'] = 'image|mimes:jpeg,png,jpg,gif|max:5120';
-            } else {
-                $request->request->remove('image');
-            }
+            $validated = Validator::make($request->except('image'), $rules)->validate();
 
-            $validated = $request->validate($rules);
+            $uploadedImage = $request->file('image');
+            if ($uploadedImage instanceof UploadedFile && $uploadedImage->isValid()) {
+                Validator::make(
+                    ['image' => $uploadedImage],
+                    ['image' => 'image|mimes:jpeg,png,jpg,gif|max:5120']
+                )->validate();
+            }
 
             $validated['units_per_carton'] = (int) ($validated['units_per_carton'] ?? 0);
             $validated['units_per_roll'] = (int) ($validated['units_per_roll'] ?? 0);
@@ -202,8 +206,8 @@ class ProductController extends Controller
                 ])->withInput();
             }
 
-            if ($request->hasFile('image')) {
-                $validated['image'] = $request->file('image')->store('products', 'public');
+            if ($uploadedImage instanceof UploadedFile && $uploadedImage->isValid()) {
+                $validated['image'] = $uploadedImage->store('products', 'public');
             }
 
             $resolvedCompanyId = auth()->user()?->company_id;
