@@ -50,7 +50,7 @@
         {{-- Main Form --}}
         <div class="card shadow-sm border-0 mb-4">
             <div class="card-body">
-                <form action="{{ route('inventory.Products.store') }}" method="POST" enctype="multipart/form-data" novalidate>
+                <form action="{{ route('inventory.Products.store') }}" method="POST" enctype="multipart/form-data" novalidate id="add_product_form">
                     @csrf
                     <div class="row">
                         {{-- Basic Info --}}
@@ -140,7 +140,7 @@
                         </div>
                         <div class="col-md-3 mb-3">
                             <label class="form-label fw-bold">Product Image</label>
-                            <input type="file" name="image" class="form-control @error('image') is-invalid @enderror">
+                            <input type="file" name="image" id="product_image_input" class="form-control @error('image') is-invalid @enderror">
                         </div>
                     </div>
 
@@ -202,6 +202,13 @@
 
         $('#stock_cartons, #stock_rolls, #stock_units, #upc, #upr').on('input', function() {
             calculateTotalPieces();
+        });
+
+        $('#add_product_form').on('submit', function() {
+            const imageInput = document.getElementById('product_image_input');
+            if (imageInput && (!imageInput.files || imageInput.files.length === 0)) {
+                imageInput.disabled = true;
+            }
         });
 
         $('#ajaxAddCategoryForm').on('submit', function(e) {
