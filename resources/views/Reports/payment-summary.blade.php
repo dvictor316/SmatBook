@@ -167,9 +167,9 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-primary">{{ $payment->payment_id }}</td>
                             <td class="px-6 py-4 min-w-[220px]">
-                                <div class="text-sm font-semibold text-gray-900">{{ $payment->reference ?: ($payment->sale->invoice_no ?? $payment->sale->order_number ?? 'Payment record') }}</div>
+                                <div class="text-sm font-semibold text-gray-900">{{ $payment->reference ?: (optional($payment->sale)->invoice_no ?? optional($payment->sale)->order_number ?? 'Payment record') }}</div>
                                 <div class="text-xs text-gray-500 mt-1">
-                                    {{ $payment->sale->customer_name ?? optional($payment->sale->customer)->name ?? ($payment->note ?: 'No extra note') }}
+                                    {{ optional($payment->sale)->customer_name ?? optional(optional($payment->sale)->customer)->name ?? ($payment->note ?: 'No extra note') }}
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $payment->method ?: 'Not set' }}</td>

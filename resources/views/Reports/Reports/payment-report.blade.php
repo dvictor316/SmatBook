@@ -147,7 +147,7 @@
                                 <td class="fw-bold text-dark">{{ $payment->payment_id }}</td>
                                 <td>
                                     <span class="badge bg-light text-dark border">
-                                        #{{ $payment->sale->invoice_no ?? $payment->sale_id }}
+                                        #{{ optional($payment->sale)->invoice_no ?? $payment->sale_id }}
                                     </span>
                                 </td>
                                 <td>
