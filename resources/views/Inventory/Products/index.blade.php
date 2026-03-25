@@ -374,6 +374,7 @@
                         <div class="col-md-3">
                             <label class="form-label" id="quick_units_per_carton_label">Units Per Carton</label>
                             <input type="text" class="form-control bg-light" id="quick_units_per_carton_preview" value="0 Units" readonly>
+                            <small class="text-muted">Packaging preview only. This does not increase stock until you enter opening cartons, rolls, or loose units below.</small>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Opening Roll Quantity</label>
@@ -385,13 +386,15 @@
                             <small class="text-muted">Cartons convert through rolls when present, or directly to pieces when rolls are not used.</small>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label" id="quick_opening_unit_label">Opening Unit Quantity</label>
+                            <label class="form-label" id="quick_opening_unit_label">Opening Loose Unit Quantity</label>
                             <input type="number" step="0.01" name="stock_units" class="form-control" value="0">
+                            <small class="text-muted">Enter only the loose units/pieces already on hand, not the carton definition above.</small>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Calculated Total Stock</label>
+                            <label class="form-label">Calculated Total Opening Stock</label>
                             <input type="text" class="form-control bg-light" id="quick_stock_preview" value="0 Units" readonly>
                             <input type="hidden" name="stock" id="quick_final_stock_input" value="">
+                            <small class="text-muted">Calculated from opening cartons + opening rolls + opening loose units only.</small>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Product Image</label>
@@ -519,7 +522,7 @@
             $('#quick_carton_content_hint').text('Auto-calculated rolls per carton');
             $('#quick_carton_content_help').text('This is calculated from total ' + unitLabel + 's and ' + unitLabel + 's per roll. If rolls are not used, it matches the unit total.');
             $('#quick_units_per_carton_label').text(titleUnit + 's Per Carton');
-            $('#quick_opening_unit_label').text('Opening ' + titleUnit + ' Quantity');
+            $('#quick_opening_unit_label').text('Opening Loose ' + titleUnit + ' Quantity');
         }
 
         function calculateQuickCartonContent() {

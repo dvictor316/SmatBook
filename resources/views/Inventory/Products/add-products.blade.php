@@ -155,17 +155,20 @@
                         <div class="col-md-3 mb-3">
                             <label class="form-label fw-bold text-info" id="units_per_carton_label">Units Per Carton</label>
                             <div class="form-control bg-light-info fw-semibold" id="units_per_carton_preview">0 Units</div>
+                            <small class="text-muted">Packaging preview only. This does not increase stock until you enter opening cartons, rolls, or loose units below.</small>
                         </div>
                         
                         {{-- Automated Calculation Preview --}}
                         <div class="col-md-3 mb-3">
-                            <label class="form-label" id="opening_unit_label">Opening Unit Quantity</label>
+                            <label class="form-label" id="opening_unit_label">Opening Loose Unit Quantity</label>
                             <input type="number" name="stock_units" id="stock_units" class="form-control" value="{{ old('stock_units', 0) }}">
+                            <small class="text-muted">Enter only the loose units/pieces already on hand, not the carton definition above.</small>
                         </div>
                         <div class="col-md-3 mb-3">
-                            <label class="form-label fw-bold text-primary">Total Inventory (Units)</label>
+                            <label class="form-label fw-bold text-primary">Total Opening Stock (Units)</label>
                             <div class="form-control bg-dark text-white fw-bold" id="total_pieces_preview">0</div>
                             <input type="hidden" name="stock" id="final_stock_input" value="{{ old('stock', 0) }}">
+                            <small class="text-muted">Calculated from opening cartons + opening rolls + opening loose units only.</small>
                         </div>
                         <div class="col-md-3 mb-3">
                             <label class="form-label fw-bold">Product Image</label>
@@ -228,7 +231,7 @@
             $('#carton_content_hint').text('Auto-calculated rolls per carton');
             $('#carton_content_help').text('This is calculated from total ' + unitLabel + 's and ' + unitLabel + 's per roll. If rolls are not used, it matches the unit total.');
             $('#units_per_carton_label').text(titleUnit + 's Per Carton');
-            $('#opening_unit_label').text('Opening ' + titleUnit + ' Quantity');
+            $('#opening_unit_label').text('Opening Loose ' + titleUnit + ' Quantity');
         }
 
         refreshPackagingLabels();
