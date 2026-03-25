@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
 use App\Support\BranchInventoryService;
 
@@ -151,7 +152,7 @@ class ProductController extends Controller
                 'units_per_roll'   => 'nullable|integer|min:0',
                 'base_unit_name'   => 'required|string|max:100',
                 'category_id'      => 'required|exists:categories,id',
-                'unit_type'        => 'required|in:unit,roll,carton',
+                'unit_type'        => 'required|in:unit,sachet,roll,carton',
                 'description'      => 'nullable|string',
                 'barcode'          => 'nullable|string|max:191',
             ];
@@ -160,10 +161,19 @@ class ProductController extends Controller
 
             $uploadedImage = $request->file('image');
             if ($uploadedImage instanceof UploadedFile && $uploadedImage->isValid()) {
-                Validator::make(
-                    ['image' => $uploadedImage],
-                    ['image' => 'image|mimes:jpeg,png,jpg,gif|max:5120']
-                )->validate();
+                try {
+                    Validator::make(
+                        ['image' => $uploadedImage],
+                        ['image' => 'image|mimes:jpeg,png,jpg,gif|max:5120']
+                    )->validate();
+                } catch (ValidationException $validationException) {
+                    Log::warning('Ignoring invalid product image upload and continuing save.', [
+                        'user_id' => auth()->id(),
+                        'filename' => $uploadedImage->getClientOriginalName(),
+                        'message' => $validationException->getMessage(),
+                    ]);
+                    $uploadedImage = null;
+                }
             }
 
             $validated['units_per_carton'] = (int) ($validated['units_per_carton'] ?? 0);
@@ -203,6 +213,11 @@ class ProductController extends Controller
             if ($validated['unit_type'] === 'roll' && $validated['units_per_roll'] < 1) {
                 return back()->withErrors([
                     'units_per_roll' => 'Units per roll must be at least 1 when default sale unit is Roll.'
+                ])->withInput();
+            }
+            if ($validated['unit_type'] === 'sachet' && $validated['stock_units'] < 1 && $validated['stock_rolls'] < 1 && $validated['stock_cartons'] < 1) {
+                return back()->withErrors([
+                    'stock_units' => 'Enter opening stock for sachets, rolls, or cartons before saving this sachet product.'
                 ])->withInput();
             }
 

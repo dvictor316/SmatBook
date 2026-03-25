@@ -245,11 +245,11 @@
                             </select>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">Units/Carton</label>
+                            <label class="form-label">Rolls/Carton</label>
                             <input type="number" name="units_per_carton" min="0" class="form-control" value="0">
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">Units/Roll (Optional)</label>
+                            <label class="form-label">Sachets/Roll</label>
                             <input type="number" name="units_per_roll" min="0" class="form-control" value="0">
                         </div>
                         <div class="col-md-3">
@@ -261,13 +261,22 @@
                             <input type="number" step="0.01" name="purchase_price" class="form-control" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Opening Stock (Units)</label>
-                            <input type="number" name="stock" class="form-control" value="0">
+                            <label class="form-label">Opening Stock (Rolls)</label>
+                            <input type="number" step="0.01" name="stock_rolls" class="form-control" value="0">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Opening Stock (Cartons)</label>
                             <input type="number" step="0.01" name="stock_cartons" class="form-control" value="0">
-                            <small class="text-muted">If cartons are entered, the system converts them to unit stock using Units/Carton.</small>
+                            <small class="text-muted">Cartons convert through rolls and sachets automatically.</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Opening Stock (Sachets / Loose Units)</label>
+                            <input type="number" step="0.01" name="stock_units" class="form-control" value="0">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Calculated Total Stock</label>
+                            <input type="text" class="form-control bg-light" id="quick_stock_preview" value="0 Units" readonly>
+                            <input type="hidden" name="stock" id="quick_final_stock_input" value="">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Product Image</label>
@@ -372,6 +381,27 @@
                 imageInput.disabled = true;
             }
         });
+
+        function calculateQuickStock() {
+            const cartons = parseFloat($('input[name="stock_cartons"]').val()) || 0;
+            const rolls = parseFloat($('input[name="stock_rolls"]').val()) || 0;
+            const sachets = parseFloat($('input[name="stock_units"]').val()) || 0;
+            const rollsPerCarton = parseFloat($('input[name="units_per_carton"]').val()) || 0;
+            const sachetsPerRoll = parseFloat($('input[name="units_per_roll"]').val()) || 0;
+
+            const fromCartons = rollsPerCarton > 0 && sachetsPerRoll > 0 ? cartons * rollsPerCarton * sachetsPerRoll : 0;
+            const fromRolls = sachetsPerRoll > 0 ? rolls * sachetsPerRoll : 0;
+            const total = fromCartons + fromRolls + sachets;
+
+            $('#quick_stock_preview').val(total.toLocaleString() + ' Units');
+            $('#quick_final_stock_input').val(Math.round(total));
+        }
+
+        $('#quick_add_product_form').find('input[name="stock_cartons"], input[name="stock_rolls"], input[name="stock_units"], input[name="units_per_carton"], input[name="units_per_roll"]').on('input', function() {
+            calculateQuickStock();
+        });
+
+        calculateQuickStock();
 
         // AJAX Category Store
         $('#ajaxAddCategoryForm').on('submit', function(e) {

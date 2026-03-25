@@ -90,9 +90,9 @@
                             <small class="text-muted">How many rolls are inside 1 carton?</small>
                         </div>
                         <div class="col-md-3 mb-3">
-                            <label class="form-label fw-bold text-warning">Units per Roll</label>
+                            <label class="form-label fw-bold text-warning">Sachets per Roll</label>
                             <input type="number" name="units_per_roll" id="upr" class="form-control bg-light-warning @error('units_per_roll') is-invalid @enderror" value="{{ old('units_per_roll', 0) }}" min="0">
-                            <small class="text-muted">How many units are inside 1 roll? Use 0 only if you do not sell rolls.</small>
+                            <small class="text-muted">How many sachets are inside 1 roll? Use 0 only if you do not sell rolls.</small>
                         </div>
                         <div class="col-md-3 mb-3">
                             <label class="form-label fw-bold">Base Unit Name</label>
@@ -102,6 +102,7 @@
                             <label class="form-label fw-bold">Default Sale Unit</label>
                             <select name="unit_type" id="unit_type" class="form-control @error('unit_type') is-invalid @enderror" required>
                                 <option value="unit" @selected(old('unit_type', 'unit') === 'unit')>Unit</option>
+                                <option value="sachet" @selected(old('unit_type') === 'sachet')>Sachet</option>
                                 <option value="roll" @selected(old('unit_type') === 'roll')>Roll</option>
                                 <option value="carton" @selected(old('unit_type') === 'carton')>Carton</option>
                             </select>
@@ -130,7 +131,7 @@
                         
                         {{-- Automated Calculation Preview --}}
                         <div class="col-md-3 mb-3">
-                            <label class="form-label">Initial Stock (Units)</label>
+                            <label class="form-label">Initial Stock (Sachets / Loose Units)</label>
                             <input type="number" name="stock_units" id="stock_units" class="form-control" value="{{ old('stock_units', 0) }}">
                         </div>
                         <div class="col-md-3 mb-3">
