@@ -105,6 +105,11 @@
                             <small class="text-muted" id="roll_content_help">Enter how many sellable units are inside one roll. Leave this at 0 if the product does not use rolls.</small>
                         </div>
                         <div class="col-md-3 mb-3">
+                            <label class="form-label fw-bold text-info">Unit Content <span class="text-muted fw-normal d-block small" id="unit_content_hint">1 unit = 1 sellable piece</span></label>
+                            <input type="number" id="unit_content_value" class="form-control bg-light-info" value="1" readonly>
+                            <small class="text-muted" id="unit_content_help">This is the base sellable piece before rolls and cartons are applied.</small>
+                        </div>
+                        <div class="col-md-3 mb-3">
                             <label class="form-label fw-bold">Base Unit Name</label>
                             <input type="text" name="base_unit_name" class="form-control @error('base_unit_name') is-invalid @enderror" value="{{ old('base_unit_name', 'Unit') }}" placeholder="e.g. Unit, Tablet, Bottle">
                         </div>
@@ -118,6 +123,7 @@
                             </select>
                             <small class="text-muted">Choose how this product is normally sold.</small>
                         </div>
+                        <div class="col-md-3 mb-3"></div>
 
                         <hr class="my-3 text-muted">
                         <h5 class="mb-3 text-success"><i class="feather-shopping-cart me-2"></i>Pricing & Initial Stock</h5>
@@ -198,6 +204,7 @@
 <style>
     .bg-light-danger { background-color: #fff5f5; border: 1px solid #feb2b2; }
     .bg-light-warning { background-color: #fffaf0; border: 1px solid #fbd38d; }
+    .bg-light-info { background-color: #f0f9ff; border: 1px solid #7dd3fc; }
     @media print { .no-print, .sidebar, .header { display: none !important; } .page-wrapper { margin: 0 !important; } }
 </style>
 @endsection
@@ -214,6 +221,8 @@
             $('#carton_content_help').text('Enter how many rolls are inside one carton, or how many ' + unitLabel + 's are inside one carton if this item does not use rolls.');
             $('#roll_content_hint').text(unitLabel + 's per roll');
             $('#roll_content_help').text('Enter how many sellable ' + unitLabel + 's are inside one roll. Leave this at 0 if the product does not use rolls.');
+            $('#unit_content_hint').text('1 ' + unitLabel + ' = 1 sellable piece');
+            $('#unit_content_help').text('This is the base sellable ' + unitLabel + ' before rolls and cartons are applied.');
             $('#opening_unit_label').text('Opening ' + titleUnit + ' Quantity');
         }
 

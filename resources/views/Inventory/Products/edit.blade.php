@@ -108,6 +108,13 @@
                             </div>
                             <div class="col-md-3">
                                 <div class="form-group">
+                                    <label>Unit Content <small class="d-block text-muted" id="edit_unit_content_hint">1 unit = 1 sellable piece</small></label>
+                                    <input type="number" class="form-control bg-light" value="1" readonly>
+                                    <small class="text-muted" id="edit_unit_content_help">This is the base sellable piece before rolls and cartons are applied.</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
                                     <label>Default Unit Type *</label>
                                     <select name="unit_type" class="form-control" required>
                                         <option value="unit" {{ $product->unit_type == 'unit' ? 'selected' : '' }}>Unit</option>
@@ -183,6 +190,8 @@
             $('#edit_carton_content_help').text('Use rolls per carton, or ' + unitLabel + 's per carton if this item does not use rolls.');
             $('#edit_roll_content_hint').text(unitLabel + 's per roll');
             $('#edit_roll_content_help').text('Leave 0 when the item is sold in cartons and ' + unitLabel + 's only.');
+            $('#edit_unit_content_hint').text('1 ' + unitLabel + ' = 1 sellable piece');
+            $('#edit_unit_content_help').text('This is the base sellable ' + unitLabel + ' before rolls and cartons are applied.');
         }
 
         refreshEditPackagingLabels();

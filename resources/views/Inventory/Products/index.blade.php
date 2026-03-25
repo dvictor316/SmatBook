@@ -351,6 +351,11 @@
                             <small class="text-muted" id="quick_roll_content_help">Leave `0` if the product is sold in cartons and units only.</small>
                         </div>
                         <div class="col-md-3">
+                            <label class="form-label">Unit Content <span class="text-muted d-block small" id="quick_unit_content_hint">1 unit = 1 sellable piece</span></label>
+                            <input type="number" class="form-control bg-light" value="1" readonly>
+                            <small class="text-muted" id="quick_unit_content_help">This is the base sellable piece before rolls and cartons are applied.</small>
+                        </div>
+                        <div class="col-md-3">
                             <label class="form-label">Retail / Default Price</label>
                             <input type="number" step="0.01" name="price" class="form-control" required>
                         </div>
@@ -507,6 +512,8 @@
             $('#quick_carton_content_help').text('Use rolls per carton, or ' + unitLabel + 's per carton if this item does not use rolls.');
             $('#quick_roll_content_hint').text(unitLabel + 's per roll');
             $('#quick_roll_content_help').text('Leave `0` if the product is sold in cartons and ' + unitLabel + 's only.');
+            $('#quick_unit_content_hint').text('1 ' + unitLabel + ' = 1 sellable piece');
+            $('#quick_unit_content_help').text('This is the base sellable ' + unitLabel + ' before rolls and cartons are applied.');
             $('#quick_opening_unit_label').text('Opening ' + titleUnit + ' Quantity');
         }
 
