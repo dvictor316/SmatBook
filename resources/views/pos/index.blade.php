@@ -1503,7 +1503,7 @@ label {
                 </div>
 
                 <!-- Process Button -->
-                <button id="process-btn" class="btn btn-process w-100 mt-3">
+                <button type="button" id="process-btn" class="btn btn-process w-100 mt-3">
                     <span id="btn-text"><i class="fas fa-check-circle me-2"></i> PROCESS SALE</span>
                     <span id="btn-loading" style="display:none;"><i class="fas fa-sync fa-spin me-2"></i> PROCESSING...</span>
                 </button>
@@ -2160,7 +2160,10 @@ $(document).ready(function() {
     }
 
     // Process Sale
-    $('#process-btn').on('click', function() {
+    $('#process-btn').on('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+
         if(!cart.length) {
             Swal.fire({ icon: 'warning', title: 'Cart Empty', confirmButtonColor: '#f59e0b' });
             return;
