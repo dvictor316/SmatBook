@@ -12,6 +12,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
@@ -38,6 +39,52 @@ class ProductController extends Controller
         $companyId = (int) (auth()->user()?->company_id ?? optional(auth()->user()?->company)->id ?? 0);
 
         return $companyId > 0 ? "{$baseKey}_company_{$companyId}" : $baseKey;
+    }
+
+    private function tenantCompanyId(): int
+    {
+        return (int) (auth()->user()?->company_id ?? optional(auth()->user()?->company)->id ?? 0);
+    }
+
+    private function applyTenantScope($query, string $table)
+    {
+        $companyId = $this->tenantCompanyId();
+        $userId = (int) (auth()->id() ?? 0);
+
+        if ($companyId > 0 && Schema::hasColumn($table, 'company_id')) {
+            return $query->where(function ($sub) use ($table, $companyId, $userId) {
+                $sub->where("{$table}.company_id", $companyId);
+
+                if ($userId > 0 && Schema::hasColumn($table, 'user_id')) {
+                    $sub->orWhere(function ($fallback) use ($table, $userId) {
+                        $fallback->whereNull("{$table}.company_id")
+                            ->where("{$table}.user_id", $userId);
+                    });
+                }
+            });
+        }
+
+        if ($userId > 0 && Schema::hasColumn($table, 'user_id')) {
+            return $query->where("{$table}.user_id", $userId);
+        }
+
+        return $query;
+    }
+
+    private function clearDashboardMetricsCache(?string $branchId = null): void
+    {
+        $companyId = $this->tenantCompanyId();
+        if ($companyId <= 0) {
+            return;
+        }
+
+        Cache::forget('metrics_co_' . $companyId);
+        Cache::forget('metrics_co_' . $companyId . '_global');
+
+        $resolvedBranchId = $branchId ?: ($this->getActiveBranchContext()['id'] ?? null);
+        if ($resolvedBranchId) {
+            Cache::forget('metrics_co_' . $companyId . '_branch_' . $resolvedBranchId);
+        }
     }
 
     private function getAvailableBranches(): array
@@ -160,6 +207,7 @@ class ProductController extends Controller
         $search = $request->input('search');
         $activeBranch = $this->getActiveBranchContext();
         $query = Product::query();
+        $this->applyTenantScope($query, 'products');
 
         if (Schema::hasTable('categories') && Schema::hasColumn('products', 'category_id')) {
             $query->with('category');
@@ -341,6 +389,7 @@ class ProductController extends Controller
                 $selectedBranch,
                 $product->company_id ?: ($resolvedCompanyId ?: null)
             );
+            $this->clearDashboardMetricsCache($selectedBranch['id'] ?? null);
 
             return redirect()->route('product-list')
                 ->with('success', 'Product added successfully.');
@@ -669,6 +718,7 @@ public function inventory(Request $request)
 
         $validated['stock_quantity'] = $validated['stock']; 
         $product->update($validated);
+        $this->clearDashboardMetricsCache();
 
         return redirect()->route('product-list')->with('success', 'Update pushed to ' . env('SESSION_DOMAIN'));
     }
@@ -758,6 +808,8 @@ public function inventory(Request $request)
             }
         });
 
+        $this->clearDashboardMetricsCache();
+
         return redirect()->back()->with('success', 'Inventory state updated on ' . env('SESSION_DOMAIN'));
     }
 
@@ -834,6 +886,9 @@ public function inventory(Request $request)
             return redirect()->back()->withInput()->with('error', $exception->getMessage());
         }
 
+        $this->clearDashboardMetricsCache($validated['from_branch_id'] ?? null);
+        $this->clearDashboardMetricsCache($validated['to_branch_id'] ?? null);
+
         return redirect()->back()->with('success', 'Stock transferred successfully between branches.');
     }
 
@@ -864,6 +919,7 @@ public function inventory(Request $request)
             Storage::disk('public')->delete($product->image); 
         }
         $product->delete();
+        $this->clearDashboardMetricsCache();
 
         return redirect()->route('product-list')->with('success', 'Product purged from ' . env('SESSION_DOMAIN'));
     }
@@ -981,7 +1037,10 @@ public function inventory(Request $request)
                 }
 
                 $sku = $this->generateUniqueSku($rowData['sku'] ?? null, $rowData['name']);
-                $product = Product::query()->where('sku', $sku)->first();
+                $product = Product::query()
+                    ->tap(fn ($query) => $this->applyTenantScope($query, 'products'))
+                    ->where('sku', $sku)
+                    ->first();
                 $isNew = $product === null;
                 $product = $product ?: new Product();
 
@@ -1040,6 +1099,7 @@ public function inventory(Request $request)
                 }
             }
         });
+        $this->clearDashboardMetricsCache($request->input('branch_id'));
 
         return redirect()->route('product-list')->with(
             'success',

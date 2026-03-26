@@ -424,7 +424,14 @@ class DashboardController extends Controller
                     'error' => $e->getMessage(),
                     'company_id' => $company->id ?? null,
                 ]);
-                return DB::table('customers')->count();
+
+                if (Schema::hasColumn('customers', 'user_id')) {
+                    return DB::table('customers')
+                        ->whereIn('user_id', $this->companyUserIds($company))
+                        ->count();
+                }
+
+                return 0;
             }
         }
         if (Schema::hasColumn('users', 'company_id')) {

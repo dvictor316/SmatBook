@@ -26,11 +26,58 @@ class SaleController extends Controller
     {
     }
 
+    private function tenantCompanyId(): int
+    {
+        return (int) (auth()->user()?->company_id ?? optional(auth()->user()?->company)->id ?? 0);
+    }
+
+    private function applyTenantScope($query, string $table)
+    {
+        $companyId = $this->tenantCompanyId();
+        $userId = (int) (auth()->id() ?? 0);
+
+        if ($companyId > 0 && Schema::hasColumn($table, 'company_id')) {
+            return $query->where(function ($sub) use ($table, $companyId, $userId) {
+                $sub->where("{$table}.company_id", $companyId);
+
+                if ($userId > 0 && Schema::hasColumn($table, 'user_id')) {
+                    $sub->orWhere(function ($fallback) use ($table, $userId) {
+                        $fallback->whereNull("{$table}.company_id")
+                            ->where("{$table}.user_id", $userId);
+                    });
+                }
+            });
+        }
+
+        if ($userId > 0 && Schema::hasColumn($table, 'user_id')) {
+            return $query->where("{$table}.user_id", $userId);
+        }
+
+        return $query;
+    }
+
+    private function clearDashboardMetricsCache(?string $branchId = null): void
+    {
+        $companyId = $this->tenantCompanyId();
+        if ($companyId <= 0) {
+            return;
+        }
+
+        Cache::forget('metrics_co_' . $companyId);
+        Cache::forget('metrics_co_' . $companyId . '_global');
+
+        $activeBranchId = $branchId ?: ($this->getActiveBranchContext()['id'] ?? null);
+        if ($activeBranchId) {
+            Cache::forget('metrics_co_' . $companyId . '_branch_' . $activeBranchId);
+        }
+    }
+
     public function index(Request $request)
     {
         // 1. Start the query with relationships
         $query = Sale::with(['customer', 'user']);
         $activeBranch = $this->getActiveBranchContext();
+        $this->applyTenantScope($query, 'sales');
 
         // 2. Apply Filters
         if ($request->invoice_no) {
@@ -92,6 +139,7 @@ class SaleController extends Controller
                 DB::raw($priceExpression),
                 DB::raw($stockExpression)
             );
+        $this->applyTenantScope($query, 'products');
 
         if ($request->filled('search')) {
             $search = trim((string) $request->search);
@@ -164,6 +212,7 @@ public function customerDetails($id = null)
         $activeBranch = $this->getActiveBranchContext();
         $productsQuery = Product::with('category')
             ->orderBy('name', 'asc');
+        $this->applyTenantScope($productsQuery, 'products');
 
         if (Schema::hasTable('product_branch_stocks') && !empty($activeBranch['id'])) {
             $productsQuery->with(['branchStocks' => function ($query) use ($activeBranch) {
@@ -181,8 +230,15 @@ public function customerDetails($id = null)
             })
             ->filter(fn ($product) => (float) ($product->available_stock ?? 0) > 0)
             ->values();
-        $customers = Customer::orderBy('customer_name', 'asc')->get();
-        $sales = Sale::with('customer')->latest()->take(10)->get();
+        $customers = Customer::query()
+            ->orderBy('customer_name', 'asc')
+            ->tap(fn ($query) => $this->applyTenantScope($query, 'customers'))
+            ->get();
+        $sales = Sale::with('customer')
+            ->tap(fn ($query) => $this->applyTenantScope($query, 'sales'))
+            ->latest()
+            ->take(10)
+            ->get();
         $bankAccounts = Schema::hasTable('banks')
             ? Bank::query()->orderBy('name')->get()
             : collect();
@@ -192,7 +248,9 @@ public function customerDetails($id = null)
 
     public function showSale($id)
     {
-        $sale = Sale::with(['customer', 'items.product', 'user'])->findOrFail($id);
+        $sale = Sale::with(['customer', 'items.product', 'user'])
+            ->tap(fn ($query) => $this->applyTenantScope($query, 'sales'))
+            ->findOrFail($id);
         $activeBranch = $this->getActiveBranchContext();
         $bankAccounts = Schema::hasTable('banks')
             ? Bank::query()->orderBy('name')->get()
@@ -405,9 +463,7 @@ $sale = Sale::create([
 
         DB::commit();
 
-        if (!empty(auth()->user()?->company_id)) {
-            Cache::forget('metrics_co_' . auth()->user()->company_id);
-        }
+        $this->clearDashboardMetricsCache($activeBranch['id'] ?? null);
 
         return response()->json([
             'success' => true,
