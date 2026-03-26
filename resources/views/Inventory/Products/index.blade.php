@@ -72,6 +72,22 @@
         margin-right: 0.5rem;
         font-size: 0.9rem;
     }
+
+    .inventory-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        justify-content: flex-end;
+        align-items: center;
+    }
+
+    .inventory-search-form {
+        min-width: 240px;
+    }
+
+    .mobile-add-product-trigger {
+        display: none;
+    }
     
     @media print {
         .no-print, .dt-buttons, .main-header, .sidebar { display: none !important; }
@@ -79,6 +95,59 @@
         .page-wrapper { margin: 0 !important; padding: 0 !important; }
         table { width: 100% !important; border-collapse: collapse; }
         th, td { border: 1px solid #dee2e6 !important; padding: 8px !important; }
+    }
+
+    @media (max-width: 767.98px) {
+        .inventory-page-header > [class*="col-"] {
+            width: 100%;
+        }
+
+        .inventory-page-title {
+            margin-bottom: 0.85rem;
+        }
+
+        .inventory-toolbar {
+            justify-content: stretch;
+            width: 100%;
+        }
+
+        .inventory-toolbar > * {
+            flex: 1 1 calc(50% - 0.375rem);
+            min-width: 0;
+        }
+
+        .inventory-search-form {
+            flex: 1 1 100%;
+            min-width: 100%;
+        }
+
+        .inventory-toolbar .btn,
+        .inventory-toolbar .dropdown,
+        .inventory-toolbar .dropdown > .btn {
+            width: 100%;
+        }
+
+        .desktop-add-product-trigger {
+            display: none !important;
+        }
+
+        .mobile-add-product-trigger {
+            position: fixed;
+            right: 16px;
+            bottom: 88px;
+            z-index: 1040;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.45rem;
+            padding: 0.9rem 1rem;
+            border: 0;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #198754 0%, #0f9d58 100%);
+            color: #fff;
+            box-shadow: 0 16px 36px rgba(15, 157, 88, 0.32);
+            font-weight: 800;
+        }
     }
 </style>
 
@@ -88,13 +157,13 @@
         {{-- INLINE HEADER & CONTROLS --}}
         <div class="card shadow-sm mb-3 no-print">
             <div class="card-body">
-                <div class="row align-items-center">
-                    <div class="col-md-4">
+                <div class="row align-items-center inventory-page-header">
+                    <div class="col-md-4 inventory-page-title">
                         <h4 class="mb-0 text-primary"><i class="fas fa-boxes me-2"></i>Inventory Management</h4>
                     </div>
                     <div class="col-md-8 text-end">
-                        <div class="d-inline-flex gap-2">
-                            <form method="GET" action="{{ route('product-list') }}" class="d-flex">
+                        <div class="inventory-toolbar">
+                            <form method="GET" action="{{ route('product-list') }}" class="d-flex inventory-search-form">
                                 <div class="input-group">
                                     <input type="text" name="search" value="{{ $search ?? '' }}" class="form-control" placeholder="Search SKU or Name...">
                                     <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i></button>
@@ -122,7 +191,7 @@
                                 </ul>
                             </div>
 
-                            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addProductModal">
+                            <button type="button" class="btn btn-success desktop-add-product-trigger" data-bs-toggle="modal" data-bs-target="#addProductModal">
                                 <i class="fa fa-plus"></i> Add Product
                             </button>
                             @if(($stockTransferEnabled ?? false) && count($availableBranches ?? []) > 1)
@@ -227,6 +296,11 @@
         </div>
     </div>
 </div>
+
+<button type="button" class="mobile-add-product-trigger no-print" data-bs-toggle="modal" data-bs-target="#addProductModal" aria-label="Add product">
+    <i class="fas fa-plus"></i>
+    <span>Add Product</span>
+</button>
 
 @if(($stockTransferEnabled ?? false) && count($availableBranches ?? []) > 1)
 <div class="modal fade" id="transferStockModal" tabindex="-1" aria-hidden="true">

@@ -232,6 +232,32 @@
         .spark-row {
             grid-template-columns: 1fr;
         }
+
+        .pro-dashboard-actions {
+            width: 100%;
+            justify-content: flex-start;
+            flex-wrap: wrap;
+        }
+
+        .pro-dashboard-actions .btn,
+        .pro-dashboard-actions .branch-chip {
+            width: 100%;
+            justify-content: center;
+            text-align: center;
+        }
+    }
+
+    .branch-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.55rem 0.95rem;
+        border-radius: 999px;
+        background: rgba(37, 99, 235, 0.08);
+        color: #1d4ed8;
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.02em;
     }
 </style>
 
@@ -241,6 +267,7 @@
         $inventoryValue = (float) ($metrics['inventoryValue'] ?? 0);
         $currentMonthSales = (float) ($metrics['currentMonthSales'] ?? 0);
         $salesGrowthRate = (float) ($metrics['salesGrowthRate'] ?? 0);
+        $branchLabel = $activeBranch['name'] ?? 'Workspace Default';
     @endphp
 
     {{-- Header Section --}}
@@ -252,7 +279,14 @@
             </div>
             <p class="text-muted small mb-0">Domain: <code>{{ env('SESSION_DOMAIN', 'Live Node') }}</code> | Instance: <strong>{{ request()->getHost() }}</strong></p>
         </div>
-        <div class="d-flex align-items-center gap-3">
+        <div class="d-flex align-items-center gap-3 pro-dashboard-actions">
+            <span class="branch-chip">
+                <i class="fas fa-code-branch"></i>
+                Active Branch: {{ $branchLabel }}
+            </span>
+            <a href="{{ route('branches.index') }}" class="btn btn-white shadow-sm border-0 px-4 py-2" style="border-radius: 12px; font-weight: 700; color: var(--deep-sapphire);">
+                <i class="fas fa-code-branch me-2 text-primary"></i> MANAGE BRANCHES
+            </a>
             <button onclick="printReport()" class="btn btn-white shadow-sm border-0 px-4 py-2" style="border-radius: 12px; font-weight: 700; color: var(--deep-sapphire);">
                 <i class="fas fa-print me-2 text-primary"></i> PRINT ANALYTICS
             </button>

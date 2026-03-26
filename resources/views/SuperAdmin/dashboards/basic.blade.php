@@ -238,6 +238,32 @@
         .spark-row {
             grid-template-columns: 1fr;
         }
+
+        .basic-dashboard-actions {
+            width: 100%;
+            justify-content: flex-start;
+            flex-wrap: wrap;
+        }
+
+        .basic-dashboard-actions .btn,
+        .basic-dashboard-actions .branch-chip {
+            width: 100%;
+            justify-content: center;
+            text-align: center;
+        }
+    }
+
+    .branch-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.55rem 0.95rem;
+        border-radius: 999px;
+        background: rgba(37, 99, 235, 0.08);
+        color: #1d4ed8;
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.02em;
     }
 
     /* Working Domain Reference: env('SESSION_DOMAIN', null) */
@@ -249,6 +275,7 @@
         $currentMonthSales = (float) ($metrics['currentMonthSales'] ?? 0);
         $salesGrowthRate = (float) ($metrics['salesGrowthRate'] ?? 0);
         $inventoryValue = (float) ($metrics['inventoryValue'] ?? 0);
+        $branchLabel = $activeBranch['name'] ?? 'Workspace Default';
     @endphp
 
     {{-- Header Section --}}
@@ -260,7 +287,14 @@
             </div>
             <p class="text-muted small">Live analytics for <strong>{{ request()->getHost() }}</strong> | Domain: <code>{{ env('SESSION_DOMAIN', 'Localhost') }}</code></p>
         </div>
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 basic-dashboard-actions">
+            <span class="branch-chip">
+                <i class="fas fa-code-branch"></i>
+                Active Branch: {{ $branchLabel }}
+            </span>
+            <a href="{{ route('branches.index') }}" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                <i class="fas fa-code-branch me-2"></i> Manage Branches
+            </a>
             <button onclick="printDashboard()" class="btn btn-outline-primary btn-sm rounded-pill px-3">
                 <i class="fas fa-print me-2"></i> Print Report
             </button>
