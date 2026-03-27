@@ -290,7 +290,10 @@ public function index()
 public function show($id)
 {
     // Fetch purchase with vendor relationship
-    $purchase = $this->applyTenantScope(Purchase::with(['vendor', 'bank', 'items.product']), 'purchases')->findOrFail($id);
+    $purchaseQuery = Purchase::with(['vendor', 'bank', 'items.product']);
+    $this->applyTenantScope($purchaseQuery, 'purchases');
+    $this->applyBranchScope($purchaseQuery, 'purchases');
+    $purchase = $purchaseQuery->findOrFail($id);
     $activeBranch = $this->getActiveBranchContext();
 
     // Logic: Look for the vendor's specific logo first. 
@@ -318,7 +321,10 @@ public function show($id)
      */
     public function downloadPDF($id)
     {
-        $purchase = $this->applyTenantScope(Purchase::with(['vendor', 'bank', 'items.product']), 'purchases')->findOrFail($id);
+        $purchaseQuery = Purchase::with(['vendor', 'bank', 'items.product']);
+        $this->applyTenantScope($purchaseQuery, 'purchases');
+        $this->applyBranchScope($purchaseQuery, 'purchases');
+        $purchase = $purchaseQuery->findOrFail($id);
         
         // Use the dynamic logo logic we built
         $vendorLogo = $purchase->vendor->logo ?? null;
@@ -336,6 +342,11 @@ public function show($id)
      */
     public function exportExcel($id)
     {
+        $purchaseQuery = Purchase::query();
+        $this->applyTenantScope($purchaseQuery, 'purchases');
+        $this->applyBranchScope($purchaseQuery, 'purchases');
+        $purchaseQuery->findOrFail($id);
+
         return Excel::download(new PurchaseExport($id), 'Purchase_Export_'.time().'.xlsx');
     }
 
@@ -346,7 +357,10 @@ public function show($id)
     public function edit($id)
     {
         $activeBranch = $this->getActiveBranchContext();
-        $purchase = $this->applyTenantScope(Purchase::with('items.product'), 'purchases')->findOrFail($id);
+        $purchaseQuery = Purchase::with('items.product');
+        $this->applyTenantScope($purchaseQuery, 'purchases');
+        $this->applyBranchScope($purchaseQuery, 'purchases');
+        $purchase = $purchaseQuery->findOrFail($id);
         $vendorsQuery = Vendor::orderBy('name');
         $this->applyTenantScope($vendorsQuery, 'vendors');
         $vendors = $vendorsQuery->get();
@@ -367,7 +381,10 @@ public function show($id)
     public function update(Request $request, $id)
     {
         $activeBranch = $this->getActiveBranchContext();
-        $purchase = $this->applyTenantScope(Purchase::query(), 'purchases')->findOrFail($id);
+        $purchaseQuery = Purchase::query();
+        $this->applyTenantScope($purchaseQuery, 'purchases');
+        $this->applyBranchScope($purchaseQuery, 'purchases');
+        $purchase = $purchaseQuery->findOrFail($id);
         
         $validated = $request->validate([
             'vendor_id' => 'nullable|exists:vendors,id',
@@ -514,7 +531,10 @@ public function show($id)
      */
     public function destroy($id)
     {
-        $purchase = $this->applyTenantScope(Purchase::query(), 'purchases')->findOrFail($id);
+        $purchaseQuery = Purchase::query();
+        $this->applyTenantScope($purchaseQuery, 'purchases');
+        $this->applyBranchScope($purchaseQuery, 'purchases');
+        $purchase = $purchaseQuery->findOrFail($id);
         
         DB::beginTransaction();
         
@@ -943,10 +963,9 @@ public function show($id)
     {
         $activeBranch = $this->getActiveBranchContext();
         $query = Purchase::with('vendor');
+        $this->applyTenantScope($query, 'purchases');
 
-        if (!empty($activeBranch['name']) && Schema::hasColumn('purchases', 'branch_name')) {
-            $query->where('branch_name', $activeBranch['name']);
-        }
+        $this->applyBranchScope($query, 'purchases');
 
         // Search by purchase number
         if ($request->filled('search')) {
@@ -988,7 +1007,15 @@ public function show($id)
                 ])
                 ->whereRaw("LOWER(COALESCE(inventory_history.type, '')) = 'in'");
 
-            if (!empty($activeBranch['name']) && Schema::hasColumn('inventory_history', 'branch_name')) {
+            if (Schema::hasColumn('products', 'company_id') && (int) (auth()->user()?->company_id ?? 0) > 0) {
+                $historyQuery->where('products.company_id', (int) auth()->user()->company_id);
+            } elseif (Schema::hasColumn('products', 'user_id') && auth()->id()) {
+                $historyQuery->where('products.user_id', auth()->id());
+            }
+
+            if (!empty($activeBranch['id']) && Schema::hasColumn('inventory_history', 'branch_id')) {
+                $historyQuery->where('inventory_history.branch_id', $activeBranch['id']);
+            } elseif (!empty($activeBranch['name']) && Schema::hasColumn('inventory_history', 'branch_name')) {
                 $historyQuery->where('inventory_history.branch_name', $activeBranch['name']);
             }
 
