@@ -448,7 +448,8 @@ class CustomerController extends Controller
             }
 
             try {
-                while (($row = fgetcsv($handle)) !== false) {
+                $delimiter = $this->detectCsvDelimiter($handle);
+                while (($row = fgetcsv($handle, 0, $delimiter)) !== false) {
                     yield $row;
                 }
             } finally {
@@ -484,5 +485,30 @@ class CustomerController extends Controller
             $spreadsheet->disconnectWorksheets();
             unset($spreadsheet);
         }
+    }
+
+    private function detectCsvDelimiter($handle): string
+    {
+        $firstLine = fgets($handle);
+        if ($firstLine === false) {
+            rewind($handle);
+            return ',';
+        }
+
+        $candidates = [',', ';', "\t", '|'];
+        $bestDelimiter = ',';
+        $bestScore = -1;
+
+        foreach ($candidates as $candidate) {
+            $score = substr_count($firstLine, $candidate);
+            if ($score > $bestScore) {
+                $bestScore = $score;
+                $bestDelimiter = $candidate;
+            }
+        }
+
+        rewind($handle);
+
+        return $bestDelimiter;
     }
 }
