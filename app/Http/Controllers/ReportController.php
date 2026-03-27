@@ -521,8 +521,10 @@ public function purchase_report(Request $request)
             ]);
             $totalAmount = 0;
             $activeBranch = $this->getActiveBranchContext();
+            $methodOptions = collect();
+            $statusOptions = collect();
 
-            return view('Reports.Reports.payment-report', compact('payments', 'totalAmount', 'activeBranch'));
+            return view('Reports.Reports.payment-report', compact('payments', 'totalAmount', 'activeBranch', 'methodOptions', 'statusOptions'));
         }
 
         $query = Payment::with($this->paymentReportRelations());
@@ -535,19 +537,40 @@ public function purchase_report(Request $request)
             $query->whereDate('created_at', '<=', $request->to_date);
         }
 
+        if ($request->filled('method')) {
+            $query->where('method', $request->method);
+        }
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
         $this->scopePaymentsForActor($query);
         $this->applyPaymentBranchFilter($query, 'payments');
+
+        $methodOptions = Payment::query()
+            ->select('method')
+            ->whereNotNull('method')
+            ->distinct()
+            ->orderBy('method')
+            ->pluck('method');
+        $statusOptions = Payment::query()
+            ->select('status')
+            ->whereNotNull('status')
+            ->distinct()
+            ->orderBy('status')
+            ->pluck('status');
 
         $totalAmount = (clone $query)->sum('amount');
         
         // Increased to 25 for better report viewing, preserved filters
-        $payments = $query->latest()->paginate(25)->withQueryString();
+        $payments = $query->orderBy('created_at', 'asc')->paginate(25)->withQueryString();
         $payments->getCollection()->transform(function ($payment) {
+            $payment->resolved_status = $this->resolvePaymentStatus($payment);
             $payment->resolved_channel = $this->resolvePaymentChannel($payment);
             return $payment;
         });
 
-        return view('Reports.Reports.payment-report', compact('payments', 'totalAmount', 'activeBranch'));
+        return view('Reports.Reports.payment-report', compact('payments', 'totalAmount', 'activeBranch', 'methodOptions', 'statusOptions'));
     }
         public function process_report_data(Request $request)
     {
@@ -875,12 +898,24 @@ private function paymentReportRelations(): array
                 'receivables' => collect(),
                 'totalDue' => 0,
                 'activeBranch' => $this->getActiveBranchContext(),
+                'filters' => [
+                    'start_date' => $request->input('start_date'),
+                    'end_date' => $request->input('end_date'),
+                    'type' => $request->input('type', 'all'),
+                ],
             ]);
         }
 
         $salesQuery = Sale::query()
             ->whereNotNull('customer_id')
             ->where('balance', '>', 0);
+
+        if ($request->filled('start_date')) {
+            $salesQuery->whereDate('created_at', '>=', $request->start_date);
+        }
+        if ($request->filled('end_date')) {
+            $salesQuery->whereDate('created_at', '<=', $request->end_date);
+        }
 
         $this->applyTenantScope($salesQuery, 'sales');
         $this->applySaleBranchFilter($salesQuery, 'sales');
@@ -942,12 +977,24 @@ private function paymentReportRelations(): array
             ->map(fn ($row) => (object) $row)
             ->values();
 
+        $typeFilter = strtolower(trim((string) $request->input('type', 'all')));
+        if ($typeFilter === 'invoices') {
+            $receivables = $receivables->filter(fn ($row) => $row->invoice_count > 0)->values();
+        } elseif ($typeFilter === 'opening') {
+            $receivables = $receivables->filter(fn ($row) => $row->invoice_count === 0)->values();
+        }
+
         $totalDue = (float) $receivables->sum('total_due') + (float) $receivables->sum('opening_balance');
 
         return view('Reports.Reports.accounts-receivable', [
             'receivables' => $receivables,
             'totalDue' => $totalDue,
             'activeBranch' => $this->getActiveBranchContext(),
+            'filters' => [
+                'start_date' => $request->input('start_date'),
+                'end_date' => $request->input('end_date'),
+                'type' => $typeFilter ?: 'all',
+            ],
         ]);
     }
 
@@ -1228,7 +1275,7 @@ public function destroy($id)
             }
 
             $salesreports = $query
-                ->orderByDesc('SoldAmount')
+                ->orderBy('DueDate', 'asc')
                 ->orderBy('products.name')
                 ->paginate(15)
                 ->withQueryString();

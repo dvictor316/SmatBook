@@ -111,7 +111,25 @@
                             <label class="form-label small fw-bold">{{ __('To Date') }}</label>
                             <input type="date" name="to_date" class="form-control" value="{{ request('to_date') }}">
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">{{ __('Method') }}</label>
+                            <select name="method" class="form-select">
+                                <option value="">All Methods</option>
+                                @foreach(($methodOptions ?? []) as $method)
+                                    <option value="{{ $method }}" {{ request('method') === $method ? 'selected' : '' }}>{{ $method }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">{{ __('Status') }}</label>
+                            <select name="status" class="form-select">
+                                <option value="">All Statuses</option>
+                                @foreach(($statusOptions ?? []) as $status)
+                                    <option value="{{ $status }}" {{ request('status') === $status ? 'selected' : '' }}>{{ $status }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-12 d-flex gap-2">
                             <button type="submit" class="btn btn-dark btn-sm px-4">
                                 <i class="fas fa-filter me-1"></i> {{ __('Filter Results') }}
                             </button>
@@ -135,6 +153,7 @@
                                 <th>{{ __('Invoice') }}</th>
                                 <th>{{ __('Date & Time') }}</th>
                                 <th>{{ __('Amount') }}</th>
+                                <th>{{ __('Running Total') }}</th>
                                 <th>{{ __('Method') }}</th>
                                 <th>{{ __('Channel') }}</th>
                                 <th>{{ __('Status') }}</th>
@@ -142,7 +161,9 @@
                             </tr>
                         </thead>
                         <tbody>
+                            @php $runningTotal = 0; @endphp
                             @forelse($payments as $payment)
+                            @php $runningTotal += (float) ($payment->amount ?? 0); @endphp
                             <tr>
                                 <td class="fw-bold text-dark">{{ $payment->payment_id }}</td>
                                 <td>
@@ -155,6 +176,7 @@
                                     <div class="small text-muted">{{ \Carbon\Carbon::parse($payment->created_at)->format('h:i A') }}</div>
                                 </td>
                                 <td class="fw-bold text-dark money-cell">₦{{ number_format($payment->amount, 2) }}</td>
+                                <td class="fw-bold text-primary money-cell">₦{{ number_format($runningTotal, 2) }}</td>
                                 <td>
                                     <span class="text-secondary small">
                                         <i class="fas fa-credit-card me-1"></i> {{ $payment->method }}
@@ -183,7 +205,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="8" class="text-center py-5">
+                                <td colspan="9" class="text-center py-5">
                                     <div class="text-muted">
                                         <i class="fas fa-circle-exclamation display-4 d-block mb-3"></i>
                                         <p>{{ __('No payment records found for the selected range.') }}</p>
@@ -195,12 +217,12 @@
                         @if($paymentsExists)
                         <tfoot class="table-light fw-bold">
                             <tr>
-                                <td colspan="4" class="text-end text-uppercase small text-muted">{{ __('Page Total') }}</td>
+                                <td colspan="5" class="text-end text-uppercase small text-muted">{{ __('Page Total') }}</td>
                                 <td class="text-primary money-cell">₦{{ number_format($pageTotal, 2) }}</td>
                                 <td colspan="3"></td>
                             </tr>
                             <tr class="table-primary border-top">
-                                <td colspan="4" class="text-end text-uppercase small">{{ __('Filtered Grand Total') }}</td>
+                                <td colspan="5" class="text-end text-uppercase small">{{ __('Filtered Grand Total') }}</td>
                                 <td class="text-dark money-cell">₦{{ number_format($totalAmount, 2) }}</td>
                                 <td colspan="3"></td>
                             </tr>

@@ -86,6 +86,27 @@
                 <div class="col-sm-12">
                     <div class="card receivable-table-card">
                         <div class="card-body">
+                            <form method="GET" action="{{ route('reports.accounts-receivable') }}" class="row g-3 mb-3">
+                                <div class="col-md-3">
+                                    <label class="form-label">Filter Type</label>
+                                    <select name="type" class="form-select">
+                                        <option value="all" {{ ($filters['type'] ?? 'all') === 'all' ? 'selected' : '' }}>All Receivables</option>
+                                        <option value="invoices" {{ ($filters['type'] ?? '') === 'invoices' ? 'selected' : '' }}>Customers With Invoices</option>
+                                        <option value="opening" {{ ($filters['type'] ?? '') === 'opening' ? 'selected' : '' }}>Opening Balance Only</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Start Date</label>
+                                    <input type="date" name="start_date" class="form-control" value="{{ $filters['start_date'] ?? '' }}">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">End Date</label>
+                                    <input type="date" name="end_date" class="form-control" value="{{ $filters['end_date'] ?? '' }}">
+                                </div>
+                                <div class="col-md-3 d-flex align-items-end gap-2">
+                                    <button type="submit" class="btn btn-primary w-100">Apply</button>
+                                </div>
+                            </form>
                             <div class="table-responsive">
                                 <table class="table table-center table-hover">
                                     <thead class="thead-light">
@@ -98,11 +119,14 @@
                                             <th class="text-end">Paid</th>
                                             <th class="text-end">Opening Balance</th>
                                             <th class="text-end">Balance Due</th>
+                                            <th class="text-end">Running Total</th>
                                             <th class="text-end">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
+                                        @php $runningTotal = 0; @endphp
                                         @forelse ($receivables as $row)
+                                            @php $runningTotal += (float) ($row->total_due + $row->opening_balance); @endphp
                                             <tr>
                                                 <td>{{ $loop->iteration }}</td>
                                                 <td class="fw-semibold">{{ $row->customer_name }}</td>
@@ -115,13 +139,14 @@
                                                 <td class="text-end">{{ $currencySymbol }}{{ number_format($row->total_paid, 2) }}</td>
                                                 <td class="text-end">{{ $currencySymbol }}{{ number_format($row->opening_balance, 2) }}</td>
                                                 <td class="text-end fw-bold text-danger">{{ $currencySymbol }}{{ number_format($row->total_due + $row->opening_balance, 2) }}</td>
+                                                <td class="text-end fw-bold text-primary">{{ $currencySymbol }}{{ number_format($runningTotal, 2) }}</td>
                                                 <td class="text-end">
                                                     <a href="{{ route('reports.customer-statement', $row->customer_id) }}" class="btn btn-sm btn-outline-primary">View Statement</a>
                                                 </td>
                                             </tr>
                                         @empty
                                             <tr>
-                                                <td colspan="9" class="text-center text-muted py-4">No outstanding customer balances found.</td>
+                                                <td colspan="10" class="text-center text-muted py-4">No outstanding customer balances found.</td>
                                             </tr>
                                         @endforelse
                                     </tbody>

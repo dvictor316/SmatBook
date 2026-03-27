@@ -136,19 +136,23 @@
                                             <th>{{ __('SKU') }}</th>
                                             <th>{{ __('Category') }}</th>
                                             <th>{{ __('Sold Amount') }}</th>
+                                            <th>{{ __('Running Total') }}</th>
                                             <th class="text-center">{{ __('Sold Qty') }}</th>
                                             <th class="text-center">{{ __('Instock Qty') }}</th>
                                             <th>{{ __('Date') }}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
+                                        @php $runningTotal = 0; @endphp
                                         @foreach ($salesreports as $report)
+                                            @php $runningTotal += (float) $report->SoldAmount; @endphp
                                             <tr>
                                                 <td>{{ $loop->iteration }}</td>
                                                 <td class="fw-bold">{{ $report->Product }}</td>
                                                 <td><span class="badge badge-soft-secondary">{{ $report->SKU }}</span></td>
                                                 <td>{{ $report->Category }}</td>
                                                 <td>${{ number_format($report->SoldAmount, 2) }}</td>
+                                                <td class="fw-bold text-primary">${{ number_format($runningTotal, 2) }}</td>
                                                 <td class="text-center">{{ $report->SoldQty }}</td>
                                                 <td class="text-center">
                                                     <span class="badge {{ ($report->InstockQty <= 10) ? 'bg-danger-light text-danger' : 'bg-success-light text-success' }}">
