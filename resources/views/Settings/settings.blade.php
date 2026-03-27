@@ -50,7 +50,7 @@
                                 <div class="upload-profile me-2">
                                     <div class="profile-img">
                                         <img id="blah" class="avatar"
-                                            src="{{ URL::asset($settings->site_logo ?? '/assets/img/logos.png') }}"
+                                            src="{{ \App\Models\Setting::mediaUrl($settings->site_logo ?? null, asset('assets/img/logos.png')) }}"
                                             alt="profile-img">
                                     </div>
                                 </div>

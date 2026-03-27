@@ -87,8 +87,11 @@
                         <form action="{{ route('settings.update') }}" method="POST" enctype="multipart/form-data">
                             @csrf
                         @php
-                            $invoiceLogo = !empty($settings['invoice_logo']) ? asset($settings['invoice_logo']) : (!empty($settings['site_logo']) ? asset($settings['site_logo']) : asset('assets/img/logos.png'));
-                            $digitalSignature = !empty($settings['digital_signature']) ? asset($settings['digital_signature']) : null;
+                            $invoiceLogo = \App\Models\Setting::mediaUrl(
+                                $settings['invoice_logo'] ?? ($settings['site_logo'] ?? null),
+                                asset('assets/img/logos.png')
+                            );
+                            $digitalSignature = \App\Models\Setting::mediaUrl($settings['digital_signature'] ?? null);
                         @endphp
                         <div class="row">
                             <div class="col-lg-6 col-12">

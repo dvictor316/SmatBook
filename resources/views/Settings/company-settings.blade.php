@@ -66,10 +66,10 @@
                             </div>
 
                             <form action="{{ route('settings.update') }}" method="POST" enctype="multipart/form-data">
-                                @csrf
+                            @csrf
                             @php
-                                $siteLogo = !empty($settings['site_logo']) ? asset($settings['site_logo']) : asset('assets/img/logos.png');
-                                $faviconLogo = !empty($settings['favicon']) ? asset($settings['favicon']) : asset('assets/img/favicon.png');
+                                $siteLogo = \App\Models\Setting::mediaUrl($settings['site_logo'] ?? null, asset('assets/img/logos.png'));
+                                $faviconLogo = \App\Models\Setting::mediaUrl($settings['favicon'] ?? null, asset('assets/img/favicon.png'));
                             @endphp
                             <div class="row">
                                 <div class="col-lg-6 col-12">

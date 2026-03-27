@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Storage;
 
 class Setting extends Model
 {
@@ -54,5 +55,28 @@ class Setting extends Model
             ['key' => $key],
             ['value' => 'enc:' . Crypt::encryptString($value)]
         );
+    }
+
+    public static function mediaUrl(?string $path, ?string $fallback = null): ?string
+    {
+        $path = trim((string) $path);
+
+        if ($path === '') {
+            return $fallback;
+        }
+
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://') || str_starts_with($path, '//')) {
+            return $path;
+        }
+
+        if (str_starts_with($path, 'storage/')) {
+            return asset($path);
+        }
+
+        if (Storage::disk('public')->exists(ltrim($path, '/'))) {
+            return Storage::disk('public')->url(ltrim($path, '/'));
+        }
+
+        return asset(ltrim($path, '/'));
     }
 }

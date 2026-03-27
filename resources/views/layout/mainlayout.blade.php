@@ -2,7 +2,10 @@
     use Illuminate\Support\Facades\Route;
     $route = Route::currentRouteName();
     $siteTitle = \App\Models\Setting::where('key', 'company_name')->value('value') ?: 'SmartProbook';
-    $faviconPath = \App\Models\Setting::where('key', 'favicon')->value('value');
+    $faviconPath = \App\Models\Setting::mediaUrl(
+        \App\Models\Setting::where('key', 'favicon')->value('value'),
+        asset('assets/img/logos.png')
+    );
     $requestPath = request()->path();
     $isReportWorkspace = request()->routeIs('reports.*')
         || request()->is('reports*')
@@ -69,7 +72,7 @@
         })();
     </script>
 
-    <link rel="shortcut icon" href="{{ asset('assets/img/logos.png') }}">
+    <link rel="shortcut icon" href="{{ $faviconPath }}">
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.0/css/all.min.css" 
           integrity="sha512-Avb2QiuDEEvB4bZJYdft2mNjVShBftLdPG8FJ0V7irTLQ8Uo0qcPxh4Plq7G5tGm0rU+1SPhVotteLpBERwTkw==" 
