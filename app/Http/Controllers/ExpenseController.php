@@ -19,31 +19,49 @@ use RuntimeException;
 
 class ExpenseController extends Controller
 {
+    private function applyTenantScope($query, string $table)
+    {
+        $companyId = (int) (Auth::user()?->company_id ?? 0);
+        $userId = (int) (Auth::id() ?? 0);
+
+        if ($companyId > 0 && Schema::hasColumn($table, 'company_id')) {
+            $query->where("{$table}.company_id", $companyId);
+        } elseif ($userId > 0 && Schema::hasColumn($table, 'user_id')) {
+            $query->where("{$table}.user_id", $userId);
+        } elseif ($userId > 0 && Schema::hasColumn($table, 'created_by')) {
+            $query->where("{$table}.created_by", $userId);
+        }
+
+        return $query;
+    }
+
     public function index()
     {
         $this->syncBanksToAssetAccounts();
 
-        $expenses = Expense::with('creator')->latest()->paginate(15);
+        $expensesQuery = Expense::with('creator')->latest();
+        $this->applyTenantScope($expensesQuery, 'expenses');
+        $expenses = $expensesQuery->paginate(15);
         $expenseAccounts = Schema::hasTable('accounts')
-            ? Account::where('type', 'Expense')->orderBy('name')->get()
+            ? $this->applyTenantScope(Account::where('type', 'Expense')->orderBy('name'), 'accounts')->get()
             : collect();
         $assetAccounts = Schema::hasTable('accounts')
-            ? Account::where('type', 'Asset')->orderBy('name')->get()
+            ? $this->applyTenantScope(Account::where('type', 'Asset')->orderBy('name'), 'accounts')->get()
             : collect();
         $categories = Schema::hasTable('categories')
-            ? Category::orderBy('name')->get(['id', 'name'])
+            ? $this->applyTenantScope(Category::orderBy('name'), 'categories')->get(['id', 'name'])
             : collect();
 
         $partyOptions = collect();
         if (Schema::hasTable('vendors') && Schema::hasColumn('vendors', 'name')) {
-            $partyOptions = $partyOptions->merge(Vendor::query()->orderBy('name')->pluck('name'));
+            $partyOptions = $partyOptions->merge($this->applyTenantScope(Vendor::query()->orderBy('name'), 'vendors')->pluck('name'));
         }
         if (Schema::hasTable('customers') && Schema::hasColumn('customers', 'customer_name')) {
-            $partyOptions = $partyOptions->merge(Customer::query()->orderBy('customer_name')->pluck('customer_name'));
+            $partyOptions = $partyOptions->merge($this->applyTenantScope(Customer::query()->orderBy('customer_name'), 'customers')->pluck('customer_name'));
         }
         if (Schema::hasColumn('expenses', 'company_name')) {
             $partyOptions = $partyOptions->merge(
-                Expense::query()->whereNotNull('company_name')->orderBy('company_name')->pluck('company_name')
+                $this->applyTenantScope(Expense::query()->whereNotNull('company_name')->orderBy('company_name'), 'expenses')->pluck('company_name')
             );
         }
         $partyOptions = $partyOptions->filter()->unique()->values();
@@ -70,8 +88,7 @@ class ExpenseController extends Controller
             $paymentAccount = Account::findOrFail($request->payment_account_id);
             $nextId = (int) Expense::max('id') + 1;
             $expenseId = 'EXP-' . date('Y') . '-' . str_pad((string) $nextId, 5, '0', STR_PAD_LEFT);
-
-            $expense = Expense::create([
+            $payload = [
                 'expense_id'     => $expenseId,
                 'company_name'   => $request->company_name,
                 'reference'      => $request->reference,
@@ -85,7 +102,16 @@ class ExpenseController extends Controller
                 'status'         => $request->status,
                 'created_by'     => Auth::id(),
                 'image'          => $this->handleFileUpload($request),
-            ]);
+            ];
+
+            if (Schema::hasColumn('expenses', 'company_id')) {
+                $payload['company_id'] = Auth::user()?->company_id ?: null;
+            }
+            if (Schema::hasColumn('expenses', 'user_id')) {
+                $payload['user_id'] = Auth::id();
+            }
+
+            $expense = Expense::create($payload);
 
             if ($request->status === 'Paid') {
                 Transaction::create([
@@ -151,6 +177,8 @@ class ExpenseController extends Controller
 
     public function update(Request $request, Expense $expense)
     {
+        $expense = $this->applyTenantScope(Expense::query(), 'expenses')->findOrFail($expense->id);
+
         $validated = $request->validate([
             'company_name' => 'required|string|max:191',
             'email' => 'nullable|email|max:191',
@@ -226,6 +254,8 @@ class ExpenseController extends Controller
 
     public function destroy(Expense $expense)
     {
+        $expense = $this->applyTenantScope(Expense::query(), 'expenses')->findOrFail($expense->id);
+
         Transaction::where('related_id', $expense->id)
             ->where('related_type', Expense::class)
             ->where('transaction_type', 'Expense')
@@ -264,32 +294,47 @@ class ExpenseController extends Controller
 
         return DB::transaction(function () use ($validated) {
             if (Schema::hasTable('banks')) {
+                $bankAttributes = [
+                    'name' => $validated['name'],
+                    'account_number' => $validated['account_number'] ?? ('N/A-' . strtolower(preg_replace('/[^a-z0-9]/i', '', $validated['name']))),
+                ];
+                $bankValues = [
+                    'branch' => null,
+                    'balance' => (float) ($validated['balance'] ?? 0),
+                ];
+                if (Schema::hasColumn('banks', 'company_id')) {
+                    $bankAttributes['company_id'] = Auth::user()?->company_id ?: null;
+                }
+                if (Schema::hasColumn('banks', 'user_id')) {
+                    $bankValues['user_id'] = Auth::id();
+                }
+
                 Bank::updateOrCreate(
-                    [
-                        'name' => $validated['name'],
-                        'account_number' => $validated['account_number'] ?? ('N/A-' . strtolower(preg_replace('/[^a-z0-9]/i', '', $validated['name']))),
-                    ],
-                    [
-                        'branch' => null,
-                        'balance' => (float) ($validated['balance'] ?? 0),
-                    ]
+                    $bankAttributes,
+                    $bankValues
                 );
             }
 
-            Account::firstOrCreate(
-                [
-                    'name' => $validated['name'],
-                    'type' => 'Asset',
-                ],
-                [
-                    'code' => $this->generateAccountCode('AST'),
-                    'sub_type' => 'Current Asset',
-                    'description' => 'Bank/Cash account created from expense quick add',
-                    'opening_balance' => (float) ($validated['balance'] ?? 0),
-                    'current_balance' => (float) ($validated['balance'] ?? 0),
-                    'is_active' => true,
-                ]
-            );
+            $accountAttributes = [
+                'name' => $validated['name'],
+                'type' => 'Asset',
+            ];
+            $accountValues = [
+                'code' => $this->generateAccountCode('AST'),
+                'sub_type' => 'Current Asset',
+                'description' => 'Bank/Cash account created from expense quick add',
+                'opening_balance' => (float) ($validated['balance'] ?? 0),
+                'current_balance' => (float) ($validated['balance'] ?? 0),
+                'is_active' => true,
+            ];
+            if (Schema::hasColumn('accounts', 'company_id')) {
+                $accountAttributes['company_id'] = Auth::user()?->company_id ?: null;
+            }
+            if (Schema::hasColumn('accounts', 'user_id')) {
+                $accountValues['user_id'] = Auth::id();
+            }
+
+            Account::firstOrCreate($accountAttributes, $accountValues);
 
             return redirect()->route('expenses.index')->with('success', 'Bank/payment source added successfully.');
         });
@@ -306,25 +351,37 @@ class ExpenseController extends Controller
         ]);
 
         return DB::transaction(function () use ($validated) {
-            $category = Category::firstOrCreate(
-                ['name' => $validated['name']],
-                ['description' => null, 'image' => null, 'status' => 1]
-            );
+            $categoryAttributes = ['name' => $validated['name']];
+            $categoryValues = ['description' => null, 'image' => null, 'status' => 1];
+            if (Schema::hasColumn('categories', 'company_id')) {
+                $categoryAttributes['company_id'] = Auth::user()?->company_id ?: null;
+            }
+            if (Schema::hasColumn('categories', 'user_id')) {
+                $categoryValues['user_id'] = Auth::id();
+            }
 
-            Account::firstOrCreate(
-                [
-                    'name' => $category->name,
-                    'type' => 'Expense',
-                ],
-                [
-                    'code' => $this->generateAccountCode('EXP'),
-                    'sub_type' => null,
-                    'description' => 'Expense account created from category quick add',
-                    'opening_balance' => 0,
-                    'current_balance' => 0,
-                    'is_active' => true,
-                ]
-            );
+            $category = Category::firstOrCreate($categoryAttributes, $categoryValues);
+
+            $accountAttributes = [
+                'name' => $category->name,
+                'type' => 'Expense',
+            ];
+            $accountValues = [
+                'code' => $this->generateAccountCode('EXP'),
+                'sub_type' => null,
+                'description' => 'Expense account created from category quick add',
+                'opening_balance' => 0,
+                'current_balance' => 0,
+                'is_active' => true,
+            ];
+            if (Schema::hasColumn('accounts', 'company_id')) {
+                $accountAttributes['company_id'] = Auth::user()?->company_id ?: null;
+            }
+            if (Schema::hasColumn('accounts', 'user_id')) {
+                $accountValues['user_id'] = Auth::id();
+            }
+
+            Account::firstOrCreate($accountAttributes, $accountValues);
 
             return redirect()->route('expenses.index')->with('success', 'Expense category added successfully.');
         });
@@ -340,14 +397,14 @@ class ExpenseController extends Controller
             }
 
             $categoryId = (int) str_replace('cat:', '', $selector);
-            $category = Category::findOrFail($categoryId);
+            $category = $this->applyTenantScope(Category::query(), 'categories')->findOrFail($categoryId);
 
-            $account = Account::where('type', 'Expense')
+            $account = $this->applyTenantScope(Account::where('type', 'Expense'), 'accounts')
                 ->whereRaw('LOWER(name) = ?', [strtolower((string) $category->name)])
                 ->first();
 
             if (!$account) {
-                $account = Account::create([
+                $payload = [
                     'code' => $this->generateExpenseAccountCode(),
                     'name' => (string) $category->name,
                     'type' => 'Expense',
@@ -356,18 +413,25 @@ class ExpenseController extends Controller
                     'opening_balance' => 0,
                     'current_balance' => 0,
                     'is_active' => true,
-                ]);
+                ];
+                if (Schema::hasColumn('accounts', 'company_id')) {
+                    $payload['company_id'] = Auth::user()?->company_id ?: null;
+                }
+                if (Schema::hasColumn('accounts', 'user_id')) {
+                    $payload['user_id'] = Auth::id();
+                }
+                $account = Account::create($payload);
             }
 
             return [$account, $categoryId];
         }
 
         $accountId = (int) $selector;
-        $account = Account::where('id', $accountId)->where('type', 'Expense')->firstOrFail();
+        $account = $this->applyTenantScope(Account::where('id', $accountId)->where('type', 'Expense'), 'accounts')->firstOrFail();
 
         $categoryId = null;
         if (Schema::hasTable('categories')) {
-            $matchedCategory = Category::whereRaw('LOWER(name) = ?', [strtolower((string) $account->name)])->first();
+            $matchedCategory = $this->applyTenantScope(Category::whereRaw('LOWER(name) = ?', [strtolower((string) $account->name)]), 'categories')->first();
             $categoryId = $matchedCategory?->id;
         }
 
@@ -378,7 +442,7 @@ class ExpenseController extends Controller
     {
         do {
             $code = 'EXP-' . str_pad((string) random_int(1, 99999), 5, '0', STR_PAD_LEFT);
-        } while (Account::where('code', $code)->exists());
+        } while ($this->applyTenantScope(Account::where('code', $code), 'accounts')->exists());
 
         return $code;
     }
@@ -387,7 +451,7 @@ class ExpenseController extends Controller
     {
         do {
             $code = strtoupper($prefix) . '-' . str_pad((string) random_int(1, 99999), 5, '0', STR_PAD_LEFT);
-        } while (Account::where('code', $code)->exists());
+        } while ($this->applyTenantScope(Account::where('code', $code), 'accounts')->exists());
 
         return $code;
     }
@@ -398,23 +462,29 @@ class ExpenseController extends Controller
             return;
         }
 
-        $banks = Bank::query()->get(['name', 'balance']);
+        $banks = $this->applyTenantScope(Bank::query(), 'banks')->get(['name', 'balance']);
         foreach ($banks as $bank) {
             if (!$bank->name) {
                 continue;
             }
 
-            Account::firstOrCreate(
-                ['name' => $bank->name, 'type' => 'Asset'],
-                [
-                    'code' => $this->generateAccountCode('AST'),
-                    'sub_type' => 'Current Asset',
-                    'description' => 'Auto-synced from banks table',
-                    'opening_balance' => (float) ($bank->balance ?? 0),
-                    'current_balance' => (float) ($bank->balance ?? 0),
-                    'is_active' => true,
-                ]
-            );
+            $accountAttributes = ['name' => $bank->name, 'type' => 'Asset'];
+            $accountValues = [
+                'code' => $this->generateAccountCode('AST'),
+                'sub_type' => 'Current Asset',
+                'description' => 'Auto-synced from banks table',
+                'opening_balance' => (float) ($bank->balance ?? 0),
+                'current_balance' => (float) ($bank->balance ?? 0),
+                'is_active' => true,
+            ];
+            if (Schema::hasColumn('accounts', 'company_id')) {
+                $accountAttributes['company_id'] = Auth::user()?->company_id ?: null;
+            }
+            if (Schema::hasColumn('accounts', 'user_id')) {
+                $accountValues['user_id'] = Auth::id();
+            }
+
+            Account::firstOrCreate($accountAttributes, $accountValues);
         }
     }
 
@@ -450,7 +520,7 @@ class ExpenseController extends Controller
      */
     public function getExpenses(Request $request)
     {
-        $expenses = Expense::with('creator')->latest()->get();
+        $expenses = $this->applyTenantScope(Expense::with('creator')->latest(), 'expenses')->get();
         
         return response()->json([
             'data' => $expenses

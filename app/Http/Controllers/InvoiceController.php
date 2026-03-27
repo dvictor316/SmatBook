@@ -14,6 +14,20 @@ use Carbon\Carbon;
 
 class InvoiceController extends Controller
 {
+    private function applyTenantScope($query, string $table)
+    {
+        $companyId = (int) (auth()->user()?->company_id ?? 0);
+        $userId = (int) (auth()->id() ?? 0);
+
+        if ($companyId > 0 && Schema::hasColumn($table, 'company_id')) {
+            $query->where("{$table}.company_id", $companyId);
+        } elseif ($userId > 0 && Schema::hasColumn($table, 'user_id')) {
+            $query->where("{$table}.user_id", $userId);
+        }
+
+        return $query;
+    }
+
     /**
      * Display a listing of invoices with statistics and company branding.
      */
@@ -33,6 +47,7 @@ class InvoiceController extends Controller
     private function renderInvoiceView(Request $request, $statusFilter = null)
     {
         $query = Sale::with('customer')->latest();
+        $this->applyTenantScope($query, 'sales');
 
         $effectiveStatus = $statusFilter ?: trim((string) $request->input('status', ''));
         if ($effectiveStatus !== '') {
@@ -63,7 +78,7 @@ class InvoiceController extends Controller
         $invoices = $query->paginate(15)->withQueryString();
         $invoicescards = $this->getInvoiceStats();
         
-        $latestSale = Sale::latest()->first();
+        $latestSale = $this->applyTenantScope(Sale::query()->latest(), 'sales')->first();
         $logo = ($latestSale && isset($latestSale->company_logo)) ? asset('storage/' . $latestSale->company_logo) : null;
 
         return view('Sales.Invoices.invoices', compact('invoices', 'invoicescards', 'logo'));
@@ -77,29 +92,29 @@ class InvoiceController extends Controller
         return [
             [
                 'title' => 'All Invoices',
-                'amount' => Sale::sum('total'), 
-                'count' => Sale::count(),
+                'amount' => $this->applyTenantScope(Sale::query(), 'sales')->sum('total'), 
+                'count' => $this->applyTenantScope(Sale::query(), 'sales')->count(),
                 'icon' => 'file-text',
                 'class' => 'bg-primary-light'
             ],
             [
                 'title' => 'Paid Invoices',
-                'amount' => Sale::where('payment_status', 'paid')->sum('total'),
-                'count' => Sale::where('payment_status', 'paid')->count(),
+                'amount' => $this->applyTenantScope(Sale::where('payment_status', 'paid'), 'sales')->sum('total'),
+                'count' => $this->applyTenantScope(Sale::where('payment_status', 'paid'), 'sales')->count(),
                 'icon' => 'check-square',
                 'class' => 'bg-success-light'
             ],
             [
                 'title' => 'Unpaid Invoices',
-                'amount' => Sale::where('payment_status', 'unpaid')->sum('total'),
-                'count' => Sale::where('payment_status', 'unpaid')->count(),
+                'amount' => $this->applyTenantScope(Sale::where('payment_status', 'unpaid'), 'sales')->sum('total'),
+                'count' => $this->applyTenantScope(Sale::where('payment_status', 'unpaid'), 'sales')->count(),
                 'icon' => 'clock',
                 'class' => 'bg-warning-light'
             ],
             [
                 'title' => 'Total Received',
-                'amount' => Sale::sum('amount_paid'), 
-                'count' => Sale::where('amount_paid', '>', 0)->count(),
+                'amount' => $this->applyTenantScope(Sale::query(), 'sales')->sum('amount_paid'), 
+                'count' => $this->applyTenantScope(Sale::where('amount_paid', '>', 0), 'sales')->count(),
                 'icon' => 'dollar-sign',
                 'class' => 'bg-info-light'
             ]
@@ -111,8 +126,8 @@ class InvoiceController extends Controller
      */
     public function create()
     {
-        $customers = Customer::all();
-        $products = Product::all();
+        $customers = $this->applyTenantScope(Customer::query(), 'customers')->get();
+        $products = $this->applyTenantScope(Product::query(), 'products')->get();
         return view('Sales.Invoices.create-invoices', compact('customers', 'products'));
     }
 
@@ -189,8 +204,8 @@ class InvoiceController extends Controller
      */
     public function edit($id)
     {
-        $invoice = Sale::findOrFail($id);
-        $customers = Customer::all();
+        $invoice = $this->applyTenantScope(Sale::query(), 'sales')->findOrFail($id);
+        $customers = $this->applyTenantScope(Customer::query(), 'customers')->get();
         return view('Sales.Invoices.edit', compact('invoice', 'customers'));
     }
 
@@ -201,7 +216,7 @@ class InvoiceController extends Controller
 
     public function update(Request $request, $id)
     {
-        $sale = Sale::findOrFail($id);
+        $sale = $this->applyTenantScope(Sale::query(), 'sales')->findOrFail($id);
         
         $request->validate([
             'customer_name'  => 'required',
@@ -225,7 +240,7 @@ class InvoiceController extends Controller
      */
     public function show($id)
     {
-        $sale = Sale::with(['customer', 'items.product'])->findOrFail($id);
+        $sale = $this->applyTenantScope(Sale::with(['customer', 'items.product']), 'sales')->findOrFail($id);
         return view('Sales.Invoices.invoice-details-admin', compact('sale'));
     }
 
@@ -236,7 +251,7 @@ class InvoiceController extends Controller
 
     public function invoice_details($id)
     {
-        $sale = Sale::with(['customer', 'items.product'])->findOrFail($id);
+        $sale = $this->applyTenantScope(Sale::with(['customer', 'items.product']), 'sales')->findOrFail($id);
         return view('Sales.Invoices.invoice-details', compact('sale'));
     }
 
@@ -256,7 +271,7 @@ class InvoiceController extends Controller
      */
     public function recurringInvoices()
     {
-        $sales = Sale::with('customer')->latest()->get();
+        $sales = $this->applyTenantScope(Sale::with('customer')->latest(), 'sales')->get();
 
         $invoices = $sales->map(function ($sale) {
             return [
@@ -317,7 +332,9 @@ class InvoiceController extends Controller
 
     public function signature_invoice($id = null) 
     {
-        $invoice = $id ? Sale::with(['items', 'customer'])->findOrFail($id) : Sale::latest()->first();
+        $invoice = $id
+            ? $this->applyTenantScope(Sale::with(['items', 'customer']), 'sales')->findOrFail($id)
+            : $this->applyTenantScope(Sale::query()->latest(), 'sales')->first();
         $signature = Signature::where('status', 'active')->first();
         return view('Sales.Invoices.signature-invoice', compact('invoice', 'signature'));
     }
@@ -327,7 +344,7 @@ class InvoiceController extends Controller
      */
     public function getRecentInvoices()
     {
-        return response()->json(Sale::latest()->take(5)->get());
+        return response()->json($this->applyTenantScope(Sale::query()->latest(), 'sales')->take(5)->get());
     }
 
     public function cashreceipt_4() { return view('Sales.Invoices.cashreceipt-4'); }
@@ -341,7 +358,7 @@ class InvoiceController extends Controller
             'status' => 'required|string',
         ]);
 
-        $sale = Sale::findOrFail($id);
+        $sale = $this->applyTenantScope(Sale::query(), 'sales')->findOrFail($id);
         $status = trim((string) $request->status);
 
         $sale->update([
@@ -354,7 +371,7 @@ class InvoiceController extends Controller
 
     public function destroy($id)
     {
-        Sale::findOrFail($id)->delete();
+        $this->applyTenantScope(Sale::query(), 'sales')->findOrFail($id)->delete();
         return redirect()->route('invoices.index')->with('success', 'Invoice Deleted');
     }
 }

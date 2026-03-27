@@ -12,6 +12,22 @@ use Flutterwave\Laravel\Facades\Flutterwave;
 
 class PaymentController extends Controller
 {
+    private function applyTenantScope($query, string $table)
+    {
+        $companyId = (int) (Auth::user()?->company_id ?? 0);
+        $userId = (int) (Auth::id() ?? 0);
+
+        if ($companyId > 0 && Schema::hasColumn($table, 'company_id')) {
+            $query->where("{$table}.company_id", $companyId);
+        } elseif ($userId > 0 && Schema::hasColumn($table, 'user_id')) {
+            $query->where("{$table}.user_id", $userId);
+        } elseif ($userId > 0 && Schema::hasColumn($table, 'created_by')) {
+            $query->where("{$table}.created_by", $userId);
+        }
+
+        return $query;
+    }
+
     private function getActiveBranchContext(): array
     {
         return [
@@ -34,7 +50,9 @@ class PaymentController extends Controller
         ]);
 
         return DB::transaction(function () use ($request) {
-            $sale = $request->filled('sale_id') ? Sale::find($request->sale_id) : null;
+            $sale = $request->filled('sale_id')
+                ? $this->applyTenantScope(Sale::query(), 'sales')->find($request->sale_id)
+                : null;
             $activeBranch = $this->getActiveBranchContext();
 
             $attachmentName = null;
@@ -59,6 +77,12 @@ class PaymentController extends Controller
 
             if (Schema::hasColumn('payments', 'payment_account_id')) {
                 $payload['payment_account_id'] = $request->payment_account_id;
+            }
+            if (Schema::hasColumn('payments', 'company_id')) {
+                $payload['company_id'] = Auth::user()?->company_id ?: null;
+            }
+            if (Schema::hasColumn('payments', 'user_id')) {
+                $payload['user_id'] = Auth::id();
             }
 
             $payment = Payment::create($payload);
@@ -292,9 +316,9 @@ class PaymentController extends Controller
     public function index()
     {
         $data = [
-            'payments'      => Payment::with(['sale', 'creator'])->latest()->paginate(10),
-            'sales'         => Sale::select('id', 'invoice_no')->get(),
-            'assetAccounts' => Account::where('type', 'Asset')->where('is_active', 1)->get(),
+            'payments'      => $this->applyTenantScope(Payment::with(['sale', 'creator'])->latest(), 'payments')->paginate(10),
+            'sales'         => $this->applyTenantScope(Sale::select('id', 'invoice_no'), 'sales')->get(),
+            'assetAccounts' => $this->applyTenantScope(Account::where('type', 'Asset')->where('is_active', 1), 'accounts')->get(),
         ];
         return view('Finance.payments', $data);
     }
@@ -302,6 +326,7 @@ class PaymentController extends Controller
     public function payment_report(Request $request)
     {
         $query = Payment::with(['sale', 'creator']);
+        $this->applyTenantScope($query, 'payments');
 
         if ($request->filled('from_date')) {
             $query->whereDate('created_at', '>=', Carbon::parse($request->from_date));
@@ -319,6 +344,8 @@ class PaymentController extends Controller
 
     public function destroy(Payment $payment)
     {
+        $payment = $this->applyTenantScope(Payment::query(), 'payments')->findOrFail($payment->id);
+
         try {
             DB::transaction(function () use ($payment) {
                 $sale = $payment->sale;
@@ -351,6 +378,7 @@ class PaymentController extends Controller
 
     public function show(Payment $payment)
     {
+        $payment = $this->applyTenantScope(Payment::query(), 'payments')->findOrFail($payment->id);
         return redirect()->route('payments.receipt', $payment->id)
             ->with('info', 'Payment receipt opened.');
     }
@@ -363,24 +391,27 @@ class PaymentController extends Controller
 
     public function edit(Payment $payment)
     {
+        $payment = $this->applyTenantScope(Payment::query(), 'payments')->findOrFail($payment->id);
         return redirect()->route('payments.index')
             ->with('info', 'Direct payment editing is not enabled yet. Use delete and recreate if needed.');
     }
 
     public function update(Request $request, Payment $payment)
     {
+        $payment = $this->applyTenantScope(Payment::query(), 'payments')->findOrFail($payment->id);
         return redirect()->route('payments.index')->with('info', 'Update is not enabled on this page yet.');
     }
 
     public function receipt(Payment $payment)
     {
+        $payment = $this->applyTenantScope(Payment::query(), 'payments')->findOrFail($payment->id);
         $payment->loadMissing(['sale', 'creator']);
         return view('Finance.payment-receipt', compact('payment'));
     }
 
     public function getBySale($saleId)
     {
-        $payments = Payment::query()
+        $payments = $this->applyTenantScope(Payment::query(), 'payments')
             ->where('sale_id', $saleId)
             ->orderByDesc('id')
             ->get();
@@ -390,10 +421,10 @@ class PaymentController extends Controller
 
     public function statistics()
     {
-        $query = Payment::query();
+        $query = $this->applyTenantScope(Payment::query(), 'payments');
         $total = (float) $query->sum('amount');
         $count = (int) $query->count();
-        $today = (float) Payment::query()->whereDate('created_at', now()->toDateString())->sum('amount');
+        $today = (float) $this->applyTenantScope(Payment::query()->whereDate('created_at', now()->toDateString()), 'payments')->sum('amount');
 
         return response()->json([
             'total_amount' => $total,
