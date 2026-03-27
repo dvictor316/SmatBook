@@ -4,10 +4,26 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 
 class CategoryController extends Controller
 {
+private function applyTenantScope($query)
+{
+    $companyId = (int) (Auth::user()?->company_id ?? 0);
+    $userId = (int) (Auth::id() ?? 0);
+
+    if ($companyId > 0 && Schema::hasColumn('categories', 'company_id')) {
+        $query->where('categories.company_id', $companyId);
+    } elseif ($userId > 0 && Schema::hasColumn('categories', 'user_id')) {
+        $query->where('categories.user_id', $userId);
+    }
+
+    return $query;
+}
+
 public function index()
 {
     if (!Schema::hasTable('categories')) {
@@ -15,7 +31,7 @@ public function index()
         return view('Inventory.Products.categories', compact('categories'));
     }
 
-    $query = Category::query();
+    $query = $this->applyTenantScope(Category::query());
 
     if (Schema::hasTable('products')) {
         $query->withCount('products');
@@ -38,25 +54,25 @@ public function store(Request $request)
 
     // 1. Validation
     $request->validate([
-        'name' => 'required|string|max:255|unique:categories,name',
+        'name' => 'required|string|max:255',
         'description' => 'nullable|string',
         'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', 
         'status' => 'nullable', // HTML select/checkbox can be tricky with 'boolean' validation
     ]);
 
+    $existingCategory = $this->applyTenantScope(Category::query())
+        ->whereRaw('LOWER(name) = ?', [mb_strtolower((string) $request->name)])
+        ->exists();
+
+    if ($existingCategory) {
+        return redirect()->back()->withErrors(['name' => 'A category with this name already exists.'])->withInput();
+    }
+
     // 2. Handle Image Upload
     $imageName = null;
     if ($request->hasFile('image')) {
-        // Create unique name to prevent overwriting
         $imageName = time() . '_' . uniqid() . '.' . $request->image->extension();
-        
-        // Ensure the directory exists
-        $path = public_path('assets/img/category');
-        if (!file_exists($path)) {
-            mkdir($path, 0777, true);
-        }
-
-        $request->image->move($path, $imageName);
+        Storage::disk('public')->putFileAs('categories', $request->file('image'), $imageName);
     }
 
     // 3. Create Record
@@ -69,11 +85,19 @@ public function store(Request $request)
     }
 
     if (Schema::hasColumn('categories', 'image')) {
-        $payload['image'] = $imageName;
+        $payload['image'] = $imageName ? 'categories/' . $imageName : null;
     }
 
     if (Schema::hasColumn('categories', 'status')) {
         $payload['status'] = $request->has('status') ? (int) $request->status : 1;
+    }
+
+    if (Schema::hasColumn('categories', 'company_id')) {
+        $payload['company_id'] = Auth::user()?->company_id ?: null;
+    }
+
+    if (Schema::hasColumn('categories', 'user_id')) {
+        $payload['user_id'] = Auth::id();
     }
 
     $category = \App\Models\Category::create($payload);

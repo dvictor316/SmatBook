@@ -6,7 +6,7 @@ use App\Models\{User, Company, Subscription, Plan, DeploymentManager};
 use App\Support\SystemEventMailer;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\{Auth, DB, Hash, Log, Password, Schema, Session};
+use Illuminate\Support\Facades\{Auth, DB, Hash, Log, Password, RateLimiter, Schema, Session, Storage};
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\InvalidStateException;
@@ -140,16 +140,11 @@ class AuthController extends Controller
                 ]));
 
                 if ($request->hasFile('profile_photo') && Schema::hasColumn('users', 'profile_photo')) {
-                    $profileDirectory = public_path('assets/img/profiles/registrations');
-                    if (!is_dir($profileDirectory)) {
-                        mkdir($profileDirectory, 0755, true);
-                    }
-
                     $profileExtension = $request->file('profile_photo')->getClientOriginalExtension() ?: 'jpg';
                     $profileFilename = 'reg-' . $user->id . '-' . Str::lower(Str::random(12)) . '.' . $profileExtension;
 
-                    $request->file('profile_photo')->move($profileDirectory, $profileFilename);
-                    $user->profile_photo = 'assets/img/profiles/registrations/' . $profileFilename;
+                    Storage::disk('public')->putFileAs('profiles/registrations', $request->file('profile_photo'), $profileFilename);
+                    $user->profile_photo = 'profiles/registrations/' . $profileFilename;
                     $user->save();
                 }
 
@@ -289,6 +284,15 @@ class AuthController extends Controller
             return back()->withErrors(['login' => 'Email or phone is required.'])->withInput();
         }
 
+        $throttleKey = Str::lower($loginInput) . '|' . $request->ip();
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+
+            return back()
+                ->withErrors(['login' => "Too many login attempts. Please wait {$seconds} seconds and try again."])
+                ->withInput($request->except('password'));
+        }
+
         $attemptOk = false;
         if (filter_var($loginInput, FILTER_VALIDATE_EMAIL)) {
             $attemptOk = Auth::attempt(['email' => $loginInput, 'password' => $password], $remember);
@@ -303,8 +307,11 @@ class AuthController extends Controller
         }
 
         if (!$attemptOk) {
+            RateLimiter::hit($throttleKey, 300);
             return back()->withErrors(['login' => 'Invalid credentials.'])->withInput();
         }
+
+        RateLimiter::clear($throttleKey);
 
         $request->session()->regenerate();
         

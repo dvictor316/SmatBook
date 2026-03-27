@@ -14,11 +14,29 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class SettingController extends Controller
 {
+    private function deleteManagedSettingFile(?string $path): void
+    {
+        $path = trim((string) $path);
+        if ($path === '') {
+            return;
+        }
+
+        if (str_starts_with($path, 'storage/')) {
+            Storage::disk('public')->delete(ltrim(substr($path, 8), '/'));
+            return;
+        }
+
+        if (File::exists(public_path($path))) {
+            File::delete(public_path($path));
+        }
+    }
+
     /**
      * Helper to fetch all key-value pairs
      */
@@ -103,16 +121,16 @@ class SettingController extends Controller
             if ($request->hasFile($field)) {
                 // Delete old file
                 $oldFile = Setting::where('key', $field)->first();
-                if ($oldFile && $oldFile->value && File::exists(public_path($oldFile->value))) {
-                    File::delete(public_path($oldFile->value));
+                if ($oldFile && $oldFile->value) {
+                    $this->deleteManagedSettingFile($oldFile->value);
                 }
 
                 // Save new file
                 $file = $request->file($field);
                 $name = $field . '_' . time() . '.' . $file->getClientOriginalExtension();
-                $file->move(public_path('assets/img'), $name);
+                Storage::disk('public')->putFileAs('settings', $file, $name);
                 
-                Setting::updateOrCreate(['key' => $field], ['value' => 'assets/img/' . $name]);
+                Setting::updateOrCreate(['key' => $field], ['value' => 'storage/settings/' . $name]);
             }
         }
 
@@ -631,6 +649,18 @@ class SettingController extends Controller
         ]);
 
         $branches = collect($this->getCompanyScopedJsonSettingArray('branches_json'));
+
+        $currentPlan = strtolower((string) session('user_plan'));
+        if ($currentPlan === '' && Auth::check() && Schema::hasTable('subscriptions')) {
+            $subscription = Subscription::resolveCurrentForUser(Auth::user())
+                ?? Subscription::where('user_id', Auth::id())->latest()->first();
+            $currentPlan = strtolower((string) ($subscription?->plan ?? $subscription?->plan_name ?? ''));
+        }
+
+        if (str_contains($currentPlan, 'basic') && $branches->count() >= 1) {
+            return redirect()->back()->withInput()->with('error', 'Basic plan supports a single branch only.');
+        }
+
         $code = strtoupper(trim((string) ($validated['code'] ?? '')));
         if ($code === '') {
             $code = strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $validated['name']), 0, 4));
