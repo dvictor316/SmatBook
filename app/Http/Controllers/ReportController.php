@@ -21,6 +21,8 @@ use App\Models\Payment;
 use App\Models\Quotation;
 use App\Models\Account;
 use App\Models\PurchaseReturn;
+use App\Models\Customer;
+use App\Models\Sale;
 use App\Support\LedgerService;
 
 
@@ -856,15 +858,177 @@ private function paymentReportRelations(): array
     return $relations;
 }
 
-private function scopePaymentsForActor($query): void
-{
-    $user = Auth::user();
-    if (!$user) {
-        return;
+    private function scopePaymentsForActor($query): void
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return;
+        }
+
+        $this->applyTenantScope($query, 'payments');
     }
 
-    $this->applyTenantScope($query, 'payments');
-}
+    public function accountsReceivable(Request $request)
+    {
+        if (!Schema::hasTable('sales') || !Schema::hasColumn('sales', 'customer_id')) {
+            return view('Reports.Reports.accounts-receivable', [
+                'receivables' => collect(),
+                'totalDue' => 0,
+                'activeBranch' => $this->getActiveBranchContext(),
+            ]);
+        }
+
+        $salesQuery = Sale::query()
+            ->whereNotNull('customer_id')
+            ->where('balance', '>', 0);
+
+        $this->applyTenantScope($salesQuery, 'sales');
+        $this->applySaleBranchFilter($salesQuery, 'sales');
+
+        $salesSummary = $salesQuery
+            ->selectRaw('customer_id, SUM(total) as total_invoiced, SUM(amount_paid) as total_paid, SUM(balance) as total_due, COUNT(*) as invoice_count')
+            ->groupBy('customer_id')
+            ->get();
+
+        $openingQuery = Customer::query();
+        $this->applyTenantScope($openingQuery, 'customers');
+        $openingCustomers = $openingQuery
+            ->where('balance', '>', 0)
+            ->get()
+            ->keyBy('id');
+
+        $customerMap = Customer::query()
+            ->whereIn('id', $salesSummary->pluck('customer_id')->filter()->merge($openingCustomers->keys())->all())
+            ->tap(fn ($query) => $this->applyTenantScope($query, 'customers'))
+            ->get()
+            ->keyBy('id');
+
+        $receivableMap = [];
+        foreach ($salesSummary as $row) {
+            $customer = $customerMap->get($row->customer_id);
+            $receivableMap[$row->customer_id] = [
+                'customer_id' => $row->customer_id,
+                'customer_name' => $customer?->customer_name ?? $customer?->name ?? 'Walk-in Customer',
+                'email' => $customer?->email,
+                'phone' => $customer?->phone,
+                'total_invoiced' => (float) $row->total_invoiced,
+                'total_paid' => (float) $row->total_paid,
+                'total_due' => (float) $row->total_due,
+                'invoice_count' => (int) $row->invoice_count,
+                'opening_balance' => (float) ($customer?->balance ?? 0),
+            ];
+        }
+
+        foreach ($openingCustomers as $customer) {
+            if (!isset($receivableMap[$customer->id])) {
+                $receivableMap[$customer->id] = [
+                    'customer_id' => $customer->id,
+                    'customer_name' => $customer->customer_name ?? $customer->name ?? 'Walk-in Customer',
+                    'email' => $customer->email,
+                    'phone' => $customer->phone,
+                    'total_invoiced' => 0.0,
+                    'total_paid' => 0.0,
+                    'total_due' => 0.0,
+                    'invoice_count' => 0,
+                    'opening_balance' => (float) $customer->balance,
+                ];
+            }
+        }
+
+        $receivables = collect(array_values($receivableMap))
+            ->sortByDesc(function ($row) {
+                return (float) $row['total_due'] + (float) $row['opening_balance'];
+            })
+            ->map(fn ($row) => (object) $row)
+            ->values();
+
+        $totalDue = (float) $receivables->sum('total_due') + (float) $receivables->sum('opening_balance');
+
+        return view('Reports.Reports.accounts-receivable', [
+            'receivables' => $receivables,
+            'totalDue' => $totalDue,
+            'activeBranch' => $this->getActiveBranchContext(),
+        ]);
+    }
+
+    public function customerStatement($id)
+    {
+        $customer = Customer::query()
+            ->tap(fn ($query) => $this->applyTenantScope($query, 'customers'))
+            ->findOrFail($id);
+
+        $salesQuery = Sale::query()
+            ->where('customer_id', $customer->id);
+        $this->applyTenantScope($salesQuery, 'sales');
+        $this->applySaleBranchFilter($salesQuery, 'sales');
+
+        $sales = $salesQuery->orderBy('order_date')->get();
+        $salesIds = $sales->pluck('id')->all();
+
+        $payments = collect();
+        if (Schema::hasTable('payments') && !empty($salesIds)) {
+            $paymentQuery = Payment::query()->whereIn('sale_id', $salesIds);
+            $this->applyTenantScope($paymentQuery, 'payments');
+            $this->applyPaymentBranchFilter($paymentQuery, 'payments');
+            $payments = $paymentQuery->orderBy('created_at')->get();
+        }
+
+        $entries = collect();
+        foreach ($sales as $sale) {
+            $entries->push([
+                'date' => $sale->order_date ?: $sale->created_at,
+                'reference' => $sale->invoice_no ?: ('SALE-' . $sale->id),
+                'type' => 'Invoice',
+                'description' => 'Invoice issued',
+                'debit' => (float) ($sale->total ?? 0),
+                'credit' => 0.0,
+            ]);
+        }
+
+        foreach ($payments as $payment) {
+            $entries->push([
+                'date' => $payment->created_at,
+                'reference' => $payment->payment_id ?: ('PAY-' . $payment->id),
+                'type' => 'Payment',
+                'description' => $payment->note ?: 'Payment received',
+                'debit' => 0.0,
+                'credit' => (float) ($payment->amount ?? 0),
+            ]);
+        }
+
+        if (($customer->balance ?? 0) > 0) {
+            $entries->push([
+                'date' => $customer->created_at ?: now(),
+                'reference' => 'OPENING',
+                'type' => 'Opening Balance',
+                'description' => 'Opening balance on customer account',
+                'debit' => (float) $customer->balance,
+                'credit' => 0.0,
+            ]);
+        }
+
+        $entries = $entries->sortBy('date')->values();
+
+        $runningBalance = 0.0;
+        $entries = $entries->map(function ($entry) use (&$runningBalance) {
+            $runningBalance += (float) $entry['debit'] - (float) $entry['credit'];
+            $entry['balance'] = $runningBalance;
+            return $entry;
+        });
+
+        $totalInvoiced = (float) $sales->sum('total');
+        $totalPaid = (float) $payments->sum('amount');
+        $balanceDue = (float) $sales->sum('balance') + (float) ($customer->balance ?? 0);
+
+        return view('Reports.Reports.customer-statement', [
+            'customer' => $customer,
+            'entries' => $entries,
+            'totalInvoiced' => $totalInvoiced,
+            'totalPaid' => $totalPaid,
+            'balanceDue' => $balanceDue,
+            'activeBranch' => $this->getActiveBranchContext(),
+        ]);
+    }
 
 
 public function bulkUpdate(Request $request)

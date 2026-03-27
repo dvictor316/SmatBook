@@ -277,6 +277,11 @@ public function customerDetails($id = null)
         'split_details.transfer_account_id' => 'nullable|exists:banks,id',
     ]);
 
+    $paidAmount = (float) $request->paid;
+    if ($paidAmount <= 0 && strtolower((string) $request->payment_method) === 'credit' && !$request->filled('customer_id')) {
+        return response()->json(['success' => false, 'message' => 'Select a customer before saving a credit sale.'], 422);
+    }
+
     DB::beginTransaction();
 
     try {

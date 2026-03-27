@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Customer;
+use App\Models\Sale;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
@@ -33,7 +34,14 @@ class CustomerController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        return view('Customers.customers', compact('customers'));
+        $customers->getCollection()->transform(function ($customer) {
+            $customer->computed_balance = (float) ($customer->balance ?? 0) + (float) ($customer->sales_balance_sum ?? 0);
+            return $customer;
+        });
+
+        $totalReceivables = $this->calculateTotalReceivables();
+
+        return view('Customers.customers', compact('customers', 'totalReceivables'));
     }
 
     /**
@@ -95,6 +103,8 @@ class CustomerController extends Controller
     {
         $customer = $this->applyTenantScope(Customer::with(['sales', 'invoices']))->findOrFail($id);
         $invoices = $customer->invoices;
+        $salesBalance = $this->calculateCustomerSalesBalance($customer->id);
+        $customer->computed_balance = (float) ($customer->balance ?? 0) + $salesBalance;
 
         $invoicescards = [
             [
@@ -111,7 +121,7 @@ class CustomerController extends Controller
             ],
             [
                 'title'  => 'Pending Balance',
-                'amount' => '₦' . number_format($customer->balance, 2),
+                'amount' => '₦' . number_format($customer->computed_balance, 2),
                 'icon'   => 'clock',
                 'class'  => 'bg-orange-light',
             ],
@@ -192,7 +202,14 @@ class CustomerController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        return view('Customers.customers', compact('customers'));
+        $customers->getCollection()->transform(function ($customer) {
+            $customer->computed_balance = (float) ($customer->balance ?? 0) + (float) ($customer->sales_balance_sum ?? 0);
+            return $customer;
+        });
+
+        $totalReceivables = $this->calculateTotalReceivables();
+
+        return view('Customers.customers', compact('customers', 'totalReceivables'));
     }
 
     public function deactiveView(Request $request)
@@ -201,7 +218,14 @@ class CustomerController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        return view('Customers.customers', compact('customers'));
+        $customers->getCollection()->transform(function ($customer) {
+            $customer->computed_balance = (float) ($customer->balance ?? 0) + (float) ($customer->sales_balance_sum ?? 0);
+            return $customer;
+        });
+
+        $totalReceivables = $this->calculateTotalReceivables();
+
+        return view('Customers.customers', compact('customers', 'totalReceivables'));
     }
 
     private function buildCustomerQuery(Request $request, ?string $fixedStatus = null)
@@ -224,7 +248,108 @@ class CustomerController extends Controller
             $query->where('status', trim((string) $request->input('status')));
         }
 
+        $this->withSalesBalances($query);
+
         return $query;
+    }
+
+    private function getActiveBranchContext(): array
+    {
+        return [
+            'id' => session('active_branch_id') ? (string) session('active_branch_id') : null,
+            'name' => session('active_branch_name') ? (string) session('active_branch_name') : null,
+        ];
+    }
+
+    private function applySaleBranchFilter($query, string $salesTable = 'sales')
+    {
+        $branchId = trim((string) ($this->getActiveBranchContext()['id'] ?? ''));
+        $branchName = trim((string) ($this->getActiveBranchContext()['name'] ?? ''));
+
+        if ($branchId === '' && $branchName === '') {
+            return $query;
+        }
+
+        return $query->where(function ($sub) use ($salesTable, $branchId, $branchName) {
+            if ($branchId !== '' && Schema::hasColumn('sales', 'branch_id')) {
+                $sub->where("{$salesTable}.branch_id", $branchId);
+            } elseif ($branchName !== '' && Schema::hasColumn('sales', 'branch_name')) {
+                $sub->where("{$salesTable}.branch_name", $branchName);
+            }
+
+            if ($branchName !== '') {
+                $sub->orWhereRaw(
+                    "JSON_UNQUOTE(JSON_EXTRACT(COALESCE({$salesTable}.payment_details, '{}'), '$.branch_name')) = ?",
+                    [$branchName]
+                )->orWhereRaw(
+                    "JSON_UNQUOTE(JSON_EXTRACT(COALESCE({$salesTable}.payment_details, '{}'), '$.branch.name')) = ?",
+                    [$branchName]
+                );
+            }
+        });
+    }
+
+    private function applySaleTenantScope($query)
+    {
+        $companyId = (int) (auth()->user()?->company_id ?? 0);
+        $userId = (int) (auth()->id() ?? 0);
+
+        if ($companyId > 0 && Schema::hasColumn('sales', 'company_id')) {
+            $query->where('company_id', $companyId);
+        } elseif ($userId > 0 && Schema::hasColumn('sales', 'user_id')) {
+            $query->where('user_id', $userId);
+        }
+
+        return $query;
+    }
+
+    private function withSalesBalances($query): void
+    {
+        if (!Schema::hasTable('sales') || !Schema::hasColumn('sales', 'customer_id')) {
+            return;
+        }
+
+        if (Schema::hasColumn('sales', 'balance')) {
+            $query->withSum(['sales as sales_balance_sum' => function ($saleQuery) {
+                $saleQuery->where('balance', '>', 0);
+                $this->applySaleTenantScope($saleQuery);
+                $this->applySaleBranchFilter($saleQuery, 'sales');
+            }], 'balance');
+        }
+    }
+
+    private function calculateCustomerSalesBalance(int $customerId): float
+    {
+        if (!Schema::hasTable('sales') || !Schema::hasColumn('sales', 'customer_id') || !Schema::hasColumn('sales', 'balance')) {
+            return 0.0;
+        }
+
+        $query = Sale::query()->where('customer_id', $customerId)->where('balance', '>', 0);
+        $this->applySaleTenantScope($query);
+        $this->applySaleBranchFilter($query, 'sales');
+
+        return (float) $query->sum('balance');
+    }
+
+    private function calculateTotalReceivables(): float
+    {
+        $openingBalances = 0.0;
+        $salesBalances = 0.0;
+
+        $customerQuery = Customer::query();
+        $this->applyTenantScope($customerQuery);
+        if (Schema::hasColumn('customers', 'balance')) {
+            $openingBalances = (float) $customerQuery->sum('balance');
+        }
+
+        if (Schema::hasTable('sales') && Schema::hasColumn('sales', 'balance')) {
+            $salesQuery = Sale::query()->where('balance', '>', 0);
+            $this->applySaleTenantScope($salesQuery);
+            $this->applySaleBranchFilter($salesQuery, 'sales');
+            $salesBalances = (float) $salesQuery->sum('balance');
+        }
+
+        return $openingBalances + $salesBalances;
     }
 
     public function activate($id)

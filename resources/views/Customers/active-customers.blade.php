@@ -56,7 +56,7 @@
                                             </h2>
                                         </td>
                                         <td>{{ $customer->phone }}</td>
-                                        <td>{{ number_format($customer->balance, 2) }}</td>
+                                        <td>{{ number_format($customer->computed_balance ?? $customer->balance, 2) }}</td>
                                         <td>{{ $customer->invoices->count() }}</td>
                                         <td>{{ $customer->created_at->format('d M Y') }}</td>
                                         <td>

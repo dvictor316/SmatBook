@@ -51,6 +51,11 @@
                 </div>
             </div>
         </div>
+        <div class="alert alert-info border-0 shadow-sm">
+            <strong>Total Customer Receivables:</strong>
+            ₦{{ number_format($totalReceivables ?? 0, 2) }}
+            <span class="text-muted">across all customer balances and unpaid invoices.</span>
+        </div>
         @component('components.search-filter')
         @endcomponent
         <div class="row">
@@ -104,7 +109,7 @@
                                                 </td>
                                                 <td>{{ $customer->phone ?? 'N/A' }}</td>
                                                 <td>{{ \Illuminate\Support\Str::limit($customer->address ?? $customer->billing_address_line1, 30) ?? 'N/A' }}</td>
-                                                <td><strong>₦{{ number_format($customer->balance, 2) }}</strong></td>
+                                                <td><strong>₦{{ number_format($customer->computed_balance ?? $customer->balance, 2) }}</strong></td>
                                                 <td>{{ $customer->created_at ? $customer->created_at->format('d M Y') : 'N/A' }}</td>
                                                 <td>
                                                     @php
@@ -125,6 +130,9 @@
                                                             </a>
                                                             <a class="dropdown-item" href="{{ route('customers.show', $customer->id) }}">
                                                                 <i class="far fa-eye me-2"></i>View Details
+                                                            </a>
+                                                            <a class="dropdown-item" href="{{ route('reports.customer-statement', $customer->id) }}">
+                                                                <i class="far fa-file-alt me-2"></i>Customer Statement
                                                             </a>
                                                             <div class="dropdown-divider"></div>
                                                             <form action="{{ route('customers.destroy', $customer->id) }}" method="POST" onsubmit="return confirm('Delete this customer?');">

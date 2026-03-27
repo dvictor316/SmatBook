@@ -758,6 +758,8 @@ Route::middleware(['auth', 'subscription.active'])->group(function () {
         Route::get('/sales-report', 'sales_report')->name('sales');
         Route::get('/stock-report', 'stock_report')->name('stock');
         Route::get('/low-stock-report', 'low_stock_report')->name('low-stock');
+        Route::get('/accounts-receivable', 'accountsReceivable')->name('accounts-receivable');
+        Route::get('/customer-statement/{id}', 'customerStatement')->name('customer-statement');
         Route::get('/quotation-report', 'quotation_report')->name('quotation');
         Route::get('/profit-loss-list', 'profit_loss_list')
             ->middleware('plan.access:professional,enterprise')

@@ -131,6 +131,10 @@
         <li><a href="{{ route('reports.payment-summary') }}"><i class="fe fe-dollar-sign"></i><span>Payment Summary</span></a></li>
     @endif
 
+    @if(Route::has('reports.accounts-receivable'))
+        <li><a href="{{ route('reports.accounts-receivable') }}"><i class="fe fe-briefcase"></i><span>Accounts Receivable</span></a></li>
+    @endif
+
     {{-- LOCKED FEATURES (Upgrade to Pro/Enterprise) --}}
     <li class="menu-title"><span>Upgrade for More</span></li>
     

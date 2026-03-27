@@ -377,6 +377,9 @@
                     <button type="button" class="btn btn-primary rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#customerProfileModal">
                         <i class="fe fe-edit me-2"></i>Edit Profile
                     </button>
+                    <a href="{{ route('reports.customer-statement', $customer->id) }}" class="btn btn-outline-primary rounded-pill px-4">
+                        <i class="fe fe-file-text me-2"></i>Customer Statement
+                    </a>
                     <button onclick="window.print()" class="btn btn-light border rounded-pill px-4">
                         <i class="fe fe-printer me-2"></i>Print Dossier
                     </button>
@@ -412,6 +415,7 @@
                         <div class="customer-pill-label">Financials</div>
                         <div class="customer-pill-value">
                             <div>Currency: {{ $customer->currency ?: '₦' }}</div>
+                            <div>Outstanding: ₦{{ number_format($customer->computed_balance ?? $customer->balance ?? 0, 2) }}</div>
                             <div>Website:
                                 @if ($customer->website)
                                     <a href="{{ $customer->website }}" target="_blank" rel="noopener">{{ $customer->website }}</a>

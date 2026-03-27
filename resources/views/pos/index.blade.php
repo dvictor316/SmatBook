@@ -1442,12 +1442,20 @@ label {
                                 <option value="Card">Card</option>
                                 <option value="Transfer">Transfer</option>
                                 <option value="Split">Split Payment</option>
+                                <option value="Credit">Credit (On Account)</option>
                             </select>
                             <small class="text-muted">Use Split Payment to enter different amounts per channel.</small>
                         </div>
                         <div class="col-md-6">
                             <label>Amount Paid</label>
                             <input type="number" id="amount-paid" class="form-control form-control-lg fw-bold text-end tabular-nums" style="font-size: 1rem; color: var(--success-500);">
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-check form-switch mt-1">
+                                <input class="form-check-input" type="checkbox" id="credit-sale">
+                                <label class="form-check-label fw-semibold" for="credit-sale">Sell on Credit (no payment yet)</label>
+                            </div>
+                            <small class="text-muted">Credit sales require a selected customer so the receivable can be tracked.</small>
                         </div>
                         <div class="col-md-12" id="payment-channel-wrap">
                             <label>Payment Channel</label>
@@ -2002,7 +2010,7 @@ $(document).ready(function() {
         $('#grand-total').text(fmt.format(totGrand));
         $('#hdr-cart-count').text(cart.length);
         
-        if($('#payment-method').val() !== 'Split') {
+        if($('#payment-method').val() !== 'Split' && !$('#credit-sale').is(':checked')) {
             $('#amount-paid').val(totGrand.toFixed(2));
         }
         
@@ -2042,6 +2050,16 @@ $(document).ready(function() {
     // Payment
     $('#payment-method').on('change', function() {
         let total = parseFloat($('#grand-total').text().replace(/[^\d.]/g, '')) || 0;
+
+        if ($(this).val() === 'Credit') {
+            $('#credit-sale').prop('checked', true);
+            syncCreditSaleState();
+            return;
+        }
+
+        if ($('#credit-sale').is(':checked')) {
+            return;
+        }
         
         if($(this).val() === 'Split') {
             $('#split-box').slideDown(200);
@@ -2058,7 +2076,33 @@ $(document).ready(function() {
         updateChange();
     });
 
+    $('#credit-sale').on('change', function() {
+        syncCreditSaleState();
+    });
+
     $(document).on('input', '#amount-paid, .split-input', updateChange);
+
+    function syncCreditSaleState() {
+        const creditSale = $('#credit-sale').is(':checked');
+        let total = parseFloat($('#grand-total').text().replace(/[^\d.]/g, '')) || 0;
+
+        if (creditSale) {
+            $('#payment-method').val('Credit').prop('disabled', true);
+            $('#amount-paid').val('0.00').prop('readonly', true).addClass('bg-light');
+            $('#split-box').hide();
+            $('#payment-channel-wrap').slideUp(150);
+            $('#split-cash, #split-card, #split-transfer').val(0);
+        } else {
+            $('#payment-method').prop('disabled', false);
+            if ($('#payment-method').val() === 'Credit') {
+                $('#payment-method').val('Cash');
+            }
+            $('#amount-paid').prop('readonly', false).removeClass('bg-light').val(total.toFixed(2));
+            $('#payment-method').trigger('change');
+        }
+
+        updateChange();
+    }
 
     function updateChange() {
         let total = parseFloat($('#grand-total').text().replace(/[^\d.]/g, '')) || 0;
@@ -2090,7 +2134,8 @@ $(document).ready(function() {
         $('#split-card-account, #split-transfer-account').val('');
         $('#split-cash, #split-card, #split-transfer').val(0);
         $('#split-box').hide();
-        $('#amount-paid').prop('readonly', false).val('0.00');
+        $('#amount-paid').prop('readonly', false).removeClass('bg-light').val('0.00');
+        $('#credit-sale').prop('checked', false);
 
         $('#product-select').val('').trigger('change');
         $('#product-search').val(null).trigger('change.select2');
@@ -2174,6 +2219,17 @@ $(document).ready(function() {
         let total = parseFloat($('#grand-total').text().replace(/[^\d.]/g, '')) || 0;
         let paid = parseFloat($('#amount-paid').val()) || 0;
 
+        const creditSale = $('#credit-sale').is(':checked');
+
+        if (creditSale) {
+            if (!$('#customer-select').val()) {
+                Swal.fire({ icon: 'warning', title: 'Select Customer', text: 'Choose a customer before saving a credit sale.', confirmButtonColor: '#f59e0b' });
+                return;
+            }
+            submitPosSale(total, 0);
+            return;
+        }
+
         if(paid <= 0) {
             Swal.fire({ icon: 'warning', title: 'Enter Payment', text: 'Enter the amount received before processing this sale.', confirmButtonColor: '#f59e0b' });
             return;
@@ -2202,6 +2258,7 @@ $(document).ready(function() {
         submitPosSale(total, paid);
     });
 
+    syncCreditSaleState();
     syncCategoryToggle();
     filterProductCards();
     setUnitTypeAvailability(null);
