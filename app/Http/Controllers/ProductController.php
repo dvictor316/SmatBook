@@ -1140,6 +1140,7 @@ public function inventory(Request $request)
         $request->validate([
             'import_file' => 'required|file|mimes:csv,txt,xls,xlsx|max:20480',
             'branch_id' => 'nullable|string',
+            'update_existing' => 'nullable|boolean',
         ]);
 
         if (!Schema::hasTable('products') || !Schema::hasTable('categories')) {
@@ -1182,12 +1183,14 @@ public function inventory(Request $request)
 
             $created = 0;
             $updated = 0;
+            $updatedExisting = 0;
             $skipped = 0;
             $duplicates = 0;
             $missingRequired = 0;
             $rowErrors = [];
+            $updateExisting = $request->boolean('update_existing');
 
-            DB::transaction(function () use ($file, $header, &$created, &$updated, &$skipped, &$duplicates, &$missingRequired, &$rowErrors, $request) {
+            DB::transaction(function () use ($file, $header, &$created, &$updated, &$updatedExisting, &$skipped, &$duplicates, &$missingRequired, &$rowErrors, $updateExisting, $request) {
                 $activeBranch = $this->resolveBranchContext($request->input('branch_id'));
 
                 foreach ($this->spreadsheetRowIterator($file) as $rowNumber => $row) {
@@ -1238,7 +1241,7 @@ public function inventory(Request $request)
                             ->when(!$providedSku && !$barcode, fn ($query) => $query->where('name', $rowData['name'])->where('category_id', $category->id))
                             ->limit(1);
                         $existing = $productQuery->first();
-                        if ($existing) {
+                        if ($existing && !$updateExisting) {
                             $skipped++;
                             $duplicates++;
                             if (count($rowErrors) < 10) {
@@ -1247,7 +1250,7 @@ public function inventory(Request $request)
                             continue;
                         }
 
-                        $sku = $this->generateUniqueSku($providedSku, $rowData['name']);
+                        $sku = $existing?->sku ?: $this->generateUniqueSku($providedSku, $rowData['name']);
                         $product = Product::query()
                             ->tap(fn ($query) => $this->applyTenantScope($query, 'products'))
                             ->where('sku', $sku)
@@ -1300,6 +1303,9 @@ public function inventory(Request $request)
                             $created++;
                         } else {
                             $updated++;
+                            if ($existing) {
+                                $updatedExisting++;
+                            }
                         }
                     } catch (\Throwable $rowException) {
                         $skipped++;
@@ -1317,14 +1323,18 @@ public function inventory(Request $request)
                 'user_id' => auth()->id(),
                 'created' => $created,
                 'updated' => $updated,
+                'updated_existing' => $updatedExisting,
                 'skipped' => $skipped,
                 'duplicates' => $duplicates,
                 'missing_required' => $missingRequired,
             ]);
 
             $summary = "Product import completed. Created: {$created}, Updated: {$updated}, Skipped: {$skipped}.";
+            if ($updatedExisting > 0) {
+                $summary .= " Updated existing: {$updatedExisting}.";
+            }
             if ($duplicates > 0 || $missingRequired > 0) {
-                $summary .= " Duplicates: {$duplicates}, Missing required: {$missingRequired}.";
+                $summary .= " Duplicates skipped: {$duplicates}, Missing required: {$missingRequired}.";
             }
 
             $redirect = redirect()->route('product-list')->with('success', $summary);

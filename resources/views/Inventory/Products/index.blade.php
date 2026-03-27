@@ -506,6 +506,13 @@
                         <label class="form-label">Spreadsheet File</label>
                         <input type="file" name="import_file" class="form-control" accept=".csv,.txt,.xls,.xlsx,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
                     </div>
+                    <div class="mt-3">
+                        <label class="form-label d-flex align-items-center gap-2">
+                            <input type="checkbox" name="update_existing" value="1">
+                            <span>Update existing products when duplicates are found</span>
+                        </label>
+                        <small class="text-muted">When enabled, imports will update matching items instead of skipping them.</small>
+                    </div>
                     <div>
                         <label class="form-label">Apply Opening Stock To Branch</label>
                         <select name="branch_id" class="form-select">
