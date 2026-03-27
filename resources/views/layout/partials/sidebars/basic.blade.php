@@ -144,6 +144,13 @@
     <li>
         <a href="{{ Route::has('membership-plans') ? route('membership-plans', ['plan' => 'pro']) : url('/membership-plans?plan=pro') }}">
             <i class="fe fe-lock"></i>
+            <span>Suppliers</span>
+            <span class="badge bg-info">Pro</span>
+        </a>
+    </li>
+    <li>
+        <a href="{{ Route::has('membership-plans') ? route('membership-plans', ['plan' => 'pro']) : url('/membership-plans?plan=pro') }}">
+            <i class="fe fe-lock"></i>
             <span>Categories & Units</span>
             <span class="badge bg-info">Pro</span>
         </a>

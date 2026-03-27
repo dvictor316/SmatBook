@@ -5,7 +5,7 @@ use App\Models\{User, Subscription, Company};
 use App\Http\Controllers\{
     AuthController, LandingController, SubscriptionController, DashboardController,
     HomeController, RoleController, UserController, CompanyController, CustomerController,
-    VendorController, ProductController, CategoryController, ProductSaleController,
+    VendorController, SupplierController, ProductController, CategoryController, ProductSaleController,
     SaleController, SaleItemController, InvoiceController, SalesInvoiceController,
     EstimateController, PurchaseController, PurchaseOrderViewController, ExpenseController,
     PaymentController, ReportController, CashFlowController, BalanceSheetController,
@@ -593,6 +593,18 @@ Route::middleware(['auth', 'subscription.active'])->group(function () {
     });
     Route::get('/Customers/ledger/{id}', [VendorController::class, 'ledger'])->name('ledger');
     Route::get('/ledger', [VendorController::class, 'ledger_general'])->name('ledger.general');
+
+    // Suppliers
+    Route::controller(SupplierController::class)->prefix('suppliers')->name('suppliers.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/create', 'create')->name('create');
+        Route::get('/import/template', 'downloadImportTemplate')->name('import.template');
+        Route::post('/import', 'import')->name('import');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{id}/edit', 'edit')->name('edit');
+        Route::put('/{id}', 'update')->name('update');
+        Route::delete('/{id}', 'destroy')->name('destroy');
+    });
     
     // Products
     Route::controller(ProductController::class)->group(function () {

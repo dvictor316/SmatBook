@@ -108,6 +108,13 @@
             'icon' => 'fa-truck',
             'keywords' => ['vendors', 'suppliers', 'procurement'],
         ] : null,
+        Route::has('suppliers.index') ? [
+            'title' => 'Suppliers',
+            'subtitle' => 'Supplier directory and procurement contacts',
+            'url' => route('suppliers.index'),
+            'icon' => 'fa-warehouse',
+            'keywords' => ['suppliers', 'procurement', 'vendors'],
+        ] : null,
         Route::has('products.index') ? [
             'title' => 'Products',
             'subtitle' => 'Products, stock, and shelves',

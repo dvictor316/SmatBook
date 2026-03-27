@@ -43,6 +43,14 @@
             'fields' => ['search'],
             'search_placeholder' => 'Search name, email, phone, or address',
         ],
+        'suppliers.index' => [
+            'mode' => 'server',
+            'route_name' => 'suppliers.index',
+            'heading' => 'Find suppliers quickly',
+            'description' => 'Search supplier names, email addresses, phone numbers, and addresses.',
+            'fields' => ['search'],
+            'search_placeholder' => 'Search name, email, phone, or address',
+        ],
         'invoices.index' => [
             'mode' => 'server',
             'route_name' => 'invoices.index',

@@ -85,6 +85,10 @@
                             <a class="{{ Request::is('vendors') ? 'active' : '' }}" href="{{ url('vendors') }}"><i
                                     class="fe fe-user"></i> <span>Vendors</span></a>
                         </li>
+                        <li>
+                            <a class="{{ Request::is('suppliers*') ? 'active' : '' }}" href="{{ url('suppliers') }}"><i
+                                    class="fe fe-user"></i> <span>Suppliers</span></a>
+                        </li>
                         <!-- /Customers -->
 
                         <!-- Inventory -->
