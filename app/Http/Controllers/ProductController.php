@@ -201,6 +201,7 @@ class ProductController extends Controller
                     }
 
                     $row = str_getcsv($line, $delimiter);
+                    $row = $this->expandEmbeddedDelimitedRow($row);
                     if ($row === [null] || $row === false) {
                         continue;
                     }
@@ -283,6 +284,39 @@ class ProductController extends Controller
         $line = preg_replace('/^\x{FEFF}/u', '', $line) ?? $line;
 
         return trim($line);
+    }
+
+    private function expandEmbeddedDelimitedRow(array $row): array
+    {
+        if (count($row) !== 1) {
+            return $row;
+        }
+
+        $cell = trim((string) ($row[0] ?? ''));
+        if ($cell === '') {
+            return $row;
+        }
+
+        $delimiters = [',', ';', "\t", '|'];
+        $bestDelimiter = null;
+        $bestScore = 0;
+
+        foreach ($delimiters as $delimiter) {
+            $score = substr_count($cell, $delimiter);
+            if ($score > $bestScore) {
+                $bestScore = $score;
+                $bestDelimiter = $delimiter;
+            }
+        }
+
+        if ($bestDelimiter === null || $bestScore === 0) {
+            return $row;
+        }
+
+        $trimmedCell = preg_replace('/^"(.*)"$/s', '$1', $cell) ?? $cell;
+        $expanded = str_getcsv($trimmedCell, $bestDelimiter);
+
+        return is_array($expanded) && count($expanded) > 1 ? $expanded : $row;
     }
 
     private function normalizeImportHeaderCell($value): string
