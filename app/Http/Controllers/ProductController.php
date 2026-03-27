@@ -182,29 +182,54 @@ class ProductController extends Controller
         return (int) round($cartonUnits + $rollUnits + $stockUnits);
     }
 
-    private function spreadsheetRows(UploadedFile $file): array
+    private function spreadsheetRowIterator(UploadedFile $file): \Generator
     {
         $extension = strtolower((string) $file->getClientOriginalExtension());
 
         if (in_array($extension, ['csv', 'txt'], true)) {
             $handle = fopen($file->getRealPath(), 'r');
             if ($handle === false) {
-                return [];
+                return;
             }
 
-            $rows = [];
-            while (($row = fgetcsv($handle)) !== false) {
-                $rows[] = $row;
+            try {
+                while (($row = fgetcsv($handle)) !== false) {
+                    yield $row;
+                }
+            } finally {
+                fclose($handle);
             }
-            fclose($handle);
 
-            return $rows;
+            return;
         }
 
-        $spreadsheet = IOFactory::load($file->getRealPath());
-        $sheet = $spreadsheet->getActiveSheet();
+        $reader = IOFactory::createReaderForFile($file->getRealPath());
+        if (method_exists($reader, 'setReadDataOnly')) {
+            $reader->setReadDataOnly(true);
+        }
+        if (method_exists($reader, 'setReadEmptyCells')) {
+            $reader->setReadEmptyCells(false);
+        }
 
-        return $sheet->toArray(null, false, false, false);
+        $spreadsheet = $reader->load($file->getRealPath());
+
+        try {
+            $sheet = $spreadsheet->getActiveSheet();
+            foreach ($sheet->getRowIterator() as $row) {
+                $cells = [];
+                $cellIterator = $row->getCellIterator();
+                $cellIterator->setIterateOnlyExistingCells(false);
+
+                foreach ($cellIterator as $cell) {
+                    $cells[] = $cell?->getFormattedValue();
+                }
+
+                yield $cells;
+            }
+        } finally {
+            $spreadsheet->disconnectWorksheets();
+            unset($spreadsheet);
+        }
     }
 
     /**
@@ -1022,8 +1047,13 @@ public function inventory(Request $request)
 
         try {
             $file = $request->file('import_file');
-            $rows = $this->spreadsheetRows($file);
-            $header = $rows[0] ?? null;
+            $header = null;
+
+            foreach ($this->spreadsheetRowIterator($file) as $row) {
+                $header = $row;
+                break;
+            }
+
             if (!$header) {
                 return redirect()->back()->with('error', 'The import file is empty.');
             }
@@ -1040,9 +1070,14 @@ public function inventory(Request $request)
             $updated = 0;
             $skipped = 0;
 
-            DB::transaction(function () use ($rows, $header, &$created, &$updated, &$skipped, $request) {
+            DB::transaction(function () use ($file, $header, &$created, &$updated, &$skipped, $request) {
                 $activeBranch = $this->resolveBranchContext($request->input('branch_id'));
-                foreach (array_slice($rows, 1) as $rowNumber => $row) {
+
+                foreach ($this->spreadsheetRowIterator($file) as $rowNumber => $row) {
+                    if ($rowNumber === 0) {
+                        continue;
+                    }
+
                     $rowData = [];
                     foreach ($header as $index => $column) {
                         $rowData[$column] = trim((string) ($row[$index] ?? ''));
@@ -1119,7 +1154,7 @@ public function inventory(Request $request)
                     } catch (\Throwable $rowException) {
                         $skipped++;
                         Log::warning('Product import row skipped.', [
-                            'row' => $rowNumber + 2,
+                            'row' => $rowNumber + 1,
                             'name' => $rowData['name'] ?? null,
                             'error' => $rowException->getMessage(),
                         ]);

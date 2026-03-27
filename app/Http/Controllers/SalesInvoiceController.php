@@ -12,6 +12,15 @@ use Illuminate\Support\Str;
 
 class SalesInvoiceController extends Controller
 {
+private function generateUniqueCloneReference(string $column, string $prefix): string
+{
+    do {
+        $candidate = $prefix . strtoupper(Str::random(6));
+    } while (Sale::withTrashed()->where($column, $candidate)->exists());
+
+    return $candidate;
+}
+
 public function index()
 {
     $salesData = Sale::with('customer')->latest()->get();
@@ -57,9 +66,10 @@ public function index()
         $clone = (array) $original;
         unset($clone['id']);
 
-        $clone['invoice_no'] = ($original->invoice_no ?: 'INV') . '-COPY-' . strtoupper(Str::random(4));
-        $clone['receipt_no'] = 'REC-' . strtoupper(Str::random(10));
-        $clone['order_number'] = 'ORD-' . date('Ymd') . '-' . strtoupper(Str::random(6));
+        $invoiceBase = trim((string) ($original->invoice_no ?: 'INV'));
+        $clone['invoice_no'] = $this->generateUniqueCloneReference('invoice_no', $invoiceBase . '-COPY-');
+        $clone['receipt_no'] = $this->generateUniqueCloneReference('receipt_no', 'REC-' . strtoupper(now()->format('ymd')) . '-');
+        $clone['order_number'] = $this->generateUniqueCloneReference('order_number', 'ORD-' . strtoupper(now()->format('Ymd')) . '-');
         $clone['created_at'] = now();
         $clone['updated_at'] = now();
 

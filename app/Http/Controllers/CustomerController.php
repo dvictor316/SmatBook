@@ -304,8 +304,14 @@ class CustomerController extends Controller
         ]);
 
         try {
-            $rows = $this->spreadsheetRows($request->file('import_file'));
-            $header = $rows[0] ?? null;
+            $file = $request->file('import_file');
+            $header = null;
+
+            foreach ($this->spreadsheetRowIterator($file) as $row) {
+                $header = $row;
+                break;
+            }
+
             if (!$header) {
                 return back()->with('error', 'The import file is empty.');
             }
@@ -323,7 +329,11 @@ class CustomerController extends Controller
             $companyId = (int) (auth()->user()?->company_id ?? 0);
             $userId = (int) (auth()->id() ?? 0);
 
-            foreach (array_slice($rows, 1) as $rowNumber => $row) {
+            foreach ($this->spreadsheetRowIterator($file) as $rowNumber => $row) {
+                if ($rowNumber === 0) {
+                    continue;
+                }
+
                 $rowData = [];
                 foreach ($header as $index => $column) {
                     $rowData[$column] = trim((string) ($row[$index] ?? ''));
@@ -383,7 +393,7 @@ class CustomerController extends Controller
                     $isNew ? $created++ : $updated++;
                 } catch (\Throwable $rowException) {
                     \Log::warning('Customer import row skipped.', [
-                        'row' => $rowNumber + 2,
+                        'row' => $rowNumber + 1,
                         'customer_name' => $rowData['customer_name'] ?? null,
                         'error' => $rowException->getMessage(),
                     ]);
@@ -414,26 +424,52 @@ class CustomerController extends Controller
         return array_intersect_key($data, $allowed);
     }
 
-    private function spreadsheetRows(\Illuminate\Http\UploadedFile $file): array
+    private function spreadsheetRowIterator(\Illuminate\Http\UploadedFile $file): \Generator
     {
         $extension = strtolower((string) $file->getClientOriginalExtension());
 
         if (in_array($extension, ['csv', 'txt'], true)) {
             $handle = fopen($file->getRealPath(), 'r');
             if ($handle === false) {
-                return [];
+                return;
             }
 
-            $rows = [];
-            while (($row = fgetcsv($handle)) !== false) {
-                $rows[] = $row;
+            try {
+                while (($row = fgetcsv($handle)) !== false) {
+                    yield $row;
+                }
+            } finally {
+                fclose($handle);
             }
-            fclose($handle);
 
-            return $rows;
+            return;
         }
 
-        $spreadsheet = IOFactory::load($file->getRealPath());
-        return $spreadsheet->getActiveSheet()->toArray(null, false, false, false);
+        $reader = IOFactory::createReaderForFile($file->getRealPath());
+        if (method_exists($reader, 'setReadDataOnly')) {
+            $reader->setReadDataOnly(true);
+        }
+        if (method_exists($reader, 'setReadEmptyCells')) {
+            $reader->setReadEmptyCells(false);
+        }
+
+        $spreadsheet = $reader->load($file->getRealPath());
+
+        try {
+            foreach ($spreadsheet->getActiveSheet()->getRowIterator() as $row) {
+                $cells = [];
+                $cellIterator = $row->getCellIterator();
+                $cellIterator->setIterateOnlyExistingCells(false);
+
+                foreach ($cellIterator as $cell) {
+                    $cells[] = $cell?->getFormattedValue();
+                }
+
+                yield $cells;
+            }
+        } finally {
+            $spreadsheet->disconnectWorksheets();
+            unset($spreadsheet);
+        }
     }
 }

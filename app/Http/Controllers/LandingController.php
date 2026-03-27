@@ -265,6 +265,13 @@ class LandingController extends Controller
                 'email' => $validated['email'] ?? null,
             ]);
 
+            if (str_contains(strtolower($e->getMessage()), 'daily user sending limit exceeded')) {
+                return back()->withInput()->with(
+                    'error',
+                    'Your request was captured, but email delivery is temporarily paused because the current sender mailbox has reached its daily Gmail sending limit.'
+                );
+            }
+
             return back()->with('error', 'Request captured, but email delivery failed. Check MAIL settings and try again.')->withInput();
         }
     }
