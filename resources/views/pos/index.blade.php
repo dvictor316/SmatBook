@@ -1339,7 +1339,8 @@ label {
                     </div>
                     <div class="col-6">
                         <label style="color: var(--danger-500);">Discount %</label>
-                        <input type="number" id="discount" class="form-control tabular-nums" value="0" min="0" max="100">
+                        <input type="number" id="discount" class="form-control tabular-nums" value="0" min="0" max="100" step="1" inputmode="numeric">
+                        <small class="text-muted">Whole numbers only</small>
                     </div>
                     <div class="col-6">
                         <label style="color: var(--primary-600);">Tax %</label>

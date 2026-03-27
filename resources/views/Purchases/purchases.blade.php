@@ -145,8 +145,9 @@
                                             </td>
                                             <td>{{ ucfirst($product->status) }}</td>
                                             <td class="text-end no-print">
-                                                <a href="{{ route('purchases.show', $product->id) }}" class="btn btn-sm btn-info text-white">
-                                                            <i class="far fa-eye"></i>
+                                                <a href="{{ route('purchases.show', $product->id) }}" class="btn btn-sm btn-info text-white d-inline-flex align-items-center gap-1">
+                                                    <i class="far fa-eye"></i>
+                                                    <span class="d-none d-md-inline">View</span>
                                                 </a>
                                             </td>
                                         </tr>

@@ -108,7 +108,7 @@
                                 <td>{{ $payment->created_at->format('M d, Y') }}</td>
                                 <td class="text-end pe-4">
                                     <div class="dropdown">
-                                        <button class="btn btn-link text-muted p-0" data-bs-toggle="dropdown">
+                                        <button class="btn btn-link text-muted p-0 action-icon" data-bs-toggle="dropdown">
                                             <i class="fas fa-ellipsis-v"></i>
                                         </button>
                                         <div class="dropdown-menu dropdown-menu-end shadow-sm">
