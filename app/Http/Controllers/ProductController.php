@@ -1036,6 +1036,14 @@ public function inventory(Request $request)
 
     public function import(Request $request)
     {
+        Log::info('Product import request received.', [
+            'user_id' => auth()->id(),
+            'has_file' => $request->hasFile('import_file'),
+            'filename' => $request->file('import_file')?->getClientOriginalName(),
+            'size' => $request->file('import_file')?->getSize(),
+            'branch_id' => $request->input('branch_id'),
+        ]);
+
         $request->validate([
             'import_file' => 'required|file|mimes:csv,txt,xls,xlsx|max:20480',
             'branch_id' => 'nullable|string',
@@ -1162,6 +1170,13 @@ public function inventory(Request $request)
                 }
             });
             $this->clearDashboardMetricsCache($request->input('branch_id'));
+
+            Log::info('Product import completed.', [
+                'user_id' => auth()->id(),
+                'created' => $created,
+                'updated' => $updated,
+                'skipped' => $skipped,
+            ]);
 
             return redirect()->route('product-list')->with(
                 'success',

@@ -299,6 +299,13 @@ class CustomerController extends Controller
 
     public function import(Request $request)
     {
+        \Log::info('Customer import request received.', [
+            'user_id' => auth()->id(),
+            'has_file' => $request->hasFile('import_file'),
+            'filename' => $request->file('import_file')?->getClientOriginalName(),
+            'size' => $request->file('import_file')?->getSize(),
+        ]);
+
         $request->validate([
             'import_file' => 'required|file|mimes:csv,txt,xls,xlsx|max:20480',
         ]);
