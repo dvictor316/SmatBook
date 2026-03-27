@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\{Payment, Sale, Account, Transaction, Subscription, User, Company};
 use App\Support\LedgerService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\{Auth, DB, Log, File, Http, Str, Schema};
+use Illuminate\Support\Facades\{Auth, DB, Log, File, Http, Str, Schema, Storage};
 use Carbon\Carbon;
 use Unicodeveloper\Paystack\Facades\Paystack;
 use Flutterwave\Laravel\Facades\Flutterwave;
@@ -46,7 +46,7 @@ class PaymentController extends Controller
             'method' => 'nullable|string|max:100',
             'status' => 'nullable|string|max:50',
             'note' => 'nullable|string|max:1000',
-            'attachment' => 'nullable|file|max:4096',
+            'attachment' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:4096',
         ]);
 
         return DB::transaction(function () use ($request) {
@@ -58,8 +58,8 @@ class PaymentController extends Controller
             $attachmentName = null;
             if ($request->hasFile('attachment')) {
                 $file = $request->file('attachment');
-                $attachmentName = time() . '_' . preg_replace('/\s+/', '_', $file->getClientOriginalName());
-                $file->move(public_path('assets/img/payments'), $attachmentName);
+                $attachmentName = time() . '_' . Str::uuid() . '.' . strtolower((string) $file->getClientOriginalExtension());
+                Storage::disk('public')->putFileAs('payments', $file, $attachmentName);
             }
 
             $payload = [
@@ -354,7 +354,10 @@ class PaymentController extends Controller
                            ->delete();
                 
                 if ($payment->attachment) {
-                    File::delete(public_path('assets/img/payments/' . $payment->attachment));
+                    $filepath = $this->resolveAttachmentPath($payment->attachment);
+                    if ($filepath && file_exists($filepath)) {
+                        @unlink($filepath);
+                    }
                 }
                 $payment->delete();
 
@@ -435,10 +438,38 @@ class PaymentController extends Controller
 
     public function download($filename)
     {
-        $path = public_path('assets/img/payments/' . $filename);
-        if (!File::exists($path)) {
+        $payment = $this->applyTenantScope(Payment::query(), 'payments')
+            ->where('attachment', $filename)
+            ->first();
+
+        if (!$payment) {
             return back()->with('error', 'Attachment not found.');
         }
+
+        $path = $this->resolveAttachmentPath($payment->attachment);
+        if (!$path || !file_exists($path)) {
+            return back()->with('error', 'Attachment not found.');
+        }
+
         return response()->download($path);
+    }
+
+    private function resolveAttachmentPath(?string $filename): ?string
+    {
+        if (!$filename) {
+            return null;
+        }
+
+        $publicPath = public_path('assets/img/payments/' . $filename);
+        if (file_exists($publicPath)) {
+            return $publicPath;
+        }
+
+        $storagePath = storage_path('app/public/payments/' . $filename);
+        if (file_exists($storagePath)) {
+            return $storagePath;
+        }
+
+        return null;
     }
 }

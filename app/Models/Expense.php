@@ -5,6 +5,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 use App\Support\GeoCurrency;
 
 class Expense extends Model{
@@ -94,6 +95,10 @@ protected $fillable = [
     public function getImageUrlAttribute()
     {
         if ($this->image) {
+            if (Storage::disk('public')->exists('expenses/' . $this->image)) {
+                return Storage::disk('public')->url('expenses/' . $this->image);
+            }
+
             return asset('assets/img/expenses/' . $this->image);
         }
         return null;

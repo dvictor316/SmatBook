@@ -143,9 +143,12 @@
                                             <td class="text-end d-print-none">
                                                 <div class="actions">
                                                     {{-- Fast-Login / Impersonate --}}
-                                                    <a href="{{ route('super_admin.companies.impersonate', $company->id) }}" class="btn btn-sm bg-info-light me-2" title="Login as Admin">
-                                                        <i class="fas fa-user-secret"></i>
-                                                    </a>
+                                                    <form action="{{ route('super_admin.companies.impersonate', $company->id) }}" method="POST" class="d-inline">
+                                                        @csrf
+                                                        <button type="submit" class="btn btn-sm bg-info-light me-2" title="Login as Admin">
+                                                            <i class="fas fa-user-secret"></i>
+                                                        </button>
+                                                    </form>
                                                     
                                                     <a href="{{ route('super_admin.companies.edit', $company->id) }}" class="btn btn-sm bg-success-light me-2">
                                                         <i class="fas fa-edit"></i>

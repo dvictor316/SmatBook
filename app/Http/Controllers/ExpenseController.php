@@ -153,20 +153,6 @@ class ExpenseController extends Controller
 
         $image = $request->file('image');
         $imageName = time() . '_' . uniqid('', true) . '.' . $image->getClientOriginalExtension();
-        $publicDir = public_path('assets/img/expenses');
-
-        try {
-            if (!File::isDirectory($publicDir)) {
-                File::makeDirectory($publicDir, 0755, true);
-            }
-
-            if (is_writable($publicDir)) {
-                $image->move($publicDir, $imageName);
-                return $imageName;
-            }
-        } catch (\Throwable $e) {
-            report($e);
-        }
 
         if (Storage::disk('public')->putFileAs('expenses', $image, $imageName)) {
             return $imageName;
@@ -275,7 +261,15 @@ class ExpenseController extends Controller
      */
     public function download($filename)
     {
-        $filepath = $this->resolveExpenseAttachmentPath($filename);
+        $expense = $this->applyTenantScope(Expense::query(), 'expenses')
+            ->where('image', $filename)
+            ->first();
+
+        if (!$expense) {
+            return redirect()->back()->with('error', 'File not found!');
+        }
+
+        $filepath = $this->resolveExpenseAttachmentPath($expense->image);
 
         if ($filepath) {
             return response()->download($filepath);

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo; // Necessary for relationships
+use Illuminate\Support\Facades\Storage;
 use App\Support\GeoCurrency;
 
 class Payment extends Model
@@ -100,7 +101,15 @@ class Payment extends Model
 
     public function getAttachmentUrlAttribute()
     {
-        return $this->attachment ? asset('assets/img/payments/' . $this->attachment) : null;
+        if (!$this->attachment) {
+            return null;
+        }
+
+        if (Storage::disk('public')->exists('payments/' . $this->attachment)) {
+            return Storage::disk('public')->url('payments/' . $this->attachment);
+        }
+
+        return asset('assets/img/payments/' . $this->attachment);
     }
 
     public function getBranchLabelAttribute(): ?string

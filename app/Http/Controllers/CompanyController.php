@@ -10,6 +10,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Str;
 
 class CompanyController extends Controller
 {
@@ -122,6 +123,16 @@ class CompanyController extends Controller
      */
     public function impersonate($id): RedirectResponse
     {
+        if (!(bool) env('TEMP_OPEN_ACCESS', false)) {
+            return redirect()->route('super_admin.dashboard')
+                ->with('error', 'Temporary impersonation mode is disabled.');
+        }
+
+        $actor = Auth::user();
+        if (!$actor || !in_array(strtolower((string) $actor->role), ['super_admin', 'superadmin'], true)) {
+            abort(403, 'Unauthorized impersonation request.');
+        }
+
         $company = Company::findOrFail($id);
         $user = User::find($company->user_id);
 
@@ -129,14 +140,31 @@ class CompanyController extends Controller
             return redirect()->back()->with('error', 'This company has no associated admin user.');
         }
 
-        // Backup current SuperAdmin ID
-        session()->put('impersonate_admin_id', Auth::id());
-        
-        Auth::login($user);
+        if ((int) $user->id === (int) $actor->id) {
+            return redirect()->route('super_admin.dashboard');
+        }
 
-        // Redirect to the specific tenant dashboard
-        $targetDomain = $company->subdomain ? $company->subdomain . '.' . env('SESSION_DOMAIN') : env('SESSION_DOMAIN');
-        
-        return redirect()->to('http://' . $targetDomain . '/home');
+        session()->put('impersonate_admin_id', $actor->id);
+        session()->put('impersonator_user_id', $actor->id);
+
+        Auth::login($user, true);
+        request()->session()->regenerate();
+        session()->put('is_impersonating', true);
+
+        $sessionDomain = ltrim((string) env('SESSION_DOMAIN', ''), '.');
+        $appHost = strtolower((string) parse_url((string) config('app.url'), PHP_URL_HOST));
+        $rootDomain = $sessionDomain !== '' ? $sessionDomain : $appHost;
+        $scheme = request()->secure() || Str::lower((string) request()->header('X-Forwarded-Proto')) === 'https'
+            ? 'https://'
+            : 'http://';
+        $targetDomain = $company->subdomain && $rootDomain !== ''
+            ? $company->subdomain . '.' . $rootDomain
+            : $rootDomain;
+
+        if ($targetDomain === '') {
+            return redirect()->route('home');
+        }
+
+        return redirect()->to($scheme . $targetDomain . '/home');
     }
 }

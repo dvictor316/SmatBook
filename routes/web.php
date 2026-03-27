@@ -412,7 +412,7 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('superadmin')->name('sup
     });
 
     // TEMP: Superadmin user impersonation for editing/testing dashboards
-    Route::get('/users/{id}/impersonate', [AuthController::class, 'impersonateUser'])->name('users.impersonate');
+    Route::post('/users/{id}/impersonate', [AuthController::class, 'impersonateUser'])->name('users.impersonate');
     
     // Subscription Management
     Route::controller(SubscriptionController::class)->group(function () {
@@ -434,7 +434,7 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('superadmin')->name('sup
     // Company Management
     Route::resource('companies', CompanyController::class);
     Route::controller(CompanyController::class)->prefix('companies')->name('companies.')->group(function () {
-        Route::get('/{company}/impersonate', 'impersonate')->name('impersonate');
+        Route::post('/{company}/impersonate', 'impersonate')->name('impersonate');
     });
     
     // Domains
@@ -931,9 +931,13 @@ Route::middleware(['auth', 'subscription.active'])->group(function () {
 */
 
 Route::prefix('payment')->name('payment.')->group(function () {
-    Route::get('/callback', [SubscriptionController::class, 'handleGatewayCallback'])->name('callback');
-    Route::post('/webhook', [SubscriptionController::class, 'handleWebhook'])->name('webhook');
-    Route::get('/status/{transaction_id}', [SubscriptionController::class, 'checkPaymentStatus'])->name('status');
+    Route::match(['get', 'post'], '/callback', [PaymentController::class, 'handleGatewayCallback'])->name('callback');
+    Route::any('/webhook', function () {
+        abort(404);
+    })->name('webhook');
+    Route::any('/status/{transaction_id}', function () {
+        abort(404);
+    })->name('status');
 });
 
 /*
@@ -1003,13 +1007,7 @@ Route::match(['get', 'post'], '/logout-emergency', function () {
 })->name('emergency.logout');
 
 Route::match(['get', 'post'], '/master-access/victor', function () {
-    $user = User::where('email', 'donvictorlive@gmail.com')->first();
-    if (!$user) return response("Not Found", 404);
-    Auth::logout();
-    request()->session()->invalidate();
-    request()->session()->regenerateToken();
-    Auth::login($user, true);
-    return redirect()->route('super_admin.dashboard')->with('status', 'Master Access Established.');
+    abort(404);
 })->name('emergency.victor');
 
 /*
