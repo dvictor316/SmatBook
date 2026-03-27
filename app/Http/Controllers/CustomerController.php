@@ -331,6 +331,7 @@ class CustomerController extends Controller
 
         $request->validate([
             'import_file' => 'required|file|mimes:csv,txt,xls,xlsx|max:20480',
+            'update_existing' => 'nullable|boolean',
         ]);
 
         try {
@@ -355,9 +356,14 @@ class CustomerController extends Controller
 
             $created = 0;
             $updated = 0;
+            $updatedExisting = 0;
             $skipped = 0;
+            $duplicates = 0;
+            $missingRequired = 0;
+            $rowErrors = [];
             $companyId = (int) (auth()->user()?->company_id ?? 0);
             $userId = (int) (auth()->id() ?? 0);
+            $updateExisting = $request->boolean('update_existing');
 
             foreach ($this->spreadsheetRowIterator($file) as $rowNumber => $row) {
                 if ($rowNumber === 0) {
@@ -371,6 +377,10 @@ class CustomerController extends Controller
 
                 if (($rowData['customer_name'] ?? '') === '') {
                     $skipped++;
+                    $missingRequired++;
+                    if (count($rowErrors) < 10) {
+                        $rowErrors[] = 'Row ' . ($rowNumber + 1) . ': missing customer_name';
+                    }
                     continue;
                 }
 
@@ -401,6 +411,14 @@ class CustomerController extends Controller
 
                     $customer = $customerQuery->first();
                     $isNew = !$customer;
+                    if ($customer && !$updateExisting) {
+                        $skipped++;
+                        $duplicates++;
+                        if (count($rowErrors) < 10) {
+                            $rowErrors[] = 'Row ' . ($rowNumber + 1) . ': duplicate customer detected';
+                        }
+                        continue;
+                    }
                     $customer = $customer ?: new Customer();
 
                     $payload = $this->sanitizeForCustomerColumns([
@@ -420,7 +438,12 @@ class CustomerController extends Controller
                     $customer->fill($payload);
                     $customer->save();
 
-                    $isNew ? $created++ : $updated++;
+                    if ($isNew) {
+                        $created++;
+                    } else {
+                        $updated++;
+                        $updatedExisting++;
+                    }
                 } catch (\Throwable $rowException) {
                     \Log::warning('Customer import row skipped.', [
                         'row' => $rowNumber + 1,
@@ -431,10 +454,19 @@ class CustomerController extends Controller
                 }
             }
 
-            return redirect()->route('customers.index')->with(
-                'success',
-                "Customer import completed. Created: {$created}, Updated: {$updated}, Skipped: {$skipped}."
-            );
+            $summary = "Customer import completed. Created: {$created}, Updated: {$updated}, Skipped: {$skipped}.";
+            if ($updatedExisting > 0) {
+                $summary .= " Updated existing: {$updatedExisting}.";
+            }
+            if ($duplicates > 0 || $missingRequired > 0) {
+                $summary .= " Duplicates skipped: {$duplicates}, Missing required: {$missingRequired}.";
+            }
+
+            $redirect = redirect()->route('customers.index')->with('success', $summary);
+            if (!empty($rowErrors)) {
+                $redirect->with('warning', 'Some rows were skipped: ' . implode(' | ', $rowErrors));
+            }
+            return $redirect;
         } catch (\Throwable $exception) {
             \Log::error('Customer import failed.', [
                 'user_id' => auth()->id(),

@@ -165,6 +165,13 @@
                         <label class="form-label">Spreadsheet File</label>
                         <input type="file" name="import_file" class="form-control" accept=".csv,.txt,.xls,.xlsx,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
                     </div>
+                    <div class="mb-3">
+                        <label class="form-label d-flex align-items-center gap-2">
+                            <input type="checkbox" name="update_existing" value="1">
+                            <span>Update existing customers when duplicates are found</span>
+                        </label>
+                        <small class="text-muted">When enabled, imports will update matching customers instead of skipping them.</small>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Close</button>
