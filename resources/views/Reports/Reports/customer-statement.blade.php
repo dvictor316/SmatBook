@@ -92,6 +92,28 @@
                 <div class="col-sm-12">
                     <div class="card statement-table-card">
                         <div class="card-body">
+                            <form method="GET" action="{{ route('reports.customer-statement', $customer->id) }}" class="row g-3 mb-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Filter Type</label>
+                                    <select name="type" class="form-select">
+                                        <option value="all" {{ ($filters['type'] ?? 'all') === 'all' ? 'selected' : '' }}>All Transactions</option>
+                                        <option value="invoice" {{ ($filters['type'] ?? '') === 'invoice' ? 'selected' : '' }}>Invoices Only</option>
+                                        <option value="payment" {{ ($filters['type'] ?? '') === 'payment' ? 'selected' : '' }}>Payments Only</option>
+                                        <option value="opening balance" {{ ($filters['type'] ?? '') === 'opening balance' ? 'selected' : '' }}>Opening Balances Only</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Start Date</label>
+                                    <input type="date" name="start_date" class="form-control" value="{{ $filters['start_date'] ?? '' }}">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">End Date</label>
+                                    <input type="date" name="end_date" class="form-control" value="{{ $filters['end_date'] ?? '' }}">
+                                </div>
+                                <div class="col-md-2 d-flex align-items-end gap-2">
+                                    <button type="submit" class="btn btn-primary w-100">Apply</button>
+                                </div>
+                            </form>
                             <div class="table-responsive">
                                 <table class="table table-center table-hover">
                                     <thead class="thead-light">

@@ -951,7 +951,7 @@ private function paymentReportRelations(): array
         ]);
     }
 
-    public function customerStatement($id)
+    public function customerStatement(Request $request, $id)
     {
         $customer = Customer::query()
             ->tap(fn ($query) => $this->applyTenantScope($query, 'customers'))
@@ -962,7 +962,7 @@ private function paymentReportRelations(): array
         $this->applyTenantScope($salesQuery, 'sales');
         $this->applySaleBranchFilter($salesQuery, 'sales');
 
-        $sales = $salesQuery->orderBy('order_date')->get();
+        $sales = $salesQuery->orderBy('order_date')->orderBy('created_at')->get();
         $salesIds = $sales->pluck('id')->all();
 
         $payments = collect();
@@ -997,8 +997,11 @@ private function paymentReportRelations(): array
         }
 
         if (($customer->balance ?? 0) > 0) {
+            $openingDate = $customer->created_at
+                ? $customer->created_at->copy()->startOfDay()->subSecond()
+                : now()->copy()->startOfDay()->subSecond();
             $entries->push([
-                'date' => $customer->created_at ?: now(),
+                'date' => $openingDate,
                 'reference' => 'OPENING',
                 'type' => 'Opening Balance',
                 'description' => 'Opening balance on customer account',
@@ -1007,7 +1010,33 @@ private function paymentReportRelations(): array
             ]);
         }
 
-        $entries = $entries->sortBy('date')->values();
+        $entries = $entries
+            ->sortBy(function ($entry) {
+                return \Carbon\Carbon::parse($entry['date'])->format('Y-m-d H:i:s') . '|' . $entry['reference'];
+            })
+            ->values();
+
+        $typeFilter = strtolower(trim((string) $request->input('type', 'all')));
+        if ($typeFilter !== '' && $typeFilter !== 'all') {
+            $entries = $entries->filter(function ($entry) use ($typeFilter) {
+                return strtolower((string) $entry['type']) === $typeFilter;
+            })->values();
+        }
+
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        if ($startDate || $endDate) {
+            $entries = $entries->filter(function ($entry) use ($startDate, $endDate) {
+                $entryDate = \Carbon\Carbon::parse($entry['date']);
+                if ($startDate && $entryDate->lt(\Carbon\Carbon::parse($startDate)->startOfDay())) {
+                    return false;
+                }
+                if ($endDate && $entryDate->gt(\Carbon\Carbon::parse($endDate)->endOfDay())) {
+                    return false;
+                }
+                return true;
+            })->values();
+        }
 
         $runningBalance = 0.0;
         $entries = $entries->map(function ($entry) use (&$runningBalance) {
@@ -1027,6 +1056,11 @@ private function paymentReportRelations(): array
             'totalPaid' => $totalPaid,
             'balanceDue' => $balanceDue,
             'activeBranch' => $this->getActiveBranchContext(),
+            'filters' => [
+                'type' => $typeFilter ?: 'all',
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+            ],
         ]);
     }
 
