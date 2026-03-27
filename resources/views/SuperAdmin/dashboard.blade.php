@@ -1448,6 +1448,111 @@
                             </div>
                         </div>
 
+                        <div class="row g-3 mt-4">
+                            <div class="col-12 col-xl-6">
+                                <div class="card card-rounded shadow-sm h-100">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <div>
+                                                <h5 class="mb-0 fw-bold text-dark">Plan Sales Snapshot</h5>
+                                                <small class="text-muted">Live subscription sales and approval pulse</small>
+                                            </div>
+                                            <span class="live-badge-soft animate-pulse">Live</span>
+                                        </div>
+                                        <div class="dashboard-side-fill">
+                                            <div class="summary-fill">
+                                                <div class="label">Plan Sales Today</div>
+                                                <div class="value">{{ number_format($metrics['plan_sales_today'] ?? 0) }}</div>
+                                            </div>
+                                            <div class="summary-fill">
+                                                <div class="label">This Month</div>
+                                                <div class="value">{{ number_format($metrics['plan_sales_month'] ?? 0) }}</div>
+                                            </div>
+                                            <div class="summary-fill">
+                                                <div class="label">Monthly Value</div>
+                                                <div class="value">₦{{ number_format($metrics['plan_sales_value_month'] ?? 0, 0) }}</div>
+                                            </div>
+                                            <div class="summary-fill">
+                                                <div class="label">Awaiting Setup</div>
+                                                <div class="value">{{ number_format($metrics['pending_setups'] ?? 0) }}</div>
+                                            </div>
+                                        </div>
+                                        <div class="mt-3">
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <h6 class="mb-0 fw-semibold">Recent Paid Plan Sales</h6>
+                                                <span class="small text-muted">{{ number_format($platformActivity->count() ?? 0) }} items</span>
+                                            </div>
+                                            <div class="list-wrapper" style="max-height: 220px; overflow-y: auto;">
+                                                <ul class="bullet-line-list mb-0">
+                                                    @forelse($platformActivity->take(5) as $activity)
+                                                        <li class="mb-2">
+                                                            <div class="d-flex justify-content-between align-items-start gap-2">
+                                                                <div class="small">
+                                                                    <div class="fw-semibold text-dark">{{ $activity->company->name ?? $activity->subscriber_name ?? 'Plan sale' }}</div>
+                                                                    <div class="text-muted">{{ $activity->plan_name ?? $activity->plan ?? 'Subscription' }}</div>
+                                                                </div>
+                                                                <div class="small text-end">
+                                                                    <div class="fw-bold text-primary">₦{{ number_format((float) ($activity->amount ?? 0), 0) }}</div>
+                                                                    <div class="text-muted">{{ optional($activity->created_at)->diffForHumans() }}</div>
+                                                                </div>
+                                                            </div>
+                                                        </li>
+                                                    @empty
+                                                        <li class="small text-muted">No paid plan sales captured yet.</li>
+                                                    @endforelse
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-xl-6">
+                                <div class="card card-rounded shadow-sm h-100">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <div>
+                                                <h5 class="mb-0 fw-bold text-dark">Approval Conversion Radar</h5>
+                                                <small class="text-muted">A compact view of manager pipeline and tenant readiness</small>
+                                            </div>
+                                            <span class="live-badge-soft animate-pulse">Live</span>
+                                        </div>
+                                        @php
+                                            $pendingManagers = (int) ($metrics['pending_managers'] ?? 0);
+                                            $activeManagers = (int) ($metrics['active_managers'] ?? 0);
+                                            $suspendedManagers = (int) ($metrics['suspended_managers'] ?? 0);
+                                            $pendingSetups = (int) ($metrics['pending_setups'] ?? 0);
+                                            $paidSubs = (int) ($metrics['paid_subs'] ?? 0);
+                                            $expiredSubs = (int) ($metrics['expired_subs'] ?? 0);
+                                            $approvalPool = max(1, $pendingManagers + $activeManagers + $suspendedManagers);
+                                            $setupPool = max(1, $pendingSetups + $paidSubs + $expiredSubs);
+                                            $approvalMix = [
+                                                ['label' => 'Pending Review', 'value' => $pendingManagers, 'color' => '#f59e0b', 'pct' => round(($pendingManagers / $approvalPool) * 100)],
+                                                ['label' => 'Approved', 'value' => $activeManagers, 'color' => '#2563eb', 'pct' => round(($activeManagers / $approvalPool) * 100)],
+                                                ['label' => 'Suspended', 'value' => $suspendedManagers, 'color' => '#ef4444', 'pct' => round(($suspendedManagers / $approvalPool) * 100)],
+                                                ['label' => 'Pending Setups', 'value' => $pendingSetups, 'color' => '#8b5cf6', 'pct' => round(($pendingSetups / $setupPool) * 100)],
+                                                ['label' => 'Paid Subs', 'value' => $paidSubs, 'color' => '#10b981', 'pct' => round(($paidSubs / $setupPool) * 100)],
+                                                ['label' => 'Expired Plans', 'value' => $expiredSubs, 'color' => '#64748b', 'pct' => round(($expiredSubs / $setupPool) * 100)],
+                                            ];
+                                        @endphp
+                                        <div class="d-grid gap-3">
+                                            @foreach($approvalMix as $mix)
+                                                <div class="p-3 rounded border bg-light-subtle">
+                                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                                        <div class="small fw-semibold text-dark">{{ $mix['label'] }}</div>
+                                                        <div class="small text-muted">{{ number_format($mix['value']) }} • {{ $mix['pct'] }}%</div>
+                                                    </div>
+                                                    <div class="progress" style="height: 10px;">
+                                                        <div class="progress-bar" role="progressbar" style="width: {{ max(6, $mix['pct']) }}%; background: {{ $mix['color'] }};" aria-valuenow="{{ $mix['pct'] }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         {{-- ROW 4: Revenue Chart & System Health --}}
                         <div class="row mt-4 dashboard-row-balanced">
                             
@@ -1869,110 +1974,6 @@
                                     </div>
                                 </div>
 
-                                <div class="row g-3">
-                                    <div class="col-12 col-xl-6">
-                                        <div class="card card-rounded shadow-sm h-100">
-                                            <div class="card-body">
-                                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                                    <div>
-                                                        <h5 class="mb-0 fw-bold text-dark">Plan Sales Snapshot</h5>
-                                                        <small class="text-muted">Live subscription sales and approval pulse</small>
-                                                    </div>
-                                                    <span class="live-badge-soft animate-pulse">Live</span>
-                                                </div>
-                                                <div class="dashboard-side-fill">
-                                                    <div class="summary-fill">
-                                                        <div class="label">Plan Sales Today</div>
-                                                        <div class="value">{{ number_format($metrics['plan_sales_today'] ?? 0) }}</div>
-                                                    </div>
-                                                    <div class="summary-fill">
-                                                        <div class="label">This Month</div>
-                                                        <div class="value">{{ number_format($metrics['plan_sales_month'] ?? 0) }}</div>
-                                                    </div>
-                                                    <div class="summary-fill">
-                                                        <div class="label">Monthly Value</div>
-                                                        <div class="value">₦{{ number_format($metrics['plan_sales_value_month'] ?? 0, 0) }}</div>
-                                                    </div>
-                                                    <div class="summary-fill">
-                                                        <div class="label">Awaiting Setup</div>
-                                                        <div class="value">{{ number_format($metrics['pending_setups'] ?? 0) }}</div>
-                                                    </div>
-                                                </div>
-                                                <div class="mt-3">
-                                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                                        <h6 class="mb-0 fw-semibold">Recent Paid Plan Sales</h6>
-                                                        <span class="small text-muted">{{ number_format($platformActivity->count() ?? 0) }} items</span>
-                                                    </div>
-                                                    <div class="list-wrapper" style="max-height: 220px; overflow-y: auto;">
-                                                        <ul class="bullet-line-list mb-0">
-                                                            @forelse($platformActivity->take(5) as $activity)
-                                                                <li class="mb-2">
-                                                                    <div class="d-flex justify-content-between align-items-start gap-2">
-                                                                        <div class="small">
-                                                                            <div class="fw-semibold text-dark">{{ $activity->company->name ?? $activity->subscriber_name ?? 'Plan sale' }}</div>
-                                                                            <div class="text-muted">{{ $activity->plan_name ?? $activity->plan ?? 'Subscription' }}</div>
-                                                                        </div>
-                                                                        <div class="small text-end">
-                                                                            <div class="fw-bold text-primary">₦{{ number_format((float) ($activity->amount ?? 0), 0) }}</div>
-                                                                            <div class="text-muted">{{ optional($activity->created_at)->diffForHumans() }}</div>
-                                                                        </div>
-                                                                    </div>
-                                                                </li>
-                                                            @empty
-                                                                <li class="small text-muted">No paid plan sales captured yet.</li>
-                                                            @endforelse
-                                                        </ul>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-12 col-xl-6">
-                                        <div class="card card-rounded shadow-sm h-100">
-                                            <div class="card-body">
-                                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                                    <div>
-                                                        <h5 class="mb-0 fw-bold text-dark">Approval Conversion Radar</h5>
-                                                        <small class="text-muted">A compact view of manager pipeline and tenant readiness</small>
-                                                    </div>
-                                                    <span class="live-badge-soft animate-pulse">Live</span>
-                                                </div>
-                                                @php
-                                                    $pendingManagers = (int) ($metrics['pending_managers'] ?? 0);
-                                                    $activeManagers = (int) ($metrics['active_managers'] ?? 0);
-                                                    $suspendedManagers = (int) ($metrics['suspended_managers'] ?? 0);
-                                                    $pendingSetups = (int) ($metrics['pending_setups'] ?? 0);
-                                                    $paidSubs = (int) ($metrics['paid_subs'] ?? 0);
-                                                    $expiredSubs = (int) ($metrics['expired_subs'] ?? 0);
-                                                    $approvalPool = max(1, $pendingManagers + $activeManagers + $suspendedManagers);
-                                                    $setupPool = max(1, $pendingSetups + $paidSubs + $expiredSubs);
-                                                    $approvalMix = [
-                                                        ['label' => 'Pending Review', 'value' => $pendingManagers, 'color' => '#f59e0b', 'pct' => round(($pendingManagers / $approvalPool) * 100)],
-                                                        ['label' => 'Approved', 'value' => $activeManagers, 'color' => '#2563eb', 'pct' => round(($activeManagers / $approvalPool) * 100)],
-                                                        ['label' => 'Suspended', 'value' => $suspendedManagers, 'color' => '#ef4444', 'pct' => round(($suspendedManagers / $approvalPool) * 100)],
-                                                        ['label' => 'Pending Setups', 'value' => $pendingSetups, 'color' => '#8b5cf6', 'pct' => round(($pendingSetups / $setupPool) * 100)],
-                                                        ['label' => 'Paid Subs', 'value' => $paidSubs, 'color' => '#10b981', 'pct' => round(($paidSubs / $setupPool) * 100)],
-                                                        ['label' => 'Expired Plans', 'value' => $expiredSubs, 'color' => '#64748b', 'pct' => round(($expiredSubs / $setupPool) * 100)],
-                                                    ];
-                                                @endphp
-                                                <div class="d-grid gap-3">
-                                                    @foreach($approvalMix as $mix)
-                                                        <div class="p-3 rounded border bg-light-subtle">
-                                                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                                                <div class="small fw-semibold text-dark">{{ $mix['label'] }}</div>
-                                                                <div class="small text-muted">{{ number_format($mix['value']) }} • {{ $mix['pct'] }}%</div>
-                                                            </div>
-                                                            <div class="progress" style="height: 10px;">
-                                                                <div class="progress-bar" role="progressbar" style="width: {{ max(6, $mix['pct']) }}%; background: {{ $mix['color'] }};" aria-valuenow="{{ $mix['pct'] }}" aria-valuemin="0" aria-valuemax="100"></div>
-                                                            </div>
-                                                        </div>
-                                                    @endforeach
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
                             </div>
                         </div>
 
