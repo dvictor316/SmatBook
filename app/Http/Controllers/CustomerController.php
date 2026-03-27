@@ -323,7 +323,7 @@ class CustomerController extends Controller
                 return back()->with('error', 'The import file is empty.');
             }
 
-            $header = array_map(fn ($value) => strtolower(trim((string) $value)), $header);
+            $header = array_map(fn ($value) => $this->normalizeImportHeaderCell($value), $header);
             foreach (['customer_name'] as $requiredColumn) {
                 if (!in_array($requiredColumn, $header, true)) {
                     return back()->with('error', 'Missing required import column: ' . $requiredColumn);
@@ -429,6 +429,12 @@ class CustomerController extends Controller
     {
         $allowed = array_flip(Schema::getColumnListing('customers'));
         return array_intersect_key($data, $allowed);
+    }
+
+    private function normalizeImportHeaderCell($value): string
+    {
+        $header = strtolower(trim((string) $value));
+        return preg_replace('/^\x{FEFF}/u', '', $header) ?? $header;
     }
 
     private function spreadsheetRowIterator(\Illuminate\Http\UploadedFile $file): \Generator

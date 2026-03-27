@@ -232,6 +232,12 @@ class ProductController extends Controller
         }
     }
 
+    private function normalizeImportHeaderCell($value): string
+    {
+        $header = strtolower(trim((string) $value));
+        return preg_replace('/^\x{FEFF}/u', '', $header) ?? $header;
+    }
+
     /**
      * Product List View with Search and Database Falling Check
      */
@@ -1066,7 +1072,7 @@ public function inventory(Request $request)
                 return redirect()->back()->with('error', 'The import file is empty.');
             }
 
-            $header = array_map(fn ($value) => strtolower(trim((string) $value)), $header);
+            $header = array_map(fn ($value) => $this->normalizeImportHeaderCell($value), $header);
             $required = ['name', 'category', 'base_unit_name', 'unit_type', 'price', 'purchase_price'];
             foreach ($required as $column) {
                 if (!in_array($column, $header, true)) {
