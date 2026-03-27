@@ -51,18 +51,30 @@ public function getActiveBranchContext(): array
         ];
     }
 
+private function applyBranchScope($query, string $table = 'purchases')
+    {
+        $activeBranch = $this->getActiveBranchContext();
+
+        if (!empty($activeBranch['id']) && Schema::hasColumn($table, 'branch_id')) {
+            $query->where("{$table}.branch_id", (string) $activeBranch['id']);
+            return $query;
+        }
+
+        if (!empty($activeBranch['name']) && Schema::hasColumn($table, 'branch_name')) {
+            $query->where("{$table}.branch_name", (string) $activeBranch['name']);
+        }
+
+        return $query;
+    }
+
 public function index()
     {
         $activeBranch = $this->getActiveBranchContext();
         // 1. Fetch Purchases (using 'vendor' or 'supplier' based on your model relation)
         $purchaseQuery = Purchase::with(['supplier', 'items.product']);
         $this->applyTenantScope($purchaseQuery, 'purchases');
-        $purchases = $purchaseQuery
-            ->when(!empty($activeBranch['name']) && Schema::hasColumn('purchases', 'branch_name'), function ($query) use ($activeBranch) {
-                $query->where('branch_name', $activeBranch['name']);
-            })
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
+        $this->applyBranchScope($purchaseQuery, 'purchases');
+        $purchases = $purchaseQuery->orderBy('created_at', 'desc')->paginate(10);
 
         // 2. Fetch Products (CRITICAL: This fixes the "Product data not loaded" error)
         $productQuery = Product::with('category')->latest();
@@ -93,12 +105,8 @@ public function index()
 
         $purchaseQuery = Purchase::with(['supplier', 'items.product']);
         $this->applyTenantScope($purchaseQuery, 'purchases');
-        $purchases = $purchaseQuery
-            ->when(!empty($activeBranch['name']) && Schema::hasColumn('purchases', 'branch_name'), function ($query) use ($activeBranch) {
-                $query->where('branch_name', $activeBranch['name']);
-            })
-            ->latest()
-            ->paginate(10);
+        $this->applyBranchScope($purchaseQuery, 'purchases');
+        $purchases = $purchaseQuery->latest()->paginate(10);
 
         return view('Purchases.purchases', [
             'products'  => $products,

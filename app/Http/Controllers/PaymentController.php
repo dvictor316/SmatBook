@@ -36,6 +36,22 @@ class PaymentController extends Controller
         ];
     }
 
+    private function applyBranchScope($query, string $table = 'payments')
+    {
+        $activeBranch = $this->getActiveBranchContext();
+
+        if (!empty($activeBranch['id']) && Schema::hasColumn($table, 'branch_id')) {
+            $query->where("{$table}.branch_id", (string) $activeBranch['id']);
+            return $query;
+        }
+
+        if (!empty($activeBranch['name']) && Schema::hasColumn($table, 'branch_name')) {
+            $query->where("{$table}.branch_name", (string) $activeBranch['name']);
+        }
+
+        return $query;
+    }
+
     public function store(Request $request)
     {
         $request->validate([
@@ -315,10 +331,21 @@ class PaymentController extends Controller
      */
     public function index()
     {
+        $paymentsQuery = Payment::with(['sale', 'creator'])->latest();
+        $this->applyTenantScope($paymentsQuery, 'payments');
+        $this->applyBranchScope($paymentsQuery, 'payments');
+
+        $salesQuery = Sale::select('id', 'invoice_no');
+        $this->applyTenantScope($salesQuery, 'sales');
+        $this->applyBranchScope($salesQuery, 'sales');
+
+        $assetAccountsQuery = Account::where('type', 'Asset')->where('is_active', 1);
+        $this->applyTenantScope($assetAccountsQuery, 'accounts');
+
         $data = [
-            'payments'      => $this->applyTenantScope(Payment::with(['sale', 'creator'])->latest(), 'payments')->paginate(10),
-            'sales'         => $this->applyTenantScope(Sale::select('id', 'invoice_no'), 'sales')->get(),
-            'assetAccounts' => $this->applyTenantScope(Account::where('type', 'Asset')->where('is_active', 1), 'accounts')->get(),
+            'payments'      => $paymentsQuery->paginate(10),
+            'sales'         => $salesQuery->get(),
+            'assetAccounts' => $assetAccountsQuery->get(),
         ];
         return view('Finance.payments', $data);
     }
@@ -327,6 +354,7 @@ class PaymentController extends Controller
     {
         $query = Payment::with(['sale', 'creator']);
         $this->applyTenantScope($query, 'payments');
+        $this->applyBranchScope($query, 'payments');
 
         if ($request->filled('from_date')) {
             $query->whereDate('created_at', '>=', Carbon::parse($request->from_date));
@@ -414,10 +442,10 @@ class PaymentController extends Controller
 
     public function getBySale($saleId)
     {
-        $payments = $this->applyTenantScope(Payment::query(), 'payments')
-            ->where('sale_id', $saleId)
-            ->orderByDesc('id')
-            ->get();
+        $paymentsQuery = Payment::query()->where('sale_id', $saleId)->orderByDesc('id');
+        $this->applyTenantScope($paymentsQuery, 'payments');
+        $this->applyBranchScope($paymentsQuery, 'payments');
+        $payments = $paymentsQuery->get();
 
         return response()->json(['data' => $payments]);
     }
@@ -425,9 +453,12 @@ class PaymentController extends Controller
     public function statistics()
     {
         $query = $this->applyTenantScope(Payment::query(), 'payments');
+        $this->applyBranchScope($query, 'payments');
         $total = (float) $query->sum('amount');
         $count = (int) $query->count();
-        $today = (float) $this->applyTenantScope(Payment::query()->whereDate('created_at', now()->toDateString()), 'payments')->sum('amount');
+        $todayQuery = $this->applyTenantScope(Payment::query()->whereDate('created_at', now()->toDateString()), 'payments');
+        $this->applyBranchScope($todayQuery, 'payments');
+        $today = (float) $todayQuery->sum('amount');
 
         return response()->json([
             'total_amount' => $total,

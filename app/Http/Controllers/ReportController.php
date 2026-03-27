@@ -54,24 +54,54 @@ use App\Support\LedgerService;
 
         private function applySaleBranchFilter($query, string $salesTable = 'sales')
         {
+            $branchId = trim((string) ($this->getActiveBranchContext()['id'] ?? ''));
             $branchName = trim((string) ($this->getActiveBranchContext()['name'] ?? ''));
 
-            if ($branchName === '') {
+            if ($branchId === '' && $branchName === '') {
                 return $query;
             }
 
-            return $query->where(function ($sub) use ($salesTable, $branchName) {
-                if (Schema::hasColumn('sales', 'branch_name')) {
+            return $query->where(function ($sub) use ($salesTable, $branchId, $branchName) {
+                if ($branchId !== '' && Schema::hasColumn('sales', 'branch_id')) {
+                    $sub->where("{$salesTable}.branch_id", $branchId);
+                } elseif ($branchName !== '' && Schema::hasColumn('sales', 'branch_name')) {
                     $sub->where("{$salesTable}.branch_name", $branchName);
                 }
 
-                $sub->orWhereRaw(
-                    "JSON_UNQUOTE(JSON_EXTRACT(COALESCE({$salesTable}.payment_details, '{}'), '$.branch_name')) = ?",
-                    [$branchName]
-                )->orWhereRaw(
-                    "JSON_UNQUOTE(JSON_EXTRACT(COALESCE({$salesTable}.payment_details, '{}'), '$.branch.name')) = ?",
-                    [$branchName]
-                );
+                if ($branchName !== '') {
+                    $sub->orWhereRaw(
+                        "JSON_UNQUOTE(JSON_EXTRACT(COALESCE({$salesTable}.payment_details, '{}'), '$.branch_name')) = ?",
+                        [$branchName]
+                    )->orWhereRaw(
+                        "JSON_UNQUOTE(JSON_EXTRACT(COALESCE({$salesTable}.payment_details, '{}'), '$.branch.name')) = ?",
+                        [$branchName]
+                    );
+                }
+            });
+        }
+
+        private function applyPaymentBranchFilter($query, string $paymentsTable = 'payments')
+        {
+            $activeBranch = $this->getActiveBranchContext();
+            $branchId = trim((string) ($activeBranch['id'] ?? ''));
+            $branchName = trim((string) ($activeBranch['name'] ?? ''));
+
+            if ($branchId === '' && $branchName === '') {
+                return $query;
+            }
+
+            return $query->where(function ($sub) use ($paymentsTable, $branchId, $branchName) {
+                if ($branchId !== '' && Schema::hasColumn('payments', 'branch_id')) {
+                    $sub->where("{$paymentsTable}.branch_id", $branchId);
+                } elseif ($branchName !== '' && Schema::hasColumn('payments', 'branch_name')) {
+                    $sub->where("{$paymentsTable}.branch_name", $branchName);
+                }
+
+                if (Schema::hasTable('sales')) {
+                    $sub->orWhereHas('sale', function ($saleQuery) {
+                        $this->applySaleBranchFilter($saleQuery, 'sales');
+                    });
+                }
             });
         }
 
@@ -503,11 +533,8 @@ public function purchase_report(Request $request)
             $query->whereDate('created_at', '<=', $request->to_date);
         }
 
-        if (!empty($activeBranch['name'])) {
-            $query->whereHas('sale', function ($saleQuery) {
-                $this->applySaleBranchFilter($saleQuery, 'sales');
-            });
-        }
+        $this->scopePaymentsForActor($query);
+        $this->applyPaymentBranchFilter($query, 'payments');
 
         $totalAmount = (clone $query)->sum('amount');
         
@@ -559,11 +586,7 @@ public function purchase_report(Request $request)
     $baseQuery = Payment::with($this->paymentReportRelations());
     $this->scopePaymentsForActor($baseQuery);
 
-    if (!empty($activeBranch['name'])) {
-        $baseQuery->whereHas('sale', function ($saleQuery) {
-            $this->applySaleBranchFilter($saleQuery, 'sales');
-        });
-    }
+    $this->applyPaymentBranchFilter($baseQuery, 'payments');
 
     $query = clone $baseQuery;
 
@@ -693,7 +716,10 @@ public function purchase_report(Request $request)
 
 public function show($id)
 {
-    $payment = \App\Models\Payment::with($this->paymentReportRelations())->findOrFail($id);
+    $paymentQuery = \App\Models\Payment::with($this->paymentReportRelations())->whereKey($id);
+    $this->scopePaymentsForActor($paymentQuery);
+    $this->applyPaymentBranchFilter($paymentQuery, 'payments');
+    $payment = $paymentQuery->firstOrFail();
     $payment->resolved_status = $this->resolvePaymentStatus($payment);
     $payment->resolved_channel = $this->resolvePaymentChannel($payment);
     return response()->json($payment);
@@ -708,7 +734,10 @@ public function update(Request $request, $id)
         'reference' => 'nullable|string|max:255',
     ]);
 
-    $payment = \App\Models\Payment::findOrFail($id);
+    $paymentQuery = \App\Models\Payment::query()->whereKey($id);
+    $this->scopePaymentsForActor($paymentQuery);
+    $this->applyPaymentBranchFilter($paymentQuery, 'payments');
+    $payment = $paymentQuery->firstOrFail();
     $payment->update([
         'method' => $request->method,
         'amount' => $request->amount,
@@ -834,28 +863,7 @@ private function scopePaymentsForActor($query): void
         return;
     }
 
-    $role = strtolower((string) ($user->role ?? ''));
-    if (in_array($role, ['super_admin', 'superadmin', 'administrator', 'admin'], true)) {
-        return;
-    }
-
-    $companyId = (int) ($user->company_id ?? 0);
-
-    $query->where(function ($paymentQuery) use ($companyId, $user) {
-        if ($companyId > 0) {
-            $paymentQuery->whereHas('sale', function ($saleQuery) use ($companyId, $user) {
-                if (Schema::hasColumn('sales', 'company_id')) {
-                    $saleQuery->where('company_id', $companyId);
-                } elseif (Schema::hasColumn('sales', 'user_id')) {
-                    $saleQuery->where('user_id', $user->id);
-                }
-            });
-        }
-
-        if (Schema::hasColumn('payments', 'created_by')) {
-            $paymentQuery->orWhere('created_by', $user->id);
-        }
-    });
+    $this->applyTenantScope($query, 'payments');
 }
 
 
@@ -873,7 +881,10 @@ public function bulkUpdate(Request $request)
     try {
         // 2. Check if the action is a permanent deletion
         if ($status === 'DELETE_ACTION') {
-            \App\Models\Payment::whereIn('id', $ids)->delete();
+            $deleteQuery = \App\Models\Payment::query()->whereIn('id', $ids);
+            $this->scopePaymentsForActor($deleteQuery);
+            $this->applyPaymentBranchFilter($deleteQuery, 'payments');
+            $deleteQuery->delete();
             return response()->json([
                 'success' => true, 
                 'message' => count($ids) . ' records deleted permanently.'
@@ -881,7 +892,10 @@ public function bulkUpdate(Request $request)
         }
 
         // 3. Otherwise, perform a standard status update
-        \App\Models\Payment::whereIn('id', $ids)->update([
+        $updateQuery = \App\Models\Payment::query()->whereIn('id', $ids);
+        $this->scopePaymentsForActor($updateQuery);
+        $this->applyPaymentBranchFilter($updateQuery, 'payments');
+        $updateQuery->update([
             'status' => $status
         ]);
 
@@ -901,7 +915,10 @@ public function bulkUpdate(Request $request)
 
 public function destroy($id)
 {
-    $payment = \App\Models\Payment::findOrFail($id);
+    $paymentQuery = \App\Models\Payment::query()->whereKey($id);
+    $this->scopePaymentsForActor($paymentQuery);
+    $this->applyPaymentBranchFilter($paymentQuery, 'payments');
+    $payment = $paymentQuery->firstOrFail();
     $payment->delete();
 
     return response()->json([
