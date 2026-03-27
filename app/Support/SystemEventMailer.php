@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\EmailAuditLog;
+use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -94,7 +95,7 @@ class SystemEventMailer
                     'intro' => $intro,
                     'details' => $details,
                 ], function ($message) use ($email, $subject) {
-                    $message->from((string) config('mail.from.address'), (string) config('mail.from.name'))
+                    $message->from(Setting::mailFromAddress(), Setting::mailFromName())
                         ->to($email)
                         ->subject($subject);
                 });

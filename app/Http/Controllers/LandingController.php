@@ -12,6 +12,7 @@ use App\Models\LandingSetting;
 use App\Models\Company;
 use App\Models\Plan; // Added Plan model
 use App\Models\Subscription;
+use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -248,7 +249,7 @@ class LandingController extends Controller
             $deliveryMailer = ($preferredMailer === 'log' && $smtpReady) ? 'smtp' : $preferredMailer;
 
             Mail::mailer($deliveryMailer)->raw($body, function ($message) use ($recipients, $validated, $subject) {
-                $message->from((string) config('mail.from.address'), (string) config('mail.from.name'))
+                $message->from(Setting::mailFromAddress(), Setting::mailFromName())
                     ->to($recipients)
                     ->subject($subject);
                 $message->replyTo($validated['email'], $validated['fullname']);

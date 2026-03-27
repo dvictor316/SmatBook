@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\{Auth, DB, Hash, Mail, Log, Storage, Schema};
 use Illuminate\Support\{Str, Carbon};
 use Illuminate\Validation\Rule;
-use App\Models\{Company, User, Subscription, ActivityLog, DeploymentManager, DeploymentCompany, Plan};
+use App\Models\{Company, User, Subscription, ActivityLog, DeploymentManager, DeploymentCompany, Plan, Setting};
 use App\Models\DeploymentManagerPayout;
 use App\Models\Role;
 use App\Support\{SystemEventMailer, DeploymentCommissionPayoutService};
@@ -1024,7 +1024,7 @@ private function formatDeploymentAmount(float $amount): string
                 'name' => $user->name,
                 'workspaceUrl' => $loginUrl,
                 'companyName' => $company?->company_name ?? $company?->name ?? 'SmartProbook',
-            ], fn($m) => $m->from((string) config('mail.from.address'), (string) config('mail.from.name'))
+            ], fn($m) => $m->from(Setting::mailFromAddress(), Setting::mailFromName())
                 ->to($user->email, $user->name)
                 ->subject('Your SmartProbook Login Credentials'));
         } catch (\Exception $e) {

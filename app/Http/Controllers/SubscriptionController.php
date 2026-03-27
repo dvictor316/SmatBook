@@ -1889,7 +1889,7 @@ class SubscriptionController extends Controller
                 'userName'     => $user->name,
                 'workspaceUrl' => $url,
                 'planName'     => $subscription->plan_name ?? $subscription->plan,
-            ], fn($m) => $m->from((string) config('mail.from.address'), (string) config('mail.from.name'))
+            ], fn($m) => $m->from(Setting::mailFromAddress(), Setting::mailFromName())
                 ->to($user->email, $user->name)
                 ->subject('Your SmartProbook Workspace is Ready!'));
         } catch (\Exception $e) {
@@ -1910,7 +1910,7 @@ class SubscriptionController extends Controller
                 'name'         => $user->name,
                 'workspaceUrl' => $url,
                 'companyName'  => $company?->company_name ?? $company?->name,
-            ], fn($m) => $m->from((string) config('mail.from.address'), (string) config('mail.from.name'))
+            ], fn($m) => $m->from(Setting::mailFromAddress(), Setting::mailFromName())
                 ->to($user->email, $user->name)
                 ->subject('Your SmartProbook Login Credentials'));
         } catch (\Exception $e) {
@@ -1952,7 +1952,7 @@ class SubscriptionController extends Controller
                 'intro' => $message,
                 'details' => $details,
             ], function ($m) use ($user, $subject) {
-                $m->from((string) config('mail.from.address'), (string) config('mail.from.name'))
+                $m->from(Setting::mailFromAddress(), Setting::mailFromName())
                     ->to($user->email, $user->name)
                     ->subject($subject);
             });

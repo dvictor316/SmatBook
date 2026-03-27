@@ -79,4 +79,47 @@ class Setting extends Model
 
         return asset(ltrim($path, '/'));
     }
+
+    public static function mailFromName(?string $fallback = null): string
+    {
+        $candidates = [
+            (string) self::get('mail_from_name', ''),
+            (string) self::get('company_name', ''),
+            (string) config('app.name', ''),
+            (string) config('mail.from.name', ''),
+            (string) env('MAIL_FROM_NAME', ''),
+            (string) ($fallback ?? ''),
+            'SmartProbook',
+        ];
+
+        foreach ($candidates as $candidate) {
+            $candidate = trim($candidate);
+            if ($candidate !== '') {
+                return $candidate;
+            }
+        }
+
+        return 'SmartProbook';
+    }
+
+    public static function mailFromAddress(?string $fallback = null): string
+    {
+        $candidates = [
+            (string) self::get('mail_from_address', ''),
+            (string) self::get('company_email', ''),
+            (string) config('mail.from.address', ''),
+            (string) env('MAIL_FROM_ADDRESS', ''),
+            (string) ($fallback ?? ''),
+            'support@smartprobook.com',
+        ];
+
+        foreach ($candidates as $candidate) {
+            $candidate = trim($candidate);
+            if ($candidate !== '' && filter_var($candidate, FILTER_VALIDATE_EMAIL)) {
+                return $candidate;
+            }
+        }
+
+        return 'support@smartprobook.com';
+    }
 }
