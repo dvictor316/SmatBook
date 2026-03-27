@@ -6,6 +6,7 @@ use App\Models\Customer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class CustomerController extends Controller
 {
@@ -38,6 +39,7 @@ class CustomerController extends Controller
             'customer_name' => 'required|string|max:191',
             'email'         => 'nullable|email|max:191|unique:customers,email',
             'phone'         => 'nullable|string|max:191',
+            'balance'       => 'nullable|numeric|min:0',
             'image'         => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
@@ -52,7 +54,7 @@ class CustomerController extends Controller
         ]);
 
         $data['status'] = 'active'; 
-        $data['balance'] = 0.00;
+        $data['balance'] = (float) $request->input('balance', 0.00);
 
         if ($request->hasFile('image')) {
             $data['image'] = $request->file('image')->store('profiles', 'public');
@@ -273,9 +275,165 @@ class CustomerController extends Controller
         return response()->json($query->latest()->limit(100)->get());
     }
 
+    public function downloadImportTemplate()
+    {
+        $headers = ['customer_name', 'email', 'phone', 'address', 'balance', 'status', 'notes'];
+        $rows = [
+            ['Adebayo Stores', 'accounts@adebayo.example', '08030000000', '12 Market Road', '25000', 'active', 'Opening credit balance'],
+            ['Walk-in Customer', '', '', '', '0', 'active', 'General retail customer'],
+        ];
+
+        $content = implode(',', $headers) . "\n";
+        foreach ($rows as $row) {
+            $content .= implode(',', array_map(function ($value) {
+                $escaped = str_replace('"', '""', (string) $value);
+                return '"' . $escaped . '"';
+            }, $row)) . "\n";
+        }
+
+        return response($content, 200, [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename=customers-import-template.csv',
+        ]);
+    }
+
+    public function import(Request $request)
+    {
+        $request->validate([
+            'import_file' => 'required|file|mimes:csv,txt,xls,xlsx|max:20480',
+        ]);
+
+        try {
+            $rows = $this->spreadsheetRows($request->file('import_file'));
+            $header = $rows[0] ?? null;
+            if (!$header) {
+                return back()->with('error', 'The import file is empty.');
+            }
+
+            $header = array_map(fn ($value) => strtolower(trim((string) $value)), $header);
+            foreach (['customer_name'] as $requiredColumn) {
+                if (!in_array($requiredColumn, $header, true)) {
+                    return back()->with('error', 'Missing required import column: ' . $requiredColumn);
+                }
+            }
+
+            $created = 0;
+            $updated = 0;
+            $skipped = 0;
+            $companyId = (int) (auth()->user()?->company_id ?? 0);
+            $userId = (int) (auth()->id() ?? 0);
+
+            foreach (array_slice($rows, 1) as $rowNumber => $row) {
+                $rowData = [];
+                foreach ($header as $index => $column) {
+                    $rowData[$column] = trim((string) ($row[$index] ?? ''));
+                }
+
+                if (($rowData['customer_name'] ?? '') === '') {
+                    $skipped++;
+                    continue;
+                }
+
+                try {
+                    $lookupEmail = $rowData['email'] ?? '';
+                    $lookupPhone = $rowData['phone'] ?? '';
+
+                    $customerQuery = Customer::query();
+                    if ($companyId > 0 && Schema::hasColumn('customers', 'company_id')) {
+                        $customerQuery->where('company_id', $companyId);
+                    } elseif ($userId > 0 && Schema::hasColumn('customers', 'user_id')) {
+                        $customerQuery->where('user_id', $userId);
+                    }
+
+                    if ($lookupEmail !== '' && Schema::hasColumn('customers', 'email')) {
+                        $customerQuery->where(function ($query) use ($lookupEmail, $lookupPhone) {
+                            $query->where('email', $lookupEmail);
+
+                            if ($lookupPhone !== '' && Schema::hasColumn('customers', 'phone')) {
+                                $query->orWhere('phone', $lookupPhone);
+                            }
+                        });
+                    } elseif ($lookupPhone !== '' && Schema::hasColumn('customers', 'phone')) {
+                        $customerQuery->where('phone', $lookupPhone);
+                    } else {
+                        $customerQuery->where('customer_name', $rowData['customer_name']);
+                    }
+
+                    $customer = $customerQuery->first();
+                    $isNew = !$customer;
+                    $customer = $customer ?: new Customer();
+
+                    $payload = $this->sanitizeForCustomerColumns([
+                        'customer_name' => $rowData['customer_name'],
+                        'email' => $lookupEmail !== '' ? $lookupEmail : null,
+                        'phone' => $lookupPhone !== '' ? $lookupPhone : null,
+                        'address' => $rowData['address'] ?? null,
+                        'balance' => is_numeric($rowData['balance'] ?? null) ? (float) $rowData['balance'] : 0,
+                        'status' => in_array(strtolower((string) ($rowData['status'] ?? 'active')), ['active', 'deactive'], true)
+                            ? strtolower((string) $rowData['status'])
+                            : 'active',
+                        'notes' => $rowData['notes'] ?? null,
+                        'company_id' => $companyId > 0 ? $companyId : null,
+                        'user_id' => $userId > 0 ? $userId : null,
+                    ]);
+
+                    $customer->fill($payload);
+                    $customer->save();
+
+                    $isNew ? $created++ : $updated++;
+                } catch (\Throwable $rowException) {
+                    \Log::warning('Customer import row skipped.', [
+                        'row' => $rowNumber + 2,
+                        'customer_name' => $rowData['customer_name'] ?? null,
+                        'error' => $rowException->getMessage(),
+                    ]);
+                    $skipped++;
+                }
+            }
+
+            return redirect()->route('customers.index')->with(
+                'success',
+                "Customer import completed. Created: {$created}, Updated: {$updated}, Skipped: {$skipped}."
+            );
+        } catch (\Throwable $exception) {
+            \Log::error('Customer import failed.', [
+                'user_id' => auth()->id(),
+                'error' => $exception->getMessage(),
+            ]);
+
+            return back()->withInput()->with(
+                'error',
+                'The customer import could not be completed. Please confirm the spreadsheet columns and try again.'
+            );
+        }
+    }
+
     private function sanitizeForCustomerColumns(array $data): array
     {
         $allowed = array_flip(Schema::getColumnListing('customers'));
         return array_intersect_key($data, $allowed);
+    }
+
+    private function spreadsheetRows(\Illuminate\Http\UploadedFile $file): array
+    {
+        $extension = strtolower((string) $file->getClientOriginalExtension());
+
+        if (in_array($extension, ['csv', 'txt'], true)) {
+            $handle = fopen($file->getRealPath(), 'r');
+            if ($handle === false) {
+                return [];
+            }
+
+            $rows = [];
+            while (($row = fgetcsv($handle)) !== false) {
+                $rows[] = $row;
+            }
+            fclose($handle);
+
+            return $rows;
+        }
+
+        $spreadsheet = IOFactory::load($file->getRealPath());
+        return $spreadsheet->getActiveSheet()->toArray(null, false, false, false);
     }
 }

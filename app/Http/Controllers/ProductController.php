@@ -87,6 +87,33 @@ class ProductController extends Controller
         }
     }
 
+    private function sanitizeForProductColumns(array $data): array
+    {
+        $allowed = array_flip(Schema::getColumnListing('products'));
+
+        return array_intersect_key($data, $allowed);
+    }
+
+    private function firstOrCreateImportCategory(string $categoryName): Category
+    {
+        $existing = Category::query()->where('name', $categoryName)->first();
+        if ($existing) {
+            return $existing;
+        }
+
+        $payload = ['name' => $categoryName];
+
+        if (Schema::hasColumn('categories', 'description')) {
+            $payload['description'] = 'Auto-created during product import';
+        }
+
+        if (Schema::hasColumn('categories', 'status')) {
+            $payload['status'] = 1;
+        }
+
+        return Category::query()->create($payload);
+    }
+
     private function getAvailableBranches(): array
     {
         $raw = Setting::where('key', $this->companyScopedSettingKey('branches_json'))->value('value');
@@ -993,118 +1020,129 @@ public function inventory(Request $request)
             return redirect()->back()->with('error', 'Products and categories tables are required for import.');
         }
 
-        $file = $request->file('import_file');
-        $rows = $this->spreadsheetRows($file);
-        $header = $rows[0] ?? null;
-        if (!$header) {
-            return redirect()->back()->with('error', 'The import file is empty.');
-        }
-
-        $header = array_map(fn ($value) => strtolower(trim((string) $value)), $header);
-        $required = ['name', 'category', 'base_unit_name', 'unit_type', 'price', 'purchase_price'];
-        foreach ($required as $column) {
-            if (!in_array($column, $header, true)) {
-                return redirect()->back()->with('error', 'Missing required import column: ' . $column);
+        try {
+            $file = $request->file('import_file');
+            $rows = $this->spreadsheetRows($file);
+            $header = $rows[0] ?? null;
+            if (!$header) {
+                return redirect()->back()->with('error', 'The import file is empty.');
             }
-        }
 
-        $created = 0;
-        $updated = 0;
-        $skipped = 0;
-
-        DB::transaction(function () use ($rows, $header, &$created, &$updated, &$skipped, $request) {
-            $activeBranch = $this->resolveBranchContext($request->input('branch_id'));
-            foreach (array_slice($rows, 1) as $row) {
-                $rowData = [];
-                foreach ($header as $index => $column) {
-                    $rowData[$column] = trim((string) ($row[$index] ?? ''));
-                }
-
-                if (($rowData['name'] ?? '') === '') {
-                    $skipped++;
-                    continue;
-                }
-
-                $categoryName = $rowData['category'] ?: 'General';
-                $category = Category::firstOrCreate(['name' => $categoryName], [
-                    'status' => 'active',
-                    'description' => 'Auto-created during product import',
-                ]);
-
-                $unitType = strtolower($rowData['unit_type'] ?: 'unit');
-                if (!in_array($unitType, ['unit', 'sachet', 'roll', 'carton'], true)) {
-                    $unitType = 'unit';
-                }
-
-                $sku = $this->generateUniqueSku($rowData['sku'] ?? null, $rowData['name']);
-                $product = Product::query()
-                    ->tap(fn ($query) => $this->applyTenantScope($query, 'products'))
-                    ->where('sku', $sku)
-                    ->first();
-                $isNew = $product === null;
-                $product = $product ?: new Product();
-
-                $stock = is_numeric($rowData['stock'] ?? null)
-                    ? (int) $rowData['stock']
-                    : $this->calculateStockFromPackaging([
-                        'stock_cartons' => (float) ($rowData['stock_cartons'] ?? 0),
-                        'stock_rolls' => (float) ($rowData['stock_rolls'] ?? 0),
-                        'stock_units' => (float) ($rowData['stock_units'] ?? 0),
-                        'units_per_carton' => max(0, (int) ($rowData['units_per_carton'] ?: 0)),
-                        'units_per_roll' => max(0, (int) ($rowData['units_per_roll'] ?: 0)),
-                    ]);
-                $product->fill([
-                    'name' => $rowData['name'],
-                    'sku' => $sku,
-                    'barcode' => $rowData['barcode'] ?: null,
-                    'category_id' => $category->id,
-                    'base_unit_name' => $rowData['base_unit_name'] ?: 'pcs',
-                    'unit_type' => $unitType,
-                    'units_per_carton' => max(0, (int) ($rowData['units_per_carton'] ?: 0)),
-                    'units_per_roll' => max(0, (int) ($rowData['units_per_roll'] ?: 0)),
-                    'price' => (float) (($rowData['retail_price'] ?? $rowData['price']) ?: 0),
-                    'purchase_price' => (float) ($rowData['purchase_price'] ?: 0),
-                    'stock' => $stock,
-                    'stock_quantity' => $stock,
-                    'status' => 'active',
-                    'description' => $rowData['description'] ?: null,
-                ]);
-                if (Schema::hasColumn('products', 'retail_price')) {
-                    $product->retail_price = (float) (($rowData['retail_price'] ?? $rowData['price']) ?: 0);
-                }
-                if (Schema::hasColumn('products', 'wholesale_price')) {
-                    $product->wholesale_price = ($rowData['wholesale_price'] ?? '') !== '' ? (float) $rowData['wholesale_price'] : null;
-                }
-                if (Schema::hasColumn('products', 'special_price')) {
-                    $product->special_price = ($rowData['special_price'] ?? '') !== '' ? (float) $rowData['special_price'] : null;
-                }
-                if (Schema::hasColumn('products', 'company_id')) {
-                    $product->company_id = auth()->user()?->company_id ?: null;
-                }
-                if (Schema::hasColumn('products', 'user_id')) {
-                    $product->user_id = auth()->id();
-                }
-                $product->save();
-                $this->branchInventory->seedOpeningStock(
-                    $product,
-                    $stock,
-                    $activeBranch,
-                    (int) ($product->company_id ?? auth()->user()?->company_id ?? 0)
-                );
-
-                if ($isNew) {
-                    $created++;
-                } else {
-                    $updated++;
+            $header = array_map(fn ($value) => strtolower(trim((string) $value)), $header);
+            $required = ['name', 'category', 'base_unit_name', 'unit_type', 'price', 'purchase_price'];
+            foreach ($required as $column) {
+                if (!in_array($column, $header, true)) {
+                    return redirect()->back()->with('error', 'Missing required import column: ' . $column);
                 }
             }
-        });
-        $this->clearDashboardMetricsCache($request->input('branch_id'));
 
-        return redirect()->route('product-list')->with(
-            'success',
-            "Product import completed. Created: {$created}, Updated: {$updated}, Skipped: {$skipped}."
-        );
+            $created = 0;
+            $updated = 0;
+            $skipped = 0;
+
+            DB::transaction(function () use ($rows, $header, &$created, &$updated, &$skipped, $request) {
+                $activeBranch = $this->resolveBranchContext($request->input('branch_id'));
+                foreach (array_slice($rows, 1) as $rowNumber => $row) {
+                    $rowData = [];
+                    foreach ($header as $index => $column) {
+                        $rowData[$column] = trim((string) ($row[$index] ?? ''));
+                    }
+
+                    if (($rowData['name'] ?? '') === '') {
+                        $skipped++;
+                        continue;
+                    }
+
+                    try {
+                        $categoryName = $rowData['category'] ?: 'General';
+                        $category = $this->firstOrCreateImportCategory($categoryName);
+
+                        $unitType = strtolower($rowData['unit_type'] ?: 'unit');
+                        if (!in_array($unitType, ['unit', 'sachet', 'roll', 'carton'], true)) {
+                            $unitType = 'unit';
+                        }
+
+                        $sku = $this->generateUniqueSku($rowData['sku'] ?? null, $rowData['name']);
+                        $product = Product::query()
+                            ->tap(fn ($query) => $this->applyTenantScope($query, 'products'))
+                            ->where('sku', $sku)
+                            ->first();
+                        $isNew = $product === null;
+                        $product = $product ?: new Product();
+
+                        $stock = is_numeric($rowData['stock'] ?? null)
+                            ? (int) $rowData['stock']
+                            : $this->calculateStockFromPackaging([
+                                'stock_cartons' => (float) ($rowData['stock_cartons'] ?? 0),
+                                'stock_rolls' => (float) ($rowData['stock_rolls'] ?? 0),
+                                'stock_units' => (float) ($rowData['stock_units'] ?? 0),
+                                'units_per_carton' => max(0, (int) ($rowData['units_per_carton'] ?: 0)),
+                                'units_per_roll' => max(0, (int) ($rowData['units_per_roll'] ?: 0)),
+                            ]);
+
+                        $payload = $this->sanitizeForProductColumns([
+                            'name' => $rowData['name'],
+                            'sku' => $sku,
+                            'barcode' => $rowData['barcode'] ?: null,
+                            'category_id' => $category->id,
+                            'base_unit_name' => $rowData['base_unit_name'] ?: 'pcs',
+                            'unit_type' => $unitType,
+                            'units_per_carton' => max(0, (int) ($rowData['units_per_carton'] ?: 0)),
+                            'units_per_roll' => max(0, (int) ($rowData['units_per_roll'] ?: 0)),
+                            'price' => (float) (($rowData['retail_price'] ?? $rowData['price']) ?: 0),
+                            'retail_price' => (float) (($rowData['retail_price'] ?? $rowData['price']) ?: 0),
+                            'wholesale_price' => ($rowData['wholesale_price'] ?? '') !== '' ? (float) $rowData['wholesale_price'] : null,
+                            'special_price' => ($rowData['special_price'] ?? '') !== '' ? (float) $rowData['special_price'] : null,
+                            'purchase_price' => (float) ($rowData['purchase_price'] ?: 0),
+                            'stock' => $stock,
+                            'stock_quantity' => $stock,
+                            'status' => 'active',
+                            'description' => $rowData['description'] ?: null,
+                            'company_id' => auth()->user()?->company_id ?: null,
+                            'user_id' => auth()->id(),
+                        ]);
+
+                        $product->fill($payload);
+                        $product->save();
+                        $this->branchInventory->seedOpeningStock(
+                            $product,
+                            $stock,
+                            $activeBranch,
+                            (int) ($product->company_id ?? auth()->user()?->company_id ?? 0)
+                        );
+
+                        if ($isNew) {
+                            $created++;
+                        } else {
+                            $updated++;
+                        }
+                    } catch (\Throwable $rowException) {
+                        $skipped++;
+                        Log::warning('Product import row skipped.', [
+                            'row' => $rowNumber + 2,
+                            'name' => $rowData['name'] ?? null,
+                            'error' => $rowException->getMessage(),
+                        ]);
+                    }
+                }
+            });
+            $this->clearDashboardMetricsCache($request->input('branch_id'));
+
+            return redirect()->route('product-list')->with(
+                'success',
+                "Product import completed. Created: {$created}, Updated: {$updated}, Skipped: {$skipped}."
+            );
+        } catch (\Throwable $exception) {
+            Log::error('Product import failed.', [
+                'user_id' => auth()->id(),
+                'error' => $exception->getMessage(),
+            ]);
+
+            return redirect()->back()->withInput()->with(
+                'error',
+                'The product import could not be completed. Please confirm the spreadsheet columns and try again.'
+            );
+        }
     }
 
     private function generateUniqueSku(?string $providedSku, string $name, ?int $ignoreId = null): string
