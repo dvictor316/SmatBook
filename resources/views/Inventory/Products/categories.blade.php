@@ -93,6 +93,12 @@
                                                            data-bs-toggle="modal" data-bs-target="#editCategory{{ data_get($category, 'id') }}">
                                                             <i class="far fa-edit"></i>
                                                         </a>
+                                                        <form action="{{ route('categories.clear-products', data_get($category, 'id')) }}" method="POST" onsubmit="return confirm('Delete all products in this category and reset their stock?')">
+                                                            @csrf
+                                                            <button type="submit" class="btn btn-sm btn-white text-warning me-2 shadow-sm">
+                                                                <i class="fas fa-broom"></i>
+                                                            </button>
+                                                        </form>
                                                         
                                                         <form action="{{ route('categories.destroy', data_get($category, 'id')) }}" method="POST" onsubmit="return confirm('Are you sure?')">
                                                             @csrf @method('DELETE')

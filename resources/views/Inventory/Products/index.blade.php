@@ -188,6 +188,17 @@
                                 <ul class="dropdown-menu dropdown-menu-end">
                                     <li><a class="dropdown-item" href="{{ route('inventory.Products.import.template') }}"><i class="far fa-file-lines me-2 text-primary"></i>Download Spreadsheet Template</a></li>
                                     <li><button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#importProductsModal"><i class="fas fa-file-upload me-2 text-success"></i>Import Products</button></li>
+                                    @php($lastImportKey = 'product_import_last_' . (auth()->id() ?? 'guest'))
+                                    @if(\Illuminate\Support\Facades\Cache::has($lastImportKey))
+                                        <li>
+                                            <form action="{{ route('inventory.Products.import.undo') }}" method="POST" onsubmit="return confirm('Undo the last product import? This will delete the imported items and reset their stock.');">
+                                                @csrf
+                                                <button type="submit" class="dropdown-item text-danger">
+                                                    <i class="fas fa-rotate-left me-2"></i>Undo Last Import
+                                                </button>
+                                            </form>
+                                        </li>
+                                    @endif
                                 </ul>
                             </div>
 

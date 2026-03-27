@@ -155,4 +155,29 @@ public function store(Request $request)
         $category->delete();
         return redirect()->back()->with('success', 'Category deleted successfully!');
     }
+
+    public function clearProducts(Category $category)
+    {
+        $deleted = 0;
+        $failed = 0;
+
+        $category->products()->chunk(100, function ($products) use (&$deleted, &$failed) {
+            foreach ($products as $product) {
+                try {
+                    if (Schema::hasTable('inventory_history')) {
+                        \DB::table('inventory_history')->where('product_id', $product->id)->delete();
+                    }
+                    $product->delete();
+                    $deleted++;
+                } catch (\Throwable $e) {
+                    $failed++;
+                }
+            }
+        });
+
+        return redirect()->back()->with(
+            'success',
+            "Deleted {$deleted} products from this category. Failed: {$failed}."
+        );
+    }
 }

@@ -613,6 +613,7 @@ Route::middleware(['auth', 'subscription.active'])->group(function () {
         Route::get('/add-products', 'create')->name('add-products');
         Route::post('/products/store', 'store')->name('inventory.Products.store');
         Route::post('/products/import', 'import')->name('inventory.Products.import');
+        Route::post('/products/import/undo', 'undoLastImport')->name('inventory.Products.import.undo');
         Route::get('/products/import/template', 'downloadImportTemplate')->name('inventory.Products.import.template');
         Route::get('/edit-products/{id}', 'edit')->name('inventory.Products.edit');
         Route::put('/products/update/{id}', 'update')->name('inventory.Products.update');
@@ -630,6 +631,7 @@ Route::middleware(['auth', 'subscription.active'])->group(function () {
     
     // Categories
     Route::resource('categories', CategoryController::class);
+    Route::post('/categories/{category}/clear-products', [CategoryController::class, 'clearProducts'])->name('categories.clear-products');
     Route::get('/inventory/products/category', [CategoryController::class, 'index'])->name('inventory.categories');
     
     // Product Sales

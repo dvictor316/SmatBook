@@ -87,6 +87,49 @@ class ProductController extends Controller
         }
     }
 
+    public function undoLastImport(Request $request): RedirectResponse
+    {
+        $cacheKey = 'product_import_last_' . auth()->id();
+        $payload = Cache::get($cacheKey);
+        if (empty($payload['ids'])) {
+            return redirect()->route('product-list')->with('warning', 'No recent import found to undo.');
+        }
+
+        $deleted = 0;
+        $failed = 0;
+        $skipped = 0;
+        $ids = array_unique((array) $payload['ids']);
+
+        foreach ($ids as $id) {
+            $product = Product::query()
+                ->tap(fn ($query) => $this->applyTenantScope($query, 'products'))
+                ->where('id', $id)
+                ->first();
+
+            if (!$product) {
+                $skipped++;
+                continue;
+            }
+
+            try {
+                if (Schema::hasTable('inventory_history')) {
+                    DB::table('inventory_history')->where('product_id', $product->id)->delete();
+                }
+                $product->delete();
+                $deleted++;
+            } catch (\Throwable $e) {
+                $failed++;
+            }
+        }
+
+        Cache::forget($cacheKey);
+
+        return redirect()->route('product-list')->with(
+            'success',
+            "Undo completed. Deleted: {$deleted}, Skipped: {$skipped}, Failed: {$failed}."
+        );
+    }
+
     private function sanitizeForProductColumns(array $data): array
     {
         $allowed = array_flip(Schema::getColumnListing('products'));
@@ -1196,6 +1239,7 @@ public function inventory(Request $request)
             $missingRequired = 0;
             $rowErrors = [];
             $updateExisting = $request->boolean('update_existing');
+            $createdIds = [];
 
             DB::transaction(function () use ($file, $header, &$created, &$updated, &$updatedExisting, &$skipped, &$duplicates, &$missingRequired, &$rowErrors, $updateExisting, $request) {
                 $activeBranch = $this->resolveBranchContext($request->input('branch_id'));
@@ -1312,6 +1356,7 @@ public function inventory(Request $request)
 
                         if ($isNew) {
                             $created++;
+                            $createdIds[] = $product->id;
                         } else {
                             $updated++;
                             if ($existing) {
@@ -1329,6 +1374,12 @@ public function inventory(Request $request)
                 }
             });
             $this->clearDashboardMetricsCache($request->input('branch_id'));
+            if (!empty($createdIds)) {
+                Cache::put('product_import_last_' . auth()->id(), [
+                    'ids' => array_values(array_unique($createdIds)),
+                    'created_at' => now(),
+                ], now()->addHours(6));
+            }
 
             Log::info('Product import completed.', [
                 'user_id' => auth()->id(),

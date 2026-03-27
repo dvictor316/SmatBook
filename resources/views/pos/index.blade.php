@@ -1442,6 +1442,7 @@ label {
                                 <option value="Transfer">Transfer</option>
                                 <option value="Split">Split Payment</option>
                             </select>
+                            <small class="text-muted">Use Split Payment to enter different amounts per channel.</small>
                         </div>
                         <div class="col-md-6">
                             <label>Amount Paid</label>
