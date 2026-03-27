@@ -10,6 +10,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Routing\Redirector; 
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Log;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class VendorController extends Controller
 {
@@ -295,5 +297,332 @@ class VendorController extends Controller
             'transactions' => $transactions,
             'closingBalance' => $vendor->current_balance,
         ]);
+    }
+
+    public function downloadImportTemplate()
+    {
+        $content = implode(',', [
+            'name',
+            'email',
+            'phone',
+            'address',
+            'balance',
+            'notes',
+        ]) . PHP_EOL;
+
+        return response($content, 200, [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="vendor-import-template.csv"',
+        ]);
+    }
+
+    public function import(Request $request): RedirectResponse
+    {
+        Log::info('Vendor import request received.', [
+            'user_id' => auth()->id(),
+            'has_file' => $request->hasFile('import_file'),
+            'filename' => $request->file('import_file')?->getClientOriginalName(),
+            'size' => $request->file('import_file')?->getSize(),
+        ]);
+
+        $request->validate([
+            'import_file' => 'required|file|mimes:csv,txt,xls,xlsx|max:20480',
+            'update_existing' => 'nullable|boolean',
+        ]);
+
+        try {
+            $file = $request->file('import_file');
+            $header = null;
+
+            foreach ($this->spreadsheetRowIterator($file) as $row) {
+                $header = $row;
+                break;
+            }
+
+            if (!$header) {
+                return back()->with('error', 'The import file is empty.');
+            }
+
+            $header = array_map(fn ($value) => $this->normalizeImportHeaderCell($value), $header);
+            foreach (['name', 'email'] as $requiredColumn) {
+                if (!in_array($requiredColumn, $header, true)) {
+                    return back()->with('error', 'Missing required import column: ' . $requiredColumn);
+                }
+            }
+
+            $created = 0;
+            $updated = 0;
+            $updatedExisting = 0;
+            $skipped = 0;
+            $duplicates = 0;
+            $missingRequired = 0;
+            $rowErrors = [];
+            $companyId = (int) (auth()->user()?->company_id ?? 0);
+            $userId = (int) (auth()->id() ?? 0);
+            $updateExisting = $request->boolean('update_existing');
+
+            foreach ($this->spreadsheetRowIterator($file) as $rowNumber => $row) {
+                if ($rowNumber === 0) {
+                    continue;
+                }
+
+                $rowData = [];
+                foreach ($header as $index => $column) {
+                    $rowData[$column] = trim((string) ($row[$index] ?? ''));
+                }
+
+                $missing = [];
+                foreach (['name', 'email'] as $requiredField) {
+                    if (($rowData[$requiredField] ?? '') === '') {
+                        $missing[] = $requiredField;
+                    }
+                }
+                if (!empty($missing)) {
+                    $skipped++;
+                    $missingRequired++;
+                    if (count($rowErrors) < 10) {
+                        $rowErrors[] = 'Row ' . ($rowNumber + 1) . ': missing ' . implode(', ', $missing);
+                    }
+                    continue;
+                }
+
+                try {
+                    $lookupEmail = $rowData['email'] ?? '';
+                    $lookupPhone = $rowData['phone'] ?? '';
+
+                    $vendorQuery = Vendor::query();
+                    if ($companyId > 0 && Schema::hasColumn('vendors', 'company_id')) {
+                        $vendorQuery->where('company_id', $companyId);
+                    } elseif ($userId > 0 && Schema::hasColumn('vendors', 'user_id')) {
+                        $vendorQuery->where('user_id', $userId);
+                    }
+
+                    if ($lookupEmail !== '' && Schema::hasColumn('vendors', 'email')) {
+                        $vendorQuery->where(function ($query) use ($lookupEmail, $lookupPhone) {
+                            $query->where('email', $lookupEmail);
+
+                            if ($lookupPhone !== '' && Schema::hasColumn('vendors', 'phone')) {
+                                $query->orWhere('phone', $lookupPhone);
+                            }
+                        });
+                    } elseif ($lookupPhone !== '' && Schema::hasColumn('vendors', 'phone')) {
+                        $vendorQuery->where('phone', $lookupPhone);
+                    } else {
+                        $vendorQuery->where('name', $rowData['name']);
+                    }
+
+                    $vendor = $vendorQuery->first();
+                    $isNew = !$vendor;
+                    if ($vendor && !$updateExisting) {
+                        $skipped++;
+                        $duplicates++;
+                        if (count($rowErrors) < 10) {
+                            $rowErrors[] = 'Row ' . ($rowNumber + 1) . ': duplicate vendor detected';
+                        }
+                        continue;
+                    }
+
+                    $vendor = $vendor ?: new Vendor();
+                    $payload = $this->sanitizeForVendorColumns([
+                        'name' => $rowData['name'],
+                        'email' => $lookupEmail !== '' ? $lookupEmail : null,
+                        'phone' => $lookupPhone !== '' ? $lookupPhone : null,
+                        'address' => $rowData['address'] ?? null,
+                        'notes' => $rowData['notes'] ?? null,
+                        'company_id' => $companyId > 0 ? $companyId : null,
+                        'user_id' => $userId > 0 ? $userId : null,
+                    ]);
+
+                    $vendor->fill($payload);
+                    $vendor->save();
+
+                    if ($isNew) {
+                        $initialAmount = is_numeric($rowData['balance'] ?? null) ? (float) $rowData['balance'] : 0.0;
+                        VendorLedgerTransaction::create([
+                            'vendor_id' => $vendor->id,
+                            'name' => 'Initial Balance on Import',
+                            'reference' => 'SYS-IMPORT',
+                            'mode' => 'System',
+                            'amount' => $initialAmount,
+                        ]);
+                        $created++;
+                    } else {
+                        $updated++;
+                        $updatedExisting++;
+                    }
+                } catch (\Throwable $rowException) {
+                    Log::warning('Vendor import row skipped.', [
+                        'row' => $rowNumber + 1,
+                        'vendor' => $rowData['name'] ?? null,
+                        'error' => $rowException->getMessage(),
+                    ]);
+                    $skipped++;
+                }
+            }
+
+            $summary = "Vendor import completed. Created: {$created}, Updated: {$updated}, Skipped: {$skipped}.";
+            if ($updatedExisting > 0) {
+                $summary .= " Updated existing: {$updatedExisting}.";
+            }
+            if ($duplicates > 0 || $missingRequired > 0) {
+                $summary .= " Duplicates skipped: {$duplicates}, Missing required: {$missingRequired}.";
+            }
+
+            $redirect = redirect()->route('vendors.index')->with('success', $summary);
+            if (!empty($rowErrors)) {
+                $redirect->with('warning', 'Some rows were skipped: ' . implode(' | ', $rowErrors));
+            }
+            return $redirect;
+        } catch (\Throwable $exception) {
+            Log::error('Vendor import failed.', [
+                'user_id' => auth()->id(),
+                'error' => $exception->getMessage(),
+            ]);
+
+            return back()->withInput()->with(
+                'error',
+                'The vendor import could not be completed. Please confirm the spreadsheet columns and try again.'
+            );
+        }
+    }
+
+    private function sanitizeForVendorColumns(array $data): array
+    {
+        $allowed = array_flip(Schema::getColumnListing('vendors'));
+        return array_intersect_key($data, $allowed);
+    }
+
+    private function normalizeImportHeaderCell($value): string
+    {
+        $header = strtolower(trim((string) $value));
+        return preg_replace('/^\x{FEFF}/u', '', $header) ?? $header;
+    }
+
+    private function spreadsheetRowIterator(\Illuminate\Http\UploadedFile $file): \Generator
+    {
+        $extension = strtolower((string) $file->getClientOriginalExtension());
+
+        if (in_array($extension, ['csv', 'txt'], true)) {
+            $handle = fopen($file->getRealPath(), 'r');
+            if ($handle === false) {
+                return;
+            }
+
+            try {
+                $delimiter = $this->detectCsvDelimiter($handle);
+                while (($line = fgets($handle)) !== false) {
+                    $line = $this->normalizeCsvLine($line);
+                    if ($line === '') {
+                        continue;
+                    }
+
+                    $row = str_getcsv($line, $delimiter);
+                    $row = $this->expandEmbeddedDelimitedRow($row);
+                    if ($row === [null] || $row === false) {
+                        continue;
+                    }
+
+                    yield $row;
+                }
+            } finally {
+                fclose($handle);
+            }
+
+            return;
+        }
+
+        $reader = IOFactory::createReaderForFile($file->getRealPath());
+        if (method_exists($reader, 'setReadDataOnly')) {
+            $reader->setReadDataOnly(true);
+        }
+        if (method_exists($reader, 'setReadEmptyCells')) {
+            $reader->setReadEmptyCells(false);
+        }
+
+        $spreadsheet = $reader->load($file->getRealPath());
+
+        try {
+            foreach ($spreadsheet->getActiveSheet()->getRowIterator() as $row) {
+                $cells = [];
+                $cellIterator = $row->getCellIterator();
+                $cellIterator->setIterateOnlyExistingCells(false);
+
+                foreach ($cellIterator as $cell) {
+                    $cells[] = $cell?->getFormattedValue();
+                }
+
+                yield $cells;
+            }
+        } finally {
+            $spreadsheet->disconnectWorksheets();
+            unset($spreadsheet);
+        }
+    }
+
+    private function detectCsvDelimiter($handle): string
+    {
+        $default = ',';
+        $candidates = [',', ';', "\t", '|'];
+        $firstLine = fgets($handle);
+        if ($firstLine === false) {
+            rewind($handle);
+            return $default;
+        }
+
+        $firstLine = $this->normalizeCsvLine($firstLine);
+        $bestDelimiter = $default;
+        $bestCount = 0;
+        foreach ($candidates as $candidate) {
+            $count = substr_count($firstLine, $candidate);
+            if ($count > $bestCount) {
+                $bestDelimiter = $candidate;
+                $bestCount = $count;
+            }
+        }
+
+        rewind($handle);
+        return $bestDelimiter;
+    }
+
+    private function normalizeCsvLine(string $line): string
+    {
+        if ($line === '') {
+            return '';
+        }
+
+        if (str_starts_with($line, "\xEF\xBB\xBF")) {
+            $line = substr($line, 3);
+        }
+
+        if (!mb_check_encoding($line, 'UTF-8')) {
+            $line = mb_convert_encoding($line, 'UTF-8', 'UTF-16LE,UTF-16BE,Windows-1252,ISO-8859-1');
+        }
+
+        return trim($line);
+    }
+
+    private function expandEmbeddedDelimitedRow($row): array
+    {
+        if (!is_array($row)) {
+            return [];
+        }
+
+        if (count($row) !== 1) {
+            return $row;
+        }
+
+        $cell = (string) ($row[0] ?? '');
+        if ($cell === '') {
+            return $row;
+        }
+
+        $delimiterCandidates = [',', ';', "\t", '|'];
+        foreach ($delimiterCandidates as $delimiter) {
+            if (strpos($cell, $delimiter) !== false) {
+                return str_getcsv($cell, $delimiter);
+            }
+        }
+
+        return $row;
     }
 }

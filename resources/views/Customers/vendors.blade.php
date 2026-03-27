@@ -12,6 +12,12 @@
 
             <div class="row mb-3">
                 <div class="col-sm-12 text-end">
+                    <button type="button" class="btn btn-outline-primary me-2" data-bs-toggle="modal" data-bs-target="#importVendorsModal">
+                        Import Vendors
+                    </button>
+                    <a href="{{ route('vendors.import.template') }}" class="btn btn-outline-secondary me-2">
+                        Download CSV Template
+                    </a>
                     <a href="{{ route('vendors.create') }}" class="btn btn-primary">Add New Vendor</a>
                 </div>
             </div>
@@ -95,6 +101,38 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="importVendorsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="POST" action="{{ route('vendors.import') }}" enctype="multipart/form-data">
+                    @csrf
+                    <div class="modal-header">
+                        <h5 class="modal-title">Import Vendors</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-muted mb-3">Upload CSV or Excel files with vendor opening balances.</p>
+                        <div class="mb-3">
+                            <label class="form-label">Spreadsheet File</label>
+                            <input type="file" name="import_file" class="form-control" accept=".csv,.txt,.xls,.xlsx,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label d-flex align-items-center gap-2">
+                                <input type="checkbox" name="update_existing" value="1">
+                                <span>Update existing vendors when duplicates are found</span>
+                            </label>
+                            <small class="text-muted">When enabled, imports will update matching vendors instead of skipping them.</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Import Vendors</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

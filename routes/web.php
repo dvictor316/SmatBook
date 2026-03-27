@@ -577,6 +577,8 @@ Route::middleware(['auth', 'subscription.active'])->group(function () {
     Route::controller(VendorController::class)->prefix('vendors')->name('vendors.')->group(function () {
         Route::get('/', 'index')->name('index');
         Route::get('/create', 'create')->name('create');
+        Route::get('/import/template', 'downloadImportTemplate')->name('import.template');
+        Route::post('/import', 'import')->name('import');
         Route::post('/', 'store')->name('store');
         Route::get('/{id}', 'show')->name('show');
         Route::get('/{id}/edit', 'edit')->name('edit');
