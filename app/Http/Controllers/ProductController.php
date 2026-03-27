@@ -1183,8 +1183,11 @@ public function inventory(Request $request)
             $created = 0;
             $updated = 0;
             $skipped = 0;
+            $duplicates = 0;
+            $missingRequired = 0;
+            $rowErrors = [];
 
-            DB::transaction(function () use ($file, $header, &$created, &$updated, &$skipped, $request) {
+            DB::transaction(function () use ($file, $header, &$created, &$updated, &$skipped, &$duplicates, &$missingRequired, &$rowErrors, $request) {
                 $activeBranch = $this->resolveBranchContext($request->input('branch_id'));
 
                 foreach ($this->spreadsheetRowIterator($file) as $rowNumber => $row) {
@@ -1197,21 +1200,54 @@ public function inventory(Request $request)
                         $rowData[$column] = trim((string) ($row[$index] ?? ''));
                     }
 
-                    if (($rowData['name'] ?? '') === '') {
+                    $requiredFields = ['name', 'category', 'base_unit_name', 'unit_type', 'price', 'purchase_price'];
+                    $missing = [];
+                    foreach ($requiredFields as $field) {
+                        if (($rowData[$field] ?? '') === '') {
+                            $missing[] = $field;
+                        }
+                    }
+                    if (!empty($missing)) {
                         $skipped++;
+                        $missingRequired++;
+                        if (count($rowErrors) < 10) {
+                            $rowErrors[] = 'Row ' . ($rowNumber + 1) . ': missing ' . implode(', ', $missing);
+                        }
                         continue;
                     }
 
                     try {
-                        $categoryName = $rowData['category'] ?: 'General';
+                        $categoryName = $rowData['category'];
                         $category = $this->firstOrCreateImportCategory($categoryName);
 
                         $unitType = strtolower($rowData['unit_type'] ?: 'unit');
                         if (!in_array($unitType, ['unit', 'sachet', 'roll', 'carton'], true)) {
-                            $unitType = 'unit';
+                            $skipped++;
+                            if (count($rowErrors) < 10) {
+                                $rowErrors[] = 'Row ' . ($rowNumber + 1) . ': invalid unit_type ' . ($rowData['unit_type'] ?? '');
+                            }
+                            continue;
                         }
 
-                        $sku = $this->generateUniqueSku($rowData['sku'] ?? null, $rowData['name']);
+                        $providedSku = $rowData['sku'] ?? null;
+                        $barcode = $rowData['barcode'] ?? null;
+                        $productQuery = Product::query()
+                            ->tap(fn ($query) => $this->applyTenantScope($query, 'products'))
+                            ->when($providedSku, fn ($query) => $query->where('sku', $providedSku))
+                            ->when(!$providedSku && $barcode, fn ($query) => $query->where('barcode', $barcode))
+                            ->when(!$providedSku && !$barcode, fn ($query) => $query->where('name', $rowData['name'])->where('category_id', $category->id))
+                            ->limit(1);
+                        $existing = $productQuery->first();
+                        if ($existing) {
+                            $skipped++;
+                            $duplicates++;
+                            if (count($rowErrors) < 10) {
+                                $rowErrors[] = 'Row ' . ($rowNumber + 1) . ': duplicate product detected';
+                            }
+                            continue;
+                        }
+
+                        $sku = $this->generateUniqueSku($providedSku, $rowData['name']);
                         $product = Product::query()
                             ->tap(fn ($query) => $this->applyTenantScope($query, 'products'))
                             ->where('sku', $sku)
@@ -1282,12 +1318,20 @@ public function inventory(Request $request)
                 'created' => $created,
                 'updated' => $updated,
                 'skipped' => $skipped,
+                'duplicates' => $duplicates,
+                'missing_required' => $missingRequired,
             ]);
 
-            return redirect()->route('product-list')->with(
-                'success',
-                "Product import completed. Created: {$created}, Updated: {$updated}, Skipped: {$skipped}."
-            );
+            $summary = "Product import completed. Created: {$created}, Updated: {$updated}, Skipped: {$skipped}.";
+            if ($duplicates > 0 || $missingRequired > 0) {
+                $summary .= " Duplicates: {$duplicates}, Missing required: {$missingRequired}.";
+            }
+
+            $redirect = redirect()->route('product-list')->with('success', $summary);
+            if (!empty($rowErrors)) {
+                $redirect->with('warning', 'Some rows were skipped: ' . implode(' | ', $rowErrors));
+            }
+            return $redirect;
         } catch (\Throwable $exception) {
             Log::error('Product import failed.', [
                 'user_id' => auth()->id(),
