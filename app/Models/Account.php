@@ -13,6 +13,8 @@ class Account extends Model
     protected $fillable = [
         'code',
         'name',
+        'company_id',
+        'user_id',
         'type',
         'sub_type',
         'description',

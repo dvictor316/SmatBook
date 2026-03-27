@@ -14,6 +14,8 @@ class Payment extends Model
     protected $fillable = [
         'payment_id',
         'sale_id',
+        'company_id',
+        'user_id',
         'branch_id',
         'branch_name',
         'payment_account_id', // ADDED: Required to save the account link

@@ -41,7 +41,7 @@ class EstimateController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'estimate_number' => 'required|string|unique:estimates',
             'customer_id' => 'required|exists:customers,id',
             'issue_date' => 'required|date',
@@ -54,7 +54,7 @@ class EstimateController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        $payload = $request->all();
+        $payload = $validated;
         if (Schema::hasColumn('estimates', 'company_id')) {
             $payload['company_id'] = auth()->user()?->company_id ?: null;
         }
@@ -83,7 +83,7 @@ class EstimateController extends Controller
     {
         $estimate = $this->applyTenantScope(Estimate::query())->findOrFail($id);
 
-        $request->validate([
+        $validated = $request->validate([
             'estimate_number' => 'required|string|unique:estimates,estimate_number,' . $estimate->id,
             'customer_id' => 'required|exists:customers,id',
             'issue_date' => 'required|date',
@@ -96,7 +96,7 @@ class EstimateController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        $estimate->update($request->all());
+        $estimate->update($validated);
 
         return redirect()->route('estimates.index')->with('success', 'Estimate updated successfully.');
     }

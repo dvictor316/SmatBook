@@ -506,7 +506,7 @@ public function show($id)
      */
     public function destroy($id)
     {
-        $purchase = Purchase::findOrFail($id);
+        $purchase = $this->applyTenantScope(Purchase::query(), 'purchases')->findOrFail($id);
         
         DB::beginTransaction();
         

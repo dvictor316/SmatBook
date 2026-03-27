@@ -13,6 +13,8 @@ class Purchase extends Model
         'branch_id',
         'branch_name',
         'purchase_no', 
+        'company_id',
+        'user_id',
         'supplier_id',
         'vendor_id', 
         'bank_id',      // Added this

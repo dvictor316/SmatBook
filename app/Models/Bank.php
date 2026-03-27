@@ -12,6 +12,8 @@ class Bank extends Model
     // Add fillable or guarded attributes
     protected $fillable = [
         'name', 
+        'company_id',
+        'user_id',
         'branch', 
         'account_number', 
         'balance', 

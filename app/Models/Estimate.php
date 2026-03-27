@@ -20,6 +20,8 @@ class Estimate extends Model
         'total_amount',
         'status',
         'notes',
+        'company_id',
+        'user_id',
     ];
 
     protected $casts = [
