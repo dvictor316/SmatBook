@@ -165,8 +165,11 @@
     }
 
     /* Dashboard density improvements */
-    .dashboard-tight .row { --bs-gutter-y: 0.85rem; }
-    .dashboard-tight .grid-margin { margin-bottom: 0.85rem !important; }
+    .dashboard-tight .row {
+        --bs-gutter-y: 0.7rem;
+        --bs-gutter-x: 0.7rem;
+    }
+    .dashboard-tight .grid-margin { margin-bottom: 0.7rem !important; }
     .dashboard-tight .stretch-card > .card { height: 100%; }
     .dashboard-tight .card-subtitle { margin-bottom: 0.65rem !important; }
     .dashboard-tight .card {
@@ -174,6 +177,13 @@
         border: 1px solid var(--dash-line);
         background: linear-gradient(180deg, var(--dash-surface) 0%, #fcfdff 100%);
         box-shadow: 0 14px 34px rgba(15, 23, 42, 0.05);
+    }
+    .dashboard-tight .card-body {
+        padding: 0.95rem 1rem;
+    }
+    .dashboard-tight .card-header,
+    .dashboard-tight .card-title {
+        margin-bottom: 0.6rem !important;
     }
     .card-title.card-title-dash,
     .card-title-dash {
@@ -282,7 +292,7 @@
     .dashboard-stack {
         display: flex;
         flex-direction: column;
-        gap: 0.85rem;
+        gap: 0.7rem;
         min-width: 0;
     }
     .dashboard-stack > .card {
@@ -306,7 +316,7 @@
     .dashboard-split-card {
         display: flex;
         flex-direction: column;
-        gap: 0.9rem;
+        gap: 0.7rem;
     }
     .dashboard-split-card .table-responsive,
     .dashboard-split-card .list-wrapper {
@@ -330,7 +340,7 @@
     .dashboard-micro-grid {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 0.75rem;
+        gap: 0.6rem;
     }
     .dashboard-micro-grid .summary-fill {
         height: 100%;
@@ -338,7 +348,7 @@
     .dashboard-side-fill {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 0.75rem;
+        gap: 0.6rem;
     }
     .summary-fill {
         border: 1px solid #dce7f3;
