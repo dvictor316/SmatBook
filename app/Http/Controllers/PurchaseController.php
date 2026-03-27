@@ -25,6 +25,20 @@ use App\Support\LedgerService;
 
 class PurchaseController extends Controller
 {
+public function applyTenantScope($query, string $table)
+    {
+        $companyId = (int) (auth()->user()?->company_id ?? 0);
+        $userId = (int) (auth()->id() ?? 0);
+
+        if ($companyId > 0 && Schema::hasColumn($table, 'company_id')) {
+            $query->where("{$table}.company_id", $companyId);
+        } elseif ($userId > 0 && Schema::hasColumn($table, 'user_id')) {
+            $query->where("{$table}.user_id", $userId);
+        }
+
+        return $query;
+    }
+
 public function __construct(private readonly BranchInventoryService $branchInventory)
     {
     }
@@ -41,7 +55,9 @@ public function index()
     {
         $activeBranch = $this->getActiveBranchContext();
         // 1. Fetch Purchases (using 'vendor' or 'supplier' based on your model relation)
-        $purchases = Purchase::with(['supplier', 'items.product'])
+        $purchaseQuery = Purchase::with(['supplier', 'items.product']);
+        $this->applyTenantScope($purchaseQuery, 'purchases');
+        $purchases = $purchaseQuery
             ->when(!empty($activeBranch['name']) && Schema::hasColumn('purchases', 'branch_name'), function ($query) use ($activeBranch) {
                 $query->where('branch_name', $activeBranch['name']);
             })
@@ -49,7 +65,9 @@ public function index()
             ->paginate(10);
 
         // 2. Fetch Products (CRITICAL: This fixes the "Product data not loaded" error)
-        $products = Product::with('category')->latest()->paginate(10);
+        $productQuery = Product::with('category')->latest();
+        $this->applyTenantScope($productQuery, 'products');
+        $products = $productQuery->paginate(10);
             
         // 3. Pass BOTH variables to the view
         return view('Purchases.purchases', compact('purchases', 'products', 'activeBranch'));
@@ -63,7 +81,9 @@ public function index()
         $activeBranch = $this->getActiveBranchContext();
         $search = $request->input('search');
 
-        $products = Product::with('category')
+        $productQuery = Product::with('category');
+        $this->applyTenantScope($productQuery, 'products');
+        $products = $productQuery
             ->when($search, function ($query) use ($search) {
                 return $query->where('name', 'like', "%{$search}%")
                              ->orWhere('sku', 'like', "%{$search}%");
@@ -71,7 +91,9 @@ public function index()
             ->latest()
             ->paginate(10);
 
-        $purchases = Purchase::with(['supplier', 'items.product'])
+        $purchaseQuery = Purchase::with(['supplier', 'items.product']);
+        $this->applyTenantScope($purchaseQuery, 'purchases');
+        $purchases = $purchaseQuery
             ->when(!empty($activeBranch['name']) && Schema::hasColumn('purchases', 'branch_name'), function ($query) use ($activeBranch) {
                 $query->where('branch_name', $activeBranch['name']);
             })
@@ -93,13 +115,19 @@ public function index()
     public function create()
     {
         $activeBranch = $this->getActiveBranchContext();
-        $vendors = Vendor::orderBy('name')->get();
-        $products = Product::orderBy('name')->get();
+        $vendorsQuery = Vendor::orderBy('name');
+        $this->applyTenantScope($vendorsQuery, 'vendors');
+        $vendors = $vendorsQuery->get();
+        $productsQuery = Product::orderBy('name');
+        $this->applyTenantScope($productsQuery, 'products');
+        $products = $productsQuery->get();
         $taxOptions = collect();
         if (class_exists(TaxCode::class) && Schema::hasTable('tax_codes')) {
             $taxOptions = TaxCode::orderBy('name')->get();
         }
-        $banks = Bank::orderBy('name')->get();
+        $banksQuery = Bank::orderBy('name');
+        $this->applyTenantScope($banksQuery, 'banks');
+        $banks = $banksQuery->get();
         
         // Generate a unique purchase ID
         $purchaseId = 'PUR-' . date('Ymd') . '-' . strtoupper(Str::random(6));
@@ -177,6 +205,12 @@ public function index()
             if (Schema::hasColumn('purchases', 'vendor_id')) {
                 $purchasePayload['vendor_id'] = $validated['vendor_id'] ?? null;
             }
+            if (Schema::hasColumn('purchases', 'company_id')) {
+                $purchasePayload['company_id'] = auth()->user()?->company_id ?: null;
+            }
+            if (Schema::hasColumn('purchases', 'user_id')) {
+                $purchasePayload['user_id'] = auth()->id();
+            }
 
             $purchase = Purchase::create($purchasePayload);
 
@@ -248,7 +282,7 @@ public function index()
 public function show($id)
 {
     // Fetch purchase with vendor relationship
-    $purchase = Purchase::with(['vendor', 'bank', 'items.product'])->findOrFail($id);
+    $purchase = $this->applyTenantScope(Purchase::with(['vendor', 'bank', 'items.product']), 'purchases')->findOrFail($id);
     $activeBranch = $this->getActiveBranchContext();
 
     // Logic: Look for the vendor's specific logo first. 
@@ -276,7 +310,7 @@ public function show($id)
      */
     public function downloadPDF($id)
     {
-        $purchase = Purchase::with(['vendor', 'bank', 'items.product'])->findOrFail($id);
+        $purchase = $this->applyTenantScope(Purchase::with(['vendor', 'bank', 'items.product']), 'purchases')->findOrFail($id);
         
         // Use the dynamic logo logic we built
         $vendorLogo = $purchase->vendor->logo ?? null;
@@ -304,11 +338,17 @@ public function show($id)
     public function edit($id)
     {
         $activeBranch = $this->getActiveBranchContext();
-        $purchase = Purchase::with('items.product')->findOrFail($id);
-        $vendors = Vendor::orderBy('name')->get();
-        $products = Product::orderBy('name')->get();
+        $purchase = $this->applyTenantScope(Purchase::with('items.product'), 'purchases')->findOrFail($id);
+        $vendorsQuery = Vendor::orderBy('name');
+        $this->applyTenantScope($vendorsQuery, 'vendors');
+        $vendors = $vendorsQuery->get();
+        $productsQuery = Product::orderBy('name');
+        $this->applyTenantScope($productsQuery, 'products');
+        $products = $productsQuery->get();
         $taxOptions = Tax::orderBy('name')->get();
-        $banks = Bank::orderBy('name')->get();
+        $banksQuery = Bank::orderBy('name');
+        $this->applyTenantScope($banksQuery, 'banks');
+        $banks = $banksQuery->get();
         
         return view('Purchases.edit-purchases', compact('purchase', 'vendors', 'products', 'taxOptions', 'banks', 'activeBranch'));
     }
@@ -319,7 +359,7 @@ public function show($id)
     public function update(Request $request, $id)
     {
         $activeBranch = $this->getActiveBranchContext();
-        $purchase = Purchase::findOrFail($id);
+        $purchase = $this->applyTenantScope(Purchase::query(), 'purchases')->findOrFail($id);
         
         $validated = $request->validate([
             'vendor_id' => 'nullable|exists:vendors,id',

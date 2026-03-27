@@ -28,6 +28,21 @@ use App\Support\LedgerService;
     class ReportController extends Controller
     {
         // ... rest of the code
+        private function applyTenantScope($query, string $table)
+        {
+            $companyId = (int) (Auth::user()?->company_id ?? 0);
+            $userId = (int) (Auth::id() ?? 0);
+
+            if ($companyId > 0 && Schema::hasColumn($table, 'company_id')) {
+                $query->where("{$table}.company_id", $companyId);
+            } elseif ($userId > 0 && Schema::hasColumn($table, 'user_id')) {
+                $query->where("{$table}.user_id", $userId);
+            } elseif ($userId > 0 && Schema::hasColumn($table, 'created_by')) {
+                $query->where("{$table}.created_by", $userId);
+            }
+
+            return $query;
+        }
 
         private function getActiveBranchContext(): array
         {
@@ -85,10 +100,11 @@ use App\Support\LedgerService;
         $end = $request->end_date ? \Carbon\Carbon::parse($request->end_date) : \Carbon\Carbon::now()->endOfDay();
 
         // 2. Fetch and Map Data as ARRAYS (Removed (object) cast)
-        $accounts = \App\Models\Account::with(['transactions' => function($query) use ($start, $end) {
+        $accountsQuery = \App\Models\Account::with(['transactions' => function($query) use ($start, $end) {
                 $query->whereBetween('transaction_date', [$start, $end]);
-            }])
-            ->get()
+            }]);
+        $this->applyTenantScope($accountsQuery, 'accounts');
+        $accounts = $accountsQuery->get()
             ->map(function($account) {
                 $totalDebit = $account->transactions->sum('debit'); 
                 $totalCredit = $account->transactions->sum('credit');
@@ -215,6 +231,7 @@ public function purchase_report(Request $request)
 
         if ($purchaseAmountColumn) {
             $query = \App\Models\Purchase::query();
+            $this->applyTenantScope($query, 'purchases');
 
             if (
                 Schema::hasTable('suppliers') &&
@@ -282,6 +299,12 @@ public function purchase_report(Request $request)
             ])
             ->whereRaw("LOWER(COALESCE(inventory_history.type, '')) = 'in'");
 
+        if (Schema::hasColumn('products', 'company_id') && (int) (Auth::user()?->company_id ?? 0) > 0) {
+            $historyQuery->where('products.company_id', (int) Auth::user()->company_id);
+        } elseif (Schema::hasColumn('products', 'user_id') && Auth::id()) {
+            $historyQuery->where('products.user_id', Auth::id());
+        }
+
         if (!empty($activeBranch['name']) && Schema::hasColumn('inventory_history', 'branch_name')) {
             $historyQuery->where('inventory_history.branch_name', $activeBranch['name']);
         }
@@ -336,6 +359,8 @@ public function purchase_report(Request $request)
                     DB::raw("COALESCE(expenses.category, 'General') as category_name"),
                     DB::raw("COALESCE(users.name, 'System') as user_name")
                 );
+
+            $this->applyTenantScope($query, 'expenses');
 
             if ($request->filled('status')) {
                 $status = strtolower((string) $request->status);
