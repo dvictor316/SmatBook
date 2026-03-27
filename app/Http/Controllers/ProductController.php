@@ -1069,13 +1069,26 @@ public function inventory(Request $request)
             }
 
             if (!$header) {
+                Log::warning('Product import file was empty after parsing.', [
+                    'user_id' => auth()->id(),
+                    'filename' => $file?->getClientOriginalName(),
+                ]);
                 return redirect()->back()->with('error', 'The import file is empty.');
             }
 
             $header = array_map(fn ($value) => $this->normalizeImportHeaderCell($value), $header);
+            Log::info('Product import header parsed.', [
+                'user_id' => auth()->id(),
+                'header' => $header,
+            ]);
             $required = ['name', 'category', 'base_unit_name', 'unit_type', 'price', 'purchase_price'];
             foreach ($required as $column) {
                 if (!in_array($column, $header, true)) {
+                    Log::warning('Product import missing required column.', [
+                        'user_id' => auth()->id(),
+                        'missing' => $column,
+                        'header' => $header,
+                    ]);
                     return redirect()->back()->with('error', 'Missing required import column: ' . $column);
                 }
             }
