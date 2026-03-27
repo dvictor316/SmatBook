@@ -39,7 +39,8 @@
         $daysRemaining = $domainRecord ? now()->diffInDays($domainRecord->expiry_date, false) : 99;
     @endphp
 
-    <link rel="shortcut icon" href="{{ asset('assets/img/log-favicon.png') }}">
+    @php($faviconVersion = file_exists(public_path('assets/img/log-favicon.png')) ? filemtime(public_path('assets/img/log-favicon.png')) : time())
+    <link rel="shortcut icon" href="{{ asset('assets/img/log-favicon.png') }}?v={{ $faviconVersion }}">
     <link rel="stylesheet" href="{{ asset('assets/css/bootstrap.min.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/plugins/feather/feather.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/plugins/select2/css/select2.min.css') }}">

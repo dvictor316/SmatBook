@@ -15,6 +15,10 @@
     $resolvedType = trim((string) ($seoType ?? 'website'));
     $resolvedImage = trim((string) ($seoImage ?? asset('assets/img/logos.png')));
     $resolvedFavicon = asset('assets/img/log-favicon.png');
+    $resolvedFaviconVersion = file_exists(public_path('assets/img/log-favicon.png')) ? filemtime(public_path('assets/img/log-favicon.png')) : null;
+    if ($resolvedFaviconVersion) {
+        $resolvedFavicon .= '?v=' . $resolvedFaviconVersion;
+    }
     $resolvedUrl = url()->current();
     $resolvedCanonical = trim((string) ($seoCanonical ?? $resolvedUrl));
 

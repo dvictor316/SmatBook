@@ -2,10 +2,16 @@
     use Illuminate\Support\Facades\Route;
     $route = Route::currentRouteName();
     $siteTitle = \App\Models\Setting::where('key', 'company_name')->value('value') ?: 'SmartProbook';
+    $defaultFavicon = 'assets/img/log-favicon.png';
+    $defaultFaviconUrl = asset($defaultFavicon);
+    $defaultFaviconVersion = file_exists(public_path($defaultFavicon)) ? filemtime(public_path($defaultFavicon)) : null;
     $faviconPath = \App\Models\Setting::mediaUrl(
         \App\Models\Setting::where('key', 'favicon')->value('value'),
-        asset('assets/img/log-favicon.png')
+        $defaultFaviconUrl
     );
+    if ($faviconPath === $defaultFaviconUrl && $defaultFaviconVersion) {
+        $faviconPath .= '?v=' . $defaultFaviconVersion;
+    }
     $requestPath = request()->path();
     $isReportWorkspace = request()->routeIs('reports.*')
         || request()->is('reports*')
