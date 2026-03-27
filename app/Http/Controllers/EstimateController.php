@@ -4,16 +4,31 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Estimate;
+use Illuminate\Support\Facades\Schema;
 
 class EstimateController extends Controller
 {
+    private function applyTenantScope($query)
+    {
+        $companyId = (int) (auth()->user()?->company_id ?? 0);
+        $userId = (int) (auth()->id() ?? 0);
+
+        if ($companyId > 0 && Schema::hasColumn('estimates', 'company_id')) {
+            $query->where('company_id', $companyId);
+        } elseif ($userId > 0 && Schema::hasColumn('estimates', 'user_id')) {
+            $query->where('user_id', $userId);
+        }
+
+        return $query;
+    }
+
     public function index()
     {
-        $estimates = Estimate::with('customer')->get();
+        $estimates = $this->applyTenantScope(Estimate::with('customer'))->get();
 
-        $sent = Estimate::where('status', 'Sent')->count();
-        $draft = Estimate::where('status', 'Draft')->count();
-        $expired = Estimate::where('status', 'Expired')->count();
+        $sent = $this->applyTenantScope(Estimate::query())->where('status', 'Sent')->count();
+        $draft = $this->applyTenantScope(Estimate::query())->where('status', 'Draft')->count();
+        $expired = $this->applyTenantScope(Estimate::query())->where('status', 'Expired')->count();
 
         // Updated view path to match your Blade file location
         return view('livewire.index-estimates', compact('estimates', 'sent', 'draft', 'expired'));
@@ -39,26 +54,34 @@ class EstimateController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        Estimate::create($request->all());
+        $payload = $request->all();
+        if (Schema::hasColumn('estimates', 'company_id')) {
+            $payload['company_id'] = auth()->user()?->company_id ?: null;
+        }
+        if (Schema::hasColumn('estimates', 'user_id')) {
+            $payload['user_id'] = auth()->id();
+        }
+
+        Estimate::create($payload);
 
         return redirect()->route('estimates.index')->with('success', 'Estimate created successfully.');
     }
 
     public function show($id)
     {
-        $estimate = Estimate::with('customer')->findOrFail($id);
+        $estimate = $this->applyTenantScope(Estimate::with('customer'))->findOrFail($id);
         return view('estimates.show', compact('estimate'));
     }
 
     public function edit($id)
     {
-        $estimate = Estimate::findOrFail($id);
+        $estimate = $this->applyTenantScope(Estimate::query())->findOrFail($id);
         return view('estimates.edit', compact('estimate'));
     }
 
     public function update(Request $request, $id)
     {
-        $estimate = Estimate::findOrFail($id);
+        $estimate = $this->applyTenantScope(Estimate::query())->findOrFail($id);
 
         $request->validate([
             'estimate_number' => 'required|string|unique:estimates,estimate_number,' . $estimate->id,
@@ -80,7 +103,7 @@ class EstimateController extends Controller
 
     public function destroy($id)
     {
-        $estimate = Estimate::findOrFail($id);
+        $estimate = $this->applyTenantScope(Estimate::query())->findOrFail($id);
         $estimate->delete();
 
         return redirect()->route('estimates.index')->with('success', 'Estimate deleted successfully.');

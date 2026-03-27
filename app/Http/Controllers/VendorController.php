@@ -9,15 +9,31 @@ use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse; 
 use Illuminate\Routing\Redirector; 
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Schema;
 
 class VendorController extends Controller
 {
+    private function applyTenantScope($query, string $table = 'vendors')
+    {
+        $companyId = (int) (auth()->user()?->company_id ?? 0);
+        $userId = (int) (auth()->id() ?? 0);
+
+        if ($companyId > 0 && Schema::hasColumn($table, 'company_id')) {
+            $query->where("{$table}.company_id", $companyId);
+        } elseif ($userId > 0 && Schema::hasColumn($table, 'user_id')) {
+            $query->where("{$table}.user_id", $userId);
+        }
+
+        return $query;
+    }
+
     /**
      * Display a listing of the vendors.
      */
     public function index(Request $request): View
     {
         $query = Vendor::query()->latest();
+        $this->applyTenantScope($query);
 
         $search = trim((string) $request->input('search', ''));
         if ($search !== '') {
@@ -65,6 +81,13 @@ class VendorController extends Controller
             $validated['logo'] = $request->file('logo')->store('vendors', 'public');
         }
 
+        if (Schema::hasColumn('vendors', 'company_id')) {
+            $validated['company_id'] = auth()->user()?->company_id ?: null;
+        }
+        if (Schema::hasColumn('vendors', 'user_id')) {
+            $validated['user_id'] = auth()->id();
+        }
+
         // 1. Create the Vendor account
         $vendor = Vendor::create($validated);
 
@@ -95,7 +118,7 @@ class VendorController extends Controller
      */
     public function ledger($id): View
     {
-        $vendor = Vendor::findOrFail($id);
+        $vendor = $this->applyTenantScope(Vendor::query())->findOrFail($id);
         
         $transactions = VendorLedgerTransaction::where('vendor_id', $vendor->id)
                                 ->orderBy('created_at', 'asc')
@@ -119,7 +142,7 @@ class VendorController extends Controller
      */
     public function createTransaction($id): View
     {
-        $vendor = Vendor::findOrFail($id);
+        $vendor = $this->applyTenantScope(Vendor::query())->findOrFail($id);
         return view('Customers.create_transaction', compact('vendor'));
     }
 
@@ -128,7 +151,7 @@ class VendorController extends Controller
      */
     public function storeTransaction(Request $request, $id): RedirectResponse
     {
-        $vendor = Vendor::findOrFail($id);
+        $vendor = $this->applyTenantScope(Vendor::query())->findOrFail($id);
 
         $validated = $request->validate([
             'name' => 'required|string|max:191',
@@ -146,7 +169,7 @@ class VendorController extends Controller
 
     public function updateLedgerProfile(Request $request, $id): RedirectResponse
     {
-        $vendor = Vendor::findOrFail($id);
+        $vendor = $this->applyTenantScope(Vendor::query())->findOrFail($id);
 
         $validated = $request->validate([
             'name' => 'required|string|max:191',
@@ -173,7 +196,7 @@ class VendorController extends Controller
 
     public function updateTransaction(Request $request, $id, $transactionId): RedirectResponse
     {
-        $vendor = Vendor::findOrFail($id);
+        $vendor = $this->applyTenantScope(Vendor::query())->findOrFail($id);
         $transaction = VendorLedgerTransaction::where('vendor_id', $vendor->id)->findOrFail($transactionId);
 
         $validated = $request->validate([
@@ -192,7 +215,7 @@ class VendorController extends Controller
 
     public function destroyTransaction($id, $transactionId): RedirectResponse
     {
-        $vendor = Vendor::findOrFail($id);
+        $vendor = $this->applyTenantScope(Vendor::query())->findOrFail($id);
         $transaction = VendorLedgerTransaction::where('vendor_id', $vendor->id)->findOrFail($transactionId);
         $transaction->delete();
 
@@ -206,7 +229,7 @@ class VendorController extends Controller
      */
     public function edit($id): View
     {
-        $vendor = Vendor::findOrFail($id);
+        $vendor = $this->applyTenantScope(Vendor::query())->findOrFail($id);
         // Calculate current balance here to display it in the edit view
         $vendor->current_balance = VendorLedgerTransaction::where('vendor_id', $vendor->id)->sum('amount');
 
@@ -218,7 +241,7 @@ class VendorController extends Controller
      */
     public function update(Request $request, $id): RedirectResponse
     {
-        $vendor = Vendor::findOrFail($id);
+        $vendor = $this->applyTenantScope(Vendor::query())->findOrFail($id);
 
         $validated = $request->validate([
             'name' => 'required|string|max:191',
@@ -246,7 +269,7 @@ class VendorController extends Controller
      */
     public function destroy($id): RedirectResponse
     {
-        $vendor = Vendor::findOrFail($id);
+        $vendor = $this->applyTenantScope(Vendor::query())->findOrFail($id);
         if ($vendor->logo && Storage::disk('public')->exists($vendor->logo)) {
             Storage::disk('public')->delete($vendor->logo);
         }
@@ -260,7 +283,7 @@ class VendorController extends Controller
      */
     public function show($id): View
     {
-        $vendor = Vendor::findOrFail($id);
+        $vendor = $this->applyTenantScope(Vendor::query())->findOrFail($id);
         $vendor->current_balance = VendorLedgerTransaction::where('vendor_id', $vendor->id)->sum('amount');
         $transactions = VendorLedgerTransaction::where('vendor_id', $vendor->id)
             ->latest()
