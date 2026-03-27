@@ -449,7 +449,17 @@ class CustomerController extends Controller
 
             try {
                 $delimiter = $this->detectCsvDelimiter($handle);
-                while (($row = fgetcsv($handle, 0, $delimiter)) !== false) {
+                while (($line = fgets($handle)) !== false) {
+                    $line = $this->normalizeCsvLine($line);
+                    if ($line === '') {
+                        continue;
+                    }
+
+                    $row = str_getcsv($line, $delimiter);
+                    if ($row === [null] || $row === false) {
+                        continue;
+                    }
+
                     yield $row;
                 }
             } finally {
@@ -495,6 +505,8 @@ class CustomerController extends Controller
             return ',';
         }
 
+        $firstLine = $this->normalizeCsvLine($firstLine);
+
         $candidates = [',', ';', "\t", '|'];
         $bestDelimiter = ',';
         $bestScore = -1;
@@ -510,5 +522,20 @@ class CustomerController extends Controller
         rewind($handle);
 
         return $bestDelimiter;
+    }
+
+    private function normalizeCsvLine(string $line): string
+    {
+        if (str_starts_with($line, "\xFF\xFE")) {
+            $line = mb_convert_encoding(substr($line, 2), 'UTF-8', 'UTF-16LE');
+        } elseif (str_starts_with($line, "\xFE\xFF")) {
+            $line = mb_convert_encoding(substr($line, 2), 'UTF-8', 'UTF-16BE');
+        } elseif (str_contains($line, "\x00")) {
+            $line = mb_convert_encoding($line, 'UTF-8', 'UTF-16LE');
+        }
+
+        $line = preg_replace('/^\x{FEFF}/u', '', $line) ?? $line;
+
+        return trim($line);
     }
 }
