@@ -1099,7 +1099,6 @@ public function inventory(Request $request)
             'stock_cartons',
             'stock_rolls',
             'stock_units',
-            'price',
             'retail_price',
             'wholesale_price',
             'special_price',
@@ -1109,8 +1108,8 @@ public function inventory(Request $request)
         ];
 
         $rows = [
-            ['Indomie Chicken', '', '1234567890123', 'Noodles', 'pcs', 'carton', '40', '0', '10', '0', '0', '250', '250', '230', '220', '180', '400', 'Fast moving carton item'],
-            ['Tissue Roll Premium', '', '8800112233445', 'Toiletries', 'roll', 'roll', '12', '1', '5', '12', '0', '1500', '1500', '1400', '1350', '1100', '120', 'Can be sold as roll or carton'],
+            ['Indomie Chicken', '', '1234567890123', 'Noodles', 'pcs', 'carton', '40', '0', '10', '0', '0', '250', '230', '220', '180', '400', 'Fast moving carton item'],
+            ['Tissue Roll Premium', '', '8800112233445', 'Toiletries', 'roll', 'roll', '12', '1', '5', '12', '0', '1500', '1400', '1350', '1100', '120', 'Can be sold as roll or carton'],
         ];
 
         $content = implode(',', $headers) . "\n";
@@ -1169,7 +1168,7 @@ public function inventory(Request $request)
                 'user_id' => auth()->id(),
                 'header' => $header,
             ]);
-            $required = ['name', 'category', 'base_unit_name', 'unit_type', 'price', 'purchase_price'];
+            $required = ['name', 'category', 'base_unit_name', 'unit_type', 'purchase_price'];
             foreach ($required as $column) {
                 if (!in_array($column, $header, true)) {
                     Log::warning('Product import missing required column.', [
@@ -1179,6 +1178,14 @@ public function inventory(Request $request)
                     ]);
                     return redirect()->back()->with('error', 'Missing required import column: ' . $column);
                 }
+            }
+            if (!in_array('retail_price', $header, true) && !in_array('price', $header, true)) {
+                Log::warning('Product import missing required column.', [
+                    'user_id' => auth()->id(),
+                    'missing' => 'retail_price',
+                    'header' => $header,
+                ]);
+                return redirect()->back()->with('error', 'Missing required import column: retail_price');
             }
 
             $created = 0;
@@ -1203,12 +1210,15 @@ public function inventory(Request $request)
                         $rowData[$column] = trim((string) ($row[$index] ?? ''));
                     }
 
-                    $requiredFields = ['name', 'category', 'base_unit_name', 'unit_type', 'price', 'purchase_price'];
+                    $requiredFields = ['name', 'category', 'base_unit_name', 'unit_type', 'purchase_price'];
                     $missing = [];
                     foreach ($requiredFields as $field) {
                         if (($rowData[$field] ?? '') === '') {
                             $missing[] = $field;
                         }
+                    }
+                    if (($rowData['retail_price'] ?? '') === '' && ($rowData['price'] ?? '') === '') {
+                        $missing[] = 'retail_price';
                     }
                     if (!empty($missing)) {
                         $skipped++;
@@ -1268,6 +1278,7 @@ public function inventory(Request $request)
                                 'units_per_roll' => max(0, (int) ($rowData['units_per_roll'] ?: 0)),
                             ]);
 
+                        $retailPrice = ($rowData['retail_price'] ?? '') !== '' ? $rowData['retail_price'] : ($rowData['price'] ?? '');
                         $payload = $this->sanitizeForProductColumns([
                             'name' => $rowData['name'],
                             'sku' => $sku,
@@ -1277,8 +1288,8 @@ public function inventory(Request $request)
                             'unit_type' => $unitType,
                             'units_per_carton' => max(0, (int) ($rowData['units_per_carton'] ?: 0)),
                             'units_per_roll' => max(0, (int) ($rowData['units_per_roll'] ?: 0)),
-                            'price' => (float) (($rowData['retail_price'] ?? $rowData['price']) ?: 0),
-                            'retail_price' => (float) (($rowData['retail_price'] ?? $rowData['price']) ?: 0),
+                            'price' => (float) ($retailPrice ?: 0),
+                            'retail_price' => (float) ($retailPrice ?: 0),
                             'wholesale_price' => ($rowData['wholesale_price'] ?? '') !== '' ? (float) $rowData['wholesale_price'] : null,
                             'special_price' => ($rowData['special_price'] ?? '') !== '' ? (float) $rowData['special_price'] : null,
                             'purchase_price' => (float) ($rowData['purchase_price'] ?: 0),

@@ -71,7 +71,7 @@
 
     <div class="global-flash-stack" data-global-flash-stack>
         @foreach ($flashMessages as $flash)
-            <div class="alert alert-{{ $flash['type'] }} alert-dismissible fade show" role="alert" data-auto-dismiss="true">
+            <div class="alert alert-{{ $flash['type'] }} alert-dismissible fade show" role="alert" data-auto-dismiss="false">
                 <div class="flash-body">
                     <i class="fas {{ $flash['icon'] }}"></i>
                     <div class="flash-copy">{{ $flash['message'] }}</div>
@@ -98,17 +98,4 @@
         @endif
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            document.querySelectorAll('[data-global-flash-stack] [data-auto-dismiss="true"]').forEach(function (alertEl) {
-                window.setTimeout(function () {
-                    if (typeof bootstrap !== 'undefined' && bootstrap.Alert) {
-                        bootstrap.Alert.getOrCreateInstance(alertEl).close();
-                    } else {
-                        alertEl.remove();
-                    }
-                }, 5000);
-            });
-        });
-    </script>
 @endif
