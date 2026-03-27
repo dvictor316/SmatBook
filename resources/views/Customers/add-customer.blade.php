@@ -9,6 +9,14 @@
                 <div class="page-header">
                     <div class="content-page-header">
                         <h5>Add New Customer</h5>
+                        <div class="mt-3 d-flex flex-wrap gap-2">
+                            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#importCustomersModal">
+                                <i class="fas fa-file-upload me-1"></i> Import Customers
+                            </button>
+                            <a href="{{ route('customers.import.template') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-file-download me-1"></i> Download Template
+                            </a>
+                        </div>
                     </div>
                 </div>
                 
@@ -138,6 +146,31 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="importCustomersModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ route('customers.import') }}" enctype="multipart/form-data">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title">Import Customers</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted mb-3">Upload CSV or Excel files with customer opening balances. Imported balances will reflect on customer credit reporting.</p>
+                    <div class="mb-3">
+                        <label class="form-label">Spreadsheet File</label>
+                        <input type="file" name="import_file" class="form-control" accept=".csv,.txt,.xls,.xlsx,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Import Customers</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

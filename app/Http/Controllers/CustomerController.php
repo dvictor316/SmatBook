@@ -10,6 +10,20 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class CustomerController extends Controller
 {
+    private function applyTenantScope($query)
+    {
+        $companyId = (int) (auth()->user()?->company_id ?? 0);
+        $userId = (int) (auth()->id() ?? 0);
+
+        if ($companyId > 0 && Schema::hasColumn('customers', 'company_id')) {
+            $query->where('company_id', $companyId);
+        } elseif ($userId > 0 && Schema::hasColumn('customers', 'user_id')) {
+            $query->where('user_id', $userId);
+        }
+
+        return $query;
+    }
+
     /**
      * Display a listing of customers.
      */
@@ -62,6 +76,13 @@ class CustomerController extends Controller
 
         $data = $this->sanitizeForCustomerColumns($data);
 
+        if (Schema::hasColumn('customers', 'company_id')) {
+            $data['company_id'] = auth()->user()?->company_id ?: null;
+        }
+        if (Schema::hasColumn('customers', 'user_id')) {
+            $data['user_id'] = auth()->id();
+        }
+
         Customer::create($data);
 
         return redirect()->route('customers.index')->with('success', 'Customer added successfully.');
@@ -72,7 +93,7 @@ class CustomerController extends Controller
      */
     public function show($id)
     {
-        $customer = Customer::with(['sales', 'invoices'])->findOrFail($id);
+        $customer = $this->applyTenantScope(Customer::with(['sales', 'invoices']))->findOrFail($id);
         $invoices = $customer->invoices;
 
         $invoicescards = [
@@ -110,7 +131,7 @@ class CustomerController extends Controller
      */
     public function edit($id)
     {
-        $customer = Customer::findOrFail($id);
+        $customer = $this->applyTenantScope(Customer::query())->findOrFail($id);
         return view('Customers.edit-customer', compact('customer'));
     }
 
@@ -119,7 +140,7 @@ class CustomerController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $customer = Customer::findOrFail($id);
+        $customer = $this->applyTenantScope(Customer::query())->findOrFail($id);
 
         $request->validate([
             'customer_name' => 'required|string|max:191',
@@ -186,6 +207,7 @@ class CustomerController extends Controller
     private function buildCustomerQuery(Request $request, ?string $fixedStatus = null)
     {
         $query = Customer::query()->latest();
+        $this->applyTenantScope($query);
 
         $search = trim((string) $request->input('search', ''));
         if ($search !== '') {
@@ -207,13 +229,13 @@ class CustomerController extends Controller
 
     public function activate($id)
     {
-        Customer::findOrFail($id)->update(['status' => 'active']);
+        $this->applyTenantScope(Customer::query())->findOrFail($id)->update(['status' => 'active']);
         return back()->with('success', 'Customer activated.');
     }
 
     public function deactivate($id)
     {
-        Customer::findOrFail($id)->update(['status' => 'deactive']);
+        $this->applyTenantScope(Customer::query())->findOrFail($id)->update(['status' => 'deactive']);
         return back()->with('success', 'Customer deactivated.');
     }
 
@@ -222,7 +244,7 @@ class CustomerController extends Controller
      */
     public function destroy($id)
     {
-        $customer = Customer::findOrFail($id);
+        $customer = $this->applyTenantScope(Customer::query())->findOrFail($id);
         
         if ($customer->image) {
             Storage::disk('public')->delete($customer->image);
@@ -234,7 +256,7 @@ class CustomerController extends Controller
 
     public function export($id)
     {
-        $customer = Customer::findOrFail($id);
+        $customer = $this->applyTenantScope(Customer::query())->findOrFail($id);
 
         $filename = 'customer_' . $customer->id . '.csv';
         $headers = [
@@ -263,6 +285,7 @@ class CustomerController extends Controller
     public function apiIndex(Request $request)
     {
         $query = Customer::query()->select(['id', 'customer_name', 'email', 'phone', 'status', 'balance']);
+        $this->applyTenantScope($query);
 
         if ($search = trim((string) $request->query('search', ''))) {
             $query->where(function ($q) use ($search) {

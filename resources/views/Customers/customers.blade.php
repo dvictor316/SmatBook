@@ -3,6 +3,25 @@
 @section('content')
 <div class="page-wrapper">
     <div class="content container-fluid">
+        <style>
+            @media (max-width: 767.98px) {
+                .customer-page-actions {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 0.5rem;
+                    justify-content: flex-start;
+                }
+
+                .customer-page-actions > * {
+                    flex: 1 1 calc(50% - 0.5rem);
+                    min-width: 0;
+                }
+
+                .customer-mobile-full {
+                    flex-basis: 100%;
+                }
+            }
+        </style>
         
         <div class="page-header">
             <div class="row align-items-center">
@@ -13,9 +32,15 @@
                         <li class="breadcrumb-item active">Customers</li>
                     </ul>
                 </div>
-                <div class="col-auto">
+                <div class="col-auto customer-page-actions">
                     <a href="{{ route('customers.create') }}" class="btn btn-primary me-1">
                         <i class="fas fa-plus"></i> Add Customer
+                    </a>
+                    <button type="button" class="btn btn-outline-primary me-1 customer-mobile-full" data-bs-toggle="modal" data-bs-target="#importCustomersModal">
+                        <i class="fas fa-file-upload"></i> Import Customers
+                    </button>
+                    <a href="{{ route('customers.import.template') }}" class="btn btn-outline-secondary me-1">
+                        <i class="fas fa-file-download"></i> Import Template
                     </a>
                     <a href="#" onclick="window.print()" class="btn btn-primary me-1">
                         <i class="fas fa-print"></i> Print
@@ -125,6 +150,31 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="importCustomersModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ route('customers.import') }}" enctype="multipart/form-data">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title">Import Customers</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted mb-3">Upload CSV or Excel files with customer opening balances. Imported balances will reflect on customer credit reporting.</p>
+                    <div class="mb-3">
+                        <label class="form-label">Spreadsheet File</label>
+                        <input type="file" name="import_file" class="form-control" accept=".csv,.txt,.xls,.xlsx,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Import Customers</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
