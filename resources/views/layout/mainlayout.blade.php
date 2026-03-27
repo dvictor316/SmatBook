@@ -4,7 +4,7 @@
     $siteTitle = \App\Models\Setting::where('key', 'company_name')->value('value') ?: 'SmartProbook';
     $faviconPath = \App\Models\Setting::mediaUrl(
         \App\Models\Setting::where('key', 'favicon')->value('value'),
-        asset('assets/img/log-favicon.svg')
+        asset('assets/img/log-favicon.png')
     );
     $requestPath = request()->path();
     $isReportWorkspace = request()->routeIs('reports.*')

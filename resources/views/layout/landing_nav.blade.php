@@ -69,8 +69,8 @@
             : ($publicSeo['keywords'] ?? 'SmartProbook, accounting software, ERP software, invoicing, inventory, reporting');
     @endphp
     @include('layout.partials.seo-meta')
-    <link rel="icon" type="image/svg+xml" href="{{ asset('assets/img/log-favicon.svg') }}">
-    <link rel="shortcut icon" href="{{ asset('assets/img/log-favicon.svg') }}">
+    <link rel="icon" type="image/png" href="{{ asset('assets/img/log-favicon.png') }}">
+    <link rel="shortcut icon" href="{{ asset('assets/img/log-favicon.png') }}">
     
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
