@@ -88,22 +88,25 @@
                                                     </div>
                                                 </td>
                                                 <td class="text-end no-print">
-                                                    <div class="d-flex justify-content-end">
-                                                        <a class="btn btn-sm btn-white text-success me-2 shadow-sm" href="javascript:void(0);" 
+                                                    <div class="d-flex justify-content-end flex-wrap gap-2">
+                                                        <a class="btn btn-sm btn-white text-success shadow-sm d-flex align-items-center gap-1" href="javascript:void(0);" 
                                                            data-bs-toggle="modal" data-bs-target="#editCategory{{ data_get($category, 'id') }}">
                                                             <i class="far fa-edit"></i>
+                                                            <span class="d-none d-md-inline">Edit</span>
                                                         </a>
                                                         <form action="{{ route('categories.clear-products', data_get($category, 'id')) }}" method="POST" onsubmit="return confirm('Delete all products in this category and reset their stock?')">
                                                             @csrf
-                                                            <button type="submit" class="btn btn-sm btn-white text-warning me-2 shadow-sm">
+                                                            <button type="submit" class="btn btn-sm btn-white text-warning shadow-sm d-flex align-items-center gap-1">
                                                                 <i class="fas fa-broom"></i>
+                                                                <span class="d-none d-md-inline">Clear Products</span>
                                                             </button>
                                                         </form>
                                                         
                                                         <form action="{{ route('categories.destroy', data_get($category, 'id')) }}" method="POST" onsubmit="return confirm('Are you sure?')">
                                                             @csrf @method('DELETE')
-                                                            <button type="submit" class="btn btn-sm btn-white text-danger shadow-sm">
+                                                            <button type="submit" class="btn btn-sm btn-white text-danger shadow-sm d-flex align-items-center gap-1">
                                                                 <i class="far fa-trash-alt"></i>
+                                                                <span class="d-none d-md-inline">Delete</span>
                                                             </button>
                                                         </form>
                                                     </div>
