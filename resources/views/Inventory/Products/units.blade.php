@@ -43,14 +43,14 @@
                                                 <td>{{ $unit['id'] }}</td>
                                                 <td>{{ $unit['name'] }}</td>
                                                 <td>{{ $unit['short'] }}</td>
-                                                <td class="d-flex align-items-center">
-                                                    <a class="btn-action-icon me-2" href="javascript:void(0);"
-                                                        data-bs-toggle="modal" data-bs-target="#edit_unit">
-                                                        <i class="fe fe-edit"></i>
+                                                <td class="d-flex align-items-center gap-2">
+                                                    <a class="btn-action-icon" href="javascript:void(0);"
+                                                        data-bs-toggle="modal" data-bs-target="#edit_unit" title="Edit">
+                                                        <i class="fas fa-edit"></i>
                                                     </a>
                                                     <a class="btn-action-icon" href="javascript:void(0);"
-                                                        data-bs-toggle="modal" data-bs-target="#delete_modal">
-                                                        <i class="fe fe-trash-2"></i>
+                                                        data-bs-toggle="modal" data-bs-target="#delete_modal" title="Delete">
+                                                        <i class="fas fa-trash-alt"></i>
                                                     </a>
                                                 </td>
                                             </tr>
