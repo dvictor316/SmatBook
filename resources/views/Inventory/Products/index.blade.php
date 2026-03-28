@@ -1,6 +1,12 @@
 
 
 <?php $page = 'product-list'; ?>
+@php
+    $productRows = $productRows ?? ($products ?? collect());
+    if ($productRows instanceof \Illuminate\Pagination\AbstractPaginator) {
+        $productRows = $productRows->getCollection();
+    }
+@endphp
 @extends('layout.mainlayout')
 
 @section('content')
