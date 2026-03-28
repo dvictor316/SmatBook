@@ -234,7 +234,14 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($products ?? [] as $product)
+                            @php
+                                $productRows = isset($products) ? $products : collect();
+                                if ($productRows instanceof \Illuminate\Pagination\AbstractPaginator) {
+                                    $productRows = $productRows->getCollection();
+                                }
+                            @endphp
+                            @php if ($productRows->count() > 0): @endphp
+                                @php foreach ($productRows as $product): @endphp
                                     <tr>
                                         <td>{{ $loop->iteration }}</td>
                                         <td>
@@ -297,11 +304,12 @@
                                             </div>
                                         </td>
                                     </tr>
-                            @empty
+                                @php endforeach; @endphp
+                            @php else: @endphp
                                 <tr>
                                     <td colspan="9" class="text-center text-muted py-4">No products found.</td>
                                 </tr>
-                            @endforelse
+                            @php endif; @endphp
                         </tbody>
                     </table>
                 </div>
