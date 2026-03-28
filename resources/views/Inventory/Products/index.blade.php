@@ -1,15 +1,13 @@
 
+@extends('layout.mainlayout')
 
-<?php $page = 'product-list'; ?>
+@section('content')
 @php
-    $productRows = $productRows ?? ($products ?? collect());
+    $productRows = $products ?? collect();
     if ($productRows instanceof \Illuminate\Pagination\AbstractPaginator) {
         $productRows = $productRows->getCollection();
     }
 @endphp
-@extends('layout.mainlayout')
-
-@section('content')
 
 <style>
     /* Hide default DataTables buttons as we trigger them via our custom dropdown */
