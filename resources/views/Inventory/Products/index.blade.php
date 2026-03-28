@@ -240,8 +240,8 @@
                                     $productRows = $productRows->getCollection();
                                 }
                             @endphp
-                            @php if ($productRows->count() > 0): @endphp
-                                @php foreach ($productRows as $product): @endphp
+                            @if($productRows->count() > 0)
+                                @foreach($productRows as $product)
                                     <tr>
                                         <td>{{ $loop->iteration }}</td>
                                         <td>
@@ -304,12 +304,12 @@
                                             </div>
                                         </td>
                                     </tr>
-                                @php endforeach; @endphp
-                            @php else: @endphp
+                                @endforeach
+                            @else
                                 <tr>
                                     <td colspan="9" class="text-center text-muted py-4">No products found.</td>
                                 </tr>
-                            @php endif; @endphp
+                            @endif
                         </tbody>
                     </table>
                 </div>
