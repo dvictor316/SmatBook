@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\{Payment, Sale, Account, Transaction, Subscription, User, Company};
+use App\Models\{Payment, Sale, Account, Transaction, Subscription, User, Company, Customer};
 use App\Support\LedgerService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\{Auth, DB, Log, File, Http, Str, Schema, Storage};
@@ -329,7 +329,7 @@ class PaymentController extends Controller
     /**
      * 5. FINANCE & REPORTING
      */
-    public function index()
+    public function index(Request $request)
     {
         $paymentsQuery = Payment::with(['sale', 'creator'])->latest();
         $this->applyTenantScope($paymentsQuery, 'payments');
@@ -339,6 +339,22 @@ class PaymentController extends Controller
         $this->applyTenantScope($salesQuery, 'sales');
         $this->applyBranchScope($salesQuery, 'sales');
 
+        $selectedCustomer = null;
+        $selectedSaleId = $request->filled('sale_id') ? (int) $request->query('sale_id') : null;
+        $openPayment = $request->boolean('open_payment');
+
+        if ($request->filled('customer_id') && Schema::hasTable('customers')) {
+            $customerId = (int) $request->query('customer_id');
+            $selectedCustomer = $this->applyTenantScope(Customer::query(), 'customers')->find($customerId);
+
+            if ($selectedCustomer) {
+                $salesQuery->where('customer_id', $selectedCustomer->id);
+                if (Schema::hasColumn('sales', 'balance')) {
+                    $salesQuery->where('balance', '>', 0);
+                }
+            }
+        }
+
         $assetAccountsQuery = Account::where('type', 'Asset')->where('is_active', 1);
         $this->applyTenantScope($assetAccountsQuery, 'accounts');
 
@@ -346,6 +362,9 @@ class PaymentController extends Controller
             'payments'      => $paymentsQuery->paginate(10),
             'sales'         => $salesQuery->get(),
             'assetAccounts' => $assetAccountsQuery->get(),
+            'selectedCustomer' => $selectedCustomer,
+            'selectedSaleId' => $selectedSaleId,
+            'openPayment' => $openPayment,
         ];
         return view('Finance.payments', $data);
     }

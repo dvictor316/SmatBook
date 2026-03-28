@@ -380,6 +380,9 @@
                     <a href="{{ route('reports.customer-statement', $customer->id) }}" class="btn btn-outline-primary rounded-pill px-4">
                         <i class="fe fe-file-text me-2"></i>Customer Statement
                     </a>
+                    <a href="{{ route('payments.index', ['customer_id' => $customer->id, 'open_payment' => 1]) }}" class="btn btn-outline-success rounded-pill px-4">
+                        <i class="fe fe-credit-card me-2"></i>Record Payment
+                    </a>
                     <button onclick="window.print()" class="btn btn-light border rounded-pill px-4">
                         <i class="fe fe-printer me-2"></i>Print Dossier
                     </button>
@@ -416,6 +419,7 @@
                         <div class="customer-pill-value">
                             <div>Currency: {{ $customer->currency ?: '₦' }}</div>
                             <div>Outstanding: ₦{{ number_format($customer->computed_balance ?? $customer->balance ?? 0, 2) }}</div>
+                            <div>Credit Limit: ₦{{ number_format($customer->credit_limit ?? 0, 2) }}</div>
                             <div>Website:
                                 @if ($customer->website)
                                     <a href="{{ $customer->website }}" target="_blank" rel="noopener">{{ $customer->website }}</a>
@@ -572,6 +576,14 @@
                                         <div class="col-md-6">
                                             <label class="form-label">Currency</label>
                                             <input type="text" name="currency" class="form-control" value="{{ old('currency', $customer->currency) }}" placeholder="₦">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Opening Balance</label>
+                                            <input type="number" step="0.01" min="0" name="balance" class="form-control" value="{{ old('balance', $customer->balance) }}">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Credit Limit</label>
+                                            <input type="number" step="0.01" min="0" name="credit_limit" class="form-control" value="{{ old('credit_limit', $customer->credit_limit ?? 0) }}">
                                         </div>
                                         <div class="col-md-12">
                                             <label class="form-label">Website</label>

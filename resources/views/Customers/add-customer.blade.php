@@ -99,6 +99,14 @@
                                             @error('balance') <div class="invalid-feedback">{{ $message }}</div> @enderror
                                         </div>
                                     </div>
+                                    <div class="col-lg-4 col-md-6 col-sm-12">
+                                        <div class="input-block mb-3">
+                                            <label>Credit Limit</label>
+                                            <input type="number" step="0.01" min="0" class="form-control @error('credit_limit') is-invalid @enderror" name="credit_limit" placeholder="0.00" value="{{ old('credit_limit', 0) }}">
+                                            <small class="text-muted">Set the maximum credit exposure allowed for this customer.</small>
+                                            @error('credit_limit') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 

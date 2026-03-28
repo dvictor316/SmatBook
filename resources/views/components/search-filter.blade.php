@@ -124,6 +124,23 @@
             'search_placeholder' => 'Search refunded invoices',
             'scope_badge' => 'Refunded only',
         ],
+        'pos.reports' => [
+            'mode' => 'server',
+            'route_name' => 'pos.reports',
+            'heading' => 'Filter POS sales activity',
+            'description' => 'Filter by branch, staff, payment status, and date range.',
+            'fields' => ['search', 'branch_id', 'staff_id', 'payment_status', 'date_from', 'date_to'],
+            'search_placeholder' => 'Search product, SKU, or category',
+            'branch_options' => $branchOptions ?? [],
+            'staff_options' => $staffOptions ?? [],
+            'payment_status_options' => [
+                '' => 'All payment statuses',
+                'paid' => 'Paid',
+                'partial' => 'Partial',
+                'unpaid' => 'Unpaid',
+                'pending' => 'Pending',
+            ],
+        ],
     ];
 
     $config = $configs[$routeName] ?? [
@@ -143,6 +160,9 @@
 
     $searchValue = trim((string) request('search', ''));
     $statusValue = trim((string) request('status', ''));
+    $branchValue = trim((string) request('branch_id', ''));
+    $staffValue = trim((string) request('staff_id', ''));
+    $paymentStatusValue = trim((string) request('payment_status', ''));
     $dateFrom = trim((string) request('date_from', ''));
     $dateTo = trim((string) request('date_to', ''));
 @endphp
@@ -404,6 +424,41 @@
                         <select id="smart-filter-status" name="status" class="form-select">
                             @foreach(($config['status_options'] ?? []) as $value => $label)
                                 <option value="{{ $value }}" @selected($statusValue === (string) $value)>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                @endif
+
+                @if(in_array('branch_id', $config['fields'], true))
+                    <div class="smart-filter-field">
+                        <label for="smart-filter-branch">Branch</label>
+                        <select id="smart-filter-branch" name="branch_id" class="form-select">
+                            <option value="">All branches</option>
+                            @foreach(($config['branch_options'] ?? []) as $value => $label)
+                                <option value="{{ $value }}" @selected($branchValue === (string) $value)>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                @endif
+
+                @if(in_array('staff_id', $config['fields'], true))
+                    <div class="smart-filter-field">
+                        <label for="smart-filter-staff">Staff</label>
+                        <select id="smart-filter-staff" name="staff_id" class="form-select">
+                            <option value="">All staff</option>
+                            @foreach(($config['staff_options'] ?? []) as $value => $label)
+                                <option value="{{ $value }}" @selected($staffValue === (string) $value)>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                @endif
+
+                @if(in_array('payment_status', $config['fields'], true))
+                    <div class="smart-filter-field">
+                        <label for="smart-filter-payment-status">Payment Status</label>
+                        <select id="smart-filter-payment-status" name="payment_status" class="form-select">
+                            @foreach(($config['payment_status_options'] ?? []) as $value => $label)
+                                <option value="{{ $value }}" @selected($paymentStatusValue === (string) $value)>{{ $label }}</option>
                             @endforeach
                         </select>
                     </div>

@@ -10,6 +10,8 @@ use App\Models\Customer;
 use App\Models\Company;
 use App\Models\Payment;
 use App\Models\Bank;
+use App\Models\Setting;
+use App\Models\User;
 use App\Events\NewSaleRegistered; // The Pusher event we created
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -72,6 +74,24 @@ class SaleController extends Controller
         }
     }
 
+    private function companyScopedSettingKey(string $baseKey): string
+    {
+        $companyId = $this->tenantCompanyId();
+
+        return $companyId > 0 ? "{$baseKey}_company_{$companyId}" : $baseKey;
+    }
+
+    private function getAvailableBranches(): array
+    {
+        $raw = Setting::where('key', $this->companyScopedSettingKey('branches_json'))->value('value');
+        $decoded = json_decode((string) $raw, true);
+
+        return collect(is_array($decoded) ? $decoded : [])
+            ->filter(fn ($branch) => !empty($branch['id']) && !empty($branch['name']))
+            ->values()
+            ->all();
+    }
+
     public function index(Request $request)
     {
         // 1. Start the query with relationships
@@ -110,6 +130,26 @@ class SaleController extends Controller
         $priceExpression = Schema::hasColumn('products', 'product_price')
             ? 'COALESCE(products.product_price, 0)'
             : (Schema::hasColumn('products', 'price') ? 'COALESCE(products.price, 0)' : '0');
+
+        $branchOptions = collect($this->getAvailableBranches())
+            ->mapWithKeys(fn ($branch) => [(string) $branch['id'] => (string) $branch['name']])
+            ->all();
+
+        $staffOptions = [];
+        if (Schema::hasTable('users')) {
+            $staffQuery = User::query()->select(['id', 'name', 'email']);
+            $this->applyTenantScope($staffQuery, 'users');
+            $staffOptions = $staffQuery->orderBy('name')->get()
+                ->mapWithKeys(function ($user) {
+                    $label = trim((string) ($user->name ?? ''));
+                    $label = $label !== '' ? $label : (string) ($user->email ?? ('User #' . $user->id));
+                    if (!empty($user->email) && $label !== $user->email) {
+                        $label .= ' (' . $user->email . ')';
+                    }
+                    return [(string) $user->id => $label];
+                })
+                ->all();
+        }
 
         $query = Product::query()
             ->leftJoin('categories', 'products.category_id', '=', 'categories.id')
@@ -168,13 +208,37 @@ class SaleController extends Controller
             });
         }
 
+        if ($request->filled('branch_id') && Schema::hasColumn('sales', 'branch_id')) {
+            $branchId = (string) $request->branch_id;
+            $query->where(function ($builder) use ($branchId) {
+                $builder->whereNull('sales.id')
+                    ->orWhere('sales.branch_id', $branchId);
+            });
+        }
+
+        if ($request->filled('staff_id') && Schema::hasColumn('sales', 'user_id')) {
+            $staffId = (int) $request->staff_id;
+            $query->where(function ($builder) use ($staffId) {
+                $builder->whereNull('sales.id')
+                    ->orWhere('sales.user_id', $staffId);
+            });
+        }
+
+        if ($request->filled('payment_status') && Schema::hasColumn('sales', 'payment_status')) {
+            $paymentStatus = (string) $request->payment_status;
+            $query->where(function ($builder) use ($paymentStatus) {
+                $builder->whereNull('sales.id')
+                    ->orWhere('sales.payment_status', $paymentStatus);
+            });
+        }
+
         $reports = $query
             ->orderByDesc('total_sold_amount')
             ->orderBy('products.name')
             ->paginate(15)
             ->withQueryString();
 
-        return view('pos.reports', compact('reports'));
+        return view('pos.reports', compact('reports', 'branchOptions', 'staffOptions'));
     }
 
 

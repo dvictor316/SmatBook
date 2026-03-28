@@ -62,12 +62,13 @@ class CustomerController extends Controller
             'email'         => 'nullable|email|max:191|unique:customers,email',
             'phone'         => 'nullable|string|max:191',
             'balance'       => 'nullable|numeric|min:0',
+            'credit_limit'  => 'nullable|numeric|min:0',
             'image'         => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
         // Capture all possible form fields, then keep only real DB columns.
         $data = $request->only([
-            'customer_name', 'email', 'phone', 'currency', 'website', 'notes',
+            'customer_name', 'email', 'phone', 'currency', 'website', 'notes', 'credit_limit',
             'billing_name', 'billing_address_line1', 'billing_address_line2', 
             'billing_country', 'billing_city', 'billing_state', 'billing_pincode',
             'shipping_name', 'shipping_address_line1', 'shipping_address_line2', 
@@ -77,6 +78,9 @@ class CustomerController extends Controller
 
         $data['status'] = 'active'; 
         $data['balance'] = (float) $request->input('balance', 0.00);
+        if ($request->filled('credit_limit')) {
+            $data['credit_limit'] = (float) $request->input('credit_limit', 0.00);
+        }
 
         if ($request->hasFile('image')) {
             $data['image'] = $request->file('image')->store('profiles', 'public');
@@ -157,11 +161,13 @@ class CustomerController extends Controller
             'email'         => 'nullable|email|max:191|unique:customers,email,' . $id,
             'image'         => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'status'        => 'required|in:active,deactive',
+            'balance'       => 'nullable|numeric|min:0',
+            'credit_limit'  => 'nullable|numeric|min:0',
         ]);
 
         // Capture all possible form fields for update, then keep only real DB columns.
         $data = $request->only([
-            'customer_name', 'email', 'phone', 'status', 'currency', 'website', 'notes',
+            'customer_name', 'email', 'phone', 'status', 'currency', 'website', 'notes', 'balance', 'credit_limit',
             'billing_name', 'billing_address_line1', 'billing_address_line2', 
             'billing_country', 'billing_city', 'billing_state', 'billing_pincode',
             'shipping_name', 'shipping_address_line1', 'shipping_address_line2', 
@@ -425,10 +431,10 @@ class CustomerController extends Controller
 
     public function downloadImportTemplate()
     {
-        $headers = ['customer_name', 'email', 'phone', 'address', 'balance', 'status', 'notes'];
+        $headers = ['customer_name', 'email', 'phone', 'address', 'balance', 'credit_limit', 'status', 'notes'];
         $rows = [
-            ['Adebayo Stores', 'accounts@adebayo.example', '08030000000', '12 Market Road', '25000', 'active', 'Opening credit balance'],
-            ['Walk-in Customer', '', '', '', '0', 'active', 'General retail customer'],
+            ['Adebayo Stores', 'accounts@adebayo.example', '08030000000', '12 Market Road', '25000', '100000', 'active', 'Opening credit balance'],
+            ['Walk-in Customer', '', '', '', '0', '0', 'active', 'General retail customer'],
         ];
 
         $content = implode(',', $headers) . "\n";
@@ -552,6 +558,7 @@ class CustomerController extends Controller
                         'phone' => $lookupPhone !== '' ? $lookupPhone : null,
                         'address' => $rowData['address'] ?? null,
                         'balance' => is_numeric($rowData['balance'] ?? null) ? (float) $rowData['balance'] : 0,
+                        'credit_limit' => is_numeric($rowData['credit_limit'] ?? null) ? (float) $rowData['credit_limit'] : 0,
                         'status' => in_array(strtolower((string) ($rowData['status'] ?? 'active')), ['active', 'deactive'], true)
                             ? strtolower((string) $rowData['status'])
                             : 'active',

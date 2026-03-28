@@ -22,6 +22,7 @@ class Customer extends Model
         'address', 
         'status', 
         'balance', 
+        'credit_limit',
         'image',
         'currency',
         'website',

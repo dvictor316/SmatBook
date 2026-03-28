@@ -134,6 +134,9 @@
                                                             <a class="dropdown-item" href="{{ route('reports.customer-statement', $customer->id) }}">
                                                                 <i class="far fa-file-alt me-2"></i>Customer Statement
                                                             </a>
+                                                            <a class="dropdown-item" href="{{ route('payments.index', ['customer_id' => $customer->id, 'open_payment' => 1]) }}">
+                                                                <i class="far fa-credit-card me-2"></i>Record Payment
+                                                            </a>
                                                             <div class="dropdown-divider"></div>
                                                             <form action="{{ route('customers.destroy', $customer->id) }}" method="POST" onsubmit="return confirm('Delete this customer?');">
                                                                 @csrf

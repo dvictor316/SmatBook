@@ -146,14 +146,29 @@
             <form action="{{ route('payments.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="modal-body p-4">
+                    @if(!empty($selectedCustomer))
+                        <div class="alert alert-info d-flex align-items-center gap-2">
+                            <i class="fe fe-user"></i>
+                            <div>
+                                Recording repayment for <strong>{{ $selectedCustomer->customer_name ?? $selectedCustomer->name }}</strong>.
+                                @if(!empty($selectedCustomer->phone))
+                                    <span class="text-muted">({{ $selectedCustomer->phone }})</span>
+                                @endif
+                            </div>
+                        </div>
+                    @endif
                     <div class="row g-4">
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Link to Sale Reference</label>
                             <select class="form-select select" name="sale_id" required>
                                 <option value="">-- Choose Sale --</option>
-                                @foreach($sales as $sale)
-                                    <option value="{{ $sale->id }}">{{ $sale->invoice_no ?? ('SALE-' . $sale->id) }} (Bal: {{ number_format((float) ($sale->balance ?? 0), 2) }})</option>
-                                @endforeach
+                                @forelse($sales as $sale)
+                                    <option value="{{ $sale->id }}" @selected(!empty($selectedSaleId) && (int) $selectedSaleId === (int) $sale->id)>
+                                        {{ $sale->invoice_no ?? ('SALE-' . $sale->id) }} (Bal: {{ number_format((float) ($sale->balance ?? 0), 2) }})
+                                    </option>
+                                @empty
+                                    <option value="" disabled>No unpaid sales available for this customer.</option>
+                                @endforelse
                             </select>
                         </div>
 
@@ -211,4 +226,17 @@
         </div>
     </div>
 </div>
+@if(!empty($openPayment))
+    @push('scripts')
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const modalEl = document.getElementById('add_payment');
+                if (modalEl && window.bootstrap) {
+                    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                    modal.show();
+                }
+            });
+        </script>
+    @endpush
+@endif
 @endsection
