@@ -1071,6 +1071,22 @@
                 content: "";
             }
         }
+
+        /* Feather icon fallback to Font Awesome when feather webfont is missing */
+        .fe {
+            font-family: "Font Awesome 6 Free" !important;
+            font-weight: 900;
+        }
+        .fe-filter:before { content: "\f0b0"; }
+        .fe-download:before { content: "\f019"; }
+        .fe-printer:before { content: "\f02f"; }
+        .fe-settings:before { content: "\f013"; }
+        .fe-grid:before { content: "\f00a"; }
+        .fe-list:before { content: "\f03a"; }
+        .fe-refresh-ccw:before { content: "\f2f1"; }
+        .fe-rotate-ccw:before { content: "\f2ea"; }
+        .fe-check-square:before { content: "\f14a"; }
+        .fe-inbox:before { content: "\f01c"; }
     </style>
 </head>
 
