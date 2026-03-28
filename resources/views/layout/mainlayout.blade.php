@@ -1068,10 +1068,7 @@
 
             .btn-action-icon::after,
             .action-icon::after {
-                content: "Actions";
-                font-size: 0.75rem;
-                font-weight: 600;
-                color: #6b7280;
+                content: "";
             }
         }
     </style>
