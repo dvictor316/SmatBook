@@ -235,7 +235,7 @@
                         </thead>
                         <tbody>
                             @php
-                                $productRows = isset($products) ? $products : collect();
+                                $productRows = $products ?? collect();
                                 if ($productRows instanceof \Illuminate\Pagination\AbstractPaginator) {
                                     $productRows = $productRows->getCollection();
                                 }
