@@ -2,12 +2,12 @@
 @extends('layout.mainlayout')
 
 @section('content')
-<?php
+@php
     $productRows = $products ?? collect();
     if ($productRows instanceof \Illuminate\Pagination\AbstractPaginator) {
         $productRows = $productRows->getCollection();
     }
-?>
+@endphp
 
 <style>
     /* Hide default DataTables buttons as we trigger them via our custom dropdown */
@@ -192,28 +192,28 @@
                                 <ul class="dropdown-menu dropdown-menu-end">
                                     <li><a class="dropdown-item" href="{{ route('inventory.Products.import.template') }}"><i class="far fa-file-lines me-2 text-primary"></i>Download Spreadsheet Template</a></li>
                                     <li><button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#importProductsModal"><i class="fas fa-file-upload me-2 text-success"></i>Import Products</button></li>
-                                    <?php $lastImportKey = 'product_import_last_' . (auth()->id() ?? 'guest'); ?>
-                                    <?php if (\Illuminate\Support\Facades\Cache::has($lastImportKey)) { ?>
+                                    @php($lastImportKey = 'product_import_last_' . (auth()->id() ?? 'guest'))
+                                    @if(\Illuminate\Support\Facades\Cache::has($lastImportKey))
                                         <li>
                                             <form action="{{ route('inventory.Products.import.undo') }}" method="POST" onsubmit="return confirm('Undo the last product import? This will delete the imported items and reset their stock.');">
-                                                <?php echo csrf_field(); ?>
+                                                @csrf
                                                 <button type="submit" class="dropdown-item text-danger">
                                                     <i class="fas fa-rotate-left me-2"></i>Undo Last Import
                                                 </button>
                                             </form>
                                         </li>
-                                    <?php } ?>
+                                    @endif
                                 </ul>
                             </div>
 
                             <button type="button" class="btn btn-success desktop-add-product-trigger" data-bs-toggle="modal" data-bs-target="#addProductModal">
                                 <i class="fa fa-plus"></i> Add Product
                             </button>
-                            <?php if (($stockTransferEnabled ?? false) && count($availableBranches ?? []) > 1) { ?>
+                            @if(($stockTransferEnabled ?? false) && count($availableBranches ?? []) > 1)
                                 <button type="button" class="btn btn-outline-dark" data-bs-toggle="modal" data-bs-target="#transferStockModal">
                                     <i class="fas fa-right-left"></i> Transfer Stock
                                 </button>
-                            <?php } ?>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -238,25 +238,23 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <?php
+                            @php
                                 $productRows = $products ?? collect();
                                 if ($productRows instanceof \Illuminate\Pagination\AbstractPaginator) {
                                     $productRows = $productRows->getCollection();
                                 }
-                            ?>
-                            <?php if (->count() > 0) { ?>
-                                <?php  = 1; ?>
-                                <?php $rowIndex = 1; ?>
-                                <?php foreach ($productRows as $product) { ?>
+                            @endphp
+                            @if($productRows->count() > 0)
+                                @foreach($productRows as $product)
                                     <tr>
-                                        <td><?php echo $rowIndex++; ?></td>
+                                        <td>{{ $loop->iteration }}</td>
                                         <td>
                                             <div class="d-flex align-items-center">
-                                                <?php if ($product->image_url) { ?>
+                                                @if($product->image_url)
                                                     <img src="{{ $product->image_url }}" class="rounded me-2" width="35" height="35" alt="{{ $product->name }}">
-                                                <?php } else { ?>
+                                                @else
                                                     <span class="product-thumb-empty"><i class="fas fa-box-open"></i></span>
-                                                <?php } ?>
+                                                @endif
                                                 <div>
                                                     <div class="fw-bold text-dark">{{ $product->name }}</div>
                                                     <small class="text-muted">{{ $product->sku }}</small>
@@ -266,32 +264,32 @@
                                         <td>{{ $product->category->name ?? 'N/A' }}</td>
                                         <td><span class="badge bg-soft-info text-info">{{ $product->base_unit_name }}</span></td>
                                         <td>
-                                                <?php if ((int) ($product->units_per_roll ?? 0) > 0) { ?>
+                                                @if((int) ($product->units_per_roll ?? 0) > 0)
                                                     <small class="d-block text-nowrap">Rolls / Carton: <strong>{{ $product->units_per_carton }}</strong></small>
                                                     <small class="d-block text-nowrap">Sachets / Roll: <strong>{{ $product->units_per_roll }}</strong></small>
-                                                <?php } else { ?>
+                                                @else
                                                     <small class="d-block text-nowrap">Pieces / Carton: <strong>{{ $product->units_per_carton }}</strong></small>
                                                     <small class="d-block text-nowrap">Roll Layer: <strong>Not used</strong></small>
-                                                <?php } ?>
+                                                @endif
                                         </td>
                                         <td>
-                                            <?php
+                                            @php
                                                 $displayStock = (float) ($product->active_branch_stock ?? $product->stock);
                                                 $hasActiveBranch = !empty($activeBranch['name'] ?? null);
-                                            ?>
+                                            @endphp
                                             <span class="badge {{ $displayStock <= 5 ? 'bg-danger' : 'bg-success' }}">
                                                 {{ rtrim(rtrim(number_format($displayStock, 2), '0'), '.') }}
                                             </span>
-                                            <?php if ($hasActiveBranch) { ?>
+                                            @if($hasActiveBranch)
                                                 <div class="small text-muted mt-1">{{ $activeBranch['name'] }}</div>
-                                            <?php } ?>
+                                            @endif
                                         </td>
                                         <td>
                                             <div>{{ number_format($product->price, 2) }}</div>
-                                            <?php if (!is_null($product->wholesale_price) || !is_null($product->special_price)) { ?>
+                                            @if(!is_null($product->wholesale_price) || !is_null($product->special_price))
                                                 <small class="d-block text-muted">Wholesale: {{ !is_null($product->wholesale_price) ? number_format($product->wholesale_price, 2) : '—' }}</small>
                                                 <small class="d-block text-muted">Special: {{ !is_null($product->special_price) ? number_format($product->special_price, 2) : '—' }}</small>
-                                            <?php } ?>
+                                            @endif
                                         </td>
                                         <td>{{ number_format($product->purchase_price, 2) }}</td>
                                         <td class="text-center no-print">
@@ -303,20 +301,19 @@
                                                 <div class="dropdown-menu dropdown-menu-end product-action-menu">
                                                     <a class="dropdown-item" href="{{ route('inventory.Products.edit', $product->id) }}"><i class="far fa-edit me-2"></i>Edit</a>
                                                     <form action="{{ route('inventory.Products.destroy', $product->id) }}" method="POST" onsubmit="return confirm('Delete this product?');">
-                                                        <?php echo csrf_field(); ?>
-                                                        <?php echo method_field('DELETE'); ?>
+                                                        @csrf @method('DELETE')
                                                         <button type="submit" class="dropdown-item text-danger"><i class="far fa-trash-alt me-2"></i>Delete</button>
                                                     </form>
                                                 </div>
                                             </div>
                                         </td>
                                     </tr>
-                                <?php } ?>
-                            <?php } else { ?>
+                                @endforeach
+                            @else
                                 <tr>
                                     <td colspan="9" class="text-center text-muted py-4">No products found.</td>
                                 </tr>
-                            <?php } ?>
+                            @endif
                         </tbody>
                     </table>
                 </div>
@@ -330,12 +327,12 @@
     <span>Add Product</span>
 </button>
 
-<?php if (($stockTransferEnabled ?? false) && count($availableBranches ?? []) > 1) { ?>
+@if(($stockTransferEnabled ?? false) && count($availableBranches ?? []) > 1)
 <div class="modal fade" id="transferStockModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <form method="POST" action="{{ route('inventory.transfer') }}">
-                <?php echo csrf_field(); ?>
+                @csrf
                 <div class="modal-header">
                     <h5 class="modal-title">Transfer Stock Between Branches</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -346,9 +343,9 @@
                         <label class="form-label">Product</label>
                         <select name="product_id" class="form-select" required>
                             <option value="">Select product</option>
-                            <?php foreach ($products as $product) { ?>
+                            @foreach($products as $product)
                                 <option value="{{ $product->id }}">{{ $product->name }} ({{ $product->sku }})</option>
-                            <?php } ?>
+                            @endforeach
                         </select>
                     </div>
                     <div class="row">
@@ -356,18 +353,18 @@
                             <label class="form-label">From Branch</label>
                             <select name="from_branch_id" class="form-select" required>
                                 <option value="">Select source</option>
-                                <?php foreach (($availableBranches ?? []) as $branch) { ?>
+                                @foreach(($availableBranches ?? []) as $branch)
                                     <option value="{{ $branch['id'] }}">{{ $branch['name'] }}</option>
-                                <?php } ?>
+                                @endforeach
                             </select>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">To Branch</label>
                             <select name="to_branch_id" class="form-select" required>
                                 <option value="">Select destination</option>
-                                <?php foreach (($availableBranches ?? []) as $branch) { ?>
+                                @foreach(($availableBranches ?? []) as $branch)
                                     <option value="{{ $branch['id'] }}">{{ $branch['name'] }}</option>
-                                <?php } ?>
+                                @endforeach
                             </select>
                         </div>
                     </div>
@@ -384,14 +381,14 @@
         </div>
     </div>
 </div>
-<?php } ?>
+@endif
 
 {{-- MODAL: ADD PRODUCT --}}
 <div class="modal fade" id="addProductModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <form method="POST" action="{{ route('inventory.Products.store') }}" enctype="multipart/form-data" id="quick_add_product_form">
-                <?php echo csrf_field(); ?>
+                @csrf
                 <div class="modal-header">
                     <h5 class="modal-title">Add New Product</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -415,9 +412,9 @@
                             <label class="form-label">Category</label>
                             <div class="input-group">
                                 <select name="category_id" id="product_category_select" class="form-select" required>
-                                    <?php foreach ($categories as $cat) { ?>
+                                    @foreach($categories as $cat)
                                         <option value="{{ $cat->id }}">{{ $cat->name }}</option>
-                                    <?php } ?>
+                                    @endforeach
                                 </select>
                                 <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addCategoryModal">+</button>
                             </div>
@@ -439,9 +436,9 @@
                             <label class="form-label">Stock Branch</label>
                             <select name="branch_id" class="form-select">
                                 <option value="">Use Active Branch</option>
-                                <?php foreach (($availableBranches ?? []) as $branch) { ?>
+                                @foreach(($availableBranches ?? []) as $branch)
                                     <option value="{{ $branch['id'] }}">{{ $branch['name'] }}</option>
-                                <?php } ?>
+                                @endforeach
                             </select>
                         </div>
                         <div class="col-md-3">
@@ -520,7 +517,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <form method="POST" action="{{ route('inventory.Products.import') }}" enctype="multipart/form-data">
-                <?php echo csrf_field(); ?>
+                @csrf
                 <div class="modal-header">
                     <h5 class="modal-title">Bulk Import Products</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -547,9 +544,9 @@
                         <label class="form-label">Apply Opening Stock To Branch</label>
                         <select name="branch_id" class="form-select">
                             <option value="">Use Active Branch</option>
-                            <?php foreach (($availableBranches ?? []) as $branch) { ?>
+                            @foreach(($availableBranches ?? []) as $branch)
                                 <option value="{{ $branch['id'] }}">{{ $branch['name'] }}</option>
-                            <?php } ?>
+                            @endforeach
                         </select>
                     </div>
                 </div>
@@ -567,7 +564,7 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <form id="ajaxAddCategoryForm">
-                <?php echo csrf_field(); ?>
+                @csrf
                 <div class="modal-header">
                     <h5 class="modal-title">Quick Category</h5>
                 </div>
