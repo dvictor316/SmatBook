@@ -383,8 +383,10 @@ class ProductController extends Controller
         }
 
         if (!Schema::hasTable('products')) {
+            $productRows = collect();
             return view('Inventory.Products.index', [
                 'products' => collect(),
+                'productRows' => $productRows,
                 'categories' => collect(),
                 'availableBranches' => $this->getAvailableBranches(),
                 'search' => trim((string) $request->input('search', '')),
@@ -433,12 +435,16 @@ class ProductController extends Controller
             $product->setAttribute('active_branch_stock', $this->branchInventory->getAvailableStock($product, $activeBranch));
             return $product;
         });
+        $productRows = $products instanceof \Illuminate\Pagination\AbstractPaginator
+            ? $products->getCollection()
+            : $products;
         $categories = Schema::hasTable('categories')
             ? Category::orderBy(Schema::hasColumn('categories', 'name') ? 'name' : 'id')->get()
             : collect();
 
         return view('Inventory.Products.index', [
             'products' => $products,
+            'productRows' => $productRows,
             'categories' => $categories,
             'availableBranches' => $this->getAvailableBranches(),
             'stockTransferEnabled' => $this->planSupportsStockTransfer(),
