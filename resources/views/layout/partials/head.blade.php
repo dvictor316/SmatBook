@@ -178,4 +178,29 @@
     .fe-git-branch::before { content: "\f126"; }
     .fe-activity::before { content: "\f201"; }
     .fe-check::before { content: "\f00c"; }
+
+    .fa,
+    .fas,
+    .far,
+    .fal,
+    .fab,
+    .fa-solid,
+    .fa-regular,
+    .fa-brands {
+        font-family: "Font Awesome 6 Free" !important;
+        font-weight: 900;
+        font-style: normal;
+    }
+
+    .fa-regular,
+    .far {
+        font-family: "Font Awesome 6 Free" !important;
+        font-weight: 400;
+    }
+
+    .fa-brands,
+    .fab {
+        font-family: "Font Awesome 6 Brands" !important;
+        font-weight: 400;
+    }
 </style>
