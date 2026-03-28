@@ -1562,7 +1562,7 @@
                                 {{-- Revenue Growth Chart --}}
                                 <div class="card card-rounded shadow-sm">
                                     <div class="card-body">
-                                        <div class="d-flex justify-content-between align-items-center mb-4">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
                                             <div>
                                                 <h4 class="card-title card-title-dash">Revenue Growth Trajectory</h4>
                                                 <p class="card-subtitle card-subtitle-dash">Year-over-year financial performance</p>
