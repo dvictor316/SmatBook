@@ -398,7 +398,9 @@
                             <label class="form-label">Category</label>
                             <div class="input-group">
                                 <select name="category_id" id="product_category_select" class="form-select" required>
-                                    @foreach($categories as $cat) <option value="{{ $cat->id }}">{{ $cat->name }}</option> @endforeach
+                                    @foreach($categories as $cat)
+                                        <option value="{{ $cat->id }}">{{ $cat->name }}</option>
+                                    @endforeach
                                 </select>
                                 <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addCategoryModal">+</button>
                             </div>
