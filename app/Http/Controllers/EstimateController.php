@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Estimate;
+use App\Models\Customer;
 use Illuminate\Support\Facades\Schema;
 
 class EstimateController extends Controller
@@ -36,7 +37,18 @@ class EstimateController extends Controller
 
     public function create()
     {
-        return view('estimates.create');
+        $customersQuery = Customer::query();
+        $companyId = (int) (auth()->user()?->company_id ?? 0);
+
+        if ($companyId > 0 && Schema::hasColumn('customers', 'company_id')) {
+            $customersQuery->where('company_id', $companyId);
+        }
+
+        $customers = $customersQuery
+            ->orderBy(Schema::hasColumn('customers', 'name') ? 'name' : 'id')
+            ->get();
+
+        return view('estimates.create', compact('customers'));
     }
 
     public function store(Request $request)
