@@ -2116,7 +2116,7 @@
                                                 <i class="mdi mdi-circle-medium text-success animate-pulse"></i> Live
                                             </span>
                                         </div>
-                                        <div class="list-wrapper" style="max-height: 320px; overflow-y: auto;">
+                                        <div class="list-wrapper" style="max-height: 220px; overflow-y: auto;">
                                             <ul class="bullet-line-list">
                                                 @forelse($platformActivity as $activity)
                                                 <li class="mb-2">
