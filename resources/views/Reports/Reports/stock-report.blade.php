@@ -36,11 +36,11 @@
         <div class="card shadow-none border mb-3 no-print">
             <div class="card-body p-2">
                 @php
-                    $stockRouteName = \Illuminate\Support\Facades\Route::has('stock-report')
-                        ? 'stock-report'
-                        : (\Illuminate\Support\Facades\Route::has('stock') ? 'stock' : null);
+                    $stockRouteName = \Illuminate\Support\Facades\Route::has('inventory.Products')
+                        ? 'inventory.Products'
+                        : (\Illuminate\Support\Facades\Route::has('inventory') ? 'inventory' : null);
                 @endphp
-                <form action="{{ $stockRouteName ? route($stockRouteName) : url('/stock-report') }}" method="GET">
+                <form action="{{ $stockRouteName ? route($stockRouteName) : url('/inventory') }}" method="GET">
                     <div class="row gx-2 align-items-end">
                         <div class="col-md-3">
                             <label class="report-filter-label">Start Date</label>
