@@ -131,7 +131,10 @@ public function index()
         $products = $productsQuery->get();
         $taxOptions = collect();
         if (class_exists(TaxCode::class) && Schema::hasTable('tax_codes')) {
-            $taxOptions = TaxCode::orderBy('name')->get();
+            $orderColumn = Schema::hasColumn('tax_codes', 'name')
+                ? 'name'
+                : (Schema::hasColumn('tax_codes', 'description') ? 'description' : 'code');
+            $taxOptions = TaxCode::orderBy($orderColumn)->get();
         }
         $banksQuery = Bank::orderBy('name');
         $this->applyTenantScope($banksQuery, 'banks');
