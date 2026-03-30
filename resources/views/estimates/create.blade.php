@@ -94,7 +94,7 @@
                         <div class="card-footer bg-white border-0 d-flex justify-content-end gap-2">
                             <a href="{{ route('estimates.index') }}" class="btn btn-light">Cancel</a>
                             <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save me-2"></i>Save Estimate
+                                <i class="fa-solid fa-floppy-disk me-2"></i>Save Estimate
                             </button>
                         </div>
                     </div>

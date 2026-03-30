@@ -190,9 +190,9 @@
                                         <li>
                                             <form action="{{ route('inventory.Products.import.undo') }}" method="POST" onsubmit="return confirm('Undo the last product import? This will delete the imported items and reset their stock.');">
                                                 <?php echo csrf_field(); ?>
-                                                <button type="submit" class="dropdown-item text-danger">
-                                                    <i class="fas fa-rotate-left me-2"></i>Undo Last Import
-                                                </button>
+                                                  <button type="submit" class="dropdown-item text-danger">
+                                                      <i class="fa-solid fa-rotate me-2"></i>Undo Last Import
+                                                  </button>
                                             </form>
                                         </li>
                                     <?php } ?>

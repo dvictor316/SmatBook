@@ -15,7 +15,7 @@
                 <div class="col-auto">
                     @if(Route::has('activity-log.export'))
                         <a href="{{ route('activity-log.export', request()->query()) }}" class="btn btn-outline-primary">
-                            <i class="fas fa-file-export me-1"></i>Export CSV
+                            <i class="fa-solid fa-file-export me-1"></i>Export CSV
                         </a>
                     @endif
                 </div>
@@ -43,10 +43,10 @@
                         </div>
                         <div class="col-md-3 d-flex gap-2">
                             <button type="submit" class="btn btn-primary flex-grow-1">
-                                <i class="fas fa-filter me-1"></i>Apply
+                                <i class="fa-solid fa-filter me-1"></i>Apply
                             </button>
                             <a href="{{ route(Route::currentRouteName()) }}" class="btn btn-outline-secondary flex-grow-1">
-                                <i class="fas fa-rotate-left me-1"></i>Reset
+                                <i class="fa-solid fa-rotate me-1"></i>Reset
                             </a>
                         </div>
                     </div>

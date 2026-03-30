@@ -24,7 +24,7 @@
                                             <th>#</th>
                                             <th>Unit Name</th>
                                             <th>Short Name</th>
-                                            <th class="no-sort">Action</th>
+                                            <th class="no-sort text-center">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -43,14 +43,16 @@
                                                 <td>{{ $unit['id'] }}</td>
                                                 <td>{{ $unit['name'] }}</td>
                                                 <td>{{ $unit['short'] }}</td>
-                                                <td class="d-flex align-items-center gap-2">
+                                                <td class="d-flex align-items-center justify-content-center gap-2">
                                                     <a class="btn-action-icon" href="javascript:void(0);"
-                                                        data-bs-toggle="modal" data-bs-target="#edit_unit" title="Edit">
-                                                        <i class="fas fa-edit"></i>
+                                                        data-bs-toggle="modal" data-bs-target="#edit_unit" title="Edit" aria-label="Edit unit">
+                                                        <i class="fa-solid fa-pen-to-square"></i>
+                                                        <span class="visually-hidden">Edit</span>
                                                     </a>
                                                     <a class="btn-action-icon" href="javascript:void(0);"
-                                                        data-bs-toggle="modal" data-bs-target="#delete_modal" title="Delete">
-                                                        <i class="fas fa-trash-alt"></i>
+                                                        data-bs-toggle="modal" data-bs-target="#delete_modal" title="Delete" aria-label="Delete unit">
+                                                        <i class="fa-solid fa-trash-can"></i>
+                                                        <span class="visually-hidden">Delete</span>
                                                     </a>
                                                 </td>
                                             </tr>

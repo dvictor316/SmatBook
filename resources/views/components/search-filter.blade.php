@@ -492,16 +492,16 @@
 
                 <div class="smart-filter-actions">
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-filter me-2"></i>Apply
+                        <i class="fa-solid fa-filter me-2"></i>Apply
                     </button>
 
                     @if($config['mode'] === 'server')
                         <a href="{{ $action }}" class="btn btn-light">
-                            <i class="fas fa-rotate-left me-2"></i>{{ $hasActiveFilters ? 'Clear Filters' : 'Reset' }}
+                            <i class="fa-solid fa-rotate me-2"></i>{{ $hasActiveFilters ? 'Clear Filters' : 'Reset' }}
                         </a>
                     @else
                         <button type="button" class="btn btn-light" data-smart-filter-reset>
-                            <i class="fas fa-rotate-left me-2"></i>{{ $hasActiveFilters ? 'Clear Filters' : 'Reset' }}
+                            <i class="fa-solid fa-rotate me-2"></i>{{ $hasActiveFilters ? 'Clear Filters' : 'Reset' }}
                         </button>
                     @endif
                 </div>

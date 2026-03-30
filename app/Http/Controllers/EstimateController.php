@@ -88,7 +88,19 @@ class EstimateController extends Controller
     public function edit($id)
     {
         $estimate = $this->applyTenantScope(Estimate::query())->findOrFail($id);
-        return view('estimates.edit', compact('estimate'));
+
+        $customersQuery = Customer::query();
+        $companyId = (int) (auth()->user()?->company_id ?? 0);
+
+        if ($companyId > 0 && Schema::hasColumn('customers', 'company_id')) {
+            $customersQuery->where('company_id', $companyId);
+        }
+
+        $customers = $customersQuery
+            ->orderBy(Schema::hasColumn('customers', 'name') ? 'name' : 'id')
+            ->get();
+
+        return view('estimates.edit', compact('estimate', 'customers'));
     }
 
     public function update(Request $request, $id)

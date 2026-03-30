@@ -27,15 +27,27 @@ class BalanceSheetExport implements FromArray, WithHeadings
         $accounts = $this->getAccountBalances($this->reportDate);
 
         // Categorize accounts
-        $currentAssets = $accounts->where('type', 'Asset')
-            ->where('sub_type', 'Current Asset');
-        $fixedAssets = $accounts->where('type', 'Asset')
-            ->where('sub_type', 'Fixed Asset');
-        $currentLiabilities = $accounts->where('type', 'Liability')
-            ->where('sub_type', 'Current Liability');
-        $longTermLiabilities = $accounts->where('type', 'Liability')
-            ->where('sub_type', 'Long-term Liability');
-        $equity = $accounts->where('type', 'Equity');
+        $currentAssets = $accounts->filter(function ($account) {
+            return $this->normalizeAccountType($account->type ?? null) === 'asset'
+                && str_contains(strtolower((string) ($account->sub_type ?? '')), 'current');
+        });
+        $fixedAssets = $accounts->filter(function ($account) {
+            return $this->normalizeAccountType($account->type ?? null) === 'asset'
+                && str_contains(strtolower((string) ($account->sub_type ?? '')), 'fixed');
+        });
+        $currentLiabilities = $accounts->filter(function ($account) {
+            return $this->normalizeAccountType($account->type ?? null) === 'liability'
+                && str_contains(strtolower((string) ($account->sub_type ?? '')), 'current');
+        });
+        $longTermLiabilities = $accounts->filter(function ($account) {
+            return $this->normalizeAccountType($account->type ?? null) === 'liability'
+                && str_contains(strtolower((string) ($account->sub_type ?? '')), 'long');
+        });
+        $equity = $accounts->filter(fn ($account) => $this->normalizeAccountType($account->type ?? null) === 'equity');
+
+        if ($currentAssets->isEmpty() && $fixedAssets->isEmpty()) {
+            $currentAssets = $accounts->filter(fn ($account) => $this->normalizeAccountType($account->type ?? null) === 'asset');
+        }
 
         // Prepare data rows
         $rows = [];
@@ -121,7 +133,8 @@ class BalanceSheetExport implements FromArray, WithHeadings
             $debits = $account->transactions->sum('debit');
             $credits = $account->transactions->sum('credit');
 
-            if (in_array($account->type, ['Asset', 'Expense'])) {
+            $type = $this->normalizeAccountType($account->type ?? null);
+            if (in_array($type, ['asset', 'expense'], true)) {
                 $balance = $debits - $credits;
             } else {
                 $balance = $credits - $debits;
@@ -145,48 +158,57 @@ class BalanceSheetExport implements FromArray, WithHeadings
             $accountsQuery->where('user_id', $this->userId);
         }
 
-        $revenue = (clone $accountsQuery)->where('type', 'Revenue')
-            ->with(['transactions' => function($query) use ($date) {
-                $query->where('transaction_date', '<=', $date);
-                if ($this->companyId > 0 && \Schema::hasColumn('transactions', 'company_id')) {
-                    $query->where('company_id', $this->companyId);
-                } elseif ($this->userId > 0 && \Schema::hasColumn('transactions', 'user_id')) {
-                    $query->where('user_id', $this->userId);
-                }
-            }])
-            ->get()
+        $accounts = (clone $accountsQuery)->with(['transactions' => function($query) use ($date) {
+            $query->where('transaction_date', '<=', $date);
+            if ($this->companyId > 0 && \Schema::hasColumn('transactions', 'company_id')) {
+                $query->where('company_id', $this->companyId);
+            } elseif ($this->userId > 0 && \Schema::hasColumn('transactions', 'user_id')) {
+                $query->where('user_id', $this->userId);
+            }
+        }])->get();
+
+        $revenue = $accounts
+            ->filter(fn ($account) => $this->normalizeAccountType($account->type ?? null) === 'revenue')
             ->sum(function($account) {
                 return $account->transactions->sum('credit') - $account->transactions->sum('debit');
             });
 
-        $expenses = (clone $accountsQuery)->where('type', 'Expense')
-            ->with(['transactions' => function($query) use ($date) {
-                $query->where('transaction_date', '<=', $date);
-                if ($this->companyId > 0 && \Schema::hasColumn('transactions', 'company_id')) {
-                    $query->where('company_id', $this->companyId);
-                } elseif ($this->userId > 0 && \Schema::hasColumn('transactions', 'user_id')) {
-                    $query->where('user_id', $this->userId);
-                }
-            }])
-            ->get()
+        $expenses = $accounts
+            ->filter(fn ($account) => $this->normalizeAccountType($account->type ?? null) === 'expense')
             ->sum(function($account) {
                 return $account->transactions->sum('debit') - $account->transactions->sum('credit');
             });
 
-        $dividends = (clone $accountsQuery)->where('name', 'like', '%dividend%')
-            ->with(['transactions' => function($query) use ($date) {
-                $query->where('transaction_date', '<=', $date);
-                if ($this->companyId > 0 && \Schema::hasColumn('transactions', 'company_id')) {
-                    $query->where('company_id', $this->companyId);
-                } elseif ($this->userId > 0 && \Schema::hasColumn('transactions', 'user_id')) {
-                    $query->where('user_id', $this->userId);
-                }
-            }])
-            ->get()
+        $dividends = $accounts
+            ->filter(fn ($account) => str_contains(strtolower((string) $account->name), 'dividend'))
             ->sum(function($account) {
                 return $account->transactions->sum('debit') - $account->transactions->sum('credit');
             });
 
         return $revenue - $expenses - $dividends;
+    }
+
+    private function normalizeAccountType(?string $type): string
+    {
+        $value = strtolower(trim((string) $type));
+        if ($value === '') {
+            return 'other';
+        }
+
+        $map = [
+            'asset' => ['asset', 'assets'],
+            'liability' => ['liability', 'liabilities', 'payable', 'payables', 'current liability', 'long term liability', 'long-term liability'],
+            'equity' => ['equity', 'capital', 'owner equity', 'owners equity', "owner's equity", 'share capital', 'shareholder equity'],
+            'revenue' => ['revenue', 'income', 'sales', 'turnover'],
+            'expense' => ['expense', 'expenses', 'cost', 'cogs', 'cost of sales', 'cost of goods sold'],
+        ];
+
+        foreach ($map as $key => $aliases) {
+            if (in_array($value, $aliases, true)) {
+                return $key;
+            }
+        }
+
+        return $value;
     }
 }

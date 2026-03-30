@@ -15,6 +15,30 @@ use App\Exports\BalanceSheetExport;
 
 class BalanceSheetController extends Controller
 {
+    private function normalizeAccountType(?string $type): string
+    {
+        $value = strtolower(trim((string) $type));
+        if ($value === '') {
+            return 'other';
+        }
+
+        $map = [
+            'asset' => ['asset', 'assets'],
+            'liability' => ['liability', 'liabilities', 'payable', 'payables', 'current liability', 'long term liability', 'long-term liability'],
+            'equity' => ['equity', 'capital', 'owner equity', 'owners equity', "owner's equity", 'share capital', 'shareholder equity'],
+            'revenue' => ['revenue', 'income', 'sales', 'turnover'],
+            'expense' => ['expense', 'expenses', 'cost', 'cogs', 'cost of sales', 'cost of goods sold'],
+        ];
+
+        foreach ($map as $key => $aliases) {
+            if (in_array($value, $aliases, true)) {
+                return $key;
+            }
+        }
+
+        return $value;
+    }
+
     public function index(Request $request)
     {
         $reportDate = $request->date ? Carbon::parse($request->date) : Carbon::now();
@@ -72,7 +96,7 @@ class BalanceSheetController extends Controller
             $dr = ($account->total_debit ?? 0);
             $cr = ($account->total_credit ?? 0);
             $opening = $account->opening_balance ?? 0;
-            $type = strtolower((string) ($account->type ?? ''));
+            $type = $this->normalizeAccountType($account->type ?? null);
 
             if (in_array($type, ['asset', 'expense'], true)) {
                 $account->balance = ($opening + $dr) - $cr;
@@ -83,20 +107,26 @@ class BalanceSheetController extends Controller
         });
 
         // 3. Calculate Retained Earnings (Revenue - Expenses)
-        $totalRevenue = $accounts->filter(fn ($a) => strtolower((string) ($a->type ?? '')) === 'revenue')->sum('balance');
-        $totalExpenses = $accounts->filter(fn ($a) => strtolower((string) ($a->type ?? '')) === 'expense')->sum('balance');
+        $totalRevenue = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type ?? null) === 'revenue')->sum('balance');
+        $totalExpenses = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type ?? null) === 'expense')->sum('balance');
         $retainedEarnings = $totalRevenue - $totalExpenses; // View expects $retainedEarnings
 
         // 4. Group Accounts specifically for your View variables
-        $assetAccounts = $accounts->filter(fn ($a) => strtolower((string) ($a->type ?? '')) === 'asset');
-        $currentAssets = $assetAccounts->filter(fn ($a) => strtolower((string) ($a->sub_type ?? '')) === 'current asset');
-        $fixedAssets = $assetAccounts->filter(fn ($a) => strtolower((string) ($a->sub_type ?? '')) === 'fixed asset');
+        $assetAccounts = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type ?? null) === 'asset');
+        $currentAssets = $assetAccounts->filter(function ($a) {
+            $subType = strtolower(trim((string) ($a->sub_type ?? '')));
+            return $subType !== '' && str_contains($subType, 'current');
+        });
+        $fixedAssets = $assetAccounts->filter(function ($a) {
+            $subType = strtolower(trim((string) ($a->sub_type ?? '')));
+            return $subType !== '' && str_contains($subType, 'fixed');
+        });
         if ($currentAssets->isEmpty() && $fixedAssets->isEmpty()) {
             // Fallback for ledgers where asset sub_type has not been categorized yet
             $currentAssets = $assetAccounts;
         }
-        $currentLiabilities = $accounts->filter(fn ($a) => strtolower((string) ($a->type ?? '')) === 'liability');
-        $equity = $accounts->filter(fn ($a) => strtolower((string) ($a->type ?? '')) === 'equity'); // Changed from equityAccounts to equity
+        $currentLiabilities = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type ?? null) === 'liability');
+        $equity = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type ?? null) === 'equity'); // Changed from equityAccounts to equity
 
         // 5. Final Totals
         $totalCurrentAssets = $currentAssets->sum('balance');

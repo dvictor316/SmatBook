@@ -79,7 +79,7 @@
                 </div>
                 <div class="d-flex gap-2">
                     <a href="{{ route('estimates.create') }}" class="btn btn-primary">
-                        <i class="fas fa-plus-circle me-2"></i>Create Estimate
+                        <i class="fa-solid fa-circle-plus me-2"></i>Create Estimate
                     </a>
                 </div>
             </div>
@@ -140,16 +140,16 @@
                                                 </a>
                                                 <div class="dropdown-menu dropdown-menu-end">
                                                     <a class="dropdown-item" href="{{ route('estimates.show', $estimate->id) }}">
-                                                        <i class="far fa-eye me-2"></i>View
+                                                        <i class="fa-solid fa-eye me-2"></i>View
                                                     </a>
                                                     <a class="dropdown-item" href="{{ route('estimates.edit', $estimate->id) }}">
-                                                        <i class="far fa-edit me-2"></i>Edit
+                                                        <i class="fa-solid fa-pen-to-square me-2"></i>Edit
                                                     </a>
                                                     <form action="{{ route('estimates.destroy', $estimate->id) }}" method="POST" onsubmit="return confirm('Delete this estimate?');">
                                                         @csrf
                                                         @method('DELETE')
                                                         <button type="submit" class="dropdown-item text-danger">
-                                                            <i class="far fa-trash-alt me-2"></i>Delete
+                                                            <i class="fa-solid fa-trash-can me-2"></i>Delete
                                                         </button>
                                                     </form>
                                                 </div>
