@@ -80,6 +80,7 @@
                             <a href="#"><i class="fe fe-file"></i> <span>Invoices</span><span class="menu-arrow"></span></a>
                             <ul>
                                 <li><a href="{{ url('invoices') }}" class="{{ Request::is('invoices', 'invoices-paid', 'invoices-overdue', 'invoices-cancelled', 'invoices-recurring', 'invoices-unpaid', 'invoices-refunded', 'invoices-draft') ? 'active' : '' }}">Invoices List</a></li>
+                                <li><a href="{{ route('add-invoice') }}" class="{{ Request::is('add-invoice') ? 'active' : '' }}">Create Invoice</a></li>
                                 <li><a href="{{ url('invoice-details-admin') }}" class="{{ Request::is('invoice-details-admin') ? 'active' : '' }}">Invoice Details (Admin)</a></li>
                                 <li><a href="{{ url('invoice-details') }}" class="{{ Request::is('invoice-details') ? 'active' : '' }}">Invoice Details (Customer)</a></li>
                                 <li><a href="{{ url('invoice-template') }}" class="{{ Request::is('invoice-template') ? 'active' : '' }}">Invoice Templates</a></li>
@@ -292,6 +293,7 @@
                         <a href="#"><i class="fe fe-file"></i> <span>Invoices</span><span class="menu-arrow"></span></a>
                         <ul>
                             <li><a href="{{ url('invoices') }}" class="{{ Request::is('invoices', 'invoices-paid', 'invoices-overdue', 'invoices-cancelled', 'invoices-recurring', 'invoices-unpaid', 'invoices-refunded', 'invoices-draft') ? 'active' : '' }}">Invoices List</a></li>
+                            <li><a href="{{ route('add-invoice') }}" class="{{ Request::is('add-invoice') ? 'active' : '' }}">Create Invoice</a></li>
                             <li><a href="{{ url('invoice-details-admin') }}" class="{{ Request::is('invoice-details-admin') ? 'active' : '' }}">Invoice Details (Admin)</a></li>
                             <li><a href="{{ url('invoice-details') }}" class="{{ Request::is('invoice-details') ? 'active' : '' }}">Invoice Details (Customer)</a></li>
                             <li><a href="{{ url('invoice-template') }}" class="{{ Request::is('invoice-template') ? 'active' : '' }}">Invoice Templates</a></li>

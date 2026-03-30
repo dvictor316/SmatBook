@@ -136,6 +136,8 @@
                             <ul>
                                 <li><a class="{{ Request::is('invoices') ? 'active' : '' }}"
                                         href="{{ url('invoices') }}">Invoices List</a></li>
+                                <li><a class="{{ Request::is('add-invoice') ? 'active' : '' }}"
+                                        href="{{ route('add-invoice') }}">Create Invoice</a></li>
                                 <li><a class="{{ Request::is('invoice-details-admin') ? 'active' : '' }}"
                                         href="{{ url('invoice-details-admin') }}">Invoice Details (Admin)</a></li>
                                 <li><a class="{{ Request::is('invoice-details') ? 'active' : '' }}"

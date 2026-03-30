@@ -1087,6 +1087,16 @@
         .fe-rotate-ccw:before { content: "\f2ea"; }
         .fe-check-square:before { content: "\f14a"; }
         .fe-inbox:before { content: "\f01c"; }
+        .fe-plus-circle:before { content: "\f055"; }
+        .fe-plus:before { content: "\2b"; }
+        .fe-trash-2:before { content: "\f2ed"; }
+        .fe-edit:before { content: "\f044"; }
+        .fe-search:before { content: "\f002"; }
+        .fe-calendar:before { content: "\f133"; }
+        .fe-upload:before { content: "\f093"; }
+        .fe-mail:before { content: "\f0e0"; }
+        .fe-message-square:before { content: "\f4ad"; }
+        .fe-clipboard:before { content: "\f328"; }
     </style>
 </head>
 
