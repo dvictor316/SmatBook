@@ -23,7 +23,7 @@
                                             <label>Customer Name <span class="text-danger">*</span></label>
                                             <ul class="form-group-plus css-equal-heights">
                                                 <li>
-                                                    <select class="select" name="customer_id" required>
+                                                    <select class="form-control customer-select select2" name="customer_id" required>
                                                         <option value="">Choose Customer</option>
                                                         @foreach($customers as $customer)
                                                             <option value="{{ $customer->id }}" {{ (isset($selected_customer) && $selected_customer == $customer->id) ? 'selected' : '' }}>
@@ -34,7 +34,7 @@
                                                 </li>
                                                 <li>
                                                     <a class="btn btn-primary form-plus-btn" href="{{ url('add-customer') }}">
-                                                        <i class="fe fe-plus-circle"></i>
+                                                        <i class="fas fa-plus-circle"></i>
                                                     </a>
                                                 </li>
                                             </ul>
@@ -95,7 +95,7 @@
                                             <tbody>
                                                 <tr class="invoice-row">
                                                     <td>
-                                                        <select name="items[0][product_id]" class="form-control product-select" onchange="syncInvoiceProduct(this)">
+                                                        <select name="items[0][product_id]" class="form-control product-select select2" onchange="syncInvoiceProduct(this)">
                                                             <option value="">Custom item</option>
                                                             @foreach($products as $product)
                                                                 <option value="{{ $product->id }}"
@@ -121,7 +121,7 @@
                                                     <td><input type="number" name="items[0][discount]" class="form-control discount-input" value="0" oninput="calculateRow(this)"></td>
                                                     <td><input type="number" name="items[0][tax]" class="form-control tax-input" value="0" oninput="calculateRow(this)"></td>
                                                     <td class="fw-bold"><span class="row-total-text">₦0.00</span><input type="hidden" name="items[0][amount]" class="row-amount-hidden" value="0"></td>
-                                                    <td class="text-end"><button type="button" class="btn btn-sm btn-white text-danger delete-row"><i class="fe fe-trash-2"></i></button></td>
+                                                    <td class="text-end"><button type="button" class="btn btn-sm btn-white text-danger delete-row"><i class="fas fa-trash-alt"></i></button></td>
                                                 </tr>
                                             </tbody>
                                         </table>
@@ -130,7 +130,7 @@
                             </div>
 
                             <div class="col-lg-12">
-                                <button type="button" class="btn btn-primary mb-4" id="add_row_btn"><i class="fe fe-plus-circle me-1"></i> Add New Item</button>
+                                <button type="button" class="btn btn-primary mb-4" id="add_row_btn"><i class="fas fa-plus-circle me-1"></i> Add New Item</button>
                             </div>
 
                             <div class="row mt-4">
@@ -176,13 +176,39 @@
 <script>
     let rowIndex = 1;
 
+    function initInvoiceSelect2(scope) {
+        if (typeof window.jQuery === 'undefined' || typeof jQuery.fn.select2 === 'undefined') {
+            return;
+        }
+
+        const $scope = scope ? jQuery(scope) : jQuery(document);
+        $scope.find('.customer-select').not('.select2-hidden-accessible').select2({
+            width: '100%',
+            placeholder: 'Choose Customer',
+            allowClear: true
+        });
+        $scope.find('.product-select').not('.select2-hidden-accessible').select2({
+            width: '100%',
+            placeholder: 'Search product',
+            allowClear: true
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            initInvoiceSelect2(document);
+        });
+    } else {
+        initInvoiceSelect2(document);
+    }
+
     // Add Row Logic
     document.getElementById('add_row_btn').addEventListener('click', function() {
         const tableBody = document.querySelector('#invoice_table tbody');
         const newRow = `
             <tr class="invoice-row">
                 <td>
-                    <select name="items[${rowIndex}][product_id]" class="form-control product-select" onchange="syncInvoiceProduct(this)">
+                    <select name="items[${rowIndex}][product_id]" class="form-control product-select select2" onchange="syncInvoiceProduct(this)">
                         <option value="">Custom item</option>
                         @foreach($products as $product)
                             <option value="{{ $product->id }}"
@@ -208,9 +234,13 @@
                 <td><input type="number" name="items[${rowIndex}][discount]" class="form-control discount-input" value="0" oninput="calculateRow(this)"></td>
                 <td><input type="number" name="items[${rowIndex}][tax]" class="form-control tax-input" value="0" oninput="calculateRow(this)"></td>
                 <td class="fw-bold"><span class="row-total-text">₦0.00</span><input type="hidden" name="items[${rowIndex}][amount]" class="row-amount-hidden" value="0"></td>
-                <td class="text-end"><button type="button" class="btn btn-sm btn-white text-danger delete-row"><i class="fe fe-trash-2"></i></button></td>
+                <td class="text-end"><button type="button" class="btn btn-sm btn-white text-danger delete-row"><i class="fas fa-trash-alt"></i></button></td>
             </tr>`;
         tableBody.insertAdjacentHTML('beforeend', newRow);
+        const insertedRow = tableBody.lastElementChild;
+        if (insertedRow) {
+            initInvoiceSelect2(insertedRow);
+        }
         rowIndex++;
     });
 
@@ -244,6 +274,12 @@
         row.querySelector('.rate-input').value = rate.toFixed(2);
         calculateRow(row.querySelector('.rate-input'));
     }
+
+    document.addEventListener('change', function(e) {
+        if (e.target.matches('.product-select, .price-level-select')) {
+            syncInvoiceProduct(e.target);
+        }
+    });
 
     // Delete Row Logic
     document.addEventListener('click', function(e) {

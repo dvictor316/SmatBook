@@ -191,6 +191,13 @@
     .fe-mail::before { content: "\f0e0"; }
     .fe-message-square::before { content: "\f4ad"; }
 
+    .cal-icon:after,
+    .cal-icon-info:after {
+        font-family: "Font Awesome 6 Free" !important;
+        font-weight: 900 !important;
+        content: "\f133";
+    }
+
     .fa,
     .fas,
     .far,

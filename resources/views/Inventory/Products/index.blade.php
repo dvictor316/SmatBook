@@ -286,6 +286,7 @@
                                                     <span>Manage</span>
                                                 </a>
                                                 <div class="dropdown-menu dropdown-menu-end product-action-menu">
+                                                    <a class="dropdown-item" href="{{ route('inventory.history', $product->id) }}"><i class="fas fa-chart-line me-2"></i>Run Report</a>
                                                     <a class="dropdown-item" href="{{ route('inventory.Products.edit', $product->id) }}"><i class="far fa-edit me-2"></i>Edit</a>
                                                     <form action="{{ route('inventory.Products.destroy', $product->id) }}" method="POST" onsubmit="return confirm('Delete this product?');">
                                                         @csrf @method('DELETE')
