@@ -997,22 +997,6 @@ label {
     letter-spacing: 0.5px;
 }
 
-/* Split Payment */
-.split-box {
-    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-    border: 2px dashed var(--primary-600);
-    border-radius: var(--radius-md);
-    padding: 16px;
-}
-
-.split-input {
-    text-align: center;
-    font-weight: 700;
-    font-size: 0.9375rem;
-    border: 2px solid var(--border);
-    font-variant-numeric: tabular-nums;
-}
-
 /* Badge */
 .qty-badge {
     font-weight: 600;
@@ -1437,71 +1421,14 @@ label {
                     <div class="row g-3 border-top pt-3">
                         <div class="col-md-6">
                             <label>Payment Method</label>
-                            <select id="payment-method" class="form-select fw-bold">
+                            <select id="payment-method" class="form-select fw-bold" disabled>
                                 <option value="Cash">Cash</option>
-                                <option value="Card">Card</option>
-                                <option value="Transfer">Transfer</option>
-                                <option value="Split">Split Payment</option>
-                                <option value="Credit">Credit (On Account)</option>
                             </select>
-                            <small class="text-muted">Use Split Payment to enter different amounts per channel.</small>
+                            <small class="text-muted">POS only accepts cash sales. Use Invoices for credit sales.</small>
                         </div>
                         <div class="col-md-6">
                             <label>Amount Paid</label>
                             <input type="number" id="amount-paid" class="form-control form-control-lg fw-bold text-end tabular-nums" style="font-size: 1rem; color: var(--success-500);">
-                        </div>
-                        <div class="col-md-12">
-                            <div class="form-check form-switch mt-1">
-                                <input class="form-check-input" type="checkbox" id="credit-sale">
-                                <label class="form-check-label fw-semibold" for="credit-sale">Sell on Credit (no payment yet)</label>
-                            </div>
-                            <small class="text-muted">Credit sales require a selected customer so the receivable can be tracked.</small>
-                        </div>
-                        <div class="col-md-12" id="payment-channel-wrap">
-                            <label>Payment Channel</label>
-                            <select id="payment-channel" class="form-select">
-                                <option value="">Auto / Not specified</option>
-                                @foreach(($bankAccounts ?? []) as $account)
-                                    <option value="{{ $account->id }}">{{ $account->name }}{{ $account->account_number ? ' - ' . $account->account_number : '' }}</option>
-                                @endforeach
-                            </select>
-                            <small class="text-muted">Pick the bank, POS terminal, wallet, or channel that received the payment.</small>
-                        </div>
-                    </div>
-
-                    <!-- Split -->
-                    <div id="split-box" class="split-box mt-3" style="display:none;">
-                        <div class="row g-3">
-                            <div class="col-4">
-                                <label>Cash</label>
-                                <input type="number" id="split-cash" class="form-control split-input" value="0">
-                            </div>
-                            <div class="col-4">
-                                <label>Card</label>
-                                <input type="number" id="split-card" class="form-control split-input" value="0">
-                            </div>
-                            <div class="col-4">
-                                <label>Transfer</label>
-                                <input type="number" id="split-transfer" class="form-control split-input" value="0">
-                            </div>
-                            <div class="col-md-6">
-                                <label>Card Channel</label>
-                                <select id="split-card-account" class="form-select">
-                                    <option value="">Select card channel</option>
-                                    @foreach(($bankAccounts ?? []) as $account)
-                                        <option value="{{ $account->id }}">{{ $account->name }}{{ $account->account_number ? ' - ' . $account->account_number : '' }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label>Transfer Channel</label>
-                                <select id="split-transfer-account" class="form-select">
-                                    <option value="">Select transfer channel</option>
-                                    @foreach(($bankAccounts ?? []) as $account)
-                                        <option value="{{ $account->id }}">{{ $account->name }}{{ $account->account_number ? ' - ' . $account->account_number : '' }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
                         </div>
                     </div>
 
@@ -2010,9 +1937,7 @@ $(document).ready(function() {
         $('#grand-total').text(fmt.format(totGrand));
         $('#hdr-cart-count').text(cart.length);
         
-        if($('#payment-method').val() !== 'Split' && !$('#credit-sale').is(':checked')) {
-            $('#amount-paid').val(totGrand.toFixed(2));
-        }
+        $('#amount-paid').val(totGrand.toFixed(2));
         
         updateChange();
         $('.cart-wrapper').scrollTop($('.cart-wrapper')[0].scrollHeight);
@@ -2047,74 +1972,12 @@ $(document).ready(function() {
         $('#barcode-input').focus();
     };
 
-    // Payment
-    $('#payment-method').on('change', function() {
-        let total = parseFloat($('#grand-total').text().replace(/[^\d.]/g, '')) || 0;
-
-        if ($(this).val() === 'Credit') {
-            $('#credit-sale').prop('checked', true);
-            syncCreditSaleState();
-            return;
-        }
-
-        if ($('#credit-sale').is(':checked')) {
-            return;
-        }
-        
-        if($(this).val() === 'Split') {
-            $('#split-box').slideDown(200);
-            $('#payment-channel-wrap').slideUp(150);
-            $('#amount-paid').prop('readonly', true).val(total.toFixed(2));
-            $('#split-cash').val(total.toFixed(2));
-            $('#split-card, #split-transfer').val(0);
-        } else {
-            $('#split-box').slideUp(200);
-            $('#payment-channel-wrap').slideDown(150);
-            $('#amount-paid').prop('readonly', false).val(total.toFixed(2));
-        }
-        
-        updateChange();
-    });
-
-    $('#credit-sale').on('change', function() {
-        syncCreditSaleState();
-    });
-
-    $(document).on('input', '#amount-paid, .split-input', updateChange);
-
-    function syncCreditSaleState() {
-        const creditSale = $('#credit-sale').is(':checked');
-        let total = parseFloat($('#grand-total').text().replace(/[^\d.]/g, '')) || 0;
-
-        if (creditSale) {
-            $('#payment-method').val('Credit').prop('disabled', true);
-            $('#amount-paid').val('0.00').prop('readonly', true).addClass('bg-light');
-            $('#split-box').hide();
-            $('#payment-channel-wrap').slideUp(150);
-            $('#split-cash, #split-card, #split-transfer').val(0);
-        } else {
-            $('#payment-method').prop('disabled', false);
-            if ($('#payment-method').val() === 'Credit') {
-                $('#payment-method').val('Cash');
-            }
-            $('#amount-paid').prop('readonly', false).removeClass('bg-light').val(total.toFixed(2));
-            $('#payment-method').trigger('change');
-        }
-
-        updateChange();
-    }
+    $(document).on('input', '#amount-paid', updateChange);
 
     function updateChange() {
         let total = parseFloat($('#grand-total').text().replace(/[^\d.]/g, '')) || 0;
-        
-        if($('#payment-method').val() === 'Split') {
-            let sum = (parseFloat($('#split-cash').val()) || 0) + (parseFloat($('#split-card').val()) || 0) + (parseFloat($('#split-transfer').val()) || 0);
-            $('#amount-paid').val(sum.toFixed(2));
-        }
-        
         let paid = parseFloat($('#amount-paid').val()) || 0;
         let change = paid - total;
-        
         $('#change-amount').text(fmt.format(change)).css('color', change < 0 ? 'var(--danger-500)' : 'var(--success-500)');
     }
 
@@ -2129,13 +1992,8 @@ $(document).ready(function() {
         lastSelectedProductId = null;
 
         $('#customer-select').val(null).trigger('change');
-        $('#payment-method').val('Cash').trigger('change');
-        $('#payment-channel').val('');
-        $('#split-card-account, #split-transfer-account').val('');
-        $('#split-cash, #split-card, #split-transfer').val(0);
-        $('#split-box').hide();
-        $('#amount-paid').prop('readonly', false).removeClass('bg-light').val('0.00');
-        $('#credit-sale').prop('checked', false);
+        $('#payment-method').val('Cash');
+        $('#amount-paid').prop('readonly', false).val('0.00');
 
         $('#product-select').val('').trigger('change');
         $('#product-search').val(null).trigger('change.select2');
@@ -2164,21 +2022,13 @@ $(document).ready(function() {
             data: {
                 _token: "{{ csrf_token() }}",
                 customer_id: $('#customer-select').val(),
-                payment_method: $('#payment-method').val(),
+                payment_method: 'Cash',
                 items: cart,
                 subtotal: cart.reduce((s, i) => s + i.sub, 0),
                 tax: cart.reduce((s, i) => s + i.taxVal, 0),
                 discount: cart.reduce((s, i) => s + i.discVal, 0),
                 total: total,
-                paid: paid,
-                payment_account_id: $('#payment-channel').val() || '',
-                split_details: {
-                    cash: $('#split-cash').val() || 0,
-                    pos: $('#split-card').val() || 0,
-                    bank: $('#split-transfer').val() || 0,
-                    card_account_id: $('#split-card-account').val() || '',
-                    transfer_account_id: $('#split-transfer-account').val() || ''
-                }
+                paid: paid
             },
             success: function(res) {
                 const invoiceUrl = "{{ route('sales.invoice.show', ':id') }}".replace(':id', res.sale_id) + '?autoprint=1';
@@ -2219,46 +2069,14 @@ $(document).ready(function() {
         let total = parseFloat($('#grand-total').text().replace(/[^\d.]/g, '')) || 0;
         let paid = parseFloat($('#amount-paid').val()) || 0;
 
-        const creditSale = $('#credit-sale').is(':checked');
-
-        if (creditSale) {
-            if (!$('#customer-select').val()) {
-                Swal.fire({ icon: 'warning', title: 'Select Customer', text: 'Choose a customer before saving a credit sale.', confirmButtonColor: '#f59e0b' });
-                return;
-            }
-            submitPosSale(total, 0);
-            return;
-        }
-
         if(paid <= 0) {
             Swal.fire({ icon: 'warning', title: 'Enter Payment', text: 'Enter the amount received before processing this sale.', confirmButtonColor: '#f59e0b' });
-            return;
-        }
-
-        if (paid < total) {
-            const balanceDue = Math.max(0, total - paid);
-
-            Swal.fire({
-                icon: 'warning',
-                title: 'Process As Deposit?',
-                text: 'Amount received is short by ' + fmt.format(balanceDue) + '. This sale will be saved as pending until fully paid.',
-                showCancelButton: true,
-                confirmButtonText: 'Yes, Save Deposit',
-                cancelButtonText: 'Cancel',
-                confirmButtonColor: '#2563eb',
-                cancelButtonColor: '#9ca3af'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    submitPosSale(total, paid);
-                }
-            });
             return;
         }
 
         submitPosSale(total, paid);
     });
 
-    syncCreditSaleState();
     syncCategoryToggle();
     filterProductCards();
     setUnitTypeAvailability(null);

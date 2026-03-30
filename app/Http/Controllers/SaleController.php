@@ -327,7 +327,7 @@ public function customerDetails($id = null)
 {
     $request->validate([
         'customer_id'    => 'nullable|exists:customers,id',
-        'payment_method' => 'required|string',
+        'payment_method' => 'required|string|in:Cash,cash',
         'total'          => 'required|numeric|min:0',
         'paid'           => 'required|numeric|min:0',
         'items'          => 'required|array|min:1',
@@ -342,8 +342,13 @@ public function customerDetails($id = null)
     ]);
 
     $paidAmount = (float) $request->paid;
-    if ($paidAmount <= 0 && strtolower((string) $request->payment_method) === 'credit' && !$request->filled('customer_id')) {
-        return response()->json(['success' => false, 'message' => 'Select a customer before saving a credit sale.'], 422);
+    $totalAmount = (float) $request->total;
+    $paymentMethod = strtolower((string) $request->payment_method);
+    if ($paymentMethod !== 'cash') {
+        return response()->json(['success' => false, 'message' => 'POS only accepts cash sales. Use Invoices for credit sales.'], 422);
+    }
+    if ($paidAmount < $totalAmount) {
+        return response()->json(['success' => false, 'message' => 'POS cash sales must be fully paid. Use Invoices for credit sales.'], 422);
     }
 
     DB::beginTransaction();
@@ -370,15 +375,9 @@ public function customerDetails($id = null)
 
         $activeBranch = $this->getActiveBranchContext();
         $splitDetails = $this->normalizeSplitDetails($request->input('split_details', []));
-        $paymentAccount = $request->filled('payment_account_id') && Schema::hasTable('banks')
-            ? Bank::query()->find($request->input('payment_account_id'))
-            : null;
-        $cardSplitAccount = !empty($splitDetails['card_account_id']) && Schema::hasTable('banks')
-            ? Bank::query()->find($splitDetails['card_account_id'])
-            : null;
-        $transferSplitAccount = !empty($splitDetails['transfer_account_id']) && Schema::hasTable('banks')
-            ? Bank::query()->find($splitDetails['transfer_account_id'])
-            : null;
+        $paymentAccount = null;
+        $cardSplitAccount = null;
+        $transferSplitAccount = null;
 
         // --- 2. CREATE THE SALE RECORD ---
 $sale = Sale::create([
@@ -401,7 +400,7 @@ $sale = Sale::create([
     'change_amount'  => $changeAmount,
     'balance'        => $balance,
     'currency'       => 'NGN',
-    'payment_method' => $request->payment_method,
+    'payment_method' => 'cash',
     'payment_status' => $paymentStatus,
         'payment_details' => [
         'source' => 'pos',
