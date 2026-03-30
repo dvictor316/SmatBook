@@ -4,7 +4,8 @@
         ?? $stripCompany?->name
         ?? \App\Models\Setting::where('key', 'company_name')->value('value')
         ?? 'SmartProbook';
-    $stripBranchName = $activeBranch['name'] ?? session('active_branch_name') ?? null;
+    $activeBranch = $activeBranch ?? [];
+    $stripBranchName = data_get($activeBranch, 'name') ?? session('active_branch_name') ?? null;
     $stripReportLabel = $reportLabel ?? 'Business Report';
     $stripPeriodLabel = $periodLabel ?? null;
 @endphp

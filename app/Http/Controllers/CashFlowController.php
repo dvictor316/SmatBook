@@ -5,7 +5,11 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Account;
 use App\Models\Transaction;
+use App\Models\Payment;
+use App\Models\Expense;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CashFlowController extends Controller
@@ -17,24 +21,40 @@ class CashFlowController extends Controller
         $end = $request->end_date ? Carbon::parse($request->end_date) : Carbon::now()->endOfDay();
 
         // 2. Identify Cash/Bank Accounts
-        $cashAccountIds = Account::whereIn('sub_type', ['Bank', 'Cash', 'Cash and Bank'])->pluck('id');
+        $cashAccountIds = $this->resolveCashAccountIds();
 
         // 3. Calculate Opening Balance (Net sum of transactions before the period)
-        $openingBalance = Transaction::whereIn('account_id', $cashAccountIds)
-            ->where('transaction_date', '<', $start->toDateString())
-            ->selectRaw('SUM(debit) - SUM(credit) as balance')
-            ->first()->balance ?? 0;
+        $openingBalance = 0;
+        if ($cashAccountIds->isNotEmpty()) {
+            $openingBalance = $this->applyTenantScope(
+                Transaction::whereIn('account_id', $cashAccountIds),
+                'transactions'
+            )
+                ->where('transaction_date', '<', $start->toDateString())
+                ->selectRaw('SUM(debit) - SUM(credit) as balance')
+                ->first()->balance ?? 0;
+        }
 
         // 4. Period Transactions
-        $transactions = Transaction::whereIn('account_id', $cashAccountIds)
-            ->whereBetween('transaction_date', [$start->toDateString(), $end->toDateString()])
-            ->with('account')
-            ->orderBy('transaction_date', 'asc')
-            ->get();
+        $transactions = collect();
+        if ($cashAccountIds->isNotEmpty()) {
+            $transactions = $this->applyTenantScope(
+                Transaction::whereIn('account_id', $cashAccountIds),
+                'transactions'
+            )
+                ->whereBetween('transaction_date', [$start->toDateString(), $end->toDateString()])
+                ->with('account')
+                ->orderBy('transaction_date', 'asc')
+                ->get();
+        }
 
         // Separate Inflows and Outflows for the loops in your Blade
         $inflows = $transactions->where('debit', '>', 0);
         $outflows = $transactions->where('credit', '>', 0);
+
+        if ($transactions->isEmpty()) {
+            [$inflows, $outflows] = $this->buildOperationalFlows($start, $end);
+        }
 
         // 5. Calculate Summary Totals
         $totalInflow = $inflows->sum('debit');
@@ -43,7 +63,9 @@ class CashFlowController extends Controller
         $closingBalance = $openingBalance + $netCashFlow;
 
         // 6. Chart Logic (For the last 6 months)
-        $chartData = $this->getMonthlyTrend($cashAccountIds);
+        $chartData = $transactions->isEmpty()
+            ? $this->getMonthlyTrendFromOperations()
+            : $this->getMonthlyTrend($cashAccountIds);
 
         // Returning variables that match your Blade exactly
         return view('Reports.Reports.cash-flow', compact(
@@ -89,21 +111,37 @@ class CashFlowController extends Controller
         $start = $request->start_date ? Carbon::parse($request->start_date) : Carbon::now()->startOfMonth();
         $end = $request->end_date ? Carbon::parse($request->end_date) : Carbon::now()->endOfDay();
 
-        $cashAccountIds = Account::whereIn('sub_type', ['Bank', 'Cash', 'Cash and Bank'])->pluck('id');
+        $cashAccountIds = $this->resolveCashAccountIds();
 
-        $openingBalance = Transaction::whereIn('account_id', $cashAccountIds)
-            ->where('transaction_date', '<', $start->toDateString())
-            ->selectRaw('SUM(debit) - SUM(credit) as balance')
-            ->first()->balance ?? 0;
+        $openingBalance = 0;
+        if ($cashAccountIds->isNotEmpty()) {
+            $openingBalance = $this->applyTenantScope(
+                Transaction::whereIn('account_id', $cashAccountIds),
+                'transactions'
+            )
+                ->where('transaction_date', '<', $start->toDateString())
+                ->selectRaw('SUM(debit) - SUM(credit) as balance')
+                ->first()->balance ?? 0;
+        }
 
-        $transactions = Transaction::whereIn('account_id', $cashAccountIds)
-            ->whereBetween('transaction_date', [$start->toDateString(), $end->toDateString()])
-            ->with('account')
-            ->orderBy('transaction_date', 'asc')
-            ->get();
+        $transactions = collect();
+        if ($cashAccountIds->isNotEmpty()) {
+            $transactions = $this->applyTenantScope(
+                Transaction::whereIn('account_id', $cashAccountIds),
+                'transactions'
+            )
+                ->whereBetween('transaction_date', [$start->toDateString(), $end->toDateString()])
+                ->with('account')
+                ->orderBy('transaction_date', 'asc')
+                ->get();
+        }
 
         $inflows = $transactions->where('debit', '>', 0);
         $outflows = $transactions->where('credit', '>', 0);
+
+        if ($transactions->isEmpty()) {
+            [$inflows, $outflows] = $this->buildOperationalFlows($start, $end);
+        }
         $totalInflow = $inflows->sum('debit');
         $totalOutflow = $outflows->sum('credit');
         $netCashFlow = $totalInflow - $totalOutflow;
@@ -160,5 +198,112 @@ class CashFlowController extends Controller
         }, $filename, [
             'Content-Type' => 'text/csv',
         ]);
+    }
+
+    private function applyTenantScope($query, string $table)
+    {
+        $companyId = (int) (Auth::user()?->company_id ?? 0);
+        $userId = (int) (Auth::id() ?? 0);
+
+        if ($companyId > 0 && Schema::hasColumn($table, 'company_id')) {
+            $query->where("{$table}.company_id", $companyId);
+        } elseif ($userId > 0 && Schema::hasColumn($table, 'user_id')) {
+            $query->where("{$table}.user_id", $userId);
+        } elseif ($userId > 0 && Schema::hasColumn($table, 'created_by')) {
+            $query->where("{$table}.created_by", $userId);
+        }
+
+        return $query;
+    }
+
+    private function resolveCashAccountIds()
+    {
+        $accountsQuery = Account::query();
+        $accountsQuery = $this->applyTenantScope($accountsQuery, 'accounts');
+
+        $cashAccountIds = $accountsQuery
+            ->where('type', 'Asset')
+            ->where(function ($query) {
+                $query->whereIn('sub_type', ['Bank', 'Cash', 'Cash and Bank', 'Cash & Bank', 'Cash/Bank'])
+                    ->orWhere(function ($q) {
+                        $q->whereNull('sub_type')
+                            ->where(function ($inner) {
+                                $inner->whereRaw('LOWER(name) like ?', ['%bank%'])
+                                    ->orWhereRaw('LOWER(name) like ?', ['%cash%']);
+                            });
+                    })
+                    ->orWhere('sub_type', '');
+            })
+            ->pluck('id');
+
+        if ($cashAccountIds->isEmpty()) {
+            $cashAccountIds = $accountsQuery->where('type', 'Asset')->pluck('id');
+        }
+
+        return $cashAccountIds;
+    }
+
+    private function buildOperationalFlows(Carbon $start, Carbon $end): array
+    {
+        $paymentsQuery = $this->applyTenantScope(Payment::query(), 'payments')
+            ->whereBetween('created_at', [$start->toDateTimeString(), $end->toDateTimeString()]);
+
+        $paymentsQuery->where(function ($query) {
+            $query->whereRaw('LOWER(status) in (?, ?, ?)', ['completed', 'success', 'successful'])
+                ->orWhereRaw('LOWER(status) = ?', ['paid']);
+        });
+
+        $paymentRows = $paymentsQuery->get()->map(function ($payment) {
+            return (object) [
+                'transaction_date' => optional($payment->created_at)->toDateString(),
+                'description' => $payment->reference ?? $payment->sale?->invoice_no ?? 'Payment received',
+                'debit' => (float) $payment->amount,
+                'credit' => 0,
+            ];
+        });
+
+        $expenseRows = $this->applyTenantScope(Expense::query(), 'expenses')
+            ->whereBetween('created_at', [$start->toDateTimeString(), $end->toDateTimeString()])
+            ->whereRaw('LOWER(status) = ?', ['paid'])
+            ->get()
+            ->map(function ($expense) {
+                return (object) [
+                    'transaction_date' => optional($expense->created_at)->toDateString(),
+                    'description' => $expense->reference ?? $expense->category ?? 'Expense payment',
+                    'debit' => 0,
+                    'credit' => (float) $expense->amount,
+                ];
+            });
+
+        return [$paymentRows, $expenseRows];
+    }
+
+    private function getMonthlyTrendFromOperations(): array
+    {
+        $labels = [];
+        $inflows = [];
+        $outflows = [];
+
+        for ($i = 5; $i >= 0; $i--) {
+            $month = Carbon::now()->subMonths($i);
+            $labels[] = $month->format('M Y');
+
+            $inflows[] = $this->applyTenantScope(Payment::query(), 'payments')
+                ->whereMonth('created_at', $month->month)
+                ->whereYear('created_at', $month->year)
+                ->where(function ($query) {
+                    $query->whereRaw('LOWER(status) in (?, ?, ?)', ['completed', 'success', 'successful'])
+                        ->orWhereRaw('LOWER(status) = ?', ['paid']);
+                })
+                ->sum('amount');
+
+            $outflows[] = $this->applyTenantScope(Expense::query(), 'expenses')
+                ->whereMonth('created_at', $month->month)
+                ->whereYear('created_at', $month->year)
+                ->whereRaw('LOWER(status) = ?', ['paid'])
+                ->sum('amount');
+        }
+
+        return ['labels' => $labels, 'inflows' => $inflows, 'outflows' => $outflows];
     }
 }

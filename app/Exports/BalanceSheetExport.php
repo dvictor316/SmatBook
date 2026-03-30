@@ -11,10 +11,14 @@ use App\Models\Account;
 class BalanceSheetExport implements FromArray, WithHeadings
 {
     protected $reportDate;
+    protected $companyId;
+    protected $userId;
 
-    public function __construct(Carbon $reportDate)
+    public function __construct(Carbon $reportDate, int $companyId = 0, int $userId = 0)
     {
         $this->reportDate = $reportDate;
+        $this->companyId = $companyId;
+        $this->userId = $userId;
     }
 
     public function array(): array
@@ -97,8 +101,20 @@ class BalanceSheetExport implements FromArray, WithHeadings
             return collect([]);
         }
 
-        $accounts = Account::with(['transactions' => function($query) use ($date) {
+        $accountsQuery = Account::query();
+        if ($this->companyId > 0 && \Schema::hasColumn('accounts', 'company_id')) {
+            $accountsQuery->where('company_id', $this->companyId);
+        } elseif ($this->userId > 0 && \Schema::hasColumn('accounts', 'user_id')) {
+            $accountsQuery->where('user_id', $this->userId);
+        }
+
+        $accounts = $accountsQuery->with(['transactions' => function($query) use ($date) {
             $query->where('transaction_date', '<=', $date);
+            if ($this->companyId > 0 && \Schema::hasColumn('transactions', 'company_id')) {
+                $query->where('company_id', $this->companyId);
+            } elseif ($this->userId > 0 && \Schema::hasColumn('transactions', 'user_id')) {
+                $query->where('user_id', $this->userId);
+            }
         }])->get();
 
         return $accounts->map(function($account) {
@@ -122,27 +138,49 @@ class BalanceSheetExport implements FromArray, WithHeadings
             return 0;
         }
 
-        $revenue = Account::where('type', 'Revenue')
+        $accountsQuery = Account::query();
+        if ($this->companyId > 0 && \Schema::hasColumn('accounts', 'company_id')) {
+            $accountsQuery->where('company_id', $this->companyId);
+        } elseif ($this->userId > 0 && \Schema::hasColumn('accounts', 'user_id')) {
+            $accountsQuery->where('user_id', $this->userId);
+        }
+
+        $revenue = (clone $accountsQuery)->where('type', 'Revenue')
             ->with(['transactions' => function($query) use ($date) {
                 $query->where('transaction_date', '<=', $date);
+                if ($this->companyId > 0 && \Schema::hasColumn('transactions', 'company_id')) {
+                    $query->where('company_id', $this->companyId);
+                } elseif ($this->userId > 0 && \Schema::hasColumn('transactions', 'user_id')) {
+                    $query->where('user_id', $this->userId);
+                }
             }])
             ->get()
             ->sum(function($account) {
                 return $account->transactions->sum('credit') - $account->transactions->sum('debit');
             });
 
-        $expenses = Account::where('type', 'Expense')
+        $expenses = (clone $accountsQuery)->where('type', 'Expense')
             ->with(['transactions' => function($query) use ($date) {
                 $query->where('transaction_date', '<=', $date);
+                if ($this->companyId > 0 && \Schema::hasColumn('transactions', 'company_id')) {
+                    $query->where('company_id', $this->companyId);
+                } elseif ($this->userId > 0 && \Schema::hasColumn('transactions', 'user_id')) {
+                    $query->where('user_id', $this->userId);
+                }
             }])
             ->get()
             ->sum(function($account) {
                 return $account->transactions->sum('debit') - $account->transactions->sum('credit');
             });
 
-        $dividends = Account::where('name', 'like', '%dividend%')
+        $dividends = (clone $accountsQuery)->where('name', 'like', '%dividend%')
             ->with(['transactions' => function($query) use ($date) {
                 $query->where('transaction_date', '<=', $date);
+                if ($this->companyId > 0 && \Schema::hasColumn('transactions', 'company_id')) {
+                    $query->where('company_id', $this->companyId);
+                } elseif ($this->userId > 0 && \Schema::hasColumn('transactions', 'user_id')) {
+                    $query->where('user_id', $this->userId);
+                }
             }])
             ->get()
             ->sum(function($account) {

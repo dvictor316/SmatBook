@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
 use App\Models\Account;
 use App\Models\Transaction;
+use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\BalanceSheetExport;
 
@@ -18,11 +19,25 @@ class BalanceSheetController extends Controller
         $reportDate = $request->date ? Carbon::parse($request->date) : Carbon::now();
 
         if (!Schema::hasTable('accounts') || !Schema::hasTable('transactions')) {
-            return view('Reports.Reports.balance-sheet', ['message' => 'Accounting tables are missing.']);
+            return view('Reports.Reports.balance-sheet', [
+                'reportDate' => $reportDate,
+                'currentAssets' => collect(),
+                'fixedAssets' => collect(),
+                'currentLiabilities' => collect(),
+                'equity' => collect(),
+                'totalCurrentAssets' => 0,
+                'totalFixedAssets' => 0,
+                'totalAssets' => 0,
+                'totalLiabilities' => 0,
+                'totalEquity' => 0,
+                'retainedEarnings' => 0,
+                'message' => 'Accounting tables are missing.',
+            ]);
         }
 
         // 1. Get all accounts with sums up to the report date
-        $accounts = Account::withSum(['transactions as total_debit' => function ($query) use ($reportDate) {
+        $accountsQuery = $this->applyAccountScope(Account::query(), $request);
+        $accounts = $accountsQuery->withSum(['transactions as total_debit' => function ($query) use ($reportDate) {
             $query->where('transaction_date', '<=', $reportDate);
         }], 'debit')
         ->withSum(['transactions as total_credit' => function ($query) use ($reportDate) {
@@ -108,7 +123,11 @@ class BalanceSheetController extends Controller
     {
         $reportDate = $request->date ? Carbon::parse($request->date) : Carbon::now();
         return Excel::download(
-            new BalanceSheetExport($reportDate), 
+            new BalanceSheetExport(
+                $reportDate,
+                (int) ($request->user()?->company_id ?? 0),
+                (int) ($request->user()?->id ?? 0)
+            ), 
             'balance_sheet_' . $reportDate->format('Y-m-d') . '.xlsx'
         );
     }
@@ -154,6 +173,20 @@ class BalanceSheetController extends Controller
 
     return view('Finance.balance_sheet', compact('assets', 'liabilities', 'equity', 'netProfit'));
 }
+
+    private function applyAccountScope($query, Request $request)
+    {
+        $companyId = (int) ($request->user()?->company_id ?? 0);
+        $userId = (int) ($request->user()?->id ?? 0);
+
+        if ($companyId > 0 && Schema::hasColumn('accounts', 'company_id')) {
+            $query->where('company_id', $companyId);
+        } elseif ($userId > 0 && Schema::hasColumn('accounts', 'user_id')) {
+            $query->where('user_id', $userId);
+        }
+
+        return $query;
+    }
 
     /**
      * Get account balances up to a specific date
