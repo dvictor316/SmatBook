@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use App\Models\Account;
 use App\Models\Transaction;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\BalanceSheetExport;
 
@@ -17,6 +18,12 @@ class BalanceSheetController extends Controller
     public function index(Request $request)
     {
         $reportDate = $request->date ? Carbon::parse($request->date) : Carbon::now();
+        Log::info('Balance sheet accessed', [
+            'host' => $request->getHost(),
+            'user_id' => $request->user()?->id,
+            'role' => $request->user()?->role,
+            'date' => $reportDate->toDateString(),
+        ]);
 
         if (!Schema::hasTable('accounts') || !Schema::hasTable('transactions')) {
             return view('Reports.Reports.balance-sheet', [
