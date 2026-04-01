@@ -128,8 +128,27 @@ use App\Support\LedgerService;
     {
         $activeBranch = $this->getActiveBranchContext();
         // 1. Parse Dates
-        $start = $request->start_date ? \Carbon\Carbon::parse($request->start_date) : \Carbon\Carbon::now()->startOfMonth();
-        $end = $request->end_date ? \Carbon\Carbon::parse($request->end_date) : \Carbon\Carbon::now()->endOfDay();
+        $start = $request->start_date ? \Carbon\Carbon::parse($request->start_date) : null;
+        $end = $request->end_date ? \Carbon\Carbon::parse($request->end_date) : null;
+
+        if (!$start || !$end) {
+            $accountIds = $this->applyTenantScope(\App\Models\Account::query(), 'accounts')
+                ->pluck('id')
+                ->all();
+
+            $latestTxnDate = null;
+            if (!empty($accountIds)) {
+                $latestTxnDate = \App\Models\Transaction::whereIn('account_id', $accountIds)
+                    ->max('transaction_date');
+            }
+
+            $effectiveEnd = $latestTxnDate
+                ? \Carbon\Carbon::parse($latestTxnDate)->endOfDay()
+                : \Carbon\Carbon::now()->endOfDay();
+
+            $end = $end ?: $effectiveEnd;
+            $start = $start ?: $end->copy()->startOfMonth();
+        }
 
         // 2. Fetch and Map Data as ARRAYS (Removed (object) cast)
         // Trial Balance is an "as-of" report; include all transactions up to end date.
