@@ -19,7 +19,7 @@
         border: 1px solid #e2e8f0;
         border-radius: 22px;
         box-shadow: 0 16px 34px rgba(15, 23, 42, 0.06);
-        padding: 1.5rem;
+        padding: 1.25rem;
     }
 
     .report-header {
@@ -29,7 +29,7 @@
     }
 
     .company-name {
-        font-size: 1.35rem;
+        font-size: 1.2rem;
         font-weight: 800;
         text-transform: none;
         letter-spacing: -0.02em;
@@ -38,7 +38,7 @@
     }
 
     .report-title {
-        font-size: 0.74rem;
+        font-size: 0.7rem;
         font-weight: 800;
         color: var(--brand-blue);
         text-transform: uppercase;
@@ -48,28 +48,28 @@
     .filter-card {
         background: #f8fbff;
         border: 1px solid #dbe7f5;
-        border-radius: 18px;
-        padding: 1.1rem;
+        border-radius: 16px;
+        padding: 0.95rem;
         margin-bottom: 1.5rem;
     }
 
     .summary-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
-        gap: 1rem;
-        margin-bottom: 1.75rem;
+        gap: 0.85rem;
+        margin-bottom: 1.5rem;
     }
 
     .summary-card {
-        padding: 1rem 1.1rem;
-        border-radius: 18px;
+        padding: 0.9rem 1rem;
+        border-radius: 16px;
         background: #ffffff;
         border: 1px solid #dbe7f5;
         box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
     }
 
     .summary-label {
-        font-size: 0.72rem;
+        font-size: 0.66rem;
         font-weight: 700;
         color: var(--text-light);
         text-transform: uppercase;
@@ -79,7 +79,7 @@
     }
 
     .summary-amount {
-        font-size: 1.15rem;
+        font-size: 1.02rem;
         font-weight: 800;
     }
 
@@ -91,16 +91,16 @@
         background: #f5f9ff;
         color: #102a5a;
         text-transform: uppercase;
-        font-size: 0.74rem;
+        font-size: 0.68rem;
         font-weight: 800;
         letter-spacing: 0.08em;
         border-bottom: 1px solid #dbe7f5 !important;
-        padding: 0.95rem 0.75rem;
+        padding: 0.75rem 0.65rem;
     }
 
     .table tbody td {
-        font-size: 0.95rem;
-        padding: 0.95rem 0.75rem;
+        font-size: 0.82rem;
+        padding: 0.75rem 0.65rem;
         border-bottom: 1px solid var(--border-faint);
         vertical-align: middle;
     }
@@ -109,9 +109,9 @@
         font-weight: 700;
         color: var(--brand-blue);
         background: #eff6ff;
-        padding: 0.3rem 0.6rem;
+        padding: 0.25rem 0.5rem;
         border-radius: 999px;
-        font-size: 0.74rem;
+        font-size: 0.66rem;
     }
 
     .total-row {
@@ -121,14 +121,14 @@
 
     .total-row td {
         font-weight: 800 !important;
-        font-size: 0.96rem !important;
+        font-size: 0.86rem !important;
         border-bottom: 3.5px double var(--text-dark) !important; /* Accounting double line */
-        padding: 1rem 0.75rem !important;
+        padding: 0.85rem 0.65rem !important;
     }
 
     .btn-export {
-        font-size: 0.76rem;
-        padding: 0.65rem 1rem;
+        font-size: 0.7rem;
+        padding: 0.55rem 0.85rem;
         font-weight: 700;
         text-transform: uppercase;
         border-radius: 999px;
@@ -141,8 +141,8 @@
 
     .status-strip {
         margin-top: 1rem;
-        padding: 0.75rem 0.9rem;
-        font-size: 0.68rem;
+        padding: 0.65rem 0.8rem;
+        font-size: 0.62rem;
         font-weight: 800;
         text-align: center;
         border-radius: 12px;
@@ -165,11 +165,11 @@
     }
     @media (max-width: 767.98px) {
         .company-name {
-            font-size: 1.15rem;
+            font-size: 1.05rem;
         }
         .table thead th,
         .table tbody td {
-            font-size: 0.85rem !important;
+            font-size: 0.78rem !important;
         }
     }
     @media print { .no-print { display: none !important; } .page-wrapper { padding-top: 0; } }
