@@ -132,25 +132,30 @@ use App\Support\LedgerService;
         $end = $request->end_date ? \Carbon\Carbon::parse($request->end_date) : \Carbon\Carbon::now()->endOfDay();
 
         // 2. Fetch and Map Data as ARRAYS (Removed (object) cast)
-        $accountsQuery = \App\Models\Account::with(['transactions' => function($query) use ($start, $end) {
-                $query->whereBetween('transaction_date', [$start, $end]);
+        // Trial Balance is an "as-of" report; include all transactions up to end date.
+        $accountsQuery = \App\Models\Account::with(['transactions' => function($query) use ($end) {
+                $query->whereDate('transaction_date', '<=', $end->toDateString());
             }]);
         $this->applyTenantScope($accountsQuery, 'accounts');
         $accounts = $accountsQuery->get()
             ->map(function($account) {
-                $totalDebit = $account->transactions->sum('debit'); 
+                $totalDebit = $account->transactions->sum('debit');
                 $totalCredit = $account->transactions->sum('credit');
-                $netBalance = $totalDebit - $totalCredit;
+                $openingBalance = (float) ($account->opening_balance ?? 0);
 
                 $debitBalance = 0;
                 $creditBalance = 0;
 
+                $normalizedType = strtolower(trim((string) ($account->type ?? '')));
+
                 // Asset/Expense logic
-                if (in_array($account->type, ['Asset', 'Expense'])) {
+                if (in_array($normalizedType, ['asset', 'expense'], true)) {
+                    $netBalance = $openingBalance + $totalDebit - $totalCredit;
                     $netBalance >= 0 ? $debitBalance = $netBalance : $creditBalance = abs($netBalance);
                 } 
                 // Liability/Equity/Revenue logic
                 else {
+                    $netBalance = $openingBalance + $totalCredit - $totalDebit;
                     $netBalance <= 0 ? $creditBalance = abs($netBalance) : $debitBalance = $netBalance;
                 }
 
