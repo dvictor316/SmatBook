@@ -18,29 +18,43 @@ class TrialBalanceController extends Controller
      */
     public function index(Request $request)
     {
-        // 1. Set Date Range (Default: Start of month to now)
-        $start = $request->start_date ? Carbon::parse($request->start_date) : Carbon::now()->startOfMonth();
-        $end = $request->end_date ? Carbon::parse($request->end_date) : Carbon::now()->endOfDay();
+        // 1. Set Date Range (Default: latest transaction month)
+        $start = $request->start_date ? Carbon::parse($request->start_date) : null;
+        $end = $request->end_date ? Carbon::parse($request->end_date) : null;
 
         // 2. Safety Check: Verify tables exist
         if (!Schema::hasTable('accounts') || !Schema::hasTable('transactions')) {
             return view('Reports.Reports.trial-balance', ['message' => 'Accounting tables are missing.']);
         }
 
+        if (!$start || !$end) {
+            $latestTxnDate = Transaction::max('transaction_date');
+            $effectiveEnd = $latestTxnDate
+                ? Carbon::parse($latestTxnDate)->endOfDay()
+                : Carbon::now()->endOfDay();
+            $end = $end ?: $effectiveEnd;
+            $start = $start ?: $end->copy()->startOfMonth();
+        }
+
         // 3. Get Account Data with Summed Transactions (Optimized)
-        $accounts = Account::withSum(['transactions as total_debit' => function ($query) use ($start, $end) {
-            $query->whereBetween('transaction_date', [$start, $end]);
-        }], 'debit')
-        ->withSum(['transactions as total_credit' => function ($query) use ($start, $end) {
-            $query->whereBetween('transaction_date', [$start, $end]);
-        }], 'credit')
-        ->get();
+        $accounts = Account::get();
+        $accountIds = $accounts->pluck('id')->all();
+
+        $txnTotals = Transaction::selectRaw('account_id, SUM(debit) as total_debit, SUM(credit) as total_credit')
+            ->when(!empty($accountIds), function ($query) use ($accountIds) {
+                $query->whereIn('account_id', $accountIds);
+            })
+            ->whereDate('transaction_date', '<=', $end->toDateString())
+            ->groupBy('account_id')
+            ->get()
+            ->keyBy('account_id');
 
         // 4. Calculate Net Position for each account
-        $accounts = $accounts->map(function ($account) {
-            $dr = $account->total_debit ?? 0;
-            $cr = $account->total_credit ?? 0;
-            $net = $dr - $cr;
+        $accounts = $accounts->map(function ($account) use ($txnTotals) {
+            $totals = $txnTotals->get($account->id);
+            $dr = (float) ($totals->total_debit ?? 0);
+            $cr = (float) ($totals->total_credit ?? 0);
+            $openingBalance = (float) ($account->opening_balance ?? 0);
             $type = strtolower((string) ($account->type ?? ''));
 
             $account->debit_balance = 0;
@@ -48,16 +62,25 @@ class TrialBalanceController extends Controller
 
             // Debit-Normal accounts (Asset/Expense) vs Credit-Normal (Liability/Equity/Revenue)
             if (in_array($type, ['asset', 'expense'], true)) {
-                if ($net >= 0) $account->debit_balance = $net;
-                else $account->credit_balance = abs($net);
+                $net = $openingBalance + $dr - $cr;
+                if ($net >= 0) {
+                    $account->debit_balance = $net;
+                } else {
+                    $account->credit_balance = abs($net);
+                }
             } else {
-                if ($net <= 0) $account->credit_balance = abs($net);
-                else $account->debit_balance = $net;
+                $net = $openingBalance + $cr - $dr;
+                if ($net <= 0) {
+                    $account->credit_balance = abs($net);
+                } else {
+                    $account->debit_balance = $net;
+                }
             }
 
+            $account->has_activity = ($dr > 0) || ($cr > 0) || (abs($openingBalance) > 0);
             return $account;
         })
-        ->filter(fn($acc) => $acc->debit_balance > 0 || $acc->credit_balance > 0)
+        ->filter(fn($acc) => $acc->has_activity)
         ->sortBy('code');
 
         // 5. Final variables exactly as requested by your Blade View
@@ -76,8 +99,17 @@ class TrialBalanceController extends Controller
      */
     public function export(Request $request)
     {
-        $startDate = $request->start_date ? Carbon::parse($request->start_date) : Carbon::now()->startOfMonth();
-        $endDate = $request->end_date ? Carbon::parse($request->end_date) : Carbon::now();
+        $startDate = $request->start_date ? Carbon::parse($request->start_date) : null;
+        $endDate = $request->end_date ? Carbon::parse($request->end_date) : null;
+
+        if (!$startDate || !$endDate) {
+            $latestTxnDate = Transaction::max('transaction_date');
+            $effectiveEnd = $latestTxnDate
+                ? Carbon::parse($latestTxnDate)->endOfDay()
+                : Carbon::now()->endOfDay();
+            $endDate = $endDate ?: $effectiveEnd;
+            $startDate = $startDate ?: $endDate->copy()->startOfMonth();
+        }
 
         return Excel::download(
             new TrialBalanceExport($startDate, $endDate),
