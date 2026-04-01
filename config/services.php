@@ -35,6 +35,7 @@ return [
     'client_id'     => env('GOOGLE_CLIENT_ID'),
     'client_secret' => env('GOOGLE_CLIENT_SECRET'),
     'redirect'      => env('GOOGLE_REDIRECT_URL'), // Changed from URI to URL to match your .env
+    'maps_key'      => env('GOOGLE_MAPS_KEY'),
 ],
 
 'facebook' => [
