@@ -12,10 +12,8 @@
         --border-blue: #e0f2fe;
     }
 
-    .page-wrapper { background: #f8fafc; min-height: 100vh; color: var(--text-dark); }
-
     .report-container {
-        max-width: 1150px;
+        max-width: 1280px;
         margin: 0 auto 24px auto;
         background: #fff;
         border: 1px solid #e2e8f0;
@@ -59,7 +57,7 @@
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         gap: 1rem;
-        margin-bottom: 1.5rem;
+        margin-bottom: 1.75rem;
     }
 
     .summary-card {
@@ -75,6 +73,7 @@
         font-weight: 700;
         color: var(--text-light);
         text-transform: uppercase;
+        margin-bottom: 2px;
         display: block;
         letter-spacing: 0.08em;
     }
@@ -82,7 +81,6 @@
     .summary-amount {
         font-size: 1.15rem;
         font-weight: 800;
-        font-family: 'JetBrains Mono', monospace;
     }
 
     .table-card {
@@ -141,13 +139,14 @@
     
     .btn-export:hover { background: var(--bg-alice); }
 
-    .status-banner {
-        margin-top: 2rem;
-        padding: 0.75rem;
-        font-size: 0.75rem;
+    .status-strip {
+        margin-top: 1rem;
+        padding: 0.75rem 0.9rem;
+        font-size: 0.68rem;
         font-weight: 800;
         text-align: center;
-        border-radius: 16px;
+        border-radius: 12px;
+        letter-spacing: 0.05em;
         text-transform: uppercase;
     }
 
@@ -155,7 +154,7 @@
     .unbalanced { background: #fef2f2; color: #991b1b; border: 1px solid #fee2e2; }
 
     .dt-buttons { display: none !important; }
-    @media (max-width: 767.98px) {
+    @media (max-width: 991.98px) {
         .report-container {
             padding: 1rem;
             border-radius: 18px;
@@ -163,6 +162,8 @@
         .summary-grid {
             grid-template-columns: 1fr;
         }
+    }
+    @media (max-width: 767.98px) {
         .company-name {
             font-size: 1.15rem;
         }
@@ -284,7 +285,7 @@
         </div>
 
         @php $isBalanced = abs($totalDebits - $totalCredits) < 0.01; @endphp
-        <div class="status-banner {{ $isBalanced ? 'balanced' : 'unbalanced' }}">
+        <div class="status-strip {{ $isBalanced ? 'balanced' : 'unbalanced' }}">
             {{ $isBalanced ? '✓ Trial Balance is Balanced' : '⚠ Discrepancy Detected in Trial Balance' }}
         </div>
         </div>
