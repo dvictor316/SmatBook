@@ -131,16 +131,17 @@ use App\Support\LedgerService;
         $start = $request->start_date ? \Carbon\Carbon::parse($request->start_date) : null;
         $end = $request->end_date ? \Carbon\Carbon::parse($request->end_date) : null;
 
-        if (!$start || !$end) {
-            $accountIds = $this->applyTenantScope(\App\Models\Account::query(), 'accounts')
-                ->pluck('id')
-                ->all();
+        $accountsQuery = \App\Models\Account::query();
+        $this->applyTenantScope($accountsQuery, 'accounts');
+        $accountsBase = $accountsQuery->get();
+        $accountIds = $accountsBase->pluck('id')->all();
 
-            $latestTxnDate = null;
+        if (!$start || !$end) {
+            $latestTxnQuery = \App\Models\Transaction::query();
             if (!empty($accountIds)) {
-                $latestTxnDate = \App\Models\Transaction::whereIn('account_id', $accountIds)
-                    ->max('transaction_date');
+                $latestTxnQuery->whereIn('account_id', $accountIds);
             }
+            $latestTxnDate = $latestTxnQuery->max('transaction_date');
 
             $effectiveEnd = $latestTxnDate
                 ? \Carbon\Carbon::parse($latestTxnDate)->endOfDay()
@@ -152,14 +153,20 @@ use App\Support\LedgerService;
 
         // 2. Fetch and Map Data as ARRAYS (Removed (object) cast)
         // Trial Balance is an "as-of" report; include all transactions up to end date.
-        $accountsQuery = \App\Models\Account::with(['transactions' => function($query) use ($end) {
-                $query->whereDate('transaction_date', '<=', $end->toDateString());
-            }]);
-        $this->applyTenantScope($accountsQuery, 'accounts');
-        $accounts = $accountsQuery->get()
-            ->map(function($account) {
-                $totalDebit = $account->transactions->sum('debit');
-                $totalCredit = $account->transactions->sum('credit');
+        $txnTotals = \App\Models\Transaction::selectRaw('account_id, SUM(debit) as total_debit, SUM(credit) as total_credit')
+            ->when(!empty($accountIds), function ($query) use ($accountIds) {
+                $query->whereIn('account_id', $accountIds);
+            })
+            ->whereDate('transaction_date', '<=', $end->toDateString())
+            ->groupBy('account_id')
+            ->get()
+            ->keyBy('account_id');
+
+        $accounts = $accountsBase
+            ->map(function($account) use ($txnTotals) {
+                $totals = $txnTotals->get($account->id);
+                $totalDebit = (float) ($totals->total_debit ?? 0);
+                $totalCredit = (float) ($totals->total_credit ?? 0);
                 $openingBalance = (float) ($account->opening_balance ?? 0);
 
                 $debitBalance = 0;
@@ -179,15 +186,18 @@ use App\Support\LedgerService;
                 }
 
                 // Return a plain ARRAY to prevent the "stdClass" error
+                $hasActivity = ($totalDebit > 0) || ($totalCredit > 0) || (abs($openingBalance) > 0);
+
                 return [
                     'code' => $account->code ?? 'N/A',
                     'name' => $account->name,
                     'type' => $account->type,
                     'debit_balance' => $debitBalance,
                     'credit_balance' => $creditBalance,
+                    'has_activity' => $hasActivity,
                 ];
             })
-            ->filter(fn($acc) => $acc['debit_balance'] > 0 || $acc['credit_balance'] > 0)
+            ->filter(fn($acc) => $acc['has_activity'])
             ->sortBy('code')
             ->values();
 
