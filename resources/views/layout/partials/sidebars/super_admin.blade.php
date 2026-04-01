@@ -180,6 +180,10 @@
                         <li><a href="{{ route('reports.stock') }}">Stock Report</a></li>
                         <li><a href="{{ route('reports.expense') }}">Expense Report</a></li>
                         <li><a href="{{ route('reports.purchase') }}">Purchase Report</a></li>
+                        <li><a href="{{ route('reports.income') }}">Income Report</a></li>
+                        <li><a href="{{ route('reports.payment') }}">Payment Report</a></li>
+                        <li><a href="{{ route('reports.sales-return') }}">Sales Return Report</a></li>
+                        <li><a href="{{ route('reports.quotation') }}">Quotation Report</a></li>
                         <li><a href="{{ route('reports.accounts-receivable') }}">Accounts Receivable</a></li>
                         <li><a href="{{ route('reports.low-stock') }}">Low Stock Report</a></li>
                         <li><a href="{{ route('reports.profit-loss') }}">Profit & Loss</a></li>
@@ -435,6 +439,10 @@
                         <li><a href="{{ route('reports.stock') }}">Stock Report</a></li>
                         <li><a href="{{ route('reports.expense') }}">Expense Report</a></li>
                         <li><a href="{{ route('reports.purchase') }}">Purchase Report</a></li>
+                        <li><a href="{{ route('reports.income') }}">Income Report</a></li>
+                        <li><a href="{{ route('reports.payment') }}">Payment Report</a></li>
+                        <li><a href="{{ route('reports.sales-return') }}">Sales Return Report</a></li>
+                        <li><a href="{{ route('reports.quotation') }}">Quotation Report</a></li>
                         <li><a href="{{ route('reports.accounts-receivable') }}">Accounts Receivable</a></li>
                         <li><a href="{{ route('reports.low-stock') }}">Low Stock Report</a></li>
                         <li><a href="{{ route('reports.profit-loss') }}">Profit & Loss</a></li>
@@ -583,6 +591,10 @@
                         <li><a href="{{ route('reports.stock') }}">Stock Report</a></li>
                         <li><a href="{{ route('reports.expense') }}">Expense Report</a></li>
                         <li><a href="{{ route('reports.purchase') }}">Purchase Report</a></li>
+                        <li><a href="{{ route('reports.income') }}">Income Report</a></li>
+                        <li><a href="{{ route('reports.payment') }}">Payment Report</a></li>
+                        <li><a href="{{ route('reports.sales-return') }}">Sales Return Report</a></li>
+                        <li><a href="{{ route('reports.quotation') }}">Quotation Report</a></li>
                         <li><a href="{{ route('reports.accounts-receivable') }}">Accounts Receivable</a></li>
                         <li><a href="{{ route('reports.low-stock') }}">Low Stock Report</a></li>
                     </ul>

@@ -57,6 +57,10 @@
                 </div>
             </div>
 
+            @include('Reports.partials.context-strip', [
+                'reportLabel' => 'Sales Return Report'
+            ])
+
             {{-- Statistics Row --}}
             <div class="row mb-4">
                 <div class="col-xl-4 col-sm-6 col-12">

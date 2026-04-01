@@ -55,6 +55,10 @@
                 </div>
             </div>
 
+            @include('Reports.partials.context-strip', [
+                'reportLabel' => 'Customer Statement'
+            ])
+
             <div class="row">
                 <div class="col-xl-4 col-sm-6 col-12">
                     <div class="card statement-summary-card bg-primary-light">

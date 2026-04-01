@@ -198,6 +198,32 @@
         content: "\f133";
     }
 
+    [class^="feather-"],
+    [class*=" feather-"] {
+        font-family: "Font Awesome 6 Free" !important;
+        font-weight: 900 !important;
+        font-style: normal;
+        line-height: 1;
+    }
+
+    .feather-printer:before { content: "\f02f"; }
+    .feather-file-text:before { content: "\f15c"; }
+    .feather-file:before { content: "\f15b"; }
+    .feather-download:before { content: "\f019"; }
+    .feather-upload:before { content: "\f093"; }
+    .feather-mail:before { content: "\f0e0"; }
+    .feather-filter:before { content: "\f0b0"; }
+    .feather-refresh-ccw:before { content: "\f2f1"; }
+    .feather-shopping-cart:before { content: "\f07a"; }
+    .feather-trending-down:before { content: "\f063"; }
+    .feather-corner-up-left:before { content: "\f148"; }
+    .feather-alert-triangle:before { content: "\f071"; }
+    .feather-inbox:before { content: "\f01c"; }
+    .feather-credit-card:before { content: "\f09d"; }
+    .feather-grid:before { content: "\f00a"; }
+    .feather-arrow-left:before { content: "\f060"; }
+    .feather-arrow-left-circle:before { content: "\f0a8"; }
+
     .fa,
     .fas,
     .far,

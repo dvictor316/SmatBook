@@ -135,27 +135,26 @@
                         {{-- Reports Section --}}
                         <li class="menu-title"><span>Reports</span></li>
                         <li>
-                            <a href="{{ url('payment-summary') }}" class="{{ Request::is('payment-summary') ? 'active' : '' }}"><i class="fe fe-credit-card"></i> <span>Payment Summary</span></a>
+                            <a href="{{ route('reports.payment-summary') }}" class="{{ Request::is('reports/payment-summary') ? 'active' : '' }}"><i class="fe fe-credit-card"></i> <span>Payment Summary</span></a>
                         </li>
                         
                         <li class="submenu">
                             <a href="#"><i class="fe fe-bar-chart"></i><span>Reports</span> <span class="menu-arrow"></span></a>
                             <ul>
-                                <li><a href="{{ url('expense-report') }}" class="{{ Request::is('expense-report') ? 'active' : '' }}">Expense Report</a></li>
-                                <li><a href="{{ url('purchase-report') }}" class="{{ Request::is('purchase-report') ? 'active' : '' }}">Purchase Report</a></li>
-                                <li><a href="{{ url('purchase-return') }}" class="{{ Request::is('purchase-return') ? 'active' : '' }}">Purchase Return Report</a></li>
-                                <li><a href="{{ url('sales-report') }}" class="{{ Request::is('sales-report') ? 'active' : '' }}">Sales Report</a></li>
-                                <li><a href="{{ url('sales-return-report') }}" class="{{ Request::is('sales-return-report') ? 'active' : '' }}">Sales Return Report</a></li>
-                                <li><a href="{{ url('quotation-report') }}" class="{{ Request::is('quotation-report') ? 'active' : '' }}">Quotation Report</a></li>
-                                <li><a href="{{ url('payment-report') }}" class="{{ Request::is('payment-report') ? 'active' : '' }}">Payment Report</a></li>
-                                <li><a href="{{ url('stock-report') }}" class="{{ Request::is('stock-report') ? 'active' : '' }}">Stock Report</a></li>
-                                <li><a href="{{ url('low-stock-report') }}" class="{{ Request::is('low-stock-report') ? 'active' : '' }}">Low Stock Report</a></li>
-                                <li><a href="{{ url('income-report') }}" class="{{ Request::is('income-report') ? 'active' : '' }}">Income Report</a></li>
-                                <li><a href="{{ url('tax-purchase') }}" class="{{ Request::is('tax-purchase', 'tax-sales') ? 'active' : '' }}">Tax Report</a></li>
-                                <li><a href="{{ url('profit-loss-list') }}" class="{{ Request::is('profit-loss-list') ? 'active' : '' }}">Profit & Loss</a></li>
-                                <li><a href="{{ url('trial-balance') }}" class="{{ Request::is('trial-balance') ? 'active' : '' }}">Trial Balance</a></li>
-                                <li><a href="{{ url('balance-sheet') }}" class="{{ Request::is('balance-sheet') ? 'active' : '' }}">Balance Sheet</a></li>
-                                <li><a href="{{ url('cash-flow') }}" class="{{ Request::is('cash-flow') ? 'active' : '' }}">Cash Flow Statement</a></li>
+                                <li><a href="{{ route('reports.expense') }}" class="{{ Request::is('reports/expense-report') ? 'active' : '' }}">Expense Report</a></li>
+                                <li><a href="{{ route('reports.purchase') }}" class="{{ Request::is('reports/purchase-report') ? 'active' : '' }}">Purchase Report</a></li>
+                                <li><a href="{{ route('reports.sales') }}" class="{{ Request::is('reports/sales-report') ? 'active' : '' }}">Sales Report</a></li>
+                                <li><a href="{{ route('reports.sales-return') }}" class="{{ Request::is('reports/sales-return-report') ? 'active' : '' }}">Sales Return Report</a></li>
+                                <li><a href="{{ route('reports.quotation') }}" class="{{ Request::is('reports/quotation-report') ? 'active' : '' }}">Quotation Report</a></li>
+                                <li><a href="{{ route('reports.payment') }}" class="{{ Request::is('reports/payment-report') ? 'active' : '' }}">Payment Report</a></li>
+                                <li><a href="{{ route('reports.stock') }}" class="{{ Request::is('reports/stock-report') ? 'active' : '' }}">Stock Report</a></li>
+                                <li><a href="{{ route('reports.low-stock') }}" class="{{ Request::is('reports/low-stock-report') ? 'active' : '' }}">Low Stock Report</a></li>
+                                <li><a href="{{ route('reports.income') }}" class="{{ Request::is('reports/income-report') ? 'active' : '' }}">Income Report</a></li>
+                                <li><a href="{{ route('reports.tax-purchase') }}" class="{{ Request::is('reports/tax-purchase', 'reports/tax-sales') ? 'active' : '' }}">Tax Report</a></li>
+                                <li><a href="{{ route('reports.profit-loss') }}" class="{{ Request::is('reports/profit-loss-list') ? 'active' : '' }}">Profit & Loss</a></li>
+                                <li><a href="{{ route('trial-balance') }}" class="{{ Request::is('trial-balance') ? 'active' : '' }}">Trial Balance</a></li>
+                                <li><a href="{{ route('balance-sheet') }}" class="{{ Request::is('balance-sheet') ? 'active' : '' }}">Balance Sheet</a></li>
+                                <li><a href="{{ route('reports.cash-flow') }}" class="{{ Request::is('cash-flow') ? 'active' : '' }}">Cash Flow Statement</a></li>
                             </ul>
                         </li>
 
@@ -338,27 +337,26 @@
                     
                     {{-- Reports Section --}}
                     <li class="menu-title"><span>Reports</span></li>
-                    <li>
-                        <a href="{{ url('payment-summary') }}" class="{{ Request::is('payment-summary') ? 'active' : '' }}"><i class="fe fe-credit-card"></i> <span>Payment Summary</span></a>
-                    </li>
+                        <li>
+                            <a href="{{ route('reports.payment-summary') }}" class="{{ Request::is('reports/payment-summary') ? 'active' : '' }}"><i class="fe fe-credit-card"></i> <span>Payment Summary</span></a>
+                        </li>
                     <li class="submenu">
                         <a href="#"><i class="fe fe-bar-chart"></i><span>Reports</span> <span class="menu-arrow"></span></a>
                         <ul>
-                            <li><a href="{{ url('expense-report') }}" class="{{ Request::is('expense-report') ? 'active' : '' }}">Expense Report</a></li>
-                            <li><a href="{{ url('purchase-report') }}" class="{{ Request::is('purchase-report') ? 'active' : '' }}">Purchase Report</a></li>
-                            <li><a href="{{ url('purchase-return') }}" class="{{ Request::is('purchase-return') ? 'active' : '' }}">Purchase Return Report</a></li>
-                            <li><a href="{{ url('sales-report') }}" class="{{ Request::is('sales-report') ? 'active' : '' }}">Sales Report</a></li>
-                            <li><a href="{{ url('sales-return-report') }}" class="{{ Request::is('sales-return-report') ? 'active' : '' }}">Sales Return Report</a></li>
-                            <li><a href="{{ url('quotation-report') }}" class="{{ Request::is('quotation-report') ? 'active' : '' }}">Quotation Report</a></li>
-                            <li><a href="{{ url('payment-report') }}" class="{{ Request::is('payment-report') ? 'active' : '' }}">Payment Report</a></li>
-                            <li><a href="{{ url('stock-report') }}" class="{{ Request::is('stock-report') ? 'active' : '' }}">Stock Report</a></li>
-                            <li><a href="{{ url('low-stock-report') }}" class="{{ Request::is('low-stock-report') ? 'active' : '' }}">Low Stock Report</a></li>
-                            <li><a href="{{ url('income-report') }}" class="{{ Request::is('income-report') ? 'active' : '' }}">Income Report</a></li>
-                            <li><a href="{{ url('tax-purchase') }}" class="{{ Request::is('tax-purchase', 'tax-sales') ? 'active' : '' }}">Tax Report</a></li>
-                            <li><a href="{{ url('profit-loss-list') }}" class="{{ Request::is('profit-loss-list') ? 'active' : '' }}">Profit & Loss</a></li>
-                            <li><a href="{{ url('trial-balance') }}" class="{{ Request::is('trial-balance') ? 'active' : '' }}">Trial Balance</a></li>
-                            <li><a href="{{ url('balance-sheet') }}" class="{{ Request::is('balance-sheet') ? 'active' : '' }}">Balance Sheet</a></li>
-                            <li><a href="{{ url('cash-flow') }}" class="{{ Request::is('cash-flow') ? 'active' : '' }}">Cash Flow Statement</a></li>
+                            <li><a href="{{ route('reports.expense') }}" class="{{ Request::is('reports/expense-report') ? 'active' : '' }}">Expense Report</a></li>
+                            <li><a href="{{ route('reports.purchase') }}" class="{{ Request::is('reports/purchase-report') ? 'active' : '' }}">Purchase Report</a></li>
+                            <li><a href="{{ route('reports.sales') }}" class="{{ Request::is('reports/sales-report') ? 'active' : '' }}">Sales Report</a></li>
+                            <li><a href="{{ route('reports.sales-return') }}" class="{{ Request::is('reports/sales-return-report') ? 'active' : '' }}">Sales Return Report</a></li>
+                            <li><a href="{{ route('reports.quotation') }}" class="{{ Request::is('reports/quotation-report') ? 'active' : '' }}">Quotation Report</a></li>
+                            <li><a href="{{ route('reports.payment') }}" class="{{ Request::is('reports/payment-report') ? 'active' : '' }}">Payment Report</a></li>
+                            <li><a href="{{ route('reports.stock') }}" class="{{ Request::is('reports/stock-report') ? 'active' : '' }}">Stock Report</a></li>
+                            <li><a href="{{ route('reports.low-stock') }}" class="{{ Request::is('reports/low-stock-report') ? 'active' : '' }}">Low Stock Report</a></li>
+                            <li><a href="{{ route('reports.income') }}" class="{{ Request::is('reports/income-report') ? 'active' : '' }}">Income Report</a></li>
+                            <li><a href="{{ route('reports.tax-purchase') }}" class="{{ Request::is('reports/tax-purchase', 'reports/tax-sales') ? 'active' : '' }}">Tax Report</a></li>
+                            <li><a href="{{ route('reports.profit-loss') }}" class="{{ Request::is('reports/profit-loss-list') ? 'active' : '' }}">Profit & Loss</a></li>
+                            <li><a href="{{ route('trial-balance') }}" class="{{ Request::is('trial-balance') ? 'active' : '' }}">Trial Balance</a></li>
+                            <li><a href="{{ route('balance-sheet') }}" class="{{ Request::is('balance-sheet') ? 'active' : '' }}">Balance Sheet</a></li>
+                            <li><a href="{{ route('reports.cash-flow') }}" class="{{ Request::is('cash-flow') ? 'active' : '' }}">Cash Flow Statement</a></li>
                         </ul>
                     </li>
                     
