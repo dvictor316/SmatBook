@@ -1780,6 +1780,39 @@
                             <div class="col-12 col-xl-5 grid-margin dashboard-stack">
                                 <div class="card card-rounded shadow-sm">
                                     <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <div>
+                                                <h5 class="mb-0 fw-bold text-dark">Subscription Health Mix</h5>
+                                                <small class="text-muted">Real-time onboarding and renewal balance</small>
+                                            </div>
+                                            <span class="badge bg-primary-subtle text-primary">Live</span>
+                                        </div>
+                                        @php
+                                            $pendingSetups = (int) ($metrics['pending_setups'] ?? 0);
+                                            $paidSubs = (int) ($metrics['paid_subs'] ?? 0);
+                                            $expiredSubs = (int) ($metrics['expired_subs'] ?? 0);
+                                            $recentSignups = (int) ($metrics['recent_signups'] ?? 0);
+                                        @endphp
+                                        <div class="row g-3 align-items-center">
+                                            <div class="col-12">
+                                                <div style="height: 220px;">
+                                                    <canvas id="subscriptionMixChart"></canvas>
+                                                </div>
+                                            </div>
+                                            <div class="col-12">
+                                                <div class="d-flex flex-wrap gap-3 small text-muted">
+                                                    <div><span class="badge-dot bg-primary me-2"></span>Paid: {{ number_format($paidSubs) }}</div>
+                                                    <div><span class="badge-dot bg-warning me-2"></span>Pending: {{ number_format($pendingSetups) }}</div>
+                                                    <div><span class="badge-dot bg-danger me-2"></span>Expired: {{ number_format($expiredSubs) }}</div>
+                                                    <div><span class="badge-dot bg-info me-2"></span>New (30d): {{ number_format($recentSignups) }}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="card card-rounded shadow-sm">
+                                    <div class="card-body">
                                         <div class="d-flex justify-content-between align-items-center mb-3">
                                             <h4 class="card-title card-title-dash">Deployment Manager Authorization</h4>
                                             @if($metrics['pending_managers'] > 0)
@@ -2541,6 +2574,49 @@
                         legend: { display: false },
                         tooltip: {
                             enabled: hasManagerPulseData,
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.label}: ${Number(context.parsed).toLocaleString()}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // --- 2C. SUBSCRIPTION HEALTH MIX (Doughnut) ---
+        const subscriptionMixCtx = document.getElementById('subscriptionMixChart');
+        if (subscriptionMixCtx) {
+            const mixValues = [
+                {{ (int) ($metrics['paid_subs'] ?? 0) }},
+                {{ (int) ($metrics['pending_setups'] ?? 0) }},
+                {{ (int) ($metrics['expired_subs'] ?? 0) }},
+                {{ (int) ($metrics['recent_signups'] ?? 0) }}
+            ];
+            const hasMixData = mixValues.some(value => Number(value) > 0);
+
+            new Chart(subscriptionMixCtx.getContext("2d"), {
+                type: 'doughnut',
+                data: {
+                    labels: hasMixData ? ['Paid', 'Pending Setup', 'Expired', 'New (30d)'] : ['No data yet'],
+                    datasets: [{
+                        data: hasMixData ? mixValues : [1],
+                        backgroundColor: hasMixData
+                            ? ['#2563eb', '#f59e0b', '#ef4444', '#0ea5e9']
+                            : ['#dbe4f0'],
+                        borderWidth: 0,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '68%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            enabled: hasMixData,
                             callbacks: {
                                 label: function(context) {
                                     return `${context.label}: ${Number(context.parsed).toLocaleString()}`;

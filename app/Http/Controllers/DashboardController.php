@@ -71,12 +71,16 @@ class DashboardController extends Controller
         if ($subdomain) {
             $subscription = Subscription::where('domain_prefix', $subdomain)->first();
             if (!$subscription) abort(404, 'Node not found.');
-            
-            // Link company via subdomain/domain_prefix and fallback to subscription relation.
-            $company = Company::where('subdomain', $subdomain)
-                ->orWhere('domain_prefix', $subdomain)
-                ->orWhere('id', $subscription->company_id)
-                ->orWhere('user_id', $subscription->user_id)
+
+            $company = Company::query()
+                ->when($subscription->company_id, fn ($q) => $q->where('id', $subscription->company_id))
+                ->orWhere(function ($q) use ($subdomain, $subscription) {
+                    $q->where('user_id', $subscription->user_id)
+                      ->where(function ($match) use ($subdomain) {
+                          $match->where('subdomain', $subdomain)
+                                ->orWhere('domain_prefix', $subdomain);
+                      });
+                })
                 ->first();
         } else {
             $company = Company::where('id', $user->company_id)
@@ -85,7 +89,17 @@ class DashboardController extends Controller
                 ->first();
         }
 
+        if ($subdomain && $company) {
+            $allowedUserIds = $this->companyUserIds($company);
+            if (!in_array((int) $user->id, $allowedUserIds, true) && !in_array($user->role, ['superadmin', 'admin'])) {
+                abort(403, 'Unauthorized workspace.');
+            }
+        }
+
         // Redirect if setup isn't finished (Handshake check)
+        if ($subdomain && !$company) {
+            return redirect()->route('saas.setup')->with('info', 'Handshake incomplete. Please set your URL.');
+        }
         if (!$company && !in_array($user->role, ['superadmin', 'admin'])) {
             return redirect()->route('saas.setup')->with('info', 'Handshake incomplete. Please set your URL.');
         }
