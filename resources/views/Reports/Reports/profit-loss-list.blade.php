@@ -263,17 +263,29 @@ $(document).ready(function() {
 
     // Email Logic using Grand Totals
     $('#emailReportBtn').on('click', function() {
-        const mailSubject = encodeURIComponent("Business P&L Summary: {{ $reportDate }}");
-        const mailBody = encodeURIComponent(
+        const subject = "Business P&L Summary: {{ $reportDate }}";
+        const body =
             "Hello,\n\nHere is the financial summary for the selected period:\n\n" +
             "Grand Total Revenue: ₦{{ number_format($grandIncome, 2) }}\n" +
             "Purchase Cost: ₦{{ number_format($grandPurchaseExpense, 2) }}\n" +
             "Operating Expenses: ₦{{ number_format($grandOperatingExpense, 2) }}\n" +
             "Grand Total Expenses: ₦{{ number_format($grandExpense, 2) }}\n" +
             "Net Profit/Loss: ₦{{ number_format($grandNet, 2) }}\n\n" +
-            "Generated via SMAT POS System."
-        );
-        window.location.href = `mailto:?subject=${mailSubject}&body=${mailBody}`;
+            "Generated via SmartProbook.";
+        const token = '{{ csrf_token() }}';
+        $('#emailReportBtn').prop('disabled', true).text('Sending...');
+        fetch("{{ route('reports.email-report') }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': token
+            },
+            body: JSON.stringify({ subject, body })
+        })
+        .then(res => res.json())
+        .then(data => alert(data.message || 'Email request sent.'))
+        .catch(() => alert('Email failed. Please check mail settings.'))
+        .finally(() => $('#emailReportBtn').prop('disabled', false).html('<i class="fas fa-envelope"></i> {{ __('Email Summary') }}'));
     });
 });
 

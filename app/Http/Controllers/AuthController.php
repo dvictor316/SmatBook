@@ -323,6 +323,24 @@ class AuthController extends Controller
             'role' => $user->role
         ]);
 
+        try {
+            SystemEventMailer::sendMessage(
+                $user->email,
+                'Login Alert: SmartProbook',
+                'Login Alert',
+                'A new login was detected on your account.',
+                [
+                    'User' => $user->name ?? $user->email,
+                    'Email' => $user->email,
+                    'IP Address' => $request->ip(),
+                    'Time' => now()->toDateTimeString(),
+                    'Device' => (string) $request->userAgent(),
+                ]
+            );
+        } catch (\Throwable $mailError) {
+            Log::warning('Login alert email failed', ['error' => $mailError->getMessage()]);
+        }
+
         // CRITICAL FIX: ALWAYS redirect to /home
         // HomeController@index will handle role-based redirects
         return redirect()->route('home');

@@ -209,13 +209,26 @@ $(document).ready(function() {
 
     // Email Logic
     $('#emailSalesTaxBtn').on('click', function() {
-        const body = encodeURIComponent(
+        const subject = "Sales Tax Collected Report";
+        const body =
             "Sales Tax Summary Report\n" +
             "Generated: {{ $reportDate }}\n" +
             "Total Sales Tax Collected: ₦{{ number_format($totalTaxCollected, 2) }}\n\n" +
-            "This report covers tax collected from customer invoices."
-        );
-        window.location.href = `mailto:?subject=Sales Tax Collected Report&body=${body}`;
+            "This report covers tax collected from customer invoices.";
+        const token = '{{ csrf_token() }}';
+        $('#emailSalesTaxBtn').prop('disabled', true).text('Sending...');
+        fetch("{{ route('reports.email-report') }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': token
+            },
+            body: JSON.stringify({ subject, body })
+        })
+        .then(res => res.json())
+        .then(data => alert(data.message || 'Email request sent.'))
+        .catch(() => alert('Email failed. Please check mail settings.'))
+        .finally(() => $('#emailSalesTaxBtn').prop('disabled', false).html('<i class="feather-mail"></i> {{ __('Email Report') }}'));
     });
 });
 </script>

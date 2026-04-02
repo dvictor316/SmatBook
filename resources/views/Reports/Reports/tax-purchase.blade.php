@@ -196,13 +196,26 @@ $(document).ready(function() {
 
     // Email Logic
     $('#emailTaxBtn').on('click', function() {
-        const body = encodeURIComponent(
+        const subject = "Purchase Tax Report";
+        const body =
             "Purchase Tax Summary\n" +
             "Date Generated: {{ $reportDate }}\n" +
             "Total Purchase Tax: ₦{{ number_format($totalTax, 2) }}\n\n" +
-            "Please log in to the portal to view full breakdown."
-        );
-        window.location.href = `mailto:?subject=Purchase Tax Report&body=${body}`;
+            "Please log in to the portal to view full breakdown.";
+        const token = '{{ csrf_token() }}';
+        $('#emailTaxBtn').prop('disabled', true).text('Sending...');
+        fetch("{{ route('reports.email-report') }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': token
+            },
+            body: JSON.stringify({ subject, body })
+        })
+        .then(res => res.json())
+        .then(data => alert(data.message || 'Email request sent.'))
+        .catch(() => alert('Email failed. Please check mail settings.'))
+        .finally(() => $('#emailTaxBtn').prop('disabled', false).html('<i class="feather-mail"></i> Email Summary'));
     });
 });
 </script>

@@ -635,6 +635,19 @@ class SuperAdminDashboardController extends Controller
             User::where('id', $manager->user_id)->update(['is_verified' => 0]);
 
             DB::commit();
+            if ($manager->user?->email) {
+                SystemEventMailer::sendMessage(
+                    [$manager->user->email, config('mail.admin_inbox')],
+                    'Deployment Manager Rejected',
+                    'Manager Rejection',
+                    'A deployment manager account has been rejected.',
+                    [
+                        'Manager' => $manager->user?->name ?? $manager->user?->email ?? 'N/A',
+                        'Email' => $manager->user?->email ?? 'N/A',
+                        'Time' => now()->toDateTimeString(),
+                    ]
+                );
+            }
             return redirect()->back()->with('success', "Manager rejected.");
         } catch (\Exception $e) {
             DB::rollBack();
@@ -652,6 +665,19 @@ class SuperAdminDashboardController extends Controller
             User::where('id', $manager->user_id)->update(['is_verified' => 0]);
 
             DB::commit();
+            if ($manager->user?->email) {
+                SystemEventMailer::sendMessage(
+                    [$manager->user->email, config('mail.admin_inbox')],
+                    'Deployment Manager Suspended',
+                    'Manager Suspension',
+                    'A deployment manager account has been suspended.',
+                    [
+                        'Manager' => $manager->user?->name ?? $manager->user?->email ?? 'N/A',
+                        'Email' => $manager->user?->email ?? 'N/A',
+                        'Time' => now()->toDateTimeString(),
+                    ]
+                );
+            }
             return redirect()->back()->with('success', "Manager suspended successfully.");
         } catch (\Exception $e) {
             DB::rollBack();
@@ -948,6 +974,20 @@ public function pendingManagers()
                 'approved_at' => now(),
                 'approved_by' => auth()->id()
             ]);
+            if ($subscription->user?->email) {
+                SystemEventMailer::sendMessage(
+                    [$subscription->user->email, config('mail.admin_inbox')],
+                    'Subscription Approved',
+                    'Subscription Approval',
+                    'Your subscription has been approved and activated.',
+                    [
+                        'Subscriber' => $subscription->user?->name ?? $subscription->user?->email ?? 'N/A',
+                        'Plan' => $subscription->plan_name ?? 'N/A',
+                        'Amount' => $subscription->amount ?? 'N/A',
+                        'Time' => now()->toDateTimeString(),
+                    ]
+                );
+            }
             return redirect()->back()->with('success', 'Subscription approved!');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Failed to approve.');

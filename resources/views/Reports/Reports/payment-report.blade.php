@@ -297,9 +297,22 @@
 
         // Email Feature
         $('#emailReport').on('click', function() {
-            const subject = encodeURIComponent("Payment Report: {{ $reportDate }}");
-            const body = encodeURIComponent("Attached is the payment report.\nTotal Received: ₦{{ number_format($totalAmount, 2) }}");
-            window.location.href = `mailto:admin@example.com?subject=${subject}&body=${body}`;
+            const subject = "Payment Report: {{ $reportDate }}";
+            const body = "Attached is the payment report. Total Received: ₦{{ number_format($totalAmount, 2) }}";
+            const token = '{{ csrf_token() }}';
+            $('#emailReport').prop('disabled', true).text('Sending...');
+            fetch("{{ route('reports.email-report') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': token
+                },
+                body: JSON.stringify({ subject, body })
+            })
+            .then(res => res.json())
+            .then(data => alert(data.message || 'Email request sent.'))
+            .catch(() => alert('Email failed. Please check mail settings.'))
+            .finally(() => $('#emailReport').prop('disabled', false).html('<i class="fas fa-envelope me-1"></i> {{ __('Email') }}'));
         });
     });
 </script>
