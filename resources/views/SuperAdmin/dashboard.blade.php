@@ -2323,9 +2323,12 @@
                                             $paidSubs = (int) ($metrics['paid_subs'] ?? 0);
                                             $pendingSetups = (int) ($metrics['pending_setups'] ?? 0);
                                             $expiredSubs = (int) ($metrics['expired_subs'] ?? 0);
-                                            $paidTone = $paidSubs > 0 ? 'bg-success' : 'bg-secondary';
-                                            $pendingTone = $pendingSetups > 0 ? 'bg-warning' : 'bg-success';
-                                            $expiredTone = $expiredSubs > 0 ? 'bg-danger' : 'bg-success';
+                                            $paidTone = 'bg-success';
+                                            $pendingTone = 'bg-warning';
+                                            $expiredTone = 'bg-danger';
+                                            $paidDim = $paidSubs > 0 ? '' : 'opacity-25';
+                                            $pendingDim = $pendingSetups > 0 ? '' : 'opacity-25';
+                                            $expiredDim = $expiredSubs > 0 ? '' : 'opacity-25';
                                         @endphp
                                         <div class="mt-3 pt-2 border-top">
                                             <div class="d-flex justify-content-between align-items-center mb-2">
@@ -2334,15 +2337,15 @@
                                             </div>
                                             <div class="d-flex flex-wrap gap-3 small text-muted">
                                                 <div class="d-flex align-items-center">
-                                                    <span class="badge badge-dot {{ $paidTone }} me-2"></span>
+                                                    <span class="badge badge-dot {{ $paidTone }} {{ $paidDim }} me-2"></span>
                                                     Paid Subs: {{ number_format($paidSubs) }}
                                                 </div>
                                                 <div class="d-flex align-items-center">
-                                                    <span class="badge badge-dot {{ $pendingTone }} me-2"></span>
+                                                    <span class="badge badge-dot {{ $pendingTone }} {{ $pendingDim }} me-2"></span>
                                                     Pending Setups: {{ number_format($pendingSetups) }}
                                                 </div>
                                                 <div class="d-flex align-items-center">
-                                                    <span class="badge badge-dot {{ $expiredTone }} me-2"></span>
+                                                    <span class="badge badge-dot {{ $expiredTone }} {{ $expiredDim }} me-2"></span>
                                                     Expired Plans: {{ number_format($expiredSubs) }}
                                                 </div>
                                             </div>
