@@ -2849,8 +2849,16 @@
         // --- 6. REAL-TIME REGIONAL MAP (Leaflet) ---
         const mapElement = document.getElementById('regionMap');
         if (mapElement) {
-            // Initialize map
-            const regionMap = L.map('regionMap').setView([20, 0], 2);
+            // Initialize map (allow page scroll over map)
+            const regionMap = L.map('regionMap', {
+                scrollWheelZoom: false,
+                doubleClickZoom: false,
+                touchZoom: false,
+            }).setView([20, 0], 2);
+
+            regionMap.scrollWheelZoom.disable();
+            regionMap.doubleClickZoom.disable();
+            regionMap.touchZoom.disable();
             
             // Add tile layer
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
