@@ -18,7 +18,16 @@ class PaymentController extends Controller
         $userId = (int) (Auth::id() ?? 0);
         $scoped = false;
 
-        if ($companyId > 0 && Schema::hasColumn($table, 'company_id')) {
+        if ($table === 'payments' && $companyId > 0 && !Schema::hasColumn($table, 'company_id')) {
+            if (Schema::hasTable('sales') && Schema::hasColumn('payments', 'sale_id') && Schema::hasColumn('sales', 'company_id')) {
+                $query->whereHas('sale', function ($saleQuery) use ($companyId) {
+                    $saleQuery->where('company_id', $companyId);
+                });
+                $scoped = true;
+            }
+        }
+
+        if (!$scoped && $companyId > 0 && Schema::hasColumn($table, 'company_id')) {
             $query->where("{$table}.company_id", $companyId);
             $scoped = true;
         } elseif ($userId > 0 && Schema::hasColumn($table, 'user_id')) {
@@ -27,22 +36,6 @@ class PaymentController extends Controller
         } elseif ($userId > 0 && Schema::hasColumn($table, 'created_by')) {
             $query->where("{$table}.created_by", $userId);
             $scoped = true;
-        }
-
-        if (!$scoped && $table === 'payments' && $companyId > 0 && Schema::hasTable('sales') && Schema::hasColumn('payments', 'sale_id') && Schema::hasColumn('sales', 'company_id')) {
-            $query->where(function ($sub) use ($companyId) {
-                $sub->whereHas('sale', function ($saleQuery) use ($companyId) {
-                    $saleQuery->where('company_id', $companyId);
-                });
-
-                if (Schema::hasColumn('payments', 'created_by')) {
-                    $sub->orWhereHas('creator', function ($creatorQuery) use ($companyId) {
-                        if (Schema::hasColumn('users', 'company_id')) {
-                            $creatorQuery->where('company_id', $companyId);
-                        }
-                    });
-                }
-            });
         }
 
         return $query;
