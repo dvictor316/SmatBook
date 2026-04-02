@@ -2319,6 +2319,34 @@
                                                 @endforelse
                                             </div>
                                         </div>
+                                        @php
+                                            $paidSubs = (int) ($metrics['paid_subs'] ?? 0);
+                                            $pendingSetups = (int) ($metrics['pending_setups'] ?? 0);
+                                            $expiredSubs = (int) ($metrics['expired_subs'] ?? 0);
+                                            $paidTone = $paidSubs > 0 ? 'bg-success' : 'bg-secondary';
+                                            $pendingTone = $pendingSetups > 0 ? 'bg-warning' : 'bg-success';
+                                            $expiredTone = $expiredSubs > 0 ? 'bg-danger' : 'bg-success';
+                                        @endphp
+                                        <div class="mt-3 pt-2 border-top">
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <div class="small text-muted fw-semibold">Traffic Light Status</div>
+                                                <span class="small text-muted">Auto</span>
+                                            </div>
+                                            <div class="d-flex flex-wrap gap-3 small text-muted">
+                                                <div class="d-flex align-items-center">
+                                                    <span class="badge badge-dot {{ $paidTone }} me-2"></span>
+                                                    Paid Subs: {{ number_format($paidSubs) }}
+                                                </div>
+                                                <div class="d-flex align-items-center">
+                                                    <span class="badge badge-dot {{ $pendingTone }} me-2"></span>
+                                                    Pending Setups: {{ number_format($pendingSetups) }}
+                                                </div>
+                                                <div class="d-flex align-items-center">
+                                                    <span class="badge badge-dot {{ $expiredTone }} me-2"></span>
+                                                    Expired Plans: {{ number_format($expiredSubs) }}
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
