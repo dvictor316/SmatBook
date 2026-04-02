@@ -145,6 +145,12 @@
         width: 100%;
         border-radius: 8px;
     }
+    #regionMap.map-interactive {
+        cursor: grab;
+    }
+    #regionMap.map-interactive:active {
+        cursor: grabbing;
+    }
 
     /* Chart height consistency */
     .chart-container {
@@ -2849,16 +2855,37 @@
         // --- 6. REAL-TIME REGIONAL MAP (Leaflet) ---
         const mapElement = document.getElementById('regionMap');
         if (mapElement) {
-            // Initialize map (allow page scroll over map)
+            // Initialize map (unlock interactions on click)
             const regionMap = L.map('regionMap', {
                 scrollWheelZoom: false,
                 doubleClickZoom: false,
                 touchZoom: false,
+                dragging: false,
             }).setView([20, 0], 2);
 
             regionMap.scrollWheelZoom.disable();
             regionMap.doubleClickZoom.disable();
             regionMap.touchZoom.disable();
+            regionMap.dragging.disable();
+
+            const setMapInteraction = (enabled) => {
+                if (enabled) {
+                    regionMap.scrollWheelZoom.enable();
+                    regionMap.doubleClickZoom.enable();
+                    regionMap.touchZoom.enable();
+                    regionMap.dragging.enable();
+                    mapElement.classList.add('map-interactive');
+                } else {
+                    regionMap.scrollWheelZoom.disable();
+                    regionMap.doubleClickZoom.disable();
+                    regionMap.touchZoom.disable();
+                    regionMap.dragging.disable();
+                    mapElement.classList.remove('map-interactive');
+                }
+            };
+
+            mapElement.addEventListener('click', () => setMapInteraction(true));
+            mapElement.addEventListener('mouseleave', () => setMapInteraction(false));
             
             // Add tile layer
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
