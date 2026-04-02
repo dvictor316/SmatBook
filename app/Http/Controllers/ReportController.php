@@ -2178,6 +2178,20 @@ public function destroy($id)
             $start_date = $request->input('start_date');
             $end_date = $request->input('end_date');
 
+            if (!$start_date || !$end_date) {
+                $latestTaxDate = DB::table('sales')
+                    ->where('sales.tax', '>', 0)
+                    ->tap(fn ($q) => $this->applyTenantScope($q, 'sales'))
+                    ->max('sales.created_at');
+
+                $effectiveEnd = $latestTaxDate
+                    ? \Carbon\Carbon::parse($latestTaxDate)->endOfDay()
+                    : now()->endOfDay();
+
+                $end_date = $end_date ?: $effectiveEnd->toDateString();
+                $start_date = $start_date ?: $effectiveEnd->copy()->startOfMonth()->toDateString();
+            }
+
             $query = DB::table('sales')
                 ->leftJoin('customers', 'sales.customer_id', '=', 'customers.id')
                 ->select([
@@ -2190,7 +2204,8 @@ public function destroy($id)
                     'sales.discount as Discount',
                     'sales.tax as TaxAmount',
                 ])
-                ->where('sales.tax', '>', 0);
+                ->where('sales.tax', '>', 0)
+                ->tap(fn ($q) => $this->applyTenantScope($q, 'sales'));
 
             if ($start_date && $end_date) {
                 $query->whereBetween(DB::raw('DATE(sales.created_at)'), [$start_date, $end_date]);
@@ -2206,6 +2221,7 @@ public function destroy($id)
             }
 
             $taxsales = $query->orderByDesc('sales.created_at')
+                ->limit(2000)
                 ->get()
                 ->map(function ($item) {
                     $row = (array) $item;

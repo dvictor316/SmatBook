@@ -613,11 +613,11 @@ class ProductController extends Controller
 
 public function inventory(Request $request)
 {
-    $fromDate = $request->input('from_date') ?: now()->startOfMonth()->toDateString();
-    $toDate = $request->input('to_date') ?: now()->toDateString();
+    $fromDate = $request->input('from_date');
+    $toDate = $request->input('to_date');
     $productId = $request->input('product_id');
-    $fromStart = \Carbon\Carbon::parse($fromDate)->startOfDay()->toDateTimeString();
-    $toEnd = \Carbon\Carbon::parse($toDate)->endOfDay()->toDateTimeString();
+    $fromStart = $fromDate ? \Carbon\Carbon::parse($fromDate)->startOfDay()->toDateTimeString() : null;
+    $toEnd = $toDate ? \Carbon\Carbon::parse($toDate)->endOfDay()->toDateTimeString() : null;
 
     $user = auth()->user();
     $companyId = (int) ($user?->company_id ?? 0);
@@ -652,6 +652,54 @@ public function inventory(Request $request)
     $saleDateColumn = Schema::hasColumn('sales', 'order_date')
         ? 'order_date'
         : (Schema::hasColumn('sales', 'date') ? 'date' : 'created_at');
+
+    if (!$fromDate || !$toDate) {
+        $latestActivity = null;
+
+        if (Schema::hasTable('inventory_history')) {
+            $historyLatest = DB::table('inventory_history')
+                ->when(
+                    $companyId > 0 && Schema::hasColumn('products', 'company_id'),
+                    function ($q) use ($companyId) {
+                        $q->join('products', 'inventory_history.product_id', '=', 'products.id')
+                          ->where('products.company_id', $companyId);
+                    }
+                )
+                ->when(
+                    $companyId === 0 && $user && Schema::hasColumn('inventory_history', 'user_id'),
+                    fn ($q) => $q->where('inventory_history.user_id', $user->id)
+                )
+                ->max('inventory_history.created_at');
+            $latestActivity = $historyLatest ?: $latestActivity;
+        }
+
+        if (Schema::hasTable('purchases')) {
+            $purchaseLatest = DB::table('purchases')
+                ->tap(fn ($q) => $applyTenantScope($q, 'purchases'))
+                ->max('purchases.' . $purchaseDateColumn);
+            if ($purchaseLatest && (!$latestActivity || $purchaseLatest > $latestActivity)) {
+                $latestActivity = $purchaseLatest;
+            }
+        }
+
+        if (Schema::hasTable('sales')) {
+            $saleLatest = DB::table('sales')
+                ->tap(fn ($q) => $applyTenantScope($q, 'sales'))
+                ->max('sales.' . $saleDateColumn);
+            if ($saleLatest && (!$latestActivity || $saleLatest > $latestActivity)) {
+                $latestActivity = $saleLatest;
+            }
+        }
+
+        $effectiveEnd = $latestActivity
+            ? \Carbon\Carbon::parse($latestActivity)->endOfDay()
+            : now()->endOfDay();
+
+        $toDate = $toDate ?: $effectiveEnd->toDateString();
+        $fromDate = $fromDate ?: $effectiveEnd->copy()->startOfMonth()->toDateString();
+        $fromStart = \Carbon\Carbon::parse($fromDate)->startOfDay()->toDateTimeString();
+        $toEnd = \Carbon\Carbon::parse($toDate)->endOfDay()->toDateTimeString();
+    }
 
     $hasPurchaseQty = Schema::hasColumn('purchase_items', 'qty');
     $hasPurchaseQuantity = Schema::hasColumn('purchase_items', 'quantity');
