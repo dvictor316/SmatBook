@@ -923,6 +923,28 @@ private function paymentReportRelations(): array
         }
 
         $this->applyTenantScope($query, 'payments');
+
+        if (
+            $user->company_id
+            && Schema::hasTable('sales')
+            && Schema::hasColumn('payments', 'sale_id')
+            && Schema::hasColumn('sales', 'company_id')
+            && Schema::hasTable('users')
+        ) {
+            $query->where(function ($sub) use ($user) {
+                $sub->whereHas('sale', function ($saleQuery) use ($user) {
+                    $saleQuery->where('company_id', $user->company_id);
+                });
+
+                if (Schema::hasColumn('payments', 'created_by')) {
+                    $sub->orWhereHas('creator', function ($creatorQuery) use ($user) {
+                        if (Schema::hasColumn('users', 'company_id')) {
+                            $creatorQuery->where('company_id', $user->company_id);
+                        }
+                    });
+                }
+            });
+        }
     }
 
     public function accountsReceivable(Request $request)
