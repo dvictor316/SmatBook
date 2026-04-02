@@ -19,12 +19,20 @@ class PaymentController extends Controller
         $scoped = false;
 
         if ($table === 'payments' && $companyId > 0 && !Schema::hasColumn($table, 'company_id')) {
-            if (Schema::hasTable('sales') && Schema::hasColumn('payments', 'sale_id') && Schema::hasColumn('sales', 'company_id')) {
-                $query->whereHas('sale', function ($saleQuery) use ($companyId) {
-                    $saleQuery->where('company_id', $companyId);
-                });
-                $scoped = true;
-            }
+            $query->where(function ($sub) use ($companyId) {
+                if (Schema::hasTable('sales') && Schema::hasColumn('payments', 'sale_id') && Schema::hasColumn('sales', 'company_id')) {
+                    $sub->whereHas('sale', function ($saleQuery) use ($companyId) {
+                        $saleQuery->where('company_id', $companyId);
+                    });
+                }
+
+                if (Schema::hasTable('users') && Schema::hasColumn('payments', 'created_by') && Schema::hasColumn('users', 'company_id')) {
+                    $sub->orWhereHas('creator', function ($creatorQuery) use ($companyId) {
+                        $creatorQuery->where('company_id', $companyId);
+                    });
+                }
+            });
+            $scoped = true;
         }
 
         if (!$scoped && $companyId > 0 && Schema::hasColumn($table, 'company_id')) {

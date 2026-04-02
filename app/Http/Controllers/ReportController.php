@@ -924,13 +924,20 @@ private function paymentReportRelations(): array
 
         if (
             $user->company_id
-            && Schema::hasTable('sales')
-            && Schema::hasColumn('payments', 'sale_id')
-            && Schema::hasColumn('sales', 'company_id')
             && !Schema::hasColumn('payments', 'company_id')
         ) {
-            $query->whereHas('sale', function ($saleQuery) use ($user) {
-                $saleQuery->where('company_id', $user->company_id);
+            $query->where(function ($sub) use ($user) {
+                if (Schema::hasTable('sales') && Schema::hasColumn('payments', 'sale_id') && Schema::hasColumn('sales', 'company_id')) {
+                    $sub->whereHas('sale', function ($saleQuery) use ($user) {
+                        $saleQuery->where('company_id', $user->company_id);
+                    });
+                }
+
+                if (Schema::hasTable('users') && Schema::hasColumn('payments', 'created_by') && Schema::hasColumn('users', 'company_id')) {
+                    $sub->orWhereHas('creator', function ($creatorQuery) use ($user) {
+                        $creatorQuery->where('company_id', $user->company_id);
+                    });
+                }
             });
             return;
         }
