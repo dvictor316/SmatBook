@@ -2343,15 +2343,15 @@
                                             </div>
                                             <div class="d-flex flex-wrap gap-3 small text-muted">
                                                 <div class="d-flex align-items-center">
-                                                    <span class="badge badge-dot {{ $paidTone }} {{ $paidDim }} me-2"></span>
+                                                    <span class="me-2" style="width:10px;height:10px;border-radius:999px;display:inline-block;background:#22c55e;opacity:{{ $paidSubs > 0 ? '1' : '0.25' }};"></span>
                                                     Paid Subs: {{ number_format($paidSubs) }}
                                                 </div>
                                                 <div class="d-flex align-items-center">
-                                                    <span class="badge badge-dot {{ $pendingTone }} {{ $pendingDim }} me-2"></span>
+                                                    <span class="me-2" style="width:10px;height:10px;border-radius:999px;display:inline-block;background:#f59e0b;opacity:{{ $pendingSetups > 0 ? '1' : '0.25' }};"></span>
                                                     Pending Setups: {{ number_format($pendingSetups) }}
                                                 </div>
                                                 <div class="d-flex align-items-center">
-                                                    <span class="badge badge-dot {{ $expiredTone }} {{ $expiredDim }} me-2"></span>
+                                                    <span class="me-2" style="width:10px;height:10px;border-radius:999px;display:inline-block;background:#ef4444;opacity:{{ $expiredSubs > 0 ? '1' : '0.25' }};"></span>
                                                     Expired Plans: {{ number_format($expiredSubs) }}
                                                 </div>
                                             </div>
