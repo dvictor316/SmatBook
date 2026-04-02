@@ -162,6 +162,11 @@ class PaymentController extends Controller
     {
         $subscription = Subscription::findOrFail($id);
 
+        if ($subscription->payment_status === 'paid' || strtolower((string) $subscription->status) === 'active') {
+            return redirect()->route('home')
+                ->with('info', 'Your subscription is already active.');
+        }
+
         // Security: Ensure the user owns this subscription
         if ((int)$subscription->user_id !== (int)Auth::id()) {
             abort(403, 'Unauthorized access to this node.');

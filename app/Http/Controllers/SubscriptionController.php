@@ -334,10 +334,10 @@ class SubscriptionController extends Controller
         try {
             $subscription = Subscription::with(['user', 'company'])->findOrFail($id);
 
-            // Already paid
-            if ($subscription->payment_status === 'paid') {
-                return redirect()->route('saas.payment.success')
-                    ->with('info', 'This subscription is already active.');
+            // Already paid / active -> keep users out of checkout/payment pages
+            if ($subscription->payment_status === 'paid' || strtolower((string) $subscription->status) === 'active') {
+                return redirect()->route('home')
+                    ->with('info', 'Your subscription is already active.');
             }
 
             $currentUser          = auth()->user();
@@ -449,6 +449,11 @@ class SubscriptionController extends Controller
         ]);
 
         $subscription = Subscription::findOrFail($id);
+
+        if ($subscription->payment_status === 'paid' || strtolower((string) $subscription->status) === 'active') {
+            return redirect()->route('home')
+                ->with('info', 'Your subscription is already active.');
+        }
 
         $request->validate([
             'gateway' => 'required|in:stripe,paystack,flutterwave',
@@ -1714,11 +1719,11 @@ class SubscriptionController extends Controller
 
     private function shouldSimulateGatewayInLocal(): bool
     {
-        if (!app()->environment(['local', 'testing'])) {
-            return false;
+        if (filter_var((string) env('LOCAL_GATEWAY_SIMULATION', false), FILTER_VALIDATE_BOOL)) {
+            return true;
         }
 
-        return filter_var((string) env('LOCAL_GATEWAY_SIMULATION', false), FILTER_VALIDATE_BOOL);
+        return app()->environment(['local', 'testing']);
     }
 
     public function approveTransfer(Request $request, $id)
