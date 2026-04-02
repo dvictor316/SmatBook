@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Message;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
@@ -42,6 +43,32 @@ class MessageController extends Controller
         }
 
         return view('messages.show', compact('message'));
+    }
+
+    /**
+     * Direct chat thread with a user (by user id).
+     */
+    public function thread($userId)
+    {
+        $currentUserId = Auth::id();
+        $targetUser = User::findOrFail($userId);
+
+        $messages = Message::where(function ($q) use ($currentUserId, $userId) {
+                $q->where('user_id', $currentUserId)->where('receiver_id', $userId);
+            })->orWhere(function ($q) use ($currentUserId, $userId) {
+                $q->where('user_id', $userId)->where('receiver_id', $currentUserId);
+            })
+            ->orderBy('created_at', 'asc')
+            ->get();
+
+        $messages->where('receiver_id', $currentUserId)
+            ->whereNull('read_at')
+            ->each(fn ($msg) => $msg->update(['read_at' => now()]));
+
+        return view('messages.thread', [
+            'targetUser' => $targetUser,
+            'messages' => $messages,
+        ]);
     }
 
     /**

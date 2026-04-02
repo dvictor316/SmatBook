@@ -212,7 +212,7 @@
                                     </li>
                                     @endif
                                     <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item" href="{{ route('messages.chat.show', ['id' => $user->id]) }}"><i class="fas fa-comments text-primary me-2"></i>Chat User</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('messages.thread', ['user' => $user->id]) }}"><i class="fas fa-comments text-primary me-2"></i>Chat User</a></li>
                                     <li>
                                         <button type="button" class="dropdown-item js-email-user" data-user-id="{{ $user->id }}">
                                             <i class="fas fa-envelope text-info me-2"></i>Email User

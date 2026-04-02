@@ -218,6 +218,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/{id}', [MessageController::class, 'show'])->name('messages.show');
         Route::post('/store', [MessageController::class, 'store'])->name('messages.store');
         Route::post('/send', [ChatController::class, 'send'])->name('chat.send');
+        Route::get('/thread/{user}', [MessageController::class, 'thread'])->name('messages.thread');
     });
 
     Route::get('/chat/{id}', [MessageController::class, 'show'])->name('messages.chat.show');
