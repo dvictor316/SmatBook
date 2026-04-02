@@ -128,13 +128,18 @@ class PaymentController extends Controller
             if ($sale) {
                 $newPaid = min((float) ($sale->total ?? 0), (float) ($sale->paid ?? 0) + (float) $payment->amount);
                 $newBalance = max(0, (float) ($sale->total ?? 0) - $newPaid);
-                $sale->update([
+                $saleUpdate = [
                     'paid' => $newPaid,
                     'amount_paid' => $newPaid,
                     'balance' => $newBalance,
                     'payment_status' => $newBalance <= 0 ? 'paid' : 'partial',
-                    'order_status' => $newBalance <= 0 ? 'completed' : ($sale->order_status ?? 'pending'),
-                ]);
+                ];
+
+                if (\Illuminate\Support\Facades\Schema::hasColumn('sales', 'order_status')) {
+                    $saleUpdate['order_status'] = $newBalance <= 0 ? 'completed' : ($sale->order_status ?? 'pending');
+                }
+
+                $sale->update($saleUpdate);
 
                 $payment->update([
                     'status' => $newBalance <= 0 ? 'Completed' : 'Pending',
