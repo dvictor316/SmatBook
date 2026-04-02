@@ -487,6 +487,15 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('superadmin')->name('sup
         Route::delete('/{id}', [SuperAdminDashboardController::class, 'deleteManager'])->name('delete');
     });
 
+    // Registered Users
+    Route::prefix('users')->name('users.')->group(function () {
+        Route::get('/', [SuperAdminDashboardController::class, 'listUsers'])->name('index');
+        Route::post('/{id}/suspend', [SuperAdminDashboardController::class, 'suspendUser'])->name('suspend');
+        Route::post('/{id}/activate', [SuperAdminDashboardController::class, 'activateUser'])->name('activate');
+        Route::post('/{id}/email', [SuperAdminDashboardController::class, 'emailUser'])->name('email');
+        Route::delete('/{id}', [SuperAdminDashboardController::class, 'deleteUser'])->name('delete');
+    });
+
     // Direct transfer users (users not onboarded through a deployment manager)
     Route::prefix('transfer-users')->name('transfer_users.')->group(function () {
         Route::get('/', [SuperAdminDashboardController::class, 'transferUsers'])->name('index');

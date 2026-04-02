@@ -994,6 +994,144 @@ public function pendingManagers()
         }
     }
 
+    public function listUsers(Request $request)
+    {
+        $query = User::query()->with('company');
+
+        if (Schema::hasColumn('users', 'role')) {
+            $query->whereNotIn('role', ['super_admin', 'superadmin', 'deployment_manager']);
+        }
+
+        if ($request->filled('search')) {
+            $search = '%' . trim((string) $request->search) . '%';
+            $query->where(function ($q) use ($search) {
+                $q->where('users.name', 'like', $search)
+                    ->orWhere('users.email', 'like', $search)
+                    ->orWhereHas('company', fn ($c) => $c->where('name', 'like', $search)
+                        ->orWhere('company_name', 'like', $search));
+            });
+        }
+
+        if ($request->filled('status') && Schema::hasColumn('users', 'status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('role') && Schema::hasColumn('users', 'role')) {
+            $query->where('role', $request->role);
+        }
+
+        $users = $query->orderByDesc('created_at')->paginate(20)->withQueryString();
+
+        $base = User::query();
+        if (Schema::hasColumn('users', 'role')) {
+            $base->whereNotIn('role', ['super_admin', 'superadmin', 'deployment_manager']);
+        }
+
+        $metrics = [
+            'total' => (clone $base)->count(),
+            'active' => Schema::hasColumn('users', 'status')
+                ? (clone $base)->where('status', 'active')->count()
+                : (clone $base)->where('is_verified', 1)->count(),
+            'suspended' => Schema::hasColumn('users', 'status')
+                ? (clone $base)->where('status', 'suspended')->count()
+                : 0,
+            'admins' => Schema::hasColumn('users', 'role')
+                ? (clone $base)->whereIn('role', ['admin', 'administrator'])->count()
+                : 0,
+            'users' => Schema::hasColumn('users', 'role')
+                ? (clone $base)->whereIn('role', ['user', 'staff', 'manager'])->count()
+                : (clone $base)->count(),
+        ];
+
+        return view('SuperAdmin.users.index', compact('users', 'metrics'));
+    }
+
+    public function suspendUser($id)
+    {
+        $user = User::findOrFail($id);
+        if (Schema::hasColumn('users', 'status')) {
+            $user->update(['status' => 'suspended']);
+        }
+        if (Schema::hasColumn('users', 'is_verified')) {
+            $user->update(['is_verified' => 0]);
+        }
+
+        if ($user->email) {
+            SystemEventMailer::sendMessage(
+                [$user->email, config('mail.admin_inbox')],
+                'Account Suspended',
+                'Account Suspension',
+                'Your SmartProbook account has been suspended.',
+                [
+                    'User' => $user->name ?? $user->email,
+                    'Email' => $user->email,
+                    'Time' => now()->toDateTimeString(),
+                ]
+            );
+        }
+
+        return back()->with('success', 'User suspended successfully.');
+    }
+
+    public function activateUser($id)
+    {
+        $user = User::findOrFail($id);
+        if (Schema::hasColumn('users', 'status')) {
+            $user->update(['status' => 'active']);
+        }
+        if (Schema::hasColumn('users', 'is_verified')) {
+            $user->update(['is_verified' => 1]);
+        }
+
+        return back()->with('success', 'User activated successfully.');
+    }
+
+    public function deleteUser($id)
+    {
+        $user = User::findOrFail($id);
+        $user->delete();
+
+        return back()->with('success', 'User deleted successfully.');
+    }
+
+    public function emailUser(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+        $payload = $request->validate([
+            'subject' => 'nullable|string|max:255',
+            'message' => 'nullable|string',
+        ]);
+
+        $recipient = $user->email;
+        if (!filter_var((string) $recipient, FILTER_VALIDATE_EMAIL)) {
+            return $request->expectsJson()
+                ? response()->json(['ok' => false, 'message' => 'User has no valid email.'], 422)
+                : back()->with('error', 'User has no valid email.');
+        }
+
+        $subject = $payload['subject'] ?: 'SmartProbook Update';
+        $message = $payload['message'] ?: 'An update has been sent regarding your account.';
+
+        $sent = SystemEventMailer::sendMessage(
+            $recipient,
+            $subject,
+            'User Notification',
+            $message,
+            [
+                'User' => $user->name ?? $user->email,
+                'Email' => $user->email,
+                'Sent By' => Auth::user()?->name ?? Auth::user()?->email ?? 'System',
+                'Time' => now()->format('d M Y h:i A'),
+            ]
+        );
+
+        if ($request->expectsJson()) {
+            return response()->json(['ok' => $sent, 'message' => $sent ? 'Email sent.' : 'Email failed.'], $sent ? 200 : 500);
+        }
+
+        return back()->with($sent ? 'success' : 'error', $sent ? 'Email sent.' : 'Email failed.');
+    }
+
     public function exportAnalytics(Request $request)
     {
         $type = $request->get('type', 'revenue');

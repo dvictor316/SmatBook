@@ -135,10 +135,16 @@
     document.getElementById('btn_email').addEventListener('click', function() {
         let btn = this;
         btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i>';
+        const recipient = prompt('Send report to email (leave blank to use your account email):') ?? null;
+        if (recipient === null) {
+            btn.innerHTML = '<i class="feather-mail me-1"></i> Email';
+            return;
+        }
         
         fetch("{{ route('reports.email-low-stock') }}", {
             method: 'POST',
-            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json' }
+            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ recipient: recipient.trim() || null })
         })
         .then(res => res.json())
         .then(data => alert(data.message))

@@ -216,14 +216,17 @@ $(document).ready(function() {
             "Total Sales Tax Collected: ₦{{ number_format($totalTaxCollected, 2) }}\n\n" +
             "This report covers tax collected from customer invoices.";
         const token = '{{ csrf_token() }}';
+        const recipient = prompt('Send report to email (leave blank to use your account email):') ?? null;
+        if (recipient === null) return;
         $('#emailSalesTaxBtn').prop('disabled', true).text('Sending...');
         fetch("{{ route('reports.email-report') }}", {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Accept': 'application/json',
                 'X-CSRF-TOKEN': token
             },
-            body: JSON.stringify({ subject, body })
+            body: JSON.stringify({ subject, body, recipient: recipient.trim() || null })
         })
         .then(res => res.json())
         .then(data => alert(data.message || 'Email request sent.'))

@@ -60,6 +60,9 @@
                         <li class="{{ Request::is('superadmin/managers*') ? 'active' : '' }}">
                             <a href="{{ route('super_admin.managers.list', $routeParams) }}">Deployment Managers</a>
                         </li>
+                        <li class="{{ Request::is('superadmin/users*') ? 'active' : '' }}">
+                            <a href="{{ route('super_admin.users.index', $routeParams) }}">Registered Users</a>
+                        </li>
                         <li><a href="{{ route('projects.index') }}" class="{{ Request::is('projects*') ? 'active' : '' }}">Project Management</a></li>
                         <li><a href="{{ route('projects.index') }}#profitability" class="{{ Request::is('projects*') ? 'active' : '' }}">Project Profitability</a></li>
                     </ul>

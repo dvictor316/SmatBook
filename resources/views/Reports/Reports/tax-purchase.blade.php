@@ -203,14 +203,17 @@ $(document).ready(function() {
             "Total Purchase Tax: ₦{{ number_format($totalTax, 2) }}\n\n" +
             "Please log in to the portal to view full breakdown.";
         const token = '{{ csrf_token() }}';
+        const recipient = prompt('Send report to email (leave blank to use your account email):') ?? null;
+        if (recipient === null) return;
         $('#emailTaxBtn').prop('disabled', true).text('Sending...');
         fetch("{{ route('reports.email-report') }}", {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Accept': 'application/json',
                 'X-CSRF-TOKEN': token
             },
-            body: JSON.stringify({ subject, body })
+            body: JSON.stringify({ subject, body, recipient: recipient.trim() || null })
         })
         .then(res => res.json())
         .then(data => alert(data.message || 'Email request sent.'))
