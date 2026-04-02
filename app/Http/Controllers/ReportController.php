@@ -645,9 +645,9 @@ public function purchase_report(Request $request)
     $baseQuery = Payment::with($this->paymentReportRelations());
     $this->scopePaymentsForActor($baseQuery);
 
-    $this->applyPaymentBranchFilter($baseQuery, 'payments');
-
-    $query = clone $baseQuery;
+    $branchQuery = clone $baseQuery;
+    $this->applyPaymentBranchFilter($branchQuery, 'payments');
+    $query = (clone $branchQuery)->exists() ? $branchQuery : $baseQuery;
 
     if ($request->filled('search')) {
         $search = trim((string) $request->search);

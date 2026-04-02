@@ -344,13 +344,21 @@ class PaymentController extends Controller
      */
     public function index(Request $request)
     {
-        $paymentsQuery = Payment::with(['sale', 'creator'])->latest();
-        $this->applyTenantScope($paymentsQuery, 'payments');
+        $paymentsBase = Payment::with(['sale', 'creator'])->latest();
+        $this->applyTenantScope($paymentsBase, 'payments');
+        $paymentsQuery = clone $paymentsBase;
         $this->applyBranchScope($paymentsQuery, 'payments');
+        if (!(clone $paymentsQuery)->exists()) {
+            $paymentsQuery = $paymentsBase;
+        }
 
-        $salesQuery = Sale::select('id', 'invoice_no');
-        $this->applyTenantScope($salesQuery, 'sales');
+        $salesBase = Sale::select('id', 'invoice_no');
+        $this->applyTenantScope($salesBase, 'sales');
+        $salesQuery = clone $salesBase;
         $this->applyBranchScope($salesQuery, 'sales');
+        if (!(clone $salesQuery)->exists()) {
+            $salesQuery = $salesBase;
+        }
 
         $selectedCustomer = null;
         $selectedSaleId = $request->filled('sale_id') ? (int) $request->query('sale_id') : null;
