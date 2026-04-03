@@ -70,6 +70,10 @@
     .extra-small { font-size: 10px; }
     .sticky-left { position: sticky; left: 0; background: #fff; z-index: 2; }
     .sticky-right { position: sticky; right: 0; background: #fff; z-index: 2; }
+    .sticky-right .dropdown { position: static; }
+    .sticky-right .dropdown-menu {
+        z-index: 2000;
+    }
 </style>
 
 <div class="master-hub-wrapper">
