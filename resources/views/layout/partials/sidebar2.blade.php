@@ -44,7 +44,6 @@
                             <ul>
                                 <li><a href="{{ url('customers') }}" class="{{ Request::is('customers', 'add-customer', 'edit-customer', 'active-customers', 'deactive-customers') ? 'active' : '' }}">Customers</a></li>
                                 <li><a href="{{ url('customer-details') }}" class="{{ Request::is('customer-details') ? 'active' : '' }}">Customer Details</a></li>
-                                <li><a href="{{ url('vendors') }}" class="{{ Request::is('vendors', 'ledger', 'customers-ledger') ? 'active' : '' }}">Vendors</a></li>
                                 <li><a href="{{ url('suppliers') }}" class="{{ Request::is('suppliers*') ? 'active' : '' }}">Suppliers</a></li>
                             </ul>
                         </li>
@@ -260,7 +259,7 @@
                         <a href="{{ url('customer-details') }}" class="{{ Request::is('customer-details') ? 'active' : '' }}"><i class="fe fe-file"></i> <span>Customer Details</span></a>
                     </li>
                     <li>
-                        <a href="{{ url('vendors') }}" class="{{ Request::is('vendors', 'ledger', 'customers-ledger') ? 'active' : '' }}"><i class="fe fe-user"></i> <span>Vendors</span></a>
+                        <a href="{{ url('suppliers') }}" class="{{ Request::is('suppliers*') ? 'active' : '' }}"><i class="fe fe-user"></i> <span>Suppliers</span></a>
                     </li>
                     
                     {{-- Inventory Section --}}
