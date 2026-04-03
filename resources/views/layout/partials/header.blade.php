@@ -1344,11 +1344,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 openMobileSidebar();
                 return;
             }
-            document.body.classList.toggle('sidebar-collapsed');
-            localStorage.setItem(
-                'sidebarCollapsed',
-                document.body.classList.contains('sidebar-collapsed')
-            );
+            const isCollapsed = document.body.classList.contains('sidebar-collapsed');
+            if (isCollapsed) {
+                document.body.classList.remove('sidebar-collapsed', 'mini-sidebar', 'sidebar-icon-only');
+                localStorage.setItem('sidebarCollapsed', 'false');
+            } else {
+                document.body.classList.add('sidebar-collapsed');
+                document.body.classList.remove('mini-sidebar', 'sidebar-icon-only');
+                localStorage.setItem('sidebarCollapsed', 'true');
+            }
         });
 
         // Restore desktop collapsed state on load
@@ -1365,6 +1369,9 @@ document.addEventListener('DOMContentLoaded', function () {
         } else {
             if (localStorage.getItem('sidebarCollapsed') === 'true') {
                 document.body.classList.add('sidebar-collapsed');
+                document.body.classList.remove('mini-sidebar', 'sidebar-icon-only');
+            } else {
+                document.body.classList.remove('sidebar-collapsed', 'mini-sidebar', 'sidebar-icon-only');
             }
         }
     }
