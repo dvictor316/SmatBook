@@ -14,10 +14,10 @@ return new class extends Migration
 
         Schema::table('customers', function (Blueprint $table) {
             if (!Schema::hasColumn('customers', 'branch_id')) {
-                $table->string('branch_id')->nullable()->after('company_id');
+                $table->string('branch_id')->nullable();
             }
             if (!Schema::hasColumn('customers', 'branch_name')) {
-                $table->string('branch_name')->nullable()->after('branch_id');
+                $table->string('branch_name')->nullable();
             }
         });
     }
