@@ -13,11 +13,11 @@
 
     /* Page Container with Bubble Background */
     .pos-content-area {
-        margin-left: var(--sb-sidebar-w, 270px); 
-        width: calc(100% - var(--sb-sidebar-w, 270px));
-        max-width: calc(100% - var(--sb-sidebar-w, 270px));
+        margin-left: 0;
+        width: 100%;
+        max-width: 100%;
         padding: 40px;
-        background-color: var(--crystal-blue); 
+        background-color: var(--crystal-blue);
         min-height: 100vh;
         position: relative;
         overflow-x: clip;
@@ -33,9 +33,9 @@
 
     body.mini-sidebar .pos-content-area,
     body.sidebar-icon-only .pos-content-area {
-        margin-left: var(--sb-sidebar-collapsed, 80px);
-        width: calc(100% - var(--sb-sidebar-collapsed, 80px));
-        max-width: calc(100% - var(--sb-sidebar-collapsed, 80px));
+        margin-left: 0;
+        width: 100%;
+        max-width: 100%;
     }
 
     @media (max-width: 991.98px) {
