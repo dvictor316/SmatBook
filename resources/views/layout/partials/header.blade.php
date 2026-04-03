@@ -1358,10 +1358,11 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function normalizeSidebarState() {
+        // Always clear any stale mobile-open state first
+        closeMobileSidebar();
         if (window.innerWidth <= 991) {
             document.body.classList.remove('sidebar-collapsed', 'mini-sidebar', 'sidebar-icon-only');
         } else {
-            closeMobileSidebar();
             if (localStorage.getItem('sidebarCollapsed') === 'true') {
                 document.body.classList.add('sidebar-collapsed');
             }
@@ -1373,6 +1374,15 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     normalizeSidebarState();
+
+    // Close mobile sidebar if user clicks anywhere outside it (e.g., branch dropdown)
+    document.addEventListener('click', function (e) {
+        const sb = getSidebar();
+        if (!sb || !sb.classList.contains('mobile-open')) return;
+        if (mobileBtn && (e.target === mobileBtn || mobileBtn.contains(e.target))) return;
+        if (sb.contains(e.target)) return;
+        closeMobileSidebar();
+    });
 
     /* ════════════════════════════════════════════
        SEARCH
