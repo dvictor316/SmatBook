@@ -490,11 +490,11 @@ class ProductController extends Controller
             $rules = [
                 'name'             => 'required|string|max:191',
                 'sku'              => 'nullable|string|max:191|unique:products,sku',
-                'price'            => 'required|numeric|min:0', 
+                'price'            => 'nullable|numeric|min:0',
                 'retail_price'     => 'nullable|numeric|min:0',
                 'wholesale_price'  => 'nullable|numeric|min:0',
                 'special_price'    => 'nullable|numeric|min:0',
-                'purchase_price'   => 'required|numeric|min:0', 
+                'purchase_price'   => 'nullable|numeric|min:0',
                 'stock'            => 'nullable|integer|min:0', 
                 'stock_cartons'    => 'nullable|numeric|min:0',
                 'stock_rolls'      => 'nullable|numeric|min:0',
@@ -509,7 +509,16 @@ class ProductController extends Controller
                 'barcode'          => 'nullable|string|max:191',
             ];
 
-            $validated = Validator::make($request->except('image'), $rules)->validate();
+            $validator = Validator::make($request->except('image'), $rules);
+            $validator->after(function ($v) use ($request) {
+                $price = trim((string) $request->input('price', ''));
+                $purchase = trim((string) $request->input('purchase_price', ''));
+                if ($price === '' && $purchase === '') {
+                    $v->errors()->add('price', 'Enter a selling price or a purchase price before saving this product.');
+                    $v->errors()->add('purchase_price', 'Enter a selling price or a purchase price before saving this product.');
+                }
+            });
+            $validated = $validator->validate();
 
             $uploadedImage = $request->file('image');
 
