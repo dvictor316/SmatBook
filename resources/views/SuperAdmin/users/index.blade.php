@@ -47,7 +47,13 @@
         background: #fff;
         border-radius: 12px;
         border: 1px solid #e2e8f0;
-        overflow: hidden;
+        overflow: visible;
+    }
+    .hub-table-container .table-responsive {
+        overflow: visible !important;
+    }
+    .hub-table-container .dropdown-menu {
+        z-index: 1055;
     }
     .pill {
         padding: 5px 10px;
