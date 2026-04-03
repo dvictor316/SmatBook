@@ -3,9 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Supplier;
+use App\Models\Purchase;
+use App\Models\PurchaseItem;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
@@ -97,6 +100,70 @@ class SupplierController extends Controller
     {
         $supplier = $this->applyTenantScope(Supplier::query())->findOrFail($id);
         return view('Customers.suppliers-edit', compact('supplier'));
+    }
+
+    public function show($id)
+    {
+        $supplier = $this->applyTenantScope(Supplier::query())->findOrFail($id);
+
+        $purchaseDateColumn = Schema::hasColumn('purchases', 'purchase_date')
+            ? 'purchase_date'
+            : (Schema::hasColumn('purchases', 'date') ? 'date' : 'created_at');
+        $totalColumn = Schema::hasColumn('purchases', 'total_amount')
+            ? 'total_amount'
+            : (Schema::hasColumn('purchases', 'total') ? 'total' : 'grand_total');
+        $receivedColumn = Schema::hasColumn('purchases', 'received_status')
+            ? 'received_status'
+            : (Schema::hasColumn('purchases', 'status') ? 'status' : null);
+
+        $purchases = Purchase::query()
+            ->where('supplier_id', $supplier->id)
+            ->orderByDesc($purchaseDateColumn)
+            ->limit(25)
+            ->get();
+
+        $summary = [
+            'total_purchases' => 0,
+            'total_spend' => 0,
+            'received_items' => 0,
+            'pending_items' => 0,
+        ];
+
+        if (Schema::hasTable('purchases')) {
+            $summary['total_purchases'] = Purchase::where('supplier_id', $supplier->id)->count();
+            if ($totalColumn) {
+                $summary['total_spend'] = (float) (Purchase::where('supplier_id', $supplier->id)->sum($totalColumn) ?? 0);
+            }
+        }
+
+        if (Schema::hasTable('purchase_items')) {
+            $purchaseIds = Purchase::where('supplier_id', $supplier->id)->pluck('id');
+            $qtyColumn = Schema::hasColumn('purchase_items', 'qty')
+                ? 'qty'
+                : (Schema::hasColumn('purchase_items', 'quantity') ? 'quantity' : null);
+            $receivedQtyColumn = Schema::hasColumn('purchase_items', 'received_qty')
+                ? 'received_qty'
+                : (Schema::hasColumn('purchase_items', 'received_quantity') ? 'received_quantity' : null);
+
+            if ($qtyColumn) {
+                $summary['pending_items'] = (float) (PurchaseItem::whereIn('purchase_id', $purchaseIds)->sum($qtyColumn) ?? 0);
+            }
+            if ($receivedQtyColumn) {
+                $summary['received_items'] = (float) (PurchaseItem::whereIn('purchase_id', $purchaseIds)->sum($receivedQtyColumn) ?? 0);
+                if ($summary['pending_items'] > 0) {
+                    $summary['pending_items'] = max(0, $summary['pending_items'] - $summary['received_items']);
+                }
+            }
+        }
+
+        return view('Customers.suppliers-show', compact(
+            'supplier',
+            'purchases',
+            'summary',
+            'purchaseDateColumn',
+            'totalColumn',
+            'receivedColumn'
+        ));
     }
 
     public function update(Request $request, $id): RedirectResponse

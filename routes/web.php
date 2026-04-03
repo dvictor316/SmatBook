@@ -611,6 +611,7 @@ Route::middleware(['auth', 'subscription.active'])->group(function () {
         Route::get('/import/template', 'downloadImportTemplate')->name('import.template');
         Route::post('/import', 'import')->name('import');
         Route::post('/', 'store')->name('store');
+        Route::get('/{id}', 'show')->name('show');
         Route::get('/{id}/edit', 'edit')->name('edit');
         Route::put('/{id}', 'update')->name('update');
         Route::delete('/{id}', 'destroy')->name('destroy');

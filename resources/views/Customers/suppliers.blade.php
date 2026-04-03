@@ -57,6 +57,9 @@
                                                 <td>{{ $supplier->phone ?? '-' }}</td>
                                                 <td>{{ optional($supplier->created_at)->format('M d, Y') ?? 'N/A' }}</td>
                                                 <td class="d-flex align-items-center">
+                                                    <a href="{{ route('suppliers.show', $supplier->id) }}" class="btn btn-outline-primary me-2">
+                                                        <i class="far fa-chart-bar me-1"></i> History
+                                                    </a>
                                                     <a href="{{ route('suppliers.edit', $supplier->id) }}" class="btn btn-greys me-2">
                                                         <i class="far fa-edit me-1"></i> Edit
                                                     </a>

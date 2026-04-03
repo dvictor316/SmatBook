@@ -202,6 +202,13 @@
         </a>
     </li>
     <li>
+        <a href="javascript:void(0);" onclick="showUpgradeModal('Pro', 'Advanced procurement & supplier analytics')">
+            <i class="fe fe-info"></i>
+            <span>Why Upgrade?</span>
+            <span class="badge bg-light text-dark">Info</span>
+        </a>
+    </li>
+    <li>
         <a href="{{ Route::has('membership-plans') ? route('membership-plans', ['plan' => 'enterprise']) : url('/membership-plans?plan=enterprise') }}">
             <i class="fe fe-lock"></i>
             <span>Cash Flow Reports</span>
