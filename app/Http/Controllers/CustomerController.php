@@ -62,6 +62,7 @@ class CustomerController extends Controller
             'email'         => 'nullable|email|max:191|unique:customers,email',
             'phone'         => 'nullable|string|max:191',
             'balance'       => 'nullable|numeric|min:0',
+            'opening_balance_date' => 'nullable|date',
             'credit_limit'  => 'nullable|numeric|min:0',
             'image'         => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
@@ -69,6 +70,7 @@ class CustomerController extends Controller
         // Capture all possible form fields, then keep only real DB columns.
         $data = $request->only([
             'customer_name', 'email', 'phone', 'currency', 'website', 'notes', 'credit_limit',
+            'opening_balance_date',
             'billing_name', 'billing_address_line1', 'billing_address_line2', 
             'billing_country', 'billing_city', 'billing_state', 'billing_pincode',
             'shipping_name', 'shipping_address_line1', 'shipping_address_line2', 
@@ -78,6 +80,9 @@ class CustomerController extends Controller
 
         $data['status'] = 'active'; 
         $data['balance'] = (float) $request->input('balance', 0.00);
+        if ($request->filled('opening_balance_date')) {
+            $data['opening_balance_date'] = $request->input('opening_balance_date');
+        }
         if ($request->filled('credit_limit')) {
             $data['credit_limit'] = (float) $request->input('credit_limit', 0.00);
         }
@@ -86,6 +91,9 @@ class CustomerController extends Controller
             $data['image'] = $request->file('image')->store('profiles', 'public');
         }
 
+        if ($request->filled('opening_balance_date')) {
+            $data['opening_balance_date'] = $request->input('opening_balance_date');
+        }
         $data = $this->sanitizeForCustomerColumns($data);
 
         if (Schema::hasColumn('customers', 'company_id')) {
@@ -162,12 +170,14 @@ class CustomerController extends Controller
             'image'         => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'status'        => 'required|in:active,deactive',
             'balance'       => 'nullable|numeric|min:0',
+            'opening_balance_date' => 'nullable|date',
             'credit_limit'  => 'nullable|numeric|min:0',
         ]);
 
         // Capture all possible form fields for update, then keep only real DB columns.
         $data = $request->only([
             'customer_name', 'email', 'phone', 'status', 'currency', 'website', 'notes', 'balance', 'credit_limit',
+            'opening_balance_date',
             'billing_name', 'billing_address_line1', 'billing_address_line2', 
             'billing_country', 'billing_city', 'billing_state', 'billing_pincode',
             'shipping_name', 'shipping_address_line1', 'shipping_address_line2', 

@@ -90,6 +90,12 @@
                             </div>
                             <div class="col-lg-4 col-md-6 col-sm-12">
                                 <div class="input-block mb-3">
+                                    <label>Opening Balance Date</label>
+                                    <input type="date" name="opening_balance_date" class="form-control" value="{{ old('opening_balance_date', $customer->opening_balance_date ?? '') }}">
+                                </div>
+                            </div>
+                            <div class="col-lg-4 col-md-6 col-sm-12">
+                                <div class="input-block mb-3">
                                     <label>Credit Limit</label>
                                     <input type="number" step="0.01" min="0" name="credit_limit" class="form-control" value="{{ old('credit_limit', $customer->credit_limit ?? 0) }}">
                                 </div>

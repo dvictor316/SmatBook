@@ -77,6 +77,7 @@
                                             <th>Phone</th>
                                             <th>Address</th>
                                             <th>Balance</th>
+                                            <th>Balance Date</th>
                                             <th>Created</th>
                                             <th>Status</th>
                                             <th class="no-sort text-end">Actions</th>
@@ -110,6 +111,7 @@
                                                 <td>{{ $customer->phone ?? 'N/A' }}</td>
                                                 <td>{{ \Illuminate\Support\Str::limit($customer->address ?? $customer->billing_address_line1, 30) ?? 'N/A' }}</td>
                                                 <td><strong>₦{{ number_format($customer->computed_balance ?? $customer->balance, 2) }}</strong></td>
+                                                <td>{{ $customer->opening_balance_date ?? '-' }}</td>
                                                 <td>{{ $customer->created_at ? $customer->created_at->format('d M Y') : 'N/A' }}</td>
                                                 <td>
                                                     @php
