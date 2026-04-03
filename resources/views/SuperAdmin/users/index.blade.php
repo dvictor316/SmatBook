@@ -18,6 +18,8 @@
         background-color: #f8fafc;
         min-height: 100vh;
         transition: all 0.3s ease;
+        position: relative;
+        z-index: 1002;
     }
 
     body.mini-sidebar .master-hub-wrapper { margin-left: 80px; }
@@ -53,7 +55,7 @@
         overflow: visible !important;
     }
     .hub-table-container .dropdown-menu {
-        z-index: 1055;
+        z-index: 2005;
     }
     .pill {
         padding: 5px 10px;
