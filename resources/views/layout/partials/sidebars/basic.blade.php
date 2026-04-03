@@ -60,6 +60,48 @@
     </li>
     @endif
 
+    {{-- Vendors --}}
+    @if(Route::has('vendors.index'))
+    <li class="submenu {{ Request::is('vendors*') ? 'active subdrop' : '' }}">
+        <a href="#"><i class="fe fe-truck"></i><span>Vendors</span><span class="menu-arrow"></span></a>
+        <ul>
+            <li><a href="{{ route('vendors.index') }}">All Vendors</a></li>
+            @if(Route::has('vendors.create'))
+                <li><a href="{{ route('vendors.create') }}">Add Vendor</a></li>
+            @endif
+        </ul>
+    </li>
+    @endif
+
+    {{-- Suppliers --}}
+    @if(Route::has('suppliers.index'))
+    <li class="submenu {{ Request::is('suppliers*') ? 'active subdrop' : '' }}">
+        <a href="#"><i class="fe fe-briefcase"></i><span>Suppliers</span><span class="menu-arrow"></span></a>
+        <ul>
+            <li><a href="{{ route('suppliers.index') }}">All Suppliers</a></li>
+            @if(Route::has('suppliers.create'))
+                <li><a href="{{ route('suppliers.create') }}">Add Supplier</a></li>
+            @endif
+        </ul>
+    </li>
+    @endif
+
+    {{-- Purchases (Stock In) --}}
+    @if(Route::has('purchases.index'))
+    <li class="submenu {{ Request::is('purchases*', 'purchase-*', 'add-purchases*') ? 'active subdrop' : '' }}">
+        <a href="#"><i class="fe fe-shopping-bag"></i><span>Purchases</span><span class="menu-arrow"></span></a>
+        <ul>
+            <li><a href="{{ route('purchases.index') }}">All Purchases</a></li>
+            @if(Route::has('purchases.create'))
+                <li><a href="{{ route('purchases.create') }}">Add Purchase</a></li>
+            @endif
+            @if(Route::has('purchase-transaction'))
+                <li><a href="{{ route('purchase-transaction') }}">Purchase Ledger</a></li>
+            @endif
+        </ul>
+    </li>
+    @endif
+
     <li class="menu-title"><span>Sales</span></li>
 
     {{-- Invoices --}}
@@ -138,20 +180,6 @@
     {{-- LOCKED FEATURES (Upgrade to Pro/Enterprise) --}}
     <li class="menu-title"><span>Upgrade for More</span></li>
     
-    <li>
-        <a href="{{ Route::has('membership-plans') ? route('membership-plans', ['plan' => 'pro']) : url('/membership-plans?plan=pro') }}">
-            <i class="fe fe-lock"></i>
-            <span>Vendors</span>
-            <span class="badge bg-info">Pro</span>
-        </a>
-    </li>
-    <li>
-        <a href="{{ Route::has('membership-plans') ? route('membership-plans', ['plan' => 'pro']) : url('/membership-plans?plan=pro') }}">
-            <i class="fe fe-lock"></i>
-            <span>Suppliers</span>
-            <span class="badge bg-info">Pro</span>
-        </a>
-    </li>
     <li>
         <a href="{{ Route::has('membership-plans') ? route('membership-plans', ['plan' => 'pro']) : url('/membership-plans?plan=pro') }}">
             <i class="fe fe-lock"></i>
