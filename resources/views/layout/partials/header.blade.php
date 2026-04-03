@@ -1340,6 +1340,10 @@ document.addEventListener('DOMContentLoaded', function () {
     if (desktopBtn) {
         desktopBtn.addEventListener('click', function (e) {
             e.preventDefault();
+            e.stopPropagation();
+            if (typeof e.stopImmediatePropagation === 'function') {
+                e.stopImmediatePropagation();
+            }
             if (window.innerWidth <= 991) {
                 openMobileSidebar();
                 return;
@@ -1347,10 +1351,12 @@ document.addEventListener('DOMContentLoaded', function () {
             const isCollapsed = document.body.classList.contains('sidebar-collapsed');
             if (isCollapsed) {
                 document.body.classList.remove('sidebar-collapsed', 'mini-sidebar', 'sidebar-icon-only');
+                document.body.classList.remove('expand-menu');
                 localStorage.setItem('sidebarCollapsed', 'false');
             } else {
                 document.body.classList.add('sidebar-collapsed');
                 document.body.classList.remove('mini-sidebar', 'sidebar-icon-only');
+                document.body.classList.remove('expand-menu');
                 localStorage.setItem('sidebarCollapsed', 'true');
             }
         });
@@ -1390,6 +1396,11 @@ document.addEventListener('DOMContentLoaded', function () {
         if (sb.contains(e.target)) return;
         closeMobileSidebar();
     });
+
+    // Disable legacy jQuery mini-sidebar toggle to avoid stuck state.
+    if (window.jQuery) {
+        window.jQuery(document).off('click', '#toggle_btn');
+    }
 
     /* ════════════════════════════════════════════
        SEARCH
