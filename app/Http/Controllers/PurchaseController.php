@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Purchase;
 use App\Models\Vendor;
+use App\Models\Supplier;
 use App\Models\Product;
 use App\Models\TaxCode;
 use App\Models\Bank;
@@ -67,7 +68,7 @@ private function applyBranchScope($query, string $table = 'purchases')
         return $query;
     }
 
-public function index()
+    public function index()
     {
         $activeBranch = $this->getActiveBranchContext();
         // 1. Fetch Purchases (using 'vendor' or 'supplier' based on your model relation)
@@ -79,6 +80,11 @@ public function index()
         // 2. Fetch Products (CRITICAL: This fixes the "Product data not loaded" error)
         $productQuery = Product::with('category')->latest();
         $this->applyTenantScope($productQuery, 'products');
+        if (!empty($activeBranch['id']) && Schema::hasTable('product_branch_stocks')) {
+            $productQuery->whereHas('branchStocks', fn ($q) => $q->where('branch_id', $activeBranch['id']));
+        } else {
+            $this->applyBranchScope($productQuery, 'products');
+        }
         $products = $productQuery->paginate(10);
             
         // 3. Pass BOTH variables to the view
@@ -95,6 +101,11 @@ public function index()
 
         $productQuery = Product::with('category');
         $this->applyTenantScope($productQuery, 'products');
+        if (!empty($activeBranch['id']) && Schema::hasTable('product_branch_stocks')) {
+            $productQuery->whereHas('branchStocks', fn ($q) => $q->where('branch_id', $activeBranch['id']));
+        } else {
+            $this->applyBranchScope($productQuery, 'products');
+        }
         $products = $productQuery
             ->when($search, function ($query) use ($search) {
                 return $query->where('name', 'like', "%{$search}%")
@@ -125,9 +136,22 @@ public function index()
         $activeBranch = $this->getActiveBranchContext();
         $vendorsQuery = Vendor::orderBy('name');
         $this->applyTenantScope($vendorsQuery, 'vendors');
+        $this->applyBranchScope($vendorsQuery, 'vendors');
         $vendors = $vendorsQuery->get();
+        $suppliers = collect();
+        if (Schema::hasTable('suppliers')) {
+            $suppliersQuery = Supplier::orderBy('name');
+            $this->applyTenantScope($suppliersQuery, 'suppliers');
+            $this->applyBranchScope($suppliersQuery, 'suppliers');
+            $suppliers = $suppliersQuery->get();
+        }
         $productsQuery = Product::orderBy('name');
         $this->applyTenantScope($productsQuery, 'products');
+        if (!empty($activeBranch['id']) && Schema::hasTable('product_branch_stocks')) {
+            $productsQuery->whereHas('branchStocks', fn ($q) => $q->where('branch_id', $activeBranch['id']));
+        } else {
+            $this->applyBranchScope($productsQuery, 'products');
+        }
         $products = $productsQuery->get();
         $taxOptions = collect();
         if (class_exists(TaxCode::class) && Schema::hasTable('tax_codes')) {
@@ -138,12 +162,13 @@ public function index()
         }
         $banksQuery = Bank::orderBy('name');
         $this->applyTenantScope($banksQuery, 'banks');
+        $this->applyBranchScope($banksQuery, 'banks');
         $banks = $banksQuery->get();
         
         // Generate a unique purchase ID
         $purchaseId = 'PUR-' . date('Ymd') . '-' . strtoupper(Str::random(6));
         
-        return view('Purchases.add-purchases', compact('vendors', 'products', 'taxOptions', 'banks', 'purchaseId', 'activeBranch'));
+        return view('Purchases.add-purchases', compact('vendors', 'suppliers', 'products', 'taxOptions', 'banks', 'purchaseId', 'activeBranch'));
     }
 
     /**
@@ -157,7 +182,7 @@ public function index()
             'purchase_id' => 'nullable|string|max:50',
             'purchase_no' => 'nullable|string|max:50',
             'vendor_id' => 'nullable|exists:vendors,id',
-            'supplier_id' => 'nullable|integer',
+            'supplier_id' => 'nullable|exists:suppliers,id',
             'purchase_date' => 'nullable|date',
             'due_date' => 'nullable|date|after_or_equal:purchase_date',
             'reference_no' => 'nullable|string|max:50',
@@ -179,6 +204,12 @@ public function index()
             'signature_name' => 'nullable|string|max:100',
             'signature_image' => 'nullable|image|max:2048',
         ]);
+
+        if (empty($validated['supplier_id']) && empty($validated['vendor_id'])) {
+            return back()->withErrors([
+                'supplier_id' => 'Please select a supplier before saving this purchase.',
+            ])->withInput();
+        }
 
         DB::beginTransaction();
         

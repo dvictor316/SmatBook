@@ -15,11 +15,20 @@ class CustomerController extends Controller
     {
         $companyId = (int) (auth()->user()?->company_id ?? 0);
         $userId = (int) (auth()->id() ?? 0);
+        $activeBranch = $this->getActiveBranchContext();
+        $branchId = trim((string) ($activeBranch['id'] ?? ''));
+        $branchName = trim((string) ($activeBranch['name'] ?? ''));
 
         if ($companyId > 0 && Schema::hasColumn('customers', 'company_id')) {
             $query->where('company_id', $companyId);
         } elseif ($userId > 0 && Schema::hasColumn('customers', 'user_id')) {
             $query->where('user_id', $userId);
+        }
+
+        if ($branchId !== '' && Schema::hasColumn('customers', 'branch_id')) {
+            $query->where('branch_id', $branchId);
+        } elseif ($branchName !== '' && Schema::hasColumn('customers', 'branch_name')) {
+            $query->where('branch_name', $branchName);
         }
 
         return $query;

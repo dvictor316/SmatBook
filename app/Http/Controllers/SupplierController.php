@@ -18,11 +18,20 @@ class SupplierController extends Controller
     {
         $companyId = (int) (auth()->user()?->company_id ?? 0);
         $userId = (int) (auth()->id() ?? 0);
+        $activeBranch = $this->getActiveBranchContext();
+        $branchId = trim((string) ($activeBranch['id'] ?? ''));
+        $branchName = trim((string) ($activeBranch['name'] ?? ''));
 
         if ($companyId > 0 && Schema::hasColumn($table, 'company_id')) {
             $query->where("{$table}.company_id", $companyId);
         } elseif ($userId > 0 && Schema::hasColumn($table, 'user_id')) {
             $query->where("{$table}.user_id", $userId);
+        }
+
+        if ($branchId !== '' && Schema::hasColumn($table, 'branch_id')) {
+            $query->where("{$table}.branch_id", $branchId);
+        } elseif ($branchName !== '' && Schema::hasColumn($table, 'branch_name')) {
+            $query->where("{$table}.branch_name", $branchName);
         }
 
         return $query;

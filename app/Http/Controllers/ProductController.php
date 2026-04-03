@@ -71,6 +71,27 @@ class ProductController extends Controller
         return $query;
     }
 
+    private function applyBranchScope($query, string $table, ?array $activeBranch = null)
+    {
+        $activeBranch = $activeBranch ?: $this->getActiveBranchContext();
+        $branchId = trim((string) ($activeBranch['id'] ?? ''));
+        $branchName = trim((string) ($activeBranch['name'] ?? ''));
+
+        if ($branchId === '' && $branchName === '') {
+            return $query;
+        }
+
+        if ($branchId !== '' && Schema::hasColumn($table, 'branch_id')) {
+            return $query->where("{$table}.branch_id", $branchId);
+        }
+
+        if ($branchName !== '' && Schema::hasColumn($table, 'branch_name')) {
+            return $query->where("{$table}.branch_name", $branchName);
+        }
+
+        return $query;
+    }
+
     private function clearDashboardMetricsCache(?string $branchId = null): void
     {
         $companyId = $this->tenantCompanyId();
@@ -403,6 +424,16 @@ class ProductController extends Controller
             $query->with('category');
         }
 
+        if (!empty($activeBranch['id']) && Schema::hasTable('product_branch_stocks')) {
+            $query->whereHas('branchStocks', function ($branchQuery) use ($activeBranch) {
+                $branchQuery->where('branch_id', $activeBranch['id']);
+            });
+        } elseif (!empty($activeBranch['name']) && Schema::hasColumn('products', 'branch_name')) {
+            $query->where('products.branch_name', $activeBranch['name']);
+        } elseif (!empty($activeBranch['id']) && Schema::hasColumn('products', 'branch_id')) {
+            $query->where('products.branch_id', $activeBranch['id']);
+        }
+
         if (Schema::hasTable('product_branch_stocks') && !empty($activeBranch['id'])) {
             $query->with(['branchStocks' => function ($branchQuery) use ($activeBranch) {
                 $branchQuery->where('branch_id', $activeBranch['id']);
@@ -649,10 +680,20 @@ public function inventory(Request $request)
         return $query;
     };
 
-    $products = Product::query()
+    $activeBranch = $this->getActiveBranchContext();
+    $productsQuery = Product::query()
         ->orderBy('name', 'asc')
-        ->tap(fn ($q) => $applyTenantScope($q, 'products'))
-        ->get(['id', 'name']);
+        ->tap(fn ($q) => $applyTenantScope($q, 'products'));
+
+    if (!empty($activeBranch['id']) && Schema::hasTable('product_branch_stocks')) {
+        $productsQuery->whereHas('branchStocks', fn ($q) => $q->where('branch_id', $activeBranch['id']));
+    } elseif (!empty($activeBranch['id']) && Schema::hasColumn('products', 'branch_id')) {
+        $productsQuery->where('products.branch_id', $activeBranch['id']);
+    } elseif (!empty($activeBranch['name']) && Schema::hasColumn('products', 'branch_name')) {
+        $productsQuery->where('products.branch_name', $activeBranch['name']);
+    }
+
+    $products = $productsQuery->get(['id', 'name']);
 
     $purchaseDateColumn = Schema::hasColumn('purchases', 'purchase_date')
         ? 'purchase_date'
@@ -674,6 +715,7 @@ public function inventory(Request $request)
                           ->where('products.company_id', $companyId);
                     }
                 )
+                ->tap(fn ($q) => $this->applyBranchScope($q, 'inventory_history', $activeBranch))
                 ->when(
                     $companyId === 0 && $user && Schema::hasColumn('inventory_history', 'user_id'),
                     fn ($q) => $q->where('inventory_history.user_id', $user->id)
@@ -685,6 +727,7 @@ public function inventory(Request $request)
         if (Schema::hasTable('purchases')) {
             $purchaseLatest = DB::table('purchases')
                 ->tap(fn ($q) => $applyTenantScope($q, 'purchases'))
+                ->tap(fn ($q) => $this->applyBranchScope($q, 'purchases', $activeBranch))
                 ->max('purchases.' . $purchaseDateColumn);
             if ($purchaseLatest && (!$latestActivity || $purchaseLatest > $latestActivity)) {
                 $latestActivity = $purchaseLatest;
@@ -694,6 +737,7 @@ public function inventory(Request $request)
         if (Schema::hasTable('sales')) {
             $saleLatest = DB::table('sales')
                 ->tap(fn ($q) => $applyTenantScope($q, 'sales'))
+                ->tap(fn ($q) => $this->applyBranchScope($q, 'sales', $activeBranch))
                 ->max('sales.' . $saleDateColumn);
             if ($saleLatest && (!$latestActivity || $saleLatest > $latestActivity)) {
                 $latestActivity = $saleLatest;
@@ -766,6 +810,7 @@ public function inventory(Request $request)
         ->whereBetween('purchases.' . $purchaseDateColumn, [$fromStart, $toEnd])
         ->when(!empty($productId), fn ($q) => $q->where('purchase_items.product_id', $productId))
         ->tap(fn ($q) => $applyTenantScope($q, 'purchases'))
+        ->tap(fn ($q) => $this->applyBranchScope($q, 'purchases', $activeBranch))
         ->groupBy('log_date');
 
     if (!(clone $stockIn)->exists()) {
@@ -786,6 +831,7 @@ public function inventory(Request $request)
                     $companyId > 0 && Schema::hasColumn('products', 'company_id'),
                     fn ($q) => $q->where('products.company_id', $companyId)
                 )
+                ->tap(fn ($q) => $this->applyBranchScope($q, 'inventory_history', $activeBranch))
                 ->groupBy('log_date');
 
             $stockIn = DB::query()->fromSub($historyStockIn, 'stk_in');
@@ -800,6 +846,7 @@ public function inventory(Request $request)
                 ])
                 ->whereBetween('purchases.' . $purchaseDateColumn, [$fromStart, $toEnd])
                 ->tap(fn ($q) => $applyTenantScope($q, 'purchases'))
+                ->tap(fn ($q) => $this->applyBranchScope($q, 'purchases', $activeBranch))
                 ->groupBy('log_date');
 
             $stockIn = DB::query()->fromSub($headerStockIn, 'stk_in');
@@ -818,6 +865,7 @@ public function inventory(Request $request)
         ->whereBetween('sales.' . $saleDateColumn, [$fromStart, $toEnd])
         ->when(!empty($productId), fn ($q) => $q->where('sale_items.product_id', $productId))
         ->tap(fn ($q) => $applyTenantScope($q, 'sales'))
+        ->tap(fn ($q) => $this->applyBranchScope($q, 'sales', $activeBranch))
         ->groupBy('log_date');
 
     if (!(clone $stockOut)->exists()) {
@@ -838,6 +886,7 @@ public function inventory(Request $request)
                     $companyId > 0 && Schema::hasColumn('products', 'company_id'),
                     fn ($q) => $q->where('products.company_id', $companyId)
                 )
+                ->tap(fn ($q) => $this->applyBranchScope($q, 'inventory_history', $activeBranch))
                 ->groupBy('log_date');
 
             $stockOut = DB::query()->fromSub($historyStockOut, 'stk_out');
@@ -852,6 +901,7 @@ public function inventory(Request $request)
                 ])
                 ->whereBetween('sales.' . $saleDateColumn, [$fromStart, $toEnd])
                 ->tap(fn ($q) => $applyTenantScope($q, 'sales'))
+                ->tap(fn ($q) => $this->applyBranchScope($q, 'sales', $activeBranch))
                 ->groupBy('log_date');
 
             $stockOut = DB::query()->fromSub($headerStockOut, 'stk_out');
@@ -1185,6 +1235,8 @@ public function inventory(Request $request)
             ->join('products', 'inventory_history.product_id', '=', 'products.id')
             ->select('inventory_history.*', 'products.name', 'products.sku', 'products.purchase_price')
             ->where('inventory_history.product_id', $id)
+            ->tap(fn ($q) => $this->applyTenantScope($q, 'products'))
+            ->tap(fn ($q) => $this->applyBranchScope($q, 'inventory_history', $activeBranch))
             ->orderByDesc('inventory_history.created_at')
             ->get();
 
