@@ -244,6 +244,13 @@
             max-width: calc(100% - var(--sb-sidebar-collapsed, 80px)) !important;
         }
 
+        /* If legacy mini-sidebar is accidentally left on, force full width when not collapsed. */
+        body.mini-sidebar:not(.sidebar-collapsed):not(.sidebar-icon-only) .page-wrapper {
+            margin-left: var(--sb-sidebar-w, 270px) !important;
+            width: calc(100% - var(--sb-sidebar-w, 270px)) !important;
+            max-width: calc(100% - var(--sb-sidebar-w, 270px)) !important;
+        }
+
         @media (max-width: 991px) {
             .page-wrapper {
                 margin-left: 0 !important;

@@ -1370,6 +1370,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function normalizeSidebarState() {
         // Always clear any stale mobile-open state first
         closeMobileSidebar();
+        document.body.classList.remove('expand-menu');
         if (window.innerWidth <= 991) {
             document.body.classList.remove('sidebar-collapsed', 'mini-sidebar', 'sidebar-icon-only');
         } else {
