@@ -55,10 +55,7 @@ trait TenantScoped
                         });
                     }
                 });
-                return;
-            }
-
-            if ($hasUser && $userId > 0) {
+            } elseif ($hasUser && $userId > 0) {
                 $builder->where("{$table}.user_id", $userId);
             }
 

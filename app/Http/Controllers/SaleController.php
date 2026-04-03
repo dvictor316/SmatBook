@@ -58,6 +58,27 @@ class SaleController extends Controller
         return $query;
     }
 
+    private function applyBranchScope($query, string $table)
+    {
+        $activeBranch = $this->getActiveBranchContext();
+        $branchId = trim((string) ($activeBranch['id'] ?? ''));
+        $branchName = trim((string) ($activeBranch['name'] ?? ''));
+
+        if ($branchId === '' && $branchName === '') {
+            return $query;
+        }
+
+        if ($branchId !== '' && Schema::hasColumn($table, 'branch_id')) {
+            return $query->where("{$table}.branch_id", $branchId);
+        }
+
+        if ($branchName !== '' && Schema::hasColumn($table, 'branch_name')) {
+            return $query->where("{$table}.branch_name", $branchName);
+        }
+
+        return $query;
+    }
+
     private function clearDashboardMetricsCache(?string $branchId = null): void
     {
         $companyId = $this->tenantCompanyId();
@@ -98,6 +119,7 @@ class SaleController extends Controller
         $query = Sale::with(['customer', 'user']);
         $activeBranch = $this->getActiveBranchContext();
         $this->applyTenantScope($query, 'sales');
+        $this->applyBranchScope($query, 'sales');
 
         // 2. Apply Filters
         if ($request->invoice_no) {
@@ -180,6 +202,20 @@ class SaleController extends Controller
                 DB::raw($stockExpression)
             );
         $this->applyTenantScope($query, 'products');
+        $activeBranch = $this->getActiveBranchContext();
+        if (!empty($activeBranch['id']) && Schema::hasColumn('sales', 'branch_id')) {
+            $branchId = (string) $activeBranch['id'];
+            $query->where(function ($builder) use ($branchId) {
+                $builder->whereNull('sales.id')
+                    ->orWhere('sales.branch_id', $branchId);
+            });
+        } elseif (!empty($activeBranch['name']) && Schema::hasColumn('sales', 'branch_name')) {
+            $branchName = (string) $activeBranch['name'];
+            $query->where(function ($builder) use ($branchName) {
+                $builder->whereNull('sales.id')
+                    ->orWhere('sales.branch_name', $branchName);
+            });
+        }
 
         if ($request->filled('search')) {
             $search = trim((string) $request->search);
@@ -277,6 +313,11 @@ public function customerDetails($id = null)
         $productsQuery = Product::with('category')
             ->orderBy('name', 'asc');
         $this->applyTenantScope($productsQuery, 'products');
+        if (!empty($activeBranch['id']) && Schema::hasTable('product_branch_stocks')) {
+            $productsQuery->whereHas('branchStocks', fn ($q) => $q->where('branch_id', $activeBranch['id']));
+        } else {
+            $this->applyBranchScope($productsQuery, 'products');
+        }
 
         if (Schema::hasTable('product_branch_stocks') && !empty($activeBranch['id'])) {
             $productsQuery->with(['branchStocks' => function ($query) use ($activeBranch) {
@@ -297,9 +338,11 @@ public function customerDetails($id = null)
         $customers = Customer::query()
             ->orderBy('customer_name', 'asc')
             ->tap(fn ($query) => $this->applyTenantScope($query, 'customers'))
+            ->tap(fn ($query) => $this->applyBranchScope($query, 'customers'))
             ->get();
         $sales = Sale::with('customer')
             ->tap(fn ($query) => $this->applyTenantScope($query, 'sales'))
+            ->tap(fn ($query) => $this->applyBranchScope($query, 'sales'))
             ->latest()
             ->take(10)
             ->get();
@@ -716,6 +759,20 @@ public function create()
     {
         $branchId = session('active_branch_id');
         $branchName = session('active_branch_name');
+
+        if (!$branchId && !$branchName && Schema::hasTable('settings')) {
+            $companyId = $this->tenantCompanyId();
+            if ($companyId > 0) {
+                $key = 'branches_json_company_' . $companyId;
+                $raw = (string) (DB::table('settings')->where('key', $key)->value('value') ?? '');
+                $branches = json_decode($raw, true) ?: [];
+                $first = collect($branches)->first();
+                if ($first) {
+                    $branchId = $branchId ?: ($first['id'] ?? null);
+                    $branchName = $branchName ?: ($first['name'] ?? null);
+                }
+            }
+        }
 
         return [
             'id' => $branchId !== null ? (string) $branchId : null,

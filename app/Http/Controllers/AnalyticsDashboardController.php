@@ -37,6 +37,51 @@ class AnalyticsDashboardController extends Controller
         return $user->company_id ?? null;
     }
 
+    private function getActiveBranchContext(): array
+    {
+        $branchId = session('active_branch_id') ? (string) session('active_branch_id') : null;
+        $branchName = session('active_branch_name') ? (string) session('active_branch_name') : null;
+
+        if (!$branchId && !$branchName && Schema::hasTable('settings')) {
+            $companyId = $this->scopeCompanyId();
+            if ($companyId) {
+                $key = 'branches_json_company_' . $companyId;
+                $raw = (string) (DB::table('settings')->where('key', $key)->value('value') ?? '');
+                $branches = json_decode($raw, true) ?: [];
+                $first = collect($branches)->first();
+                if ($first) {
+                    $branchId = $branchId ?: ($first['id'] ?? null);
+                    $branchName = $branchName ?: ($first['name'] ?? null);
+                }
+            }
+        }
+
+        return [
+            'id' => $branchId,
+            'name' => $branchName,
+        ];
+    }
+
+    private function applySalesScope($query, string $salesTable = 'sales')
+    {
+        $companyId = $this->scopeCompanyId();
+        if ($companyId && Schema::hasColumn($salesTable, 'company_id')) {
+            $query->where($salesTable . '.company_id', $companyId);
+        }
+
+        $activeBranch = $this->getActiveBranchContext();
+        $branchId = trim((string) ($activeBranch['id'] ?? ''));
+        $branchName = trim((string) ($activeBranch['name'] ?? ''));
+
+        if ($branchId !== '' && Schema::hasColumn($salesTable, 'branch_id')) {
+            $query->where($salesTable . '.branch_id', $branchId);
+        } elseif ($branchName !== '' && Schema::hasColumn($salesTable, 'branch_name')) {
+            $query->where($salesTable . '.branch_name', $branchName);
+        }
+
+        return $query;
+    }
+
     /**
      * Display the main analytics dashboard view with all required data.
      */
@@ -103,8 +148,9 @@ class AnalyticsDashboardController extends Controller
                 ->whereIn(DB::raw("LOWER(COALESCE(" . (Schema::hasColumn('sales', 'payment_status') ? 'sales.payment_status' : 'sales.status') . ", ''))"), $this->paidSaleStatuses)
                 ->groupBy('products.name')
                 ->orderByDesc('total_product_sales')
-                ->take(5)
-                ->get();
+                ->take(5);
+            $this->applySalesScope($topProductsQuery, 'sales');
+            $topProductsQuery = $topProductsQuery->get();
 
             $productSalesLabels = $topProductsQuery->pluck('name')->toArray();
             $productSalesData   = $topProductsQuery->pluck('total_product_sales')->map('floatval')->toArray();
@@ -198,9 +244,9 @@ class AnalyticsDashboardController extends Controller
 
         if ($companyId) {
             $companies->where('id', $companyId);
-            $sales->where('company_id', $companyId);
             $subscriptions->where('company_id', $companyId);
         }
+        $this->applySalesScope($sales, 'sales');
 
         return response()->json([
             'total_companies' => $companies->count(),
@@ -220,6 +266,12 @@ class AnalyticsDashboardController extends Controller
         $sales = Sale::query()->where('created_at', '>=', $from);
         if ($companyId) {
             $sales->where('company_id', $companyId);
+        }
+        $activeBranch = $this->getActiveBranchContext();
+        if (!empty($activeBranch['id']) && Schema::hasColumn('sales', 'branch_id')) {
+            $sales->where('branch_id', $activeBranch['id']);
+        } elseif (!empty($activeBranch['name']) && Schema::hasColumn('sales', 'branch_name')) {
+            $sales->where('branch_name', $activeBranch['name']);
         }
 
         $rows = $sales
@@ -245,6 +297,7 @@ class AnalyticsDashboardController extends Controller
         if ($companyId) {
             $sales->where('company_id', $companyId);
         }
+        $this->applySalesScope($sales, 'sales');
 
         $statusColumn = Schema::hasColumn('sales', 'payment_status') ? 'payment_status' : 'status';
         $statusData = $sales
@@ -274,10 +327,7 @@ class AnalyticsDashboardController extends Controller
             ->groupBy('products.name')
             ->orderByDesc('amount')
             ->limit($limit);
-
-        if ($companyId && Schema::hasColumn('sales', 'company_id')) {
-            $query->where('sales.company_id', $companyId);
-        }
+        $this->applySalesScope($query, 'sales');
 
         $rows = $query->get();
 

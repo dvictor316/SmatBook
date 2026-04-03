@@ -49,10 +49,35 @@ use App\Support\LedgerService;
 
         private function getActiveBranchContext(): array
         {
+            $branchId = session('active_branch_id') ? (string) session('active_branch_id') : null;
+            $branchName = session('active_branch_name') ? (string) session('active_branch_name') : null;
+
+            if (!$branchId && !$branchName && Schema::hasTable('settings')) {
+                $companyId = (int) (Auth::user()?->company_id ?? 0);
+                if ($companyId > 0) {
+                    $key = 'branches_json_company_' . $companyId;
+                    $raw = (string) (DB::table('settings')->where('key', $key)->value('value') ?? '');
+                    $branches = json_decode($raw, true) ?: [];
+                    $first = collect($branches)->first();
+                    if ($first) {
+                        $branchId = $branchId ?: ($first['id'] ?? null);
+                        $branchName = $branchName ?: ($first['name'] ?? null);
+                    }
+                }
+            }
+
             return [
-                'id' => session('active_branch_id') ? (string) session('active_branch_id') : null,
-                'name' => session('active_branch_name') ? (string) session('active_branch_name') : null,
+                'id' => $branchId,
+                'name' => $branchName,
             ];
+        }
+
+        private function applySalesScope($query, string $salesTable = 'sales')
+        {
+            $this->applyTenantScope($query, $salesTable);
+            $this->applySaleBranchFilter($query, $salesTable);
+
+            return $query;
         }
 
         private function applySaleBranchFilter($query, string $salesTable = 'sales')
@@ -459,6 +484,7 @@ public function purchase_report(Request $request)
                 DB::raw("'Inflow' as type"),
                 DB::raw("'Sales' as label")
             ])->whereBetween('created_at', [$start.' 00:00:00', $end.' 23:59:59']);
+            $this->applySalesScope($sales, 'sales');
 
             $other = DB::table('payments')->select([
                 DB::raw('DATE(created_at) as log_date'),
@@ -467,6 +493,8 @@ public function purchase_report(Request $request)
                 DB::raw("'Misc' as label")
             ])->where('payment_method', '!=', 'Sales Payment')
             ->whereBetween('created_at', [$start.' 00:00:00', $end.' 23:59:59']);
+            $this->applyTenantScope($other, 'payments');
+            $this->applyPaymentBranchFilter($other, 'payments');
 
             $exp = DB::table('expenses')->select([
                 DB::raw('DATE(created_at) as log_date'),
@@ -474,6 +502,7 @@ public function purchase_report(Request $request)
                 DB::raw("'Outflow' as type"),
                 DB::raw("COALESCE(category, 'Expense') as label")
             ])->whereBetween('created_at', [$start.' 00:00:00', $end.' 23:59:59']);
+            $this->applyTenantScope($exp, 'expenses');
 
             return $sales->unionAll($other)->unionAll($exp);
         };
@@ -1302,6 +1331,8 @@ public function destroy($id)
                     'categories.name',
                     DB::raw($stockExpression)
                 );
+            $this->applyTenantScope($query, 'products');
+            $this->applySalesScope($query, 'sales');
 
             if ($request->filled('search')) {
                 $search = trim((string) $request->search);
@@ -1358,6 +1389,8 @@ public function destroy($id)
                 'products.stock as InstockQty',
                 'sales.created_at as DueDate'
             ]);
+        $this->applyTenantScope($query, 'products');
+        $this->applySalesScope($query, 'sales');
 
         // Use your helper function for date filtering and search
         // We add withQueryString() to keep filters alive during pagination
@@ -1534,11 +1567,12 @@ public function destroy($id)
                 DB::raw("SUM({$saleQtyExpr}) as qty_out"),
                 DB::raw('0 as val_in'),
                 DB::raw("SUM({$saleTotalExpr}) as val_out"),
-            ])
-            ->whereBetween('sales.' . $saleDateColumn, [$fromStart, $toEnd])
-            ->when(!empty($productId), fn ($q) => $q->where('sale_items.product_id', $productId))
-            ->tap(fn ($q) => $applyTenantScope($q, 'sales'))
-            ->groupBy('log_date');
+        ])
+        ->whereBetween('sales.' . $saleDateColumn, [$fromStart, $toEnd])
+        ->when(!empty($productId), fn ($q) => $q->where('sale_items.product_id', $productId))
+        ->tap(fn ($q) => $applyTenantScope($q, 'sales'))
+        ->tap(fn ($q) => $this->applySaleBranchFilter($q, 'sales'))
+        ->groupBy('log_date');
 
         $this->applySaleBranchFilter($stockOut, 'sales');
 
@@ -1568,17 +1602,18 @@ public function destroy($id)
 
                 $stockOut = DB::query()->fromSub($historyStockOut, 'stk_out');
             } elseif (Schema::hasTable('sales')) {
-                $headerStockOut = DB::table('sales')
-                    ->select([
-                        DB::raw('DATE(sales.' . $saleDateColumn . ') as log_date'),
-                        DB::raw('0 as qty_in'),
-                        DB::raw('COUNT(*) as qty_out'),
-                        DB::raw('0 as val_in'),
-                        DB::raw('SUM(COALESCE(sales.total, 0)) as val_out'),
-                    ])
-                    ->whereBetween('sales.' . $saleDateColumn, [$fromStart, $toEnd])
-                    ->tap(fn ($q) => $applyTenantScope($q, 'sales'))
-                    ->groupBy('log_date');
+            $headerStockOut = DB::table('sales')
+                ->select([
+                    DB::raw('DATE(sales.' . $saleDateColumn . ') as log_date'),
+                    DB::raw('0 as qty_in'),
+                    DB::raw('COUNT(*) as qty_out'),
+                    DB::raw('0 as val_in'),
+                    DB::raw('SUM(COALESCE(sales.total, 0)) as val_out'),
+                ])
+                ->whereBetween('sales.' . $saleDateColumn, [$fromStart, $toEnd])
+                ->tap(fn ($q) => $applyTenantScope($q, 'sales'))
+                ->tap(fn ($q) => $this->applySaleBranchFilter($q, 'sales'))
+                ->groupBy('log_date');
 
                 $stockOut = DB::query()->fromSub($headerStockOut, 'stk_out');
             }
@@ -1827,8 +1862,9 @@ public function destroy($id)
                 'sales.id as display_name', 
                 'customers.customer_name'
             )
-            ->orderBy('sales.id', 'desc')
-            ->get();
+            ->orderBy('sales.id', 'desc');
+        $this->applySalesScope($invoices, 'sales');
+        $invoices = $invoices->get();
 
         return view('Reports.Reports.create-sales-return', compact('invoices'));
     }
@@ -2040,6 +2076,7 @@ public function destroy($id)
                 fn($q) => $q->whereBetween(DB::raw("DATE(sales.{$salesDateColumn})"), [$start_date, $end_date])
             )
             ->tap(fn($q) => $applyTenantScope($q, 'sales'))
+            ->tap(fn($q) => $this->applySaleBranchFilter($q, 'sales'))
             ->groupBy(DB::raw("DATE(sales.{$salesDateColumn})"));
 
         // Base Expenses Query (Operational Expense)
@@ -2250,6 +2287,7 @@ public function destroy($id)
                 $latestTaxDate = DB::table('sales')
                     ->where('sales.tax', '>', 0)
                     ->tap(fn ($q) => $this->applyTenantScope($q, 'sales'))
+                    ->tap(fn ($q) => $this->applySaleBranchFilter($q, 'sales'))
                     ->max('sales.created_at');
 
                 $effectiveEnd = $latestTaxDate
@@ -2273,7 +2311,8 @@ public function destroy($id)
                     'sales.tax as TaxAmount',
                 ])
                 ->where('sales.tax', '>', 0)
-                ->tap(fn ($q) => $this->applyTenantScope($q, 'sales'));
+                ->tap(fn ($q) => $this->applyTenantScope($q, 'sales'))
+                ->tap(fn ($q) => $this->applySaleBranchFilter($q, 'sales'));
 
             if ($start_date && $end_date) {
                 $query->whereBetween(DB::raw('DATE(sales.created_at)'), [$start_date, $end_date]);
