@@ -102,6 +102,12 @@ class CustomerController extends Controller
         if (Schema::hasColumn('customers', 'user_id')) {
             $data['user_id'] = auth()->id();
         }
+        if (Schema::hasColumn('customers', 'branch_id')) {
+            $data['branch_id'] = $this->getActiveBranchContext()['id'];
+        }
+        if (Schema::hasColumn('customers', 'branch_name')) {
+            $data['branch_name'] = $this->getActiveBranchContext()['name'];
+        }
 
         Customer::create($data);
 

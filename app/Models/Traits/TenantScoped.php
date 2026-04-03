@@ -28,9 +28,6 @@ trait TenantScoped
             $role = strtolower((string) ($user->role ?? ''));
             $isSuperAdmin = in_array($role, ['super_admin', 'superadmin', 'administrator', 'admin'], true);
             $isSuperAdminArea = request()->is('superadmin*');
-            if ($isSuperAdmin && $isSuperAdminArea) {
-                return;
-            }
 
             /** @var Model $model */
             $model = $builder->getModel();
@@ -38,6 +35,10 @@ trait TenantScoped
 
             $companyId = (int) ($user->company_id ?? 0);
             $userId = (int) ($user->id ?? 0);
+
+            if ($isSuperAdmin && $isSuperAdminArea && $companyId === 0) {
+                return;
+            }
 
             $hasCompany = Schema::hasColumn($table, 'company_id');
             $hasUser = Schema::hasColumn($table, 'user_id');
@@ -58,6 +59,19 @@ trait TenantScoped
 
             if ($hasUser && $userId > 0) {
                 $builder->where("{$table}.user_id", $userId);
+            }
+
+            $activeBranchId = trim((string) session('active_branch_id', ''));
+            $activeBranchName = trim((string) session('active_branch_name', ''));
+            if ($activeBranchId !== '' || $activeBranchName !== '') {
+                $hasBranchId = Schema::hasColumn($table, 'branch_id');
+                $hasBranchName = Schema::hasColumn($table, 'branch_name');
+
+                if ($hasBranchId && $activeBranchId !== '') {
+                    $builder->where("{$table}.branch_id", $activeBranchId);
+                } elseif ($hasBranchName && $activeBranchName !== '') {
+                    $builder->where("{$table}.branch_name", $activeBranchName);
+                }
             }
         });
     }

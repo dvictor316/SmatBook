@@ -39,6 +39,14 @@ class SupplierController extends Controller
         return 'name';
     }
 
+    private function getActiveBranchContext(): array
+    {
+        return [
+            'id' => session('active_branch_id') ? (string) session('active_branch_id') : null,
+            'name' => session('active_branch_name') ? (string) session('active_branch_name') : null,
+        ];
+    }
+
     public function index(Request $request)
     {
         $query = Supplier::query()->latest();
@@ -78,6 +86,8 @@ class SupplierController extends Controller
             'email'   => 'nullable|email|max:191',
             'phone'   => 'nullable|string|max:191',
             'address' => 'nullable|string|max:255',
+            'opening_balance' => 'nullable|numeric',
+            'opening_balance_date' => 'nullable|date',
         ]);
 
         $payload = $this->sanitizeForSupplierColumns([
@@ -85,8 +95,12 @@ class SupplierController extends Controller
             'email' => $request->input('email'),
             'phone' => $request->input('phone'),
             'address' => $request->input('address'),
+            'opening_balance' => $request->input('opening_balance'),
+            'opening_balance_date' => $request->input('opening_balance_date'),
             'company_id' => auth()->user()?->company_id ?? null,
             'user_id' => auth()->id(),
+            'branch_id' => $this->getActiveBranchContext()['id'],
+            'branch_name' => $this->getActiveBranchContext()['name'],
         ]);
 
         $nameColumn = $this->resolveNameColumn();
@@ -198,6 +212,8 @@ class SupplierController extends Controller
             'email'   => 'nullable|email|max:191',
             'phone'   => 'nullable|string|max:191',
             'address' => 'nullable|string|max:255',
+            'opening_balance' => 'nullable|numeric',
+            'opening_balance_date' => 'nullable|date',
         ]);
 
         $payload = $this->sanitizeForSupplierColumns([
@@ -205,6 +221,8 @@ class SupplierController extends Controller
             'email' => $request->input('email'),
             'phone' => $request->input('phone'),
             'address' => $request->input('address'),
+            'opening_balance' => $request->input('opening_balance'),
+            'opening_balance_date' => $request->input('opening_balance_date'),
         ]);
         $nameColumn = $this->resolveNameColumn();
         $payload[$nameColumn] = $request->input('name');
