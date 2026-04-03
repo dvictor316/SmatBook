@@ -89,9 +89,46 @@
                                         {{ number_format((float) ($totalColumn ? ($purchase->{$totalColumn} ?? 0) : 0), 2) }}
                                     </td>
                                     <td class="text-end">
+                                        <button class="btn btn-sm btn-outline-secondary me-2" type="button" data-bs-toggle="collapse" data-bs-target="#purchase-items-{{ $purchase->id }}">
+                                            Items
+                                        </button>
                                         @if(Route::has('purchase-details'))
                                             <a href="{{ route('purchase-details', $purchase->id) }}" class="btn btn-sm btn-outline-primary">View</a>
                                         @endif
+                                    </td>
+                                </tr>
+                                <tr class="collapse bg-light" id="purchase-items-{{ $purchase->id }}">
+                                    <td colspan="6">
+                                        <div class="p-3">
+                                            <div class="table-responsive">
+                                                <table class="table table-sm mb-0">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Item</th>
+                                                            <th class="text-end">Qty</th>
+                                                            <th class="text-end">Received</th>
+                                                            <th class="text-end">Unit Price</th>
+                                                            <th class="text-end">Total</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @forelse(($purchaseItemsByPurchase[$purchase->id] ?? collect()) as $item)
+                                                            <tr>
+                                                                <td>{{ $item->product_name }}</td>
+                                                                <td class="text-end">{{ number_format((float) ($item->qty ?? 0)) }}</td>
+                                                                <td class="text-end">{{ number_format((float) ($item->received_qty ?? 0)) }}</td>
+                                                                <td class="text-end">{{ number_format((float) ($item->unit_price ?? 0), 2) }}</td>
+                                                                <td class="text-end">{{ number_format((float) ($item->line_total ?? 0), 2) }}</td>
+                                                            </tr>
+                                                        @empty
+                                                            <tr>
+                                                                <td colspan="5" class="text-center text-muted">No items recorded for this purchase.</td>
+                                                            </tr>
+                                                        @endforelse
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
                                     </td>
                                 </tr>
                             @empty

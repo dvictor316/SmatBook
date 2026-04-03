@@ -136,6 +136,7 @@ class SupplierController extends Controller
             }
         }
 
+        $purchaseItemsByPurchase = collect();
         if (Schema::hasTable('purchase_items')) {
             $purchaseIds = Purchase::where('supplier_id', $supplier->id)->pluck('id');
             $qtyColumn = Schema::hasColumn('purchase_items', 'qty')
@@ -144,6 +145,12 @@ class SupplierController extends Controller
             $receivedQtyColumn = Schema::hasColumn('purchase_items', 'received_qty')
                 ? 'received_qty'
                 : (Schema::hasColumn('purchase_items', 'received_quantity') ? 'received_quantity' : null);
+            $rateColumn = Schema::hasColumn('purchase_items', 'unit_price')
+                ? 'unit_price'
+                : (Schema::hasColumn('purchase_items', 'rate') ? 'rate' : null);
+            $totalItemColumn = Schema::hasColumn('purchase_items', 'total_price')
+                ? 'total_price'
+                : (Schema::hasColumn('purchase_items', 'subtotal') ? 'subtotal' : null);
 
             if ($qtyColumn) {
                 $summary['pending_items'] = (float) (PurchaseItem::whereIn('purchase_id', $purchaseIds)->sum($qtyColumn) ?? 0);
@@ -154,6 +161,21 @@ class SupplierController extends Controller
                     $summary['pending_items'] = max(0, $summary['pending_items'] - $summary['received_items']);
                 }
             }
+
+            $itemQuery = PurchaseItem::query()
+                ->whereIn('purchase_id', $purchaseIds)
+                ->leftJoin('products', 'products.id', '=', 'purchase_items.product_id')
+                ->select(
+                    'purchase_items.purchase_id',
+                    'purchase_items.product_id',
+                    DB::raw("COALESCE(products.name, purchase_items.product_name, 'Item') as product_name"),
+                    $qtyColumn ? "purchase_items.{$qtyColumn} as qty" : DB::raw('0 as qty'),
+                    $receivedQtyColumn ? "purchase_items.{$receivedQtyColumn} as received_qty" : DB::raw('0 as received_qty'),
+                    $rateColumn ? "purchase_items.{$rateColumn} as unit_price" : DB::raw('0 as unit_price'),
+                    $totalItemColumn ? "purchase_items.{$totalItemColumn} as line_total" : DB::raw('0 as line_total')
+                );
+
+            $purchaseItemsByPurchase = $itemQuery->get()->groupBy('purchase_id');
         }
 
         return view('Customers.suppliers-show', compact(
@@ -162,7 +184,8 @@ class SupplierController extends Controller
             'summary',
             'purchaseDateColumn',
             'totalColumn',
-            'receivedColumn'
+            'receivedColumn',
+            'purchaseItemsByPurchase'
         ));
     }
 
