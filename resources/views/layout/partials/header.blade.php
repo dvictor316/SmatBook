@@ -1340,6 +1340,10 @@ document.addEventListener('DOMContentLoaded', function () {
     if (desktopBtn) {
         desktopBtn.addEventListener('click', function (e) {
             e.preventDefault();
+            if (window.innerWidth <= 991) {
+                openMobileSidebar();
+                return;
+            }
             document.body.classList.toggle('sidebar-collapsed');
             localStorage.setItem(
                 'sidebarCollapsed',
@@ -1348,10 +1352,27 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         // Restore desktop collapsed state on load
-        if (localStorage.getItem('sidebarCollapsed') === 'true') {
+        if (window.innerWidth > 991 && localStorage.getItem('sidebarCollapsed') === 'true') {
             document.body.classList.add('sidebar-collapsed');
         }
     }
+
+    function normalizeSidebarState() {
+        if (window.innerWidth <= 991) {
+            document.body.classList.remove('sidebar-collapsed', 'mini-sidebar', 'sidebar-icon-only');
+        } else {
+            closeMobileSidebar();
+            if (localStorage.getItem('sidebarCollapsed') === 'true') {
+                document.body.classList.add('sidebar-collapsed');
+            }
+        }
+    }
+
+    window.addEventListener('resize', function () {
+        normalizeSidebarState();
+    });
+
+    normalizeSidebarState();
 
     /* ════════════════════════════════════════════
        SEARCH

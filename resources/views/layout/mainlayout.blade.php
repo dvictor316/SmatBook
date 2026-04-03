@@ -244,6 +244,14 @@
             max-width: calc(100% - var(--sb-sidebar-collapsed, 80px)) !important;
         }
 
+        @media (max-width: 991px) {
+            .page-wrapper {
+                margin-left: 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+        }
+
         .page-wrapper .content.container-fluid {
             padding-top: 0 !important;
             padding-left: 12px !important;
