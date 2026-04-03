@@ -205,7 +205,7 @@
                     <li>
                         <a class="btn btn-primary" href="javascript:void(0);" data-bs-toggle="modal"
                             data-bs-target="#add_vendor"><i class="fa fa-plus-circle me-2" aria-hidden="true"></i>Add
-                            Vendors</a>
+                            Suppliers</a>
                     </li>
                 @endif
                 @if (Route::is(['product-list']))

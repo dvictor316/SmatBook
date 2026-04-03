@@ -82,7 +82,7 @@
                                             </div>
                                             <div class="col-md-4">
                                                 <div class="invoice-info">
-                                                    <strong class="customer-text-one">Vendor:</strong>
+                                                    <strong class="customer-text-one">Supplier:</strong>
                                                     <p class="invoice-details-two">
                                                         {{ $purchase->vendor->name ?? 'N/A' }}<br>
                                                         {{ $purchase->vendor->address ?? 'No Address Provided' }}<br>

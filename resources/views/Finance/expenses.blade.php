@@ -48,7 +48,7 @@
                                     <tr>
                                         <th>Date</th>
                                         <th>Expense ID</th>
-                                        <th>Vendor/Company</th>
+                                        <th>Supplier/Company</th>
                                         <th>Amount</th>
                                         <th>Payment Source</th>
                                         <th>Category (Debit)</th>
@@ -144,7 +144,7 @@
                 <div class="modal-body p-4">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label fw-bold">Vendor / Company *</label>
+                            <label class="form-label fw-bold">Supplier / Company *</label>
                             <input type="text" class="form-control" name="company_name" list="expense-party-list" placeholder="Who are you paying?" required>
                             <datalist id="expense-party-list">
                                 @foreach(($partyOptions ?? []) as $party)
@@ -304,7 +304,7 @@
                 <div class="row g-2">
                     <div class="col-6"><small class="text-muted">Expense ID</small><div class="fw-semibold">{{ $expense->expense_id }}</div></div>
                     <div class="col-6"><small class="text-muted">Date</small><div class="fw-semibold">{{ optional($expense->created_at)->format('d M Y h:i A') }}</div></div>
-                    <div class="col-12"><small class="text-muted">Vendor / Company</small><div class="fw-semibold">{{ $expense->company_name }}</div></div>
+                    <div class="col-12"><small class="text-muted">Supplier / Company</small><div class="fw-semibold">{{ $expense->company_name }}</div></div>
                     <div class="col-6"><small class="text-muted">Amount</small><div class="fw-semibold">₦{{ number_format((float) $expense->amount, 2) }}</div></div>
                     <div class="col-6"><small class="text-muted">Status</small><div class="fw-semibold">{{ $expense->status }}</div></div>
                     <div class="col-6"><small class="text-muted">Category</small><div class="fw-semibold">{{ $expense->category ?? 'N/A' }}</div></div>
@@ -333,7 +333,7 @@
                 <div class="modal-body p-4">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label fw-bold">Vendor / Company *</label>
+                            <label class="form-label fw-bold">Supplier / Company *</label>
                             <input type="text" class="form-control" name="company_name" value="{{ $expense->company_name }}" required>
                         </div>
                         <div class="col-md-6">

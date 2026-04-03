@@ -47,9 +47,9 @@
                             </div>
                             <div class="col-lg-4 col-md-6">
                                 <div class="form-group mb-0">
-                                    <label>Vendor Name</label>
+                                    <label>Supplier Name</label>
                                     <select name="vendor_id" class="form-control select">
-                                        <option value="">All Vendors</option>
+                                        <option value="">All Suppliers</option>
                                         @foreach($vendors as $vendor)
                                             <option value="{{ $vendor->id }}" {{ request('vendor_id') == $vendor->id ? 'selected' : '' }}>
                                                 {{ $vendor->name }}
@@ -80,7 +80,7 @@
                                         <tr>
                                             <th>#</th>
                                             <th>Debit Notes ID</th>
-                                            <th>Vendor</th>
+                                            <th>Supplier</th>
                                             <th>Amount</th>
                                             <th>Created On</th>
                                             <th>Status</th>
@@ -100,7 +100,7 @@
                                                             <img class="avatar-img rounded-circle" src="{{ asset('assets/img/profiles/avatar-01.jpg') }}" alt="User">
                                                         </a>
                                                         <a href="#">
-                                                            {{ $note->vendor->name ?? 'Deleted Vendor' }} 
+                                                            {{ $note->vendor->name ?? 'Deleted Supplier' }} 
                                                             <span>{{ $note->vendor->phone ?? '' }}</span>
                                                         </a>
                                                     </h2>

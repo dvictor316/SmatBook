@@ -51,7 +51,7 @@
                                         <tr>
                                             <th>#</th>
                                             <th>Purchase ID</th>
-                                            <th>Vendor</th>
+                                            <th>Supplier</th>
                                             <th>Amount</th>
                                             <th>Payment Mode</th>
                                             <th>Date</th>
@@ -66,7 +66,7 @@
                                                 <td>{{ $order['PurchaseID'] ?? 'N/A' }}</td>
                                                 <td>
                                                     @php
-                                                        $vendorName = $order['Vendor'] ?? 'Unknown Vendor';
+                                                        $vendorName = $order['Vendor'] ?? 'Unknown Supplier';
                                                         $vendorInitials = \Illuminate\Support\Str::of($vendorName)
                                                             ->explode(' ')
                                                             ->filter()

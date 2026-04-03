@@ -17,9 +17,9 @@
                             <input type="text" class="form-control" name="purchase_id" value="{{ old('purchase_id') }}" placeholder="Auto-generated if empty">
                         </div>
                         <div class="col-md-4 mb-3">
-                            <label class="form-label">Vendor</label>
+                            <label class="form-label">Supplier</label>
                             <select class="form-control" name="vendor_id">
-                                <option value="">Select Vendor</option>
+                                <option value="">Select Supplier</option>
                                 @foreach(($vendors ?? collect()) as $vendor)
                                     <option value="{{ $vendor->id }}" {{ (string) old('vendor_id') === (string) $vendor->id ? 'selected' : '' }}>
                                         {{ $vendor->name }}

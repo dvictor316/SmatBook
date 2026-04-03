@@ -34,6 +34,15 @@
                                 <label class="form-label">Address</label>
                                 <textarea name="address" class="form-control" rows="3">{{ old('address') }}</textarea>
                             </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Opening Balance</label>
+                                <input type="number" step="0.01" name="opening_balance" class="form-control" value="{{ old('opening_balance') }}" placeholder="0.00">
+                                <small class="text-muted">Amount owed to this supplier at setup.</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Opening Balance Date</label>
+                                <input type="date" name="opening_balance_date" class="form-control" value="{{ old('opening_balance_date') }}">
+                            </div>
                         </div>
                         <div class="text-end">
                             <a href="{{ route('suppliers.index') }}" class="btn btn-light me-2">Cancel</a>

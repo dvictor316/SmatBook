@@ -51,24 +51,29 @@
                                        class="form-control" readonly>
                             </div>
 
-                            <!-- Select Vendor -->
+                            <!-- Select Supplier -->
                             <div class="col-md-4">
-                                <label for="vendor_id" class="form-label">Select Vendor *</label>
+                                <label for="supplier_id" class="form-label">Select Supplier *</label>
                                 <div class="input-group">
-                                    <select id="vendor_id" name="vendor_id" class="form-select @error('vendor_id') is-invalid @enderror" required>
-                                        <option value="">Choose Vendor</option>
-                                        @foreach($vendors as $vendor)
-                                            <option value="{{ $vendor->id }}" 
-                                                {{ old('vendor_id') == $vendor->id ? 'selected' : '' }}>
-                                                {{ $vendor->name }}
+                                    @php
+                                        $supplierOptions = ($suppliers ?? collect());
+                                        $fallbackVendors = ($vendors ?? collect());
+                                        $partyOptions = $supplierOptions->isNotEmpty() ? $supplierOptions : $fallbackVendors;
+                                    @endphp
+                                    <select id="supplier_id" name="supplier_id" class="form-select @error('supplier_id') is-invalid @enderror" required>
+                                        <option value="">Choose Supplier</option>
+                                        @foreach($partyOptions as $supplier)
+                                            <option value="{{ $supplier->id }}" 
+                                                {{ old('supplier_id') == $supplier->id ? 'selected' : '' }}>
+                                                {{ $supplier->name ?? $supplier->supplier_name ?? $supplier->company_name ?? 'Supplier' }}
                                             </option>
                                         @endforeach
                                     </select>
-                                    <a class="btn btn-primary" href="{{ route('vendors.create') }}" title="Add Vendor">
+                                    <a class="btn btn-primary" href="{{ route('suppliers.create') }}" title="Add Supplier">
                                         <i class="fas fa-plus-circle"></i>
                                     </a>
                                 </div>
-                                @error('vendor_id')
+                                @error('supplier_id')
                                     <div class="invalid-feedback d-block">{{ $message }}</div>
                                 @enderror
                             </div>
@@ -576,13 +581,13 @@
             
             // Form validation
             document.getElementById('purchaseForm').addEventListener('submit', function(e) {
-                const vendorId = document.getElementById('vendor_id').value;
+                const supplierId = document.getElementById('supplier_id').value;
                 const purchaseDate = document.getElementById('purchase_date').value;
                 const productRows = document.querySelectorAll('#productsTableBody tr:not(#noProductsRow)');
                 
-                if (!vendorId) {
+                if (!supplierId) {
                     e.preventDefault();
-                    alert('Please select a vendor');
+                    alert('Please select a supplier');
                     return;
                 }
                 

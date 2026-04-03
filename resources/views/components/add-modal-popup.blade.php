@@ -814,7 +814,7 @@
                             <div class="col-lg-3 col-sm-6">
                                 <div class="checkboxes">
                                     <label>
-                                        <input type="checkbox" name="checkbox" checked>Vendors
+                                        <input type="checkbox" name="checkbox" checked>Suppliers
                                     </label>
                                 </div>										
                             </div>
@@ -870,7 +870,7 @@
                             <div class="col-lg-3 col-sm-6">
                                 <div class="checkboxes">
                                     <label>
-                                        <input type="checkbox" name="checkbox" checked>Vendors
+                                        <input type="checkbox" name="checkbox" checked>Suppliers
                                     </label>
                                 </div>										
                             </div>
@@ -1947,7 +1947,7 @@
                                 <a href="javascript:void(0);" class="w-100" data-bs-toggle="collapse"
                                     data-bs-target="#collapseOne" aria-expanded="true"
                                     aria-controls="collapseOne">
-                                    Vendors
+                                    Suppliers
                                     <span class="float-end"><i class="fa-solid fa-chevron-down"></i></span>
                                 </a>
                             </h6>
@@ -2026,13 +2026,13 @@
         </div>
     </div>
     <!--/Add Asset -->
-     <!-- Add Vendor Modal -->
+     <!-- Add Supplier Modal -->
      <div class="modal custom-modal fade" id="add_vendor" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
                 <div class="modal-header border-0 pb-0">
                     <div class="form-header modal-header-title text-start mb-0">
-                        <h4 class="mb-0">Add Vendor</h4>
+                        <h4 class="mb-0">Add Supplier</h4>
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
 
@@ -2072,13 +2072,13 @@
                         <button type="button" data-bs-dismiss="modal"
                             class="btn btn-back cancel-btn me-2">Cancel</button>
                         <button type="submit" data-bs-dismiss="modal"
-                            class="btn btn-primary paid-continue-btn">Add Vendor</button>
+                            class="btn btn-primary paid-continue-btn">Add Supplier</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
-    <!-- /Add Vendor Modal -->
+    <!-- /Add Supplier Modal -->
 @endif
 @if (Route::is(['product-list']))
     <!-- Add Asset -->
@@ -2642,7 +2642,7 @@
             </div>
         </div>
     </div>
-    <!-- /Add Vendor Modal -->
+    <!-- /Add Supplier Modal -->
 @endif
 @if (Route::is(['units']))
     <!-- Add Asset -->
@@ -5232,13 +5232,13 @@
     </div>
     <!--/Add Asset -->
 
-    <!-- Add Vendor Modal -->
+    <!-- Add Supplier Modal -->
     <div class="modal custom-modal fade" id="add_vendor" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
                 <div class="modal-header border-0 pb-0">
                     <div class="form-header modal-header-title text-start mb-0">
-                        <h4 class="mb-0">Add Vendor</h4>
+                        <h4 class="mb-0">Add Supplier</h4>
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
 
@@ -5276,12 +5276,12 @@
                 <div class="modal-footer">
                     <a href="#" data-bs-dismiss="modal" class="btn btn-back cancel-btn me-2">Cancel</a>
                     <a href="#" data-bs-dismiss="modal" class="btn btn-primary paid-continue-btn">Add
-                        Vendor</a>
+                        Supplier</a>
                 </div>
             </div>
         </div>
     </div>
-    <!-- /Add Vendor Modal -->
+    <!-- /Add Supplier Modal -->
 @endif
 @if (Route::is(['add-purchase-return']))
     <!-- Add Tax & Discount Modal -->
@@ -5399,7 +5399,7 @@
                                 <a href="javascript:void(0);" class="w-100" data-bs-toggle="collapse"
                                     data-bs-target="#collapseOne" aria-expanded="true"
                                     aria-controls="collapseOne">
-                                    Vendor
+                                    Supplier
                                     <span class="float-end"><i class="fa-solid fa-chevron-down"></i></span>
                                 </a>
                             </h6>
@@ -5413,7 +5413,7 @@
                                         <div id="checkBoxes1">
                                             <div class="form-custom">
                                                 <input type="text" class="form-control" id="member_search1"
-                                                    placeholder="Search Vendor">
+                                                    placeholder="Search Supplier">
                                                 <span><img src="{{ URL::asset('/assets/img/icons/search.svg')}}" alt="img"></span>
                                             </div>
                                             @php
@@ -8266,7 +8266,7 @@
             </div>
         </div>
     </div>
-    <!-- /Add Vendor Modal -->
+    <!-- /Add Supplier Modal -->
 @endif
 @if (Route::is(['customers-ledger']))
 <!-- Add Asset -->
@@ -9150,13 +9150,13 @@
     </div>
     <!--/Add Asset -->
 
-    <!-- Add Vendor Modal -->
+    <!-- Add Supplier Modal -->
     <div class="modal custom-modal fade" id="add_vendor" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
                 <div class="modal-header border-0 pb-0">
                     <div class="form-header modal-header-title text-start mb-0">
-                        <h4 class="mb-0">Add Vendor</h4>
+                        <h4 class="mb-0">Add Supplier</h4>
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
 
@@ -9194,12 +9194,12 @@
                 <div class="modal-footer">
                     <a href="#" data-bs-dismiss="modal" class="btn btn-back cancel-btn me-2">Cancel</a>
                     <a href="#" data-bs-dismiss="modal" class="btn btn-primary paid-continue-btn">Add
-                        Vendor</a>
+                        Supplier</a>
                 </div>
             </div>
         </div>
     </div>
-    <!-- /Add Vendor Modal -->
+    <!-- /Add Supplier Modal -->
 @endif
 @if (Route::is(['edit-purchase-return']))
     <!-- Add Tax & Discount Modal -->
@@ -9366,7 +9366,7 @@
                                 <a href="javascript:void(0);" class="w-100" data-bs-toggle="collapse"
                                     data-bs-target="#collapseOne" aria-expanded="true"
                                     aria-controls="collapseOne">
-                                    Vendor
+                                    Supplier
                                     <span class="float-end"><i class="fa-solid fa-chevron-down"></i></span>
                                 </a>
                             </h6>
@@ -9380,7 +9380,7 @@
                                         <div id="checkBoxes1">
                                             <div class="form-custom">
                                                 <input type="text" class="form-control" id="member_search1"
-                                                    placeholder="Search Vendor">
+                                                    placeholder="Search Supplier">
                                                 <span><img src="{{ URL::asset('/assets/img/icons/search.svg')}}" alt="img"></span>
                                             </div>
                                             <div class="selectBox-cont">
@@ -9973,13 +9973,13 @@
     </div>
     <!--/Add Asset -->
 
-    <!-- Add Vendor Modal -->
+    <!-- Add Supplier Modal -->
     <div class="modal custom-modal fade" id="add_vendor" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
                 <div class="modal-header border-0 pb-0">
                     <div class="form-header modal-header-title text-start mb-0">
-                        <h4 class="mb-0">Add Vendor</h4>
+                        <h4 class="mb-0">Add Supplier</h4>
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
 
@@ -10017,12 +10017,12 @@
                 <div class="modal-footer">
                     <a href="#" data-bs-dismiss="modal" class="btn btn-back cancel-btn me-2">Cancel</a>
                     <a href="#" data-bs-dismiss="modal" class="btn btn-primary paid-continue-btn">Add
-                        Vendor</a>
+                        Supplier</a>
                 </div>
             </div>
         </div>
     </div>
-    <!-- /Add Vendor Modal -->
+    <!-- /Add Supplier Modal -->
 @endif
 @if (Route::is(['expenses']))
     <!-- Add Asset -->
@@ -12092,7 +12092,7 @@
             </div>
         </div>
     </div>
-    <!-- /Add Vendor Modal -->
+    <!-- /Add Supplier Modal -->
 
     <!-- Add Asset -->
     <div class="toggle-sidebar">
@@ -13048,7 +13048,7 @@
             </div>
         </div>
     </div>
-    <!-- /Add Vendor Modal -->
+    <!-- /Add Supplier Modal -->
 
     <!-- Add Asset -->
     <div class="toggle-sidebar">
@@ -14238,13 +14238,13 @@
     </div>
     <!--/Add Asset -->
 
-    <!-- Add Vendor Modal -->
+    <!-- Add Supplier Modal -->
     <div class="modal custom-modal fade" id="add_vendor" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
                 <div class="modal-header border-0 pb-0">
                     <div class="form-header modal-header-title text-start mb-0">
-                        <h4 class="mb-0">Add Vendor</h4>
+                        <h4 class="mb-0">Add Supplier</h4>
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
 
@@ -14282,12 +14282,12 @@
                 <div class="modal-footer">
                     <a href="#" data-bs-dismiss="modal" class="btn btn-back cancel-btn me-2">Cancel</a>
                     <a href="#" data-bs-dismiss="modal" class="btn btn-primary paid-continue-btn">Add
-                        Vendor</a>
+                        Supplier</a>
                 </div>
             </div>
         </div>
     </div>
-    <!-- /Add Vendor Modal -->
+    <!-- /Add Supplier Modal -->
 @endif
 @if (Route::is(['sales-return-report']))
     <!-- Add Asset -->

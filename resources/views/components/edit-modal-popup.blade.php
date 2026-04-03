@@ -1,5 +1,5 @@
 @if (Route::is(['subscription']))
-    <!-- Edit Vendor Modal -->
+    <!-- Edit Supplier Modal -->
     <div class="modal custom-modal fade" id="edit_contact" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -55,7 +55,7 @@
             </div>
         </div>
     </div>
-    <!-- /Edit Vendor Modal -->
+    <!-- /Edit Supplier Modal -->
 @endif
 
 @if(Route::is(['customers-ledger']))
@@ -271,7 +271,7 @@
                             <div class="col-lg-3 col-sm-6">
                                 <div class="checkboxes">
                                     <label>
-                                        <input type="checkbox" name="checkbox" checked>Vendors
+                                        <input type="checkbox" name="checkbox" checked>Suppliers
                                     </label>
                                 </div>										
                             </div>
@@ -327,7 +327,7 @@
                             <div class="col-lg-3 col-sm-6">
                                 <div class="checkboxes">
                                     <label>
-                                        <input type="checkbox" name="checkbox" checked>Vendors
+                                        <input type="checkbox" name="checkbox" checked>Suppliers
                                     </label>
                                 </div>										
                             </div>
@@ -415,7 +415,7 @@
 @endif
 
 @if (Route::is(['domain']))
-    <!-- Edit Vendor Modal -->
+    <!-- Edit Supplier Modal -->
     <div class="modal custom-modal fade" id="edit_contact" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -473,7 +473,7 @@
             </div>
         </div>
     </div>
-    <!-- /Edit Vendor Modal -->
+    <!-- /Edit Supplier Modal -->
 @endif
 
 @if (Route::is(['purchase-transcation']))
@@ -609,13 +609,13 @@
 @endif
 
 @if (Route::is(['vendors']))
-    <!-- Edit Vendor Modal -->
+    <!-- Edit Supplier Modal -->
     <div class="modal custom-modal fade" id="edit_vendor" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
                 <div class="modal-header border-0 pb-0">
                     <div class="form-header modal-header-title text-start mb-0">
-                        <h4 class="mb-0">Edit Vendor</h4>
+                        <h4 class="mb-0">Edit Supplier</h4>
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
 
@@ -664,7 +664,7 @@
             </div>
         </div>
     </div>
-    <!-- /Edit Vendor Modal -->
+    <!-- /Edit Supplier Modal -->
 @endif
 
 @if (Route::is(['inventory']))
@@ -996,13 +996,13 @@
 @endif
 
 @if (Route::is(['purchase-return']))
-    <!-- Edit Vendor Modal -->
+    <!-- Edit Supplier Modal -->
     <div class="modal custom-modal fade" id="edit_vendor" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
                 <div class="modal-header border-0 pb-0">
                     <div class="form-header modal-header-title text-start mb-0">
-                        <h4 class="mb-0">Edit Vendor</h4>
+                        <h4 class="mb-0">Edit Supplier</h4>
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
 
@@ -1047,7 +1047,7 @@
             </div>
         </div>
     </div>
-    <!-- /Edit Vendor Modal -->
+    <!-- /Edit Supplier Modal -->
 @endif
 
 @if (Route::is(['all-blogs']))
@@ -1366,7 +1366,7 @@
 @endif
 
 @if (Route::is(['contact-messages']))
-    <!-- Edit Vendor Modal -->
+    <!-- Edit Supplier Modal -->
     <div class="modal custom-modal fade" id="edit_contact" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -1428,7 +1428,7 @@
             </div>
         </div>
     </div>
-    <!-- /Edit Vendor Modal -->
+    <!-- /Edit Supplier Modal -->
 @endif
 
 @if (Route::is(['countries']))
@@ -1752,13 +1752,13 @@
 @endif
 
 @if (Route::is(['purchase-report']))
-    <!-- Edit Vendor Modal -->
+    <!-- Edit Supplier Modal -->
     <div class="modal custom-modal fade" id="edit_vendor" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
                 <div class="modal-header border-0 pb-0">
                     <div class="form-header modal-header-title text-start mb-0">
-                        <h4 class="mb-0">Edit Vendor</h4>
+                        <h4 class="mb-0">Edit Supplier</h4>
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
 
@@ -1804,7 +1804,7 @@
             </div>
         </div>
     </div>
-    <!-- /Edit Vendor Modal -->
+    <!-- /Edit Supplier Modal -->
 @endif
 
 @if (Route::is(['edit-purchases-order']))
@@ -1964,13 +1964,13 @@
 @endif
 
 @if (Route::is(['rexpense-report']))
-    <!-- Edit Vendor Modal -->
+    <!-- Edit Supplier Modal -->
     <div class="modal custom-modal fade" id="edit_vendor" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
                 <div class="modal-header border-0 pb-0">
                     <div class="form-header modal-header-title text-start mb-0">
-                        <h4 class="mb-0">Edit Vendor</h4>
+                        <h4 class="mb-0">Edit Supplier</h4>
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
 
@@ -2016,7 +2016,7 @@
             </div>
         </div>
     </div>
-    <!-- /Edit Vendor Modal -->
+    <!-- /Edit Supplier Modal -->
 @endif
 
 @if (Route::is(['expenses']))
@@ -2344,13 +2344,13 @@
 @endif
 
 @if (Route::is(['sales-report']))
-    <!-- Edit Vendor Modal -->
+    <!-- Edit Supplier Modal -->
     <div class="modal custom-modal fade" id="edit_vendor" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
                 <div class="modal-header border-0 pb-0">
                     <div class="form-header modal-header-title text-start mb-0">
-                        <h4 class="mb-0">Edit Vendor</h4>
+                        <h4 class="mb-0">Edit Supplier</h4>
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
 
@@ -2396,7 +2396,7 @@
             </div>
         </div>
     </div>
-    <!-- /Edit Vendor Modal -->
+    <!-- /Edit Supplier Modal -->
 @endif
 
 @if (Route::is(['testimonials']))

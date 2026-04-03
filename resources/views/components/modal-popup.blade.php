@@ -1183,7 +1183,7 @@
 </div>
 <!-- /Filter -->
 
-  <!-- Edit Vendor Modal -->
+  <!-- Edit Supplier Modal -->
   <div class="modal custom-modal fade" id="edit_contact" role="dialog">
     <div class="modal-dialog modal-dialog-centered modal-md">
         <div class="modal-content">
@@ -1236,7 +1236,7 @@
         </div>
     </div>
 </div>
-<!-- /Edit Vendor Modal -->
+<!-- /Edit Supplier Modal -->
 
 <!-- Delete Items Modal -->
 <div class="modal custom-modal fade modal-delete" id="delete_modal" role="dialog">
@@ -1898,7 +1898,7 @@
             <div class="modal-content">
                 <div class="modal-body">
                     <div class="form-header">
-                        <h3>Delete Vendor</h3>
+                        <h3>Delete Supplier</h3>
                         <p>Are you sure want to delete?</p>
                     </div>
                     <div class="modal-btn delete-action">
@@ -2161,7 +2161,7 @@
             <div class="modal-content">
                 <div class="modal-body">
                     <div class="form-header">
-                        <h3>Delete Vendor</h3>
+                        <h3>Delete Supplier</h3>
                         <p>Are you sure want to delete?</p>
                     </div>
                     <div class="modal-btn delete-action">
@@ -2507,7 +2507,7 @@
             <div class="modal-content">
                 <div class="modal-body">
                     <div class="form-header">
-                        <h3>Delete Vendor</h3>
+                        <h3>Delete Supplier</h3>
                         <p>Are you sure want to delete?</p>
                     </div>
                     <div class="modal-btn delete-action">
@@ -2594,7 +2594,7 @@
             <div class="modal-content">
                 <div class="modal-body">
                     <div class="form-header">
-                        <h3>Delete Vendor</h3>
+                        <h3>Delete Supplier</h3>
                         <p>Are you sure want to delete?</p>
                     </div>
                     <div class="modal-btn delete-action">
@@ -2892,7 +2892,7 @@
             <div class="modal-content">
                 <div class="modal-body">
                     <div class="form-header">
-                        <h3>Delete Vendor</h3>
+                        <h3>Delete Supplier</h3>
                         <p>Are you sure want to delete?</p>
                     </div>
                     <div class="modal-btn delete-action">
@@ -5262,7 +5262,7 @@
                             <div class="col-lg-3 col-sm-6">
                                 <div class="checkboxes">
                                     <label>
-                                        <input type="checkbox" name="checkbox" checked>Vendors
+                                        <input type="checkbox" name="checkbox" checked>Suppliers
                                     </label>
                                 </div>										
                             </div>
@@ -5318,7 +5318,7 @@
                             <div class="col-lg-3 col-sm-6">
                                 <div class="checkboxes">
                                     <label>
-                                        <input type="checkbox" name="checkbox" checked>Vendors
+                                        <input type="checkbox" name="checkbox" checked>Suppliers
                                     </label>
                                 </div>										
                             </div>
@@ -5560,7 +5560,7 @@
                             <div class="col-lg-3 col-sm-6">
                                 <div class="checkboxes">
                                     <label>
-                                        <input type="checkbox" name="checkbox" checked>Vendors
+                                        <input type="checkbox" name="checkbox" checked>Suppliers
                                     </label>
                                 </div>										
                             </div>
@@ -5616,7 +5616,7 @@
                             <div class="col-lg-3 col-sm-6">
                                 <div class="checkboxes">
                                     <label>
-                                        <input type="checkbox" name="checkbox" checked>Vendors
+                                        <input type="checkbox" name="checkbox" checked>Suppliers
                                     </label>
                                 </div>										
                             </div>

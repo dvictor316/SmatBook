@@ -6,7 +6,7 @@
     <div class="content container-fluid">
         @component('components.page-header')
             @slot('title')
-                Vendor Ledger
+                Supplier Ledger
             @endslot
         @endcomponent
 
@@ -460,7 +460,7 @@
                 <div class="modal-dialog modal-lg modal-dialog-centered">
                     <div class="modal-content border-0 shadow-lg">
                         <div class="modal-header">
-                            <h5 class="modal-title">Update Vendor Profile</h5>
+                            <h5 class="modal-title">Update Supplier Profile</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <form action="{{ route('vendors.profile.update', ['id' => $vendor->id]) }}" method="POST" enctype="multipart/form-data">
@@ -468,7 +468,7 @@
                             <div class="modal-body">
                                 <div class="row g-3">
                                     <div class="col-md-4">
-                                        <label class="form-label">Vendor Image</label>
+                                        <label class="form-label">Supplier Image</label>
                                         <input type="file" name="logo" class="form-control" accept="image/*">
                                         <div class="mt-3">
                                             <img src="{{ $vendor->logo_url }}" alt="{{ $vendor->name }}" class="img-fluid rounded-4 border" style="max-height: 180px; object-fit: cover;">

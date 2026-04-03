@@ -157,7 +157,7 @@
                         <div class="mb-2">
                             <label class="form-label small">Counterparty Type</label>
                             <select name="counterparty_type" class="form-select" required>
-                                <option value="vendor" @selected(old('counterparty_type') === 'vendor')>Vendor</option>
+                                <option value="vendor" @selected(old('counterparty_type') === 'vendor')>Supplier</option>
                                 <option value="customer" @selected(old('counterparty_type') === 'customer')>Customer</option>
                                 <option value="contractor" @selected(old('counterparty_type') === 'contractor')>Contractor</option>
                             </select>
@@ -359,7 +359,7 @@
                                             <div class="col-md-2"><input type="text" name="name" class="form-control form-control-sm" value="{{ $rule->name }}" required></div>
                                             <div class="col-md-2">
                                                 <select name="counterparty_type" class="form-select form-select-sm" required>
-                                                    <option value="vendor" @selected($rule->counterparty_type === 'vendor')>Vendor</option>
+                                                    <option value="vendor" @selected($rule->counterparty_type === 'vendor')>Supplier</option>
                                                     <option value="customer" @selected($rule->counterparty_type === 'customer')>Customer</option>
                                                     <option value="contractor" @selected($rule->counterparty_type === 'contractor')>Contractor</option>
                                                 </select>

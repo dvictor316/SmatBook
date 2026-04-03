@@ -54,7 +54,7 @@
                                 <tr>
                                     <th>#</th>
                                     <th>{{ __('Purchase No') }}</th>
-                                    <th>{{ __('Vendor') }}</th>
+                                    <th>{{ __('Supplier') }}</th>
                                     <th>{{ __('Product') }}</th>
                                     <th>{{ __('Amount') }}</th>
                                     <th>{{ __('Qty') }}</th>

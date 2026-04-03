@@ -1,6 +1,6 @@
 @extends('layout.mainlayout')
 
-@section('page-title', 'Add Vendor Transaction')
+@section('page-title', 'Add Supplier Transaction')
 
 @section('content')
 <div class="page-wrapper">

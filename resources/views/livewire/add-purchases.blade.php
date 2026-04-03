@@ -51,12 +51,12 @@
                                        class="form-control" readonly>
                             </div>
 
-                            <!-- Select Vendor -->
+                            <!-- Select Supplier -->
                             <div class="col-md-4">
-                                <label for="vendor_id" class="form-label">Select Vendor *</label>
+                                <label for="vendor_id" class="form-label">Select Supplier *</label>
                                 <div class="input-group">
                                     <select id="vendor_id" name="vendor_id" class="form-select @error('vendor_id') is-invalid @enderror" required>
-                                        <option value="">Choose Vendor</option>
+                                        <option value="">Choose Supplier</option>
                                         @foreach($vendors as $vendor)
                                             <option value="{{ $vendor->id }}" 
                                                 {{ old('vendor_id') == $vendor->id ? 'selected' : '' }}>
@@ -64,7 +64,7 @@
                                             </option>
                                         @endforeach
                                     </select>
-                                    <a class="btn btn-primary" href="{{ route('vendors.create') }}" title="Add Vendor">
+                                    <a class="btn btn-primary" href="{{ route('vendors.create') }}" title="Add Supplier">
                                         <i class="fas fa-plus-circle"></i>
                                     </a>
                                 </div>

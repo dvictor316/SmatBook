@@ -60,19 +60,6 @@
     </li>
     @endif
 
-    {{-- Vendors --}}
-    @if(Route::has('vendors.index'))
-    <li class="submenu {{ Request::is('vendors*') ? 'active subdrop' : '' }}">
-        <a href="#"><i class="fe fe-truck"></i><span>Vendors</span><span class="menu-arrow"></span></a>
-        <ul>
-            <li><a href="{{ route('vendors.index') }}">All Vendors</a></li>
-            @if(Route::has('vendors.create'))
-                <li><a href="{{ route('vendors.create') }}">Add Vendor</a></li>
-            @endif
-        </ul>
-    </li>
-    @endif
-
     {{-- Suppliers --}}
     @if(Route::has('suppliers.index'))
     <li class="submenu {{ Request::is('suppliers*') ? 'active subdrop' : '' }}">
@@ -240,7 +227,7 @@ function showUpgradeModal(planName, featureName) {
         title: '🚀 Upgrade to ' + planName,
         html: 'Unlock <strong>' + featureName + '</strong> and many more features!<br><br>' +
               '<ul style="text-align: left; display: inline-block; margin: 0 auto;">' +
-              '<li>Vendor Management</li>' +
+              '<li>Supplier Management</li>' +
               '<li>Full Inventory Control</li>' +
               '<li>Purchase Orders</li>' +
               '<li>Recurring Invoices</li>' +

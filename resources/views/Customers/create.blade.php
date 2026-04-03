@@ -9,10 +9,10 @@
         <div class="page-header">
             <div class="row">
                 <div class="col-sm-12">
-                    <h3 class="page-title">Create Vendor</h3>
+                    <h3 class="page-title">Create Supplier</h3>
                     <ul class="breadcrumb">
-                        <li class="breadcrumb-item"><a href="{{ route('vendors.index') }}">Vendors</a></li>
-                        <li class="breadcrumb-item active">New Vendor</li>
+                        <li class="breadcrumb-item"><a href="{{ route('vendors.index') }}">Suppliers</a></li>
+                        <li class="breadcrumb-item active">New Supplier</li>
                     </ul>
                 </div>
             </div>
@@ -23,7 +23,7 @@
             <div class="col-md-12">
                 <div class="card">
                     <div class="card-header">
-                        <h4 class="card-title">Vendor Information</h4>
+                        <h4 class="card-title">Supplier Information</h4>
                     </div>
                     <div class="card-body">
                         
@@ -45,9 +45,9 @@
                             <div class="row">
                                 <div class="col-md-12">
                                     <div class="form-group">
-                                        <label for="logo" class="col-form-label">Vendor Image</label>
+                                        <label for="logo" class="col-form-label">Supplier Image</label>
                                         <input type="file" id="logo" name="logo" class="form-control" accept="image/*">
-                                        <small class="text-muted">Upload a logo or profile image to personalize the vendor record.</small>
+                                        <small class="text-muted">Upload a logo or profile image to personalize the supplier record.</small>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
@@ -93,7 +93,7 @@
                             <div class="text-end mt-4">
                                 {{-- Link points back to the vendor index page --}}
                                 <a href="{{ route('vendors.index') }}" class="btn btn-light me-2">Cancel</a>
-                                <button type="submit" class="btn btn-primary">Create Vendor</button>
+                                <button type="submit" class="btn btn-primary">Create Supplier</button>
                             </div>
                         </form>
 

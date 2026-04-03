@@ -10,12 +10,12 @@
                 </div>
                 <div class="col-lg-4 col-md-6 col-sm-12">
                     <div class="input-block mb-3">
-                        <label>Select Vendor</label>
+                        <label>Select Supplier</label>
                         <ul class="form-group-plus css-equal-heights">
                             <li>
                                 <select class="select">
-                                    <option>Choose Vendor</option>
-                                    <option>Vendor 1</option>
+                                    <option>Choose Supplier</option>
+                                    <option>Supplier 1</option>
                                     <option>vendor 2</option>
                                     <option>vendor 3</option>
                                 </select>

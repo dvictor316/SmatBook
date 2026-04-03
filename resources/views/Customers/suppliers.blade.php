@@ -35,6 +35,8 @@
                                             <th>#</th>
                                             <th>Name</th>
                                             <th>Phone</th>
+                                            <th>Opening Balance</th>
+                                            <th>Balance Date</th>
                                             <th>Created</th>
                                             <th class="no-sort">Actions</th>
                                         </tr>
@@ -55,6 +57,8 @@
                                                     </h2>
                                                 </td>
                                                 <td>{{ $supplier->phone ?? '-' }}</td>
+                                                <td>{{ number_format((float) ($supplier->opening_balance ?? 0), 2) }}</td>
+                                                <td>{{ $supplier->opening_balance_date ?? '-' }}</td>
                                                 <td>{{ optional($supplier->created_at)->format('M d, Y') ?? 'N/A' }}</td>
                                                 <td class="d-flex align-items-center">
                                                     <a href="{{ route('suppliers.show', $supplier->id) }}" class="btn btn-outline-primary me-2">

@@ -54,6 +54,15 @@
                     </div>
                 </div>
             </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body">
+                        <p class="text-muted mb-1">Opening Balance</p>
+                        <h4 class="fw-bold mb-0">{{ number_format((float) ($supplier->opening_balance ?? 0), 2) }}</h4>
+                        <small class="text-muted">as of {{ $supplier->opening_balance_date ?? '—' }}</small>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="card">
@@ -84,6 +93,16 @@
                                     <td>{{ $purchase->reference_no ?? $purchase->invoice_serial_no ?? $purchase->purchase_order_no ?? '—' }}</td>
                                     <td class="text-capitalize">
                                         {{ $receivedColumn ? ($purchase->{$receivedColumn} ?? 'pending') : 'pending' }}
+                                        @php
+                                            $items = $purchaseItemsByPurchase[$purchase->id] ?? collect();
+                                            $totalQty = (float) $items->sum('qty');
+                                            $receivedQty = (float) $items->sum('received_qty');
+                                            $pct = $totalQty > 0 ? round(($receivedQty / $totalQty) * 100) : 0;
+                                        @endphp
+                                        <div class="progress mt-2" style="height: 6px;">
+                                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ $pct }}%;" aria-valuenow="{{ $pct }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                        <small class="text-muted">{{ $receivedQty }} received / {{ $totalQty }} total</small>
                                     </td>
                                     <td class="text-end">
                                         {{ number_format((float) ($totalColumn ? ($purchase->{$totalColumn} ?? 0) : 0), 2) }}

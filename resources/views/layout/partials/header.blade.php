@@ -68,14 +68,14 @@
 
     $headerSearchPlaceholder = 'Search customers, invoices, products...';
 
-    if (request()->routeIs('customers.*') || request()->is('customers*', 'vendors*')) {
-        $headerSearchPlaceholder = 'Search customers, vendors, ledgers...';
+    if (request()->routeIs('customers.*') || request()->is('customers*', 'suppliers*')) {
+        $headerSearchPlaceholder = 'Search customers, suppliers, ledgers...';
     } elseif (request()->routeIs('invoices.*') || request()->routeIs('sales.*') || request()->is('pos*')) {
         $headerSearchPlaceholder = 'Search invoices, POS, receipts, customers...';
     } elseif (request()->routeIs('products.*') || request()->is('products*', 'inventory*')) {
         $headerSearchPlaceholder = 'Search products, inventory, stock, shelves...';
     } elseif (request()->routeIs('purchases.*') || request()->routeIs('expenses.*')) {
-        $headerSearchPlaceholder = 'Search purchases, expenses, vendors...';
+        $headerSearchPlaceholder = 'Search purchases, expenses, suppliers...';
     } elseif (request()->routeIs('quotations*') || request()->is('quotations*', 'add-quotations*', 'edit-quotations*')) {
         $headerSearchPlaceholder = 'Search quotations, proposals, customers...';
     } elseif (request()->routeIs('payroll.*') || request()->is('payroll*')) {
@@ -101,19 +101,12 @@
             'icon' => 'fa-users',
             'keywords' => ['customers', 'clients', 'accounts', 'crm'],
         ] : null,
-        Route::has('vendors.index') ? [
-            'title' => 'Vendors',
-            'subtitle' => 'Suppliers and vendor ledger',
-            'url' => route('vendors.index'),
-            'icon' => 'fa-truck',
-            'keywords' => ['vendors', 'suppliers', 'procurement'],
-        ] : null,
         Route::has('suppliers.index') ? [
             'title' => 'Suppliers',
             'subtitle' => 'Supplier directory and procurement contacts',
             'url' => route('suppliers.index'),
             'icon' => 'fa-warehouse',
-            'keywords' => ['suppliers', 'procurement', 'vendors'],
+            'keywords' => ['suppliers', 'procurement'],
         ] : null,
         Route::has('products.index') ? [
             'title' => 'Products',

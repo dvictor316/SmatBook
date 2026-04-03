@@ -69,11 +69,10 @@
                 </li>
 
                 {{-- Customers --}}
-                <li class="submenu {{ Request::is('customers*', 'vendors*', 'suppliers*') ? 'active subdrop' : '' }}">
+                <li class="submenu {{ Request::is('customers*', 'suppliers*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-users"></i><span>Customers</span><span class="menu-arrow"></span></a>
                     <ul>
                         <li><a href="{{ route('customers.index') }}">Customers</a></li>
-                        <li><a href="{{ route('vendors.index') }}">Vendors</a></li>
                         <li><a href="{{ route('suppliers.index') }}">Suppliers</a></li>
                     </ul>
                 </li>
@@ -352,11 +351,10 @@
                 </li>
 
                 {{-- Customers --}}
-                <li class="submenu {{ Request::is('customers*', 'vendors*', 'suppliers*') ? 'active subdrop' : '' }}">
+                <li class="submenu {{ Request::is('customers*', 'suppliers*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-users"></i><span>Customers</span><span class="menu-arrow"></span></a>
                     <ul>
                         <li><a href="{{ route('customers.index') }}">Customers</a></li>
-                        <li><a href="{{ route('vendors.index') }}">Vendors</a></li>
                         <li><a href="{{ route('suppliers.index') }}">Suppliers</a></li>
                     </ul>
                 </li>
@@ -504,11 +502,10 @@
                 </li>
 
                 {{-- Customers --}}
-                <li class="submenu {{ Request::is('customers*', 'vendors*', 'suppliers*') ? 'active subdrop' : '' }}">
+                <li class="submenu {{ Request::is('customers*', 'suppliers*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-users"></i><span>Customers</span><span class="menu-arrow"></span></a>
                     <ul>
                         <li><a href="{{ route('customers.index') }}">Customers</a></li>
-                        <li><a href="{{ route('vendors.index') }}">Vendors</a></li>
                         <li><a href="{{ route('suppliers.index') }}">Suppliers</a></li>
                     </ul>
                 </li>
@@ -711,13 +708,6 @@ function showUpgradeModal(planName) {
                 {{-- LOCKED FEATURES - Upgrade to Professional --}}
                 <li class="menu-title"><span>Premium Features</span></li>
                 
-                <li>
-                    <a href="{{ Route::has('membership-plans') ? route('membership-plans') : url('/membership-plans') }}">
-                        <i class="fe fe-lock"></i>
-                        <span>Vendors</span>
-                        <span class="badge bg-warning">Pro</span>
-                    </a>
-                </li>
                 <li>
                     <a href="{{ Route::has('membership-plans') ? route('membership-plans') : url('/membership-plans') }}">
                         <i class="fe fe-lock"></i>
