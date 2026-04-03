@@ -287,5 +287,28 @@
             .catch(() => alert('Email failed. Please check mail settings.'));
         });
     });
+
+    // Force dropdown menus to render above the sidebar by portaling to body on open
+    document.querySelectorAll('.master-hub-wrapper .dropdown').forEach((dropdown) => {
+        const menu = dropdown.querySelector('.dropdown-menu');
+        if (!menu) return;
+
+        dropdown.addEventListener('shown.bs.dropdown', () => {
+            const rect = dropdown.getBoundingClientRect();
+            document.body.appendChild(menu);
+            menu.style.position = 'fixed';
+            menu.style.top = `${rect.bottom + 6}px`;
+            menu.style.left = `${Math.max(12, rect.right - menu.offsetWidth)}px`;
+            menu.style.zIndex = '3000';
+        });
+
+        dropdown.addEventListener('hide.bs.dropdown', () => {
+            dropdown.appendChild(menu);
+            menu.style.position = '';
+            menu.style.top = '';
+            menu.style.left = '';
+            menu.style.zIndex = '';
+        });
+    });
 </script>
 @endsection
