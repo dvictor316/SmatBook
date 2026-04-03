@@ -941,6 +941,18 @@ class SettingController extends Controller
         if (Schema::hasColumn('banks', 'swift_code')) {
             $payload['swift_code'] = $validated['ifsc_code'] ?? null;
         }
+        if (Schema::hasColumn('banks', 'company_id')) {
+            $payload['company_id'] = $request->user()?->company_id;
+        }
+        if (Schema::hasColumn('banks', 'user_id')) {
+            $payload['user_id'] = $request->user()?->id;
+        }
+        if (Schema::hasColumn('banks', 'branch_id')) {
+            $payload['branch_id'] = session('active_branch_id');
+        }
+        if (Schema::hasColumn('banks', 'branch_name')) {
+            $payload['branch_name'] = session('active_branch_name');
+        }
 
         Bank::create($payload);
 

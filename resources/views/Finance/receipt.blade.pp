@@ -37,8 +37,8 @@
                     <div class="row mb-4">
                         <div class="col-sm-6">
                             <h6 class="text-muted text-uppercase fw-bold">Received From:</h6>
-                            <p class="mb-1"><strong>{{ $payment->sale->customer->name ?? 'Walk-in Customer' }}</strong></p>
-                            <p class="text-muted">{{ $payment->sale->customer->email ?? '' }}</p>
+                            <p class="mb-1"><strong>{{ $payment->sale->customer->name ?? $payment->customer->customer_name ?? $payment->customer->name ?? 'Walk-in Customer' }}</strong></p>
+                            <p class="text-muted">{{ $payment->sale->customer->email ?? $payment->customer->email ?? '' }}</p>
                         </div>
                         <div class="col-sm-6 text-sm-end">
                             <h6 class="text-muted text-uppercase fw-bold">Payment Details:</h6>

@@ -15,6 +15,8 @@ class Bank extends Model
         'name', 
         'company_id',
         'user_id',
+        'branch_id',
+        'branch_name',
         'branch', 
         'account_number', 
         'balance', 

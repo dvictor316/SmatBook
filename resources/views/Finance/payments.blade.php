@@ -159,8 +159,27 @@
                     @endif
                     <div class="row g-4">
                         <div class="col-md-6">
-                            <label class="form-label fw-bold">Link to Sale Reference</label>
-                            <select class="form-select select" name="sale_id" required>
+                            <label class="form-label fw-bold">Customer (Optional)</label>
+                            @if(!empty($selectedCustomer))
+                                <input type="hidden" name="customer_id" value="{{ $selectedCustomer->id }}">
+                                <div class="form-control bg-light">
+                                    {{ $selectedCustomer->customer_name ?? $selectedCustomer->name ?? 'Customer' }}
+                                </div>
+                            @else
+                                <select class="form-select select" name="customer_id">
+                                    <option value="">-- Choose Customer --</option>
+                                    @foreach(($customers ?? collect()) as $customer)
+                                        <option value="{{ $customer->id }}">
+                                            {{ $customer->customer_name ?? $customer->name ?? 'Customer' }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            @endif
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Link to Sale Reference (Optional)</label>
+                            <select class="form-select select" name="sale_id">
                                 <option value="">-- Choose Sale --</option>
                                 @forelse($sales as $sale)
                                     <option value="{{ $sale->id }}" @selected(!empty($selectedSaleId) && (int) $selectedSaleId === (int) $sale->id)>

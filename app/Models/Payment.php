@@ -16,6 +16,7 @@ class Payment extends Model
     protected $fillable = [
         'payment_id',
         'sale_id',
+        'customer_id',
         'company_id',
         'user_id',
         'branch_id',
@@ -60,6 +61,11 @@ class Payment extends Model
     public function sale(): BelongsTo
     {
         return $this->belongsTo(Sale::class, 'sale_id');
+    }
+
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class, 'customer_id');
     }
 
     /**

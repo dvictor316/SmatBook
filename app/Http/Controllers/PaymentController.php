@@ -78,6 +78,7 @@ class PaymentController extends Controller
     {
         $request->validate([
             'sale_id' => 'nullable|exists:sales,id',
+            'customer_id' => 'nullable|exists:customers,id',
             'payment_account_id' => 'nullable|exists:accounts,id',
             'amount' => 'required|numeric|min:0.01',
             'reference' => 'nullable|string|max:191',
@@ -87,9 +88,16 @@ class PaymentController extends Controller
             'attachment' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:4096',
         ]);
 
+        if (!$request->filled('sale_id') && !$request->filled('customer_id')) {
+            return back()->withInput()->with('error', 'Select a customer or link a sale reference for this payment.');
+        }
+
         return DB::transaction(function () use ($request) {
             $sale = $request->filled('sale_id')
                 ? $this->applyTenantScope(Sale::query(), 'sales')->find($request->sale_id)
+                : null;
+            $customer = (!$sale && $request->filled('customer_id'))
+                ? $this->applyTenantScope(Customer::query(), 'customers')->find($request->customer_id)
                 : null;
             $activeBranch = $this->getActiveBranchContext();
 
@@ -102,6 +110,7 @@ class PaymentController extends Controller
 
             $payload = [
                 'sale_id' => $sale?->id,
+                'customer_id' => $sale?->customer_id ?? $customer?->id,
                 'branch_id' => $sale?->branch_id ?? $activeBranch['id'],
                 'branch_name' => $sale?->branch_name ?? $sale?->branch_label ?? $activeBranch['name'],
                 'reference' => $request->reference,
@@ -148,7 +157,18 @@ class PaymentController extends Controller
 
                 LedgerService::postSalePayment($sale->fresh(), $payment, $request->reference);
             } else {
-                LedgerService::postStandalonePayment($payment);
+                if ($customer && Schema::hasColumn('customers', 'balance')) {
+                    $currentBalance = (float) ($customer->balance ?? 0);
+                    $customer->update([
+                        'balance' => max(0, $currentBalance - (float) $payment->amount),
+                    ]);
+                }
+
+                if ($customer) {
+                    LedgerService::postCustomerPayment($payment);
+                } else {
+                    LedgerService::postStandalonePayment($payment);
+                }
             }
 
             return redirect()->route('payments.index')->with('success', 'Payment recorded and ledger updated.');
@@ -371,7 +391,7 @@ class PaymentController extends Controller
             $paymentsQuery = $paymentsBase;
         }
 
-        $salesBase = Sale::select('id', 'invoice_no');
+        $salesBase = Sale::select('id', 'invoice_no', 'customer_id', 'balance', 'total', 'paid', 'amount_paid');
         $this->applyTenantScope($salesBase, 'sales');
         $salesQuery = clone $salesBase;
         $this->applyBranchScope($salesQuery, 'sales');
@@ -395,6 +415,10 @@ class PaymentController extends Controller
             }
         }
 
+        $customersQuery = Customer::query()->orderByRaw("COALESCE(customer_name, name) asc");
+        $this->applyTenantScope($customersQuery, 'customers');
+        $this->applyBranchScope($customersQuery, 'customers');
+
         $assetAccountsQuery = Account::where('type', 'Asset')->where('is_active', 1);
         $this->applyTenantScope($assetAccountsQuery, 'accounts');
 
@@ -405,6 +429,7 @@ class PaymentController extends Controller
             'selectedCustomer' => $selectedCustomer,
             'selectedSaleId' => $selectedSaleId,
             'openPayment' => $openPayment,
+            'customers' => $customersQuery->get(),
         ];
         return view('Finance.payments', $data);
     }

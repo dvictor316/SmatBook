@@ -195,6 +195,51 @@ class LedgerService
         );
     }
 
+    public static function postCustomerPayment(Payment $payment): void
+    {
+        if (!self::isReady()) {
+            return;
+        }
+
+        $amount = (float) ($payment->amount ?? 0);
+        if ($amount <= 0) {
+            return;
+        }
+
+        $existing = Transaction::query()
+            ->where('related_id', $payment->id)
+            ->where('related_type', Payment::class)
+            ->where('transaction_type', Transaction::TYPE_RECEIPT)
+            ->exists();
+        if ($existing) {
+            return;
+        }
+
+        $cashAccount = null;
+        if (!empty($payment->payment_account_id)) {
+            $cashAccount = Account::query()->find((int) $payment->payment_account_id);
+        }
+        if (!$cashAccount) {
+            $cashAccount = self::resolveCashAccount($payment->method ?? null);
+        }
+
+        $receivableAccount = self::resolveAccount('Accounts Receivable', 'Asset', ['receivable', 'debtor'], 'AUTO-AST-AR');
+        $reference = $payment->reference ?: ($payment->payment_id ?: ('PAY-' . $payment->id));
+
+        self::postDoubleEntry(
+            debitAccountId: $cashAccount->id,
+            creditAccountId: $receivableAccount->id,
+            amount: $amount,
+            date: self::resolveDate($payment->created_at),
+            reference: $reference,
+            description: 'Customer payment received: ' . $reference,
+            transactionType: Transaction::TYPE_RECEIPT,
+            relatedId: (int) $payment->id,
+            relatedType: Payment::class,
+            userId: $payment->created_by ?? auth()->id()
+        );
+    }
+
     public static function postExpense(Expense $expense): void
     {
         if (!self::isReady()) {

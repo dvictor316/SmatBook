@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 trait TenantScoped
 {
@@ -63,6 +64,18 @@ trait TenantScoped
 
             $activeBranchId = trim((string) session('active_branch_id', ''));
             $activeBranchName = trim((string) session('active_branch_name', ''));
+            if ($activeBranchId === '' && $activeBranchName === '' && $companyId > 0 && Schema::hasTable('settings')) {
+                $branchKey = 'branches_json_company_' . $companyId;
+                $rawBranches = (string) (DB::table('settings')->where('key', $branchKey)->value('value') ?? '');
+                $branches = json_decode($rawBranches, true) ?: [];
+                $firstBranch = collect($branches)
+                    ->filter(fn ($branch) => !empty($branch['id']) || !empty($branch['name']))
+                    ->first();
+                if ($firstBranch) {
+                    $activeBranchId = trim((string) ($firstBranch['id'] ?? ''));
+                    $activeBranchName = trim((string) ($firstBranch['name'] ?? ''));
+                }
+            }
             if ($activeBranchId !== '' || $activeBranchName !== '') {
                 $hasBranchId = Schema::hasColumn($table, 'branch_id');
                 $hasBranchName = Schema::hasColumn($table, 'branch_name');

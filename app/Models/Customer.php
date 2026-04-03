@@ -24,10 +24,15 @@ class Customer extends Model
         'status', 
         'balance', 
         'credit_limit',
+        'opening_balance_date',
         'image',
         'currency',
         'website',
         'notes',
+        'company_id',
+        'user_id',
+        'branch_id',
+        'branch_name',
 
         // Billing Details
         'billing_name',

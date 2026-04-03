@@ -72,9 +72,9 @@
                     <div class="row mb-5">
                         <div class="col-sm-6">
                             <h6 class="text-muted text-uppercase small fw-bold mb-3">Received From:</h6>
-                            <h5 class="mb-1">{{ $payment->sale->customer->name ?? 'Walk-in Customer' }}</h5>
-                            <p class="text-muted small mb-0">{{ $payment->sale->customer->email ?? '' }}</p>
-                            <p class="text-muted small">{{ $payment->sale->customer->phone ?? '' }}</p>
+                            <h5 class="mb-1">{{ $payment->sale->customer->name ?? $payment->customer->customer_name ?? $payment->customer->name ?? 'Walk-in Customer' }}</h5>
+                            <p class="text-muted small mb-0">{{ $payment->sale->customer->email ?? $payment->customer->email ?? '' }}</p>
+                            <p class="text-muted small">{{ $payment->sale->customer->phone ?? $payment->customer->phone ?? '' }}</p>
                         </div>
                         <div class="col-sm-6 text-sm-end">
                             <h6 class="text-muted text-uppercase small fw-bold mb-3">Payment Method:</h6>
