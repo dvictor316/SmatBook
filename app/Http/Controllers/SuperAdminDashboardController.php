@@ -21,6 +21,10 @@ class SuperAdminDashboardController extends Controller
     public function index()
     {
         $user = Auth::user();
+        $activeBranch = [
+            'id' => session('active_branch_id') ? (string) session('active_branch_id') : null,
+            'name' => session('active_branch_name') ? (string) session('active_branch_name') : null,
+        ];
         if (method_exists(Subscription::class, 'expireDueSubscriptions')) {
             Subscription::expireDueSubscriptions();
         } else {
@@ -74,11 +78,25 @@ class SuperAdminDashboardController extends Controller
                 })
                 : null;
 
-            $salesRevenue = Schema::hasTable('sales') ? ((float) (DB::table('sales')->sum('total') ?? 0)) : 0.0;
+            $salesBranchScope = function ($query, string $table = 'sales') use ($activeBranch) {
+                if (Schema::hasColumn($table, 'branch_id') && !empty($activeBranch['id'])) {
+                    return $query->where($table . '.branch_id', (string) $activeBranch['id']);
+                }
+                if (Schema::hasColumn($table, 'branch_name') && !empty($activeBranch['name'])) {
+                    return $query->where($table . '.branch_name', (string) $activeBranch['name']);
+                }
+                return $query;
+            };
+
+            $salesRevenue = Schema::hasTable('sales')
+                ? ((float) ($salesBranchScope(DB::table('sales'))->sum('total') ?? 0))
+                : 0.0;
             $subscriptionRevenue = $paidSubscriptionsQuery
                 ? ((float) ((clone $paidSubscriptionsQuery)->sum('amount') ?? 0))
                 : 0.0;
-            $platformRevenue = $subscriptionRevenue > 0 ? $subscriptionRevenue : $salesRevenue;
+            $platformRevenue = !empty($activeBranch['id']) || !empty($activeBranch['name'])
+                ? $salesRevenue
+                : ($subscriptionRevenue > 0 ? $subscriptionRevenue : $salesRevenue);
 
             $activeSubs = Schema::hasTable('subscriptions')
                 ? Subscription::query()
@@ -103,14 +121,28 @@ class SuperAdminDashboardController extends Controller
                 $hasProductPrice = Schema::hasColumn('products', 'product_price');
                 $hasPrice = Schema::hasColumn('products', 'price');
                 $priceExpr = $hasProductPrice ? 'product_price' : ($hasPrice ? 'price' : '0');
-                $stockValue = (float) (DB::table('products')
-                    ->selectRaw("SUM(COALESCE({$priceExpr}, 0) * COALESCE(stock, 0)) as total_stock_value")
-                    ->value('total_stock_value') ?? 0);
-                if (Schema::hasColumn('products', 'stock')) {
-                    $lowStockItems = (int) (DB::table('products')
-                        ->whereNotNull('stock')
-                        ->where('stock', '<=', 10)
+
+                if (!empty($activeBranch['id']) && Schema::hasTable('product_branch_stocks')) {
+                    $stockValue = (float) (DB::table('product_branch_stocks')
+                        ->join('products', 'products.id', '=', 'product_branch_stocks.product_id')
+                        ->where('product_branch_stocks.branch_id', (string) $activeBranch['id'])
+                        ->selectRaw("SUM(COALESCE(product_branch_stocks.quantity, 0) * COALESCE(products.{$priceExpr}, 0)) as total_stock_value")
+                        ->value('total_stock_value') ?? 0);
+                    $lowStockItems = (int) (DB::table('product_branch_stocks')
+                        ->where('branch_id', (string) $activeBranch['id'])
+                        ->whereNotNull('quantity')
+                        ->where('quantity', '<=', 10)
                         ->count());
+                } else {
+                    $stockValue = (float) (DB::table('products')
+                        ->selectRaw("SUM(COALESCE({$priceExpr}, 0) * COALESCE(stock, 0)) as total_stock_value")
+                        ->value('total_stock_value') ?? 0);
+                    if (Schema::hasColumn('products', 'stock')) {
+                        $lowStockItems = (int) (DB::table('products')
+                            ->whereNotNull('stock')
+                            ->where('stock', '<=', 10)
+                            ->count());
+                    }
                 }
             }
 
@@ -177,7 +209,7 @@ class SuperAdminDashboardController extends Controller
                     ->get();
             }
             if ($revenueTrends->isEmpty() && Schema::hasTable('sales')) {
-                $revenueTrends = DB::table('sales')
+                $revenueTrends = $salesBranchScope(DB::table('sales'))
                     ->select(
                         DB::raw('MONTHNAME(created_at) as month'),
                         DB::raw('SUM(total) as total'),
@@ -373,7 +405,8 @@ class SuperAdminDashboardController extends Controller
             }
 
             $activityHeatmap = [];
-            if (Schema::hasTable('subscriptions')) {
+            $forceBranchHeatmap = !empty($activeBranch['id']) || !empty($activeBranch['name']);
+            if (!$forceBranchHeatmap && Schema::hasTable('subscriptions')) {
                 $heatRows = Subscription::select(
                         DB::raw('DAYOFWEEK(created_at) as dow'),
                         DB::raw('HOUR(created_at) as hr'),
@@ -393,7 +426,7 @@ class SuperAdminDashboardController extends Controller
                 }
             }
             if (empty($activityHeatmap) && Schema::hasTable('sales')) {
-                $heatRows = DB::table('sales')
+                $heatRows = $salesBranchScope(DB::table('sales'))
                     ->select(
                         DB::raw('DAYOFWEEK(created_at) as dow'),
                         DB::raw('HOUR(created_at) as hr'),
@@ -454,7 +487,7 @@ class SuperAdminDashboardController extends Controller
                     ->get();
             }
             if ($platformActivity->isEmpty() && Schema::hasTable('sales')) {
-                $platformActivity = Sale::query()
+                $platformActivity = $salesBranchScope(Sale::query())
                     ->latest()
                     ->limit(10)
                     ->get()
@@ -491,6 +524,7 @@ class SuperAdminDashboardController extends Controller
                 'userRole', 'permissions', 'deployments', 'domain', 
                 'deploymentLimit', 'statusDistribution', 'isDeploymentView',
                 'chartSeries', 'activityHeatmap', 'systemHealth', 'managerPerformance',
+                'activeBranch',
                 'expiringSubscriptions'
             ));
 
