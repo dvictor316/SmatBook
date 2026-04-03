@@ -5,9 +5,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Traits\TenantScoped;
 
 class Receipt extends Model
 {
+    use TenantScoped;
     // If your table name is not 'receipts' (unlikely), set it here:
     // protected $table = 'your_custom_receipt_table_name'; 
 

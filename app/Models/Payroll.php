@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Traits\TenantScoped;
 
 class Payroll extends Model
 {
-    use HasFactory;
+    use HasFactory, TenantScoped;
 
     protected $fillable = [
         'employee_id', 'payroll_run_id',
@@ -59,4 +60,3 @@ class Payroll extends Model
         return $query->where('status', 'pending');
     }
 }
-

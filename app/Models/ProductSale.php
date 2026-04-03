@@ -6,10 +6,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Traits\TenantScoped;
 
 class ProductSale extends Model
 {
-    use HasFactory;
+    use HasFactory, TenantScoped;
 
     // Define fillable fields, relationships, etc.
     protected $fillable = [

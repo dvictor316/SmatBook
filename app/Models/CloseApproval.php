@@ -5,10 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\Traits\TenantScoped;
 
 class CloseApproval extends Model
 {
-    use HasFactory;
+    use HasFactory, TenantScoped;
 
     protected $fillable = [
         'accounting_period_id',
@@ -40,4 +41,3 @@ class CloseApproval extends Model
         return $this->belongsTo(User::class, 'approved_by');
     }
 }
-

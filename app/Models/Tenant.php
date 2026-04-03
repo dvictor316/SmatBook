@@ -3,10 +3,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Traits\TenantScoped;
 
 class Tenant extends Model
 {
-    use HasFactory;
+    use HasFactory, TenantScoped;
 
     /**
      * The table associated with the model.

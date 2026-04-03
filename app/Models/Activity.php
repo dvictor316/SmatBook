@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Traits\TenantScoped;
 
 class Activity extends Model
 {
-    use HasFactory;
+    use HasFactory, TenantScoped;
 
     // Allow these fields to be filled by the database
     protected $fillable = [

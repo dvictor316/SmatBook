@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\Traits\TenantScoped;
 
 class Income extends Model
 {
-    use HasFactory;
+    use HasFactory, TenantScoped;
 
     public function index()
     {

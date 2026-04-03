@@ -7,10 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo; // Necessary for relationships
 use Illuminate\Support\Facades\Storage;
 use App\Support\GeoCurrency;
+use App\Models\Traits\TenantScoped;
 
 class Payment extends Model
 {
-    use HasFactory;
+    use HasFactory, TenantScoped;
 
     protected $fillable = [
         'payment_id',

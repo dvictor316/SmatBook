@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
+use App\Models\Traits\TenantScoped;
 
 class Message extends Model
 {
-    use HasFactory, SoftDeletes; // Added SoftDeletes for the "Trash" folder
+    use HasFactory, SoftDeletes, TenantScoped; // Added SoftDeletes for the "Trash" folder
 
     protected $fillable = [
         'user_id',      // Sender

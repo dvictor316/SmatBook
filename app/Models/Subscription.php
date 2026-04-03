@@ -18,10 +18,11 @@ use Carbon\Carbon;
 use App\Support\GeoCurrency;
 use App\Models\Plan;
 use Illuminate\Support\Facades\Schema;
+use App\Models\Traits\TenantScoped;
 
 class Subscription extends Model
 {
-    use HasFactory;
+    use HasFactory, TenantScoped;
 
     /**
      * REWRITTEN: SUBSCRIPTION MODEL

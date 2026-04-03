@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Traits\TenantScoped;
 
 class Bank extends Model
 {
-    use HasFactory;
+    use HasFactory, TenantScoped;
 
     // Add fillable or guarded attributes
     protected $fillable = [

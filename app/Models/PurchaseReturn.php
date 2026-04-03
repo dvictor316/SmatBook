@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Traits\TenantScoped;
 
 class PurchaseReturn extends Model
 {
-    use HasFactory;
+    use HasFactory, TenantScoped;
 
     // Add the fields that are in your purchase_returns table
     protected $fillable = [

@@ -7,10 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use App\Models\Traits\TenantScoped;
 
 class Company extends Model
 {
-    use HasFactory;
+    use HasFactory, TenantScoped;
 
     /**
      * Attributes that can be mass-assigned.

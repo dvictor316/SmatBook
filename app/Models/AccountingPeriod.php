@@ -5,10 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\Traits\TenantScoped;
 
 class AccountingPeriod extends Model
 {
-    use HasFactory;
+    use HasFactory, TenantScoped;
 
     protected $fillable = [
         'name',
@@ -35,4 +36,3 @@ class AccountingPeriod extends Model
         return $this->hasMany(CloseApproval::class, 'accounting_period_id');
     }
 }
-
