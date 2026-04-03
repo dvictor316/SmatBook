@@ -76,6 +76,10 @@
     .sticky-right .dropdown-menu {
         z-index: 2000;
     }
+    body.dropdown-elevated .sidebar,
+    body.dropdown-elevated .header {
+        z-index: 900 !important;
+    }
 </style>
 
 <div class="master-hub-wrapper">
@@ -292,17 +296,29 @@
     document.querySelectorAll('.master-hub-wrapper .dropdown').forEach((dropdown) => {
         const menu = dropdown.querySelector('.dropdown-menu');
         if (!menu) return;
+        let onReposition = null;
 
-        dropdown.addEventListener('shown.bs.dropdown', () => {
+        const reposition = () => {
             const rect = dropdown.getBoundingClientRect();
-            document.body.appendChild(menu);
-            menu.style.position = 'fixed';
             menu.style.top = `${rect.bottom + 6}px`;
             menu.style.left = `${Math.max(12, rect.right - menu.offsetWidth)}px`;
-            menu.style.zIndex = '3000';
+        };
+
+        dropdown.addEventListener('shown.bs.dropdown', () => {
+            document.body.classList.add('dropdown-elevated');
+            document.body.appendChild(menu);
+            menu.style.position = 'fixed';
+            menu.style.zIndex = '12000';
+            reposition();
+            onReposition = () => reposition();
+            window.addEventListener('scroll', onReposition, true);
+            window.addEventListener('resize', onReposition);
         });
 
         dropdown.addEventListener('hide.bs.dropdown', () => {
+            document.body.classList.remove('dropdown-elevated');
+            window.removeEventListener('scroll', onReposition, true);
+            window.removeEventListener('resize', onReposition);
             dropdown.appendChild(menu);
             menu.style.position = '';
             menu.style.top = '';
