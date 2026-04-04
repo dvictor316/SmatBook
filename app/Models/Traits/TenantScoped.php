@@ -59,8 +59,32 @@ trait TenantScoped
                 $builder->where("{$table}.user_id", $userId);
             }
 
+            $requestBranchScope = (string) request()->get('branch_scope', '');
+            $requestBranchId = (string) request()->get('branch_id', '');
+            $requestAllBranches = request()->boolean('all_branches')
+                || strtolower($requestBranchScope) === 'all'
+                || strtolower($requestBranchId) === 'all';
+
+            if ($requestAllBranches) {
+                return;
+            }
+
             $activeBranchId = trim((string) session('active_branch_id', ''));
             $activeBranchName = trim((string) session('active_branch_name', ''));
+
+            if ($requestBranchId !== '') {
+                $activeBranchId = trim($requestBranchId);
+                $activeBranchName = '';
+                if ($activeBranchId !== '' && $companyId > 0 && Schema::hasTable('settings')) {
+                    $branchKey = 'branches_json_company_' . $companyId;
+                    $rawBranches = (string) (DB::table('settings')->where('key', $branchKey)->value('value') ?? '');
+                    $branches = json_decode($rawBranches, true) ?: [];
+                    $branchMatch = collect($branches)->firstWhere('id', $activeBranchId);
+                    if ($branchMatch) {
+                        $activeBranchName = trim((string) ($branchMatch['name'] ?? ''));
+                    }
+                }
+            }
             if ($activeBranchId === '' && $activeBranchName === '' && $companyId > 0 && Schema::hasTable('settings')) {
                 $branchKey = 'branches_json_company_' . $companyId;
                 $rawBranches = (string) (DB::table('settings')->where('key', $branchKey)->value('value') ?? '');

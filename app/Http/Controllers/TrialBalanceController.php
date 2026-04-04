@@ -13,11 +13,59 @@ use App\Exports\TrialBalanceExport;
 
 class TrialBalanceController extends Controller
 {
+    private function resolveActiveBranch(Request $request): array
+    {
+        $branchScope = (string) $request->get('branch_scope', '');
+        $branchId = (string) $request->get('branch_id', '');
+        $allBranches = $request->boolean('all_branches')
+            || strtolower($branchScope) === 'all'
+            || strtolower($branchId) === 'all';
+
+        if ($allBranches) {
+            return ['id' => null, 'name' => null, 'scope' => 'all'];
+        }
+
+        $activeBranchId = trim((string) session('active_branch_id', ''));
+        $activeBranchName = trim((string) session('active_branch_name', ''));
+
+        if ($branchId !== '') {
+            $activeBranchId = trim($branchId);
+            $activeBranchName = '';
+        }
+
+        $companyId = (int) (auth()->user()?->company_id ?? 0);
+        if (($activeBranchId === '' || $activeBranchName === '') && $companyId > 0 && Schema::hasTable('settings')) {
+            $branchKey = 'branches_json_company_' . $companyId;
+            $rawBranches = (string) (DB::table('settings')->where('key', $branchKey)->value('value') ?? '');
+            $branches = json_decode($rawBranches, true) ?: [];
+
+            if ($activeBranchId !== '') {
+                $match = collect($branches)->firstWhere('id', $activeBranchId);
+                $activeBranchName = trim((string) ($match['name'] ?? $activeBranchName));
+            } else {
+                $first = collect($branches)->first();
+                $activeBranchId = trim((string) ($first['id'] ?? $activeBranchId));
+                $activeBranchName = trim((string) ($first['name'] ?? $activeBranchName));
+            }
+        }
+
+        if ($activeBranchId !== '') {
+            session(['active_branch_id' => $activeBranchId]);
+        }
+        if ($activeBranchName !== '') {
+            session(['active_branch_name' => $activeBranchName]);
+        }
+
+        return ['id' => $activeBranchId ?: null, 'name' => $activeBranchName ?: null, 'scope' => 'branch'];
+    }
+
     /**
      * Display the trial balance
      */
     public function index(Request $request)
     {
+        $activeBranch = $this->resolveActiveBranch($request);
+
         // 1. Set Date Range (Default: latest transaction month)
         $start = $request->start_date ? Carbon::parse($request->start_date) : null;
         $end = $request->end_date ? Carbon::parse($request->end_date) : null;
@@ -90,7 +138,9 @@ class TrialBalanceController extends Controller
             'reportDate'   => $end, // Added fallback for header logic
             'accounts'     => $accounts,
             'totalDebits'  => $accounts->sum('debit_balance'),
-            'totalCredits' => $accounts->sum('credit_balance')
+            'totalCredits' => $accounts->sum('credit_balance'),
+            'activeBranch' => $activeBranch,
+            'branchScope'  => $activeBranch['scope'] ?? 'branch',
         ]);
     }
 
@@ -99,6 +149,8 @@ class TrialBalanceController extends Controller
      */
     public function export(Request $request)
     {
+        $this->resolveActiveBranch($request);
+
         $startDate = $request->start_date ? Carbon::parse($request->start_date) : null;
         $endDate = $request->end_date ? Carbon::parse($request->end_date) : null;
 
