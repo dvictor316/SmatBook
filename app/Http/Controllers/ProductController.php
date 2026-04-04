@@ -657,6 +657,8 @@ class ProductController extends Controller
 
             return redirect()->route('product-list')
                 ->with('success', 'Product added successfully.');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e;
         } catch (\Throwable $e) {
             \Log::error('Product store failed', [
                 'error' => $e->getMessage(),
@@ -664,9 +666,17 @@ class ProductController extends Controller
                 'payload' => $request->except(['image']),
             ]);
 
+            $message = 'Product could not be added.';
+            $showDetail = config('app.debug') || (auth()->user()?->role === 'super_admin');
+            if ($showDetail) {
+                $message .= ' ' . $e->getMessage();
+            } else {
+                $message .= ' Please check the highlighted fields and try again.';
+            }
+
             return back()
                 ->withInput()
-                ->with('error', 'Product could not be added. Please check the highlighted fields and try again.');
+                ->with('error', $message);
         }
     }
 
