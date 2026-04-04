@@ -647,6 +647,26 @@ class ProductController extends Controller
                 unset($validated['branch_name']);
             }
             $product = Product::create($validated);
+            if (Schema::hasTable('product_branch_stocks')) {
+                $branchId = $selectedBranch['id'] ?? null;
+                if (!empty($branchId)) {
+                    $alreadyHasStock = DB::table('product_branch_stocks')
+                        ->where('product_id', $product->id)
+                        ->where('branch_id', $branchId)
+                        ->exists();
+                    if (!$alreadyHasStock) {
+                        DB::table('product_branch_stocks')->insert([
+                            'product_id' => $product->id,
+                            'branch_id' => $branchId,
+                            'branch_name' => $selectedBranch['name'] ?? null,
+                            'quantity' => (float) ($product->stock ?? 0),
+                            'company_id' => $product->company_id ?? ($resolvedCompanyId ?: null),
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
+                }
+            }
             $this->branchInventory->seedOpeningStock(
                 $product,
                 (float) $validated['stock'],
