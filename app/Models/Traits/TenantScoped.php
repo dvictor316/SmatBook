@@ -34,7 +34,7 @@ trait TenantScoped
             $model = $builder->getModel();
             $table = $model->getTable();
 
-            $companyId = (int) ($user->company_id ?? 0);
+            $companyId = (int) ($user->company_id ?? session('current_tenant_id') ?? 0);
             $userId = (int) ($user->id ?? 0);
 
             if ($isSuperAdmin && $isSuperAdminArea && $companyId === 0) {

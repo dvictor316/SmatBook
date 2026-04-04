@@ -72,7 +72,7 @@ use App\Support\LedgerService;
             }
 
             if ((!$branchId || !$branchName) && Schema::hasTable('settings')) {
-                $companyId = (int) (Auth::user()?->company_id ?? 0);
+            $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
                 if ($companyId > 0) {
                     $key = 'branches_json_company_' . $companyId;
                     $raw = (string) (DB::table('settings')->where('key', $key)->value('value') ?? '');

@@ -35,7 +35,7 @@ class BalanceSheetController extends Controller
             $activeBranchName = '';
         }
 
-        $companyId = (int) (auth()->user()?->company_id ?? 0);
+        $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
         if (($activeBranchId === '' || $activeBranchName === '') && $companyId > 0 && Schema::hasTable('settings')) {
             $branchKey = 'branches_json_company_' . $companyId;
             $rawBranches = (string) (DB::table('settings')->where('key', $branchKey)->value('value') ?? '');
@@ -114,7 +114,7 @@ class BalanceSheetController extends Controller
         }
 
         // 1. Get all accounts with sums up to the report date (branch-safe)
-        $companyId = (int) ($request->user()?->company_id ?? 0);
+        $companyId = (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0);
         $userId = (int) ($request->user()?->id ?? 0);
 
         $txnTotals = Transaction::query()

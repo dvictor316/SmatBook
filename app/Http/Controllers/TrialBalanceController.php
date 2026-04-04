@@ -33,7 +33,7 @@ class TrialBalanceController extends Controller
             $activeBranchName = '';
         }
 
-        $companyId = (int) (auth()->user()?->company_id ?? 0);
+        $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
         if (($activeBranchId === '' || $activeBranchName === '') && $companyId > 0 && Schema::hasTable('settings')) {
             $branchKey = 'branches_json_company_' . $companyId;
             $rawBranches = (string) (DB::table('settings')->where('key', $branchKey)->value('value') ?? '');
@@ -65,7 +65,7 @@ class TrialBalanceController extends Controller
     public function index(Request $request)
     {
         $activeBranch = $this->resolveActiveBranch($request);
-        $companyId = (int) ($request->user()?->company_id ?? 0);
+        $companyId = (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0);
         $userId = (int) ($request->user()?->id ?? 0);
 
         // 1. Set Date Range (Default: latest transaction month)
