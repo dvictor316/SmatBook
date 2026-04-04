@@ -661,6 +661,14 @@ class SettingController extends Controller
             return redirect()->back()->withInput()->with('error', 'Basic plan supports a single branch only.');
         }
 
+        $name = trim((string) $validated['name']);
+        $duplicateByName = $branches->first(function ($branch) use ($name) {
+            return (string) ($branch['name'] ?? '') === $name;
+        });
+        if ($duplicateByName) {
+            return redirect()->back()->withInput()->with('error', 'A branch with this name already exists.');
+        }
+
         $code = strtoupper(trim((string) ($validated['code'] ?? '')));
         if ($code === '') {
             $code = strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $validated['name']), 0, 4));
@@ -669,7 +677,7 @@ class SettingController extends Controller
 
         $branches->push([
             'id' => (string) Str::uuid(),
-            'name' => $validated['name'],
+            'name' => $name,
             'code' => $code,
             'manager' => $validated['manager'] ?? '',
             'phone' => $validated['phone'] ?? '',
@@ -693,12 +701,24 @@ class SettingController extends Controller
             'is_active' => 'nullable|boolean',
         ]);
 
-        $branches = collect($this->getCompanyScopedJsonSettingArray('branches_json'))->map(function ($branch) use ($branchId, $validated) {
+        $branchesCollection = collect($this->getCompanyScopedJsonSettingArray('branches_json'));
+        $name = trim((string) $validated['name']);
+        $duplicateByName = $branchesCollection->first(function ($branch) use ($branchId, $name) {
+            if ((string) ($branch['id'] ?? '') === $branchId) {
+                return false;
+            }
+            return (string) ($branch['name'] ?? '') === $name;
+        });
+        if ($duplicateByName) {
+            return redirect()->back()->withInput()->with('error', 'A branch with this name already exists.');
+        }
+
+        $branches = $branchesCollection->map(function ($branch) use ($branchId, $validated, $name) {
             if ((string) ($branch['id'] ?? '') !== $branchId) {
                 return $branch;
             }
 
-            $branch['name'] = $validated['name'];
+            $branch['name'] = $name;
             $branch['code'] = strtoupper(trim((string) ($validated['code'] ?? $branch['code'] ?? '')));
             $branch['manager'] = $validated['manager'] ?? '';
             $branch['phone'] = $validated['phone'] ?? '';
