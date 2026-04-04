@@ -250,13 +250,18 @@ private function applyBranchScope($query, string $table = 'purchases')
             }
 
             $purchasePayload = [
-                'branch_id' => $activeBranch['id'],
-                'branch_name' => $activeBranch['name'],
                 'purchase_no' => $purchaseNo,
                 'total_amount' => $totals['total_amount'],
                 'tax_amount' => $totals['vat_amount'],
                 'status' => 'received',
             ];
+
+            if (Schema::hasColumn('purchases', 'branch_id')) {
+                $purchasePayload['branch_id'] = $activeBranch['id'];
+            }
+            if (Schema::hasColumn('purchases', 'branch_name')) {
+                $purchasePayload['branch_name'] = $activeBranch['name'];
+            }
 
             if (Schema::hasColumn('purchases', 'supplier_id')) {
                 $purchasePayload['supplier_id'] = $validated['supplier_id'] ?? $validated['vendor_id'] ?? null;

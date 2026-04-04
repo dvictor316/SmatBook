@@ -185,28 +185,28 @@
                                 <ul class="dropdown-menu dropdown-menu-end">
                                     <li><a class="dropdown-item" href="{{ route('inventory.Products.import.template') }}"><i class="far fa-file-lines me-2 text-primary"></i>Download Spreadsheet Template</a></li>
                                     <li><button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#importProductsModal"><i class="fas fa-file-upload me-2 text-success"></i>Import Products</button></li>
-                                    <?php $lastImportKey = 'product_import_last_' . (auth()->id() ?? 'guest'); ?>
-                                    <?php if (\Illuminate\Support\Facades\Cache::has($lastImportKey)) { ?>
+                                    @php($lastImportKey = 'product_import_last_' . (auth()->id() ?? 'guest'))
+                                    @if (\Illuminate\Support\Facades\Cache::has($lastImportKey))
                                         <li>
                                             <form action="{{ route('inventory.Products.import.undo') }}" method="POST" onsubmit="return confirm('Undo the last product import? This will delete the imported items and reset their stock.');">
-                                                <?php echo csrf_field(); ?>
+                                                @csrf
                                                   <button type="submit" class="dropdown-item text-danger">
                                                       <i class="fa-solid fa-rotate me-2"></i>Undo Last Import
                                                   </button>
                                             </form>
                                         </li>
-                                    <?php } ?>
+                                    @endif
                                 </ul>
                             </div>
 
                             <button type="button" class="btn btn-success desktop-add-product-trigger" data-bs-toggle="modal" data-bs-target="#addProductModal">
                                 <i class="fa fa-plus"></i> Add Product
                             </button>
-                            <?php if (($stockTransferEnabled ?? false) && count($availableBranches ?? []) > 1) { ?>
+                            @if (($stockTransferEnabled ?? false) && count($availableBranches ?? []) > 1)
                                 <button type="button" class="btn btn-outline-dark" data-bs-toggle="modal" data-bs-target="#transferStockModal">
                                     <i class="fas fa-right-left"></i> Transfer Stock
                                 </button>
-                            <?php } ?>
+                            @endif
                         </div>
                     </div>
                 </div>
