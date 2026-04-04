@@ -13,12 +13,18 @@ class BalanceSheetExport implements FromArray, WithHeadings
     protected $reportDate;
     protected $companyId;
     protected $userId;
+    protected $branchId;
+    protected $branchName;
+    protected $branchScope;
 
-    public function __construct(Carbon $reportDate, int $companyId = 0, int $userId = 0)
+    public function __construct(Carbon $reportDate, int $companyId = 0, int $userId = 0, ?string $branchId = null, ?string $branchName = null, string $branchScope = 'branch')
     {
         $this->reportDate = $reportDate;
         $this->companyId = $companyId;
         $this->userId = $userId;
+        $this->branchId = $branchId;
+        $this->branchName = $branchName;
+        $this->branchScope = $branchScope;
     }
 
     public function array(): array
@@ -113,25 +119,45 @@ class BalanceSheetExport implements FromArray, WithHeadings
             return collect([]);
         }
 
-        $accountsQuery = Account::query();
-        if ($this->companyId > 0 && \Schema::hasColumn('accounts', 'company_id')) {
-            $accountsQuery->where('company_id', $this->companyId);
-        } elseif ($this->userId > 0 && \Schema::hasColumn('accounts', 'user_id')) {
-            $accountsQuery->where('user_id', $this->userId);
+        $txnQuery = \App\Models\Transaction::query()
+            ->selectRaw('account_id, SUM(debit) as total_debit, SUM(credit) as total_credit')
+            ->where('transaction_date', '<=', $date)
+            ->groupBy('account_id');
+
+        if ($this->branchScope !== 'all') {
+            if (!empty($this->branchId)) {
+                $txnQuery->where('branch_id', $this->branchId);
+            } elseif (!empty($this->branchName)) {
+                $txnQuery->where('branch_name', $this->branchName);
+            }
         }
 
-        $accounts = $accountsQuery->with(['transactions' => function($query) use ($date) {
-            $query->where('transaction_date', '<=', $date);
-            if ($this->companyId > 0 && \Schema::hasColumn('transactions', 'company_id')) {
-                $query->where('company_id', $this->companyId);
-            } elseif ($this->userId > 0 && \Schema::hasColumn('transactions', 'user_id')) {
-                $query->where('user_id', $this->userId);
-            }
-        }])->get();
+        $txnTotals = $txnQuery->get()->keyBy('account_id');
+        $accountIds = $txnTotals->keys()->all();
 
-        return $accounts->map(function($account) {
-            $debits = $account->transactions->sum('debit');
-            $credits = $account->transactions->sum('credit');
+        if (empty($accountIds)) {
+            return collect([]);
+        }
+
+        $accounts = Account::withoutGlobalScope('tenant')
+            ->whereIn('id', $accountIds)
+            ->where(function ($q) {
+                if ($this->companyId > 0) {
+                    $q->where('company_id', $this->companyId)
+                      ->orWhere(function ($sub) {
+                          $sub->whereNull('company_id')
+                              ->where('user_id', $this->userId);
+                      });
+                } elseif ($this->userId > 0) {
+                    $q->where('user_id', $this->userId);
+                }
+            })
+            ->get();
+
+        return $accounts->map(function($account) use ($txnTotals) {
+            $totals = $txnTotals->get($account->id);
+            $debits = (float) ($totals->total_debit ?? 0);
+            $credits = (float) ($totals->total_credit ?? 0);
 
             $type = $this->normalizeAccountType($account->type ?? null);
             if (in_array($type, ['asset', 'expense'], true)) {
@@ -151,38 +177,60 @@ class BalanceSheetExport implements FromArray, WithHeadings
             return 0;
         }
 
-        $accountsQuery = Account::query();
-        if ($this->companyId > 0 && \Schema::hasColumn('accounts', 'company_id')) {
-            $accountsQuery->where('company_id', $this->companyId);
-        } elseif ($this->userId > 0 && \Schema::hasColumn('accounts', 'user_id')) {
-            $accountsQuery->where('user_id', $this->userId);
+        $txnQuery = \App\Models\Transaction::query()
+            ->selectRaw('account_id, SUM(debit) as total_debit, SUM(credit) as total_credit')
+            ->where('transaction_date', '<=', $date)
+            ->groupBy('account_id');
+
+        if ($this->branchScope !== 'all') {
+            if (!empty($this->branchId)) {
+                $txnQuery->where('branch_id', $this->branchId);
+            } elseif (!empty($this->branchName)) {
+                $txnQuery->where('branch_name', $this->branchName);
+            }
         }
 
-        $accounts = (clone $accountsQuery)->with(['transactions' => function($query) use ($date) {
-            $query->where('transaction_date', '<=', $date);
-            if ($this->companyId > 0 && \Schema::hasColumn('transactions', 'company_id')) {
-                $query->where('company_id', $this->companyId);
-            } elseif ($this->userId > 0 && \Schema::hasColumn('transactions', 'user_id')) {
-                $query->where('user_id', $this->userId);
-            }
-        }])->get();
+        $txnTotals = $txnQuery->get()->keyBy('account_id');
+        $accountIds = $txnTotals->keys()->all();
+
+        if (empty($accountIds)) {
+            return 0;
+        }
+
+        $accounts = Account::withoutGlobalScope('tenant')
+            ->whereIn('id', $accountIds)
+            ->where(function ($q) {
+                if ($this->companyId > 0) {
+                    $q->where('company_id', $this->companyId)
+                      ->orWhere(function ($sub) {
+                          $sub->whereNull('company_id')
+                              ->where('user_id', $this->userId);
+                      });
+                } elseif ($this->userId > 0) {
+                    $q->where('user_id', $this->userId);
+                }
+            })
+            ->get();
 
         $revenue = $accounts
             ->filter(fn ($account) => $this->normalizeAccountType($account->type ?? null) === 'revenue')
-            ->sum(function($account) {
-                return $account->transactions->sum('credit') - $account->transactions->sum('debit');
+            ->sum(function($account) use ($txnTotals) {
+                $totals = $txnTotals->get($account->id);
+                return (float) ($totals->total_credit ?? 0) - (float) ($totals->total_debit ?? 0);
             });
 
         $expenses = $accounts
             ->filter(fn ($account) => $this->normalizeAccountType($account->type ?? null) === 'expense')
-            ->sum(function($account) {
-                return $account->transactions->sum('debit') - $account->transactions->sum('credit');
+            ->sum(function($account) use ($txnTotals) {
+                $totals = $txnTotals->get($account->id);
+                return (float) ($totals->total_debit ?? 0) - (float) ($totals->total_credit ?? 0);
             });
 
         $dividends = $accounts
             ->filter(fn ($account) => str_contains(strtolower((string) $account->name), 'dividend'))
-            ->sum(function($account) {
-                return $account->transactions->sum('debit') - $account->transactions->sum('credit');
+            ->sum(function($account) use ($txnTotals) {
+                $totals = $txnTotals->get($account->id);
+                return (float) ($totals->total_debit ?? 0) - (float) ($totals->total_credit ?? 0);
             });
 
         return $revenue - $expenses - $dividends;

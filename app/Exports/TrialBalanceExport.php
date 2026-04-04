@@ -10,26 +10,64 @@ class TrialBalanceExport implements FromCollection, WithHeadings
 {
     protected $startDate;
     protected $endDate;
+    protected $companyId;
+    protected $userId;
+    protected $branchId;
+    protected $branchName;
+    protected $branchScope;
 
-    public function __construct($startDate, $endDate)
+    public function __construct($startDate, $endDate, int $companyId = 0, int $userId = 0, ?string $branchId = null, ?string $branchName = null, string $branchScope = 'branch')
     {
         $this->startDate = $startDate;
         $this->endDate = $endDate;
+        $this->companyId = $companyId;
+        $this->userId = $userId;
+        $this->branchId = $branchId;
+        $this->branchName = $branchName;
+        $this->branchScope = $branchScope;
     }
 
     public function collection()
     {
-        $accounts = Account::withSum(['transactions as total_debit' => function ($query) {
-            $query->whereBetween('transaction_date', [$this->startDate, $this->endDate]);
-        }], 'debit')
-        ->withSum(['transactions as total_credit' => function ($query) {
-            $query->whereBetween('transaction_date', [$this->startDate, $this->endDate]);
-        }], 'credit')
-        ->get();
+        $txnQuery = \App\Models\Transaction::query()
+            ->selectRaw('account_id, SUM(debit) as total_debit, SUM(credit) as total_credit')
+            ->whereBetween('transaction_date', [$this->startDate, $this->endDate])
+            ->groupBy('account_id');
+
+        if ($this->branchScope !== 'all') {
+            if (!empty($this->branchId)) {
+                $txnQuery->where('branch_id', $this->branchId);
+            } elseif (!empty($this->branchName)) {
+                $txnQuery->where('branch_name', $this->branchName);
+            }
+        }
+
+        $txnTotals = $txnQuery->get()->keyBy('account_id');
+        $accountIds = $txnTotals->keys()->all();
+
+        if (empty($accountIds)) {
+            return collect();
+        }
+
+        $accounts = Account::withoutGlobalScope('tenant')
+            ->whereIn('id', $accountIds)
+            ->where(function ($q) {
+                if ($this->companyId > 0) {
+                    $q->where('company_id', $this->companyId)
+                      ->orWhere(function ($sub) {
+                          $sub->whereNull('company_id')
+                              ->where('user_id', $this->userId);
+                      });
+                } elseif ($this->userId > 0) {
+                    $q->where('user_id', $this->userId);
+                }
+            })
+            ->get();
 
         return $accounts->map(function ($account) {
-            $dr = (float) ($account->total_debit ?? 0);
-            $cr = (float) ($account->total_credit ?? 0);
+            $totals = $txnTotals->get($account->id);
+            $dr = (float) ($totals->total_debit ?? 0);
+            $cr = (float) ($totals->total_credit ?? 0);
             $net = $dr - $cr;
 
             $debitBalance = 0.0;

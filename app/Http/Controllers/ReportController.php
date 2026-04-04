@@ -49,19 +49,44 @@ use App\Support\LedgerService;
 
         private function getActiveBranchContext(): array
         {
+            $branchScope = (string) request()->get('branch_scope', '');
+            $requestBranchId = (string) request()->get('branch_id', '');
+            $allBranches = request()->boolean('all_branches')
+                || strtolower($branchScope) === 'all'
+                || strtolower($requestBranchId) === 'all';
+
+            if ($allBranches) {
+                return [
+                    'id' => null,
+                    'name' => null,
+                    'scope' => 'all',
+                ];
+            }
+
             $branchId = session('active_branch_id') ? (string) session('active_branch_id') : null;
             $branchName = session('active_branch_name') ? (string) session('active_branch_name') : null;
 
-            if (!$branchId && !$branchName && Schema::hasTable('settings')) {
+            if ($requestBranchId !== '') {
+                $branchId = $requestBranchId;
+                $branchName = null;
+            }
+
+            if ((!$branchId || !$branchName) && Schema::hasTable('settings')) {
                 $companyId = (int) (Auth::user()?->company_id ?? 0);
                 if ($companyId > 0) {
                     $key = 'branches_json_company_' . $companyId;
                     $raw = (string) (DB::table('settings')->where('key', $key)->value('value') ?? '');
                     $branches = json_decode($raw, true) ?: [];
-                    $first = collect($branches)->first();
-                    if ($first) {
-                        $branchId = $branchId ?: ($first['id'] ?? null);
-                        $branchName = $branchName ?: ($first['name'] ?? null);
+
+                    if ($branchId) {
+                        $match = collect($branches)->firstWhere('id', $branchId);
+                        $branchName = $branchName ?: ($match['name'] ?? null);
+                    } else {
+                        $first = collect($branches)->first();
+                        if ($first) {
+                            $branchId = $branchId ?: ($first['id'] ?? null);
+                            $branchName = $branchName ?: ($first['name'] ?? null);
+                        }
                     }
                 }
             }
@@ -69,6 +94,7 @@ use App\Support\LedgerService;
             return [
                 'id' => $branchId,
                 'name' => $branchName,
+                'scope' => 'branch',
             ];
         }
 
@@ -148,6 +174,38 @@ use App\Support\LedgerService;
 
                 $sub->orWhere("{$historyTable}.reference", 'like', '%' . $branchName . '%');
             });
+        }
+
+        private function applyGenericBranchFilter($query, string $table)
+        {
+            $activeBranch = $this->getActiveBranchContext();
+            if (($activeBranch['scope'] ?? 'branch') === 'all') {
+                return $query;
+            }
+
+            $branchId = trim((string) ($activeBranch['id'] ?? ''));
+            $branchName = trim((string) ($activeBranch['name'] ?? ''));
+
+            if ($branchId === '' && $branchName === '') {
+                return $query;
+            }
+
+            if (Schema::hasColumn($table, 'branch_id') && $branchId !== '') {
+                $query->where("{$table}.branch_id", $branchId);
+            } elseif (Schema::hasColumn($table, 'branch_name') && $branchName !== '') {
+                $query->where("{$table}.branch_name", $branchName);
+            }
+
+            return $query;
+        }
+
+        private function scopedTable(string $table)
+        {
+            $query = DB::table($table);
+            $this->applyTenantScope($query, $table);
+            $this->applyGenericBranchFilter($query, $table);
+
+            return $query;
         }
 
         public function index(Request $request)
@@ -378,7 +436,7 @@ public function purchase_report(Request $request)
     }
 
     if (!$hasPurchaseRows && Schema::hasTable('inventory_history') && Schema::hasTable('products')) {
-        $historyQuery = DB::table('inventory_history')
+        $historyQuery = $this->scopedTable('inventory_history')
             ->join('products', 'inventory_history.product_id', '=', 'products.id')
             ->select([
                 DB::raw("CONCAT('HIST-IN-', inventory_history.id) as Reference"),
@@ -391,15 +449,7 @@ public function purchase_report(Request $request)
             ])
             ->whereRaw("LOWER(COALESCE(inventory_history.type, '')) = 'in'");
 
-        if (Schema::hasColumn('products', 'company_id') && (int) (Auth::user()?->company_id ?? 0) > 0) {
-            $historyQuery->where('products.company_id', (int) Auth::user()->company_id);
-        } elseif (Schema::hasColumn('products', 'user_id') && Auth::id()) {
-            $historyQuery->where('products.user_id', Auth::id());
-        }
-
-        if (!empty($activeBranch['name']) && Schema::hasColumn('inventory_history', 'branch_name')) {
-            $historyQuery->where('inventory_history.branch_name', $activeBranch['name']);
-        }
+        $this->applyTenantScope($historyQuery, 'products');
 
         if ($request->filled('start_date') && $request->filled('end_date')) {
             $historyQuery->whereBetween('inventory_history.created_at', [
@@ -444,15 +494,13 @@ public function purchase_report(Request $request)
         /** 1. Expense Report **/
         public function expense_report(Request $request)
         {
-            $query = DB::table('expenses')
+            $query = $this->scopedTable('expenses')
                 ->leftJoin('users', 'expenses.created_by', '=', 'users.id')
                 ->select(
                     'expenses.*',
                     DB::raw("COALESCE(expenses.category, 'General') as category_name"),
                     DB::raw("COALESCE(users.name, 'System') as user_name")
                 );
-
-            $this->applyTenantScope($query, 'expenses');
 
             if ($request->filled('status')) {
                 $status = strtolower((string) $request->status);
@@ -478,7 +526,7 @@ public function purchase_report(Request $request)
         $prevTo = \Carbon\Carbon::parse($toDate)->subYear()->toDateString();
 
         $fetchData = function($start, $end) {
-            $sales = DB::table('sales')->select([
+            $sales = $this->scopedTable('sales')->select([
                 DB::raw('DATE(created_at) as log_date'),
                 DB::raw('total as amount'),
                 DB::raw("'Inflow' as type"),
@@ -486,17 +534,16 @@ public function purchase_report(Request $request)
             ])->whereBetween('created_at', [$start.' 00:00:00', $end.' 23:59:59']);
             $this->applySalesScope($sales, 'sales');
 
-            $other = DB::table('payments')->select([
+            $other = $this->scopedTable('payments')->select([
                 DB::raw('DATE(created_at) as log_date'),
                 DB::raw('amount as amount'),
                 DB::raw("'Inflow' as type"),
                 DB::raw("'Misc' as label")
             ])->where('payment_method', '!=', 'Sales Payment')
             ->whereBetween('created_at', [$start.' 00:00:00', $end.' 23:59:59']);
-            $this->applyTenantScope($other, 'payments');
             $this->applyPaymentBranchFilter($other, 'payments');
 
-            $exp = DB::table('expenses')->select([
+            $exp = $this->scopedTable('expenses')->select([
                 DB::raw('DATE(created_at) as log_date'),
                 DB::raw('amount as amount'),
                 DB::raw("'Outflow' as type"),
@@ -544,7 +591,7 @@ public function purchase_report(Request $request)
             $target = $request->get('target_qty', 100);
 
             // 2. Query actual DB columns confirmed via MySQL: 'name' and 'stock'
-            $products = DB::table('products')
+            $products = $this->scopedTable('products')
                 ->select(['id', 'name', 'sku', 'stock', 'purchase_price', 'unit_type'])
                 ->where('stock', '<=', $threshold)
                 ->orderBy('stock', 'asc')
@@ -558,7 +605,7 @@ public function purchase_report(Request $request)
         {
             $threshold = $request->get('min_qty', 15);
             
-            $products = DB::table('products')
+            $products = $this->scopedTable('products')
                 ->where('stock', '<=', $threshold)
                 ->get();
 
@@ -636,9 +683,9 @@ public function purchase_report(Request $request)
 
         return view('Reports.Reports.payment-report', compact('payments', 'totalAmount', 'activeBranch', 'methodOptions', 'statusOptions'));
     }
-        public function process_report_data(Request $request)
+    public function process_report_data(Request $request)
     {
-        return $this->process_report(DB::table('payments'), $request, 'created_at', ['reference_no', 'payment_method']);
+        return $this->process_report($this->scopedTable('payments'), $request, 'created_at', ['reference_no', 'payment_method']);
     }
 
  
@@ -1260,7 +1307,7 @@ public function destroy($id)
         /** 5. Purchase Report **/
         public function purchase_return(Request $request)
         {
-            $query = DB::table('purchase_transactions')
+            $query = $this->scopedTable('purchase_transactions')
                 ->leftJoin('companies', 'purchase_transactions.company_id', '=', 'companies.id')
                 ->where('purchase_transactions.transaction_type', 'purchase')
                 ->select([
@@ -1373,7 +1420,7 @@ public function destroy($id)
     public function sales_return_report(Request $request)
     {
         // Join products to get meaningful report data
-        $query = DB::table('sale_items')
+        $query = $this->scopedTable('sale_items')
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
             ->join('products', 'sale_items.product_id', '=', 'products.id')
             ->leftJoin('categories', 'products.category_id', '=', 'categories.id')
@@ -1434,7 +1481,7 @@ public function destroy($id)
             return $query;
         };
 
-        $products = DB::table('products')
+        $products = $this->scopedTable('products')
             ->select('id', 'name')
             ->orderBy('name')
             ->tap(fn ($q) => $applyTenantScope($q, 'products'))
@@ -1503,7 +1550,7 @@ public function destroy($id)
             ? "COALESCE(sale_items.{$saleTotalColumn}, ({$saleQtyExpr} * {$saleUnitPriceExpr}))"
             : "({$saleQtyExpr} * {$saleUnitPriceExpr})";
 
-        $stockIn = DB::table('purchase_items')
+        $stockIn = $this->scopedTable('purchase_items')
             ->join('purchases', 'purchase_items.purchase_id', '=', 'purchases.id')
             ->select([
                 DB::raw('DATE(purchases.' . $purchaseDateColumn . ') as log_date'),
@@ -1521,7 +1568,7 @@ public function destroy($id)
 
         if (!$stockInExists) {
             if (Schema::hasTable('inventory_history') && Schema::hasTable('products')) {
-                $historyStockIn = DB::table('inventory_history')
+                $historyStockIn = $this->scopedTable('inventory_history')
                     ->join('products', 'inventory_history.product_id', '=', 'products.id')
                     ->select([
                         DB::raw('DATE(inventory_history.created_at) as log_date'),
@@ -1543,7 +1590,7 @@ public function destroy($id)
 
                 $stockIn = DB::query()->fromSub($historyStockIn, 'stk_in');
             } elseif (Schema::hasTable('purchases')) {
-                $headerStockIn = DB::table('purchases')
+                $headerStockIn = $this->scopedTable('purchases')
                     ->select([
                         DB::raw('DATE(purchases.' . $purchaseDateColumn . ') as log_date'),
                         DB::raw('COUNT(*) as qty_in'),
@@ -1559,7 +1606,7 @@ public function destroy($id)
             }
         }
 
-        $stockOut = DB::table('sale_items')
+        $stockOut = $this->scopedTable('sale_items')
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
             ->select([
                 DB::raw('DATE(sales.' . $saleDateColumn . ') as log_date'),
@@ -1580,7 +1627,7 @@ public function destroy($id)
 
         if (!$stockOutExists) {
             if (Schema::hasTable('inventory_history') && Schema::hasTable('products')) {
-                $historyStockOut = DB::table('inventory_history')
+                $historyStockOut = $this->scopedTable('inventory_history')
                     ->join('products', 'inventory_history.product_id', '=', 'products.id')
                     ->select([
                         DB::raw('DATE(inventory_history.created_at) as log_date'),
@@ -1602,7 +1649,7 @@ public function destroy($id)
 
                 $stockOut = DB::query()->fromSub($historyStockOut, 'stk_out');
             } elseif (Schema::hasTable('sales')) {
-            $headerStockOut = DB::table('sales')
+            $headerStockOut = $this->scopedTable('sales')
                 ->select([
                     DB::raw('DATE(sales.' . $saleDateColumn . ') as log_date'),
                     DB::raw('0 as qty_in'),
@@ -1718,7 +1765,7 @@ public function destroy($id)
          */
         public function purchase_return_report(Request $request)
         {
-            $query = DB::table('purchase_return_items')
+            $query = $this->scopedTable('purchase_return_items')
                 ->join('purchase_returns', 'purchase_return_items.purchase_return_id', '=', 'purchase_returns.id')
                 ->join('products', 'purchase_return_items.product_id', '=', 'products.id')
                 ->leftJoin('vendors', 'purchase_returns.vendor_id', '=', 'vendors.id')
@@ -1745,7 +1792,7 @@ public function destroy($id)
          */
         public function create_purchase_return()
         {
-            $purchases = DB::table('purchases')
+            $purchases = $this->scopedTable('purchases')
                 ->leftJoin('suppliers', 'purchases.supplier_id', '=', 'suppliers.id')
                 ->select(
                     'purchases.id',
@@ -1827,7 +1874,7 @@ public function destroy($id)
         */
         public function credit_notes(Request $request) 
         {
-            $query = DB::table('credit_note_items')
+            $query = $this->scopedTable('credit_note_items')
                 ->join('credit_notes', 'credit_note_items.credit_note_id', '=', 'credit_notes.id')
                 ->join('products', 'credit_note_items.product_id', '=', 'products.id')
                 ->join('customers', 'credit_notes.customer_id', '=', 'customers.id')
@@ -1855,7 +1902,7 @@ public function destroy($id)
     public function create_credit_note()
     {
         // Pointing to 'sales' where your 9 records actually are
-        $invoices = DB::table('sales')
+        $invoices = $this->scopedTable('sales')
             ->leftJoin('customers', 'sales.customer_id', '=', 'customers.id')
             ->select(
                 'sales.id', 
@@ -1950,7 +1997,7 @@ public function destroy($id)
 
         public function get_purchase_items($id)
         {
-            $items = DB::table('purchase_items')
+            $items = $this->scopedTable('purchase_items')
                 ->join('products', 'purchase_items.product_id', '=', 'products.id')
                 ->where('purchase_id', $id)
                 ->select('products.id as product_id', 'products.name', 'purchase_items.qty', 'purchase_items.unit_price')
@@ -1962,7 +2009,7 @@ public function destroy($id)
     public function get_invoice_items($id)
     {
         // Fetch items linked to the sale_id
-        $items = DB::table('sale_items')
+        $items = $this->scopedTable('sale_items')
             ->join('products', 'sale_items.product_id', '=', 'products.id')
             ->where('sale_items.sale_id', $id)
             ->select(
@@ -1981,7 +2028,7 @@ public function destroy($id)
      */
     private function getReturnBaseQuery()
     {
-        return DB::table('purchase_items')
+        return $this->scopedTable('purchase_items')
             ->join('purchases', 'purchase_items.purchase_id', '=', 'purchases.id')
             ->join('products', 'purchase_items.product_id', '=', 'products.id')
             ->leftJoin('suppliers', 'purchases.supplier_id', '=', 'suppliers.id') 
@@ -2003,7 +2050,7 @@ public function destroy($id)
      */
     private function handleReturnReport($request, $viewPath)
     {
-        $query = DB::table('purchase_items')
+        $query = $this->scopedTable('purchase_items')
             ->join('purchases', 'purchase_items.purchase_id', '=', 'purchases.id')
             ->join('products', 'purchase_items.product_id', '=', 'products.id')
             ->leftJoin('suppliers', 'purchases.supplier_id', '=', 'suppliers.id') 
@@ -2064,7 +2111,7 @@ public function destroy($id)
         };
 
         // Base Sales Query (Income)
-        $salesQuery = DB::table('sales')
+        $salesQuery = $this->scopedTable('sales')
             ->select([
                 DB::raw("DATE(sales.{$salesDateColumn}) as report_date"),
                 DB::raw('SUM(COALESCE(sales.' . ($salesAmountColumn ?? 'total') . ', 0)) as income'),
@@ -2080,7 +2127,7 @@ public function destroy($id)
             ->groupBy(DB::raw("DATE(sales.{$salesDateColumn})"));
 
         // Base Expenses Query (Operational Expense)
-        $expensesQuery = DB::table('expenses')
+        $expensesQuery = $this->scopedTable('expenses')
             ->select([
                 DB::raw('DATE(expenses.created_at) as report_date'),
                 DB::raw('0 as income'),
@@ -2099,7 +2146,7 @@ public function destroy($id)
             ? 'purchase_date'
             : (Schema::hasColumn('purchases', 'date') ? 'date' : 'created_at');
 
-        $purchaseBase = DB::table('purchases')
+        $purchaseBase = $this->scopedTable('purchases')
             ->when(
                 $start_date && $end_date,
                 fn($q) => $q->whereBetween(DB::raw("DATE(purchases.{$purchaseDateColumn})"), [$start_date, $end_date])
@@ -2118,7 +2165,7 @@ public function destroy($id)
                 ])
                 ->groupBy(DB::raw("DATE(purchases.{$purchaseDateColumn})"));
         } elseif (Schema::hasTable('inventory_history') && Schema::hasTable('products')) {
-            $purchasesQuery = DB::table('inventory_history')
+            $purchasesQuery = $this->scopedTable('inventory_history')
                 ->join('products', 'inventory_history.product_id', '=', 'products.id')
                 ->select([
                     DB::raw('DATE(inventory_history.created_at) as report_date'),
@@ -2137,7 +2184,7 @@ public function destroy($id)
                 )
                 ->groupBy(DB::raw('DATE(inventory_history.created_at)'));
         } else {
-            $purchasesQuery = DB::table('purchases')
+            $purchasesQuery = $this->scopedTable('purchases')
                 ->select([
                     DB::raw("DATE(NOW()) as report_date"),
                     DB::raw('0 as income'),
@@ -2176,7 +2223,7 @@ public function destroy($id)
         /** 12. Tax Purchase **/
         public function tax_purchase(Request $request)
         {
-            $query = DB::table('purchases')->where('purchases.tax_amount', '>', 0);
+            $query = $this->scopedTable('purchases')->where('purchases.tax_amount', '>', 0);
 
             $supplierSelect = DB::raw("'N/A' as Supplier");
             $supplierSearchColumn = null;
@@ -2240,7 +2287,7 @@ public function destroy($id)
                 ->map(fn ($item) => (array) $item);
 
             if ($taxpurchases->isEmpty() && Schema::hasTable('inventory_history') && Schema::hasTable('products')) {
-                $fallback = DB::table('inventory_history')
+                $fallback = $this->scopedTable('inventory_history')
                     ->join('products', 'inventory_history.product_id', '=', 'products.id')
                     ->select([
                         'inventory_history.id as Id',
@@ -2284,7 +2331,7 @@ public function destroy($id)
             $end_date = $request->input('end_date');
 
             if (!$start_date || !$end_date) {
-                $latestTaxDate = DB::table('sales')
+                $latestTaxDate = $this->scopedTable('sales')
                     ->where('sales.tax', '>', 0)
                     ->tap(fn ($q) => $this->applyTenantScope($q, 'sales'))
                     ->tap(fn ($q) => $this->applySaleBranchFilter($q, 'sales'))
@@ -2298,7 +2345,7 @@ public function destroy($id)
                 $start_date = $start_date ?: $effectiveEnd->copy()->startOfMonth()->toDateString();
             }
 
-            $query = DB::table('sales')
+            $query = $this->scopedTable('sales')
                 ->leftJoin('customers', 'sales.customer_id', '=', 'customers.id')
                 ->select([
                     'sales.id as Id',

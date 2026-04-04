@@ -65,6 +65,8 @@ class TrialBalanceController extends Controller
     public function index(Request $request)
     {
         $activeBranch = $this->resolveActiveBranch($request);
+        $companyId = (int) ($request->user()?->company_id ?? 0);
+        $userId = (int) ($request->user()?->id ?? 0);
 
         // 1. Set Date Range (Default: latest transaction month)
         $start = $request->start_date ? Carbon::parse($request->start_date) : null;
@@ -84,18 +86,34 @@ class TrialBalanceController extends Controller
             $start = $start ?: $end->copy()->startOfMonth();
         }
 
-        // 3. Get Account Data with Summed Transactions (Optimized)
-        $accounts = Account::get();
-        $accountIds = $accounts->pluck('id')->all();
-
-        $txnTotals = Transaction::selectRaw('account_id, SUM(debit) as total_debit, SUM(credit) as total_credit')
-            ->when(!empty($accountIds), function ($query) use ($accountIds) {
-                $query->whereIn('account_id', $accountIds);
-            })
+        // 3. Get Account Data with Summed Transactions (Optimized + Branch-safe)
+        $txnTotals = Transaction::query()
+            ->selectRaw('account_id, SUM(debit) as total_debit, SUM(credit) as total_credit')
             ->whereDate('transaction_date', '<=', $end->toDateString())
             ->groupBy('account_id')
             ->get()
             ->keyBy('account_id');
+
+        $accountIds = $txnTotals->keys()->all();
+        $accounts = collect();
+
+        if (!empty($accountIds)) {
+            $accountsQuery = Account::withoutGlobalScope('tenant')
+                ->whereIn('id', $accountIds)
+                ->where(function ($q) use ($companyId, $userId) {
+                    if ($companyId > 0) {
+                        $q->where('company_id', $companyId)
+                          ->orWhere(function ($sub) use ($userId) {
+                              $sub->whereNull('company_id')
+                                  ->where('user_id', $userId);
+                          });
+                    } elseif ($userId > 0) {
+                        $q->where('user_id', $userId);
+                    }
+                });
+
+            $accounts = $accountsQuery->get();
+        }
 
         // 4. Calculate Net Position for each account
         $accounts = $accounts->map(function ($account) use ($txnTotals) {
@@ -149,7 +167,7 @@ class TrialBalanceController extends Controller
      */
     public function export(Request $request)
     {
-        $this->resolveActiveBranch($request);
+        $activeBranch = $this->resolveActiveBranch($request);
 
         $startDate = $request->start_date ? Carbon::parse($request->start_date) : null;
         $endDate = $request->end_date ? Carbon::parse($request->end_date) : null;
@@ -164,7 +182,15 @@ class TrialBalanceController extends Controller
         }
 
         return Excel::download(
-            new TrialBalanceExport($startDate, $endDate),
+            new TrialBalanceExport(
+                $startDate,
+                $endDate,
+                (int) ($request->user()?->company_id ?? 0),
+                (int) ($request->user()?->id ?? 0),
+                $activeBranch['id'] ?? null,
+                $activeBranch['name'] ?? null,
+                $activeBranch['scope'] ?? 'branch'
+            ),
             'trial_balance_' . $startDate->format('Y-m-d') . '.xlsx'
         );
     }

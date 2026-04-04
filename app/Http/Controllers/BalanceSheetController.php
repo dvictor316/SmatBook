@@ -15,6 +15,52 @@ use App\Exports\BalanceSheetExport;
 
 class BalanceSheetController extends Controller
 {
+    private function resolveActiveBranch(Request $request): array
+    {
+        $branchScope = (string) $request->get('branch_scope', '');
+        $branchId = (string) $request->get('branch_id', '');
+        $allBranches = $request->boolean('all_branches')
+            || strtolower($branchScope) === 'all'
+            || strtolower($branchId) === 'all';
+
+        if ($allBranches) {
+            return ['id' => null, 'name' => null, 'scope' => 'all'];
+        }
+
+        $activeBranchId = trim((string) session('active_branch_id', ''));
+        $activeBranchName = trim((string) session('active_branch_name', ''));
+
+        if ($branchId !== '') {
+            $activeBranchId = trim($branchId);
+            $activeBranchName = '';
+        }
+
+        $companyId = (int) (auth()->user()?->company_id ?? 0);
+        if (($activeBranchId === '' || $activeBranchName === '') && $companyId > 0 && Schema::hasTable('settings')) {
+            $branchKey = 'branches_json_company_' . $companyId;
+            $rawBranches = (string) (DB::table('settings')->where('key', $branchKey)->value('value') ?? '');
+            $branches = json_decode($rawBranches, true) ?: [];
+
+            if ($activeBranchId !== '') {
+                $match = collect($branches)->firstWhere('id', $activeBranchId);
+                $activeBranchName = trim((string) ($match['name'] ?? $activeBranchName));
+            } else {
+                $first = collect($branches)->first();
+                $activeBranchId = trim((string) ($first['id'] ?? $activeBranchId));
+                $activeBranchName = trim((string) ($first['name'] ?? $activeBranchName));
+            }
+        }
+
+        if ($activeBranchId !== '') {
+            session(['active_branch_id' => $activeBranchId]);
+        }
+        if ($activeBranchName !== '') {
+            session(['active_branch_name' => $activeBranchName]);
+        }
+
+        return ['id' => $activeBranchId ?: null, 'name' => $activeBranchName ?: null, 'scope' => 'branch'];
+    }
+
     private function normalizeAccountType(?string $type): string
     {
         $value = strtolower(trim((string) $type));
@@ -41,6 +87,7 @@ class BalanceSheetController extends Controller
 
     public function index(Request $request)
     {
+        $activeBranch = $this->resolveActiveBranch($request);
         $reportDate = $request->date ? Carbon::parse($request->date) : Carbon::now();
         Log::info('Balance sheet accessed', [
             'host' => $request->getHost(),
@@ -66,30 +113,44 @@ class BalanceSheetController extends Controller
             ]);
         }
 
-        // 1. Get all accounts with sums up to the report date
-        $accountsQuery = $this->applyAccountScope(Account::query(), $request);
-        $accounts = $accountsQuery->withSum(['transactions as total_debit' => function ($query) use ($reportDate) {
-            $query->where('transaction_date', '<=', $reportDate);
-        }], 'debit')
-        ->withSum(['transactions as total_credit' => function ($query) use ($reportDate) {
-            $query->where('transaction_date', '<=', $reportDate);
-        }], 'credit')
-        ->with(['transactions' => function ($query) use ($reportDate) {
-            $query->where('transaction_date', '<=', $reportDate)
-                ->select([
-                    'id',
-                    'account_id',
-                    'transaction_date',
-                    'reference',
-                    'description',
-                    'transaction_type',
-                    'debit',
-                    'credit',
-                ])
-                ->orderBy('transaction_date', 'desc')
-                ->orderBy('id', 'desc');
-        }])
-        ->get();
+        // 1. Get all accounts with sums up to the report date (branch-safe)
+        $companyId = (int) ($request->user()?->company_id ?? 0);
+        $userId = (int) ($request->user()?->id ?? 0);
+
+        $txnTotals = Transaction::query()
+            ->selectRaw('account_id, SUM(debit) as total_debit, SUM(credit) as total_credit')
+            ->where('transaction_date', '<=', $reportDate)
+            ->groupBy('account_id')
+            ->get()
+            ->keyBy('account_id');
+
+        $accountIds = $txnTotals->keys()->all();
+        $accounts = collect();
+
+        if (!empty($accountIds)) {
+            $accountsQuery = Account::withoutGlobalScope('tenant')
+                ->whereIn('id', $accountIds)
+                ->where(function ($q) use ($companyId, $userId) {
+                    if ($companyId > 0) {
+                        $q->where('company_id', $companyId)
+                          ->orWhere(function ($sub) use ($userId) {
+                              $sub->whereNull('company_id')
+                                  ->where('user_id', $userId);
+                          });
+                    } elseif ($userId > 0) {
+                        $q->where('user_id', $userId);
+                    }
+                });
+
+            $accounts = $accountsQuery->get();
+        }
+
+        $accounts->transform(function ($account) use ($txnTotals) {
+            $totals = $txnTotals->get($account->id);
+            $account->total_debit = (float) ($totals->total_debit ?? 0);
+            $account->total_credit = (float) ($totals->total_credit ?? 0);
+            return $account;
+        });
 
         // 2. Transform balances based on Account Type
         $accounts->transform(function ($account) {
@@ -148,7 +209,8 @@ class BalanceSheetController extends Controller
             'totalAssets',
             'totalLiabilities',
             'totalEquity',
-            'retainedEarnings'
+            'retainedEarnings',
+            'activeBranch'
         ));
     }
 
@@ -159,11 +221,15 @@ class BalanceSheetController extends Controller
     public function export(Request $request)
     {
         $reportDate = $request->date ? Carbon::parse($request->date) : Carbon::now();
+        $activeBranch = $this->resolveActiveBranch($request);
         return Excel::download(
             new BalanceSheetExport(
                 $reportDate,
                 (int) ($request->user()?->company_id ?? 0),
-                (int) ($request->user()?->id ?? 0)
+                (int) ($request->user()?->id ?? 0),
+                $activeBranch['id'] ?? null,
+                $activeBranch['name'] ?? null,
+                $activeBranch['scope'] ?? 'branch'
             ), 
             'balance_sheet_' . $reportDate->format('Y-m-d') . '.xlsx'
         );

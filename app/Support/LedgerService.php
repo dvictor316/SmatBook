@@ -32,6 +32,8 @@ class LedgerService
         $reference = $sale->invoice_no ?: ('SALE-' . $sale->id);
         $date = self::resolveDate($sale->order_date ?? $sale->created_at);
         $userId = $sale->user_id ?? auth()->id();
+        $branchId = $sale->branch_id ?? null;
+        $branchName = $sale->branch_name ?? $sale->branch_label ?? null;
 
         Transaction::query()
             ->where('related_id', $sale->id)
@@ -52,7 +54,9 @@ class LedgerService
             transactionType: Transaction::TYPE_SALE,
             relatedId: $sale->id,
             relatedType: Sale::class,
-            userId: $userId
+            userId: $userId,
+            branchId: $branchId,
+            branchName: $branchName
         );
 
         $paid = (float) ($sale->paid ?? $sale->amount_paid ?? 0);
@@ -64,14 +68,16 @@ class LedgerService
                 creditAccountId: $receivableAccount->id,
                 amount: min($paid, $total),
                 date: $date,
-                reference: ($sale->receipt_no ?: $reference),
-                description: 'Sale receipt: ' . $reference,
-                transactionType: Transaction::TYPE_RECEIPT,
-                relatedId: $sale->id,
-                relatedType: Sale::class,
-                userId: $userId
-            );
-        }
+            reference: ($sale->receipt_no ?: $reference),
+            description: 'Sale receipt: ' . $reference,
+            transactionType: Transaction::TYPE_RECEIPT,
+            relatedId: $sale->id,
+            relatedType: Sale::class,
+            userId: $userId,
+            branchId: $branchId,
+            branchName: $branchName
+        );
+    }
     }
 
     public static function postPurchase(Purchase $purchase): void
@@ -88,6 +94,8 @@ class LedgerService
         $reference = $purchase->purchase_no ?: ($purchase->purchase_id ?? ('PUR-' . $purchase->id));
         $date = self::resolveDate($purchase->purchase_date ?? $purchase->created_at);
         $userId = auth()->id();
+        $branchId = $purchase->branch_id ?? null;
+        $branchName = $purchase->branch_name ?? $purchase->branch_label ?? null;
 
         Transaction::query()
             ->where('related_id', $purchase->id)
@@ -108,7 +116,9 @@ class LedgerService
             transactionType: Transaction::TYPE_PURCHASE,
             relatedId: $purchase->id,
             relatedType: Purchase::class,
-            userId: $userId
+            userId: $userId,
+            branchId: $branchId,
+            branchName: $branchName
         );
     }
 
@@ -138,6 +148,8 @@ class LedgerService
         $reference = $externalReference ?: ($payment->payment_id ?: ('PAY-' . $payment->id));
         $date = self::resolveDate($payment->created_at);
         $userId = $payment->created_by ?? $sale->user_id ?? auth()->id();
+        $branchId = $payment->branch_id ?? $sale->branch_id ?? null;
+        $branchName = $payment->branch_name ?? $sale->branch_name ?? $sale->branch_label ?? null;
 
         self::postDoubleEntry(
             debitAccountId: $cashAccount->id,
@@ -149,7 +161,9 @@ class LedgerService
             transactionType: Transaction::TYPE_RECEIPT,
             relatedId: $payment->id,
             relatedType: Payment::class,
-            userId: $userId
+            userId: $userId,
+            branchId: $branchId,
+            branchName: $branchName
         );
     }
 
@@ -182,6 +196,8 @@ class LedgerService
         }
         $revenueAccount = self::resolveAccount('Other Income', 'Revenue', ['income', 'other income', 'sales'], 'AUTO-REV-OTH');
         $reference = $payment->reference ?: ($payment->payment_id ?: ('PAY-' . $payment->id));
+        $branchId = $payment->branch_id ?? null;
+        $branchName = $payment->branch_name ?? null;
 
         self::postDoubleEntry(
             debitAccountId: $cashAccount->id,
@@ -193,7 +209,9 @@ class LedgerService
             transactionType: Transaction::TYPE_PAYMENT,
             relatedId: (int) $payment->id,
             relatedType: Payment::class,
-            userId: $payment->created_by ?? auth()->id()
+            userId: $payment->created_by ?? auth()->id(),
+            branchId: $branchId,
+            branchName: $branchName
         );
     }
 
@@ -227,6 +245,9 @@ class LedgerService
 
         $receivableAccount = self::resolveAccount('Accounts Receivable', 'Asset', ['receivable', 'debtor'], 'AUTO-AST-AR');
         $reference = $payment->reference ?: ($payment->payment_id ?: ('PAY-' . $payment->id));
+        $sale = $payment->sale;
+        $branchId = $payment->branch_id ?? ($sale?->branch_id ?? null);
+        $branchName = $payment->branch_name ?? ($sale?->branch_name ?? $sale?->branch_label ?? null);
 
         self::postDoubleEntry(
             debitAccountId: $cashAccount->id,
@@ -238,7 +259,9 @@ class LedgerService
             transactionType: Transaction::TYPE_RECEIPT,
             relatedId: (int) $payment->id,
             relatedType: Payment::class,
-            userId: $payment->created_by ?? auth()->id()
+            userId: $payment->created_by ?? auth()->id(),
+            branchId: $branchId,
+            branchName: $branchName
         );
     }
 
@@ -380,7 +403,9 @@ class LedgerService
         string $transactionType,
         int $relatedId,
         string $relatedType,
-        ?int $userId = null
+        ?int $userId = null,
+        ?string $branchId = null,
+        ?string $branchName = null
     ): void {
         if ($amount <= 0) {
             return;
@@ -398,6 +423,12 @@ class LedgerService
             'balance' => 0,
         ];
         $payload = array_merge($payload, self::resolveTenantPayload('transactions'));
+        if ($branchId !== null && Schema::hasColumn('transactions', 'branch_id')) {
+            $payload['branch_id'] = $branchId;
+        }
+        if ($branchName !== null && Schema::hasColumn('transactions', 'branch_name')) {
+            $payload['branch_name'] = $branchName;
+        }
 
         Transaction::create(self::filterTransactionPayload(array_merge($payload, [
             'account_id' => $debitAccountId,
