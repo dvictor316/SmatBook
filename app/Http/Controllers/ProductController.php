@@ -631,8 +631,21 @@ class ProductController extends Controller
             $validated['status'] = 'active';
             $validated['stock_quantity'] = $validated['stock'];
             $validated['user_id'] = auth()->id();
-            $validated['company_id'] = $resolvedCompanyId ?: null;
-            unset($validated['branch_id']);
+            if (Schema::hasColumn('products', 'company_id')) {
+                $validated['company_id'] = $resolvedCompanyId ?: null;
+            } else {
+                unset($validated['company_id']);
+            }
+            if (Schema::hasColumn('products', 'branch_id')) {
+                $validated['branch_id'] = $selectedBranch['id'] ?? null;
+            } else {
+                unset($validated['branch_id']);
+            }
+            if (Schema::hasColumn('products', 'branch_name')) {
+                $validated['branch_name'] = $selectedBranch['name'] ?? null;
+            } else {
+                unset($validated['branch_name']);
+            }
             $product = Product::create($validated);
             $this->branchInventory->seedOpeningStock(
                 $product,
@@ -1088,6 +1101,9 @@ public function inventory(Request $request)
             if (Schema::hasColumn('inventory_history', 'user_id')) {
                 $payload['user_id'] = auth()->id() ?? (int) DB::table('users')->min('id');
             }
+            if (Schema::hasColumn('inventory_history', 'company_id')) {
+                $payload['company_id'] = auth()->user()?->company_id;
+            }
             if (Schema::hasColumn('inventory_history', 'reference')) {
                 $activeBranch = $this->getActiveBranchContext();
                 $payload['reference'] = $activeBranch['name']
@@ -1114,6 +1130,13 @@ public function inventory(Request $request)
                             'tax_amount' => 0,
                             'status' => 'received',
                         ]);
+                        if (Schema::hasColumn('purchases', 'company_id')) {
+                            $purchase->company_id = auth()->user()?->company_id;
+                        }
+                        if (Schema::hasColumn('purchases', 'user_id')) {
+                            $purchase->user_id = auth()->id();
+                        }
+                        $purchase->save();
 
                         PurchaseItem::create([
                             'purchase_id' => $purchase->id,
@@ -1177,6 +1200,9 @@ public function inventory(Request $request)
 
                     if (Schema::hasColumn('inventory_history', 'user_id')) {
                         $basePayload['user_id'] = auth()->id() ?? (int) DB::table('users')->min('id');
+                    }
+                    if (Schema::hasColumn('inventory_history', 'company_id')) {
+                        $basePayload['company_id'] = auth()->user()?->company_id;
                     }
 
                     $sourcePayload = $basePayload + ['type' => 'out'];

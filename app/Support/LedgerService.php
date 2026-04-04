@@ -9,12 +9,14 @@ use App\Models\Purchase;
 use App\Models\Sale;
 use App\Models\Transaction;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 class LedgerService
 {
     private static ?array $transactionColumns = null;
+    private static ?array $accountColumns = null;
 
     public static function postSale(Sale $sale): void
     {
@@ -395,6 +397,7 @@ class LedgerService
             'amount' => $amount,
             'balance' => 0,
         ];
+        $payload = array_merge($payload, self::resolveTenantPayload('transactions'));
 
         Transaction::create(self::filterTransactionPayload(array_merge($payload, [
             'account_id' => $debitAccountId,
@@ -468,19 +471,73 @@ class LedgerService
             return $account;
         }
 
-        return Account::create([
+        $payload = [
             'code' => self::nextCode($autoCodePrefix),
             'name' => $name,
             'type' => $type,
             'opening_balance' => 0,
             'current_balance' => 0,
             'is_active' => 1,
-        ]);
+        ];
+        $payload = array_merge($payload, self::resolveTenantPayload('accounts'));
+
+        return Account::create(self::filterAccountPayload($payload));
     }
 
     private static function nextCode(string $prefix): string
     {
         $id = (int) (DB::table('accounts')->max('id') ?? 0) + 1;
         return $prefix . '-' . str_pad((string) $id, 5, '0', STR_PAD_LEFT);
+    }
+
+    private static function resolveTenantPayload(string $table): array
+    {
+        $payload = [];
+        $user = Auth::user();
+        $companyId = $user?->company_id;
+        $userId = $user?->id;
+        $branchId = trim((string) session('active_branch_id', ''));
+        $branchName = trim((string) session('active_branch_name', ''));
+
+        if ($branchId === '' && $branchName === '' && $companyId && Schema::hasTable('settings')) {
+            $branchKey = 'branches_json_company_' . $companyId;
+            $rawBranches = (string) (DB::table('settings')->where('key', $branchKey)->value('value') ?? '');
+            $branches = json_decode($rawBranches, true) ?: [];
+            $firstBranch = collect($branches)
+                ->filter(fn ($branch) => !empty($branch['id']) || !empty($branch['name']))
+                ->first();
+            if ($firstBranch) {
+                $branchId = trim((string) ($firstBranch['id'] ?? ''));
+                $branchName = trim((string) ($firstBranch['name'] ?? ''));
+            }
+        }
+
+        if (Schema::hasColumn($table, 'company_id')) {
+            $payload['company_id'] = $companyId ?: null;
+        }
+        if (Schema::hasColumn($table, 'user_id')) {
+            $payload['user_id'] = $userId ?: null;
+        }
+        if (Schema::hasColumn($table, 'branch_id')) {
+            $payload['branch_id'] = $branchId !== '' ? $branchId : null;
+        }
+        if (Schema::hasColumn($table, 'branch_name')) {
+            $payload['branch_name'] = $branchName !== '' ? $branchName : null;
+        }
+
+        return $payload;
+    }
+
+    private static function filterAccountPayload(array $payload): array
+    {
+        if (self::$accountColumns === null) {
+            self::$accountColumns = Schema::getColumnListing('accounts');
+        }
+
+        return array_filter(
+            $payload,
+            static fn ($value, $key) => in_array($key, self::$accountColumns, true),
+            ARRAY_FILTER_USE_BOTH
+        );
     }
 }

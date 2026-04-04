@@ -302,6 +302,15 @@ private function applyBranchScope($query, string $table = 'purchases')
                 if (Schema::hasColumn('purchase_items', 'amount')) {
                     $itemPayload['amount'] = $itemAmount;
                 }
+                if (Schema::hasColumn('purchase_items', 'company_id')) {
+                    $itemPayload['company_id'] = $purchase->company_id ?? auth()->user()?->company_id;
+                }
+                if (Schema::hasColumn('purchase_items', 'branch_id')) {
+                    $itemPayload['branch_id'] = $purchase->branch_id ?? $activeBranch['id'];
+                }
+                if (Schema::hasColumn('purchase_items', 'branch_name')) {
+                    $itemPayload['branch_name'] = $purchase->branch_name ?? $activeBranch['name'];
+                }
 
                 PurchaseItem::create($itemPayload);
                 $product->increment('stock', $quantity);
@@ -547,6 +556,15 @@ public function show($id)
                 }
                 if (Schema::hasColumn('purchase_items', 'amount')) {
                     $itemPayload['amount'] = $itemAmount;
+                }
+                if (Schema::hasColumn('purchase_items', 'company_id')) {
+                    $itemPayload['company_id'] = $purchase->company_id ?? auth()->user()?->company_id;
+                }
+                if (Schema::hasColumn('purchase_items', 'branch_id')) {
+                    $itemPayload['branch_id'] = $purchase->branch_id ?? $activeBranch['id'];
+                }
+                if (Schema::hasColumn('purchase_items', 'branch_name')) {
+                    $itemPayload['branch_name'] = $purchase->branch_name ?? $activeBranch['name'];
                 }
 
                 PurchaseItem::create($itemPayload);
@@ -972,17 +990,40 @@ public function show($id)
             if (Schema::hasColumn('purchases', 'notes')) {
                 $purchase->notes = $validated['notes'] ?? null;
             }
+            if (Schema::hasColumn('purchases', 'company_id')) {
+                $purchase->company_id = auth()->user()?->company_id ?: null;
+            }
+            if (Schema::hasColumn('purchases', 'user_id')) {
+                $purchase->user_id = auth()->id();
+            }
+            $activeBranch = $this->getActiveBranchContext();
+            if (Schema::hasColumn('purchases', 'branch_id')) {
+                $purchase->branch_id = $activeBranch['id'] ?? null;
+            }
+            if (Schema::hasColumn('purchases', 'branch_name')) {
+                $purchase->branch_name = $activeBranch['name'] ?? null;
+            }
             $purchase->total_amount = $total;
             $purchase->status = 'pending';
             $purchase->save();
 
             if (!empty($validated['product_id']) && $qty > 0 && $rate >= 0) {
-                PurchaseItem::create([
+                $itemPayload = [
                     'purchase_id' => $purchase->id,
                     'product_id' => $validated['product_id'],
                     'qty' => $qty,
                     'unit_price' => $rate,
-                ]);
+                ];
+                if (Schema::hasColumn('purchase_items', 'company_id')) {
+                    $itemPayload['company_id'] = $purchase->company_id ?? auth()->user()?->company_id;
+                }
+                if (Schema::hasColumn('purchase_items', 'branch_id')) {
+                    $itemPayload['branch_id'] = $purchase->branch_id ?? $activeBranch['id'];
+                }
+                if (Schema::hasColumn('purchase_items', 'branch_name')) {
+                    $itemPayload['branch_name'] = $purchase->branch_name ?? $activeBranch['name'];
+                }
+                PurchaseItem::create($itemPayload);
             }
 
             DB::commit();

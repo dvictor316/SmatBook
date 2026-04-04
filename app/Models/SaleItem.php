@@ -11,6 +11,9 @@ class SaleItem extends Model
     use HasFactory, TenantScoped;
 
   protected $fillable = [
+    'company_id',
+    'branch_id',
+    'branch_name',
     'sale_id',
     'product_id',
     'qty',

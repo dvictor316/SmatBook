@@ -16,6 +16,8 @@ class Account extends Model
         'name',
         'company_id',
         'user_id',
+        'branch_id',
+        'branch_name',
         'type',
         'sub_type',
         'description',

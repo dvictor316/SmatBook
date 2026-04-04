@@ -482,7 +482,7 @@ $sale = Sale::create([
             $itemTaxAmount  = $afterDisc * ($taxPercent / 100);
             $itemTotal      = $afterDisc + $itemTaxAmount;
 
-            SaleItem::create([
+            $itemPayload = [
                 'sale_id'     => $sale->id,
                 'product_id'  => $product->id,
                 'qty'         => $qty,
@@ -491,7 +491,18 @@ $sale = Sale::create([
                 'tax'         => $taxPercent,
                 'subtotal'    => $itemSubtotal,
                 'total_price' => $itemTotal, 
-            ]);
+            ];
+            if (Schema::hasColumn('sale_items', 'company_id')) {
+                $itemPayload['company_id'] = $sale->company_id ?? auth()->user()?->company_id;
+            }
+            if (Schema::hasColumn('sale_items', 'branch_id')) {
+                $itemPayload['branch_id'] = $sale->branch_id ?? $activeBranch['id'];
+            }
+            if (Schema::hasColumn('sale_items', 'branch_name')) {
+                $itemPayload['branch_name'] = $sale->branch_name ?? $activeBranch['name'];
+            }
+
+            SaleItem::create($itemPayload);
 
             $runningSubtotal += $itemSubtotal;
             $runningDiscount += $itemDiscAmount;

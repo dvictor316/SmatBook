@@ -14,6 +14,9 @@ class Transaction extends Model
 
     protected $fillable = [
         'account_id',
+        'company_id',
+        'branch_id',
+        'branch_name',
         'transaction_date',
         'reference',
         'description',
