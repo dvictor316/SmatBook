@@ -148,14 +148,7 @@
                                             <th>Action</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="productsTableBody">
-                                        <!-- Products will be added here dynamically -->
-                                        <tr id="noProductsRow">
-                                            <td colspan="8" class="text-center text-muted py-4">
-                                                No products added yet. Click "Add Product" to start.
-                                            </td>
-                                        </tr>
-                                    </tbody>
+                                    <tbody id="productsTableBody"></tbody>
                                 </table>
                             </div>
                         </div>
@@ -300,180 +293,140 @@
         </form>
     </div>
 
-    <!-- Product Selection Modal -->
-    <div class="modal fade" id="productModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Select Product</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="modal_product_id" class="form-label">Product *</label>
-                        <select id="modal_product_id" class="form-select">
-                            <option value="">Select Product</option>
-                            @foreach($products as $product)
-                                <option value="{{ $product->id }}" 
-                                        data-name="{{ $product->name }}"
-                                        data-unit="{{ $product->unit ?? 'pcs' }}"
-                                        data-price="{{ $product->price ?? 0 }}">
-                                    {{ $product->name }} - ${{ number_format($product->price ?? 0, 2) }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="modal_quantity" class="form-label">Quantity *</label>
-                        <input type="number" id="modal_quantity" class="form-control" value="1" min="1" step="1">
-                    </div>
-                    <div class="mb-3">
-                        <label for="modal_rate" class="form-label">Rate *</label>
-                        <input type="number" id="modal_rate" class="form-control" step="0.01" min="0">
-                    </div>
-                    <div class="mb-3">
-                        <label for="modal_unit" class="form-label">Unit</label>
-                        <input type="text" id="modal_unit" class="form-control">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="addProductModalBtn">Add Product</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- JavaScript for dynamic product handling -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const products = @json($products);
             let productCounter = 0;
-            const productsData = [];
-            
-            // Initialize Bootstrap modal
-            const productModal = new bootstrap.Modal(document.getElementById('productModal'));
-            
-            // Add Product button click
-            document.getElementById('addProductBtn').addEventListener('click', function() {
-                productModal.show();
-            });
-            
-            // Add product from modal
-            document.getElementById('addProductModalBtn').addEventListener('click', function() {
-                const productSelect = document.getElementById('modal_product_id');
-                const productId = productSelect.value;
-                const productName = productSelect.options[productSelect.selectedIndex].getAttribute('data-name');
-                const defaultUnit = productSelect.options[productSelect.selectedIndex].getAttribute('data-unit');
-                const defaultPrice = productSelect.options[productSelect.selectedIndex].getAttribute('data-price');
-                
-                const quantity = document.getElementById('modal_quantity').value;
-                const rate = document.getElementById('modal_rate').value || defaultPrice;
-                const unit = document.getElementById('modal_unit').value || defaultUnit;
-                
-                if (!productId || !quantity || quantity <= 0 || !rate || rate <= 0) {
-                    alert('Please fill in all required fields with valid values');
-                    return;
-                }
-                
-                // Add product to table
-                addProductToTable(productId, productName, quantity, unit, rate);
-                
-                // Clear modal
-                productSelect.value = '';
-                document.getElementById('modal_quantity').value = 1;
-                document.getElementById('modal_rate').value = '';
-                document.getElementById('modal_unit').value = '';
-                
-                // Hide modal
-                productModal.hide();
-                
-                // Update totals
-                updateTotals();
-            });
-            
-            // Auto-fill rate when product is selected
-            document.getElementById('modal_product_id').addEventListener('change', function() {
-                const selectedOption = this.options[this.selectedIndex];
-                const defaultPrice = selectedOption.getAttribute('data-price');
-                const defaultUnit = selectedOption.getAttribute('data-unit');
-                
-                if (defaultPrice) {
-                    document.getElementById('modal_rate').value = defaultPrice;
-                }
-                if (defaultUnit) {
-                    document.getElementById('modal_unit').value = defaultUnit;
-                }
-            });
-            
-            function addProductToTable(productId, productName, quantity, unit, rate) {
-                const tableBody = document.getElementById('productsTableBody');
-                const noProductsRow = document.getElementById('noProductsRow');
-                
-                // Remove "no products" row if it exists
-                if (noProductsRow) {
-                    noProductsRow.remove();
-                }
-                
+
+            const tableBody = document.getElementById('productsTableBody');
+            const addBtn = document.getElementById('addProductBtn');
+
+            function buildProductOptions() {
+                const options = ['<option value="">Select Product</option>'];
+                products.forEach((product) => {
+                    const unit = product.unit ?? 'pcs';
+                    const price = product.price ?? 0;
+                    options.push(
+                        `<option value="${product.id}" data-name="${escapeHtml(product.name)}" data-unit="${escapeHtml(unit)}" data-price="${price}">${escapeHtml(product.name)} - $${Number(price).toFixed(2)}</option>`
+                    );
+                });
+                return options.join('');
+            }
+
+            function escapeHtml(value) {
+                return String(value ?? '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+            }
+
+            function createEmptyRow() {
                 const rowId = `productRow_${productCounter}`;
+                const rowIndex = productCounter;
                 const row = document.createElement('tr');
                 row.id = rowId;
                 row.innerHTML = `
                     <td>
-                        ${productName}
-                        <input type="hidden" name="products[${productCounter}][product_id]" value="${productId}">
-                        <input type="hidden" name="products[${productCounter}][product_name]" value="${productName}">
+                        <select name="products[${rowIndex}][product_id]" class="form-select product-select" data-row="${rowIndex}" required>
+                            ${buildProductOptions()}
+                        </select>
                     </td>
                     <td>
-                        <input type="number" name="products[${productCounter}][quantity]" 
-                               value="${quantity}" class="form-control quantity-input" min="1" 
-                               data-row="${productCounter}" onchange="updateProductAmount(${productCounter})">
+                        <input type="number" name="products[${rowIndex}][quantity]" value="1" class="form-control quantity-input" min="1"
+                               data-row="${rowIndex}" onchange="updateProductAmount(${rowIndex})">
                     </td>
                     <td>
-                        <input type="text" name="products[${productCounter}][unit]" 
-                               value="${unit}" class="form-control">
+                        <input type="text" name="products[${rowIndex}][unit]" value="" class="form-control unit-input" data-row="${rowIndex}">
                     </td>
                     <td>
-                        <input type="number" name="products[${productCounter}][rate]" 
-                               value="${rate}" class="form-control rate-input" step="0.01" min="0"
-                               data-row="${productCounter}" onchange="updateProductAmount(${productCounter})">
+                        <input type="number" name="products[${rowIndex}][rate]" value="0" class="form-control rate-input" step="0.01" min="0"
+                               data-row="${rowIndex}" onchange="updateProductAmount(${rowIndex})">
                     </td>
                     <td>
-                        <input type="number" name="products[${productCounter}][discount]" 
-                               value="0" class="form-control discount-input" step="0.01" min="0"
-                               data-row="${productCounter}" onchange="updateProductAmount(${productCounter})">
+                        <input type="number" name="products[${rowIndex}][discount]" value="0" class="form-control discount-input" step="0.01" min="0"
+                               data-row="${rowIndex}" onchange="updateProductAmount(${rowIndex})">
                     </td>
                     <td>
-                        <select name="products[${productCounter}][tax_id]" class="form-select tax-select"
-                                data-row="${productCounter}" onchange="updateProductAmount(${productCounter})">
+                        <select name="products[${rowIndex}][tax_id]" class="form-select tax-select" data-row="${rowIndex}" onchange="updateProductAmount(${rowIndex})">
                             <option value="">No Tax</option>
                             @foreach($taxOptions as $tax)
                                 <option value="{{ $tax->id }}">{{ $tax->name }}</option>
                             @endforeach
                         </select>
                     </td>
-                    <td class="amount-cell" id="amount_${productCounter}">${(quantity * rate).toFixed(2)}</td>
+                    <td class="amount-cell" id="amount_${rowIndex}">0.00</td>
                     <td>
-                        <button type="button" class="btn btn-sm btn-danger" onclick="removeProductRow('${rowId}')">
-                            Remove
-                        </button>
+                        <button type="button" class="btn btn-sm btn-danger" onclick="removeProductRow('${rowId}')">Remove</button>
                     </td>
                 `;
-                
+
                 tableBody.appendChild(row);
-                productCounter++;
-                
-                // Store product data
-                productsData.push({
-                    id: productId,
-                    quantity: parseFloat(quantity),
-                    rate: parseFloat(rate),
-                    discount: 0,
-                    tax_id: null,
-                    amount: quantity * rate
+                productCounter += 1;
+                bindRowEvents(row);
+                return row;
+            }
+
+            function bindRowEvents(row) {
+                const productSelect = row.querySelector('.product-select');
+                if (!productSelect) {
+                    return;
+                }
+
+                productSelect.addEventListener('change', function() {
+                    const selectedOption = this.options[this.selectedIndex];
+                    const rowIndex = this.getAttribute('data-row');
+                    const nameField = document.querySelector(`input[name="products[${rowIndex}][product_name]"]`);
+                    const unitInput = row.querySelector('.unit-input');
+                    const rateInput = row.querySelector('.rate-input');
+
+                    const unit = selectedOption.getAttribute('data-unit') || '';
+                    const price = selectedOption.getAttribute('data-price') || 0;
+                    const productName = selectedOption.getAttribute('data-name') || '';
+
+                    if (!nameField && productName) {
+                        const hiddenName = document.createElement('input');
+                        hiddenName.type = 'hidden';
+                        hiddenName.name = `products[${rowIndex}][product_name]`;
+                        hiddenName.value = productName;
+                        row.querySelector('td').appendChild(hiddenName);
+                    } else if (nameField) {
+                        nameField.value = productName;
+                    }
+
+                    if (unitInput) {
+                        unitInput.value = unit;
+                    }
+                    if (rateInput && Number(rateInput.value || 0) <= 0) {
+                        rateInput.value = price;
+                    }
+
+                    updateProductAmount(rowIndex);
+
+                    if (isLastRowFilled()) {
+                        createEmptyRow();
+                    }
                 });
             }
+
+            function isLastRowFilled() {
+                const rows = Array.from(tableBody.querySelectorAll('tr'));
+                if (rows.length === 0) {
+                    return false;
+                }
+                const lastRow = rows[rows.length - 1];
+                const productSelect = lastRow.querySelector('.product-select');
+                return productSelect && productSelect.value;
+            }
+
+            addBtn.addEventListener('click', function() {
+                createEmptyRow();
+            });
+
+            createEmptyRow();
             
             // Global functions for inline event handlers
             window.updateProductAmount = function(rowIndex) {
@@ -492,18 +445,9 @@
                 if (row) {
                     row.remove();
                 }
-                
-                // If no products left, show "no products" message
-                if (document.getElementById('productsTableBody').children.length === 0) {
-                    const tableBody = document.getElementById('productsTableBody');
-                    const noProductsRow = document.createElement('tr');
-                    noProductsRow.id = 'noProductsRow';
-                    noProductsRow.innerHTML = `
-                        <td colspan="8" class="text-center text-muted py-4">
-                            No products added yet. Click "Add Product" to start.
-                        </td>
-                    `;
-                    tableBody.appendChild(noProductsRow);
+
+                if (tableBody.children.length === 0) {
+                    createEmptyRow();
                 }
                 
                 updateTotals();
