@@ -314,7 +314,17 @@ public function customerDetails($id = null)
             ->orderBy('name', 'asc');
         $this->applyTenantScope($productsQuery, 'products');
         if (!empty($activeBranch['id']) && Schema::hasTable('product_branch_stocks')) {
-            $productsQuery->whereHas('branchStocks', fn ($q) => $q->where('branch_id', $activeBranch['id']));
+            $branchId = (string) $activeBranch['id'];
+            $branchName = (string) ($activeBranch['name'] ?? '');
+            $productsQuery->where(function ($q) use ($branchId, $branchName) {
+                $q->whereHas('branchStocks', fn ($sub) => $sub->where('branch_id', $branchId));
+                if (Schema::hasColumn('products', 'branch_id')) {
+                    $q->orWhere('products.branch_id', $branchId);
+                }
+                if ($branchName !== '' && Schema::hasColumn('products', 'branch_name')) {
+                    $q->orWhere('products.branch_name', $branchName);
+                }
+            });
         } else {
             $this->applyBranchScope($productsQuery, 'products');
         }
