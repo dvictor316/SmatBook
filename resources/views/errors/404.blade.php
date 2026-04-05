@@ -9,6 +9,12 @@
                 <p class="text-muted mb-4">
                     The page you are trying to reach is unavailable.
                 </p>
+                @if (session('error'))
+                    <div class="alert alert-danger d-inline-block text-start">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        {{ session('error') }}
+                    </div>
+                @endif
 
                 @php
                     $branchId = trim((string) session('active_branch_id', ''));

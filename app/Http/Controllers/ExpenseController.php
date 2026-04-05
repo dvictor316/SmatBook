@@ -150,52 +150,62 @@ class ExpenseController extends Controller
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:4096',
         ]);
 
-        return DB::transaction(function () use ($request, $sessionBranch) {
-            [$expenseAccount, $categoryId] = $this->resolveExpenseAccountFromSelector((string) $request->account_id);
-            $paymentAccount = Account::findOrFail($request->payment_account_id);
-            $nextId = (int) Expense::max('id') + 1;
-            $expenseId = 'EXP-' . date('Y') . '-' . str_pad((string) $nextId, 5, '0', STR_PAD_LEFT);
-            $payload = [
-                'expense_id'     => $expenseId,
-                'company_name'   => $request->company_name,
-                'reference'      => $request->reference,
-                'email'          => $request->email,
-                'amount'         => $request->amount,
-                'payment_mode'   => $paymentAccount->name,
-                'payment_status' => strtolower($request->status) === 'paid' ? 'paid' : 'pending',
-                'category'       => $expenseAccount->name,
-                'category_id'    => Schema::hasColumn('expenses', 'category_id') ? $categoryId : null,
-                'notes'          => $request->notes,
-                'status'         => $request->status,
-                'created_by'     => Auth::id(),
-                'image'          => $this->handleFileUpload($request),
-            ];
+        try {
+            return DB::transaction(function () use ($request, $sessionBranch) {
+                [$expenseAccount, $categoryId] = $this->resolveExpenseAccountFromSelector((string) $request->account_id);
+                $paymentAccount = Account::findOrFail($request->payment_account_id);
+                $nextId = (int) Expense::max('id') + 1;
+                $expenseId = 'EXP-' . date('Y') . '-' . str_pad((string) $nextId, 5, '0', STR_PAD_LEFT);
+                $payload = [
+                    'expense_id'     => $expenseId,
+                    'company_name'   => $request->company_name,
+                    'reference'      => $request->reference,
+                    'email'          => $request->email,
+                    'amount'         => $request->amount,
+                    'payment_mode'   => $paymentAccount->name,
+                    'payment_status' => strtolower($request->status) === 'paid' ? 'paid' : 'pending',
+                    'category'       => $expenseAccount->name,
+                    'category_id'    => Schema::hasColumn('expenses', 'category_id') ? $categoryId : null,
+                    'notes'          => $request->notes,
+                    'status'         => $request->status,
+                    'created_by'     => Auth::id(),
+                    'image'          => $this->handleFileUpload($request),
+                ];
 
-            if (Schema::hasColumn('expenses', 'company_id')) {
-                $payload['company_id'] = Auth::user()?->company_id ?? session('current_tenant_id');
-            }
-            if (Schema::hasColumn('expenses', 'user_id')) {
-                $payload['user_id'] = Auth::id();
-            }
-            if (Schema::hasColumn('expenses', 'branch_id')) {
-                $payload['branch_id'] = $sessionBranch['id'];
-            }
-            if (Schema::hasColumn('expenses', 'branch_name')) {
-                $payload['branch_name'] = $sessionBranch['name'];
-            }
+                if (Schema::hasColumn('expenses', 'company_id')) {
+                    $payload['company_id'] = Auth::user()?->company_id ?? session('current_tenant_id');
+                }
+                if (Schema::hasColumn('expenses', 'user_id')) {
+                    $payload['user_id'] = Auth::id();
+                }
+                if (Schema::hasColumn('expenses', 'branch_id')) {
+                    $payload['branch_id'] = $sessionBranch['id'];
+                }
+                if (Schema::hasColumn('expenses', 'branch_name')) {
+                    $payload['branch_name'] = $sessionBranch['name'];
+                }
 
-            $expense = Expense::create($payload);
+                $expense = Expense::create($payload);
 
-            if ($request->status === 'Paid') {
-                Transaction::where('related_id', $expense->id)
-                    ->where('related_type', Expense::class)
-                    ->delete();
+                if ($request->status === 'Paid') {
+                    Transaction::where('related_id', $expense->id)
+                        ->where('related_type', Expense::class)
+                        ->delete();
 
-                \App\Support\LedgerService::postExpense($expense->fresh());
-            }
+                    \App\Support\LedgerService::postExpense($expense->fresh());
+                }
 
-            return redirect()->route('expenses.index')->with('success', 'Expense saved successfully.');
-        });
+                return redirect()->route('expenses.index')->with('success', 'Expense saved successfully.');
+            });
+        } catch (\Throwable $e) {
+            Log::error('Expense store failed', [
+                'error' => $e->getMessage(),
+                'user_id' => Auth::id(),
+                'branch_id' => $sessionBranch['id'] ?? null,
+                'branch_name' => $sessionBranch['name'] ?? null,
+            ]);
+            return back()->withInput()->with('error', 'Expense could not be saved. ' . $e->getMessage());
+        }
     }
 
     private function handleFileUpload($request)
@@ -248,11 +258,12 @@ class ExpenseController extends Controller
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:4096',
         ]);
 
-        return DB::transaction(function () use ($request, $validated, $expense) {
-            $categoryId = Schema::hasColumn('expenses', 'category_id') ? ($expense->category_id ?? null) : null;
-            $categoryName = $expense->category ?: null;
-            if (!empty($validated['account_id'])) {
-                [$expenseAccount, $categoryId] = $this->resolveExpenseAccountFromSelector((string) $validated['account_id']);
+        try {
+            return DB::transaction(function () use ($request, $validated, $expense) {
+                $categoryId = Schema::hasColumn('expenses', 'category_id') ? ($expense->category_id ?? null) : null;
+                $categoryName = $expense->category ?: null;
+                if (!empty($validated['account_id'])) {
+                    [$expenseAccount, $categoryId] = $this->resolveExpenseAccountFromSelector((string) $validated['account_id']);
                 $categoryName = $expenseAccount->name;
             }
             if (!$categoryName) {
@@ -328,8 +339,16 @@ class ExpenseController extends Controller
                 'user_id' => Auth::id(),
             ]);
 
-            return redirect()->route('expenses.index')->with('success', 'Expense updated successfully!');
-        });
+                return redirect()->route('expenses.index')->with('success', 'Expense updated successfully!');
+            });
+        } catch (\Throwable $e) {
+            Log::error('Expense update failed', [
+                'expense_id' => $expense->id ?? null,
+                'error' => $e->getMessage(),
+                'user_id' => Auth::id(),
+            ]);
+            return back()->withInput()->with('error', 'Expense update failed. ' . $e->getMessage());
+        }
     }
 
     public function destroy($id)
@@ -368,30 +387,39 @@ class ExpenseController extends Controller
                 ->with('error', 'Expense not found for the active branch.');
         }
 
-        $paymentAccount = null;
-        if ($request->filled('payment_account_id')) {
-            $paymentAccount = Account::findOrFail((int) $request->input('payment_account_id'));
-            $expense->payment_mode = $paymentAccount->name;
+        try {
+            $paymentAccount = null;
+            if ($request->filled('payment_account_id')) {
+                $paymentAccount = Account::findOrFail((int) $request->input('payment_account_id'));
+                $expense->payment_mode = $paymentAccount->name;
+            }
+
+            if (empty($expense->payment_mode)) {
+                return redirect()
+                    ->route('expenses.index')
+                    ->with('error', 'Select a Paid From (Credit Account) before marking this expense as Paid.');
+            }
+
+            $expense->status = 'Paid';
+            $expense->payment_status = 'paid';
+            $expense->save();
+
+            Transaction::where('related_id', $expense->id)
+                ->where('related_type', Expense::class)
+                ->where('transaction_type', 'Expense')
+                ->delete();
+
+            \App\Support\LedgerService::postExpense($expense->fresh());
+
+            return redirect()->route('expenses.index')->with('success', 'Expense marked as Paid and posted to the ledger.');
+        } catch (\Throwable $e) {
+            Log::error('Expense markPaid failed', [
+                'expense_id' => $expense->id ?? null,
+                'error' => $e->getMessage(),
+                'user_id' => Auth::id(),
+            ]);
+            return back()->with('error', 'Could not mark expense as Paid. ' . $e->getMessage());
         }
-
-        if (empty($expense->payment_mode)) {
-            return redirect()
-                ->route('expenses.index')
-                ->with('error', 'Select a Paid From (Credit Account) before marking this expense as Paid.');
-        }
-
-        $expense->status = 'Paid';
-        $expense->payment_status = 'paid';
-        $expense->save();
-
-        Transaction::where('related_id', $expense->id)
-            ->where('related_type', Expense::class)
-            ->where('transaction_type', 'Expense')
-            ->delete();
-
-        \App\Support\LedgerService::postExpense($expense->fresh());
-
-        return redirect()->route('expenses.index')->with('success', 'Expense marked as Paid and posted to the ledger.');
     }
 
     public function show($id)

@@ -41,6 +41,16 @@
                 <span>{{ session('error') }}</span>
             </div>
         @endif
+        @if ($errors->any())
+            <div class="alert alert-danger mb-3" role="alert">
+                <div class="fw-semibold mb-1">Please fix the following and try again.</div>
+                <ul class="mb-0 ps-3">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
         <div class="mb-4 d-flex justify-content-between align-items-center">
             <button type="button" class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#add_expenses">
                 <i class="fas fa-plus-circle me-1"></i> Add Expense
