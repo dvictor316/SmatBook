@@ -2227,4 +2227,106 @@ $(document).ready(function() {
     setUnitTypeAvailability(null);
 });
 </script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    if (window.POS_VANILLA_BOUND) return;
+    window.POS_VANILLA_BOUND = true;
+
+    const productCards = document.querySelectorAll('.product-card');
+    const productSelect = document.getElementById('product-select');
+    const productSearch = document.getElementById('product-search');
+    const priceInput = document.getElementById('unit-price-input');
+    const qtyInput = document.getElementById('quantity');
+    const productImg = document.getElementById('product-img');
+    const noImg = document.getElementById('no-img');
+    const quickName = document.getElementById('quick-selected-name');
+    const quickSku = document.getElementById('quick-selected-sku');
+    const quickCategory = document.getElementById('quick-selected-category');
+    const quickMinStock = document.getElementById('quick-selected-min-stock');
+    const quickStock = document.getElementById('quick-selected-stock');
+    const quickHealth = document.getElementById('quick-stock-health');
+    const hdrSelected = document.getElementById('hdr-selected-product');
+
+    function applyVanillaSelection(source) {
+        const data = source?.dataset || {};
+        const productId = data.id || '';
+        if (!productId) {
+            if (priceInput) priceInput.value = '';
+            if (productImg) productImg.style.display = 'none';
+            if (noImg) noImg.style.display = 'block';
+            if (quickName) quickName.textContent = 'None';
+            if (quickSku) quickSku.textContent = '-';
+            if (quickCategory) quickCategory.textContent = '-';
+            if (quickMinStock) quickMinStock.textContent = '15';
+            if (quickStock) quickStock.textContent = '0';
+            if (quickHealth) { quickHealth.classList.remove('low'); quickHealth.classList.add('ok'); quickHealth.textContent = 'OK'; }
+            if (hdrSelected) hdrSelected.textContent = 'None';
+            return;
+        }
+
+        if (productSelect) productSelect.value = productId;
+        if (productSearch) productSearch.value = productId;
+
+        const retail = parseFloat(data.retail || data.price || '0') || 0;
+        if (priceInput) priceInput.value = retail.toFixed(2);
+        if (qtyInput && (!qtyInput.value || parseFloat(qtyInput.value) <= 0)) qtyInput.value = '1';
+
+        if (productImg && data.img) {
+            productImg.src = data.img;
+            productImg.style.display = 'block';
+            if (noImg) noImg.style.display = 'none';
+        } else {
+            if (productImg) productImg.style.display = 'none';
+            if (noImg) noImg.style.display = 'block';
+        }
+
+        if (quickName) quickName.textContent = data.name || 'Product';
+        if (quickSku) quickSku.textContent = data.sku || '-';
+        if (quickCategory) quickCategory.textContent = data.categoryName || 'Uncategorized';
+        if (quickMinStock) quickMinStock.textContent = data.minStock || '15';
+        if (quickStock) quickStock.textContent = data.stock || '0';
+
+        const stock = parseFloat(data.stock || '0') || 0;
+        const minStock = parseFloat(data.minStock || '15') || 15;
+        if (quickHealth) {
+            if (stock <= minStock) {
+                quickHealth.classList.remove('ok');
+                quickHealth.classList.add('low');
+                quickHealth.textContent = 'LOW';
+            } else {
+                quickHealth.classList.remove('low');
+                quickHealth.classList.add('ok');
+                quickHealth.textContent = 'OK';
+            }
+        }
+        if (hdrSelected) hdrSelected.textContent = data.name || 'Product';
+    }
+
+    productCards.forEach((card) => {
+        card.addEventListener('click', function () {
+            applyVanillaSelection(card);
+        });
+    });
+
+    if (productSelect) {
+        productSelect.addEventListener('change', function () {
+            const option = productSelect.options[productSelect.selectedIndex];
+            if (!option) return;
+            const data = option.dataset || {};
+            applyVanillaSelection({ dataset: {
+                id: option.value,
+                name: data.name,
+                sku: data.sku,
+                categoryName: data.categoryName,
+                retail: data.retail,
+                price: data.price,
+                stock: data.stock,
+                minStock: data.minStock,
+                img: data.img
+            }});
+        });
+    }
+});
+</script>
 @endsection
