@@ -20,12 +20,8 @@
                         <i class="fas fa-exclamation-triangle me-2"></i>
                         Please select an active branch to continue.
                     </div>
-                    @php
-                        $branchRoute = route('branches.index', [], false);
-                        $branchUrl = $branchRoute ?: url('/settings/branches');
-                    @endphp
                     <div class="mt-3">
-                        <a href="{{ $branchUrl }}" class="btn btn-primary">
+                        <a href="{{ \App\Support\SafeRoute::to('branches.index', '/settings/branches') }}" class="btn btn-primary">
                             Select Branch
                         </a>
                     </div>
