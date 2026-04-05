@@ -1421,14 +1421,28 @@ label {
                     <div class="row g-3 border-top pt-3">
                         <div class="col-md-6">
                             <label>Payment Method</label>
-                            <select id="payment-method" class="form-select fw-bold" disabled>
+                            <select id="payment-method" class="form-select fw-bold">
                                 <option value="Cash">Cash</option>
+                                <option value="Split">Split (Cash + Transfer)</option>
                             </select>
-                            <small class="text-muted">POS only accepts cash sales. Use Invoices for credit sales.</small>
+                            <small class="text-muted">POS accepts cash or split (cash + transfer). No credit sales.</small>
                         </div>
                         <div class="col-md-6">
-                            <label>Amount Paid</label>
+                            <label>Cash Amount</label>
                             <input type="number" id="amount-paid" class="form-control form-control-lg fw-bold text-end tabular-nums" style="font-size: 1rem; color: var(--success-500);">
+                        </div>
+                        <div class="col-md-6 d-none" id="split-transfer-wrap">
+                            <label>Transfer Amount</label>
+                            <input type="number" id="transfer-amount" class="form-control form-control-lg fw-bold text-end tabular-nums" style="font-size: 1rem; color: var(--primary-600);">
+                        </div>
+                        <div class="col-md-6 d-none" id="split-transfer-account-wrap">
+                            <label>Transfer Account</label>
+                            <select id="transfer-account" class="form-select">
+                                <option value="">-- Choose Bank --</option>
+                                @foreach($bankAccounts as $bank)
+                                    <option value="{{ $bank->id }}">{{ $bank->name }}</option>
+                                @endforeach
+                            </select>
                         </div>
                     </div>
 
@@ -1972,11 +1986,21 @@ $(document).ready(function() {
         $('#barcode-input').focus();
     };
 
-    $(document).on('input', '#amount-paid', updateChange);
+    $(document).on('input', '#amount-paid, #transfer-amount', updateChange);
+    $(document).on('change', '#payment-method', function() {
+        const method = $('#payment-method').val();
+        const isSplit = method === 'Split';
+        $('#split-transfer-wrap').toggleClass('d-none', !isSplit);
+        $('#split-transfer-account-wrap').toggleClass('d-none', !isSplit);
+        updateChange();
+    });
 
     function updateChange() {
         let total = parseFloat($('#grand-total').text().replace(/[^\d.]/g, '')) || 0;
-        let paid = parseFloat($('#amount-paid').val()) || 0;
+        let cashPaid = parseFloat($('#amount-paid').val()) || 0;
+        let transferPaid = parseFloat($('#transfer-amount').val()) || 0;
+        let method = $('#payment-method').val();
+        let paid = method === 'Split' ? (cashPaid + transferPaid) : cashPaid;
         let change = paid - total;
         $('#change-amount').text(fmt.format(change)).css('color', change < 0 ? 'var(--danger-500)' : 'var(--success-500)');
     }
@@ -1994,6 +2018,10 @@ $(document).ready(function() {
         $('#customer-select').val(null).trigger('change');
         $('#payment-method').val('Cash');
         $('#amount-paid').prop('readonly', false).val('0.00');
+        $('#transfer-amount').val('0.00');
+        $('#transfer-account').val('');
+        $('#split-transfer-wrap').addClass('d-none');
+        $('#split-transfer-account-wrap').addClass('d-none');
 
         $('#product-select').val('').trigger('change');
         $('#product-search').val(null).trigger('change.select2');
@@ -2022,13 +2050,18 @@ $(document).ready(function() {
             data: {
                 _token: "{{ csrf_token() }}",
                 customer_id: $('#customer-select').val(),
-                payment_method: 'Cash',
+                payment_method: $('#payment-method').val(),
                 items: cart,
                 subtotal: cart.reduce((s, i) => s + i.sub, 0),
                 tax: cart.reduce((s, i) => s + i.taxVal, 0),
                 discount: cart.reduce((s, i) => s + i.discVal, 0),
                 total: total,
-                paid: paid
+                paid: paid,
+                split_details: {
+                    cash: parseFloat($('#amount-paid').val()) || 0,
+                    transfer: parseFloat($('#transfer-amount').val()) || 0,
+                    transfer_account_id: $('#transfer-account').val() || null
+                }
             },
             success: function(res) {
                 const invoiceUrl = "{{ route('sales.invoice.show', ':id') }}".replace(':id', res.sale_id) + '?autoprint=1';
@@ -2067,7 +2100,10 @@ $(document).ready(function() {
         }
 
         let total = parseFloat($('#grand-total').text().replace(/[^\d.]/g, '')) || 0;
-        let paid = parseFloat($('#amount-paid').val()) || 0;
+        let cashPaid = parseFloat($('#amount-paid').val()) || 0;
+        let transferPaid = parseFloat($('#transfer-amount').val()) || 0;
+        let method = $('#payment-method').val();
+        let paid = method === 'Split' ? (cashPaid + transferPaid) : cashPaid;
 
         if(paid <= 0) {
             Swal.fire({ icon: 'warning', title: 'Enter Payment', text: 'Enter the amount received before processing this sale.', confirmButtonColor: '#f59e0b' });

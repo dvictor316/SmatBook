@@ -382,7 +382,7 @@ public function customerDetails($id = null)
 {
     $request->validate([
         'customer_id'    => 'nullable|exists:customers,id',
-        'payment_method' => 'required|string|in:Cash,cash',
+        'payment_method' => 'required|string|in:Cash,cash,Split,split',
         'total'          => 'required|numeric|min:0',
         'paid'           => 'required|numeric|min:0',
         'items'          => 'required|array|min:1',
@@ -399,11 +399,25 @@ public function customerDetails($id = null)
     $paidAmount = (float) $request->paid;
     $totalAmount = (float) $request->total;
     $paymentMethod = strtolower((string) $request->payment_method);
-    if ($paymentMethod !== 'cash') {
-        return response()->json(['success' => false, 'message' => 'POS only accepts cash sales. Use Invoices for credit sales.'], 422);
+    $splitDetails = $this->normalizeSplitDetails($request->input('split_details', []));
+
+    if (!in_array($paymentMethod, ['cash', 'split'], true)) {
+        return response()->json(['success' => false, 'message' => 'POS only accepts cash or split (cash + transfer) sales. Use Invoices for credit sales.'], 422);
     }
-    if ($paidAmount < $totalAmount) {
-        return response()->json(['success' => false, 'message' => 'POS cash sales must be fully paid. Use Invoices for credit sales.'], 422);
+
+    if ($paymentMethod === 'split') {
+        $splitPaid = round(((float) $splitDetails['cash']) + ((float) $splitDetails['transfer']), 2);
+        if ($splitPaid <= 0) {
+            return response()->json(['success' => false, 'message' => 'Enter split payment amounts before processing this sale.'], 422);
+        }
+        if ($splitPaid < $totalAmount) {
+            return response()->json(['success' => false, 'message' => 'POS split sales must be fully paid. Use Invoices for credit sales.'], 422);
+        }
+        $paidAmount = $splitPaid;
+    } else {
+        if ($paidAmount < $totalAmount) {
+            return response()->json(['success' => false, 'message' => 'POS cash sales must be fully paid. Use Invoices for credit sales.'], 422);
+        }
     }
 
     DB::beginTransaction();
@@ -455,7 +469,7 @@ $sale = Sale::create([
     'change_amount'  => $changeAmount,
     'balance'        => $balance,
     'currency'       => 'NGN',
-    'payment_method' => 'cash',
+    'payment_method' => $paymentMethod,
     'payment_status' => $paymentStatus,
         'payment_details' => [
         'source' => 'pos',
@@ -577,7 +591,7 @@ $sale = Sale::create([
                 'branch_id' => $activeBranch['id'],
                 'branch_name' => $activeBranch['name'],
                 'amount'  => $finalPaid,
-                'method'  => $request->payment_method,
+            'method'  => $request->payment_method,
                 'status'  => $paymentRecordStatus,
                 'note'    => $finalBalance <= 0
                     ? ($paymentAccount?->name ? 'Initial POS Payment via ' . $paymentAccount->name : 'Initial POS Payment')
