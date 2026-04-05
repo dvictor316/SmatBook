@@ -137,14 +137,73 @@ class BalanceSheetController extends Controller
             ->get()
             ->keyBy('account_id');
 
-        $accountIds = $txnTotals->keys()->all();
-        $accounts = collect();
+        $ledgerTotalsQuery = Transaction::query()
+            ->selectRaw('SUM(debit) as total_debit, SUM(credit) as total_credit')
+            ->where('transaction_date', '<=', $reportDate)
+            ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
+                $branchId = trim((string) ($activeBranch['id'] ?? ''));
+                $branchName = trim((string) ($activeBranch['name'] ?? ''));
 
-        if (!empty($accountIds)) {
-            $accounts = Account::withoutGlobalScope('tenant')
-                ->whereIn('id', $accountIds)
-                ->get();
-        }
+                return $query->where(function ($sub) use ($branchId, $branchName) {
+                    if ($branchId !== '') {
+                        $sub->where('branch_id', $branchId);
+                    }
+                    if ($branchName !== '') {
+                        $sub->orWhere('branch_name', $branchName);
+                    }
+                });
+            });
+
+        $ledgerTotals = $ledgerTotalsQuery->first();
+        $ledgerDebits = (float) ($ledgerTotals->total_debit ?? 0);
+        $ledgerCredits = (float) ($ledgerTotals->total_credit ?? 0);
+        $ledgerDifference = $ledgerDebits - $ledgerCredits;
+
+        $imbalancedEntries = Transaction::query()
+            ->selectRaw('related_type, related_id, transaction_type, reference, SUM(debit) as total_debit, SUM(credit) as total_credit')
+            ->where('transaction_date', '<=', $reportDate)
+            ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
+                $branchId = trim((string) ($activeBranch['id'] ?? ''));
+                $branchName = trim((string) ($activeBranch['name'] ?? ''));
+
+                return $query->where(function ($sub) use ($branchId, $branchName) {
+                    if ($branchId !== '') {
+                        $sub->where('branch_id', $branchId);
+                    }
+                    if ($branchName !== '') {
+                        $sub->orWhere('branch_name', $branchName);
+                    }
+                });
+            })
+            ->groupBy('related_type', 'related_id', 'transaction_type', 'reference')
+            ->havingRaw('ABS(SUM(debit) - SUM(credit)) > 0.01')
+            ->orderByRaw('ABS(SUM(debit) - SUM(credit)) DESC')
+            ->limit(10)
+            ->get();
+
+        $accountIds = $txnTotals->keys()->all();
+        $accountsQuery = Account::query()
+            ->where(function ($query) use ($accountIds) {
+                if (!empty($accountIds)) {
+                    $query->whereIn('id', $accountIds);
+                }
+                $query->orWhere('opening_balance', '!=', 0);
+            })
+            ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
+                $branchId = trim((string) ($activeBranch['id'] ?? ''));
+                $branchName = trim((string) ($activeBranch['name'] ?? ''));
+
+                return $query->where(function ($sub) use ($branchId, $branchName) {
+                    if ($branchId !== '') {
+                        $sub->where('branch_id', $branchId);
+                    }
+                    if ($branchName !== '') {
+                        $sub->orWhere('branch_name', $branchName);
+                    }
+                });
+            });
+
+        $accounts = $accountsQuery->get();
 
         $accounts->transform(function ($account) use ($txnTotals) {
             $totals = $txnTotals->get($account->id);
@@ -211,6 +270,10 @@ class BalanceSheetController extends Controller
             'totalLiabilities',
             'totalEquity',
             'retainedEarnings',
+            'ledgerDebits',
+            'ledgerCredits',
+            'ledgerDifference',
+            'imbalancedEntries',
             'activeBranch'
         ));
     }

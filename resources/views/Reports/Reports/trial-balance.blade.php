@@ -249,6 +249,26 @@
             </div>
         </div>
 
+        @if (abs(($ledgerDifference ?? 0)) >= 0.01)
+            <div class="alert alert-danger mb-3">
+                <div class="fw-semibold mb-1">Ledger imbalance detected</div>
+                <div>Debits: ₦{{ number_format($ledgerDebits ?? 0, 2) }} · Credits: ₦{{ number_format($ledgerCredits ?? 0, 2) }} · Difference: ₦{{ number_format(abs($ledgerDifference ?? 0), 2) }}</div>
+                @if (!empty($imbalancedEntries) && $imbalancedEntries->isNotEmpty())
+                    <div class="mt-2 small">Top unbalanced entries:</div>
+                    <ul class="mb-0 ps-3 small">
+                        @foreach ($imbalancedEntries as $entry)
+                            <li>
+                                {{ $entry->transaction_type ?? 'Entry' }}
+                                · Ref: {{ $entry->reference ?: 'N/A' }}
+                                · Related: {{ $entry->related_type ?: 'N/A' }} #{{ $entry->related_id ?: 'N/A' }}
+                                · Δ ₦{{ number_format(abs(((float) $entry->total_debit) - ((float) $entry->total_credit)), 2) }}
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+            </div>
+        @endif
+
         {{-- Table --}}
         <div class="table-card">
             <table class="table align-middle" id="trialBalanceTable">
