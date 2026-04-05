@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Account;
+use App\Models\Bank;
 use App\Models\Customer;
 use App\Models\Payment;
 use App\Models\Sale;
@@ -427,6 +428,59 @@ class CustomerController extends Controller
         return false;
     }
 
+    private function resolveReceivePaymentAccountId(?string $paymentTarget): ?int
+    {
+        $paymentTarget = trim((string) $paymentTarget);
+        if ($paymentTarget === '') {
+            return null;
+        }
+
+        [$targetType, $targetId] = array_pad(explode(':', $paymentTarget, 2), 2, null);
+        $targetType = strtolower((string) $targetType);
+        $targetId = (int) $targetId;
+
+        if ($targetId <= 0) {
+            return null;
+        }
+
+        if ($targetType === 'account' && Schema::hasTable('accounts')) {
+            return Account::query()->whereKey($targetId)->value('id');
+        }
+
+        if ($targetType === 'bank' && Schema::hasTable('banks')) {
+            $bank = Bank::query()->find($targetId);
+            if (!$bank) {
+                return null;
+            }
+
+            if (!Schema::hasTable('accounts')) {
+                return null;
+            }
+
+            $accountName = $bank->name ?? $bank->bank_name ?? 'Bank Account';
+            $payload = [
+                'type' => 'Asset',
+                'is_active' => 1,
+                'company_id' => auth()->user()?->company_id ?? session('current_tenant_id'),
+                'user_id' => auth()->id(),
+            ];
+            if (Schema::hasColumn('accounts', 'code')) {
+                $payload['code'] = 'BANK-' . str_pad((string) ($targetId ?: 1), 5, '0', STR_PAD_LEFT);
+            }
+            if (Schema::hasColumn('accounts', 'opening_balance')) {
+                $payload['opening_balance'] = 0;
+            }
+            if (Schema::hasColumn('accounts', 'current_balance')) {
+                $payload['current_balance'] = 0;
+            }
+
+            $account = Account::firstOrCreate(['name' => $accountName], $payload);
+            return (int) $account->id;
+        }
+
+        return null;
+    }
+
     public function receivePayment($id)
     {
         $customer = $this->applyTenantScope(Customer::query())->findOrFail($id);
@@ -469,7 +523,7 @@ class CustomerController extends Controller
         }
         $paymentHistory = $paymentHistoryQuery->limit(50)->get();
 
-        $accounts = collect();
+        $paymentDestinations = collect();
         if (Schema::hasTable('accounts')) {
             $accountsQuery = Account::query()->orderBy('name');
             $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
@@ -482,7 +536,52 @@ class CustomerController extends Controller
             if (Schema::hasColumn('accounts', 'is_active')) {
                 $accountsQuery->where('is_active', 1);
             }
-            $accounts = $accountsQuery->get();
+            $paymentDestinations = $paymentDestinations->merge(
+                $accountsQuery->get()->map(function ($account) {
+                    return (object) [
+                        'value' => 'account:' . $account->id,
+                        'label' => $account->name,
+                        'type' => 'Account',
+                    ];
+                })
+            );
+        }
+
+        if (Schema::hasTable('banks')) {
+            $banksQuery = Bank::query()->orderBy('name');
+            $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+            $userId = (int) (auth()->id() ?? 0);
+            if ($companyId > 0 && Schema::hasColumn('banks', 'company_id')) {
+                $banksQuery->where('company_id', $companyId);
+            } elseif ($userId > 0 && Schema::hasColumn('banks', 'user_id')) {
+                $banksQuery->where('user_id', $userId);
+            }
+            $activeBranch = $this->getActiveBranchContext();
+            $branchId = trim((string) ($activeBranch['id'] ?? ''));
+            $branchName = trim((string) ($activeBranch['name'] ?? ''));
+            if ($branchId !== '' || $branchName !== '') {
+                $banksQuery->where(function ($sub) use ($branchId, $branchName) {
+                    if ($branchId !== '' && Schema::hasColumn('banks', 'branch_id')) {
+                        $sub->where('branch_id', $branchId);
+                    }
+                    if ($branchName !== '' && Schema::hasColumn('banks', 'branch_name')) {
+                        $sub->orWhere('branch_name', $branchName);
+                    }
+                });
+            }
+
+            $existingLabels = $paymentDestinations->pluck('label')->map(fn ($label) => strtolower((string) $label))->all();
+            $paymentDestinations = $paymentDestinations->merge(
+                $banksQuery->get()
+                    ->reject(fn ($bank) => in_array(strtolower((string) ($bank->name ?? '')), $existingLabels, true))
+                    ->map(function ($bank) {
+                        return (object) [
+                            'value' => 'bank:' . $bank->id,
+                            'label' => $bank->name,
+                            'type' => 'Bank',
+                        ];
+                    })
+            );
         }
 
         $customer->computed_balance = (float) ($customer->balance ?? 0) + (float) $outstandingSales->sum('balance');
@@ -494,7 +593,7 @@ class CustomerController extends Controller
             'customer',
             'outstandingSales',
             'paymentHistory',
-            'accounts',
+            'paymentDestinations',
             'outstandingOpeningBalance',
             'outstandingInvoicesTotal',
             'supportsStandalonePayments'
@@ -507,7 +606,7 @@ class CustomerController extends Controller
 
         $request->validate([
             'payment_date' => 'required|date',
-            'payment_account_id' => Schema::hasTable('accounts') ? 'nullable|exists:accounts,id' : 'nullable',
+            'payment_target' => 'nullable|string|max:50',
             'reference' => 'nullable|string|max:191',
             'method' => 'nullable|string|max:100',
             'note' => 'nullable|string|max:1000',
@@ -534,6 +633,7 @@ class CustomerController extends Controller
         $activeBranch = $this->getActiveBranchContext();
         $referenceBase = trim((string) $request->input('reference', ''));
         $paymentDate = $request->input('payment_date');
+        $resolvedAccountId = $this->resolveReceivePaymentAccountId($request->input('payment_target'));
 
         try {
             DB::transaction(function () use (
@@ -543,7 +643,8 @@ class CustomerController extends Controller
                 $request,
                 $activeBranch,
                 $referenceBase,
-                $paymentDate
+                $paymentDate,
+                $resolvedAccountId
             ) {
                 $salesQuery = Sale::query()
                     ->where('customer_id', $customer->id)
@@ -580,7 +681,7 @@ class CustomerController extends Controller
                     ];
 
                     if (Schema::hasColumn('payments', 'payment_account_id')) {
-                        $paymentPayload['payment_account_id'] = $request->input('payment_account_id');
+                        $paymentPayload['payment_account_id'] = $resolvedAccountId;
                     }
                     if (Schema::hasColumn('payments', 'company_id')) {
                         $paymentPayload['company_id'] = auth()->user()?->company_id ?? session('current_tenant_id');
@@ -597,16 +698,25 @@ class CustomerController extends Controller
 
                     $newPaid = min((float) ($sale->total ?? 0), (float) ($sale->paid ?? $sale->amount_paid ?? 0) + $amount);
                     $newBalance = max(0, (float) ($sale->total ?? 0) - $newPaid);
-                    $saleUpdate = [
-                        'paid' => $newPaid,
-                        'amount_paid' => $newPaid,
-                        'balance' => $newBalance,
-                        'payment_status' => $newBalance <= 0 ? 'paid' : 'partial',
-                    ];
+                    $saleUpdate = [];
+                    if (Schema::hasColumn('sales', 'paid')) {
+                        $saleUpdate['paid'] = $newPaid;
+                    }
+                    if (Schema::hasColumn('sales', 'amount_paid')) {
+                        $saleUpdate['amount_paid'] = $newPaid;
+                    }
+                    if (Schema::hasColumn('sales', 'balance')) {
+                        $saleUpdate['balance'] = $newBalance;
+                    }
+                    if (Schema::hasColumn('sales', 'payment_status')) {
+                        $saleUpdate['payment_status'] = $newBalance <= 0 ? 'paid' : 'partial';
+                    }
                     if (Schema::hasColumn('sales', 'order_status')) {
                         $saleUpdate['order_status'] = $newBalance <= 0 ? 'completed' : ($sale->order_status ?? 'pending');
                     }
-                    $sale->update($saleUpdate);
+                    if (!empty($saleUpdate)) {
+                        $sale->update($saleUpdate);
+                    }
 
                     LedgerService::postSalePayment($sale->fresh(), $payment->fresh(), $payment->reference);
                 }
@@ -631,7 +741,7 @@ class CustomerController extends Controller
                         ];
 
                         if (Schema::hasColumn('payments', 'payment_account_id')) {
-                            $paymentPayload['payment_account_id'] = $request->input('payment_account_id');
+                            $paymentPayload['payment_account_id'] = $resolvedAccountId;
                         }
                         if (Schema::hasColumn('payments', 'company_id')) {
                             $paymentPayload['company_id'] = auth()->user()?->company_id ?? session('current_tenant_id');

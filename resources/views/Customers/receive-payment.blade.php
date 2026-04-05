@@ -93,10 +93,10 @@
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Deposit To</label>
-                            <select name="payment_account_id" class="form-select">
-                                <option value="">Select account</option>
-                                @foreach($accounts as $account)
-                                    <option value="{{ $account->id }}" @selected((string) old('payment_account_id') === (string) $account->id)>{{ $account->name }}</option>
+                            <select name="payment_target" class="form-select">
+                                <option value="">Select bank or account</option>
+                                @foreach($paymentDestinations as $destination)
+                                    <option value="{{ $destination->value }}" @selected(old('payment_target') === $destination->value)>{{ $destination->label }} ({{ $destination->type }})</option>
                                 @endforeach
                             </select>
                         </div>
@@ -124,6 +124,8 @@
                             <small class="text-muted">Click “Full” to auto-fill the row, or enter a partial amount manually.</small>
                         </div>
                         <div class="text-end">
+                            <div class="small text-muted">Customer outstanding total</div>
+                            <div class="fs-6 fw-semibold mb-1">₦{{ number_format(($outstandingInvoicesTotal + $outstandingOpeningBalance), 2) }}</div>
                             <div class="small text-muted">Amount being received</div>
                             <div class="fs-4 fw-bold text-primary">₦<span data-allocation-total>0.00</span></div>
                         </div>
