@@ -1489,24 +1489,41 @@ label {
 $(document).ready(function() {
     let cart = [];
     let lastSelectedProductId = null;
+    let isSyncingProductSearch = false;
     const fmt = new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' });
 
     // Clock
     setInterval(() => $('#live-clock').text(new Date().toLocaleTimeString('en-US', { hour12: false })), 1000);
 
-    // Select2
-    $('#customer-select').select2({ width: '100%' });
-    $('#product-search').select2({
-        width: '100%',
-        placeholder: 'Search product name...',
-        allowClear: true
-    });
+    const hasSelect2 = !!($.fn && $.fn.select2);
+    if (hasSelect2) {
+        $('#customer-select').select2({ width: '100%' });
+        $('#product-search').select2({
+            width: '100%',
+            placeholder: 'Search product name...',
+            allowClear: true
+        });
+    }
     $(document).on('keydown', function(e) {
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
             e.preventDefault();
             $('#quick-search').trigger('focus');
         }
     });
+
+    function syncProductSearchValue(value) {
+        isSyncingProductSearch = true;
+        if (value === null || value === undefined || value === '') {
+            $('#product-search').val(null);
+        } else {
+            $('#product-search').val(String(value));
+        }
+        $('#product-search').trigger('change');
+        if (hasSelect2) {
+            $('#product-search').trigger('change.select2');
+        }
+        isSyncingProductSearch = false;
+    }
 
     function syncActiveProductCard(productId) {
         $('.product-card').removeClass('active');
@@ -1688,6 +1705,9 @@ $(document).ready(function() {
     });
 
     $('#product-search').on('change', function() {
+        if (isSyncingProductSearch) {
+            return;
+        }
         const productId = $(this).val();
         if (!productId) return;
         $('#product-select').val(String(productId)).trigger('change');
@@ -1811,7 +1831,7 @@ $(document).ready(function() {
             $('#unit-helper-copy').text('Select a product to unlock the right unit packs and live pricing.');
             $('#product-img').hide();
             $('#no-img').show();
-            $('#product-search').val(null).trigger('change.select2');
+            syncProductSearchValue(null);
             $('#hdr-selected-product').text('None');
             $('#quick-selected-name').text('None');
             $('#quick-selected-sku').text('-');
@@ -1839,7 +1859,7 @@ $(document).ready(function() {
                 ? `Selling in single ${unitMeta.baseUnit}${unitMeta.baseUnit.endsWith('s') ? '' : 's'} using the ${basePrice.label.toLowerCase()} price.`
                 : `Each ${unitMeta.type} uses ${unitMeta.multiplier} unit(s) and the ${basePrice.label.toLowerCase()} price. Available: ${unitMeta.maxQty} ${unitMeta.unitName}.`
         );
-        $('#product-search').val(String(opt.val())).trigger('change.select2');
+        syncProductSearchValue(opt.val());
         $('#hdr-selected-product').text(opt.data('name'));
         $('#quick-selected-name').text(opt.data('name'));
         $('#quick-selected-sku').text(opt.data('sku') || '-');
@@ -2070,7 +2090,7 @@ $(document).ready(function() {
         $('#split-card-account-wrap').addClass('d-none');
 
         $('#product-select').val('').trigger('change');
-        $('#product-search').val(null).trigger('change.select2');
+        syncProductSearchValue(null);
         $('#quick-search').val('');
         $('#barcode-input').val('');
         $('#quantity').val(1);
