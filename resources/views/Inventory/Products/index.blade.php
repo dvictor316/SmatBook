@@ -10,6 +10,8 @@
     $availableBranches = $availableBranches ?? [];
     $activeBranch = $activeBranch ?? [];
     $stockTransferEnabled = $stockTransferEnabled ?? false;
+    $branchOptions = $availableBranches;
+    $showStockTransferModal = $stockTransferEnabled && count($branchOptions) > 1;
 @endphp
 <style>
     /* Hide default DataTables buttons as we trigger them via our custom dropdown */
@@ -211,7 +213,7 @@
                             <button type="button" class="btn btn-success desktop-add-product-trigger" data-bs-toggle="modal" data-bs-target="#addProductModal">
                                 <i class="fa fa-plus"></i> Add Product
                             </button>
-                            @if (($stockTransferEnabled ?? false) && count($availableBranches ?? []) > 1)
+                            @if($showStockTransferModal)
                                 <button type="button" class="btn btn-outline-dark" data-bs-toggle="modal" data-bs-target="#transferStockModal">
                                     <i class="fas fa-right-left"></i> Transfer Stock
                                 </button>
@@ -324,7 +326,7 @@
     <span>Add Product</span>
 </button>
 
-@if(($stockTransferEnabled ?? false) && count($availableBranches ?? []) > 1)
+@if($showStockTransferModal)
 <div class="modal fade" id="transferStockModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -350,7 +352,7 @@
                             <label class="form-label">From Branch</label>
                             <select name="from_branch_id" class="form-select" required>
                                 <option value="">Select source</option>
-                                @foreach(($availableBranches ?? []) as $branch)
+                                @foreach($branchOptions as $branch)
                                     <option value="{{ $branch['id'] }}">{{ $branch['name'] }}</option>
                                 @endforeach
                             </select>
@@ -359,7 +361,7 @@
                             <label class="form-label">To Branch</label>
                             <select name="to_branch_id" class="form-select" required>
                                 <option value="">Select destination</option>
-                                @foreach(($availableBranches ?? []) as $branch)
+                                @foreach($branchOptions as $branch)
                                     <option value="{{ $branch['id'] }}">{{ $branch['name'] }}</option>
                                 @endforeach
                             </select>
@@ -433,7 +435,7 @@
                             <label class="form-label">Stock Branch</label>
                             <select name="branch_id" class="form-select">
                                 <option value="">Use Active Branch</option>
-                                @foreach(($availableBranches ?? []) as $branch)
+                                @foreach($branchOptions as $branch)
                                     <option value="{{ $branch['id'] }}">{{ $branch['name'] }}</option>
                                 @endforeach
                             </select>
@@ -541,9 +543,9 @@
                         <label class="form-label">Apply Opening Stock To Branch</label>
                         <select name="branch_id" class="form-select">
                             <option value="">Use Active Branch</option>
-                            @foreach(($availableBranches ?? []) as $branch)
-                                <option value="{{ $branch['id'] }}">{{ $branch['name'] }}</option>
-                            @endforeach
+                                @foreach($branchOptions as $branch)
+                                    <option value="{{ $branch['id'] }}">{{ $branch['name'] }}</option>
+                                @endforeach
                         </select>
                     </div>
                 </div>
