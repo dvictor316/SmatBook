@@ -420,7 +420,13 @@ class PaymentController extends Controller
             }
         }
 
-        $customersQuery = Customer::query()->orderByRaw("COALESCE(customer_name, name) asc");
+        $orderColumn = 'id';
+        if (Schema::hasColumn('customers', 'customer_name')) {
+            $orderColumn = 'customer_name';
+        } elseif (Schema::hasColumn('customers', 'name')) {
+            $orderColumn = 'name';
+        }
+        $customersQuery = Customer::query()->orderBy($orderColumn, 'asc');
         $this->applyTenantScope($customersQuery, 'customers');
         $this->applyBranchScope($customersQuery, 'customers');
 
