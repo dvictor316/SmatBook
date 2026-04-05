@@ -5,6 +5,7 @@
 @php
     $products = $products ?? collect();
     $productRows = $productRows ?? collect();
+    $hasProductRows = isset($hasProductRows) ? (bool) $hasProductRows : ($productRows->count() > 0);
     $categories = $categories ?? collect();
     $availableBranches = $availableBranches ?? [];
     $activeBranch = $activeBranch ?? [];
@@ -239,7 +240,6 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @php $hasProductRows = $productRows->count() > 0; @endphp
                             @if($hasProductRows)
                                 @php $rowNumber = 1; foreach ($productRows as $product): @endphp
                                     <tr>
