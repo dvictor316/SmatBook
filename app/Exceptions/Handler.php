@@ -101,5 +101,27 @@ class Handler extends ExceptionHandler
                 ->route('settings.branches.index')
                 ->with('error', $message);
         });
+
+        $this->renderable(function (NotFoundHttpException $e, $request) {
+            if (!Auth::check()) {
+                return null;
+            }
+
+            $path = ltrim($request->path(), '/');
+
+            if (str_starts_with($path, 'expenses/')) {
+                if ($request->expectsJson()) {
+                    return response()->json([
+                        'message' => 'Open the Expenses page and use the Edit action from the list.',
+                    ], 404);
+                }
+
+                return redirect()
+                    ->route('expenses.index')
+                    ->with('info', 'Open the Expenses page and use the Edit action from the list.');
+            }
+
+            return null;
+        });
     }
 }
