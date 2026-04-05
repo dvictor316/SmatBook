@@ -1213,13 +1213,35 @@ label {
 
         <div class="product-grid" id="product-grid">
             @foreach($products as $p)
+            @php
+                $retailPrice = (float) ($p->retail_price ?? $p->price ?? 0);
+                $wholesalePrice = (float) ($p->wholesale_price ?? 0);
+                $specialPrice = (float) ($p->special_price ?? 0);
+                $rollsPerCarton = max((int) ($p->units_per_carton ?? 0), 0);
+                $unitsPerRoll = max((int) ($p->units_per_roll ?? 0), 0);
+                $categoryName = $p->category->name ?? 'Uncategorized';
+                $minStockLevel = (int) ($p->min_stock_level ?? 15);
+                $availableStock = (float) ($p->available_stock ?? $p->stock ?? 0);
+            @endphp
             <div class="product-card"
                 title="{{ $p->name }}"
                 data-id="{{ $p->id }}"
-                data-name="{{ strtolower($p->name) }}"
+                data-name="{{ $p->name }}"
+                data-search-name="{{ strtolower($p->name) }}"
                 data-sku="{{ strtolower($p->sku ?? '') }}"
                 data-barcode="{{ strtolower($p->barcode ?? '') }}"
-                data-category="{{ strtolower($p->category->name ?? 'uncategorized') }}">
+                data-category="{{ strtolower($categoryName) }}"
+                data-category-name="{{ $categoryName }}"
+                data-price="{{ $retailPrice }}"
+                data-retail="{{ $retailPrice }}"
+                data-wholesale="{{ $wholesalePrice }}"
+                data-special="{{ $specialPrice }}"
+                data-stock="{{ $availableStock }}"
+                data-upc="{{ $rollsPerCarton }}"
+                data-upr="{{ $unitsPerRoll }}"
+                data-base-unit="{{ strtolower($p->base_unit_name ?? 'unit') }}"
+                data-min-stock="{{ $minStockLevel }}"
+                data-img="{{ $p->image_url }}">
                 <div class="product-card-img">
                     @if($p->image_url)
                         <img src="{{ $p->image_url }}" alt="{{ $p->name }}">
@@ -1549,7 +1571,7 @@ $(document).ready(function() {
 
         $('.product-card').each(function() {
             const card = $(this);
-            const name = card.data('name') || '';
+            const name = card.data('search-name') || (card.data('name') || '').toString().toLowerCase();
             const sku = card.data('sku') || '';
             const category = card.data('category') || '';
 
@@ -1828,8 +1850,13 @@ $(document).ready(function() {
     }
 
     // Product Change
-    function applyProductSelection(opt) {
-        if (!opt || !opt.val()) {
+    function applyProductSelection(source) {
+        const opt = source && source.jquery ? source : $(source);
+        const productId = opt.val() || opt.data('id') || '';
+        if (productId && $('#product-select').val() !== String(productId)) {
+            $('#product-select').val(String(productId));
+        }
+        if (!productId) {
             $('#unit-price-input').val('');
             $('#qty-label').text('Quantity');
             $('#unit-helper-copy').text('Select a product to unlock the right unit packs and live pricing.');
@@ -1863,7 +1890,7 @@ $(document).ready(function() {
                 ? `Selling in single ${unitMeta.baseUnit}${unitMeta.baseUnit.endsWith('s') ? '' : 's'} using the ${basePrice.label.toLowerCase()} price.`
                 : `Each ${unitMeta.type} uses ${unitMeta.multiplier} unit(s) and the ${basePrice.label.toLowerCase()} price. Available: ${unitMeta.maxQty} ${unitMeta.unitName}.`
         );
-        syncProductSearchValue(opt.val());
+        syncProductSearchValue(productId);
         $('#hdr-selected-product').text(opt.data('name'));
         $('#quick-selected-name').text(opt.data('name'));
         $('#quick-selected-sku').text(opt.data('sku') || '-');
@@ -1877,7 +1904,7 @@ $(document).ready(function() {
         } else {
             $('#quick-stock-health').removeClass('low').addClass('ok').text('OK');
         }
-        syncActiveProductCard(opt.val());
+        syncActiveProductCard(productId);
 
         if (opt.data('img')) {
             $('#product-img').attr('src', opt.data('img')).show();
