@@ -1363,6 +1363,8 @@ public function inventory(Request $request)
     {
         $activeBranch = $this->getActiveBranchContext();
         $inventoryHistories = collect();
+        $branchId = trim((string) ($activeBranch['id'] ?? ''));
+        $branchName = trim((string) ($activeBranch['name'] ?? ''));
 
         if (Schema::hasTable('inventory_history') && Schema::hasTable('products')) {
             $historyQuery = DB::table('inventory_history')
@@ -1378,8 +1380,48 @@ public function inventory(Request $request)
                     'products.purchase_price'
                 )
                 ->where('inventory_history.product_id', $id)
-                ->tap(fn ($q) => $this->applyTenantScope($q, 'products'))
-                ->tap(fn ($q) => $this->applyBranchScope($q, 'inventory_history', $activeBranch));
+                ->tap(fn ($q) => $this->applyTenantScope($q, 'products'));
+
+            if ($branchId !== '' || $branchName !== '') {
+                $historyQuery->where(function ($sub) use ($branchId, $branchName) {
+                    $matched = false;
+                    if ($branchId !== '' && Schema::hasColumn('inventory_history', 'branch_id')) {
+                        $sub->where('inventory_history.branch_id', $branchId);
+                        $matched = true;
+                    }
+                    if ($branchName !== '' && Schema::hasColumn('inventory_history', 'branch_name')) {
+                        $method = $matched ? 'orWhere' : 'where';
+                        $sub->{$method}('inventory_history.branch_name', $branchName);
+                        $matched = true;
+                    }
+
+                    if ($branchId !== '' && Schema::hasColumn('products', 'branch_id')) {
+                        $method = $matched ? 'orWhere' : 'where';
+                        $sub->{$method}(function ($fallback) use ($branchId) {
+                            if (Schema::hasColumn('inventory_history', 'branch_id')) {
+                                $fallback->whereNull('inventory_history.branch_id');
+                            }
+                            if (Schema::hasColumn('inventory_history', 'branch_name')) {
+                                $fallback->whereNull('inventory_history.branch_name');
+                            }
+                            $fallback->where('products.branch_id', $branchId);
+                        });
+                        $matched = true;
+                    }
+                    if ($branchName !== '' && Schema::hasColumn('products', 'branch_name')) {
+                        $method = $matched ? 'orWhere' : 'where';
+                        $sub->{$method}(function ($fallback) use ($branchName) {
+                            if (Schema::hasColumn('inventory_history', 'branch_id')) {
+                                $fallback->whereNull('inventory_history.branch_id');
+                            }
+                            if (Schema::hasColumn('inventory_history', 'branch_name')) {
+                                $fallback->whereNull('inventory_history.branch_name');
+                            }
+                            $fallback->where('products.branch_name', $branchName);
+                        });
+                    }
+                });
+            }
 
             $inventoryHistories = $inventoryHistories->merge($historyQuery->get());
         }
@@ -1408,8 +1450,69 @@ public function inventory(Request $request)
                     ")
                     ->where('purchase_items.product_id', $id)
                     ->tap(fn ($q) => $this->applyTenantScope($q, 'products'))
-                    ->tap(fn ($q) => $this->applyTenantScope($q, 'purchases'))
-                    ->tap(fn ($q) => $this->applyBranchScope($q, 'purchase_items', $activeBranch));
+                    ->tap(fn ($q) => $this->applyTenantScope($q, 'purchases'));
+
+                if ($branchId !== '' || $branchName !== '') {
+                    $purchaseHistoryQuery->where(function ($sub) use ($branchId, $branchName) {
+                        $matched = false;
+                        if ($branchId !== '' && Schema::hasColumn('purchase_items', 'branch_id')) {
+                            $sub->where('purchase_items.branch_id', $branchId);
+                            $matched = true;
+                        }
+                        if ($branchName !== '' && Schema::hasColumn('purchase_items', 'branch_name')) {
+                            $method = $matched ? 'orWhere' : 'where';
+                            $sub->{$method}('purchase_items.branch_name', $branchName);
+                            $matched = true;
+                        }
+                        if ($branchId !== '' && Schema::hasColumn('purchases', 'branch_id')) {
+                            $method = $matched ? 'orWhere' : 'where';
+                            $sub->{$method}('purchases.branch_id', $branchId);
+                            $matched = true;
+                        }
+                        if ($branchName !== '' && Schema::hasColumn('purchases', 'branch_name')) {
+                            $method = $matched ? 'orWhere' : 'where';
+                            $sub->{$method}('purchases.branch_name', $branchName);
+                            $matched = true;
+                        }
+                        if ($branchId !== '' && Schema::hasColumn('products', 'branch_id')) {
+                            $method = $matched ? 'orWhere' : 'where';
+                            $sub->{$method}(function ($fallback) use ($branchId) {
+                                if (Schema::hasColumn('purchase_items', 'branch_id')) {
+                                    $fallback->whereNull('purchase_items.branch_id');
+                                }
+                                if (Schema::hasColumn('purchase_items', 'branch_name')) {
+                                    $fallback->whereNull('purchase_items.branch_name');
+                                }
+                                if (Schema::hasColumn('purchases', 'branch_id')) {
+                                    $fallback->whereNull('purchases.branch_id');
+                                }
+                                if (Schema::hasColumn('purchases', 'branch_name')) {
+                                    $fallback->whereNull('purchases.branch_name');
+                                }
+                                $fallback->where('products.branch_id', $branchId);
+                            });
+                            $matched = true;
+                        }
+                        if ($branchName !== '' && Schema::hasColumn('products', 'branch_name')) {
+                            $method = $matched ? 'orWhere' : 'where';
+                            $sub->{$method}(function ($fallback) use ($branchName) {
+                                if (Schema::hasColumn('purchase_items', 'branch_id')) {
+                                    $fallback->whereNull('purchase_items.branch_id');
+                                }
+                                if (Schema::hasColumn('purchase_items', 'branch_name')) {
+                                    $fallback->whereNull('purchase_items.branch_name');
+                                }
+                                if (Schema::hasColumn('purchases', 'branch_id')) {
+                                    $fallback->whereNull('purchases.branch_id');
+                                }
+                                if (Schema::hasColumn('purchases', 'branch_name')) {
+                                    $fallback->whereNull('purchases.branch_name');
+                                }
+                                $fallback->where('products.branch_name', $branchName);
+                            });
+                        }
+                    });
+                }
 
                 $inventoryHistories = $inventoryHistories->merge($purchaseHistoryQuery->get());
             }
@@ -1439,8 +1542,69 @@ public function inventory(Request $request)
                     ")
                     ->where('sale_items.product_id', $id)
                     ->tap(fn ($q) => $this->applyTenantScope($q, 'products'))
-                    ->tap(fn ($q) => $this->applyTenantScope($q, 'sales'))
-                    ->tap(fn ($q) => $this->applyBranchScope($q, 'sale_items', $activeBranch));
+                    ->tap(fn ($q) => $this->applyTenantScope($q, 'sales'));
+
+                if ($branchId !== '' || $branchName !== '') {
+                    $saleHistoryQuery->where(function ($sub) use ($branchId, $branchName) {
+                        $matched = false;
+                        if ($branchId !== '' && Schema::hasColumn('sale_items', 'branch_id')) {
+                            $sub->where('sale_items.branch_id', $branchId);
+                            $matched = true;
+                        }
+                        if ($branchName !== '' && Schema::hasColumn('sale_items', 'branch_name')) {
+                            $method = $matched ? 'orWhere' : 'where';
+                            $sub->{$method}('sale_items.branch_name', $branchName);
+                            $matched = true;
+                        }
+                        if ($branchId !== '' && Schema::hasColumn('sales', 'branch_id')) {
+                            $method = $matched ? 'orWhere' : 'where';
+                            $sub->{$method}('sales.branch_id', $branchId);
+                            $matched = true;
+                        }
+                        if ($branchName !== '' && Schema::hasColumn('sales', 'branch_name')) {
+                            $method = $matched ? 'orWhere' : 'where';
+                            $sub->{$method}('sales.branch_name', $branchName);
+                            $matched = true;
+                        }
+                        if ($branchId !== '' && Schema::hasColumn('products', 'branch_id')) {
+                            $method = $matched ? 'orWhere' : 'where';
+                            $sub->{$method}(function ($fallback) use ($branchId) {
+                                if (Schema::hasColumn('sale_items', 'branch_id')) {
+                                    $fallback->whereNull('sale_items.branch_id');
+                                }
+                                if (Schema::hasColumn('sale_items', 'branch_name')) {
+                                    $fallback->whereNull('sale_items.branch_name');
+                                }
+                                if (Schema::hasColumn('sales', 'branch_id')) {
+                                    $fallback->whereNull('sales.branch_id');
+                                }
+                                if (Schema::hasColumn('sales', 'branch_name')) {
+                                    $fallback->whereNull('sales.branch_name');
+                                }
+                                $fallback->where('products.branch_id', $branchId);
+                            });
+                            $matched = true;
+                        }
+                        if ($branchName !== '' && Schema::hasColumn('products', 'branch_name')) {
+                            $method = $matched ? 'orWhere' : 'where';
+                            $sub->{$method}(function ($fallback) use ($branchName) {
+                                if (Schema::hasColumn('sale_items', 'branch_id')) {
+                                    $fallback->whereNull('sale_items.branch_id');
+                                }
+                                if (Schema::hasColumn('sale_items', 'branch_name')) {
+                                    $fallback->whereNull('sale_items.branch_name');
+                                }
+                                if (Schema::hasColumn('sales', 'branch_id')) {
+                                    $fallback->whereNull('sales.branch_id');
+                                }
+                                if (Schema::hasColumn('sales', 'branch_name')) {
+                                    $fallback->whereNull('sales.branch_name');
+                                }
+                                $fallback->where('products.branch_name', $branchName);
+                            });
+                        }
+                    });
+                }
 
                 $inventoryHistories = $inventoryHistories->merge($saleHistoryQuery->get());
             }
