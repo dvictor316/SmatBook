@@ -37,8 +37,9 @@ class ExpenseController extends Controller
 
     private function applyBranchScope($query, string $table = 'expenses')
     {
-        $branchId = trim((string) session('active_branch_id', ''));
-        $branchName = trim((string) session('active_branch_name', ''));
+        $activeBranch = $this->getActiveBranchContext();
+        $branchId = trim((string) ($activeBranch['id'] ?? ''));
+        $branchName = trim((string) ($activeBranch['name'] ?? ''));
 
         if ($branchId === '' && $branchName === '') {
             return $query;
@@ -52,6 +53,38 @@ class ExpenseController extends Controller
                 $sub->orWhere("{$table}.branch_name", $branchName);
             }
         });
+    }
+
+    private function getActiveBranchContext(): array
+    {
+        $branchId = session('active_branch_id') ? (string) session('active_branch_id') : null;
+        $branchName = session('active_branch_name') ? (string) session('active_branch_name') : null;
+
+        if (!$branchId && !$branchName && Schema::hasTable('settings')) {
+            $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+            if ($companyId > 0) {
+                $key = 'branches_json_company_' . $companyId;
+                $raw = (string) (DB::table('settings')->where('key', $key)->value('value') ?? '');
+                $branches = json_decode($raw, true) ?: [];
+                $first = collect($branches)->first();
+                if ($first) {
+                    $branchId = $branchId ?: ($first['id'] ?? null);
+                    $branchName = $branchName ?: ($first['name'] ?? null);
+                }
+            }
+        }
+
+        if ($branchId) {
+            session(['active_branch_id' => $branchId]);
+        }
+        if ($branchName) {
+            session(['active_branch_name' => $branchName]);
+        }
+
+        return [
+            'id' => $branchId,
+            'name' => $branchName,
+        ];
     }
 
     public function index()
@@ -131,10 +164,10 @@ class ExpenseController extends Controller
                 $payload['user_id'] = Auth::id();
             }
             if (Schema::hasColumn('expenses', 'branch_id')) {
-                $payload['branch_id'] = session('active_branch_id');
+                $payload['branch_id'] = $this->getActiveBranchContext()['id'];
             }
             if (Schema::hasColumn('expenses', 'branch_name')) {
-                $payload['branch_name'] = session('active_branch_name');
+                $payload['branch_name'] = $this->getActiveBranchContext()['name'];
             }
 
             $expense = Expense::create($payload);
@@ -299,10 +332,10 @@ class ExpenseController extends Controller
                     $bankValues['user_id'] = Auth::id();
                 }
                 if (Schema::hasColumn('banks', 'branch_id')) {
-                    $bankValues['branch_id'] = session('active_branch_id');
+                    $bankValues['branch_id'] = $this->getActiveBranchContext()['id'];
                 }
                 if (Schema::hasColumn('banks', 'branch_name')) {
-                    $bankValues['branch_name'] = session('active_branch_name');
+                    $bankValues['branch_name'] = $this->getActiveBranchContext()['name'];
                 }
 
                 Bank::updateOrCreate(
@@ -330,10 +363,10 @@ class ExpenseController extends Controller
                 $accountValues['user_id'] = Auth::id();
             }
             if (Schema::hasColumn('accounts', 'branch_id')) {
-                $accountValues['branch_id'] = session('active_branch_id');
+                $accountValues['branch_id'] = $this->getActiveBranchContext()['id'];
             }
             if (Schema::hasColumn('accounts', 'branch_name')) {
-                $accountValues['branch_name'] = session('active_branch_name');
+                $accountValues['branch_name'] = $this->getActiveBranchContext()['name'];
             }
 
             Account::firstOrCreate($accountAttributes, $accountValues);
