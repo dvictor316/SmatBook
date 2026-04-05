@@ -207,11 +207,19 @@ class ExpenseController extends Controller
         $image = $request->file('image');
         $imageName = time() . '_' . uniqid('', true) . '.' . $image->getClientOriginalExtension();
 
-        if (Storage::disk('public')->putFileAs('expenses', $image, $imageName)) {
-            return $imageName;
+        try {
+            if (Storage::disk('public')->putFileAs('expenses', $image, $imageName)) {
+                return $imageName;
+            }
+        } catch (\Throwable $e) {
+            Log::error('Expense receipt upload failed', [
+                'error' => $e->getMessage(),
+                'user_id' => Auth::id(),
+            ]);
         }
 
-        throw new RuntimeException('Expense receipt upload failed. Storage directory is not writable.');
+        // Don't block expense creation if the attachment fails.
+        return null;
     }
 
     public function update(Request $request, $id)
