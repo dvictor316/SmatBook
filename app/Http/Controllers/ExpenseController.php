@@ -441,7 +441,7 @@ class ExpenseController extends Controller
             'balance' => 'nullable|numeric|min:0',
         ]);
 
-        return DB::transaction(function () use ($validated) {
+        return DB::transaction(function () use ($validated, $sessionBranch) {
             if (Schema::hasTable('banks')) {
                 $bankAttributes = [
                     'name' => $validated['name'],
