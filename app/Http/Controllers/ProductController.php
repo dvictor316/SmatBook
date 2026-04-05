@@ -1371,7 +1371,7 @@ public function inventory(Request $request)
             ->orderByDesc('inventory_history.created_at')
             ->get();
 
-        return view('inventory.inventory-history', compact('inventoryHistories', 'activeBranch'));
+        return view('Inventory.inventory-history', compact('inventoryHistories', 'activeBranch'));
     }
 
     public function downloadImportTemplate()
