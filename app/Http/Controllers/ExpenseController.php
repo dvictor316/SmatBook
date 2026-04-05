@@ -606,7 +606,27 @@ class ExpenseController extends Controller
             }
 
             $categoryId = (int) str_replace('cat:', '', $selector);
-            $category = $this->applyTenantScope(Category::query(), 'categories')->findOrFail($categoryId);
+            $category = $this->applyTenantScope(Category::query(), 'categories')->find($categoryId);
+            if (!$category) {
+                Log::warning('Expense category not found; using fallback account', [
+                    'category_id' => $categoryId,
+                    'user_id' => Auth::id(),
+                ]);
+                $fallback = $this->applyTenantScope(Account::where('type', 'Expense'), 'accounts')->first();
+                if ($fallback) {
+                    return [$fallback, null];
+                }
+                return [Account::create([
+                    'code' => $this->generateExpenseAccountCode(),
+                    'name' => 'General Expense',
+                    'type' => 'Expense',
+                    'sub_type' => null,
+                    'description' => 'Auto-created fallback expense account',
+                    'opening_balance' => 0,
+                    'current_balance' => 0,
+                    'is_active' => true,
+                ]), null];
+            }
 
             $account = $this->applyTenantScope(Account::where('type', 'Expense'), 'accounts')
                 ->whereRaw('LOWER(name) = ?', [strtolower((string) $category->name)])
