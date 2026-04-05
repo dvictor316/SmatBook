@@ -271,12 +271,10 @@
                                                 @endif
                                         </td>
                                         <td>
-                                            @php
-                                                $displayStock = (float) ($product->active_branch_stock ?? $product->stock);
-                                                $hasActiveBranch = !empty($activeBranch['name'] ?? null);
-                                            @endphp
+                                            <?php $displayStock = (float) ($product->active_branch_stock ?? $product->stock); ?>
+                                            <?php $hasActiveBranch = !empty($activeBranch['name'] ?? null); ?>
                                             <span class="badge {{ $displayStock <= 5 ? 'bg-danger' : 'bg-success' }}">
-                                                {{ rtrim(rtrim(number_format($displayStock, 2), '0'), '.') }}
+                                                {{ rtrim(rtrim(number_format((float) $displayStock, 2), '0'), '.') }}
                                             </span>
                                             @if($hasActiveBranch)
                                                 <div class="small text-muted mt-1">{{ $activeBranch['name'] }}</div>
