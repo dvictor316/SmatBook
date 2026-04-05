@@ -499,11 +499,19 @@ $sale = Sale::create([
             }
 
             $unitPrice   = (float) ($itemData['price'] ?? $product->price);
+            $discountType = strtolower((string) ($itemData['discountType'] ?? $itemData['discount_type'] ?? 'percent'));
+            $discountValue = (float) ($itemData['discountValue'] ?? $itemData['discount_value'] ?? ($itemData['discount'] ?? 0));
             $discPercent = (float) ($itemData['discount'] ?? 0);
             $taxPercent  = (float) ($itemData['tax'] ?? 0);
 
             $itemSubtotal   = $unitPrice * $qty;
-            $itemDiscAmount = $itemSubtotal * ($discPercent / 100);
+            if ($discountType === 'fixed') {
+                $itemDiscAmount = min($discountValue, $itemSubtotal);
+                $discPercent = $itemSubtotal > 0 ? ($itemDiscAmount / $itemSubtotal) * 100 : 0;
+            } else {
+                $discPercent = (float) ($itemData['discount'] ?? $discountValue);
+                $itemDiscAmount = $itemSubtotal * ($discPercent / 100);
+            }
             $afterDisc      = $itemSubtotal - $itemDiscAmount;
             $itemTaxAmount  = $afterDisc * ($taxPercent / 100);
             $itemTotal      = $afterDisc + $itemTaxAmount;
@@ -518,6 +526,12 @@ $sale = Sale::create([
                 'subtotal'    => $itemSubtotal,
                 'total_price' => $itemTotal, 
             ];
+            if (Schema::hasColumn('sale_items', 'discount_type')) {
+                $itemPayload['discount_type'] = $discountType === 'fixed' ? 'fixed' : 'percent';
+            }
+            if (Schema::hasColumn('sale_items', 'discount_value')) {
+                $itemPayload['discount_value'] = $discountValue;
+            }
             if (Schema::hasColumn('sale_items', 'company_id')) {
                 $itemPayload['company_id'] = $sale->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id');
             }

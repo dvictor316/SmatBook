@@ -1322,9 +1322,15 @@ label {
                         <input type="number" id="quantity" class="form-control fw-bold tabular-nums" value="1" min="0.01" step="0.01">
                     </div>
                     <div class="col-6">
-                        <label style="color: var(--danger-500);">Discount %</label>
-                        <input type="number" id="discount" class="form-control tabular-nums" value="0" min="0" max="100" step="1" inputmode="numeric">
-                        <small class="text-muted">Whole numbers only</small>
+                        <label style="color: var(--danger-500);">Discount</label>
+                        <div class="input-group">
+                            <select id="discount-type" class="form-select">
+                                <option value="percent">%</option>
+                                <option value="fixed">₦</option>
+                            </select>
+                            <input type="number" id="discount" class="form-control tabular-nums" value="0" min="0" step="0.01" inputmode="decimal">
+                        </div>
+                        <small class="text-muted" id="discount-helper">Percent of item subtotal</small>
                     </div>
                     <div class="col-6">
                         <label style="color: var(--primary-600);">Tax %</label>
@@ -1746,25 +1752,29 @@ $(document).ready(function() {
         let qty = parseFloat($('#quantity').val()) || 1;
         let disc = parseFloat($('#discount').val()) || 0;
         let tax = parseFloat($('#tax').val()) || 0;
+        let discType = $('#discount-type').val() || 'percent';
 
         let sub = price * qty;
-        let discVal = sub * (disc / 100);
+        let discVal = discType === 'fixed' ? Math.min(disc, sub) : (sub * (disc / 100));
         let afterDisc = sub - discVal;
         let taxVal = afterDisc * (tax / 100);
         let total = afterDisc + taxVal;
 
         $('#item-total').text(fmt.format(total));
-        return { sub, discVal, taxVal, total };
+        return { sub, discVal, taxVal, total, discType, disc };
     }
 
     function calculateCartLine(item) {
         const qty = parseFloat(item.qty) || 1;
         const price = parseFloat(item.price) || 0;
-        const discount = parseFloat(item.discount) || 0;
+        const discount = parseFloat(item.discountValue ?? item.discount) || 0;
+        const discountType = item.discountType || 'percent';
         const tax = parseFloat(item.tax) || 0;
 
         const sub = price * qty;
-        const discVal = sub * (discount / 100);
+        const discVal = discountType === 'fixed'
+            ? Math.min(discount, sub)
+            : (sub * (discount / 100));
         const afterDisc = sub - discVal;
         const taxVal = afterDisc * (tax / 100);
         const total = afterDisc + taxVal;
@@ -1773,6 +1783,8 @@ $(document).ready(function() {
         item.discVal = discVal;
         item.taxVal = taxVal;
         item.total = total;
+        item.discountType = discountType;
+        item.discountValue = discount;
 
         return item;
     }
@@ -1844,6 +1856,12 @@ $(document).ready(function() {
     $('input[name="unit_type"]').on('change', () => $('#product-select').trigger('change'));
     $('#price-tier').on('change', () => $('#product-select').trigger('change'));
     $(document).on('input', '#quantity, #discount, #tax', calculate);
+    $(document).on('change', '#discount-type', function() {
+        const type = $('#discount-type').val();
+        $('#discount-helper').text(type === 'fixed' ? 'Fixed amount off item subtotal' : 'Percent of item subtotal');
+        $('#discount').attr('max', type === 'fixed' ? '' : '100');
+        calculate();
+    });
 
     // Add to Cart
     $('#add-btn').on('click', function() {
@@ -1881,7 +1899,9 @@ $(document).ready(function() {
             unitLabel: unitMeta.type === 'unit' ? unitMeta.baseUnit : unitMeta.type,
             stockUnits: unitMeta.multiplier * qty,
             price: parseFloat($('#unit-price-input').val()),
-            discount: parseFloat($('#discount').val()) || 0,
+            discount: res.discType === 'fixed' ? 0 : (parseFloat($('#discount').val()) || 0),
+            discountType: res.discType,
+            discountValue: parseFloat($('#discount').val()) || 0,
             tax: parseFloat($('#tax').val()) || 0,
             sub: res.sub,
             discVal: res.discVal,
@@ -1893,6 +1913,9 @@ $(document).ready(function() {
         $('#product-select').val('').trigger('change');
         $('#quantity').val(1);
         $('#discount, #tax').val(0);
+        $('#discount-type').val('percent');
+        $('#discount-helper').text('Percent of item subtotal');
+        $('#discount').attr('max', '100');
         $('#price-tier').val('retail');
         $('#barcode-input').val('').focus();
         
@@ -1979,7 +2002,10 @@ $(document).ready(function() {
         $('#price-tier').val(item.priceLevel || 'retail');
         $('#product-select').val(String(item.id)).trigger('change');
         $('#quantity').val(item.qty);
-        $('#discount').val(item.discount || 0);
+        $('#discount-type').val(item.discountType || 'percent');
+        $('#discount').val(item.discountValue ?? item.discount || 0);
+        $('#discount-helper').text($('#discount-type').val() === 'fixed' ? 'Fixed amount off item subtotal' : 'Percent of item subtotal');
+        $('#discount').attr('max', $('#discount-type').val() === 'fixed' ? '' : '100');
         $('#tax').val(item.tax || 0);
         $('#unit-price-input').val(item.price);
         calculate();
@@ -2029,6 +2055,9 @@ $(document).ready(function() {
         $('#barcode-input').val('');
         $('#quantity').val(1);
         $('#discount, #tax').val(0);
+        $('#discount-type').val('percent');
+        $('#discount-helper').text('Percent of item subtotal');
+        $('#discount').attr('max', '100');
         $('#price-tier').val('retail');
         $('#unit-type-unit').prop('checked', true).trigger('change');
 

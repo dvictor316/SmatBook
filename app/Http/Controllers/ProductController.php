@@ -434,10 +434,11 @@ class ProductController extends Controller
             ]);
         }
 
-        $search = $request->input('search');
-        $activeBranch = $this->getActiveBranchContext();
-        $query = Product::query();
-        $this->applyTenantScope($query, 'products');
+        try {
+            $search = $request->input('search');
+            $activeBranch = $this->getActiveBranchContext();
+            $query = Product::query();
+            $this->applyTenantScope($query, 'products');
 
         if (Schema::hasTable('categories') && Schema::hasColumn('products', 'category_id')) {
             $query->with('category');
@@ -492,16 +493,34 @@ class ProductController extends Controller
             ? Category::orderBy(Schema::hasColumn('categories', 'name') ? 'name' : 'id')->get()
             : collect();
 
-        return view('Inventory.Products.index', [
-            'products' => $products,
-            'productRows' => $productRows,
-            'categories' => $categories,
-            'availableBranches' => $this->getAvailableBranches(),
-            'stockTransferEnabled' => $this->planSupportsStockTransfer(),
-            'search' => $search,
-            'activeBranch' => $activeBranch,
-            'session_domain' => env('SESSION_DOMAIN', null)
-        ]);
+            return view('Inventory.Products.index', [
+                'products' => $products,
+                'productRows' => $productRows,
+                'categories' => $categories,
+                'availableBranches' => $this->getAvailableBranches(),
+                'stockTransferEnabled' => $this->planSupportsStockTransfer(),
+                'search' => $search,
+                'activeBranch' => $activeBranch,
+                'session_domain' => env('SESSION_DOMAIN', null)
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Product list failed', [
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id(),
+            ]);
+            $productRows = collect();
+            session()->flash('error', 'Product list failed. ' . $e->getMessage());
+            return view('Inventory.Products.index', [
+                'products' => collect(),
+                'productRows' => $productRows,
+                'categories' => collect(),
+                'availableBranches' => $this->getAvailableBranches(),
+                'stockTransferEnabled' => $this->planSupportsStockTransfer(),
+                'search' => trim((string) $request->input('search', '')),
+                'activeBranch' => $this->getActiveBranchContext(),
+                'session_domain' => env('SESSION_DOMAIN', null)
+            ]);
+        }
     }
 
     /**
