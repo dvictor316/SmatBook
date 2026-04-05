@@ -131,7 +131,8 @@
                     <a href="#"><i class="fe fe-shopping-cart"></i><span>POS</span><span class="menu-arrow"></span></a>
                     <ul>
                         <li><a href="{{ route('sales.showPos') }}">Sales Terminal</a></li>
-                        <li><a href="{{ route('pos.reports') }}">POS Reports</a></li>
+                        <li><a href="{{ route('pos.sales') }}">POS Sales</a></li>
+                        <li><a href="{{ route('pos.reports') }}">Items Sold</a></li>
                     </ul>
                 </li>
 

@@ -279,6 +279,42 @@ class SaleController extends Controller
         return view('pos.reports', compact('reports', 'branchOptions', 'staffOptions'));
     }
 
+    public function posSales(Request $request)
+    {
+        $query = Sale::with(['customer', 'user', 'items']);
+        $activeBranch = $this->getActiveBranchContext();
+        $this->applyTenantScope($query, 'sales');
+        $this->applyBranchScope($query, 'sales');
+
+        if (Schema::hasColumn('sales', 'terminal_id')) {
+            $query->whereNotNull('terminal_id');
+        } elseif (Schema::hasColumn('sales', 'payment_details')) {
+            $query->where(function ($builder) {
+                $builder->where('payment_details->source', 'pos')
+                    ->orWhere('payment_details', 'like', '%"source":"pos"%');
+            });
+        }
+
+        if ($request->invoice_no) {
+            $query->where('invoice_no', 'like', '%' . $request->invoice_no . '%');
+        }
+        if ($request->customer_name) {
+            $query->whereHas('customer', function ($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->customer_name . '%')
+                    ->orWhere('customer_name', 'like', '%' . $request->customer_name . '%');
+            });
+        }
+        if ($request->sale_date) {
+            $query->whereDate('created_at', $request->sale_date);
+        }
+
+        $totalRevenue = (clone $query)->sum('total');
+        $totalSalesCount = (clone $query)->count();
+        $sales = $query->orderBy('created_at', 'desc')->paginate(15);
+
+        return view('pos.sales', compact('sales', 'totalRevenue', 'totalSalesCount', 'activeBranch'));
+    }
+
 
 public function customerDetails($id = null)
 {

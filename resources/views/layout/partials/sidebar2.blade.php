@@ -246,7 +246,8 @@
                         <a href="#"><i class="fe fe-shopping-cart"></i> <span>POS Terminal</span> <span class="menu-arrow"></span></a>
                         <ul>
                             <li><a href="{{ url('pos') }}" class="{{ Request::is('pos') ? 'active' : '' }}">Sales Point</a></li>
-                            <li><a href="{{ url('pos/reports') }}" class="{{ Request::is('pos/reports') ? 'active' : '' }}">POS Reports</a></li>
+                            <li><a href="{{ url('pos/sales') }}" class="{{ Request::is('pos/sales') ? 'active' : '' }}">POS Sales</a></li>
+                            <li><a href="{{ url('pos/reports') }}" class="{{ Request::is('pos/reports') ? 'active' : '' }}">Items Sold</a></li>
                         </ul>
                     </li>
                     

@@ -127,8 +127,8 @@
         'pos.reports' => [
             'mode' => 'server',
             'route_name' => 'pos.reports',
-            'heading' => 'Filter POS sales activity',
-            'description' => 'Filter by branch, staff, payment status, and date range.',
+            'heading' => 'Filter items sold',
+            'description' => 'Filter items sold by branch, staff, payment status, and date range.',
             'fields' => ['search', 'branch_id', 'staff_id', 'payment_status', 'date_from', 'date_to'],
             'search_placeholder' => 'Search product, SKU, or category',
             'branch_options' => $branchOptions ?? [],

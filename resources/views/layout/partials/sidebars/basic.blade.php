@@ -116,8 +116,11 @@
         <a href="#"><i class="fe fe-shopping-cart"></i><span>POS Terminal</span><span class="menu-arrow"></span></a>
         <ul>
             <li><a href="{{ route('sales.showPos') }}">Sales Terminal</a></li>
+            @if(Route::has('pos.sales'))
+                <li><a href="{{ route('pos.sales') }}">POS Sales</a></li>
+            @endif
             @if(Route::has('pos.reports'))
-                <li><a href="{{ route('pos.reports') }}">POS Reports</a></li>
+                <li><a href="{{ route('pos.reports') }}">Items Sold</a></li>
             @endif
         </ul>
     </li>

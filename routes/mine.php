@@ -160,6 +160,7 @@ use App\Http\Controllers\{
         Route::controller(SaleController::class)->group(function () {
         Route::get('/pos', 'showPos')->name('sales.showPos');
         Route::get('/pos/reports', [SaleController::class, 'report'])->name('pos.reports');
+        Route::get('/pos/sales', [SaleController::class, 'posSales'])->name('pos.sales');
         Route::get('/sales/index', [SaleController::class, 'index'])->name('sales.index');
         Route::post('/sales', 'store')->name('sales.store');
         Route::get('/sales/reports', 'report')->name('pos.report');

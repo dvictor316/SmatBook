@@ -150,9 +150,9 @@ body.mini-sidebar .report-page-wrapper { margin-left: var(--sb-sidebar-collapsed
     <!-- Institutional Command Header -->
     <div class="report-header-bar">
         <div class="d-flex align-items-center">
-            <h5 class="mb-0">SALES ANALYTICAL COMMAND</h5>
+            <h5 class="mb-0">ITEMS SOLD REPORT</h5>
             <div class="vr mx-3 opacity-25" style="height: 30px; width: 2px; background: #000;"></div>
-            <span class="report-node-id">VALUATION-NODE: {{ strtoupper(date('M-Y')) }}</span>
+            <span class="report-node-id">ITEMS-SOLD: {{ strtoupper(date('M-Y')) }}</span>
         </div>
         <div class="d-flex gap-3 align-items-center">
             <div class="badge bg-white text-navy border border-2 border-primary px-3 py-2 fw-bold shadow-sm" style="color: var(--brand-navy);">
@@ -173,15 +173,15 @@ body.mini-sidebar .report-page-wrapper { margin-left: var(--sb-sidebar-collapsed
     <!-- Metrics Grid -->
     <div class="metric-grid">
         <div class="metric-node">
-            <div class="metric-label">Structural Units Sold</div>
+            <div class="metric-label">Total Units Sold</div>
             <div class="metric-value">{{ number_format($totalSoldUnits) }}</div>
         </div>
         <div class="metric-node" style="border-left-color: var(--brand-blue);">
-            <div class="metric-label">Gross Revenue Valuation</div>
+            <div class="metric-label">Gross Sales Value</div>
             <div class="metric-value text-primary">₦{{ number_format($totalSoldAmount, 2) }}</div>
         </div>
         <div class="metric-node" style="border-left-color: var(--brand-success);">
-            <div class="metric-label">Liquidity Stock Valuation</div>
+            <div class="metric-label">Current Stock Value</div>
             <div class="metric-value text-success">₦{{ number_format($grandTotalStockValue, 2) }}</div>
         </div>
     </div>
@@ -237,7 +237,7 @@ body.mini-sidebar .report-page-wrapper { margin-left: var(--sb-sidebar-collapsed
         </div>
 
         <div class="p-4 border-top bg-light d-flex justify-content-between align-items-center">
-            <span class="small text-muted fw-bold text-uppercase px-2"><i class="fas fa-shield-check me-2"></i>Data integrity verified by core terminal</span>
+            <span class="small text-muted fw-bold text-uppercase px-2"><i class="fas fa-shield-check me-2"></i>Items sold summary generated from POS sales</span>
             <div class="pagination-institutional">{{ $reports->links() }}</div>
         </div>
     </div>
@@ -246,9 +246,9 @@ body.mini-sidebar .report-page-wrapper { margin-left: var(--sb-sidebar-collapsed
     <div class="row mt-5 mb-4">
         <div class="col-md-7">
             <div class="p-4 rounded-4 bg-white border-2 border h-100 d-flex flex-column justify-content-center" style="border-style: dashed; border-color: var(--brand-slate);">
-                <h6 class="fw-bold text-dark mb-3"><i class="fas fa-microchip me-2 text-primary"></i> Analytical Logic Summary</h6>
+                <h6 class="fw-bold text-dark mb-3"><i class="fas fa-microchip me-2 text-primary"></i> Items Sold Summary</h6>
                 <p class="small text-muted mb-0 leading-relaxed">
-                    This report summarizes sold units, gross sales value, and current stock value across your products based on recorded sales and live inventory balances.
+                    This report summarizes sold units, gross sales value, and current stock value across your products based on recorded POS sales and live inventory balances.
                 </p>
             </div>
         </div>
