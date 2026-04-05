@@ -226,6 +226,38 @@
                                 </select>
                             </div>
                         @endif
+                        @if(($sales ?? collect())->count() > 0)
+                            <div class="col-12">
+                                <div class="border rounded p-3 bg-light">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <strong>Outstanding Invoices</strong>
+                                        <span class="text-muted small">Click a row to apply the payment amount.</span>
+                                    </div>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm align-middle mb-0">
+                                            <thead>
+                                                <tr>
+                                                    <th>Invoice</th>
+                                                    <th>Date</th>
+                                                    <th class="text-end">Open Balance</th>
+                                                    <th class="text-end">Total</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach($sales as $sale)
+                                                    <tr class="select-sale-row" data-sale-id="{{ $sale->id }}" data-balance="{{ (float) ($sale->balance ?? 0) }}">
+                                                        <td>{{ $sale->invoice_no ?? ('SALE-' . $sale->id) }}</td>
+                                                        <td>{{ optional($sale->created_at)->format('d M Y') }}</td>
+                                                        <td class="text-end">₦{{ number_format((float) ($sale->balance ?? 0), 2) }}</td>
+                                                        <td class="text-end">₦{{ number_format((float) ($sale->total ?? 0), 2) }}</td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
 
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Bank Reference No.</label>
@@ -307,6 +339,19 @@
                 }
             });
         }
+        document.querySelectorAll('.select-sale-row').forEach((row) => {
+            row.addEventListener('click', () => {
+                const saleId = row.getAttribute('data-sale-id');
+                const balance = parseFloat(row.getAttribute('data-balance') || '0');
+                if (saleId) {
+                    saleSelect.value = saleId;
+                    saleSelect.dispatchEvent(new Event('change'));
+                }
+                if (balance > 0) {
+                    amountInput.value = balance.toFixed(2);
+                }
+            });
+        });
         if (saleSelect.value) {
             updateAmountFromSale();
         }
