@@ -56,17 +56,6 @@ class TrialBalanceExport implements FromCollection, WithHeadings
 
         $accounts = Account::withoutGlobalScope('tenant')
             ->whereIn('id', $accountIds)
-            ->where(function ($q) {
-                if ($this->companyId > 0) {
-                    $q->where('company_id', $this->companyId)
-                      ->orWhere(function ($sub) {
-                          $sub->whereNull('company_id')
-                              ->where('user_id', $this->userId);
-                      });
-                } elseif ($this->userId > 0) {
-                    $q->where('user_id', $this->userId);
-                }
-            })
             ->get();
 
         return $accounts->map(function ($account) {

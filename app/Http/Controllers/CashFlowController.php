@@ -30,6 +30,7 @@ class CashFlowController extends Controller
                 Transaction::whereIn('account_id', $cashAccountIds),
                 'transactions'
             )
+                ->tap(fn ($query) => $this->applyBranchScope($query, 'transactions'))
                 ->where('transaction_date', '<', $start->toDateString())
                 ->selectRaw('SUM(debit) - SUM(credit) as balance')
                 ->first()->balance ?? 0;
@@ -42,6 +43,7 @@ class CashFlowController extends Controller
                 Transaction::whereIn('account_id', $cashAccountIds),
                 'transactions'
             )
+                ->tap(fn ($query) => $this->applyBranchScope($query, 'transactions'))
                 ->whereBetween('transaction_date', [$start->toDateString(), $end->toDateString()])
                 ->with('account')
                 ->orderBy('transaction_date', 'asc')
@@ -93,11 +95,15 @@ class CashFlowController extends Controller
             $labels[] = $month->format('M Y');
             
             $inflows[] = Transaction::whereIn('account_id', $cashAccountIds)
+                ->tap(fn ($query) => $this->applyTenantScope($query, 'transactions'))
+                ->tap(fn ($query) => $this->applyBranchScope($query, 'transactions'))
                 ->whereMonth('transaction_date', $month->month)
                 ->whereYear('transaction_date', $month->year)
                 ->sum('debit');
 
             $outflows[] = Transaction::whereIn('account_id', $cashAccountIds)
+                ->tap(fn ($query) => $this->applyTenantScope($query, 'transactions'))
+                ->tap(fn ($query) => $this->applyBranchScope($query, 'transactions'))
                 ->whereMonth('transaction_date', $month->month)
                 ->whereYear('transaction_date', $month->year)
                 ->sum('credit');
@@ -119,6 +125,7 @@ class CashFlowController extends Controller
                 Transaction::whereIn('account_id', $cashAccountIds),
                 'transactions'
             )
+                ->tap(fn ($query) => $this->applyBranchScope($query, 'transactions'))
                 ->where('transaction_date', '<', $start->toDateString())
                 ->selectRaw('SUM(debit) - SUM(credit) as balance')
                 ->first()->balance ?? 0;
@@ -130,6 +137,7 @@ class CashFlowController extends Controller
                 Transaction::whereIn('account_id', $cashAccountIds),
                 'transactions'
             )
+                ->tap(fn ($query) => $this->applyBranchScope($query, 'transactions'))
                 ->whereBetween('transaction_date', [$start->toDateString(), $end->toDateString()])
                 ->with('account')
                 ->orderBy('transaction_date', 'asc')
@@ -202,7 +210,7 @@ class CashFlowController extends Controller
 
     private function applyTenantScope($query, string $table)
     {
-        $companyId = (int) (Auth::user()?->company_id ?? 0);
+        $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
         $userId = (int) (Auth::id() ?? 0);
 
         if ($companyId > 0 && Schema::hasColumn($table, 'company_id')) {
@@ -214,6 +222,34 @@ class CashFlowController extends Controller
         }
 
         return $query;
+    }
+
+    private function getActiveBranchContext(): array
+    {
+        return [
+            'id' => session('active_branch_id') ? (string) session('active_branch_id') : null,
+            'name' => session('active_branch_name') ? (string) session('active_branch_name') : null,
+        ];
+    }
+
+    private function applyBranchScope($query, string $table)
+    {
+        $activeBranch = $this->getActiveBranchContext();
+        $branchId = trim((string) ($activeBranch['id'] ?? ''));
+        $branchName = trim((string) ($activeBranch['name'] ?? ''));
+
+        if ($branchId === '' && $branchName === '') {
+            return $query;
+        }
+
+        return $query->where(function ($sub) use ($table, $branchId, $branchName) {
+            if ($branchId !== '' && Schema::hasColumn($table, 'branch_id')) {
+                $sub->where("{$table}.branch_id", $branchId);
+            }
+            if ($branchName !== '' && Schema::hasColumn($table, 'branch_name')) {
+                $sub->orWhere("{$table}.branch_name", $branchName);
+            }
+        });
     }
 
     private function resolveCashAccountIds()
@@ -247,6 +283,7 @@ class CashFlowController extends Controller
     {
         $paymentsQuery = $this->applyTenantScope(Payment::query(), 'payments')
             ->whereBetween('created_at', [$start->toDateTimeString(), $end->toDateTimeString()]);
+        $this->applyBranchScope($paymentsQuery, 'payments');
 
         $paymentsQuery->where(function ($query) {
             $query->whereRaw('LOWER(status) in (?, ?, ?)', ['completed', 'success', 'successful'])
@@ -263,6 +300,7 @@ class CashFlowController extends Controller
         });
 
         $expenseRows = $this->applyTenantScope(Expense::query(), 'expenses')
+            ->tap(fn ($query) => $this->applyBranchScope($query, 'expenses'))
             ->whereBetween('created_at', [$start->toDateTimeString(), $end->toDateTimeString()])
             ->whereRaw('LOWER(status) = ?', ['paid'])
             ->get()
@@ -289,6 +327,7 @@ class CashFlowController extends Controller
             $labels[] = $month->format('M Y');
 
             $inflows[] = $this->applyTenantScope(Payment::query(), 'payments')
+                ->tap(fn ($query) => $this->applyBranchScope($query, 'payments'))
                 ->whereMonth('created_at', $month->month)
                 ->whereYear('created_at', $month->year)
                 ->where(function ($query) {
@@ -298,6 +337,7 @@ class CashFlowController extends Controller
                 ->sum('amount');
 
             $outflows[] = $this->applyTenantScope(Expense::query(), 'expenses')
+                ->tap(fn ($query) => $this->applyBranchScope($query, 'expenses'))
                 ->whereMonth('created_at', $month->month)
                 ->whereYear('created_at', $month->year)
                 ->whereRaw('LOWER(status) = ?', ['paid'])

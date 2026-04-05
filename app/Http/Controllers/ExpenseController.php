@@ -293,10 +293,16 @@ class ExpenseController extends Controller
                     'balance' => (float) ($validated['balance'] ?? 0),
                 ];
                 if (Schema::hasColumn('banks', 'company_id')) {
-                    $bankAttributes['company_id'] = Auth::user()?->company_id ?: null;
+                    $bankAttributes['company_id'] = Auth::user()?->company_id ?? session('current_tenant_id');
                 }
                 if (Schema::hasColumn('banks', 'user_id')) {
                     $bankValues['user_id'] = Auth::id();
+                }
+                if (Schema::hasColumn('banks', 'branch_id')) {
+                    $bankValues['branch_id'] = session('active_branch_id');
+                }
+                if (Schema::hasColumn('banks', 'branch_name')) {
+                    $bankValues['branch_name'] = session('active_branch_name');
                 }
 
                 Bank::updateOrCreate(
@@ -318,10 +324,16 @@ class ExpenseController extends Controller
                 'is_active' => true,
             ];
             if (Schema::hasColumn('accounts', 'company_id')) {
-                $accountAttributes['company_id'] = Auth::user()?->company_id ?: null;
+                $accountAttributes['company_id'] = Auth::user()?->company_id ?? session('current_tenant_id');
             }
             if (Schema::hasColumn('accounts', 'user_id')) {
                 $accountValues['user_id'] = Auth::id();
+            }
+            if (Schema::hasColumn('accounts', 'branch_id')) {
+                $accountValues['branch_id'] = session('active_branch_id');
+            }
+            if (Schema::hasColumn('accounts', 'branch_name')) {
+                $accountValues['branch_name'] = session('active_branch_name');
             }
 
             Account::firstOrCreate($accountAttributes, $accountValues);

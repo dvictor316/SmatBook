@@ -34,7 +34,7 @@ class AnalyticsDashboardController extends Controller
             return null; // super admins get global analytics
         }
 
-        return $user->company_id ?? null;
+        return $user->company_id ?? session('current_tenant_id');
     }
 
     private function getActiveBranchContext(): array
@@ -73,10 +73,15 @@ class AnalyticsDashboardController extends Controller
         $branchId = trim((string) ($activeBranch['id'] ?? ''));
         $branchName = trim((string) ($activeBranch['name'] ?? ''));
 
-        if ($branchId !== '' && Schema::hasColumn($salesTable, 'branch_id')) {
-            $query->where($salesTable . '.branch_id', $branchId);
-        } elseif ($branchName !== '' && Schema::hasColumn($salesTable, 'branch_name')) {
-            $query->where($salesTable . '.branch_name', $branchName);
+        if ($branchId !== '' || $branchName !== '') {
+            $query->where(function ($sub) use ($salesTable, $branchId, $branchName) {
+                if ($branchId !== '' && Schema::hasColumn($salesTable, 'branch_id')) {
+                    $sub->where($salesTable . '.branch_id', $branchId);
+                }
+                if ($branchName !== '' && Schema::hasColumn($salesTable, 'branch_name')) {
+                    $sub->orWhere($salesTable . '.branch_name', $branchName);
+                }
+            });
         }
 
         return $query;

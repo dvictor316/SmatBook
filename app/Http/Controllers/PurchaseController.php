@@ -28,7 +28,7 @@ class PurchaseController extends Controller
 {
 public function applyTenantScope($query, string $table)
     {
-        $companyId = (int) (auth()->user()?->company_id ?? 0);
+        $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
         $userId = (int) (auth()->id() ?? 0);
 
         if ($companyId > 0 && Schema::hasColumn($table, 'company_id')) {
@@ -50,7 +50,7 @@ public function getActiveBranchContext(): array
         $branchName = session('active_branch_name') ? (string) session('active_branch_name') : null;
 
         if (!$branchId && !$branchName && Schema::hasTable('settings')) {
-            $companyId = (int) (auth()->user()?->company_id ?? 0);
+            $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
             if ($companyId > 0) {
                 $key = 'branches_json_company_' . $companyId;
                 $raw = (string) (DB::table('settings')->where('key', $key)->value('value') ?? '');
@@ -73,16 +73,21 @@ private function applyBranchScope($query, string $table = 'purchases')
     {
         $activeBranch = $this->getActiveBranchContext();
 
-        if (!empty($activeBranch['id']) && Schema::hasColumn($table, 'branch_id')) {
-            $query->where("{$table}.branch_id", (string) $activeBranch['id']);
+        $branchId = trim((string) ($activeBranch['id'] ?? ''));
+        $branchName = trim((string) ($activeBranch['name'] ?? ''));
+
+        if ($branchId === '' && $branchName === '') {
             return $query;
         }
 
-        if (!empty($activeBranch['name']) && Schema::hasColumn($table, 'branch_name')) {
-            $query->where("{$table}.branch_name", (string) $activeBranch['name']);
-        }
-
-        return $query;
+        return $query->where(function ($sub) use ($table, $branchId, $branchName) {
+            if ($branchId !== '' && Schema::hasColumn($table, 'branch_id')) {
+                $sub->where("{$table}.branch_id", $branchId);
+            }
+            if ($branchName !== '' && Schema::hasColumn($table, 'branch_name')) {
+                $sub->orWhere("{$table}.branch_name", $branchName);
+            }
+        });
     }
 
     public function index()
@@ -270,7 +275,7 @@ private function applyBranchScope($query, string $table = 'purchases')
                 $purchasePayload['vendor_id'] = $validated['vendor_id'] ?? null;
             }
             if (Schema::hasColumn('purchases', 'company_id')) {
-                $purchasePayload['company_id'] = auth()->user()?->company_id ?: null;
+                $purchasePayload['company_id'] = auth()->user()?->company_id ?? session('current_tenant_id');
             }
             if (Schema::hasColumn('purchases', 'user_id')) {
                 $purchasePayload['user_id'] = auth()->id();
@@ -308,7 +313,7 @@ private function applyBranchScope($query, string $table = 'purchases')
                     $itemPayload['amount'] = $itemAmount;
                 }
                 if (Schema::hasColumn('purchase_items', 'company_id')) {
-                    $itemPayload['company_id'] = $purchase->company_id ?? auth()->user()?->company_id;
+                    $itemPayload['company_id'] = $purchase->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id');
                 }
                 if (Schema::hasColumn('purchase_items', 'branch_id')) {
                     $itemPayload['branch_id'] = $purchase->branch_id ?? $activeBranch['id'];
@@ -326,7 +331,7 @@ private function applyBranchScope($query, string $table = 'purchases')
                     $product,
                     $quantity,
                     $activeBranch,
-                    (int) ($product->company_id ?? auth()->user()?->company_id ?? 0)
+                    (int) ($product->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id') ?? 0)
                 );
             }
 
@@ -529,7 +534,7 @@ public function show($id)
                     $previousProduct,
                     -$previousQty,
                     $activeBranch,
-                    (int) ($previousProduct->company_id ?? auth()->user()?->company_id ?? 0)
+                    (int) ($previousProduct->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id') ?? 0)
                 );
             }
 
@@ -563,7 +568,7 @@ public function show($id)
                     $itemPayload['amount'] = $itemAmount;
                 }
                 if (Schema::hasColumn('purchase_items', 'company_id')) {
-                    $itemPayload['company_id'] = $purchase->company_id ?? auth()->user()?->company_id;
+                    $itemPayload['company_id'] = $purchase->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id');
                 }
                 if (Schema::hasColumn('purchase_items', 'branch_id')) {
                     $itemPayload['branch_id'] = $purchase->branch_id ?? $activeBranch['id'];
@@ -581,7 +586,7 @@ public function show($id)
                     $product,
                     $quantity,
                     $activeBranch,
-                    (int) ($product->company_id ?? auth()->user()?->company_id ?? 0)
+                    (int) ($product->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id') ?? 0)
                 );
             }
 
@@ -641,7 +646,7 @@ public function show($id)
                         'id' => $purchase->branch_id ?? $activeBranch['id'],
                         'name' => $purchase->branch_name ?? $activeBranch['name'],
                     ],
-                    (int) ($product->company_id ?? auth()->user()?->company_id ?? 0)
+                    (int) ($product->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id') ?? 0)
                 );
             }
             
@@ -996,7 +1001,7 @@ public function show($id)
                 $purchase->notes = $validated['notes'] ?? null;
             }
             if (Schema::hasColumn('purchases', 'company_id')) {
-                $purchase->company_id = auth()->user()?->company_id ?: null;
+                $purchase->company_id = auth()->user()?->company_id ?? session('current_tenant_id');
             }
             if (Schema::hasColumn('purchases', 'user_id')) {
                 $purchase->user_id = auth()->id();
@@ -1020,7 +1025,7 @@ public function show($id)
                     'unit_price' => $rate,
                 ];
                 if (Schema::hasColumn('purchase_items', 'company_id')) {
-                    $itemPayload['company_id'] = $purchase->company_id ?? auth()->user()?->company_id;
+                    $itemPayload['company_id'] = $purchase->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id');
                 }
                 if (Schema::hasColumn('purchase_items', 'branch_id')) {
                     $itemPayload['branch_id'] = $purchase->branch_id ?? $activeBranch['id'];
@@ -1104,16 +1109,21 @@ public function show($id)
                 ])
                 ->whereRaw("LOWER(COALESCE(inventory_history.type, '')) = 'in'");
 
-            if (Schema::hasColumn('products', 'company_id') && (int) (auth()->user()?->company_id ?? 0) > 0) {
-                $historyQuery->where('products.company_id', (int) auth()->user()->company_id);
+            if (Schema::hasColumn('products', 'company_id') && (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0) > 0) {
+                $historyQuery->where('products.company_id', (int) (auth()->user()?->company_id ?? session('current_tenant_id')));
             } elseif (Schema::hasColumn('products', 'user_id') && auth()->id()) {
                 $historyQuery->where('products.user_id', auth()->id());
             }
 
-            if (!empty($activeBranch['id']) && Schema::hasColumn('inventory_history', 'branch_id')) {
-                $historyQuery->where('inventory_history.branch_id', $activeBranch['id']);
-            } elseif (!empty($activeBranch['name']) && Schema::hasColumn('inventory_history', 'branch_name')) {
-                $historyQuery->where('inventory_history.branch_name', $activeBranch['name']);
+            if (!empty($activeBranch['id']) || !empty($activeBranch['name'])) {
+                $historyQuery->where(function ($sub) use ($activeBranch) {
+                    if (!empty($activeBranch['id']) && Schema::hasColumn('inventory_history', 'branch_id')) {
+                        $sub->where('inventory_history.branch_id', $activeBranch['id']);
+                    }
+                    if (!empty($activeBranch['name']) && Schema::hasColumn('inventory_history', 'branch_name')) {
+                        $sub->orWhere('inventory_history.branch_name', $activeBranch['name']);
+                    }
+                });
             }
 
             if ($request->filled('search')) {

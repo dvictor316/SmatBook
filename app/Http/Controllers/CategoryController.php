@@ -12,7 +12,7 @@ class CategoryController extends Controller
 {
 private function applyTenantScope($query)
 {
-    $companyId = (int) (Auth::user()?->company_id ?? 0);
+    $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
     $userId = (int) (Auth::id() ?? 0);
 
     if ($companyId > 0 && Schema::hasColumn('categories', 'company_id')) {
@@ -93,7 +93,7 @@ public function store(Request $request)
     }
 
     if (Schema::hasColumn('categories', 'company_id')) {
-        $payload['company_id'] = Auth::user()?->company_id ?: null;
+        $payload['company_id'] = Auth::user()?->company_id ?? session('current_tenant_id');
     }
 
     if (Schema::hasColumn('categories', 'user_id')) {

@@ -166,12 +166,16 @@ class TaxFilingController extends Controller
 
         if (Schema::hasTable('sales')) {
             $salesQuery = DB::table('sales')->whereBetween(DB::raw('DATE(created_at)'), [$start, $end]);
+            $this->applyTenantScope($salesQuery, 'sales');
+            $this->applyBranchScope($salesQuery, 'sales');
             $salesTax = (float) $salesQuery->sum('tax');
             $salesTaxable = (float) $salesQuery->sum(DB::raw('GREATEST(total - tax, 0)'));
         }
 
         if (Schema::hasTable('purchases')) {
             $purchaseQuery = DB::table('purchases')->whereBetween(DB::raw('DATE(created_at)'), [$start, $end]);
+            $this->applyTenantScope($purchaseQuery, 'purchases');
+            $this->applyBranchScope($purchaseQuery, 'purchases');
             $purchaseTax = (float) $purchaseQuery->sum('tax_amount');
             $purchaseTaxable = (float) $purchaseQuery->sum(DB::raw('GREATEST(total_amount - tax_amount, 0)'));
         }
@@ -199,5 +203,38 @@ class TaxFilingController extends Controller
     private function migrationMessage(): string
     {
         return 'Taxation tables are missing. Run `php artisan migrate` to initialize tax modules.';
+    }
+
+    private function applyTenantScope($query, string $table): void
+    {
+        $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $userId = (int) (auth()->id() ?? 0);
+
+        if ($companyId > 0 && Schema::hasColumn($table, 'company_id')) {
+            $query->where("{$table}.company_id", $companyId);
+        } elseif ($userId > 0 && Schema::hasColumn($table, 'user_id')) {
+            $query->where("{$table}.user_id", $userId);
+        } elseif ($userId > 0 && Schema::hasColumn($table, 'created_by')) {
+            $query->where("{$table}.created_by", $userId);
+        }
+    }
+
+    private function applyBranchScope($query, string $table): void
+    {
+        $branchId = trim((string) session('active_branch_id', ''));
+        $branchName = trim((string) session('active_branch_name', ''));
+
+        if ($branchId === '' && $branchName === '') {
+            return;
+        }
+
+        $query->where(function ($sub) use ($table, $branchId, $branchName) {
+            if ($branchId !== '' && Schema::hasColumn($table, 'branch_id')) {
+                $sub->where("{$table}.branch_id", $branchId);
+            }
+            if ($branchName !== '' && Schema::hasColumn($table, 'branch_name')) {
+                $sub->orWhere("{$table}.branch_name", $branchName);
+            }
+        });
     }
 }

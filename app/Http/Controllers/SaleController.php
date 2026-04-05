@@ -30,7 +30,10 @@ class SaleController extends Controller
 
     private function tenantCompanyId(): int
     {
-        return (int) (auth()->user()?->company_id ?? optional(auth()->user()?->company)->id ?? 0);
+        return (int) (auth()->user()?->company_id
+            ?? session('current_tenant_id')
+            ?? optional(auth()->user()?->company)->id
+            ?? 0);
     }
 
     private function applyTenantScope($query, string $table)
@@ -68,15 +71,14 @@ class SaleController extends Controller
             return $query;
         }
 
-        if ($branchId !== '' && Schema::hasColumn($table, 'branch_id')) {
-            return $query->where("{$table}.branch_id", $branchId);
-        }
-
-        if ($branchName !== '' && Schema::hasColumn($table, 'branch_name')) {
-            return $query->where("{$table}.branch_name", $branchName);
-        }
-
-        return $query;
+        return $query->where(function ($sub) use ($table, $branchId, $branchName) {
+            if ($branchId !== '' && Schema::hasColumn($table, 'branch_id')) {
+                $sub->where("{$table}.branch_id", $branchId);
+            }
+            if ($branchName !== '' && Schema::hasColumn($table, 'branch_name')) {
+                $sub->orWhere("{$table}.branch_name", $branchName);
+            }
+        });
     }
 
     private function clearDashboardMetricsCache(?string $branchId = null): void
@@ -434,7 +436,7 @@ public function customerDetails($id = null)
 
         // --- 2. CREATE THE SALE RECORD ---
 $sale = Sale::create([
-    'company_id'     => auth()->user()?->company_id,
+    'company_id'     => auth()->user()?->company_id ?? session('current_tenant_id'),
     'branch_id'      => $activeBranch['id'],
     'branch_name'    => $activeBranch['name'],
     'order_number'   => $orderNumber,
@@ -503,7 +505,7 @@ $sale = Sale::create([
                 'total_price' => $itemTotal, 
             ];
             if (Schema::hasColumn('sale_items', 'company_id')) {
-                $itemPayload['company_id'] = $sale->company_id ?? auth()->user()?->company_id;
+                $itemPayload['company_id'] = $sale->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id');
             }
             if (Schema::hasColumn('sale_items', 'branch_id')) {
                 $itemPayload['branch_id'] = $sale->branch_id ?? $activeBranch['id'];
@@ -526,7 +528,7 @@ $sale = Sale::create([
                 $product,
                 -$requestedStockUnits,
                 $activeBranch,
-                (int) ($product->company_id ?? auth()->user()?->company_id ?? 0)
+                (int) ($product->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id') ?? 0)
             );
         }
 

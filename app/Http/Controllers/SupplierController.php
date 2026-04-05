@@ -16,7 +16,7 @@ class SupplierController extends Controller
 {
     private function applyTenantScope($query, string $table = 'suppliers')
     {
-        $companyId = (int) (auth()->user()?->company_id ?? 0);
+        $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
         $userId = (int) (auth()->id() ?? 0);
         $activeBranch = $this->getActiveBranchContext();
         $branchId = trim((string) ($activeBranch['id'] ?? ''));
@@ -28,10 +28,15 @@ class SupplierController extends Controller
             $query->where("{$table}.user_id", $userId);
         }
 
-        if ($branchId !== '' && Schema::hasColumn($table, 'branch_id')) {
-            $query->where("{$table}.branch_id", $branchId);
-        } elseif ($branchName !== '' && Schema::hasColumn($table, 'branch_name')) {
-            $query->where("{$table}.branch_name", $branchName);
+        if ($branchId !== '' || $branchName !== '') {
+            $query->where(function ($sub) use ($table, $branchId, $branchName) {
+                if ($branchId !== '' && Schema::hasColumn($table, 'branch_id')) {
+                    $sub->where("{$table}.branch_id", $branchId);
+                }
+                if ($branchName !== '' && Schema::hasColumn($table, 'branch_name')) {
+                    $sub->orWhere("{$table}.branch_name", $branchName);
+                }
+            });
         }
 
         return $query;
@@ -54,7 +59,7 @@ class SupplierController extends Controller
         $branchName = session('active_branch_name') ? (string) session('active_branch_name') : null;
 
         if (!$branchId && !$branchName && Schema::hasTable('settings')) {
-            $companyId = (int) (auth()->user()?->company_id ?? 0);
+            $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
             if ($companyId > 0) {
                 $key = 'branches_json_company_' . $companyId;
                 $raw = (string) (DB::table('settings')->where('key', $key)->value('value') ?? '');
@@ -128,6 +133,19 @@ class SupplierController extends Controller
             'branch_id' => $this->getActiveBranchContext()['id'],
             'branch_name' => $this->getActiveBranchContext()['name'],
         ]);
+
+        if (Schema::hasColumn('suppliers', 'company_id')) {
+            $payload['company_id'] = auth()->user()?->company_id ?? session('current_tenant_id');
+        }
+        if (Schema::hasColumn('suppliers', 'user_id')) {
+            $payload['user_id'] = auth()->id();
+        }
+        if (Schema::hasColumn('suppliers', 'branch_id')) {
+            $payload['branch_id'] = $this->getActiveBranchContext()['id'];
+        }
+        if (Schema::hasColumn('suppliers', 'branch_name')) {
+            $payload['branch_name'] = $this->getActiveBranchContext()['name'];
+        }
 
         $nameColumn = $this->resolveNameColumn();
         $payload[$nameColumn] = $request->input('name');

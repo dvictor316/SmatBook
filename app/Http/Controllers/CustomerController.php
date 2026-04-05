@@ -14,7 +14,7 @@ class CustomerController extends Controller
 {
     private function applyTenantScope($query)
     {
-        $companyId = (int) (auth()->user()?->company_id ?? 0);
+        $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
         $userId = (int) (auth()->id() ?? 0);
         $activeBranch = $this->getActiveBranchContext();
         $branchId = trim((string) ($activeBranch['id'] ?? ''));
@@ -26,10 +26,15 @@ class CustomerController extends Controller
             $query->where('user_id', $userId);
         }
 
-        if ($branchId !== '' && Schema::hasColumn('customers', 'branch_id')) {
-            $query->where('branch_id', $branchId);
-        } elseif ($branchName !== '' && Schema::hasColumn('customers', 'branch_name')) {
-            $query->where('branch_name', $branchName);
+        if ($branchId !== '' || $branchName !== '') {
+            $query->where(function ($sub) use ($branchId, $branchName) {
+                if ($branchId !== '' && Schema::hasColumn('customers', 'branch_id')) {
+                    $sub->where('branch_id', $branchId);
+                }
+                if ($branchName !== '' && Schema::hasColumn('customers', 'branch_name')) {
+                    $sub->orWhere('branch_name', $branchName);
+                }
+            });
         }
 
         return $query;
@@ -107,7 +112,7 @@ class CustomerController extends Controller
         $data = $this->sanitizeForCustomerColumns($data);
 
         if (Schema::hasColumn('customers', 'company_id')) {
-            $data['company_id'] = auth()->user()?->company_id ?: null;
+            $data['company_id'] = auth()->user()?->company_id ?? session('current_tenant_id');
         }
         if (Schema::hasColumn('customers', 'user_id')) {
             $data['user_id'] = auth()->id();

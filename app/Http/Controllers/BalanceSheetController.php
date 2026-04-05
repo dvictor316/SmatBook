@@ -141,21 +141,9 @@ class BalanceSheetController extends Controller
         $accounts = collect();
 
         if (!empty($accountIds)) {
-            $accountsQuery = Account::withoutGlobalScope('tenant')
+            $accounts = Account::withoutGlobalScope('tenant')
                 ->whereIn('id', $accountIds)
-                ->where(function ($q) use ($companyId, $userId) {
-                    if ($companyId > 0) {
-                        $q->where('company_id', $companyId)
-                          ->orWhere(function ($sub) use ($userId) {
-                              $sub->whereNull('company_id')
-                                  ->where('user_id', $userId);
-                          });
-                    } elseif ($userId > 0) {
-                        $q->where('user_id', $userId);
-                    }
-                });
-
-            $accounts = $accountsQuery->get();
+                ->get();
         }
 
         $accounts->transform(function ($account) use ($txnTotals) {

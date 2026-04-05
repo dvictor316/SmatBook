@@ -11,14 +11,18 @@ use Illuminate\Routing\Redirector;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class VendorController extends Controller
 {
     private function applyTenantScope($query, string $table = 'vendors')
     {
-        $companyId = (int) (auth()->user()?->company_id ?? 0);
+        $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
         $userId = (int) (auth()->id() ?? 0);
+        $activeBranch = $this->getActiveBranchContext();
+        $branchId = trim((string) ($activeBranch['id'] ?? ''));
+        $branchName = trim((string) ($activeBranch['name'] ?? ''));
 
         if ($companyId > 0 && Schema::hasColumn($table, 'company_id')) {
             $query->where("{$table}.company_id", $companyId);
@@ -26,7 +30,43 @@ class VendorController extends Controller
             $query->where("{$table}.user_id", $userId);
         }
 
+        if ($branchId !== '' || $branchName !== '') {
+            $query->where(function ($sub) use ($table, $branchId, $branchName) {
+                if ($branchId !== '' && Schema::hasColumn($table, 'branch_id')) {
+                    $sub->where("{$table}.branch_id", $branchId);
+                }
+                if ($branchName !== '' && Schema::hasColumn($table, 'branch_name')) {
+                    $sub->orWhere("{$table}.branch_name", $branchName);
+                }
+            });
+        }
+
         return $query;
+    }
+
+    private function getActiveBranchContext(): array
+    {
+        $branchId = session('active_branch_id') ? (string) session('active_branch_id') : null;
+        $branchName = session('active_branch_name') ? (string) session('active_branch_name') : null;
+
+        if (!$branchId && !$branchName && Schema::hasTable('settings')) {
+            $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+            if ($companyId > 0) {
+                $key = 'branches_json_company_' . $companyId;
+                $raw = (string) (DB::table('settings')->where('key', $key)->value('value') ?? '');
+                $branches = json_decode($raw, true) ?: [];
+                $first = collect($branches)->first();
+                if ($first) {
+                    $branchId = $branchId ?: ($first['id'] ?? null);
+                    $branchName = $branchName ?: ($first['name'] ?? null);
+                }
+            }
+        }
+
+        return [
+            'id' => $branchId,
+            'name' => $branchName,
+        ];
     }
 
     /**
@@ -84,10 +124,16 @@ class VendorController extends Controller
         }
 
         if (Schema::hasColumn('vendors', 'company_id')) {
-            $validated['company_id'] = auth()->user()?->company_id ?: null;
+            $validated['company_id'] = auth()->user()?->company_id ?? session('current_tenant_id');
         }
         if (Schema::hasColumn('vendors', 'user_id')) {
             $validated['user_id'] = auth()->id();
+        }
+        if (Schema::hasColumn('vendors', 'branch_id')) {
+            $validated['branch_id'] = $this->getActiveBranchContext()['id'];
+        }
+        if (Schema::hasColumn('vendors', 'branch_name')) {
+            $validated['branch_name'] = $this->getActiveBranchContext()['name'];
         }
 
         // 1. Create the Vendor account

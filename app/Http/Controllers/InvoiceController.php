@@ -16,7 +16,7 @@ class InvoiceController extends Controller
 {
     private function applyTenantScope($query, string $table)
     {
-        $companyId = (int) (auth()->user()?->company_id ?? 0);
+        $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
         $userId = (int) (auth()->id() ?? 0);
 
         if ($companyId > 0 && Schema::hasColumn($table, 'company_id')) {
