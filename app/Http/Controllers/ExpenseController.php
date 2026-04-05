@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 class ExpenseController extends Controller
@@ -242,6 +243,13 @@ class ExpenseController extends Controller
             if (!empty($validated['payment_account_id'])) {
                 $paymentAccount = Account::findOrFail((int) $validated['payment_account_id']);
             } elseif ($validated['status'] === 'Paid' && empty($expense->payment_mode)) {
+                Log::warning('Expense update blocked: paid status without payment source', [
+                    'expense_id' => $expense->id,
+                    'status' => $validated['status'] ?? null,
+                    'payment_mode' => $expense->payment_mode ?? null,
+                    'payment_account_id' => $validated['payment_account_id'] ?? null,
+                    'user_id' => Auth::id(),
+                ]);
                 return back()->withInput()->with('error', 'Select a Paid From (Credit Account) to mark this expense as Paid.');
             }
 
@@ -292,6 +300,13 @@ class ExpenseController extends Controller
             if ($validated['status'] === 'Paid') {
                 \App\Support\LedgerService::postExpense($expense->fresh());
             }
+
+            Log::info('Expense updated', [
+                'expense_id' => $expense->id,
+                'status' => $expense->status,
+                'payment_mode' => $expense->payment_mode,
+                'user_id' => Auth::id(),
+            ]);
 
             return redirect()->route('expenses.index')->with('success', 'Expense updated successfully!');
         });
