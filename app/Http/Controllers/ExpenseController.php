@@ -213,11 +213,11 @@ class ExpenseController extends Controller
         throw new RuntimeException('Expense receipt upload failed. Storage directory is not writable.');
     }
 
-    public function update(Request $request, Expense $expense)
+    public function update(Request $request, $id)
     {
         $expenseQuery = $this->applyTenantScope(Expense::query(), 'expenses');
         $this->applyBranchScope($expenseQuery, 'expenses');
-        $expense = $expenseQuery->findOrFail($expense->id);
+        $expense = $expenseQuery->findOrFail($id);
 
         $validated = $request->validate([
             'company_name' => 'required|string|max:191',
@@ -282,11 +282,11 @@ class ExpenseController extends Controller
         });
     }
 
-    public function destroy(Expense $expense)
+    public function destroy($id)
     {
         $expenseQuery = $this->applyTenantScope(Expense::query(), 'expenses');
         $this->applyBranchScope($expenseQuery, 'expenses');
-        $expense = $expenseQuery->findOrFail($expense->id);
+        $expense = $expenseQuery->findOrFail($id);
 
         Transaction::where('related_id', $expense->id)
             ->where('related_type', Expense::class)
@@ -302,22 +302,22 @@ class ExpenseController extends Controller
             ->with('success', 'Expense deleted successfully!');
     }
 
-    public function show(Expense $expense)
+    public function show($id)
     {
         $expenseQuery = $this->applyTenantScope(Expense::query(), 'expenses');
         $this->applyBranchScope($expenseQuery, 'expenses');
-        $expenseQuery->findOrFail($expense->id);
+        $expenseQuery->findOrFail($id);
 
         return redirect()
             ->route('expenses.index')
             ->with('info', 'Expense details are available in the list view.');
     }
 
-    public function edit(Expense $expense)
+    public function edit($id)
     {
         $expenseQuery = $this->applyTenantScope(Expense::query(), 'expenses');
         $this->applyBranchScope($expenseQuery, 'expenses');
-        $expenseQuery->findOrFail($expense->id);
+        $expenseQuery->findOrFail($id);
 
         return redirect()
             ->route('expenses.index')
