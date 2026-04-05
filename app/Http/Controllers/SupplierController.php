@@ -200,6 +200,7 @@ class SupplierController extends Controller
         $purchaseItemsByPurchase = collect();
         if ($hasPurchases && Schema::hasTable('purchase_items')) {
             $purchaseIds = Purchase::where('supplier_id', $supplier->id)->pluck('id');
+            $hasProductNameColumn = Schema::hasColumn('purchase_items', 'product_name');
             $qtyColumn = Schema::hasColumn('purchase_items', 'qty')
                 ? 'qty'
                 : (Schema::hasColumn('purchase_items', 'quantity') ? 'quantity' : null);
@@ -223,13 +224,17 @@ class SupplierController extends Controller
                 }
             }
 
+            $productNameExpression = $hasProductNameColumn
+                ? "COALESCE(products.name, purchase_items.product_name, 'Item')"
+                : "COALESCE(products.name, 'Item')";
+
             $itemQuery = PurchaseItem::query()
                 ->whereIn('purchase_id', $purchaseIds)
                 ->leftJoin('products', 'products.id', '=', 'purchase_items.product_id')
                 ->select(
                     'purchase_items.purchase_id',
                     'purchase_items.product_id',
-                    DB::raw("COALESCE(products.name, purchase_items.product_name, 'Item') as product_name"),
+                    DB::raw($productNameExpression . ' as product_name'),
                     $qtyColumn ? "purchase_items.{$qtyColumn} as qty" : DB::raw('0 as qty'),
                     $receivedQtyColumn ? "purchase_items.{$receivedQtyColumn} as received_qty" : DB::raw('0 as received_qty'),
                     $rateColumn ? "purchase_items.{$rateColumn} as unit_price" : DB::raw('0 as unit_price'),

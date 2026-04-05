@@ -423,7 +423,7 @@ class HomeController extends Controller
     {
         $customerValidation = Schema::hasTable('customers') ? 'nullable|exists:customers,id' : 'nullable';
         $validated = $request->validate([
-            'quotation_id' => 'nullable|string|max:100',
+            'quotation_id' => 'nullable|string|max:100|unique:quotations,quotation_id',
             'customer_id' => $customerValidation,
             'total' => 'required|numeric|min:0',
             'status' => 'nullable|string|max:50',
@@ -431,7 +431,13 @@ class HomeController extends Controller
         ]);
 
         if (empty($validated['quotation_id'])) {
-            $validated['quotation_id'] = 'QTN-' . str_pad((string) ((Quotation::max('id') ?? 0) + 1), 5, '0', STR_PAD_LEFT);
+            $seed = (int) (Quotation::max('id') ?? 0);
+            $sequence = max(1, $seed + 1);
+            do {
+                $candidate = 'QTN-' . str_pad((string) $sequence, 5, '0', STR_PAD_LEFT);
+                $sequence++;
+            } while (Quotation::where('quotation_id', $candidate)->exists());
+            $validated['quotation_id'] = $candidate;
         }
         $validated['status'] = $validated['status'] ?? 'Pending';
 
