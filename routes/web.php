@@ -578,6 +578,8 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
     Route::get('/add-customer', [CustomerController::class, 'create'])->name('customers.add');
     Route::get('/customers/import/template', [CustomerController::class, 'downloadImportTemplate'])->name('customers.import.template');
     Route::post('/customers/import', [CustomerController::class, 'import'])->name('customers.import');
+    Route::get('/customers/{id}/receive-payment', [CustomerController::class, 'receivePayment'])->name('customers.receive-payment');
+    Route::post('/customers/{id}/receive-payment', [CustomerController::class, 'storeReceivedPayment'])->name('customers.store-receive-payment');
     Route::get('/active-customers', [CustomerController::class, 'activeView'])->name('active-customers');
     Route::get('/deactive-customers', [CustomerController::class, 'deactiveView'])->name('deactive-customers');
     Route::post('/customers/{id}/export', [CustomerController::class, 'export'])->name('customers.export');
@@ -611,6 +613,8 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::get('/import/template', 'downloadImportTemplate')->name('import.template');
         Route::post('/import', 'import')->name('import');
         Route::post('/', 'store')->name('store');
+        Route::get('/{id}/pay', 'pay')->name('pay');
+        Route::post('/{id}/pay', 'storePayment')->name('store-payment');
         Route::get('/{id}', 'show')->name('show');
         Route::get('/{id}/edit', 'edit')->name('edit');
         Route::put('/{id}', 'update')->name('update');

@@ -380,7 +380,7 @@
                     <a href="{{ route('reports.customer-statement', $customer->id) }}" class="btn btn-outline-primary rounded-pill px-4">
                         <i class="fe fe-file-text me-2"></i>Customer Statement
                     </a>
-                    <a href="{{ route('payments.index', ['customer_id' => $customer->id, 'open_payment' => 1]) }}" class="btn btn-outline-success rounded-pill px-4">
+                    <a href="{{ route('customers.receive-payment', $customer->id) }}" class="btn btn-outline-success rounded-pill px-4">
                         <i class="fe fe-credit-card me-2"></i>Record Payment
                     </a>
                     <button onclick="window.print()" class="btn btn-light border rounded-pill px-4">

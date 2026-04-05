@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\Traits\TenantScoped;
 
 class Purchase extends Model
@@ -79,5 +80,10 @@ class Purchase extends Model
     public function returns()
     {
         return $this->hasMany(PurchaseReturn::class, 'purchase_id');
+    }
+
+    public function supplierPayments(): HasMany
+    {
+        return $this->hasMany(SupplierPayment::class, 'purchase_id');
     }
 } // Class ends here

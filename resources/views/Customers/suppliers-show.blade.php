@@ -14,6 +14,9 @@
                     </ul>
                 </div>
                 <div class="col-auto">
+                    <a href="{{ route('suppliers.pay', $supplier->id) }}" class="btn btn-success me-2">
+                        <i class="far fa-credit-card me-1"></i>Pay Supplier
+                    </a>
                     <a href="{{ route('suppliers.edit', $supplier->id) }}" class="btn btn-outline-primary">
                         <i class="far fa-edit me-1"></i>Edit Supplier
                     </a>
@@ -60,6 +63,22 @@
                         <p class="text-muted mb-1">Opening Balance</p>
                         <h4 class="fw-bold mb-0">{{ number_format((float) ($supplier->opening_balance ?? 0), 2) }}</h4>
                         <small class="text-muted">as of {{ $supplier->opening_balance_date ?? '—' }}</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body">
+                        <p class="text-muted mb-1">Outstanding Payables</p>
+                        <h4 class="fw-bold mb-0">{{ number_format((float) ($summary['outstanding_payables'] ?? 0), 2) }}</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body">
+                        <p class="text-muted mb-1">Paid So Far</p>
+                        <h4 class="fw-bold mb-0">{{ number_format((float) ($summary['total_paid'] ?? 0), 2) }}</h4>
                     </div>
                 </div>
             </div>
@@ -153,6 +172,47 @@
                             @empty
                                 <tr>
                                     <td colspan="6" class="text-center text-muted py-4">No purchase history yet.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Payment History</h5>
+                <p class="text-muted small mb-0">Review every payment already made against this supplier.</p>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-center table-hover">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>Date</th>
+                                <th>Reference</th>
+                                <th>Purchase</th>
+                                <th>Bank</th>
+                                <th>Method</th>
+                                <th class="text-end">Amount</th>
+                                <th>Note</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($supplierPayments as $payment)
+                                <tr>
+                                    <td>{{ optional($payment->payment_date)->format('M d, Y') ?: optional($payment->created_at)->format('M d, Y') }}</td>
+                                    <td>{{ $payment->reference ?: ($payment->payment_group ?: '—') }}</td>
+                                    <td>{{ $payment->purchase?->purchase_no ?: 'Manual supplier payment' }}</td>
+                                    <td>{{ $payment->bank?->name ?: 'Not specified' }}</td>
+                                    <td>{{ $payment->method ?: '—' }}</td>
+                                    <td class="text-end">{{ number_format((float) $payment->amount, 2) }}</td>
+                                    <td>{{ $payment->note ?: '—' }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted py-4">No supplier payment history recorded yet.</td>
                                 </tr>
                             @endforelse
                         </tbody>

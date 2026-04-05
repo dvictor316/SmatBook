@@ -36,6 +36,7 @@
                                             <th>Name</th>
                                             <th>Phone</th>
                                             <th>Opening Balance</th>
+                                            <th>Outstanding Payables</th>
                                             <th>Balance Date</th>
                                             <th>Created</th>
                                             <th class="no-sort">Actions</th>
@@ -58,9 +59,15 @@
                                                 </td>
                                                 <td>{{ $supplier->phone ?? '-' }}</td>
                                                 <td>{{ number_format((float) ($supplier->opening_balance ?? 0), 2) }}</td>
+                                                <td class="fw-semibold">{{ number_format((float) ($supplier->outstanding_payables ?? 0), 2) }}</td>
                                                 <td>{{ $supplier->opening_balance_date ?? '-' }}</td>
                                                 <td>{{ optional($supplier->created_at)->format('M d, Y') ?? 'N/A' }}</td>
                                                 <td class="d-flex align-items-center">
+                                                    @if((float) ($supplier->outstanding_payables ?? 0) > 0)
+                                                        <a href="{{ route('suppliers.pay', $supplier->id) }}" class="btn btn-success me-2">
+                                                            <i class="far fa-credit-card me-1"></i> Pay
+                                                        </a>
+                                                    @endif
                                                     <a href="{{ route('suppliers.show', $supplier->id) }}" class="btn btn-outline-primary me-2">
                                                         <i class="far fa-chart-bar me-1"></i> History
                                                     </a>

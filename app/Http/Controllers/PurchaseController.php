@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\TaxCode;
 use App\Models\Bank;
 use App\Models\PurchaseItem;
+use App\Models\SupplierPayment;
 use App\Models\PurchaseReturn;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -366,7 +367,7 @@ public function show($id)
     $purchase = $purchaseQuery->findOrFail($id);
     $activeBranch = $this->getActiveBranchContext();
 
-    // Logic: Look for the vendor's specific logo first. 
+    // Logic: Look for the vendor's specific logo first.
     // If the vendor doesn't have a logo, fall back to the site-wide logo.
     $vendorLogo = $purchase->vendor->logo ?? null;
     
@@ -377,11 +378,16 @@ public function show($id)
         $logo = $vendorLogo;
     }
 
+    $banks = Schema::hasTable('banks')
+        ? Bank::query()->orderBy('name')->get()
+        : collect();
+
     return view('Purchases.purchase-details', [
         'purchase' => $purchase,
         'logo'     => $logo,
         'page'     => 'purchase-details',
         'activeBranch' => $activeBranch,
+        'banks' => $banks,
     ]);
 }
 
@@ -625,6 +631,80 @@ public function show($id)
         $purchase->save();
 
         return redirect()->route('purchases.index')->with('success', 'Purchase marked as paid.');
+    }
+
+    public function recordPayment(Request $request, $id)
+    {
+        $purchaseQuery = Purchase::query();
+        $this->applyTenantScope($purchaseQuery, 'purchases');
+        $this->applyBranchScope($purchaseQuery, 'purchases');
+        $purchase = $purchaseQuery->find($id);
+        if (!$purchase) {
+            return redirect()->route('purchases.index')->with('error', 'Purchase not found for the active branch.');
+        }
+
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'payment_account_id' => 'nullable|exists:banks,id',
+            'reference' => 'nullable|string|max:191',
+            'notes' => 'nullable|string|max:500',
+        ]);
+
+        $total = (float) ($purchase->total_amount ?? 0);
+        $currentPaid = (float) ($purchase->paid_amount ?? 0);
+        $amount = (float) $validated['amount'];
+        $remaining = max(0, $total - $currentPaid);
+        if ($amount > $remaining) {
+            $amount = $remaining;
+        }
+        if ($amount <= 0) {
+            return back()->withInput()->with('error', 'Payment amount exceeds the outstanding balance.');
+        }
+
+        $bank = null;
+        if (!empty($validated['payment_account_id'])) {
+            $bank = Bank::find((int) $validated['payment_account_id']);
+        }
+
+        if (Schema::hasColumn('purchases', 'bank_id') && $bank) {
+            $purchase->bank_id = $bank->id;
+        }
+
+        if (Schema::hasColumn('purchases', 'paid_amount')) {
+            $purchase->paid_amount = round($currentPaid + $amount, 2);
+        }
+        if (Schema::hasColumn('purchases', 'paid_at')) {
+            $purchase->paid_at = $request->input('payment_date', now());
+        }
+        $newBalance = max(0, $total - ($purchase->paid_amount ?? ($currentPaid + $amount)));
+        $purchase->status = $newBalance <= 0 ? 'paid' : 'partial';
+        $purchase->save();
+
+        $reference = $validated['reference'] ?: ($purchase->purchase_no ?: ('PUR-' . $purchase->id)) . '-PAY';
+        if (Schema::hasTable('supplier_payments') && !empty($purchase->supplier_id)) {
+            $activeBranch = $this->getActiveBranchContext();
+            SupplierPayment::create([
+                'supplier_id' => $purchase->supplier_id,
+                'purchase_id' => $purchase->id,
+                'company_id' => auth()->user()?->company_id ?? session('current_tenant_id'),
+                'user_id' => auth()->id(),
+                'branch_id' => $purchase->branch_id ?? $activeBranch['id'],
+                'branch_name' => $purchase->branch_name ?? $activeBranch['name'],
+                'bank_id' => $bank?->id,
+                'payment_group' => $reference,
+                'reference' => $reference,
+                'amount' => $amount,
+                'method' => $bank ? 'Bank Transfer' : 'Manual Payment',
+                'note' => $validated['notes'] ?? null,
+                'payment_date' => $request->input('payment_date', now()->toDateString()),
+                'created_by' => auth()->id(),
+            ]);
+        }
+        LedgerService::postPurchasePayment($purchase, $amount, $bank?->name, $reference);
+
+        return redirect()
+            ->route('purchases.show', $purchase->id)
+            ->with('success', 'Purchase payment recorded.');
     }
 
     /**

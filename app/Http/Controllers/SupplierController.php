@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Supplier;
 use App\Models\Purchase;
 use App\Models\PurchaseItem;
+use App\Models\SupplierPayment;
+use App\Models\Bank;
+use App\Support\LedgerService;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Log;
@@ -101,6 +104,13 @@ class SupplierController extends Controller
         }
 
         $suppliers = $query->paginate(20)->withQueryString();
+        $outstandingBySupplier = $this->supplierOutstandingBalances($suppliers->getCollection()->pluck('id')->all());
+        $suppliers->getCollection()->transform(function ($supplier) use ($outstandingBySupplier) {
+            $payables = (float) ($outstandingBySupplier[$supplier->id] ?? 0);
+            $supplier->outstanding_payables = $payables + (float) ($supplier->opening_balance ?? 0);
+            return $supplier;
+        });
+
         return view('Customers.suppliers', compact('suppliers'));
     }
 
@@ -176,8 +186,10 @@ class SupplierController extends Controller
             : ($hasPurchases && Schema::hasColumn('purchases', 'status') ? 'status' : null);
 
         $purchases = $hasPurchases
-            ? Purchase::query()
-                ->where('supplier_id', $supplier->id)
+            ? tap(Purchase::query()->where('supplier_id', $supplier->id), function ($query) {
+                $this->applyTenantScope($query, 'purchases');
+                $this->applyBranchScopeToPurchases($query);
+            })
                 ->orderByDesc($purchaseDateColumn)
                 ->limit(25)
                 ->get()
@@ -191,15 +203,24 @@ class SupplierController extends Controller
         ];
 
         if ($hasPurchases) {
-            $summary['total_purchases'] = Purchase::where('supplier_id', $supplier->id)->count();
+            $summaryQuery = Purchase::query()->where('supplier_id', $supplier->id);
+            $this->applyTenantScope($summaryQuery, 'purchases');
+            $this->applyBranchScopeToPurchases($summaryQuery);
+            $summary['total_purchases'] = (clone $summaryQuery)->count();
             if ($totalColumn) {
-                $summary['total_spend'] = (float) (Purchase::where('supplier_id', $supplier->id)->sum($totalColumn) ?? 0);
+                $summary['total_spend'] = (float) ((clone $summaryQuery)->sum($totalColumn) ?? 0);
             }
         }
 
+        $summary['outstanding_payables'] = $this->calculateSupplierOutstandingBalance($supplier->id);
+        $summary['total_paid'] = 0;
+
         $purchaseItemsByPurchase = collect();
         if ($hasPurchases && Schema::hasTable('purchase_items')) {
-            $purchaseIds = Purchase::where('supplier_id', $supplier->id)->pluck('id');
+            $purchaseIdsQuery = Purchase::query()->where('supplier_id', $supplier->id);
+            $this->applyTenantScope($purchaseIdsQuery, 'purchases');
+            $this->applyBranchScopeToPurchases($purchaseIdsQuery);
+            $purchaseIds = $purchaseIdsQuery->pluck('id');
             $hasProductNameColumn = Schema::hasColumn('purchase_items', 'product_name');
             $qtyColumn = Schema::hasColumn('purchase_items', 'qty')
                 ? 'qty'
@@ -244,6 +265,17 @@ class SupplierController extends Controller
             $purchaseItemsByPurchase = $itemQuery->get()->groupBy('purchase_id');
         }
 
+        $supplierPayments = collect();
+        if (Schema::hasTable('supplier_payments')) {
+            $supplierPaymentsQuery = SupplierPayment::with(['purchase', 'bank'])
+                ->where('supplier_id', $supplier->id)
+                ->latest('payment_date')
+                ->latest('id');
+            $this->applyTenantScope($supplierPaymentsQuery, 'supplier_payments');
+            $supplierPayments = $supplierPaymentsQuery->limit(50)->get();
+            $summary['total_paid'] = (float) $supplierPayments->sum('amount');
+        }
+
         return view('Customers.suppliers-show', compact(
             'supplier',
             'purchases',
@@ -251,8 +283,175 @@ class SupplierController extends Controller
             'purchaseDateColumn',
             'totalColumn',
             'receivedColumn',
-            'purchaseItemsByPurchase'
+            'purchaseItemsByPurchase',
+            'supplierPayments'
         ));
+    }
+
+    public function pay($id)
+    {
+        $supplier = $this->applyTenantScope(Supplier::query())->findOrFail($id);
+
+        $purchasesQuery = Purchase::query()
+            ->where('supplier_id', $supplier->id)
+            ->orderBy('purchase_date')
+            ->orderBy('id');
+        $this->applyTenantScope($purchasesQuery, 'purchases');
+        $this->applyBranchScopeToPurchases($purchasesQuery);
+        $outstandingPurchases = $purchasesQuery->get()->map(function ($purchase) {
+            $purchase->outstanding_balance = max(0, (float) ($purchase->total_amount ?? 0) - (float) ($purchase->paid_amount ?? 0));
+            return $purchase;
+        })->filter(fn ($purchase) => $purchase->outstanding_balance > 0)->values();
+
+        $banks = collect();
+        if (Schema::hasTable('banks')) {
+            $banksQuery = Bank::query()->orderBy('name');
+            $this->applyTenantScope($banksQuery, 'banks');
+            if (Schema::hasColumn('banks', 'branch_id') || Schema::hasColumn('banks', 'branch_name')) {
+                $activeBranch = $this->getActiveBranchContext();
+                $branchId = trim((string) ($activeBranch['id'] ?? ''));
+                $branchName = trim((string) ($activeBranch['name'] ?? ''));
+                if ($branchId !== '' || $branchName !== '') {
+                    $banksQuery->where(function ($sub) use ($branchId, $branchName) {
+                        if ($branchId !== '' && Schema::hasColumn('banks', 'branch_id')) {
+                            $sub->where('branch_id', $branchId);
+                        }
+                        if ($branchName !== '' && Schema::hasColumn('banks', 'branch_name')) {
+                            $sub->orWhere('branch_name', $branchName);
+                        }
+                    });
+                }
+            }
+            $banks = $banksQuery->get();
+        }
+
+        $supplierPayments = collect();
+        if (Schema::hasTable('supplier_payments')) {
+            $supplierPaymentsQuery = SupplierPayment::with(['purchase', 'bank'])
+                ->where('supplier_id', $supplier->id)
+                ->latest('payment_date')
+                ->latest('id');
+            $this->applyTenantScope($supplierPaymentsQuery, 'supplier_payments');
+            $supplierPayments = $supplierPaymentsQuery->limit(50)->get();
+        }
+
+        $summary = [
+            'outstanding_payables' => (float) $outstandingPurchases->sum('outstanding_balance'),
+            'total_paid' => (float) $supplierPayments->sum('amount'),
+            'open_bills' => (int) $outstandingPurchases->count(),
+        ];
+
+        return view('Customers.supplier-payments', compact(
+            'supplier',
+            'outstandingPurchases',
+            'banks',
+            'supplierPayments',
+            'summary'
+        ));
+    }
+
+    public function storePayment(Request $request, $id): RedirectResponse
+    {
+        $supplier = $this->applyTenantScope(Supplier::query())->findOrFail($id);
+
+        $request->validate([
+            'payment_date' => 'required|date',
+            'bank_id' => Schema::hasTable('banks') ? 'nullable|exists:banks,id' : 'nullable',
+            'reference' => 'nullable|string|max:191',
+            'method' => 'nullable|string|max:100',
+            'note' => 'nullable|string|max:1000',
+            'allocations' => 'required|array',
+        ]);
+
+        $allocations = collect($request->input('allocations', []))
+            ->mapWithKeys(fn ($value, $purchaseId) => [(int) $purchaseId => round(max(0, (float) $value), 2)])
+            ->filter(fn ($value) => $value > 0);
+
+        if ($allocations->isEmpty()) {
+            return back()->withInput()->with('error', 'Enter at least one supplier payment amount before saving.');
+        }
+
+        $paymentDate = $request->input('payment_date');
+        $paymentGroup = trim((string) $request->input('reference', '')) ?: ('SUPPAY-' . now()->format('YmdHis'));
+        $bank = null;
+        if ($request->filled('bank_id') && Schema::hasTable('banks')) {
+            $bankQuery = Bank::query();
+            $this->applyTenantScope($bankQuery, 'banks');
+            $bank = $bankQuery->find((int) $request->input('bank_id'));
+        }
+
+        try {
+            DB::transaction(function () use ($supplier, $allocations, $request, $paymentDate, $paymentGroup, $bank) {
+                $purchasesQuery = Purchase::query()
+                    ->where('supplier_id', $supplier->id)
+                    ->whereIn('id', $allocations->keys())
+                    ->lockForUpdate();
+                $this->applyTenantScope($purchasesQuery, 'purchases');
+                $this->applyBranchScopeToPurchases($purchasesQuery);
+                $purchases = $purchasesQuery->get()->keyBy('id');
+                $activeBranch = $this->getActiveBranchContext();
+
+                foreach ($allocations as $purchaseId => $amountRequested) {
+                    /** @var \App\Models\Purchase|null $purchase */
+                    $purchase = $purchases->get($purchaseId);
+                    if (!$purchase) {
+                        continue;
+                    }
+
+                    $remaining = max(0, (float) ($purchase->total_amount ?? 0) - (float) ($purchase->paid_amount ?? 0));
+                    $amount = min($remaining, max(0, (float) $amountRequested));
+                    if ($amount <= 0) {
+                        continue;
+                    }
+
+                    $newPaid = round((float) ($purchase->paid_amount ?? 0) + $amount, 2);
+                    if (Schema::hasColumn('purchases', 'paid_amount')) {
+                        $purchase->paid_amount = $newPaid;
+                    }
+                    if (Schema::hasColumn('purchases', 'paid_at')) {
+                        $purchase->paid_at = $paymentDate;
+                    }
+                    if (Schema::hasColumn('purchases', 'bank_id') && $bank) {
+                        $purchase->bank_id = $bank->id;
+                    }
+                    $newBalance = max(0, (float) ($purchase->total_amount ?? 0) - $newPaid);
+                    $purchase->status = $newBalance <= 0 ? 'paid' : 'partial';
+                    $purchase->save();
+
+                    if (Schema::hasTable('supplier_payments')) {
+                        SupplierPayment::create([
+                            'supplier_id' => $supplier->id,
+                            'purchase_id' => $purchase->id,
+                            'company_id' => auth()->user()?->company_id ?? session('current_tenant_id'),
+                            'user_id' => auth()->id(),
+                            'branch_id' => $purchase->branch_id ?? $activeBranch['id'],
+                            'branch_name' => $purchase->branch_name ?? $activeBranch['name'],
+                            'bank_id' => $bank?->id,
+                            'payment_group' => $paymentGroup,
+                            'reference' => $paymentGroup,
+                            'amount' => $amount,
+                            'method' => $request->input('method') ?: 'Bank Transfer',
+                            'note' => $request->input('note'),
+                            'payment_date' => $paymentDate,
+                            'created_by' => auth()->id(),
+                        ]);
+                    }
+
+                    LedgerService::postPurchasePayment(
+                        $purchase->fresh(),
+                        $amount,
+                        $request->input('method') ?: ($bank?->name ?: 'Bank Transfer'),
+                        $paymentGroup
+                    );
+                }
+            });
+        } catch (\Throwable $exception) {
+            return back()->withInput()->with('error', 'Supplier payment could not be saved. ' . $exception->getMessage());
+        }
+
+        return redirect()
+            ->route('suppliers.pay', $supplier->id)
+            ->with('success', 'Supplier payment recorded successfully.');
     }
 
     public function update(Request $request, $id): RedirectResponse
@@ -471,6 +670,70 @@ class SupplierController extends Controller
     {
         $allowed = array_flip(Schema::getColumnListing('suppliers'));
         return array_intersect_key($data, $allowed);
+    }
+
+    private function applyBranchScopeToPurchases($query)
+    {
+        $activeBranch = $this->getActiveBranchContext();
+        $branchId = trim((string) ($activeBranch['id'] ?? ''));
+        $branchName = trim((string) ($activeBranch['name'] ?? ''));
+
+        if ($branchId === '' && $branchName === '') {
+            return $query;
+        }
+
+        return $query->where(function ($sub) use ($branchId, $branchName) {
+            if ($branchId !== '' && Schema::hasColumn('purchases', 'branch_id')) {
+                $sub->where('purchases.branch_id', $branchId);
+            }
+            if ($branchName !== '' && Schema::hasColumn('purchases', 'branch_name')) {
+                $sub->orWhere('purchases.branch_name', $branchName);
+            }
+        });
+    }
+
+    private function calculateSupplierOutstandingBalance(int $supplierId): float
+    {
+        if (!Schema::hasTable('purchases')) {
+            return 0.0;
+        }
+
+        $query = Purchase::query()->where('supplier_id', $supplierId);
+        $this->applyTenantScope($query, 'purchases');
+        $this->applyBranchScopeToPurchases($query);
+
+        $total = (float) $query->sum('total_amount');
+        $paid = Schema::hasColumn('purchases', 'paid_amount')
+            ? (float) (clone $query)->sum('paid_amount')
+            : 0.0;
+
+        return max(0, $total - $paid);
+    }
+
+    private function supplierOutstandingBalances(array $supplierIds): array
+    {
+        if (empty($supplierIds) || !Schema::hasTable('purchases')) {
+            return [];
+        }
+
+        $query = Purchase::query()
+            ->select('supplier_id')
+            ->selectRaw('SUM(COALESCE(total_amount, 0)) as total_amount_sum')
+            ->whereIn('supplier_id', $supplierIds)
+            ->groupBy('supplier_id');
+        if (Schema::hasColumn('purchases', 'paid_amount')) {
+            $query->selectRaw('SUM(COALESCE(paid_amount, 0)) as paid_amount_sum');
+        } else {
+            $query->selectRaw('0 as paid_amount_sum');
+        }
+        $this->applyTenantScope($query, 'purchases');
+        $this->applyBranchScopeToPurchases($query);
+
+        return $query->get()
+            ->mapWithKeys(fn ($row) => [
+                (int) $row->supplier_id => max(0, (float) $row->total_amount_sum - (float) $row->paid_amount_sum),
+            ])
+            ->all();
     }
 
     private function normalizeImportHeaderCell($value): string

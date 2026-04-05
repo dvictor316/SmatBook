@@ -74,6 +74,11 @@ class Customer extends Model
         return $this->hasMany(Invoice::class, 'customer_id');
     }
 
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class, 'customer_id');
+    }
+
     /**
      * Accessors
      */
