@@ -97,8 +97,13 @@ class Handler extends ExceptionHandler
                 return response()->json(['message' => $message], 404);
             }
 
+            $target = route('branches.index', [], false);
+            if (!$target) {
+                $target = url('/settings/branches');
+            }
+
             return redirect()
-                ->route('settings.branches.index')
+                ->to($target)
                 ->with('error', $message);
         });
 
