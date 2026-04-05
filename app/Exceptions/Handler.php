@@ -3,9 +3,13 @@
 namespace App\Exceptions;
 
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Database\QueryException;
 use Illuminate\Session\TokenMismatchException;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -123,5 +127,84 @@ class Handler extends ExceptionHandler
 
             return null;
         });
+
+        $this->renderable(function (ModelNotFoundException $e, $request) {
+            $model = class_basename($e->getModel());
+            $ids = $e->getIds();
+            $idText = $ids ? implode(',', $ids) : 'unknown';
+            $message = "Record not found: {$model} ({$idText}).";
+
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $message], 404);
+            }
+
+            return back()->withInput()->with('error', $message);
+        });
+
+        $this->renderable(function (QueryException $e, $request) {
+            $message = $this->formatQueryExceptionMessage($e);
+            Log::error('Database error', [
+                'message' => $e->getMessage(),
+                'code' => $e->getCode(),
+            ]);
+
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $message], 500);
+            }
+
+            if ($request->isMethod('get')) {
+                return response()->view('errors.500', ['errorMessage' => $message], 500);
+            }
+
+            return back()->withInput()->with('error', $message);
+        });
+
+        $this->renderable(function (Throwable $e, $request) {
+            if ($e instanceof HttpException
+                || $e instanceof NotFoundHttpException
+                || $e instanceof TokenMismatchException
+                || $e instanceof QueryException
+                || $e instanceof ModelNotFoundException) {
+                return null;
+            }
+
+            $raw = trim((string) $e->getMessage());
+            $base = class_basename($e);
+            $message = $raw !== '' ? "Unexpected error ({$base}): {$raw}" : "Unexpected error ({$base}).";
+
+            Log::error('Unhandled exception', [
+                'message' => $e->getMessage(),
+                'exception' => $base,
+            ]);
+
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $message], 500);
+            }
+
+            if ($request->isMethod('get')) {
+                return response()->view('errors.500', ['errorMessage' => $message], 500);
+            }
+
+            return back()->withInput()->with('error', $message);
+        });
+    }
+
+    private function formatQueryExceptionMessage(QueryException $e): string
+    {
+        $raw = $e->getMessage();
+
+        if (preg_match("/Unknown column '([^']+)'/i", $raw, $matches)) {
+            return "Database column missing: {$matches[1]}.";
+        }
+
+        if (preg_match("/Table '([^']+)' doesn't exist/i", $raw, $matches)) {
+            return "Database table missing: {$matches[1]}.";
+        }
+
+        if (preg_match("/Integrity constraint violation: (\\d+)/i", $raw, $matches)) {
+            return "Database constraint violation ({$matches[1]}).";
+        }
+
+        return 'Database error occurred. Please contact support if it persists.';
     }
 }

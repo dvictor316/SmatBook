@@ -28,6 +28,78 @@ class SaleController extends Controller
     {
     }
 
+    private function hasDatabaseConnection(): bool
+    {
+        try {
+            DB::connection()->getPdo();
+
+            return true;
+        } catch (\Throwable $e) {
+            Log::error('SaleController database connection failure', [
+                'message' => $e->getMessage(),
+                'user_id' => auth()->id(),
+            ]);
+
+            return false;
+        }
+    }
+
+    private function hasTableColumn(string $table, string $column): bool
+    {
+        return Schema::hasTable($table) && Schema::hasColumn($table, $column);
+    }
+
+    private function customerNameColumn(): ?string
+    {
+        if ($this->hasTableColumn('customers', 'customer_name')) {
+            return 'customer_name';
+        }
+
+        if ($this->hasTableColumn('customers', 'name')) {
+            return 'name';
+        }
+
+        return null;
+    }
+
+    private function bankLabelColumn(): string
+    {
+        if ($this->hasTableColumn('banks', 'name')) {
+            return 'name';
+        }
+
+        if ($this->hasTableColumn('banks', 'account_number')) {
+            return 'account_number';
+        }
+
+        return 'id';
+    }
+
+    private function applyCustomerNameFilter($query, string $term): void
+    {
+        $customerNameColumn = $this->customerNameColumn();
+        if (!$customerNameColumn) {
+            return;
+        }
+
+        $query->whereHas('customer', function ($customerQuery) use ($term, $customerNameColumn) {
+            $customerQuery->where($customerNameColumn, 'like', '%' . $term . '%');
+        });
+    }
+
+    private function posFallbackView(array $activeBranch, string $message)
+    {
+        session()->flash('error', $message);
+
+        return view('pos.index', [
+            'products' => collect(),
+            'customers' => collect(),
+            'sales' => collect(),
+            'activeBranch' => $activeBranch,
+            'bankAccounts' => collect(),
+        ]);
+    }
+
     private function tenantCompanyId(): int
     {
         return (int) (auth()->user()?->company_id
@@ -128,9 +200,7 @@ class SaleController extends Controller
             $query->where('invoice_no', 'like', '%' . $request->invoice_no . '%');
         }
         if ($request->customer_name) {
-            $query->whereHas('customer', function($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->customer_name . '%');
-            });
+            $this->applyCustomerNameFilter($query, (string) $request->customer_name);
         }
         if ($request->sale_date) {
             $query->whereDate('created_at', $request->sale_date);
@@ -299,10 +369,7 @@ class SaleController extends Controller
             $query->where('invoice_no', 'like', '%' . $request->invoice_no . '%');
         }
         if ($request->customer_name) {
-            $query->whereHas('customer', function ($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->customer_name . '%')
-                    ->orWhere('customer_name', 'like', '%' . $request->customer_name . '%');
-            });
+            $this->applyCustomerNameFilter($query, (string) $request->customer_name);
         }
         if ($request->sale_date) {
             $query->whereDate('created_at', $request->sale_date);
@@ -348,57 +415,106 @@ public function customerDetails($id = null)
     public function showPos()
     {
         $activeBranch = $this->getActiveBranchContext();
-        $productsQuery = Product::with('category')
-            ->orderBy('name', 'asc');
-        $this->applyTenantScope($productsQuery, 'products');
-        if (!empty($activeBranch['id']) && Schema::hasTable('product_branch_stocks')) {
-            $branchId = (string) $activeBranch['id'];
-            $branchName = (string) ($activeBranch['name'] ?? '');
-            $productsQuery->where(function ($q) use ($branchId, $branchName) {
-                $q->whereHas('branchStocks', fn ($sub) => $sub->where('branch_id', $branchId));
-                if (Schema::hasColumn('products', 'branch_id')) {
-                    $q->orWhere('products.branch_id', $branchId);
-                }
-                if ($branchName !== '' && Schema::hasColumn('products', 'branch_name')) {
-                    $q->orWhere('products.branch_name', $branchName);
-                }
-            });
-        } else {
-            $this->applyBranchScope($productsQuery, 'products');
+        if (!$this->hasDatabaseConnection()) {
+            return $this->posFallbackView(
+                $activeBranch,
+                'POS is temporarily unavailable because the database connection failed.'
+            );
         }
 
-        if (Schema::hasTable('product_branch_stocks') && !empty($activeBranch['id'])) {
-            $productsQuery->with(['branchStocks' => function ($query) use ($activeBranch) {
-                $query->where('branch_id', $activeBranch['id']);
-            }]);
+        try {
+            $products = collect();
+            if (Schema::hasTable('products')) {
+                $hasCategories = Schema::hasTable('categories') && Schema::hasColumn('products', 'category_id');
+                $hasBranchStocksBranchId = Schema::hasTable('product_branch_stocks')
+                    && Schema::hasColumn('product_branch_stocks', 'branch_id');
+                $productsQuery = Product::query();
+                if ($hasCategories) {
+                    $productsQuery->with('category');
+                }
+
+                $orderColumn = Schema::hasColumn('products', 'name')
+                    ? 'name'
+                    : (Schema::hasColumn('products', 'id') ? 'id' : null);
+                if ($orderColumn) {
+                    $productsQuery->orderBy($orderColumn, 'asc');
+                }
+
+                $this->applyTenantScope($productsQuery, 'products');
+                if (!empty($activeBranch['id']) && $hasBranchStocksBranchId) {
+                    $branchId = (string) $activeBranch['id'];
+                    $branchName = (string) ($activeBranch['name'] ?? '');
+                    $productsQuery->where(function ($q) use ($branchId, $branchName) {
+                        $q->whereHas('branchStocks', fn ($sub) => $sub->where('branch_id', $branchId));
+                        if (Schema::hasColumn('products', 'branch_id')) {
+                            $q->orWhere('products.branch_id', $branchId);
+                        }
+                        if ($branchName !== '' && Schema::hasColumn('products', 'branch_name')) {
+                            $q->orWhere('products.branch_name', $branchName);
+                        }
+                    });
+                } else {
+                    $this->applyBranchScope($productsQuery, 'products');
+                }
+
+                if ($hasBranchStocksBranchId && !empty($activeBranch['id'])) {
+                    $productsQuery->with(['branchStocks' => function ($query) use ($activeBranch) {
+                        $query->where('branch_id', $activeBranch['id']);
+                    }]);
+                }
+
+                $products = $productsQuery
+                    ->get()
+                    ->map(function ($product) use ($activeBranch) {
+                        $availableStock = $this->branchInventory->getAvailableStock($product, $activeBranch);
+                        $product->setAttribute('available_stock', $availableStock);
+
+                        return $product;
+                    })
+                    ->filter(fn ($product) => (float) ($product->available_stock ?? 0) > 0)
+                    ->values();
+            }
+
+            $customers = collect();
+            if (Schema::hasTable('customers')) {
+                $customerOrderColumn = $this->customerNameColumn() ?? 'id';
+                $customers = Customer::query()
+                    ->orderBy($customerOrderColumn, 'asc')
+                    ->tap(fn ($query) => $this->applyTenantScope($query, 'customers'))
+                    ->tap(fn ($query) => $this->applyBranchScope($query, 'customers'))
+                    ->get();
+            }
+
+            $sales = Schema::hasTable('sales')
+                ? Sale::with('customer')
+                    ->tap(fn ($query) => $this->applyTenantScope($query, 'sales'))
+                    ->tap(fn ($query) => $this->applyBranchScope($query, 'sales'))
+                    ->latest()
+                    ->take(10)
+                    ->get()
+                : collect();
+
+            $bankAccounts = collect();
+            if (Schema::hasTable('banks')) {
+                $bankOrderColumn = $this->bankLabelColumn();
+                $bankQuery = Bank::query()->orderBy($bankOrderColumn);
+                $this->applyTenantScope($bankQuery, 'banks');
+                $this->applyBranchScope($bankQuery, 'banks');
+                $bankAccounts = $bankQuery->get();
+            }
+
+            return view('pos.index', compact('products', 'customers', 'sales', 'activeBranch', 'bankAccounts'));
+        } catch (\Throwable $e) {
+            Log::error('POS page failed', [
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id(),
+            ]);
+
+            return $this->posFallbackView(
+                $activeBranch,
+                'POS page hit a compatibility error and has been recovered with a safe fallback.'
+            );
         }
-
-        $products = $productsQuery
-            ->get()
-            ->map(function ($product) use ($activeBranch) {
-                $availableStock = $this->branchInventory->getAvailableStock($product, $activeBranch);
-                $product->setAttribute('available_stock', $availableStock);
-
-                return $product;
-            })
-            ->filter(fn ($product) => (float) ($product->available_stock ?? 0) > 0)
-            ->values();
-        $customers = Customer::query()
-            ->orderBy('customer_name', 'asc')
-            ->tap(fn ($query) => $this->applyTenantScope($query, 'customers'))
-            ->tap(fn ($query) => $this->applyBranchScope($query, 'customers'))
-            ->get();
-        $sales = Sale::with('customer')
-            ->tap(fn ($query) => $this->applyTenantScope($query, 'sales'))
-            ->tap(fn ($query) => $this->applyBranchScope($query, 'sales'))
-            ->latest()
-            ->take(10)
-            ->get();
-        $bankAccounts = Schema::hasTable('banks')
-            ? Bank::query()->orderBy('name')->get()
-            : collect();
-
-        return view('pos.index', compact('products', 'customers', 'sales', 'activeBranch', 'bankAccounts'));
     }
 
     public function showSale($id)

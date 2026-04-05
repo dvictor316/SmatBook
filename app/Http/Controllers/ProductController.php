@@ -26,6 +26,41 @@ class ProductController extends Controller
     {
     }
 
+    private function hasDatabaseConnection(): bool
+    {
+        try {
+            DB::connection()->getPdo();
+
+            return true;
+        } catch (\Throwable $e) {
+            Log::error('ProductController database connection failure', [
+                'message' => $e->getMessage(),
+                'user_id' => auth()->id(),
+            ]);
+
+            return false;
+        }
+    }
+
+    private function renderProductIndexFallback(Request $request, string $message)
+    {
+        session()->flash('error', $message);
+
+        return view('Inventory.Products.index', [
+            'products' => collect(),
+            'productRows' => collect(),
+            'categories' => collect(),
+            'availableBranches' => [],
+            'stockTransferEnabled' => $this->planSupportsStockTransfer(),
+            'search' => trim((string) $request->input('search', '')),
+            'activeBranch' => [
+                'id' => session('active_branch_id'),
+                'name' => session('active_branch_name'),
+            ],
+            'session_domain' => env('SESSION_DOMAIN', null),
+        ]);
+    }
+
     private function getActiveBranchContext(): array
     {
         $branchId = session('active_branch_id') ? (string) session('active_branch_id') : null;
@@ -413,13 +448,11 @@ class ProductController extends Controller
      */
     public function index(Request $request)
     {
-        try {
-            DB::connection()->getPdo();
-        } catch (\Exception $e) {
-            Log::error("DB Connection Failure on " . env('SESSION_DOMAIN') . ": " . $e->getMessage());
-            return response()->view('errors.db_error', [
-                'message' => "Could not connect to database on " . env('SESSION_DOMAIN', 'localhost') . ". Check your .env file."
-            ], 500);
+        if (!$this->hasDatabaseConnection()) {
+            return $this->renderProductIndexFallback(
+                $request,
+                'Product list is temporarily unavailable because the database connection failed.'
+            );
         }
 
         if (!Schema::hasTable('products')) {
@@ -438,62 +471,71 @@ class ProductController extends Controller
             $search = $request->input('search');
             $activeBranch = $this->getActiveBranchContext();
             $hasCategories = Schema::hasTable('categories') && Schema::hasColumn('products', 'category_id');
+            $hasBranchStocksTable = Schema::hasTable('product_branch_stocks');
+            $hasBranchStocksBranchId = $hasBranchStocksTable && Schema::hasColumn('product_branch_stocks', 'branch_id');
+            $hasProductBranchName = Schema::hasColumn('products', 'branch_name');
+            $hasProductBranchId = Schema::hasColumn('products', 'branch_id');
             $query = Product::query();
             $this->applyTenantScope($query, 'products');
 
-        if ($hasCategories) {
-            $query->with('category');
-        }
-
-        if (!empty($activeBranch['id']) && Schema::hasTable('product_branch_stocks')) {
-            $query->whereHas('branchStocks', function ($branchQuery) use ($activeBranch) {
-                $branchQuery->where('branch_id', $activeBranch['id']);
-            });
-        } elseif (!empty($activeBranch['name']) && Schema::hasColumn('products', 'branch_name')) {
-            $query->where('products.branch_name', $activeBranch['name']);
-        } elseif (!empty($activeBranch['id']) && Schema::hasColumn('products', 'branch_id')) {
-            $query->where('products.branch_id', $activeBranch['id']);
-        }
-
-        if (Schema::hasTable('product_branch_stocks') && !empty($activeBranch['id'])) {
-            $query->with(['branchStocks' => function ($branchQuery) use ($activeBranch) {
-                $branchQuery->where('branch_id', $activeBranch['id']);
-            }]);
-        }
-
-        $orderColumn = Schema::hasColumn('products', 'created_at') ? 'created_at' : 'id';
-        $query->orderByDesc($orderColumn);
-
-        if ($search) {
-            $hasNameColumn = Schema::hasColumn('products', 'name');
-            $hasSkuColumn = Schema::hasColumn('products', 'sku');
-
-            if ($hasNameColumn || $hasSkuColumn) {
-                $query->where(function($q) use ($search, $hasNameColumn, $hasSkuColumn) {
-                    if ($hasNameColumn) {
-                        $q->where('name', 'like', "%{$search}%");
-                    }
-
-                    if ($hasSkuColumn) {
-                        $method = $hasNameColumn ? 'orWhere' : 'where';
-                        $q->{$method}('sku', 'like', "%{$search}%");
-                    }
-                });
+            if ($hasCategories) {
+                $query->with('category');
             }
-        }
 
-        $products = $query->paginate(15)->withQueryString();
-        $products->getCollection()->transform(function ($product) use ($activeBranch, $hasCategories) {
-            $product->setAttribute('active_branch_stock', $this->branchInventory->getAvailableStock($product, $activeBranch));
-            $product->setAttribute('category_name', $hasCategories ? ($product->category->name ?? null) : null);
-            return $product;
-        });
-        $productRows = $products instanceof \Illuminate\Pagination\AbstractPaginator
-            ? $products->getCollection()
-            : $products;
-        $categories = Schema::hasTable('categories')
-            ? Category::orderBy(Schema::hasColumn('categories', 'name') ? 'name' : 'id')->get()
-            : collect();
+            if (!empty($activeBranch['id']) && $hasBranchStocksBranchId) {
+                $query->whereHas('branchStocks', function ($branchQuery) use ($activeBranch) {
+                    $branchQuery->where('branch_id', $activeBranch['id']);
+                });
+            } elseif (!empty($activeBranch['name']) && $hasProductBranchName) {
+                $query->where('products.branch_name', $activeBranch['name']);
+            } elseif (!empty($activeBranch['id']) && $hasProductBranchId) {
+                $query->where('products.branch_id', $activeBranch['id']);
+            }
+
+            if ($hasBranchStocksBranchId && !empty($activeBranch['id'])) {
+                $query->with(['branchStocks' => function ($branchQuery) use ($activeBranch) {
+                    $branchQuery->where('branch_id', $activeBranch['id']);
+                }]);
+            }
+
+            $orderColumn = Schema::hasColumn('products', 'created_at')
+                ? 'created_at'
+                : (Schema::hasColumn('products', 'id') ? 'id' : null);
+            if ($orderColumn) {
+                $query->orderByDesc($orderColumn);
+            }
+
+            if ($search) {
+                $hasNameColumn = Schema::hasColumn('products', 'name');
+                $hasSkuColumn = Schema::hasColumn('products', 'sku');
+
+                if ($hasNameColumn || $hasSkuColumn) {
+                    $query->where(function ($q) use ($search, $hasNameColumn, $hasSkuColumn) {
+                        if ($hasNameColumn) {
+                            $q->where('name', 'like', "%{$search}%");
+                        }
+
+                        if ($hasSkuColumn) {
+                            $method = $hasNameColumn ? 'orWhere' : 'where';
+                            $q->{$method}('sku', 'like', "%{$search}%");
+                        }
+                    });
+                }
+            }
+
+            $products = $query->paginate(15)->withQueryString();
+            $products->getCollection()->transform(function ($product) use ($activeBranch, $hasCategories) {
+                $product->setAttribute('active_branch_stock', $this->branchInventory->getAvailableStock($product, $activeBranch));
+                $product->setAttribute('category_name', $hasCategories ? ($product->category->name ?? null) : null);
+
+                return $product;
+            });
+            $productRows = $products instanceof \Illuminate\Pagination\AbstractPaginator
+                ? $products->getCollection()
+                : $products;
+            $categories = Schema::hasTable('categories')
+                ? Category::orderBy(Schema::hasColumn('categories', 'name') ? 'name' : 'id')->get()
+                : collect();
 
             return view('Inventory.Products.index', [
                 'products' => $products,
@@ -510,18 +552,11 @@ class ProductController extends Controller
                 'error' => $e->getMessage(),
                 'user_id' => auth()->id(),
             ]);
-            $productRows = collect();
-            session()->flash('error', 'Product list failed. ' . $e->getMessage());
-            return view('Inventory.Products.index', [
-                'products' => collect(),
-                'productRows' => $productRows,
-                'categories' => collect(),
-                'availableBranches' => $this->getAvailableBranches(),
-                'stockTransferEnabled' => $this->planSupportsStockTransfer(),
-                'search' => trim((string) $request->input('search', '')),
-                'activeBranch' => $this->getActiveBranchContext(),
-                'session_domain' => env('SESSION_DOMAIN', null)
-            ]);
+
+            return $this->renderProductIndexFallback(
+                $request,
+                'Product list failed to load cleanly. The page has been recovered with a safe fallback.'
+            );
         }
     }
 
