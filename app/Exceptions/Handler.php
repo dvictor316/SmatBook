@@ -4,6 +4,8 @@ namespace App\Exceptions;
 
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Session\TokenMismatchException;
+use Illuminate\Support\Facades\Auth;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -61,6 +63,43 @@ class Handler extends ExceptionHandler
             return back()
                 ->withInput($safeInput)
                 ->withErrors(['error' => $message]);
+        });
+
+        $this->renderable(function (NotFoundHttpException $e, $request) {
+            if (!Auth::check()) {
+                return null;
+            }
+
+            $branchId = trim((string) session('active_branch_id', ''));
+            $branchName = trim((string) session('active_branch_name', ''));
+
+            if ($branchId !== '' || $branchName !== '') {
+                return null;
+            }
+
+            $path = ltrim($request->path(), '/');
+            $allow = [
+                'settings/branches',
+                'settings/branches/activate',
+                'branches',
+                'settings',
+            ];
+
+            foreach ($allow as $prefix) {
+                if ($path === $prefix || str_starts_with($path, $prefix . '/')) {
+                    return null;
+                }
+            }
+
+            $message = 'Please select an active branch to continue.';
+
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $message], 404);
+            }
+
+            return redirect()
+                ->route('settings.branches.index')
+                ->with('error', $message);
         });
     }
 }
