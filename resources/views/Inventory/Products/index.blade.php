@@ -243,9 +243,9 @@
                         </thead>
                         <tbody>
                             @if($hasProductRows)
-                                @foreach($productRows as $product)
+                                @php $productIndex = 1; foreach ($productRows as $product) { @endphp
                                     <tr>
-                                        <td>{{ $loop->iteration }}</td>
+                                        <td>{{ $productIndex }}</td>
                                         <td>
                                             <div class="d-flex align-items-center">
                                                 @if($product->image_url)
@@ -307,7 +307,7 @@
                                             </div>
                                         </td>
                                     </tr>
-                                @endforeach
+                                @php $productIndex++; } @endphp
                             @else
                                 <tr>
                                     <td colspan="9" class="text-center text-muted py-4">No products found.</td>
@@ -342,9 +342,9 @@
                         <label class="form-label">Product</label>
                         <select name="product_id" class="form-select" required>
                             <option value="">Select product</option>
-                            @foreach($products as $product)
+                            @php foreach ($products as $product) { @endphp
                                 <option value="{{ $product->id }}">{{ $product->name }} ({{ $product->sku }})</option>
-                            @endforeach
+                            @php } @endphp
                         </select>
                     </div>
                     <div class="row">
@@ -352,18 +352,18 @@
                             <label class="form-label">From Branch</label>
                             <select name="from_branch_id" class="form-select" required>
                                 <option value="">Select source</option>
-                                @foreach($branchOptions as $branch)
+                                @php foreach ($branchOptions as $branch) { @endphp
                                     <option value="{{ $branch['id'] }}">{{ $branch['name'] }}</option>
-                                @endforeach
+                                @php } @endphp
                             </select>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">To Branch</label>
                             <select name="to_branch_id" class="form-select" required>
                                 <option value="">Select destination</option>
-                                @foreach($branchOptions as $branch)
+                                @php foreach ($branchOptions as $branch) { @endphp
                                     <option value="{{ $branch['id'] }}">{{ $branch['name'] }}</option>
-                                @endforeach
+                                @php } @endphp
                             </select>
                         </div>
                     </div>
@@ -411,9 +411,9 @@
                             <label class="form-label">Category</label>
                             <div class="input-group">
                                 <select name="category_id" id="product_category_select" class="form-select" required>
-                                    @foreach($categories as $cat)
+                                    @php foreach ($categories as $cat) { @endphp
                                         <option value="{{ $cat->id }}">{{ $cat->name }}</option>
-                                    @endforeach
+                                    @php } @endphp
                                 </select>
                                 <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addCategoryModal">+</button>
                             </div>
@@ -435,9 +435,9 @@
                             <label class="form-label">Stock Branch</label>
                             <select name="branch_id" class="form-select">
                                 <option value="">Use Active Branch</option>
-                                @foreach($branchOptions as $branch)
+                                @php foreach ($branchOptions as $branch) { @endphp
                                     <option value="{{ $branch['id'] }}">{{ $branch['name'] }}</option>
-                                @endforeach
+                                @php } @endphp
                             </select>
                         </div>
                         <div class="col-md-3">
@@ -543,9 +543,9 @@
                         <label class="form-label">Apply Opening Stock To Branch</label>
                         <select name="branch_id" class="form-select">
                             <option value="">Use Active Branch</option>
-                                @foreach($branchOptions as $branch)
-                                    <option value="{{ $branch['id'] }}">{{ $branch['name'] }}</option>
-                                @endforeach
+                            @php foreach ($branchOptions as $branch) { @endphp
+                                <option value="{{ $branch['id'] }}">{{ $branch['name'] }}</option>
+                            @php } @endphp
                         </select>
                     </div>
                 </div>
