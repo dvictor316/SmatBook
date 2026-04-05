@@ -13,7 +13,7 @@ class SafeRoute
                 return route($name, $parameters);
             }
         } catch (\Throwable $e) {
-            // Fall through to fallback.
+            // Fall back safely.
         }
 
         return url($fallback);
