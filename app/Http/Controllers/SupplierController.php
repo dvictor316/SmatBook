@@ -291,10 +291,13 @@ class SupplierController extends Controller
     public function pay($id)
     {
         $supplier = $this->applyTenantScope(Supplier::query())->findOrFail($id);
+        $purchaseDateColumn = Schema::hasColumn('purchases', 'purchase_date')
+            ? 'purchase_date'
+            : (Schema::hasColumn('purchases', 'date') ? 'date' : 'created_at');
 
         $purchasesQuery = Purchase::query()
             ->where('supplier_id', $supplier->id)
-            ->orderBy('purchase_date')
+            ->orderBy($purchaseDateColumn)
             ->orderBy('id');
         $this->applyTenantScope($purchasesQuery, 'purchases');
         $this->applyBranchScopeToPurchases($purchasesQuery);
