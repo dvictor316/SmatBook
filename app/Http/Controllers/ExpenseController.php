@@ -231,33 +231,43 @@ class ExpenseController extends Controller
             'notes' => 'nullable|string',
             'amount' => 'required|numeric|min:0.01|max:999999999999.99',
             'account_id' => 'required|string',
-            'payment_account_id' => 'required|exists:accounts,id',
+            'payment_account_id' => 'nullable|exists:accounts,id',
             'status' => 'required|string|in:Pending,Paid,Overdue',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:4096',
         ]);
 
         return DB::transaction(function () use ($request, $validated, $expense) {
             [$expenseAccount, $categoryId] = $this->resolveExpenseAccountFromSelector((string) $validated['account_id']);
-            $paymentAccount = Account::findOrFail((int) $validated['payment_account_id']);
+            $paymentAccount = null;
+            if (!empty($validated['payment_account_id'])) {
+                $paymentAccount = Account::findOrFail((int) $validated['payment_account_id']);
+            } elseif ($validated['status'] === 'Paid') {
+                return back()->withInput()->with('error', 'Select a Paid From (Credit Account) to mark this expense as Paid.');
+            }
 
             if ($request->hasFile('image')) {
                 $this->deleteExpenseAttachment($expense->image);
                 $validated['image'] = $this->handleFileUpload($request);
             }
 
-            $expense->update([
+            $updatePayload = [
                 'company_name'   => $validated['company_name'],
                 'reference'      => $validated['reference'] ?? null,
                 'email'          => $validated['email'] ?? null,
                 'amount'         => $validated['amount'],
-                'payment_mode'   => $paymentAccount->name,
                 'payment_status' => strtolower($validated['status']) === 'paid' ? 'paid' : 'pending',
                 'category'       => $expenseAccount->name,
                 'category_id'    => Schema::hasColumn('expenses', 'category_id') ? $categoryId : null,
                 'notes'          => $validated['notes'] ?? null,
                 'status'         => $validated['status'],
                 'image'          => $validated['image'] ?? $expense->image,
-            ]);
+            ];
+
+            if ($paymentAccount) {
+                $updatePayload['payment_mode'] = $paymentAccount->name;
+            }
+
+            $expense->update($updatePayload);
 
             if (Schema::hasColumn('expenses', 'branch_id') && empty($expense->branch_id)) {
                 $expense->branch_id = session('active_branch_id');
