@@ -169,7 +169,7 @@
                                 <select class="form-select select" name="customer_id">
                                     <option value="">-- Choose Customer --</option>
                                     @foreach(($customers ?? collect()) as $customer)
-                                        <option value="{{ $customer->id }}">
+                                        <option value="{{ $customer->id }}" data-balance="{{ (float) ($customer->balance ?? 0) }}">
                                             {{ $customer->customer_name ?? $customer->name ?? 'Customer' }}
                                         </option>
                                     @endforeach
@@ -182,7 +182,7 @@
                             <select class="form-select select" name="sale_id">
                                 <option value="">-- Choose Sale --</option>
                                 @forelse($sales as $sale)
-                                    <option value="{{ $sale->id }}" @selected(!empty($selectedSaleId) && (int) $selectedSaleId === (int) $sale->id)>
+                                    <option value="{{ $sale->id }}" data-balance="{{ (float) ($sale->balance ?? 0) }}" @selected(!empty($selectedSaleId) && (int) $selectedSaleId === (int) $sale->id)>
                                         {{ $sale->invoice_no ?? ('SALE-' . $sale->id) }} (Bal: {{ number_format((float) ($sale->balance ?? 0), 2) }})
                                     </option>
                                 @empty
@@ -193,21 +193,39 @@
 
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Deposit Account (Debit)</label>
-                            <select class="form-select select" name="payment_account_id" required>
-                                <option value="">-- Choose Account --</option>
+                            <select class="form-select select" name="payment_account_id">
+                                <option value="">-- Choose Ledger Account --</option>
                                 @foreach($assetAccounts as $acc)
                                     <option value="{{ $acc->id }}">{{ $acc->name }} ({{ $acc->code }})</option>
                                 @endforeach
                             </select>
+                            @if(!empty($bankAccounts) && $bankAccounts->count())
+                                <small class="text-muted d-block mt-1">Or pick a bank account below.</small>
+                            @endif
                         </div>
 
                         <div class="col-md-6">
                             <label class="form-label fw-bold text-primary">Transaction Amount</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-primary text-white border-primary">$</span>
-                                <input type="number" class="form-control border-primary" name="amount" step="0.01" required placeholder="0.00">
+                                <input type="number" class="form-control border-primary" name="amount" id="payment-amount" step="0.01" required placeholder="0.00" value="{{ old('amount', $selectedSaleBalance ?? $outstandingBalance ?? '') }}">
                             </div>
+                            @if(!empty($outstandingBalance))
+                                <small class="text-muted">Outstanding for customer: ₦{{ number_format($outstandingBalance, 2) }}</small>
+                            @endif
                         </div>
+
+                        @if(!empty($bankAccounts) && $bankAccounts->count())
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Bank Account</label>
+                                <select class="form-select select" name="bank_id">
+                                    <option value="">-- Choose Bank --</option>
+                                    @foreach($bankAccounts as $bank)
+                                        <option value="{{ $bank->id }}">{{ $bank->name ?? $bank->bank_name ?? 'Bank' }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        @endif
 
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Bank Reference No.</label>
@@ -258,4 +276,41 @@
         </script>
     @endpush
 @endif
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const saleSelect = document.querySelector('select[name="sale_id"]');
+        const customerSelect = document.querySelector('select[name="customer_id"]');
+        const amountInput = document.getElementById('payment-amount');
+        if (!saleSelect || !amountInput) return;
+
+        const updateAmountFromSale = () => {
+            const selectedOption = saleSelect.options[saleSelect.selectedIndex];
+            if (!selectedOption) return;
+            const balance = parseFloat(selectedOption.getAttribute('data-balance') || '0');
+            if (balance > 0) {
+                amountInput.value = balance.toFixed(2);
+            }
+        };
+
+        saleSelect.addEventListener('change', updateAmountFromSale);
+        if (customerSelect) {
+            customerSelect.addEventListener('change', () => {
+                if (saleSelect.value) {
+                    return;
+                }
+                const selectedCustomer = customerSelect.options[customerSelect.selectedIndex];
+                const balance = parseFloat(selectedCustomer?.getAttribute('data-balance') || '0');
+                if (balance > 0) {
+                    amountInput.value = balance.toFixed(2);
+                }
+            });
+        }
+        if (saleSelect.value) {
+            updateAmountFromSale();
+        }
+    });
+</script>
+@endpush
 @endsection
