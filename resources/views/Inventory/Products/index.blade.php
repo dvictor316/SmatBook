@@ -279,13 +279,13 @@
                                             @endif
                                         </td>
                                         <td>
-                                            <div>{{ number_format($product->price, 2) }}</div>
+                                            <div>{{ number_format((float) $product->price, 2) }}</div>
                                             @if(!is_null($product->wholesale_price) || !is_null($product->special_price))
-                                                <small class="d-block text-muted">Wholesale: {{ !is_null($product->wholesale_price) ? number_format($product->wholesale_price, 2) : '—' }}</small>
-                                                <small class="d-block text-muted">Special: {{ !is_null($product->special_price) ? number_format($product->special_price, 2) : '—' }}</small>
+                                                <small class="d-block text-muted">Wholesale: {{ !is_null($product->wholesale_price) ? number_format((float) $product->wholesale_price, 2) : '—' }}</small>
+                                                <small class="d-block text-muted">Special: {{ !is_null($product->special_price) ? number_format((float) $product->special_price, 2) : '—' }}</small>
                                             @endif
                                         </td>
-                                        <td>{{ number_format($product->purchase_price, 2) }}</td>
+                                        <td>{{ number_format((float) $product->purchase_price, 2) }}</td>
                                         <td class="text-center no-print">
                                             <div class="dropdown">
                                                 <a href="#" class="product-action-trigger dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">

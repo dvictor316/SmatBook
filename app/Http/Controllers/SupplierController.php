@@ -164,21 +164,24 @@ class SupplierController extends Controller
     {
         $supplier = $this->applyTenantScope(Supplier::query())->findOrFail($id);
 
-        $purchaseDateColumn = Schema::hasColumn('purchases', 'purchase_date')
+        $hasPurchases = Schema::hasTable('purchases');
+        $purchaseDateColumn = $hasPurchases && Schema::hasColumn('purchases', 'purchase_date')
             ? 'purchase_date'
-            : (Schema::hasColumn('purchases', 'date') ? 'date' : 'created_at');
-        $totalColumn = Schema::hasColumn('purchases', 'total_amount')
+            : ($hasPurchases && Schema::hasColumn('purchases', 'date') ? 'date' : 'created_at');
+        $totalColumn = $hasPurchases && Schema::hasColumn('purchases', 'total_amount')
             ? 'total_amount'
-            : (Schema::hasColumn('purchases', 'total') ? 'total' : 'grand_total');
-        $receivedColumn = Schema::hasColumn('purchases', 'received_status')
+            : ($hasPurchases && Schema::hasColumn('purchases', 'total') ? 'total' : 'grand_total');
+        $receivedColumn = $hasPurchases && Schema::hasColumn('purchases', 'received_status')
             ? 'received_status'
-            : (Schema::hasColumn('purchases', 'status') ? 'status' : null);
+            : ($hasPurchases && Schema::hasColumn('purchases', 'status') ? 'status' : null);
 
-        $purchases = Purchase::query()
-            ->where('supplier_id', $supplier->id)
-            ->orderByDesc($purchaseDateColumn)
-            ->limit(25)
-            ->get();
+        $purchases = $hasPurchases
+            ? Purchase::query()
+                ->where('supplier_id', $supplier->id)
+                ->orderByDesc($purchaseDateColumn)
+                ->limit(25)
+                ->get()
+            : collect();
 
         $summary = [
             'total_purchases' => 0,
@@ -187,7 +190,7 @@ class SupplierController extends Controller
             'pending_items' => 0,
         ];
 
-        if (Schema::hasTable('purchases')) {
+        if ($hasPurchases) {
             $summary['total_purchases'] = Purchase::where('supplier_id', $supplier->id)->count();
             if ($totalColumn) {
                 $summary['total_spend'] = (float) (Purchase::where('supplier_id', $supplier->id)->sum($totalColumn) ?? 0);
@@ -195,7 +198,7 @@ class SupplierController extends Controller
         }
 
         $purchaseItemsByPurchase = collect();
-        if (Schema::hasTable('purchase_items')) {
+        if ($hasPurchases && Schema::hasTable('purchase_items')) {
             $purchaseIds = Purchase::where('supplier_id', $supplier->id)->pluck('id');
             $qtyColumn = Schema::hasColumn('purchase_items', 'qty')
                 ? 'qty'
