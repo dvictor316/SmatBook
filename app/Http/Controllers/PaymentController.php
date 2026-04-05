@@ -81,8 +81,20 @@ class PaymentController extends Controller
 
     public function store(Request $request)
     {
+        $requiresSaleId = false;
+        if (Schema::hasTable('payments')) {
+            try {
+                $columnInfo = DB::select("SHOW COLUMNS FROM payments WHERE Field = 'sale_id'");
+                if (!empty($columnInfo) && isset($columnInfo[0]->Null)) {
+                    $requiresSaleId = strtolower((string) $columnInfo[0]->Null) === 'no';
+                }
+            } catch (\Throwable $e) {
+                $requiresSaleId = false;
+            }
+        }
+
         $request->validate([
-            'sale_id' => 'nullable|exists:sales,id',
+            'sale_id' => ($requiresSaleId ? 'required' : 'nullable') . '|exists:sales,id',
             'customer_id' => 'nullable|exists:customers,id',
             'payment_account_id' => 'nullable|exists:accounts,id',
             'bank_id' => Schema::hasTable('banks') ? 'nullable|exists:banks,id' : 'nullable',
@@ -96,6 +108,9 @@ class PaymentController extends Controller
 
         if (!$request->filled('sale_id') && !$request->filled('customer_id')) {
             return back()->withInput()->with('error', 'Select a customer or link a sale reference for this payment.');
+        }
+        if ($requiresSaleId && !$request->filled('sale_id')) {
+            return back()->withInput()->with('error', 'Select the sale reference for this payment.');
         }
 
         try {

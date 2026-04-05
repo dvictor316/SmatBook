@@ -1722,10 +1722,7 @@ $(document).ready(function() {
     $('#quick-search').on('input', filterProductCards);
 
     $(document).on('click', '.product-card', function() {
-        const productId = $(this).data('id');
-        const option = $(`#product-select option[value="${productId}"]`);
-        $('#product-select').val(String(productId));
-        applyProductSelection(option);
+        applyProductSelection($(this));
     });
 
     $('#product-search').on('change', function() {
@@ -1851,11 +1848,13 @@ $(document).ready(function() {
 
     // Product Change
     function applyProductSelection(source) {
-        const opt = source && source.jquery ? source : $(source);
-        const productId = opt.val() || opt.data('id') || '';
+        const sourceEl = source && source.jquery ? source : $(source);
+        const productId = sourceEl.val() || sourceEl.data('id') || '';
         if (productId && $('#product-select').val() !== String(productId)) {
             $('#product-select').val(String(productId));
         }
+        const selectOption = productId ? $(`#product-select option[value="${productId}"]`) : $();
+        const opt = selectOption.length ? selectOption : sourceEl;
         if (!productId) {
             $('#unit-price-input').val('');
             $('#qty-label').text('Quantity');

@@ -239,8 +239,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @if($productRows->count() > 0)
-                                @foreach($productRows as $product)
+                            @forelse($productRows as $product)
                                     <tr>
                                         <td>{{ $loop->iteration }}</td>
                                         <td>
@@ -304,12 +303,11 @@
                                             </div>
                                         </td>
                                     </tr>
-                                @endforeach
-                            @else
+                            @empty
                                 <tr>
                                     <td colspan="9" class="text-center text-muted py-4">No products found.</td>
                                 </tr>
-                            @endif
+                            @endforelse
                         </tbody>
                     </table>
                 </div>
