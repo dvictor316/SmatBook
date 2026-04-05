@@ -121,6 +121,16 @@
                         <li>
                             <a href="{{ url('payments') }}" class="{{ Request::is('payments') ? 'active' : '' }}"><i class="fe fe-credit-card"></i> <span>Payments</span></a>
                         </li>
+                        @if(Route::has('finance.recurring.index'))
+                        <li>
+                            <a href="{{ route('finance.recurring.index') }}" class="{{ Request::is('finance/recurring-transactions*') ? 'active' : '' }}"><i class="fe fe-repeat"></i> <span>Recurring Transactions</span></a>
+                        </li>
+                        @endif
+                        @if(Route::has('finance.approvals.index'))
+                        <li>
+                            <a href="{{ route('finance.approvals.index') }}" class="{{ Request::is('finance/approvals*') ? 'active' : '' }}"><i class="fe fe-check-square"></i> <span>Approval Queue</span></a>
+                        </li>
+                        @endif
 
                         {{-- Quotations Section --}}
                         <li class="menu-title"><span>Quotations</span></li>
@@ -322,9 +332,19 @@
                     <li>
                         <a href="{{ url('expenses') }}" class="{{ Request::is('expenses') ? 'active' : '' }}"><i class="fe fe-file-plus"></i> <span>Expenses</span></a>
                     </li>
-                    <li>
-                        <a href="{{ url('payments') }}" class="{{ Request::is('payments') ? 'active' : '' }}"><i class="fe fe-credit-card"></i> <span>Payments</span></a>
-                    </li>
+                        <li>
+                            <a href="{{ url('payments') }}" class="{{ Request::is('payments') ? 'active' : '' }}"><i class="fe fe-credit-card"></i> <span>Payments</span></a>
+                        </li>
+                        @if(Route::has('finance.recurring.index'))
+                        <li>
+                            <a href="{{ route('finance.recurring.index') }}" class="{{ Request::is('finance/recurring-transactions*') ? 'active' : '' }}"><i class="fe fe-repeat"></i> <span>Recurring Transactions</span></a>
+                        </li>
+                        @endif
+                        @if(Route::has('finance.approvals.index'))
+                        <li>
+                            <a href="{{ route('finance.approvals.index') }}" class="{{ Request::is('finance/approvals*') ? 'active' : '' }}"><i class="fe fe-check-square"></i> <span>Approval Queue</span></a>
+                        </li>
+                        @endif
                     
                     {{-- Quotations Section --}}
                     <li class="menu-title"><span>Quotations</span></li>

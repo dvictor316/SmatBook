@@ -184,6 +184,20 @@
                                     class="fe fe-credit-card"></i>
                                 <span>Payments</span></a>
                         </li>
+                        @if(Route::has('finance.recurring.index'))
+                        <li>
+                            <a class="{{ Request::is('finance/recurring-transactions*') ? 'active' : '' }}" href="{{ route('finance.recurring.index') }}"><i
+                                    class="fe fe-repeat"></i>
+                                <span>Recurring Transactions</span></a>
+                        </li>
+                        @endif
+                        @if(Route::has('finance.approvals.index'))
+                        <li>
+                            <a class="{{ Request::is('finance/approvals*') ? 'active' : '' }}" href="{{ route('finance.approvals.index') }}"><i
+                                    class="fe fe-check-square"></i>
+                                <span>Approval Queue</span></a>
+                        </li>
+                        @endif
                         <!-- /Finance & Accounts -->
 
                         <!-- Quotations -->
