@@ -217,7 +217,12 @@ class ExpenseController extends Controller
     {
         $expenseQuery = $this->applyTenantScope(Expense::query(), 'expenses');
         $this->applyBranchScope($expenseQuery, 'expenses');
-        $expense = $expenseQuery->findOrFail($id);
+        $expense = $expenseQuery->find($id);
+        if (!$expense) {
+            return redirect()
+                ->route('expenses.index')
+                ->with('error', 'Expense not found for the active branch.');
+        }
 
         $validated = $request->validate([
             'company_name' => 'required|string|max:191',
@@ -286,7 +291,12 @@ class ExpenseController extends Controller
     {
         $expenseQuery = $this->applyTenantScope(Expense::query(), 'expenses');
         $this->applyBranchScope($expenseQuery, 'expenses');
-        $expense = $expenseQuery->findOrFail($id);
+        $expense = $expenseQuery->find($id);
+        if (!$expense) {
+            return redirect()
+                ->route('expenses.index')
+                ->with('error', 'Expense not found for the active branch.');
+        }
 
         Transaction::where('related_id', $expense->id)
             ->where('related_type', Expense::class)
@@ -306,7 +316,12 @@ class ExpenseController extends Controller
     {
         $expenseQuery = $this->applyTenantScope(Expense::query(), 'expenses');
         $this->applyBranchScope($expenseQuery, 'expenses');
-        $expenseQuery->findOrFail($id);
+        $expense = $expenseQuery->find($id);
+        if (!$expense) {
+            return redirect()
+                ->route('expenses.index')
+                ->with('error', 'Expense not found for the active branch.');
+        }
 
         return redirect()
             ->route('expenses.index')
@@ -317,7 +332,12 @@ class ExpenseController extends Controller
     {
         $expenseQuery = $this->applyTenantScope(Expense::query(), 'expenses');
         $this->applyBranchScope($expenseQuery, 'expenses');
-        $expenseQuery->findOrFail($id);
+        $expense = $expenseQuery->find($id);
+        if (!$expense) {
+            return redirect()
+                ->route('expenses.index')
+                ->with('error', 'Expense not found for the active branch.');
+        }
 
         return redirect()
             ->route('expenses.index')
