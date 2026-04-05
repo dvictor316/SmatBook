@@ -29,6 +29,18 @@
                 Expenses & Ledger Posting
             @endslot
         @endcomponent
+        @if (session('success'))
+            <div class="alert alert-success d-flex align-items-center mb-3" role="alert">
+                <i class="fas fa-check-circle me-2"></i>
+                <span>{{ session('success') }}</span>
+            </div>
+        @endif
+        @if (session('error'))
+            <div class="alert alert-danger d-flex align-items-center mb-3" role="alert">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                <span>{{ session('error') }}</span>
+            </div>
+        @endif
         <div class="mb-4 d-flex justify-content-between align-items-center">
             <button type="button" class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#add_expenses">
                 <i class="fas fa-plus-circle me-1"></i> Add Expense

@@ -220,6 +220,9 @@ class ExpenseController extends Controller
         $this->applyBranchScope($expenseQuery, 'expenses');
         $expense = $expenseQuery->find($id);
         if (!$expense) {
+            $expense = $this->applyTenantScope(Expense::query(), 'expenses')->find($id);
+        }
+        if (!$expense) {
             return redirect()
                 ->route('expenses.index')
                 ->with('error', 'Expense not found for the active branch.');
@@ -231,14 +234,23 @@ class ExpenseController extends Controller
             'reference' => 'nullable|string|max:191',
             'notes' => 'nullable|string',
             'amount' => 'required|numeric|min:0.01|max:999999999999.99',
-            'account_id' => 'required|string',
+            'account_id' => 'nullable|string',
             'payment_account_id' => 'nullable|exists:accounts,id',
             'status' => 'required|string|in:Pending,Paid,Overdue',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:4096',
         ]);
 
         return DB::transaction(function () use ($request, $validated, $expense) {
-            [$expenseAccount, $categoryId] = $this->resolveExpenseAccountFromSelector((string) $validated['account_id']);
+            $categoryId = Schema::hasColumn('expenses', 'category_id') ? ($expense->category_id ?? null) : null;
+            $categoryName = $expense->category ?: null;
+            if (!empty($validated['account_id'])) {
+                [$expenseAccount, $categoryId] = $this->resolveExpenseAccountFromSelector((string) $validated['account_id']);
+                $categoryName = $expenseAccount->name;
+            }
+            if (!$categoryName) {
+                $fallbackAccount = $this->applyTenantScope(Account::where('type', 'Expense'), 'accounts')->first();
+                $categoryName = $fallbackAccount?->name ?: 'General Expense';
+            }
             $paymentAccount = null;
             if (!empty($validated['payment_account_id'])) {
                 $paymentAccount = Account::findOrFail((int) $validated['payment_account_id']);
@@ -264,7 +276,7 @@ class ExpenseController extends Controller
                 'email'          => $validated['email'] ?? null,
                 'amount'         => $validated['amount'],
                 'payment_status' => strtolower($validated['status']) === 'paid' ? 'paid' : 'pending',
-                'category'       => $expenseAccount->name,
+                'category'       => $categoryName,
                 'category_id'    => Schema::hasColumn('expenses', 'category_id') ? $categoryId : null,
                 'notes'          => $validated['notes'] ?? null,
                 'status'         => $validated['status'],

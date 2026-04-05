@@ -87,8 +87,11 @@ class IdentifyTenant
 
         // 5. Session Persistence (domain => env('SESSION_DOMAIN', null))
         if (session('current_tenant_id') !== $tenant->id) {
+            $tenantName = $tenant->domain_name
+                ?? $tenant->customer_name
+                ?? $subdomain;
             session(['current_tenant_id' => $tenant->id]);
-            session(['current_tenant_name' => $tenant->domain]);
+            session(['current_tenant_name' => $tenantName]);
         }
 
         return $next($request);
