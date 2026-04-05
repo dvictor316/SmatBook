@@ -87,6 +87,14 @@ class ExpenseController extends Controller
         ];
     }
 
+    private function getSessionBranchContext(): array
+    {
+        return [
+            'id' => session('active_branch_id') ? (string) session('active_branch_id') : null,
+            'name' => session('active_branch_name') ? (string) session('active_branch_name') : null,
+        ];
+    }
+
     public function index()
     {
         $this->syncBanksToAssetAccounts();
@@ -124,6 +132,11 @@ class ExpenseController extends Controller
 
     public function store(Request $request)
     {
+        $sessionBranch = $this->getSessionBranchContext();
+        if (empty($sessionBranch['id']) && empty($sessionBranch['name'])) {
+            return back()->withInput()->with('error', 'Please select a branch before posting an expense.');
+        }
+
         $request->validate([
             'company_name' => 'required|string|max:191',
             'email' => 'nullable|email|max:191',
@@ -164,10 +177,10 @@ class ExpenseController extends Controller
                 $payload['user_id'] = Auth::id();
             }
             if (Schema::hasColumn('expenses', 'branch_id')) {
-                $payload['branch_id'] = $this->getActiveBranchContext()['id'];
+                $payload['branch_id'] = $sessionBranch['id'];
             }
             if (Schema::hasColumn('expenses', 'branch_name')) {
-                $payload['branch_name'] = $this->getActiveBranchContext()['name'];
+                $payload['branch_name'] = $sessionBranch['name'];
             }
 
             $expense = Expense::create($payload);
@@ -309,6 +322,11 @@ class ExpenseController extends Controller
 
     public function quickAddBank(Request $request)
     {
+        $sessionBranch = $this->getSessionBranchContext();
+        if (empty($sessionBranch['id']) && empty($sessionBranch['name'])) {
+            return back()->withInput()->with('error', 'Please select a branch before adding a bank/cash source.');
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:191',
             'account_number' => 'nullable|string|max:191',
@@ -332,10 +350,10 @@ class ExpenseController extends Controller
                     $bankValues['user_id'] = Auth::id();
                 }
                 if (Schema::hasColumn('banks', 'branch_id')) {
-                    $bankValues['branch_id'] = $this->getActiveBranchContext()['id'];
+                    $bankValues['branch_id'] = $sessionBranch['id'];
                 }
                 if (Schema::hasColumn('banks', 'branch_name')) {
-                    $bankValues['branch_name'] = $this->getActiveBranchContext()['name'];
+                    $bankValues['branch_name'] = $sessionBranch['name'];
                 }
 
                 Bank::updateOrCreate(
@@ -363,10 +381,10 @@ class ExpenseController extends Controller
                 $accountValues['user_id'] = Auth::id();
             }
             if (Schema::hasColumn('accounts', 'branch_id')) {
-                $accountValues['branch_id'] = $this->getActiveBranchContext()['id'];
+                $accountValues['branch_id'] = $sessionBranch['id'];
             }
             if (Schema::hasColumn('accounts', 'branch_name')) {
-                $accountValues['branch_name'] = $this->getActiveBranchContext()['name'];
+                $accountValues['branch_name'] = $sessionBranch['name'];
             }
 
             Account::firstOrCreate($accountAttributes, $accountValues);
