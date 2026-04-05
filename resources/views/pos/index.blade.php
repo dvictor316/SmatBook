@@ -1365,7 +1365,7 @@ label {
                     <div class="subtotal-amount" id="item-total">₦0.00</div>
                 </div>
 
-                <button id="add-btn" class="btn btn-add-cart w-100 py-2 mt-2">
+                <button id="add-btn" type="button" class="btn btn-add-cart w-100 py-2 mt-2">
                     <i class="fas fa-plus-circle me-2"></i> ADD TO CART
                 </button>
 
@@ -1513,6 +1513,16 @@ $(document).ready(function() {
     let lastSelectedProductId = null;
     let isSyncingProductSearch = false;
     const fmt = new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' });
+    const showAlert = (options) => {
+        if (window.Swal && typeof Swal.fire === 'function') {
+            return Swal.fire(options);
+        }
+        if (options?.icon === 'success') {
+            return;
+        }
+        const message = options?.text || options?.title || 'Action required';
+        window.alert(message);
+    };
 
     // Clock
     setInterval(() => $('#live-clock').text(new Date().toLocaleTimeString('en-US', { hour12: false })), 1000);
@@ -1725,7 +1735,7 @@ $(document).ready(function() {
         applyProductSelection($(this));
     });
 
-    $('#product-search').on('change', function() {
+    $('#product-search').on('change select2:select', function() {
         if (isSyncingProductSearch) {
             return;
         }
@@ -1770,7 +1780,7 @@ $(document).ready(function() {
             return true;
         }
 
-        Swal.fire({
+        showAlert({
             icon: 'error',
             title: 'Product Not Found',
             text: `No product matched "${rawCode}"`,
@@ -1931,10 +1941,11 @@ $(document).ready(function() {
     });
 
     // Add to Cart
-    $('#add-btn').on('click', function() {
+    $('#add-btn').on('click', function(e) {
+        e.preventDefault();
         let opt = $('#product-select').find(':selected');
         if(!opt.val()) {
-            Swal.fire({ icon: 'warning', title: 'No Product', text: 'Select a product', confirmButtonColor: '#2563eb' });
+            showAlert({ icon: 'warning', title: 'No Product', text: 'Select a product', confirmButtonColor: '#2563eb' });
             return;
         }
 
@@ -1944,12 +1955,12 @@ $(document).ready(function() {
         const maxAllowed = Math.max(unitMeta.maxQty, 0);
         
         if(maxAllowed <= 0) {
-            Swal.fire({ icon: 'error', title: 'Unavailable', text: `No ${unitMeta.unitName} available for this product`, confirmButtonColor: '#ef4444' });
+            showAlert({ icon: 'error', title: 'Unavailable', text: `No ${unitMeta.unitName} available for this product`, confirmButtonColor: '#ef4444' });
             return;
         }
 
         if(qty > maxAllowed) {
-            Swal.fire({ icon: 'error', title: 'Low Stock', text: `Only ${maxAllowed} ${unitMeta.unitName} available`, confirmButtonColor: '#ef4444' });
+            showAlert({ icon: 'error', title: 'Low Stock', text: `Only ${maxAllowed} ${unitMeta.unitName} available`, confirmButtonColor: '#ef4444' });
             return;
         }
 
@@ -1987,7 +1998,7 @@ $(document).ready(function() {
         $('#price-tier').val('retail');
         $('#barcode-input').val('').focus();
         
-        Swal.fire({ icon: 'success', title: 'Added', timer: 1000, toast: true, position: 'top-end', showConfirmButton: false });
+        showAlert({ icon: 'success', title: 'Added', timer: 1000, toast: true, position: 'top-end', showConfirmButton: false });
     });
 
     // Render Cart
@@ -2179,7 +2190,7 @@ $(document).ready(function() {
 
                 resetPosWorkspace();
 
-                Swal.fire({
+                showAlert({
                     icon: 'success',
                     title: balanceDue > 0 ? 'Deposit recorded' : 'Sale completed',
                     text: balanceDue > 0
@@ -2193,7 +2204,7 @@ $(document).ready(function() {
             },
             error: function(xhr) {
                 restoreProcessButton();
-                Swal.fire({ icon: 'error', title: 'Error', text: xhr.responseJSON?.message || 'Failed', confirmButtonColor: '#ef4444' });
+                showAlert({ icon: 'error', title: 'Error', text: xhr.responseJSON?.message || 'Failed', confirmButtonColor: '#ef4444' });
             }
         });
     }
@@ -2204,7 +2215,7 @@ $(document).ready(function() {
         e.stopPropagation();
 
         if(!cart.length) {
-            Swal.fire({ icon: 'warning', title: 'Cart Empty', confirmButtonColor: '#f59e0b' });
+            showAlert({ icon: 'warning', title: 'Cart Empty', confirmButtonColor: '#f59e0b' });
             return;
         }
 
@@ -2215,7 +2226,7 @@ $(document).ready(function() {
         let paid = method === 'Split' ? (cashPaid + transferPaid) : cashPaid;
 
         if(paid <= 0) {
-            Swal.fire({ icon: 'warning', title: 'Enter Payment', text: 'Enter the amount received before processing this sale.', confirmButtonColor: '#f59e0b' });
+            showAlert({ icon: 'warning', title: 'Enter Payment', text: 'Enter the amount received before processing this sale.', confirmButtonColor: '#f59e0b' });
             return;
         }
 
@@ -2230,6 +2241,7 @@ $(document).ready(function() {
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    if (window.jQuery && window.jQuery.fn) return;
     if (window.POS_VANILLA_BOUND) return;
     window.POS_VANILLA_BOUND = true;
 
@@ -2265,7 +2277,9 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        if (productSelect) productSelect.value = productId;
+        if (productSelect) {
+            productSelect.value = productId;
+        }
         if (productSearch) productSearch.value = productId;
 
         const retail = parseFloat(data.retail || data.price || '0') || 0;
