@@ -115,12 +115,13 @@ use App\Support\LedgerService;
                 return $query;
             }
 
-            return $query->where(function ($sub) use ($salesTable, $branchId, $branchName) {
-                if ($branchId !== '' && Schema::hasColumn('sales', 'branch_id')) {
-                    $sub->where("{$salesTable}.branch_id", $branchId);
-                } elseif ($branchName !== '' && Schema::hasColumn('sales', 'branch_name')) {
-                    $sub->where("{$salesTable}.branch_name", $branchName);
-                }
+        return $query->where(function ($sub) use ($salesTable, $branchId, $branchName) {
+            if ($branchId !== '' && Schema::hasColumn('sales', 'branch_id')) {
+                $sub->where("{$salesTable}.branch_id", $branchId);
+            }
+            if ($branchName !== '' && Schema::hasColumn('sales', 'branch_name')) {
+                $sub->orWhere("{$salesTable}.branch_name", $branchName);
+            }
 
                 if ($branchName !== '') {
                     $sub->orWhereRaw(
@@ -145,11 +146,12 @@ use App\Support\LedgerService;
             }
 
             return $query->where(function ($sub) use ($paymentsTable, $branchId, $branchName) {
-                if ($branchId !== '' && Schema::hasColumn('payments', 'branch_id')) {
-                    $sub->where("{$paymentsTable}.branch_id", $branchId);
-                } elseif ($branchName !== '' && Schema::hasColumn('payments', 'branch_name')) {
-                    $sub->where("{$paymentsTable}.branch_name", $branchName);
-                }
+            if ($branchId !== '' && Schema::hasColumn('payments', 'branch_id')) {
+                $sub->where("{$paymentsTable}.branch_id", $branchId);
+            }
+            if ($branchName !== '' && Schema::hasColumn('payments', 'branch_name')) {
+                $sub->orWhere("{$paymentsTable}.branch_name", $branchName);
+            }
 
                 if (Schema::hasTable('sales')) {
                     $sub->orWhereHas('sale', function ($saleQuery) {
@@ -190,11 +192,14 @@ use App\Support\LedgerService;
                 return $query;
             }
 
-            if (Schema::hasColumn($table, 'branch_id') && $branchId !== '') {
-                $query->where("{$table}.branch_id", $branchId);
-            } elseif (Schema::hasColumn($table, 'branch_name') && $branchName !== '') {
-                $query->where("{$table}.branch_name", $branchName);
-            }
+            $query->where(function ($sub) use ($table, $branchId, $branchName) {
+                if (Schema::hasColumn($table, 'branch_id') && $branchId !== '') {
+                    $sub->where("{$table}.branch_id", $branchId);
+                }
+                if (Schema::hasColumn($table, 'branch_name') && $branchName !== '') {
+                    $sub->orWhere("{$table}.branch_name", $branchName);
+                }
+            });
 
             return $query;
         }
@@ -422,8 +427,15 @@ public function purchase_report(Request $request)
                 });
             }
 
-            if (!empty($activeBranch['name']) && Schema::hasColumn('purchases', 'branch_name')) {
-                $query->where('purchases.branch_name', $activeBranch['name']);
+            if (!empty($activeBranch['id']) || !empty($activeBranch['name'])) {
+                $query->where(function ($sub) use ($activeBranch) {
+                    if (!empty($activeBranch['id']) && Schema::hasColumn('purchases', 'branch_id')) {
+                        $sub->where('purchases.branch_id', $activeBranch['id']);
+                    }
+                    if (!empty($activeBranch['name']) && Schema::hasColumn('purchases', 'branch_name')) {
+                        $sub->orWhere('purchases.branch_name', $activeBranch['name']);
+                    }
+                });
             }
 
             $hasPurchaseRows = (clone $query)->exists();
@@ -1326,7 +1338,42 @@ public function destroy($id)
     public function quotation_report(Request $request)
     {
         // Using the full namespace prevents "Class not found" errors
-        $query = \App\Models\Quotation::with('customer'); 
+        $query = \App\Models\Quotation::with('customer');
+        $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $userId = (int) (Auth::id() ?? 0);
+        $activeBranch = $this->getActiveBranchContext();
+
+        if ($companyId > 0 && Schema::hasColumn('quotations', 'company_id')) {
+            $query->where('company_id', $companyId)
+                ->orWhere(function ($sub) use ($userId) {
+                    $sub->whereNull('company_id')
+                        ->where('user_id', $userId);
+                });
+        } elseif ($companyId > 0 && Schema::hasTable('customers')) {
+            $query->whereHas('customer', function ($sub) use ($companyId) {
+                if (Schema::hasColumn('customers', 'company_id')) {
+                    $sub->where('company_id', $companyId);
+                }
+            });
+        }
+
+        if (!empty($activeBranch['id']) || !empty($activeBranch['name'])) {
+            $query->where(function ($sub) use ($activeBranch) {
+                if (!empty($activeBranch['id']) && Schema::hasColumn('quotations', 'branch_id')) {
+                    $sub->where('branch_id', $activeBranch['id']);
+                }
+                if (!empty($activeBranch['name']) && Schema::hasColumn('quotations', 'branch_name')) {
+                    $sub->orWhere('branch_name', $activeBranch['name']);
+                }
+            })->orWhereHas('customer', function ($sub) use ($activeBranch) {
+                if (!empty($activeBranch['id']) && Schema::hasColumn('customers', 'branch_id')) {
+                    $sub->where('branch_id', $activeBranch['id']);
+                }
+                if (!empty($activeBranch['name']) && Schema::hasColumn('customers', 'branch_name')) {
+                    $sub->orWhere('branch_name', $activeBranch['name']);
+                }
+            });
+        }
 
         if ($request->filled('from_date')) {
             $query->whereDate('created_at', '>=', $request->from_date);

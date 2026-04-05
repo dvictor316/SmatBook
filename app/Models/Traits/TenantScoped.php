@@ -101,11 +101,14 @@ trait TenantScoped
                 $hasBranchId = Schema::hasColumn($table, 'branch_id');
                 $hasBranchName = Schema::hasColumn($table, 'branch_name');
 
-                if ($hasBranchId && $activeBranchId !== '') {
-                    $builder->where("{$table}.branch_id", $activeBranchId);
-                } elseif ($hasBranchName && $activeBranchName !== '') {
-                    $builder->where("{$table}.branch_name", $activeBranchName);
-                }
+                $builder->where(function ($q) use ($table, $hasBranchId, $hasBranchName, $activeBranchId, $activeBranchName) {
+                    if ($hasBranchId && $activeBranchId !== '') {
+                        $q->where("{$table}.branch_id", $activeBranchId);
+                    }
+                    if ($hasBranchName && $activeBranchName !== '') {
+                        $q->orWhere("{$table}.branch_name", $activeBranchName);
+                    }
+                });
             }
         });
     }

@@ -303,9 +303,48 @@ class HomeController extends Controller
     // Quotations / Delivery pages used by sidebar links
     public function quotations()
     {
-        $quotations = Schema::hasTable('quotations')
-            ? Quotation::with('customer')->latest()->paginate(20)
-            : new LengthAwarePaginator([], 0, 20);
+        $quotations = new LengthAwarePaginator([], 0, 20);
+        if (Schema::hasTable('quotations')) {
+            $query = Quotation::with('customer')->latest();
+            $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+            $userId = (int) (Auth::id() ?? 0);
+            $branchId = trim((string) session('active_branch_id', ''));
+            $branchName = trim((string) session('active_branch_name', ''));
+
+            if ($companyId > 0 && Schema::hasColumn('quotations', 'company_id')) {
+                $query->where('company_id', $companyId)
+                    ->orWhere(function ($sub) use ($userId) {
+                        $sub->whereNull('company_id')
+                            ->where('user_id', $userId);
+                    });
+            } elseif ($companyId > 0 && Schema::hasTable('customers')) {
+                $query->whereHas('customer', function ($sub) use ($companyId) {
+                    if (Schema::hasColumn('customers', 'company_id')) {
+                        $sub->where('company_id', $companyId);
+                    }
+                });
+            }
+
+            if ($branchId !== '' || $branchName !== '') {
+                $query->where(function ($sub) use ($branchId, $branchName) {
+                    if ($branchId !== '' && Schema::hasColumn('quotations', 'branch_id')) {
+                        $sub->where('branch_id', $branchId);
+                    }
+                    if ($branchName !== '' && Schema::hasColumn('quotations', 'branch_name')) {
+                        $sub->orWhere('branch_name', $branchName);
+                    }
+                })->orWhereHas('customer', function ($sub) use ($branchId, $branchName) {
+                    if ($branchId !== '' && Schema::hasColumn('customers', 'branch_id')) {
+                        $sub->where('branch_id', $branchId);
+                    }
+                    if ($branchName !== '' && Schema::hasColumn('customers', 'branch_name')) {
+                        $sub->orWhere('branch_name', $branchName);
+                    }
+                });
+            }
+
+            $quotations = $query->paginate(20);
+        }
         return view('Quotations.quotations', compact('quotations'));
     }
 
@@ -314,7 +353,31 @@ class HomeController extends Controller
         $customers = collect();
         if (Schema::hasTable('customers')) {
             $customerNameColumn = Schema::hasColumn('customers', 'name') ? 'name' : 'customer_name';
-            $customers = Customer::orderBy($customerNameColumn)->get();
+            $customersQuery = Customer::orderBy($customerNameColumn);
+            $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+            $userId = (int) (Auth::id() ?? 0);
+            $branchId = trim((string) session('active_branch_id', ''));
+            $branchName = trim((string) session('active_branch_name', ''));
+
+            if ($companyId > 0 && Schema::hasColumn('customers', 'company_id')) {
+                $customersQuery->where('company_id', $companyId)
+                    ->orWhere(function ($sub) use ($userId) {
+                        $sub->whereNull('company_id')
+                            ->where('user_id', $userId);
+                    });
+            }
+            if ($branchId !== '' || $branchName !== '') {
+                $customersQuery->where(function ($sub) use ($branchId, $branchName) {
+                    if ($branchId !== '' && Schema::hasColumn('customers', 'branch_id')) {
+                        $sub->where('branch_id', $branchId);
+                    }
+                    if ($branchName !== '' && Schema::hasColumn('customers', 'branch_name')) {
+                        $sub->orWhere('branch_name', $branchName);
+                    }
+                });
+            }
+
+            $customers = $customersQuery->get();
         }
         return view('Quotations.add-quotations', compact('customers'));
     }
@@ -327,7 +390,31 @@ class HomeController extends Controller
         $customers = collect();
         if (Schema::hasTable('customers')) {
             $customerNameColumn = Schema::hasColumn('customers', 'name') ? 'name' : 'customer_name';
-            $customers = Customer::orderBy($customerNameColumn)->get();
+            $customersQuery = Customer::orderBy($customerNameColumn);
+            $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+            $userId = (int) (Auth::id() ?? 0);
+            $branchId = trim((string) session('active_branch_id', ''));
+            $branchName = trim((string) session('active_branch_name', ''));
+
+            if ($companyId > 0 && Schema::hasColumn('customers', 'company_id')) {
+                $customersQuery->where('company_id', $companyId)
+                    ->orWhere(function ($sub) use ($userId) {
+                        $sub->whereNull('company_id')
+                            ->where('user_id', $userId);
+                    });
+            }
+            if ($branchId !== '' || $branchName !== '') {
+                $customersQuery->where(function ($sub) use ($branchId, $branchName) {
+                    if ($branchId !== '' && Schema::hasColumn('customers', 'branch_id')) {
+                        $sub->where('branch_id', $branchId);
+                    }
+                    if ($branchName !== '' && Schema::hasColumn('customers', 'branch_name')) {
+                        $sub->orWhere('branch_name', $branchName);
+                    }
+                });
+            }
+
+            $customers = $customersQuery->get();
         }
         return view('Quotations.edit-quotations', compact('quotation', 'customers'));
     }
@@ -348,6 +435,11 @@ class HomeController extends Controller
         }
         $validated['status'] = $validated['status'] ?? 'Pending';
 
+        $validated['company_id'] = Auth::user()?->company_id ?? session('current_tenant_id');
+        $validated['user_id'] = Auth::id();
+        $validated['branch_id'] = session('active_branch_id');
+        $validated['branch_name'] = session('active_branch_name');
+
         Quotation::create($validated);
 
         return redirect()->route('quotations')->with('success', 'Quotation created successfully.');
@@ -367,6 +459,10 @@ class HomeController extends Controller
         ]);
 
         $validated['status'] = $validated['status'] ?? 'Pending';
+        $validated['company_id'] = $quotation->company_id ?? (Auth::user()?->company_id ?? session('current_tenant_id'));
+        $validated['user_id'] = $quotation->user_id ?? Auth::id();
+        $validated['branch_id'] = $quotation->branch_id ?? session('active_branch_id');
+        $validated['branch_name'] = $quotation->branch_name ?? session('active_branch_name');
         $quotation->update($validated);
 
         return redirect()->route('quotations')->with('success', 'Quotation updated successfully.');

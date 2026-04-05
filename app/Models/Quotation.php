@@ -13,6 +13,10 @@ class Quotation extends Model
     protected $fillable = [
         'quotation_id',
         'customer_id',
+        'company_id',
+        'user_id',
+        'branch_id',
+        'branch_name',
         'total',
         'status',
         'note',

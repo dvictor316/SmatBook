@@ -83,7 +83,8 @@ class DashboardController extends Controller
                 })
                 ->first();
         } else {
-            $company = Company::where('id', $user->company_id)
+            $tenantId = (int) ($user->company_id ?? session('current_tenant_id') ?? 0);
+            $company = Company::where('id', $tenantId)
                 ->orWhere('user_id', $user->id)
                 ->orWhere('owner_id', $user->id)
                 ->first();
@@ -173,7 +174,7 @@ class DashboardController extends Controller
 
      // 4. PACKAGING DATA FOR DEEP SAPPHIRE VIEW
         $monthlySalesData = $this->getMonthlySalesData($company, $activeBranch);
-        $monthlyExpenseData = $this->getMonthlyExpensesData($company);
+        $monthlyExpenseData = $this->getMonthlyExpensesData($company, $activeBranch);
         $monthlyProfitData = $this->getMonthlyProfitData($monthlySalesData, $monthlyExpenseData);
         $salesCountByMonth = $this->getSalesCountByMonth($company, $activeBranch);
         $topCustomers = $this->getTopCustomers($company, $activeBranch);
@@ -336,7 +337,7 @@ class DashboardController extends Controller
 
     private function getTotalExpenses($company, ?array $activeBranch = null) {
         if (!Schema::hasTable('expenses')) return 0;
-        return $this->scopeByCompany(Expense::query(), 'expenses', $company)
+        return $this->scopeExpensesByContext(Expense::query(), $company, $activeBranch, 'expenses')
             ->where(function ($q) {
                 $q->whereRaw('LOWER(status) = ?', ['approved'])->orWhereNull('status');
             })
@@ -484,9 +485,9 @@ class DashboardController extends Controller
             });
     }
 
-    private function getMonthlyExpensesData($company) {
+    private function getMonthlyExpensesData($company, ?array $activeBranch = null) {
         if (!Schema::hasTable('expenses')) return collect();
-        return $this->scopeByCompany(Expense::query(), 'expenses', $company)
+        return $this->scopeExpensesByContext(Expense::query(), $company, $activeBranch, 'expenses')
             ->select(
                 DB::raw('MONTHNAME(created_at) as month'),
                 DB::raw('MONTH(created_at) as month_num'),
@@ -762,14 +763,41 @@ class DashboardController extends Controller
             return $query;
         }
 
-        if (Schema::hasColumn($table, 'branch_id') && !empty($activeBranch['id'])) {
-            return $query->where($table . '.branch_id', (string) $activeBranch['id']);
-        }
+        $branchId = (string) ($activeBranch['id'] ?? '');
+        $branchName = (string) ($activeBranch['name'] ?? '');
 
-        if (Schema::hasColumn($table, 'branch_name') && !empty($activeBranch['name'])) {
-            return $query->where($table . '.branch_name', (string) $activeBranch['name']);
+        if ($branchId !== '' || $branchName !== '') {
+            $query->where(function ($sub) use ($table, $branchId, $branchName) {
+                if ($branchId !== '' && Schema::hasColumn($table, 'branch_id')) {
+                    $sub->where($table . '.branch_id', $branchId);
+                }
+                if ($branchName !== '' && Schema::hasColumn($table, 'branch_name')) {
+                    $sub->orWhere($table . '.branch_name', $branchName);
+                }
+            });
         }
 
         return $query;
+    }
+
+    private function scopeExpensesByContext($query, $company, ?array $activeBranch = null, string $table = 'expenses')
+    {
+        $query = $this->scopeByCompany($query, $table, $company);
+
+        if (empty($activeBranch['id']) && empty($activeBranch['name'])) {
+            return $query;
+        }
+
+        $branchId = (string) ($activeBranch['id'] ?? '');
+        $branchName = (string) ($activeBranch['name'] ?? '');
+
+        return $query->where(function ($sub) use ($table, $branchId, $branchName) {
+            if ($branchId !== '' && Schema::hasColumn($table, 'branch_id')) {
+                $sub->where($table . '.branch_id', $branchId);
+            }
+            if ($branchName !== '' && Schema::hasColumn($table, 'branch_name')) {
+                $sub->orWhere($table . '.branch_name', $branchName);
+            }
+        });
     }
 }

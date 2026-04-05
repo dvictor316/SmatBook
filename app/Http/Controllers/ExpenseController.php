@@ -21,7 +21,7 @@ class ExpenseController extends Controller
 {
     private function applyTenantScope($query, string $table)
     {
-        $companyId = (int) (Auth::user()?->company_id ?? 0);
+        $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
         $userId = (int) (Auth::id() ?? 0);
 
         if ($companyId > 0 && Schema::hasColumn($table, 'company_id')) {
@@ -35,12 +35,32 @@ class ExpenseController extends Controller
         return $query;
     }
 
+    private function applyBranchScope($query, string $table = 'expenses')
+    {
+        $branchId = trim((string) session('active_branch_id', ''));
+        $branchName = trim((string) session('active_branch_name', ''));
+
+        if ($branchId === '' && $branchName === '') {
+            return $query;
+        }
+
+        return $query->where(function ($sub) use ($table, $branchId, $branchName) {
+            if ($branchId !== '' && Schema::hasColumn($table, 'branch_id')) {
+                $sub->where("{$table}.branch_id", $branchId);
+            }
+            if ($branchName !== '' && Schema::hasColumn($table, 'branch_name')) {
+                $sub->orWhere("{$table}.branch_name", $branchName);
+            }
+        });
+    }
+
     public function index()
     {
         $this->syncBanksToAssetAccounts();
 
         $expensesQuery = Expense::with('creator')->latest();
         $this->applyTenantScope($expensesQuery, 'expenses');
+        $this->applyBranchScope($expensesQuery, 'expenses');
         $expenses = $expensesQuery->paginate(15);
         $expenseAccounts = Schema::hasTable('accounts')
             ? $this->applyTenantScope(Account::where('type', 'Expense')->orderBy('name'), 'accounts')->get()
@@ -105,40 +125,26 @@ class ExpenseController extends Controller
             ];
 
             if (Schema::hasColumn('expenses', 'company_id')) {
-                $payload['company_id'] = Auth::user()?->company_id ?: null;
+                $payload['company_id'] = Auth::user()?->company_id ?? session('current_tenant_id');
             }
             if (Schema::hasColumn('expenses', 'user_id')) {
                 $payload['user_id'] = Auth::id();
+            }
+            if (Schema::hasColumn('expenses', 'branch_id')) {
+                $payload['branch_id'] = session('active_branch_id');
+            }
+            if (Schema::hasColumn('expenses', 'branch_name')) {
+                $payload['branch_name'] = session('active_branch_name');
             }
 
             $expense = Expense::create($payload);
 
             if ($request->status === 'Paid') {
-                Transaction::create([
-                    'account_id'       => $expenseAccount->id,
-                    'transaction_date' => now(),
-                    'debit'            => $request->amount,
-                    'credit'           => 0,
-                    'reference'        => $expense->expense_id,
-                    'description'      => 'Expense: ' . $request->company_name,
-                    'transaction_type' => 'Expense',
-                    'related_id'       => $expense->id,
-                    'related_type'     => Expense::class,
-                    'user_id'          => Auth::id(),
-                ]);
+                Transaction::where('related_id', $expense->id)
+                    ->where('related_type', Expense::class)
+                    ->delete();
 
-                Transaction::create([
-                    'account_id'       => $request->payment_account_id,
-                    'transaction_date' => now(),
-                    'debit'            => 0,
-                    'credit'           => $request->amount,
-                    'reference'        => $expense->expense_id,
-                    'description'      => 'Expense payment for ' . $request->company_name,
-                    'transaction_type' => 'Expense',
-                    'related_id'       => $expense->id,
-                    'related_type'     => Expense::class,
-                    'user_id'          => Auth::id(),
-                ]);
+                \App\Support\LedgerService::postExpense($expense->fresh());
             }
 
             return redirect()->route('expenses.index')->with('success', 'Expense saved successfully.');
@@ -200,6 +206,20 @@ class ExpenseController extends Controller
                 'image'          => $validated['image'] ?? $expense->image,
             ]);
 
+            if (Schema::hasColumn('expenses', 'branch_id') && empty($expense->branch_id)) {
+                $expense->branch_id = session('active_branch_id');
+            }
+            if (Schema::hasColumn('expenses', 'branch_name') && empty($expense->branch_name)) {
+                $expense->branch_name = session('active_branch_name');
+            }
+            if (Schema::hasColumn('expenses', 'company_id') && empty($expense->company_id)) {
+                $expense->company_id = Auth::user()?->company_id ?? session('current_tenant_id');
+            }
+            if (Schema::hasColumn('expenses', 'user_id') && empty($expense->user_id)) {
+                $expense->user_id = Auth::id();
+            }
+            $expense->save();
+
             // Rebuild ledger entries for this expense to keep accounting accurate.
             Transaction::where('related_id', $expense->id)
                 ->where('related_type', Expense::class)
@@ -207,31 +227,7 @@ class ExpenseController extends Controller
                 ->delete();
 
             if ($validated['status'] === 'Paid') {
-                Transaction::create([
-                    'account_id'       => $validated['account_id'],
-                    'transaction_date' => now(),
-                    'debit'            => $validated['amount'],
-                    'credit'           => 0,
-                    'reference'        => $expense->expense_id,
-                    'description'      => 'Expense: ' . $validated['company_name'],
-                    'transaction_type' => 'Expense',
-                    'related_id'       => $expense->id,
-                    'related_type'     => Expense::class,
-                    'user_id'          => Auth::id(),
-                ]);
-
-                Transaction::create([
-                    'account_id'       => $validated['payment_account_id'],
-                    'transaction_date' => now(),
-                    'debit'            => 0,
-                    'credit'           => $validated['amount'],
-                    'reference'        => $expense->expense_id,
-                    'description'      => 'Expense payment for ' . $validated['company_name'],
-                    'transaction_type' => 'Expense',
-                    'related_id'       => $expense->id,
-                    'related_type'     => Expense::class,
-                    'user_id'          => Auth::id(),
-                ]);
+                \App\Support\LedgerService::postExpense($expense->fresh());
             }
 
             return redirect()->route('expenses.index')->with('success', 'Expense updated successfully!');

@@ -15,7 +15,7 @@ class PaymentController extends Controller
 {
     private function applyTenantScope($query, string $table)
     {
-        $companyId = (int) (Auth::user()?->company_id ?? 0);
+        $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
         $userId = (int) (Auth::id() ?? 0);
         $scoped = false;
 
@@ -62,13 +62,18 @@ class PaymentController extends Controller
     {
         $activeBranch = $this->getActiveBranchContext();
 
-        if (!empty($activeBranch['id']) && Schema::hasColumn($table, 'branch_id')) {
-            $query->where("{$table}.branch_id", (string) $activeBranch['id']);
-            return $query;
-        }
+        $branchId = (string) ($activeBranch['id'] ?? '');
+        $branchName = (string) ($activeBranch['name'] ?? '');
 
-        if (!empty($activeBranch['name']) && Schema::hasColumn($table, 'branch_name')) {
-            $query->where("{$table}.branch_name", (string) $activeBranch['name']);
+        if ($branchId !== '' || $branchName !== '') {
+            $query->where(function ($sub) use ($table, $branchId, $branchName) {
+                if ($branchId !== '' && Schema::hasColumn($table, 'branch_id')) {
+                    $sub->where("{$table}.branch_id", $branchId);
+                }
+                if ($branchName !== '' && Schema::hasColumn($table, 'branch_name')) {
+                    $sub->orWhere("{$table}.branch_name", $branchName);
+                }
+            });
         }
 
         return $query;
@@ -126,7 +131,7 @@ class PaymentController extends Controller
                 $payload['payment_account_id'] = $request->payment_account_id;
             }
             if (Schema::hasColumn('payments', 'company_id')) {
-                $payload['company_id'] = Auth::user()?->company_id ?: null;
+                $payload['company_id'] = Auth::user()?->company_id ?? session('current_tenant_id');
             }
             if (Schema::hasColumn('payments', 'user_id')) {
                 $payload['user_id'] = Auth::id();

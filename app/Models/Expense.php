@@ -25,6 +25,8 @@ protected $fillable = [
     'notes', 
     'status', 
     'company_id',
+    'branch_id',
+    'branch_name',
     'created_by', 
     'image'
 ];
