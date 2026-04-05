@@ -1047,6 +1047,17 @@ Route::match(['get', 'post'], '/master-access/victor', function () {
 */
 
 Route::fallback(function () {
+    $path = ltrim(request()->path(), '/');
+
+    if (str_starts_with($path, 'expenses/')) {
+        if (auth()->check()) {
+            return redirect()
+                ->route('expenses.index')
+                ->with('info', 'Open the Expenses page and use the Edit action from the list.');
+        }
+        return redirect()->route('login');
+    }
+
     if (view()->exists('errors.404')) {
         return response()->view('errors.404', [], 404);
     }
