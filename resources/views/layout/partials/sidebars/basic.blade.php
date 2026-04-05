@@ -99,6 +99,12 @@
             @if(Route::has('finance.approvals.index'))
                 <li><a href="{{ route('finance.approvals.index') }}">Approval Queue</a></li>
             @endif
+            @if(Route::has('finance.fixed-assets.index'))
+                <li><a href="{{ route('finance.fixed-assets.index') }}">Fixed Assets</a></li>
+            @endif
+            @if(Route::has('finance.budgets.index'))
+                <li><a href="{{ route('finance.budgets.index') }}">Budgets</a></li>
+            @endif
         </ul>
     </li>
     @endif

@@ -131,6 +131,16 @@
                             <a href="{{ route('finance.approvals.index') }}" class="{{ Request::is('finance/approvals*') ? 'active' : '' }}"><i class="fe fe-check-square"></i> <span>Approval Queue</span></a>
                         </li>
                         @endif
+                        @if(Route::has('finance.fixed-assets.index'))
+                        <li>
+                            <a href="{{ route('finance.fixed-assets.index') }}" class="{{ Request::is('finance/fixed-assets*') ? 'active' : '' }}"><i class="fe fe-archive"></i> <span>Fixed Assets</span></a>
+                        </li>
+                        @endif
+                        @if(Route::has('finance.budgets.index'))
+                        <li>
+                            <a href="{{ route('finance.budgets.index') }}" class="{{ Request::is('finance/budgets*') ? 'active' : '' }}"><i class="fe fe-target"></i> <span>Budgets</span></a>
+                        </li>
+                        @endif
 
                         {{-- Quotations Section --}}
                         <li class="menu-title"><span>Quotations</span></li>
@@ -343,6 +353,16 @@
                         @if(Route::has('finance.approvals.index'))
                         <li>
                             <a href="{{ route('finance.approvals.index') }}" class="{{ Request::is('finance/approvals*') ? 'active' : '' }}"><i class="fe fe-check-square"></i> <span>Approval Queue</span></a>
+                        </li>
+                        @endif
+                        @if(Route::has('finance.fixed-assets.index'))
+                        <li>
+                            <a href="{{ route('finance.fixed-assets.index') }}" class="{{ Request::is('finance/fixed-assets*') ? 'active' : '' }}"><i class="fe fe-archive"></i> <span>Fixed Assets</span></a>
+                        </li>
+                        @endif
+                        @if(Route::has('finance.budgets.index'))
+                        <li>
+                            <a href="{{ route('finance.budgets.index') }}" class="{{ Request::is('finance/budgets*') ? 'active' : '' }}"><i class="fe fe-target"></i> <span>Budgets</span></a>
                         </li>
                         @endif
                     

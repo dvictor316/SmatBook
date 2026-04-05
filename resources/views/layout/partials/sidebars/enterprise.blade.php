@@ -169,6 +169,12 @@
                 @if(Route::has('finance.approvals.index'))
                     <li><a href="{{ route('finance.approvals.index') }}"><i class="fe fe-check-square"></i><span>Approval Queue</span></a></li>
                 @endif
+                @if(Route::has('finance.fixed-assets.index'))
+                    <li><a href="{{ route('finance.fixed-assets.index') }}"><i class="fe fe-archive"></i><span>Fixed Assets</span></a></li>
+                @endif
+                @if(Route::has('finance.budgets.index'))
+                    <li><a href="{{ route('finance.budgets.index') }}"><i class="fe fe-target"></i><span>Budgets</span></a></li>
+                @endif
                 <li class="{{ request()->routeIs('payroll.*') ? 'active' : '' }}">
                     <a href="{{ route('payroll.index') }}" class="{{ request()->routeIs('payroll.*') ? 'active' : '' }}">
                         <i class="fe fe-dollar-sign"></i><span>Payroll</span>

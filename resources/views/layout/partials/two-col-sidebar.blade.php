@@ -198,6 +198,20 @@
                                 <span>Approval Queue</span></a>
                         </li>
                         @endif
+                        @if(Route::has('finance.fixed-assets.index'))
+                        <li>
+                            <a class="{{ Request::is('finance/fixed-assets*') ? 'active' : '' }}" href="{{ route('finance.fixed-assets.index') }}"><i
+                                    class="fe fe-archive"></i>
+                                <span>Fixed Assets</span></a>
+                        </li>
+                        @endif
+                        @if(Route::has('finance.budgets.index'))
+                        <li>
+                            <a class="{{ Request::is('finance/budgets*') ? 'active' : '' }}" href="{{ route('finance.budgets.index') }}"><i
+                                    class="fe fe-target"></i>
+                                <span>Budgets</span></a>
+                        </li>
+                        @endif
                         <!-- /Finance & Accounts -->
 
                         <!-- Quotations -->

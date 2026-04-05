@@ -14,7 +14,7 @@ use App\Http\Controllers\{
     SuperAdminDashboardController, MessageController, CalendarController, EventController,
     NotificationController, ActivityLogController, BackupController, AuditController,
     TaxCenterController, TaxFilingController, PeriodCloseController, ProjectManagementController
-    , AiQuickAgentController, RecurringTransactionController, FinanceApprovalController
+    , AiQuickAgentController, RecurringTransactionController, FinanceApprovalController, FixedAssetController, BudgetController
 };
 use App\Http\Controllers\SuperAdmin\DeploymentManagerController;
 
@@ -726,6 +726,12 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::post('/approvals/from-purchase/{purchase}', [FinanceApprovalController::class, 'submitPurchase'])->name('approvals.from-purchase');
         Route::post('/approvals/{financeApproval}/approve', [FinanceApprovalController::class, 'approve'])->name('approvals.approve');
         Route::post('/approvals/{financeApproval}/reject', [FinanceApprovalController::class, 'reject'])->name('approvals.reject');
+        Route::get('/fixed-assets', [FixedAssetController::class, 'index'])->name('fixed-assets.index');
+        Route::post('/fixed-assets', [FixedAssetController::class, 'store'])->name('fixed-assets.store');
+        Route::post('/fixed-assets/{fixedAsset}/depreciate', [FixedAssetController::class, 'depreciate'])->name('fixed-assets.depreciate');
+        Route::get('/budgets', [BudgetController::class, 'index'])->name('budgets.index');
+        Route::post('/budgets', [BudgetController::class, 'store'])->name('budgets.store');
+        Route::post('/budgets/{budget}/toggle', [BudgetController::class, 'toggleStatus'])->name('budgets.toggle');
     });
     
     // Estimates
