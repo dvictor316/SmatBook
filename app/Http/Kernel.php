@@ -169,6 +169,7 @@ class Kernel extends HttpKernel
         |--------------------------------------------------------------------------
         */
         'plan.access' => \App\Http\Middleware\CheckPlanAccess::class,
+        'branch.required' => \App\Http\Middleware\RequireActiveBranch::class,
         // Add any other custom middleware aliases here
     ];
 

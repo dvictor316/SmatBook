@@ -523,7 +523,7 @@ Route::middleware('auth')->get('/impersonation/leave', [AuthController::class, '
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth', 'subscription.active'])->group(function () {
+Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(function () {
     
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('user.dashboard');
     Route::get('/blank-page', [HomeController::class, 'blankpage'])->name('blank-page');
