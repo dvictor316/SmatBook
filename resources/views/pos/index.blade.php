@@ -1508,6 +1508,18 @@ label {
 <script src="{{ asset('assets/js/select2.min.js') }}"></script>
 
 <script>
+window.POS_FALLBACK_REQUESTED = false;
+window.requestPosFallback = function(reason) {
+    if (window.POS_FALLBACK_REQUESTED) return;
+    window.POS_FALLBACK_REQUESTED = true;
+    if (typeof window.POS_ENABLE_FALLBACK === 'function') {
+        window.POS_ENABLE_FALLBACK();
+    }
+};
+window.addEventListener('error', function() {
+    window.requestPosFallback('js-error');
+});
+
 $(document).ready(function() {
     let cart = [];
     let lastSelectedProductId = null;
@@ -2240,8 +2252,7 @@ $(document).ready(function() {
 </script>
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    if (window.jQuery && window.jQuery.fn) return;
+window.POS_ENABLE_FALLBACK = function () {
     if (window.POS_VANILLA_BOUND) return;
     window.POS_VANILLA_BOUND = true;
 
@@ -2250,6 +2261,11 @@ document.addEventListener('DOMContentLoaded', function () {
     const productSearch = document.getElementById('product-search');
     const priceInput = document.getElementById('unit-price-input');
     const qtyInput = document.getElementById('quantity');
+    const discountInput = document.getElementById('discount');
+    const discountTypeInput = document.getElementById('discount-type');
+    const taxInput = document.getElementById('tax');
+    const addBtn = document.getElementById('add-btn');
+    const cartBody = document.getElementById('cart-body');
     const productImg = document.getElementById('product-img');
     const noImg = document.getElementById('no-img');
     const quickName = document.getElementById('quick-selected-name');
@@ -2259,6 +2275,17 @@ document.addEventListener('DOMContentLoaded', function () {
     const quickStock = document.getElementById('quick-selected-stock');
     const quickHealth = document.getElementById('quick-stock-health');
     const hdrSelected = document.getElementById('hdr-selected-product');
+    const sumSubtotal = document.getElementById('sum-subtotal');
+    const sumDiscount = document.getElementById('sum-discount');
+    const sumTax = document.getElementById('sum-tax');
+    const grandTotal = document.getElementById('grand-total');
+    const hdrCartCount = document.getElementById('hdr-cart-count');
+    const amountPaid = document.getElementById('amount-paid');
+    const itemTotal = document.getElementById('item-total');
+    const fmt = new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' });
+    const cart = [];
+
+    const alertFallback = (message) => window.alert(message);
 
     function applyVanillaSelection(source) {
         const data = source?.dataset || {};
@@ -2315,6 +2342,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
         if (hdrSelected) hdrSelected.textContent = data.name || 'Product';
+        updateItemTotal();
     }
 
     productCards.forEach((card) => {
@@ -2340,6 +2368,134 @@ document.addEventListener('DOMContentLoaded', function () {
                 img: data.img
             }});
         });
+    }
+
+    function updateItemTotal() {
+        const price = parseFloat(priceInput?.value || '0') || 0;
+        const qty = parseFloat(qtyInput?.value || '1') || 1;
+        const discount = parseFloat(discountInput?.value || '0') || 0;
+        const discountType = discountTypeInput?.value || 'percent';
+        const tax = parseFloat(taxInput?.value || '0') || 0;
+        const sub = price * qty;
+        const discVal = discountType === 'fixed' ? Math.min(discount, sub) : (sub * (discount / 100));
+        const afterDisc = sub - discVal;
+        const taxVal = afterDisc * (tax / 100);
+        const total = afterDisc + taxVal;
+        if (itemTotal) itemTotal.textContent = fmt.format(total);
+        return { sub, discVal, taxVal, total, discountType, discount };
+    }
+
+    function renderCart() {
+        if (!cartBody) return;
+        let html = '';
+        let totSub = 0;
+        let totDisc = 0;
+        let totTax = 0;
+        let totGrand = 0;
+
+        cart.forEach((item, i) => {
+            totSub += item.sub;
+            totDisc += item.discVal;
+            totTax += item.taxVal;
+            totGrand += item.total;
+
+            html += `
+                <tr>
+                    <td class="ps-3">
+                        <div class="fw-bold" style="color: var(--text-primary);">${item.name}</div>
+                        <small style="color: var(--text-secondary); font-size: 0.75rem;">${item.qty} ${item.unitLabel || 'unit'} × ${fmt.format(item.price)}</small>
+                    </td>
+                    <td class="text-center">
+                        <input type="number" min="0.01" step="0.01" value="${item.qty}" class="cart-qty-input" data-index="${i}">
+                    </td>
+                    <td class="text-end fw-bold tabular-nums" style="color: var(--text-primary);">${fmt.format(item.total)}</td>
+                    <td class="text-center">
+                        <button class="btn btn-sm btn-remove" data-remove="${i}"><i class="fas fa-trash-alt"></i></button>
+                    </td>
+                </tr>
+            `;
+        });
+
+        cartBody.innerHTML = html;
+        if (sumSubtotal) sumSubtotal.textContent = fmt.format(totSub);
+        if (sumDiscount) sumDiscount.textContent = totDisc > 0 ? '- ' + fmt.format(totDisc) : fmt.format(0);
+        if (sumTax) sumTax.textContent = totTax > 0 ? '+ ' + fmt.format(totTax) : fmt.format(0);
+        if (grandTotal) grandTotal.textContent = fmt.format(totGrand);
+        if (hdrCartCount) hdrCartCount.textContent = String(cart.length);
+        if (amountPaid) amountPaid.value = totGrand.toFixed(2);
+    }
+
+    if (cartBody) {
+        cartBody.addEventListener('input', function (e) {
+            const target = e.target;
+            if (!target || !target.classList.contains('cart-qty-input')) return;
+            const index = parseInt(target.getAttribute('data-index') || '0', 10);
+            if (Number.isNaN(index) || !cart[index]) return;
+            const qty = parseFloat(target.value || '1') || 1;
+            cart[index].qty = qty;
+            const line = updateItemTotal();
+            const price = cart[index].price;
+            const discount = cart[index].discountValue ?? cart[index].discount ?? 0;
+            const discountType = cart[index].discountType || 'percent';
+            const tax = cart[index].tax || 0;
+            const sub = price * qty;
+            const discVal = discountType === 'fixed' ? Math.min(discount, sub) : (sub * (discount / 100));
+            const afterDisc = sub - discVal;
+            const taxVal = afterDisc * (tax / 100);
+            cart[index].sub = sub;
+            cart[index].discVal = discVal;
+            cart[index].taxVal = taxVal;
+            cart[index].total = afterDisc + taxVal;
+            renderCart();
+        });
+        cartBody.addEventListener('click', function (e) {
+            const target = e.target.closest('button[data-remove]');
+            if (!target) return;
+            const index = parseInt(target.getAttribute('data-remove') || '0', 10);
+            if (Number.isNaN(index)) return;
+            cart.splice(index, 1);
+            renderCart();
+        });
+    }
+
+    if (addBtn) {
+        addBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            const option = productSelect?.options[productSelect.selectedIndex];
+            if (!option || !option.value) {
+                alertFallback('Select a product');
+                return;
+            }
+            const data = option.dataset || {};
+            const price = parseFloat(priceInput?.value || data.retail || data.price || '0') || 0;
+            const qty = parseFloat(qtyInput?.value || '1') || 1;
+            if (price <= 0) {
+                alertFallback('Price is required for this product.');
+                return;
+            }
+            const calc = updateItemTotal();
+            cart.push({
+                id: option.value,
+                name: data.name || option.textContent || 'Product',
+                qty,
+                unitLabel: data.baseUnit || 'unit',
+                price,
+                discountType: calc.discountType,
+                discountValue: calc.discount,
+                tax: parseFloat(taxInput?.value || '0') || 0,
+                sub: calc.sub,
+                discVal: calc.discVal,
+                taxVal: calc.taxVal,
+                total: calc.total
+            });
+            renderCart();
+        });
+    }
+};
+
+document.addEventListener('DOMContentLoaded', function () {
+    if (!window.jQuery || !window.jQuery.fn) {
+        window.POS_ENABLE_FALLBACK();
     }
 });
 </script>
