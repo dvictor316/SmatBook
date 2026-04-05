@@ -256,7 +256,7 @@
                                                 </div>
                                             </div>
                                         </td>
-                                        <td>{{ $product->category->name ?? 'N/A' }}</td>
+                                        <td>{{ $product->category_name ?? 'N/A' }}</td>
                                         <td><span class="badge bg-soft-info text-info">{{ $product->base_unit_name }}</span></td>
                                         <td>
                                                 @if((int) ($product->units_per_roll ?? 0) > 0)

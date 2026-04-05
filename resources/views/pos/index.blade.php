@@ -1701,7 +1701,9 @@ $(document).ready(function() {
 
     $(document).on('click', '.product-card', function() {
         const productId = $(this).data('id');
-        $('#product-select').val(String(productId)).trigger('change');
+        const option = $(`#product-select option[value="${productId}"]`);
+        $('#product-select').val(String(productId));
+        applyProductSelection(option);
     });
 
     $('#product-search').on('change', function() {
@@ -1710,7 +1712,9 @@ $(document).ready(function() {
         }
         const productId = $(this).val();
         if (!productId) return;
-        $('#product-select').val(String(productId)).trigger('change');
+        const option = $(`#product-select option[value="${productId}"]`);
+        $('#product-select').val(String(productId));
+        applyProductSelection(option);
     });
 
     // Barcode
@@ -1740,7 +1744,8 @@ $(document).ready(function() {
         });
 
         if (matchedOption && matchedOption.val()) {
-            $('#product-select').val(matchedOption.val()).trigger('change');
+            $('#product-select').val(matchedOption.val());
+            applyProductSelection(matchedOption);
             $('#barcode-input').val('');
             barcodeBuffer = '';
             return true;
@@ -1823,9 +1828,8 @@ $(document).ready(function() {
     }
 
     // Product Change
-    $('#product-select').on('change', function() {
-        let opt = $(this).find(':selected');
-        if(!opt.val()) {
+    function applyProductSelection(opt) {
+        if (!opt || !opt.val()) {
             $('#unit-price-input').val('');
             $('#qty-label').text('Quantity');
             $('#unit-helper-copy').text('Select a product to unlock the right unit packs and live pricing.');
@@ -1875,15 +1879,19 @@ $(document).ready(function() {
         }
         syncActiveProductCard(opt.val());
 
-        if(opt.data('img')) {
+        if (opt.data('img')) {
             $('#product-img').attr('src', opt.data('img')).show();
             $('#no-img').hide();
         } else {
             $('#product-img').hide();
             $('#no-img').show();
         }
-        
+
         calculate();
+    }
+
+    $('#product-select').on('change', function() {
+        applyProductSelection($(this).find(':selected'));
     });
 
     $('input[name="unit_type"]').on('change', () => $('#product-select').trigger('change'));
@@ -1943,7 +1951,8 @@ $(document).ready(function() {
         });
 
         renderCart();
-        $('#product-select').val('').trigger('change');
+        $('#product-select').val('');
+        applyProductSelection($('#product-select').find(':selected'));
         $('#quantity').val(1);
         $('#discount, #tax').val(0);
         $('#discount-type').val('percent');
@@ -2033,7 +2042,9 @@ $(document).ready(function() {
 
         $(`#unit-type-${item.unitType || 'unit'}`).prop('checked', true);
         $('#price-tier').val(item.priceLevel || 'retail');
-        $('#product-select').val(String(item.id)).trigger('change');
+        const option = $(`#product-select option[value="${item.id}"]`);
+        $('#product-select').val(String(item.id));
+        applyProductSelection(option);
         $('#quantity').val(item.qty);
         $('#discount-type').val(item.discountType || 'percent');
         $('#discount').val(item.discountValue ?? item.discount || 0);
@@ -2089,7 +2100,8 @@ $(document).ready(function() {
         $('#split-card-wrap').addClass('d-none');
         $('#split-card-account-wrap').addClass('d-none');
 
-        $('#product-select').val('').trigger('change');
+        $('#product-select').val('');
+        applyProductSelection($('#product-select').find(':selected'));
         syncProductSearchValue(null);
         $('#quick-search').val('');
         $('#barcode-input').val('');

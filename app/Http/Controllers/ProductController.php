@@ -437,10 +437,11 @@ class ProductController extends Controller
         try {
             $search = $request->input('search');
             $activeBranch = $this->getActiveBranchContext();
+            $hasCategories = Schema::hasTable('categories') && Schema::hasColumn('products', 'category_id');
             $query = Product::query();
             $this->applyTenantScope($query, 'products');
 
-        if (Schema::hasTable('categories') && Schema::hasColumn('products', 'category_id')) {
+        if ($hasCategories) {
             $query->with('category');
         }
 
@@ -482,8 +483,9 @@ class ProductController extends Controller
         }
 
         $products = $query->paginate(15)->withQueryString();
-        $products->getCollection()->transform(function ($product) use ($activeBranch) {
+        $products->getCollection()->transform(function ($product) use ($activeBranch, $hasCategories) {
             $product->setAttribute('active_branch_stock', $this->branchInventory->getAvailableStock($product, $activeBranch));
+            $product->setAttribute('category_name', $hasCategories ? ($product->category->name ?? null) : null);
             return $product;
         });
         $productRows = $products instanceof \Illuminate\Pagination\AbstractPaginator
