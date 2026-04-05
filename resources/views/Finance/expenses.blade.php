@@ -377,7 +377,7 @@
                                     <i class="fas fa-plus-circle me-1"></i>Add Bank/Cash
                                 </a>
                             </div>
-                            <select class="form-select border-success" name="payment_account_id" required>
+                            <select class="form-select border-success" name="payment_account_id">
                                 <option value="">-- Choose Bank/Cash --</option>
                                 @foreach($assetAccounts as $acc)
                                     <option value="{{ $acc->id }}" {{ strtolower((string) $expense->payment_mode) === strtolower((string) $acc->name) ? 'selected' : '' }}>

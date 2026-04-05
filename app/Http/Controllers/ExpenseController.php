@@ -241,7 +241,7 @@ class ExpenseController extends Controller
             $paymentAccount = null;
             if (!empty($validated['payment_account_id'])) {
                 $paymentAccount = Account::findOrFail((int) $validated['payment_account_id']);
-            } elseif ($validated['status'] === 'Paid') {
+            } elseif ($validated['status'] === 'Paid' && empty($expense->payment_mode)) {
                 return back()->withInput()->with('error', 'Select a Paid From (Credit Account) to mark this expense as Paid.');
             }
 
