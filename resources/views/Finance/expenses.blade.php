@@ -100,6 +100,14 @@
                                                         <a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#edit_expense_{{ $expense->id }}">
                                                             <i class="far fa-edit me-2 text-primary"></i>Edit
                                                         </a>
+                                                        @if (strtolower((string) $expense->status) !== 'paid')
+                                                            <form action="{{ route('expenses.mark-paid', $expense->id) }}" method="POST" class="d-inline">
+                                                                @csrf
+                                                                <button type="submit" class="dropdown-item text-success">
+                                                                    <i class="far fa-circle-check me-2"></i>Mark as Paid
+                                                                </button>
+                                                            </form>
+                                                        @endif
                                                         <span class="dropdown-item text-muted"><i class="far fa-user me-2"></i>{{ $expense->creator?->name ?? 'System' }}</span>
                                                         <div class="dropdown-divider"></div>
                                                         <form action="{{ route('expenses.destroy', $expense->id) }}" method="POST" class="d-inline">

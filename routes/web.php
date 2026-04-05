@@ -745,6 +745,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
     
     // Expenses
     Route::resource('expenses', ExpenseController::class);
+    Route::post('/expenses/{id}/mark-paid', [ExpenseController::class, 'markPaid'])->name('expenses.mark-paid');
     Route::get('/expenses/download/{filename}', [ExpenseController::class, 'download'])->name('expenses.download');
     Route::post('/expenses/quick-add-bank', [ExpenseController::class, 'quickAddBank'])->name('expenses.quick-add-bank');
     Route::post('/expenses/quick-add-category', [ExpenseController::class, 'quickAddCategory'])->name('expenses.quick-add-category');

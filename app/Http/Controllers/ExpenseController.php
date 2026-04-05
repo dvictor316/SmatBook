@@ -337,6 +337,43 @@ class ExpenseController extends Controller
             ->with('success', 'Expense deleted successfully!');
     }
 
+    public function markPaid(Request $request, $id)
+    {
+        $expenseQuery = $this->applyTenantScope(Expense::query(), 'expenses');
+        $this->applyBranchScope($expenseQuery, 'expenses');
+        $expense = $expenseQuery->find($id);
+        if (!$expense) {
+            return redirect()
+                ->route('expenses.index')
+                ->with('error', 'Expense not found for the active branch.');
+        }
+
+        $paymentAccount = null;
+        if ($request->filled('payment_account_id')) {
+            $paymentAccount = Account::findOrFail((int) $request->input('payment_account_id'));
+            $expense->payment_mode = $paymentAccount->name;
+        }
+
+        if (empty($expense->payment_mode)) {
+            return redirect()
+                ->route('expenses.index')
+                ->with('error', 'Select a Paid From (Credit Account) before marking this expense as Paid.');
+        }
+
+        $expense->status = 'Paid';
+        $expense->payment_status = 'paid';
+        $expense->save();
+
+        Transaction::where('related_id', $expense->id)
+            ->where('related_type', Expense::class)
+            ->where('transaction_type', 'Expense')
+            ->delete();
+
+        \App\Support\LedgerService::postExpense($expense->fresh());
+
+        return redirect()->route('expenses.index')->with('success', 'Expense marked as Paid and posted to the ledger.');
+    }
+
     public function show($id)
     {
         $expenseQuery = $this->applyTenantScope(Expense::query(), 'expenses');
