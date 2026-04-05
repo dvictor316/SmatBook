@@ -90,6 +90,19 @@ class TrialBalanceController extends Controller
         $txnTotals = Transaction::query()
             ->selectRaw('account_id, SUM(debit) as total_debit, SUM(credit) as total_credit')
             ->whereDate('transaction_date', '<=', $end->toDateString())
+            ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
+                $branchId = trim((string) ($activeBranch['id'] ?? ''));
+                $branchName = trim((string) ($activeBranch['name'] ?? ''));
+
+                return $query->where(function ($sub) use ($branchId, $branchName) {
+                    if ($branchId !== '') {
+                        $sub->where('branch_id', $branchId);
+                    }
+                    if ($branchName !== '') {
+                        $sub->orWhere('branch_name', $branchName);
+                    }
+                });
+            })
             ->groupBy('account_id')
             ->get()
             ->keyBy('account_id');

@@ -35,11 +35,16 @@ class TrialBalanceExport implements FromCollection, WithHeadings
             ->groupBy('account_id');
 
         if ($this->branchScope !== 'all') {
-            if (!empty($this->branchId)) {
-                $txnQuery->where('branch_id', $this->branchId);
-            } elseif (!empty($this->branchName)) {
-                $txnQuery->where('branch_name', $this->branchName);
-            }
+            $branchId = trim((string) ($this->branchId ?? ''));
+            $branchName = trim((string) ($this->branchName ?? ''));
+            $txnQuery->where(function ($sub) use ($branchId, $branchName) {
+                if ($branchId !== '') {
+                    $sub->where('branch_id', $branchId);
+                }
+                if ($branchName !== '') {
+                    $sub->orWhere('branch_name', $branchName);
+                }
+            });
         }
 
         $txnTotals = $txnQuery->get()->keyBy('account_id');
