@@ -605,6 +605,28 @@ public function show($id)
         }
     }
 
+    public function markPaid(Request $request, $id)
+    {
+        $purchaseQuery = Purchase::query();
+        $this->applyTenantScope($purchaseQuery, 'purchases');
+        $this->applyBranchScope($purchaseQuery, 'purchases');
+        $purchase = $purchaseQuery->find($id);
+        if (!$purchase) {
+            return redirect()->route('purchases.index')->with('error', 'Purchase not found for the active branch.');
+        }
+
+        $purchase->status = 'paid';
+        if (Schema::hasColumn('purchases', 'paid_amount')) {
+            $purchase->paid_amount = (float) ($purchase->total_amount ?? 0);
+        }
+        if (Schema::hasColumn('purchases', 'paid_at')) {
+            $purchase->paid_at = now();
+        }
+        $purchase->save();
+
+        return redirect()->route('purchases.index')->with('success', 'Purchase marked as paid.');
+    }
+
     /**
      * Remove the specified purchase from storage.
      */

@@ -1,6 +1,6 @@
 // Page: resources/views/Purchases/purchases.blade.php
 
-@php $page = 'products'; @endphp
+@php $page = 'purchases'; @endphp
 @extends('layout.mainlayout')
 
 @section('content')
@@ -120,35 +120,46 @@
                             <thead class="thead-light">
                                 <tr>
                                     <th>#</th>
-                                    <th>Product</th>
-                                    <th>SKU</th>
-                                    <th>Category</th>
-                                    <th>Price</th>
-                                    <th>Stock</th>
+                                    <th>Purchase No</th>
+                                    <th>Supplier</th>
+                                    <th>Total</th>
+                                    <th>Paid</th>
                                     <th>Status</th>
                                     <th class="no-print text-end">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @isset($products)
-                                    @forelse ($products as $product)
+                                @isset($purchases)
+                                    @forelse ($purchases as $purchase)
                                         <tr>
-                                            <td>{{ ($products->currentPage() - 1) * $products->perPage() + $loop->iteration }}</td>
-                                            <td><strong>{{ $product->name }}</strong></td>
-                                            <td>{{ $product->sku }}</td>
-                                            <td>{{ $product->category->name ?? 'N/A' }}</td>
-                                            <td>{{ number_format($product->price, 2) }}</td>
+                                            <td>{{ ($purchases->currentPage() - 1) * $purchases->perPage() + $loop->iteration }}</td>
+                                            <td><strong>{{ $purchase->purchase_no ?? ('PUR-' . $purchase->id) }}</strong></td>
+                                            <td>{{ $purchase->supplier?->name ?? $purchase->vendor?->name ?? 'Supplier' }}</td>
+                                            <td>{{ number_format((float) ($purchase->total_amount ?? 0), 2) }}</td>
+                                            <td>{{ number_format((float) ($purchase->paid_amount ?? 0), 2) }}</td>
                                             <td>
-                                                <span class="badge {{ $product->stock < 10 ? 'bg-danger' : 'bg-success' }}">
-                                                    {{ $product->stock }}
-                                                </span>
+                                                @php
+                                                    $status = strtolower((string) ($purchase->status ?? 'pending'));
+                                                    $statusClass = $status === 'paid' || $status === 'completed'
+                                                        ? 'bg-success'
+                                                        : ($status === 'pending' ? 'bg-warning text-dark' : 'bg-secondary');
+                                                @endphp
+                                                <span class="badge {{ $statusClass }}">{{ ucfirst($status) }}</span>
                                             </td>
-                                            <td>{{ ucfirst($product->status) }}</td>
-                                            <td class="text-end no-print">
-                                                <a href="{{ route('purchases.show', $product->id) }}" class="btn btn-sm btn-info text-white d-inline-flex align-items-center gap-1">
+                                            <td class="text-end no-print d-flex justify-content-end gap-2">
+                                                <a href="{{ route('purchases.show', $purchase->id) }}" class="btn btn-sm btn-info text-white d-inline-flex align-items-center gap-1">
                                                     <i class="far fa-eye"></i>
                                                     <span class="d-none d-md-inline">View</span>
                                                 </a>
+                                                @if (!in_array($status, ['paid', 'completed'], true))
+                                                    <form action="{{ route('purchases.mark-paid', $purchase->id) }}" method="POST">
+                                                        @csrf
+                                                        <button type="submit" class="btn btn-sm btn-success d-inline-flex align-items-center gap-1">
+                                                            <i class="fas fa-check-circle"></i>
+                                                            <span class="d-none d-md-inline">Mark Paid</span>
+                                                        </button>
+                                                    </form>
+                                                @endif
                                             </td>
                                         </tr>
                                     @empty
@@ -159,7 +170,7 @@
                                 @else
                                     <tr>
                                         <td colspan="8" class="text-center py-5 text-danger">
-                                            <strong>Error: Product data not loaded.</strong>
+                                            <strong>Error: Purchase data not loaded.</strong>
                                         </td>
                                     </tr>
                                 @endisset
@@ -167,9 +178,9 @@
                         </table>
 
                         {{-- Pagination Links (Hidden on Print) --}}
-                        @if(isset($products) && method_exists($products, 'links'))
+                        @if(isset($purchases) && method_exists($purchases, 'links'))
                             <div class="d-flex justify-content-center mt-4 no-print">
-                                {{ $products->appends(request()->query())->links() }}
+                                {{ $purchases->appends(request()->query())->links() }}
                             </div>
                         @endif
                     </div>

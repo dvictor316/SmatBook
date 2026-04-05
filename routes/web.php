@@ -724,6 +724,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
 
     // Purchases
     Route::resource('purchases', PurchaseController::class);
+    Route::post('/purchases/{id}/mark-paid', [PurchaseController::class, 'markPaid'])->name('purchases.mark-paid');
     Route::controller(PurchaseController::class)->group(function () {
         Route::get('/add-purchase-return', 'createReturn')->name('add-purchase-return');
         Route::get('/purchase-returns/create', 'createReturn')->name('purchase-returns.create');
