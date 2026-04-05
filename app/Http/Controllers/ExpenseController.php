@@ -215,7 +215,9 @@ class ExpenseController extends Controller
 
     public function update(Request $request, Expense $expense)
     {
-        $expense = $this->applyTenantScope(Expense::query(), 'expenses')->findOrFail($expense->id);
+        $expenseQuery = $this->applyTenantScope(Expense::query(), 'expenses');
+        $this->applyBranchScope($expenseQuery, 'expenses');
+        $expense = $expenseQuery->findOrFail($expense->id);
 
         $validated = $request->validate([
             'company_name' => 'required|string|max:191',
@@ -282,7 +284,9 @@ class ExpenseController extends Controller
 
     public function destroy(Expense $expense)
     {
-        $expense = $this->applyTenantScope(Expense::query(), 'expenses')->findOrFail($expense->id);
+        $expenseQuery = $this->applyTenantScope(Expense::query(), 'expenses');
+        $this->applyBranchScope($expenseQuery, 'expenses');
+        $expense = $expenseQuery->findOrFail($expense->id);
 
         Transaction::where('related_id', $expense->id)
             ->where('related_type', Expense::class)
@@ -296,6 +300,28 @@ class ExpenseController extends Controller
 
         return redirect()->route('expenses.index')
             ->with('success', 'Expense deleted successfully!');
+    }
+
+    public function show(Expense $expense)
+    {
+        $expenseQuery = $this->applyTenantScope(Expense::query(), 'expenses');
+        $this->applyBranchScope($expenseQuery, 'expenses');
+        $expenseQuery->findOrFail($expense->id);
+
+        return redirect()
+            ->route('expenses.index')
+            ->with('info', 'Expense details are available in the list view.');
+    }
+
+    public function edit(Expense $expense)
+    {
+        $expenseQuery = $this->applyTenantScope(Expense::query(), 'expenses');
+        $this->applyBranchScope($expenseQuery, 'expenses');
+        $expenseQuery->findOrFail($expense->id);
+
+        return redirect()
+            ->route('expenses.index')
+            ->with('info', 'Use the edit action in the list to update this expense.');
     }
 
     /**
