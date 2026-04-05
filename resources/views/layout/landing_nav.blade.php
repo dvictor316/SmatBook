@@ -1255,6 +1255,7 @@
 
 <!-- ===== MAIN CONTENT ===== -->
 <main>
+    @include('layout.partials.flash-messages')
     @yield('content')
 </main>
 
