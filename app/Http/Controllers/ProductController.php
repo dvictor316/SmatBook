@@ -1362,14 +1362,93 @@ public function inventory(Request $request)
     public function inventory_history($id)
     {
         $activeBranch = $this->getActiveBranchContext();
-        $inventoryHistories = DB::table('inventory_history')
-            ->join('products', 'inventory_history.product_id', '=', 'products.id')
-            ->select('inventory_history.*', 'products.name', 'products.sku', 'products.purchase_price')
-            ->where('inventory_history.product_id', $id)
-            ->tap(fn ($q) => $this->applyTenantScope($q, 'products'))
-            ->tap(fn ($q) => $this->applyBranchScope($q, 'inventory_history', $activeBranch))
-            ->orderByDesc('inventory_history.created_at')
-            ->get();
+        $inventoryHistories = collect();
+
+        if (Schema::hasTable('inventory_history') && Schema::hasTable('products')) {
+            $historyQuery = DB::table('inventory_history')
+                ->join('products', 'inventory_history.product_id', '=', 'products.id')
+                ->select(
+                    'inventory_history.id',
+                    'inventory_history.created_at',
+                    'inventory_history.type',
+                    'inventory_history.reference',
+                    'inventory_history.quantity',
+                    'products.name',
+                    'products.sku',
+                    'products.purchase_price'
+                )
+                ->where('inventory_history.product_id', $id)
+                ->tap(fn ($q) => $this->applyTenantScope($q, 'products'))
+                ->tap(fn ($q) => $this->applyBranchScope($q, 'inventory_history', $activeBranch));
+
+            $inventoryHistories = $inventoryHistories->merge($historyQuery->get());
+        }
+
+        if (Schema::hasTable('purchase_items') && Schema::hasTable('purchases') && Schema::hasTable('products')) {
+            $purchaseQtyColumn = Schema::hasColumn('purchase_items', 'qty')
+                ? 'qty'
+                : (Schema::hasColumn('purchase_items', 'quantity') ? 'quantity' : null);
+            $purchaseReferenceColumn = Schema::hasColumn('purchases', 'reference_no')
+                ? 'reference_no'
+                : (Schema::hasColumn('purchases', 'purchase_no') ? 'purchase_no' : null);
+
+            if ($purchaseQtyColumn) {
+                $purchaseHistoryQuery = DB::table('purchase_items')
+                    ->join('purchases', 'purchase_items.purchase_id', '=', 'purchases.id')
+                    ->join('products', 'purchase_items.product_id', '=', 'products.id')
+                    ->selectRaw("
+                        CONCAT('purchase-', purchase_items.id) as id,
+                        purchases.created_at as created_at,
+                        'in' as type,
+                        COALESCE(" . ($purchaseReferenceColumn ? "purchases.{$purchaseReferenceColumn}" : 'NULL') . ", purchases.purchase_no, CONCAT('PUR-', purchases.id)) as reference,
+                        COALESCE(purchase_items.{$purchaseQtyColumn}, 0) as quantity,
+                        products.name as name,
+                        products.sku as sku,
+                        products.purchase_price as purchase_price
+                    ")
+                    ->where('purchase_items.product_id', $id)
+                    ->tap(fn ($q) => $this->applyTenantScope($q, 'products'))
+                    ->tap(fn ($q) => $this->applyTenantScope($q, 'purchases'))
+                    ->tap(fn ($q) => $this->applyBranchScope($q, 'purchase_items', $activeBranch));
+
+                $inventoryHistories = $inventoryHistories->merge($purchaseHistoryQuery->get());
+            }
+        }
+
+        if (Schema::hasTable('sale_items') && Schema::hasTable('sales') && Schema::hasTable('products')) {
+            $saleQtyColumn = Schema::hasColumn('sale_items', 'qty')
+                ? 'qty'
+                : (Schema::hasColumn('sale_items', 'quantity') ? 'quantity' : null);
+            $saleReferenceColumn = Schema::hasColumn('sales', 'invoice_no')
+                ? 'invoice_no'
+                : (Schema::hasColumn('sales', 'order_number') ? 'order_number' : null);
+
+            if ($saleQtyColumn) {
+                $saleHistoryQuery = DB::table('sale_items')
+                    ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+                    ->join('products', 'sale_items.product_id', '=', 'products.id')
+                    ->selectRaw("
+                        CONCAT('sale-', sale_items.id) as id,
+                        sales.created_at as created_at,
+                        'out' as type,
+                        COALESCE(" . ($saleReferenceColumn ? "sales.{$saleReferenceColumn}" : 'NULL') . ", CONCAT('SALE-', sales.id)) as reference,
+                        COALESCE(sale_items.{$saleQtyColumn}, 0) as quantity,
+                        products.name as name,
+                        products.sku as sku,
+                        products.purchase_price as purchase_price
+                    ")
+                    ->where('sale_items.product_id', $id)
+                    ->tap(fn ($q) => $this->applyTenantScope($q, 'products'))
+                    ->tap(fn ($q) => $this->applyTenantScope($q, 'sales'))
+                    ->tap(fn ($q) => $this->applyBranchScope($q, 'sale_items', $activeBranch));
+
+                $inventoryHistories = $inventoryHistories->merge($saleHistoryQuery->get());
+            }
+        }
+
+        $inventoryHistories = $inventoryHistories
+            ->sortByDesc(fn ($row) => strtotime((string) ($row->created_at ?? '1970-01-01 00:00:00')))
+            ->values();
 
         return view('Inventory.inventory-history', compact('inventoryHistories', 'activeBranch'));
     }
