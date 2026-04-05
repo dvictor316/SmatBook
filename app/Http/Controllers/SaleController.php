@@ -406,7 +406,7 @@ public function customerDetails($id = null)
     }
 
     if ($paymentMethod === 'split') {
-        $splitPaid = round(((float) $splitDetails['cash']) + ((float) $splitDetails['transfer']), 2);
+        $splitPaid = round(((float) $splitDetails['cash']) + ((float) $splitDetails['transfer']) + ((float) $splitDetails['card']), 2);
         if ($splitPaid <= 0) {
             return response()->json(['success' => false, 'message' => 'Enter split payment amounts before processing this sale.'], 422);
         }

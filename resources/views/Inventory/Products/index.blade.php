@@ -2,6 +2,14 @@
 @extends('layout.mainlayout')
 
 @section('content')
+@php
+    $products = $products ?? collect();
+    $productRows = $productRows ?? collect();
+    $categories = $categories ?? collect();
+    $availableBranches = $availableBranches ?? [];
+    $activeBranch = $activeBranch ?? [];
+    $stockTransferEnabled = $stockTransferEnabled ?? false;
+@endphp
 <style>
     /* Hide default DataTables buttons as we trigger them via our custom dropdown */
     .dt-buttons { display: none !important; }

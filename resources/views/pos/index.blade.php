@@ -1429,9 +1429,9 @@ label {
                             <label>Payment Method</label>
                             <select id="payment-method" class="form-select fw-bold">
                                 <option value="Cash">Cash</option>
-                                <option value="Split">Split (Cash + Transfer)</option>
+                                <option value="Split">Split (Cash + Transfer + POS)</option>
                             </select>
-                            <small class="text-muted">POS accepts cash or split (cash + transfer). No credit sales.</small>
+                            <small class="text-muted">POS accepts cash or split (cash + transfer + POS). No credit sales.</small>
                         </div>
                         <div class="col-md-6">
                             <label>Cash Amount</label>
@@ -1444,6 +1444,19 @@ label {
                         <div class="col-md-6 d-none" id="split-transfer-account-wrap">
                             <label>Transfer Account</label>
                             <select id="transfer-account" class="form-select">
+                                <option value="">-- Choose Bank --</option>
+                                @foreach($bankAccounts as $bank)
+                                    <option value="{{ $bank->id }}">{{ $bank->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6 d-none" id="split-card-wrap">
+                            <label>POS Amount</label>
+                            <input type="number" id="card-amount" class="form-control form-control-lg fw-bold text-end tabular-nums" style="font-size: 1rem; color: var(--primary-600);">
+                        </div>
+                        <div class="col-md-6 d-none" id="split-card-account-wrap">
+                            <label>POS Account</label>
+                            <select id="card-account" class="form-select">
                                 <option value="">-- Choose Bank --</option>
                                 @foreach($bankAccounts as $bank)
                                     <option value="{{ $bank->id }}">{{ $bank->name }}</option>
@@ -2012,12 +2025,14 @@ $(document).ready(function() {
         $('#barcode-input').focus();
     };
 
-    $(document).on('input', '#amount-paid, #transfer-amount', updateChange);
+    $(document).on('input', '#amount-paid, #transfer-amount, #card-amount', updateChange);
     $(document).on('change', '#payment-method', function() {
         const method = $('#payment-method').val();
         const isSplit = method === 'Split';
         $('#split-transfer-wrap').toggleClass('d-none', !isSplit);
         $('#split-transfer-account-wrap').toggleClass('d-none', !isSplit);
+        $('#split-card-wrap').toggleClass('d-none', !isSplit);
+        $('#split-card-account-wrap').toggleClass('d-none', !isSplit);
         updateChange();
     });
 
@@ -2025,8 +2040,9 @@ $(document).ready(function() {
         let total = parseFloat($('#grand-total').text().replace(/[^\d.]/g, '')) || 0;
         let cashPaid = parseFloat($('#amount-paid').val()) || 0;
         let transferPaid = parseFloat($('#transfer-amount').val()) || 0;
+        let cardPaid = parseFloat($('#card-amount').val()) || 0;
         let method = $('#payment-method').val();
-        let paid = method === 'Split' ? (cashPaid + transferPaid) : cashPaid;
+        let paid = method === 'Split' ? (cashPaid + transferPaid + cardPaid) : cashPaid;
         let change = paid - total;
         $('#change-amount').text(fmt.format(change)).css('color', change < 0 ? 'var(--danger-500)' : 'var(--success-500)');
     }
@@ -2046,8 +2062,12 @@ $(document).ready(function() {
         $('#amount-paid').prop('readonly', false).val('0.00');
         $('#transfer-amount').val('0.00');
         $('#transfer-account').val('');
+        $('#card-amount').val('0.00');
+        $('#card-account').val('');
         $('#split-transfer-wrap').addClass('d-none');
         $('#split-transfer-account-wrap').addClass('d-none');
+        $('#split-card-wrap').addClass('d-none');
+        $('#split-card-account-wrap').addClass('d-none');
 
         $('#product-select').val('').trigger('change');
         $('#product-search').val(null).trigger('change.select2');
@@ -2089,7 +2109,9 @@ $(document).ready(function() {
                 split_details: {
                     cash: parseFloat($('#amount-paid').val()) || 0,
                     transfer: parseFloat($('#transfer-amount').val()) || 0,
-                    transfer_account_id: $('#transfer-account').val() || null
+                    transfer_account_id: $('#transfer-account').val() || null,
+                    card: parseFloat($('#card-amount').val()) || 0,
+                    card_account_id: $('#card-account').val() || null
                 }
             },
             success: function(res) {
