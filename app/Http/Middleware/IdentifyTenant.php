@@ -44,7 +44,7 @@ class IdentifyTenant
         }
 
         // 3. Identify workspace via Domain model for standard customers
-        $tenant = Domain::where('domain', $subdomain)->first();
+        $tenant = Domain::where('domain_name', $subdomain)->first();
 
         if (!$tenant) {
             // Check if this is a manager route; if so, don't redirect to "not found"
