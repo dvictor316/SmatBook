@@ -5,7 +5,7 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use App\Models\{Domain, DeploymentManager}; 
-use Illuminate\Support\Facades\{View, Auth};
+use Illuminate\Support\Facades\{View, Auth, Log, Schema};
 
 class IdentifyTenant
 {
@@ -44,7 +44,31 @@ class IdentifyTenant
         }
 
         // 3. Identify workspace via Domain model for standard customers
-        $tenant = Domain::where('domain_name', $subdomain)->first();
+        $tenant = null;
+        try {
+            if (Schema::hasTable('domains')) {
+                $query = Domain::query();
+                if (Schema::hasColumn('domains', 'domain_name')) {
+                    $query->where('domain_name', $subdomain);
+                } elseif (Schema::hasColumn('domains', 'domain')) {
+                    $query->where('domain', $subdomain);
+                } else {
+                    Log::warning('IdentifyTenant: domains table missing domain column', [
+                        'host' => $host,
+                        'subdomain' => $subdomain,
+                    ]);
+                }
+                $tenant = $query->first();
+            }
+        } catch (\Throwable $e) {
+            Log::error('IdentifyTenant failed to resolve tenant', [
+                'host' => $host,
+                'subdomain' => $subdomain,
+                'error' => $e->getMessage(),
+            ]);
+            return redirect()->to(config('app.url') ?: 'https://smartprobook.com')
+                ->with('error', 'Workspace lookup failed. Please try again.');
+        }
 
         if (!$tenant) {
             // Check if this is a manager route; if so, don't redirect to "not found"
@@ -52,7 +76,7 @@ class IdentifyTenant
                 return $next($request);
             }
             
-            return redirect('https://smatbook.com/workspace-not-found');
+            return redirect((config('app.url') ?: 'https://smartprobook.com') . '/workspace-not-found');
         }
 
         // 4. Set Global Data for Sidebars and Menus
