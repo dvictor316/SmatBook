@@ -150,7 +150,7 @@ class ExpenseController extends Controller
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:4096',
         ]);
 
-        return DB::transaction(function () use ($request) {
+        return DB::transaction(function () use ($request, $sessionBranch) {
             [$expenseAccount, $categoryId] = $this->resolveExpenseAccountFromSelector((string) $request->account_id);
             $paymentAccount = Account::findOrFail($request->payment_account_id);
             $nextId = (int) Expense::max('id') + 1;
