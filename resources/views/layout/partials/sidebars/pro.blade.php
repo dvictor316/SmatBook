@@ -136,6 +136,12 @@
 
                 {{-- Payments --}}
                 <li><a href="{{ route('payments.index') }}"><i class="fe fe-credit-card"></i><span>Payments</span></a></li>
+                @if(Route::has('finance.recurring.index'))
+                    <li><a href="{{ route('finance.recurring.index') }}"><i class="fe fe-repeat"></i><span>Recurring Transactions</span></a></li>
+                @endif
+                @if(Route::has('finance.approvals.index'))
+                    <li><a href="{{ route('finance.approvals.index') }}"><i class="fe fe-check-square"></i><span>Approval Queue</span></a></li>
+                @endif
                 <li class="{{ request()->routeIs('branches.index') ? 'active' : '' }}">
                     <a href="{{ route('branches.index') }}" class="{{ request()->routeIs('branches.index') ? 'active' : '' }}">
                         <i class="fe fe-git-branch"></i><span>Branches</span>

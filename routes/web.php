@@ -14,7 +14,7 @@ use App\Http\Controllers\{
     SuperAdminDashboardController, MessageController, CalendarController, EventController,
     NotificationController, ActivityLogController, BackupController, AuditController,
     TaxCenterController, TaxFilingController, PeriodCloseController, ProjectManagementController
-    , AiQuickAgentController
+    , AiQuickAgentController, RecurringTransactionController, FinanceApprovalController
 };
 use App\Http\Controllers\SuperAdmin\DeploymentManagerController;
 
@@ -711,6 +711,22 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
     Route::view('/invoice-three', 'Sales.Invoices.invoice-three')->name('invoice-three');
     Route::view('/invoice-four-a', 'Sales.Invoices.invoice-four-a')->name('invoice-four-a');
     Route::view('/invoice-five', 'Sales.Invoices.invoice-five')->name('invoice-five');
+
+    // Finance operations
+    Route::prefix('finance')->name('finance.')->group(function () {
+        Route::get('/recurring-transactions', [RecurringTransactionController::class, 'index'])->name('recurring.index');
+        Route::post('/recurring-transactions', [RecurringTransactionController::class, 'store'])->name('recurring.store');
+        Route::post('/recurring-transactions/{recurringTransaction}/run', [RecurringTransactionController::class, 'run'])->name('recurring.run');
+        Route::post('/recurring-transactions/{recurringTransaction}/toggle', [RecurringTransactionController::class, 'toggleStatus'])->name('recurring.toggle');
+        Route::post('/recurring-transactions/from-expense/{expense}', [RecurringTransactionController::class, 'createFromExpense'])->name('recurring.from-expense');
+        Route::post('/recurring-transactions/from-purchase/{purchase}', [RecurringTransactionController::class, 'createFromPurchase'])->name('recurring.from-purchase');
+
+        Route::get('/approvals', [FinanceApprovalController::class, 'index'])->name('approvals.index');
+        Route::post('/approvals/from-expense/{expense}', [FinanceApprovalController::class, 'submitExpense'])->name('approvals.from-expense');
+        Route::post('/approvals/from-purchase/{purchase}', [FinanceApprovalController::class, 'submitPurchase'])->name('approvals.from-purchase');
+        Route::post('/approvals/{financeApproval}/approve', [FinanceApprovalController::class, 'approve'])->name('approvals.approve');
+        Route::post('/approvals/{financeApproval}/reject', [FinanceApprovalController::class, 'reject'])->name('approvals.reject');
+    });
     
     // Estimates
     Route::resource('estimates', EstimateController::class);

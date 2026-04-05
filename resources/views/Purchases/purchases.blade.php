@@ -1,5 +1,3 @@
-// Page: resources/views/Purchases/purchases.blade.php
-
 @php $page = 'purchases'; @endphp
 @extends('layout.mainlayout')
 
@@ -63,7 +61,10 @@
         1. TOP RIGHT ACTION BUTTONS 
         Moved here as requested
     --}}
-    <div class="d-flex justify-content-end mb-3">
+    <div class="d-flex justify-content-end mb-3 gap-2">
+        <a href="{{ route('purchases.create') }}" class="btn btn-success">
+            <i class="fas fa-plus-circle me-2"></i> New Purchase
+        </a>
         <div class="dropdown">
             <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                 <i class="fas fa-download me-2"></i> Export / Print
@@ -151,6 +152,20 @@
                                                     <i class="far fa-eye"></i>
                                                     <span class="d-none d-md-inline">View</span>
                                                 </a>
+                                                <form action="{{ route('finance.recurring.from-purchase', $purchase->id) }}" method="POST">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1">
+                                                        <i class="far fa-clock"></i>
+                                                        <span class="d-none d-md-inline">Template</span>
+                                                    </button>
+                                                </form>
+                                                <form action="{{ route('finance.approvals.from-purchase', $purchase->id) }}" method="POST">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-sm btn-outline-warning d-inline-flex align-items-center gap-1">
+                                                        <i class="far fa-paper-plane"></i>
+                                                        <span class="d-none d-md-inline">Approval</span>
+                                                    </button>
+                                                </form>
                                                 @if (!in_array($status, ['paid', 'completed'], true))
                                                     <form action="{{ route('purchases.mark-paid', $purchase->id) }}" method="POST">
                                                         @csrf

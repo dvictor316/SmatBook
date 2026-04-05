@@ -122,6 +122,18 @@
                                                         <a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#edit_expense_{{ $expense->id }}">
                                                             <i class="far fa-edit me-2 text-primary"></i>Edit
                                                         </a>
+                                                        <form action="{{ route('finance.recurring.from-expense', $expense->id) }}" method="POST" class="d-inline">
+                                                            @csrf
+                                                            <button type="submit" class="dropdown-item text-primary">
+                                                                <i class="far fa-clock me-2"></i>Create Recurring Template
+                                                            </button>
+                                                        </form>
+                                                        <form action="{{ route('finance.approvals.from-expense', $expense->id) }}" method="POST" class="d-inline">
+                                                            @csrf
+                                                            <button type="submit" class="dropdown-item text-warning">
+                                                                <i class="far fa-paper-plane me-2"></i>Submit For Approval
+                                                            </button>
+                                                        </form>
                                                         @if (strtolower((string) $expense->status) !== 'paid')
                                                             <form action="{{ route('expenses.mark-paid', $expense->id) }}" method="POST" class="d-inline">
                                                                 @csrf
