@@ -67,6 +67,7 @@ class Kernel extends HttpKernel
             \Illuminate\Session\Middleware\StartSession::class,
             \App\Http\Middleware\IdentifyTenant::class,
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+            \App\Http\Middleware\AutoSuccessFlash::class,
             \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             // Add subdomain detection for local dev routing
@@ -89,6 +90,7 @@ class Kernel extends HttpKernel
             \App\Http\Middleware\IdentifyTenant::class,
             
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+            \App\Http\Middleware\AutoSuccessFlash::class,
             \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             
