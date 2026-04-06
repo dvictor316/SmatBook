@@ -213,6 +213,16 @@
                         <li>
                             <a href="{{ url('delete-account-request') }}" class="{{ Request::is('delete-account-request') ? 'active' : '' }}"><i class="fe fe-trash-2"></i> <span>Delete Account Request</span></a>
                         </li>
+                        @if($sidebarHasEnterprise && Route::has('activity-log.index'))
+                        <li>
+                            <a href="{{ route('activity-log.index') }}" class="{{ Request::is('activity-log*') ? 'active' : '' }}"><i class="fe fe-activity"></i> <span>Activity Log</span></a>
+                        </li>
+                        @endif
+                        @if($sidebarHasEnterprise && Route::has('close.index'))
+                        <li>
+                            <a href="{{ route('close.index') }}" class="{{ Request::is('close*') ? 'active' : '' }}"><i class="fe fe-lock"></i> <span>Period Close</span></a>
+                        </li>
+                        @endif
 
                         {{-- Membership Section --}}
                         <li class="menu-title"><span>Membership</span></li>
@@ -454,6 +464,18 @@
                         <a class="{{ Request::is('delete-account-request') ? 'active' : '' }}"
                             href="{{ url('delete-account-request') }}"><i class="fe fe-trash-2"></i> <span>Delete Account Request</span></a>
                     </li>
+                    @if($sidebarHasEnterprise && Route::has('activity-log.index'))
+                    <li>
+                        <a class="{{ Request::is('activity-log*') ? 'active' : '' }}"
+                            href="{{ route('activity-log.index') }}"><i class="fe fe-activity"></i> <span>Activity Log</span></a>
+                    </li>
+                    @endif
+                    @if($sidebarHasEnterprise && Route::has('close.index'))
+                    <li>
+                        <a class="{{ Request::is('close*') ? 'active' : '' }}"
+                            href="{{ route('close.index') }}"><i class="fe fe-lock"></i> <span>Period Close</span></a>
+                    </li>
+                    @endif
                     <li class="menu-title"><span>Membership</span></li>
                     <li class="submenu">
                         <a href="#"><i class="fe fe-book"></i> <span> Membership</span> <span class="menu-arrow"></span></a>

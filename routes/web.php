@@ -551,8 +551,10 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
     Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
     
     // Activity Log
-    Route::get('/activity-log', [ActivityLogController::class, 'index'])->name('activity-log.index');
-    Route::get('/activity-log/export', [ActivityLogController::class, 'export'])->name('activity-log.export');
+    Route::middleware('plan.access:enterprise')->group(function () {
+        Route::get('/activity-log', [ActivityLogController::class, 'index'])->name('activity-log.index');
+        Route::get('/activity-log/export', [ActivityLogController::class, 'export'])->name('activity-log.export');
+    });
     
     // User Management
     Route::middleware('role:super_admin,administrator')->group(function () {
@@ -872,7 +874,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
     });
 
     // Period Close Controls
-    Route::prefix('close')->name('close.')->group(function () {
+    Route::prefix('close')->name('close.')->middleware('plan.access:enterprise')->group(function () {
         Route::get('/', [PeriodCloseController::class, 'index'])->name('index');
         Route::post('/periods', [PeriodCloseController::class, 'storePeriod'])->name('periods.store');
         Route::post('/periods/{periodId}/tasks', [PeriodCloseController::class, 'storeTask'])->name('tasks.store');

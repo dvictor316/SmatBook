@@ -317,6 +317,18 @@
                                 href="{{ url('delete-account-request') }}"><i class="fe fe-trash-2"></i> <span>Delete
                                     Account Request</span></a>
                         </li>
+                        @if($twoColHasEnterprise && Route::has('activity-log.index'))
+                        <li>
+                            <a class="{{ Request::is('activity-log*') ? 'active' : '' }}"
+                                href="{{ route('activity-log.index') }}"><i class="fe fe-activity"></i> <span>Activity Log</span></a>
+                        </li>
+                        @endif
+                        @if($twoColHasEnterprise && Route::has('close.index'))
+                        <li>
+                            <a class="{{ Request::is('close*') ? 'active' : '' }}"
+                                href="{{ route('close.index') }}"><i class="fe fe-lock"></i> <span>Period Close</span></a>
+                        </li>
+                        @endif
                         <!-- /User Management -->
 
                         <!-- Membership) -->

@@ -40,6 +40,15 @@ class ActivityLogController extends Controller
             $query->where('module', $module);
         }
 
+        if ($request->filled('from_date')) {
+            $query->whereDate('created_at', '>=', $request->input('from_date'));
+        }
+        if ($request->filled('to_date')) {
+            $query->whereDate('created_at', '<=', $request->input('to_date'));
+        }
+
+        $statsQuery = clone $query;
+
         $logs = $query->latest()->paginate(25)->withQueryString();
         $modules = ActivityLog::query()
             ->select('module')
@@ -49,7 +58,14 @@ class ActivityLogController extends Controller
             ->orderBy('module')
             ->pluck('module');
 
-        return view('activity-log.index', compact('logs', 'modules', 'search', 'module'));
+        $stats = [
+            'total' => (clone $statsQuery)->count(),
+            'today' => (clone $statsQuery)->whereDate('created_at', now()->toDateString())->count(),
+            'users' => (clone $statsQuery)->distinct('user_id')->count('user_id'),
+            'modules' => (clone $statsQuery)->whereNotNull('module')->distinct('module')->count('module'),
+        ];
+
+        return view('activity-log.index', compact('logs', 'modules', 'search', 'module', 'stats'));
     }
 
     /**

@@ -259,6 +259,9 @@
 
                 {{-- Activity Log --}}
                 <li><a href="{{ route('activity-log.index') }}"><i class="fe fe-activity"></i><span>Activity Log</span></a></li>
+                @if(Route::has('close.index'))
+                    <li><a href="{{ route('close.index') }}"><i class="fe fe-lock"></i><span>Period Close</span></a></li>
+                @endif
 
                 {{-- Settings --}}
                 <li><a href="{{ route('settings.index') }}"><i class="fe fe-settings"></i><span>Settings</span></a></li>

@@ -12,6 +12,9 @@ class CloseTask extends Model
     use HasFactory, TenantScoped;
 
     protected $fillable = [
+        'company_id',
+        'branch_id',
+        'branch_name',
         'accounting_period_id',
         'title',
         'description',

@@ -147,6 +147,12 @@
                 @if(Route::has('finance.budgets.index'))
                     <li><a href="{{ route('finance.budgets.index') }}"><i class="fe fe-target"></i><span>Budgets</span></a></li>
                 @endif
+                @if(Route::has('activity-log.index'))
+                    <li><a href="{{ route('activity-log.index') }}"><i class="fe fe-activity"></i><span>Activity Log</span></a></li>
+                @endif
+                @if(Route::has('close.index'))
+                    <li><a href="{{ route('close.index') }}"><i class="fe fe-lock"></i><span>Period Close</span></a></li>
+                @endif
                 <li class="{{ request()->routeIs('payroll.*') ? 'active' : '' }}">
                     <a href="{{ route('payroll.index') }}" class="{{ request()->routeIs('payroll.*') ? 'active' : '' }}">
                         <i class="fe fe-dollar-sign"></i><span>Payroll</span>

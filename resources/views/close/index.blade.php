@@ -38,6 +38,27 @@
     @if(session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>
     @endif
+    @if(session('error'))
+        <div class="alert alert-danger">{{ session('error') }}</div>
+    @endif
+    @if(session('info'))
+        <div class="alert alert-info">{{ session('info') }}</div>
+    @endif
+
+    <div class="row g-3 mb-3">
+        <div class="col-md-3">
+            <div class="card close-card"><div class="card-body"><div class="text-muted small text-uppercase fw-bold">Periods</div><div class="fs-4 fw-bold">{{ $stats['total'] ?? 0 }}</div></div></div>
+        </div>
+        <div class="col-md-3">
+            <div class="card close-card"><div class="card-body"><div class="text-muted small text-uppercase fw-bold">Open</div><div class="fs-4 fw-bold">{{ $stats['open'] ?? 0 }}</div></div></div>
+        </div>
+        <div class="col-md-3">
+            <div class="card close-card"><div class="card-body"><div class="text-muted small text-uppercase fw-bold">Closed</div><div class="fs-4 fw-bold">{{ $stats['closed'] ?? 0 }}</div></div></div>
+        </div>
+        <div class="col-md-3">
+            <div class="card close-card"><div class="card-body"><div class="text-muted small text-uppercase fw-bold">Pending Tasks</div><div class="fs-4 fw-bold">{{ $stats['pending_tasks'] ?? 0 }}</div></div></div>
+        </div>
+    </div>
 
     <div class="card close-card mb-3">
         <div class="card-header bg-white"><strong>Create Accounting Period</strong></div>
@@ -115,6 +136,9 @@
                         <div class="mb-2">
                             <form method="POST" action="{{ route('close.request', $period->id) }}" class="d-inline">
                                 @csrf
+                                <div class="mb-2">
+                                    <textarea class="form-control form-control-sm" name="notes" rows="2" placeholder="Optional close request note"></textarea>
+                                </div>
                                 <button class="btn btn-primary btn-sm text-white" {{ $period->status === 'closed' ? 'disabled' : '' }}>
                                     Request Close Approval
                                 </button>

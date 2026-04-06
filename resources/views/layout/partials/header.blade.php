@@ -217,6 +217,20 @@
             'icon' => 'fa-right-left',
             'keywords' => ['transfer audit', 'stock transfer', 'branch transfer', 'inventory movement'],
         ] : null,
+        $headerHasEnterprise && Route::has('activity-log.index') ? [
+            'title' => 'Activity Log',
+            'subtitle' => 'Audit trail of user and system actions',
+            'url' => route('activity-log.index'),
+            'icon' => 'fa-clipboard-list',
+            'keywords' => ['activity log', 'audit trail', 'audit', 'user actions'],
+        ] : null,
+        $headerHasEnterprise && Route::has('close.index') ? [
+            'title' => 'Period Close',
+            'subtitle' => 'Period-end tasks, approvals, and close controls',
+            'url' => route('close.index'),
+            'icon' => 'fa-lock',
+            'keywords' => ['period close', 'month end', 'close books', 'close approvals'],
+        ] : null,
         $headerHasEnterprise && Route::has('finance.fixed-assets.index') ? [
             'title' => 'Fixed Assets',
             'subtitle' => 'Asset register and depreciation runs',

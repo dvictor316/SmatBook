@@ -12,6 +12,9 @@ class CloseApproval extends Model
     use HasFactory, TenantScoped;
 
     protected $fillable = [
+        'company_id',
+        'branch_id',
+        'branch_name',
         'accounting_period_id',
         'requested_by',
         'approved_by',

@@ -12,6 +12,9 @@ class AccountingPeriod extends Model
     use HasFactory, TenantScoped;
 
     protected $fillable = [
+        'company_id',
+        'branch_id',
+        'branch_name',
         'name',
         'start_date',
         'end_date',

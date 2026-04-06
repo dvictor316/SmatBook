@@ -22,6 +22,21 @@
             </div>
         </div>
 
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm h-100"><div class="card-body"><div class="text-muted small text-uppercase fw-bold">Events</div><div class="fs-3 fw-bold">{{ $stats['total'] ?? 0 }}</div></div></div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm h-100"><div class="card-body"><div class="text-muted small text-uppercase fw-bold">Today</div><div class="fs-3 fw-bold">{{ $stats['today'] ?? 0 }}</div></div></div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm h-100"><div class="card-body"><div class="text-muted small text-uppercase fw-bold">Users</div><div class="fs-3 fw-bold">{{ $stats['users'] ?? 0 }}</div></div></div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm h-100"><div class="card-body"><div class="text-muted small text-uppercase fw-bold">Modules</div><div class="fs-3 fw-bold">{{ $stats['modules'] ?? 0 }}</div></div></div>
+            </div>
+        </div>
+
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-body">
                 <form method="GET" action="{{ route(Route::currentRouteName()) }}">
@@ -40,6 +55,14 @@
                                     </option>
                                 @endforeach
                             </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">From</label>
+                            <input type="date" name="from_date" value="{{ request('from_date') }}" class="form-control">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">To</label>
+                            <input type="date" name="to_date" value="{{ request('to_date') }}" class="form-control">
                         </div>
                         <div class="col-md-3 d-flex gap-2">
                             <button type="submit" class="btn btn-primary flex-grow-1">
