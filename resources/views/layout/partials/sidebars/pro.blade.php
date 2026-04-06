@@ -142,12 +142,6 @@
                 @if(Route::has('finance.approvals.index'))
                     <li><a href="{{ route('finance.approvals.index') }}"><i class="fe fe-check-square"></i><span>Approval Queue</span></a></li>
                 @endif
-                @if(Route::has('finance.fixed-assets.index'))
-                    <li><a href="{{ route('finance.fixed-assets.index') }}"><i class="fe fe-archive"></i><span>Fixed Assets</span></a></li>
-                @endif
-                @if(Route::has('finance.budgets.index'))
-                    <li><a href="{{ route('finance.budgets.index') }}"><i class="fe fe-target"></i><span>Budgets</span></a></li>
-                @endif
                 <li class="{{ request()->routeIs('branches.index') ? 'active' : '' }}">
                     <a href="{{ route('branches.index') }}" class="{{ request()->routeIs('branches.index') ? 'active' : '' }}">
                         <i class="fe fe-git-branch"></i><span>Branches</span>
@@ -201,6 +195,20 @@
                 {{-- LOCKED FEATURES - Upgrade to Enterprise --}}
                 <li class="menu-title"><span>Enterprise Features</span></li>
                 
+                <li>
+                    <a href="{{ Route::has('membership-plans') ? route('membership-plans', ['plan' => 'enterprise']) : url('/membership-plans?plan=enterprise') }}">
+                        <i class="fe fe-lock"></i>
+                        <span>Fixed Assets</span>
+                        <span class="badge bg-warning">Enterprise</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ Route::has('membership-plans') ? route('membership-plans', ['plan' => 'enterprise']) : url('/membership-plans?plan=enterprise') }}">
+                        <i class="fe fe-lock"></i>
+                        <span>Budgets</span>
+                        <span class="badge bg-warning">Enterprise</span>
+                    </a>
+                </li>
                 <li>
                     <a href="{{ Route::has('membership-plans') ? route('membership-plans', ['plan' => 'enterprise']) : url('/membership-plans?plan=enterprise') }}">
                         <i class="fe fe-lock"></i>

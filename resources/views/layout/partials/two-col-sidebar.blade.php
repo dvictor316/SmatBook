@@ -174,6 +174,15 @@
                         <!-- /Purchases -->
 
                         <!-- Finance & Accounts -->
+                        @php
+                            $twoColPlan = strtolower(trim((string) (session('user_plan') ?: (auth()->user()?->company?->plan ?? 'basic'))));
+                            $twoColIsSuper = auth()->check() && (
+                                in_array(strtolower((string) (auth()->user()?->role ?? '')), ['super_admin', 'superadmin', 'administrator', 'admin'], true)
+                                || strtolower((string) (auth()->user()?->email ?? '')) === 'donvictorlive@gmail.com'
+                            );
+                            $twoColHasProfessional = $twoColIsSuper || str_contains($twoColPlan, 'professional') || str_contains($twoColPlan, 'pro') || str_contains($twoColPlan, 'enterprise');
+                            $twoColHasEnterprise = $twoColIsSuper || str_contains($twoColPlan, 'enterprise');
+                        @endphp
                         <li>
                             <a class="{{ Request::is('expenses') ? 'active' : '' }}" href="{{ url('expenses') }}"><i
                                     class="fe fe-file-plus"></i>
@@ -184,32 +193,39 @@
                                     class="fe fe-credit-card"></i>
                                 <span>Payments</span></a>
                         </li>
-                        @if(Route::has('finance.recurring.index'))
+                        @if($twoColHasProfessional && Route::has('finance.recurring.index'))
                         <li>
                             <a class="{{ Request::is('finance/recurring-transactions*') ? 'active' : '' }}" href="{{ route('finance.recurring.index') }}"><i
                                     class="fe fe-repeat"></i>
                                 <span>Recurring Transactions</span></a>
                         </li>
                         @endif
-                        @if(Route::has('finance.approvals.index'))
+                        @if($twoColHasProfessional && Route::has('finance.approvals.index'))
                         <li>
                             <a class="{{ Request::is('finance/approvals*') ? 'active' : '' }}" href="{{ route('finance.approvals.index') }}"><i
                                     class="fe fe-check-square"></i>
                                 <span>Approval Queue</span></a>
                         </li>
                         @endif
-                        @if(Route::has('finance.fixed-assets.index'))
+                        @if($twoColHasEnterprise && Route::has('finance.fixed-assets.index'))
                         <li>
                             <a class="{{ Request::is('finance/fixed-assets*') ? 'active' : '' }}" href="{{ route('finance.fixed-assets.index') }}"><i
                                     class="fe fe-archive"></i>
                                 <span>Fixed Assets</span></a>
                         </li>
                         @endif
-                        @if(Route::has('finance.budgets.index'))
+                        @if($twoColHasEnterprise && Route::has('finance.budgets.index'))
                         <li>
                             <a class="{{ Request::is('finance/budgets*') ? 'active' : '' }}" href="{{ route('finance.budgets.index') }}"><i
                                     class="fe fe-target"></i>
                                 <span>Budgets</span></a>
+                        </li>
+                        @endif
+                        @if(!$twoColHasEnterprise && Route::has('membership-plans'))
+                        <li>
+                            <a class="{{ Request::is('membership-plans*') ? 'active' : '' }}" href="{{ route('membership-plans', ['plan' => 'enterprise']) }}"><i
+                                    class="fe fe-lock"></i>
+                                <span>Upgrade for Assets & Budgets</span></a>
                         </li>
                         @endif
                         <!-- /Finance & Accounts -->

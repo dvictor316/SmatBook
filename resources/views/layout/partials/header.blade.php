@@ -66,6 +66,20 @@
         }
     }
 
+    $normalizedHeaderPlan = strtolower(trim((string) (
+        session('user_plan')
+        ?: ($user?->company?->plan ?? 'basic')
+    )));
+    $headerIsSuperAdmin = $user && (
+        in_array(strtolower((string) ($user->role ?? '')), ['super_admin', 'superadmin', 'administrator', 'admin'], true)
+        || strtolower((string) ($user->email ?? '')) === 'donvictorlive@gmail.com'
+    );
+    $headerHasProfessional = $headerIsSuperAdmin
+        || str_contains($normalizedHeaderPlan, 'professional')
+        || str_contains($normalizedHeaderPlan, 'pro')
+        || str_contains($normalizedHeaderPlan, 'enterprise');
+    $headerHasEnterprise = $headerIsSuperAdmin || str_contains($normalizedHeaderPlan, 'enterprise');
+
     $headerSearchPlaceholder = 'Search customers, invoices, products...';
 
     if (request()->routeIs('customers.*') || request()->is('customers*', 'suppliers*')) {
@@ -84,6 +98,10 @@
         $headerSearchPlaceholder = 'Search notifications, alerts, updates...';
     } elseif (request()->routeIs('settings*') || request()->is('settings*')) {
         $headerSearchPlaceholder = 'Search settings, company profile, templates...';
+    } elseif (request()->routeIs('finance.*') || request()->is('finance/*')) {
+        $headerSearchPlaceholder = $headerHasEnterprise
+            ? 'Search recurring items, approvals, assets, budgets...'
+            : 'Search recurring items, approvals, expenses...';
     }
 
     $headerSearchItems = array_values(array_filter([
@@ -108,10 +126,10 @@
             'icon' => 'fa-warehouse',
             'keywords' => ['suppliers', 'procurement'],
         ] : null,
-        Route::has('products.index') ? [
+        Route::has('product-list') ? [
             'title' => 'Products',
             'subtitle' => 'Products, stock, and shelves',
-            'url' => route('products.index'),
+            'url' => route('product-list'),
             'icon' => 'fa-box-open',
             'keywords' => ['products', 'inventory', 'stock', 'items'],
         ] : null,
@@ -143,6 +161,13 @@
             'icon' => 'fa-receipt',
             'keywords' => ['expenses', 'costs', 'spend', 'payments'],
         ] : null,
+        Route::has('purchase-orders') ? [
+            'title' => 'Purchase Orders',
+            'subtitle' => 'Purchase order workflow and procurement planning',
+            'url' => route('purchase-orders'),
+            'icon' => 'fa-file-import',
+            'keywords' => ['purchase orders', 'po', 'procurement', 'ordering'],
+        ] : null,
         Route::has('quotations') ? [
             'title' => 'Quotations',
             'subtitle' => 'Quotes and proposals',
@@ -164,10 +189,38 @@
             'icon' => 'fa-bell',
             'keywords' => ['notifications', 'alerts', 'updates', 'messages'],
         ] : null,
-        Route::has('settings') ? [
+        $headerHasProfessional && Route::has('finance.recurring.index') ? [
+            'title' => 'Recurring Transactions',
+            'subtitle' => 'Scheduled purchase and expense automation',
+            'url' => route('finance.recurring.index'),
+            'icon' => 'fa-repeat',
+            'keywords' => ['recurring', 'templates', 'automation', 'finance'],
+        ] : null,
+        $headerHasProfessional && Route::has('finance.approvals.index') ? [
+            'title' => 'Approval Queue',
+            'subtitle' => 'Finance approvals and review decisions',
+            'url' => route('finance.approvals.index'),
+            'icon' => 'fa-check-square',
+            'keywords' => ['approvals', 'approval queue', 'review', 'finance'],
+        ] : null,
+        $headerHasEnterprise && Route::has('finance.fixed-assets.index') ? [
+            'title' => 'Fixed Assets',
+            'subtitle' => 'Asset register and depreciation runs',
+            'url' => route('finance.fixed-assets.index'),
+            'icon' => 'fa-archive',
+            'keywords' => ['fixed assets', 'depreciation', 'asset register'],
+        ] : null,
+        $headerHasEnterprise && Route::has('finance.budgets.index') ? [
+            'title' => 'Budgets',
+            'subtitle' => 'Budget planning and budget vs actual',
+            'url' => route('finance.budgets.index'),
+            'icon' => 'fa-bullseye',
+            'keywords' => ['budgets', 'budgeting', 'variance', 'actuals'],
+        ] : null,
+        Route::has('settings.index') ? [
             'title' => 'Settings',
             'subtitle' => 'Workspace and company configuration',
-            'url' => route('settings'),
+            'url' => route('settings.index'),
             'icon' => 'fa-cog',
             'keywords' => ['settings', 'configuration', 'company', 'profile'],
         ] : [
@@ -1399,7 +1452,7 @@ document.addEventListener('DOMContentLoaded', function () {
     /* ════════════════════════════════════════════
        SEARCH
        ════════════════════════════════════════════ */
-    const searchConfig = { minChars: 2 };
+    const searchConfig = { minChars: 1 };
     const searchableData = @json($headerSearchItems);
 
     function renderSearchResults(query, container) {

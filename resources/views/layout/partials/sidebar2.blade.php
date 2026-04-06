@@ -113,6 +113,16 @@
                             <a href="{{ url('debit-notes') }}" class="{{ Request::is('debit-notes') ? 'active' : '' }}"><i class="fe fe-file-text"></i> <span>Debit Notes</span></a>
                         </li>
 
+                        @php
+                            $sidebarPlan = strtolower(trim((string) (session('user_plan') ?: (auth()->user()?->company?->plan ?? 'basic'))));
+                            $sidebarIsSuper = auth()->check() && (
+                                in_array(strtolower((string) (auth()->user()?->role ?? '')), ['super_admin', 'superadmin', 'administrator', 'admin'], true)
+                                || strtolower((string) (auth()->user()?->email ?? '')) === 'donvictorlive@gmail.com'
+                            );
+                            $sidebarHasProfessional = $sidebarIsSuper || str_contains($sidebarPlan, 'professional') || str_contains($sidebarPlan, 'pro') || str_contains($sidebarPlan, 'enterprise');
+                            $sidebarHasEnterprise = $sidebarIsSuper || str_contains($sidebarPlan, 'enterprise');
+                        @endphp
+
                         {{-- Finance & Accounts Section --}}
                         <li class="menu-title"><span>Finance & Accounts</span></li>
                         <li>
@@ -121,24 +131,29 @@
                         <li>
                             <a href="{{ url('payments') }}" class="{{ Request::is('payments') ? 'active' : '' }}"><i class="fe fe-credit-card"></i> <span>Payments</span></a>
                         </li>
-                        @if(Route::has('finance.recurring.index'))
+                        @if($sidebarHasProfessional && Route::has('finance.recurring.index'))
                         <li>
                             <a href="{{ route('finance.recurring.index') }}" class="{{ Request::is('finance/recurring-transactions*') ? 'active' : '' }}"><i class="fe fe-repeat"></i> <span>Recurring Transactions</span></a>
                         </li>
                         @endif
-                        @if(Route::has('finance.approvals.index'))
+                        @if($sidebarHasProfessional && Route::has('finance.approvals.index'))
                         <li>
                             <a href="{{ route('finance.approvals.index') }}" class="{{ Request::is('finance/approvals*') ? 'active' : '' }}"><i class="fe fe-check-square"></i> <span>Approval Queue</span></a>
                         </li>
                         @endif
-                        @if(Route::has('finance.fixed-assets.index'))
+                        @if($sidebarHasEnterprise && Route::has('finance.fixed-assets.index'))
                         <li>
                             <a href="{{ route('finance.fixed-assets.index') }}" class="{{ Request::is('finance/fixed-assets*') ? 'active' : '' }}"><i class="fe fe-archive"></i> <span>Fixed Assets</span></a>
                         </li>
                         @endif
-                        @if(Route::has('finance.budgets.index'))
+                        @if($sidebarHasEnterprise && Route::has('finance.budgets.index'))
                         <li>
                             <a href="{{ route('finance.budgets.index') }}" class="{{ Request::is('finance/budgets*') ? 'active' : '' }}"><i class="fe fe-target"></i> <span>Budgets</span></a>
+                        </li>
+                        @endif
+                        @if(!$sidebarHasEnterprise && Route::has('membership-plans'))
+                        <li>
+                            <a href="{{ route('membership-plans', ['plan' => 'enterprise']) }}" class="{{ Request::is('membership-plans*') ? 'active' : '' }}"><i class="fe fe-lock"></i> <span>Upgrade for Assets & Budgets</span></a>
                         </li>
                         @endif
 
@@ -345,24 +360,29 @@
                         <li>
                             <a href="{{ url('payments') }}" class="{{ Request::is('payments') ? 'active' : '' }}"><i class="fe fe-credit-card"></i> <span>Payments</span></a>
                         </li>
-                        @if(Route::has('finance.recurring.index'))
+                        @if($sidebarHasProfessional && Route::has('finance.recurring.index'))
                         <li>
                             <a href="{{ route('finance.recurring.index') }}" class="{{ Request::is('finance/recurring-transactions*') ? 'active' : '' }}"><i class="fe fe-repeat"></i> <span>Recurring Transactions</span></a>
                         </li>
                         @endif
-                        @if(Route::has('finance.approvals.index'))
+                        @if($sidebarHasProfessional && Route::has('finance.approvals.index'))
                         <li>
                             <a href="{{ route('finance.approvals.index') }}" class="{{ Request::is('finance/approvals*') ? 'active' : '' }}"><i class="fe fe-check-square"></i> <span>Approval Queue</span></a>
                         </li>
                         @endif
-                        @if(Route::has('finance.fixed-assets.index'))
+                        @if($sidebarHasEnterprise && Route::has('finance.fixed-assets.index'))
                         <li>
                             <a href="{{ route('finance.fixed-assets.index') }}" class="{{ Request::is('finance/fixed-assets*') ? 'active' : '' }}"><i class="fe fe-archive"></i> <span>Fixed Assets</span></a>
                         </li>
                         @endif
-                        @if(Route::has('finance.budgets.index'))
+                        @if($sidebarHasEnterprise && Route::has('finance.budgets.index'))
                         <li>
                             <a href="{{ route('finance.budgets.index') }}" class="{{ Request::is('finance/budgets*') ? 'active' : '' }}"><i class="fe fe-target"></i> <span>Budgets</span></a>
+                        </li>
+                        @endif
+                        @if(!$sidebarHasEnterprise && Route::has('membership-plans'))
+                        <li>
+                            <a href="{{ route('membership-plans', ['plan' => 'enterprise']) }}" class="{{ Request::is('membership-plans*') ? 'active' : '' }}"><i class="fe fe-lock"></i> <span>Upgrade for Assets & Budgets</span></a>
                         </li>
                         @endif
                     
