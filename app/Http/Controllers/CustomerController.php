@@ -601,9 +601,6 @@ class CustomerController extends Controller
     public function storeReceivedPayment(Request $request, $id)
     {
         $customer = $this->applyTenantScope(Customer::query())->findOrFail($id);
-        $outstandingOpeningBalance = Schema::hasColumn('customers', 'balance')
-            ? round((float) ($customer->balance ?? 0), 2)
-            : 0.0;
 
         $request->validate([
             'payment_date' => 'required|date',
@@ -618,18 +615,13 @@ class CustomerController extends Controller
         $rawAllocations = collect($request->input('allocations', []))
             ->map(fn ($value) => round((float) $value, 2));
 
-        $openingAllocation = max(0, (float) $rawAllocations->get('opening_balance', 0));
         $saleAllocations = $rawAllocations
-            ->except(['opening_balance'])
             ->mapWithKeys(fn ($value, $saleId) => [(int) $saleId => max(0, (float) $value)])
             ->filter(fn ($value) => $value > 0);
 
         $receivedAmount = round((float) $request->input('received_amount', 0), 2);
-        if ($openingAllocation <= 0 && $saleAllocations->isEmpty() && $receivedAmount > 0 && $outstandingOpeningBalance > 0) {
-            $openingAllocation = min($outstandingOpeningBalance, $receivedAmount);
-        }
 
-        $requestedTotal = round($openingAllocation + (float) $saleAllocations->sum(), 2);
+        $requestedTotal = round((float) $saleAllocations->sum(), 2);
         if ($requestedTotal <= 0) {
             return back()->withInput()->with('error', 'Enter at least one payment amount before saving.');
         }
@@ -646,7 +638,6 @@ class CustomerController extends Controller
             DB::transaction(function () use (
                 $customer,
                 $saleAllocations,
-                $openingAllocation,
                 $request,
                 $activeBranch,
                 $referenceBase,
@@ -729,78 +720,6 @@ class CustomerController extends Controller
                     LedgerService::postSalePayment($sale->fresh(), $payment->fresh(), $payment->reference);
                 }
 
-                if ($openingAllocation > 0 && Schema::hasColumn('customers', 'balance')) {
-                    $customer->refresh();
-                    $openingOutstanding = round((float) ($customer->balance ?? 0), 2);
-                    $openingAmount = min($openingOutstanding, $openingAllocation);
-
-                    if ($openingAmount > 0) {
-                        $openingSale = null;
-                        if ($this->paymentsRequireSaleId()) {
-                            $openingSale = $this->createOrRefreshOpeningBalanceSale($customer, $openingOutstanding, $activeBranch, $paymentDate);
-                        }
-
-                        $paymentPayload = [
-                            'sale_id' => $openingSale?->id,
-                            'customer_id' => $customer->id,
-                            'branch_id' => $activeBranch['id'],
-                            'branch_name' => $activeBranch['name'],
-                            'reference' => $referenceBase !== '' ? $referenceBase : ('CUST-OPEN-' . $customer->id),
-                            'amount' => $openingAmount,
-                            'receipt_no' => $this->generatePaymentReceiptNo(),
-                            'method' => $request->input('method') ?: 'Bank Transfer',
-                            'status' => 'Completed',
-                            'note' => $request->input('note') ?: 'Customer opening balance payment received.',
-                            'created_by' => auth()->id(),
-                        ];
-
-                        if (Schema::hasColumn('payments', 'payment_account_id')) {
-                            $paymentPayload['payment_account_id'] = $resolvedAccountId;
-                        }
-                        if (Schema::hasColumn('payments', 'company_id')) {
-                            $paymentPayload['company_id'] = auth()->user()?->company_id ?? session('current_tenant_id');
-                        }
-                        if (Schema::hasColumn('payments', 'user_id')) {
-                            $paymentPayload['user_id'] = auth()->id();
-                        }
-
-                        $payment = Payment::create($paymentPayload);
-                        $payment->forceFill([
-                            'created_at' => $paymentDate,
-                            'updated_at' => $paymentDate,
-                        ])->saveQuietly();
-
-                        $customer->update([
-                            'balance' => max(0, $openingOutstanding - $openingAmount),
-                        ]);
-
-                        if ($openingSale) {
-                            $freshCustomerBalance = round((float) ($customer->fresh()->balance ?? 0), 2);
-                            $newPaid = round(max(0, $openingOutstanding - $freshCustomerBalance), 2);
-                            $openingSaleUpdate = [];
-                            if (Schema::hasColumn('sales', 'paid')) {
-                                $openingSaleUpdate['paid'] = $newPaid;
-                            }
-                            if (Schema::hasColumn('sales', 'amount_paid')) {
-                                $openingSaleUpdate['amount_paid'] = $newPaid;
-                            }
-                            if (Schema::hasColumn('sales', 'balance')) {
-                                $openingSaleUpdate['balance'] = $freshCustomerBalance;
-                            }
-                            if (Schema::hasColumn('sales', 'payment_status')) {
-                                $openingSaleUpdate['payment_status'] = $freshCustomerBalance <= 0 ? 'paid' : 'partial';
-                            }
-                            if (Schema::hasColumn('sales', 'order_status')) {
-                                $openingSaleUpdate['order_status'] = $freshCustomerBalance <= 0 ? 'completed' : 'pending';
-                            }
-                            if (!empty($openingSaleUpdate)) {
-                                $openingSale->update($openingSaleUpdate);
-                            }
-                        }
-
-                        LedgerService::postCustomerPayment($payment->fresh());
-                    }
-                }
             });
         } catch (\Throwable $exception) {
             return back()->withInput()->with('error', 'Customer payment could not be saved. ' . $exception->getMessage());

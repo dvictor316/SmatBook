@@ -160,29 +160,6 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @if($outstandingOpeningBalance > 0)
-                                    <tr>
-                                        <td>
-                                            <div class="fw-semibold">Opening Balance</div>
-                                            <small class="text-muted">
-                                                Balance brought forward on customer account
-                                                @unless($supportsStandalonePayments)
-                                                    • This workspace will post it through an opening balance receivable record automatically.
-                                                @endunless
-                                            </small>
-                                        </td>
-                                        <td>{{ $customer->opening_balance_date ?: 'Opening' }}</td>
-                                        <td class="text-end">₦{{ number_format($outstandingOpeningBalance, 2) }}</td>
-                                        <td class="text-end fw-semibold">₦{{ number_format($outstandingOpeningBalance, 2) }}</td>
-                                        <td>
-                                            <div class="input-group">
-                                                <input type="number" step="0.01" min="0" max="{{ $outstandingOpeningBalance }}" name="allocations[opening_balance]" class="form-control allocation-input" value="{{ old('allocations.opening_balance') }}" data-max="{{ $outstandingOpeningBalance }}">
-                                                <button class="btn btn-outline-secondary fill-allocation" type="button" data-full="{{ $outstandingOpeningBalance }}">Full</button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @endif
-
                                 @forelse($outstandingSales as $sale)
                                     <tr>
                                         <td>
