@@ -3,6 +3,7 @@
 namespace App\Traits;
 
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
 
 trait HasUniqueReceiptNumber
@@ -12,6 +13,11 @@ trait HasUniqueReceiptNumber
      */
     protected function generateUniqueReference(string $modelClass, string $column, string $prefix, int $randomLength = 6, bool $checkTrashed = false): string
     {
+        $tableName = (new $modelClass)->getTable();
+        if (!Schema::hasTable($tableName) || !Schema::hasColumn($tableName, $column)) {
+            return $prefix . strtoupper(Str::random($randomLength));
+        }
+
         do {
             $candidate = $prefix . strtoupper(Str::random($randomLength));
             $query = $modelClass::where($column, $candidate);
