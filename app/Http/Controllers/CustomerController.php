@@ -603,6 +603,9 @@ class CustomerController extends Controller
     public function storeReceivedPayment(Request $request, $id)
     {
         $customer = $this->applyTenantScope(Customer::query())->findOrFail($id);
+        $outstandingOpeningBalance = Schema::hasColumn('customers', 'balance')
+            ? round((float) ($customer->balance ?? 0), 2)
+            : 0.0;
 
         $request->validate([
             'payment_date' => 'required|date',
@@ -611,7 +614,7 @@ class CustomerController extends Controller
             'reference' => 'nullable|string|max:191',
             'method' => 'nullable|string|max:100',
             'note' => 'nullable|string|max:1000',
-            'allocations' => 'required|array',
+            'allocations' => 'nullable|array',
         ]);
 
         $rawAllocations = collect($request->input('allocations', []))
@@ -623,16 +626,17 @@ class CustomerController extends Controller
             ->mapWithKeys(fn ($value, $saleId) => [(int) $saleId => max(0, (float) $value)])
             ->filter(fn ($value) => $value > 0);
 
+        $receivedAmount = round((float) $request->input('received_amount', 0), 2);
+        if ($openingAllocation <= 0 && $saleAllocations->isEmpty() && $receivedAmount > 0 && $outstandingOpeningBalance > 0) {
+            $openingAllocation = min($outstandingOpeningBalance, $receivedAmount);
+        }
+
         $requestedTotal = round($openingAllocation + (float) $saleAllocations->sum(), 2);
         if ($requestedTotal <= 0) {
             return back()->withInput()->with('error', 'Enter at least one payment amount before saving.');
         }
-        $receivedAmount = round((float) $request->input('received_amount', 0), 2);
         if ($receivedAmount > 0 && abs($receivedAmount - $requestedTotal) > 0.009) {
             return back()->withInput()->with('error', 'Amount received must match the total allocated amount before saving.');
-        }
-        if ($openingAllocation > 0 && $this->paymentsRequireSaleId()) {
-            return back()->withInput()->with('error', 'This database requires every payment to be linked to an invoice, so opening balance collection is not available here yet.');
         }
 
         $activeBranch = $this->getActiveBranchContext();
@@ -732,8 +736,13 @@ class CustomerController extends Controller
                     $openingAmount = min($openingOutstanding, $openingAllocation);
 
                     if ($openingAmount > 0) {
+                        $openingSale = null;
+                        if ($this->paymentsRequireSaleId()) {
+                            $openingSale = $this->createOrRefreshOpeningBalanceSale($customer, $openingOutstanding, $activeBranch, $paymentDate);
+                        }
+
                         $paymentPayload = [
-                            'sale_id' => null,
+                            'sale_id' => $openingSale?->id,
                             'customer_id' => $customer->id,
                             'branch_id' => $activeBranch['id'],
                             'branch_name' => $activeBranch['name'],
@@ -765,6 +774,30 @@ class CustomerController extends Controller
                             'balance' => max(0, $openingOutstanding - $openingAmount),
                         ]);
 
+                        if ($openingSale) {
+                            $freshCustomerBalance = round((float) ($customer->fresh()->balance ?? 0), 2);
+                            $newPaid = round(max(0, $openingOutstanding - $freshCustomerBalance), 2);
+                            $openingSaleUpdate = [];
+                            if (Schema::hasColumn('sales', 'paid')) {
+                                $openingSaleUpdate['paid'] = $newPaid;
+                            }
+                            if (Schema::hasColumn('sales', 'amount_paid')) {
+                                $openingSaleUpdate['amount_paid'] = $newPaid;
+                            }
+                            if (Schema::hasColumn('sales', 'balance')) {
+                                $openingSaleUpdate['balance'] = $freshCustomerBalance;
+                            }
+                            if (Schema::hasColumn('sales', 'payment_status')) {
+                                $openingSaleUpdate['payment_status'] = $freshCustomerBalance <= 0 ? 'paid' : 'partial';
+                            }
+                            if (Schema::hasColumn('sales', 'order_status')) {
+                                $openingSaleUpdate['order_status'] = $freshCustomerBalance <= 0 ? 'completed' : 'pending';
+                            }
+                            if (!empty($openingSaleUpdate)) {
+                                $openingSale->update($openingSaleUpdate);
+                            }
+                        }
+
                         LedgerService::postCustomerPayment($payment->fresh());
                     }
                 }
@@ -776,6 +809,79 @@ class CustomerController extends Controller
         return redirect()
             ->route('customers.receive-payment', $customer->id)
             ->with('success', 'Payment received successfully and outstanding balances updated.');
+    }
+
+    private function createOrRefreshOpeningBalanceSale(Customer $customer, float $openingOutstanding, array $activeBranch, string $paymentDate): ?Sale
+    {
+        if (!Schema::hasTable('sales')) {
+            return null;
+        }
+
+        $query = Sale::query()
+            ->where('customer_id', $customer->id)
+            ->where('invoice_no', 'OPENING-BAL-' . $customer->id);
+        $this->applySaleTenantScope($query);
+        $existing = $query->latest('id')->first();
+
+        $payload = [];
+        if (Schema::hasColumn('sales', 'company_id')) {
+            $payload['company_id'] = auth()->user()?->company_id ?? session('current_tenant_id');
+        }
+        if (Schema::hasColumn('sales', 'branch_id')) {
+            $payload['branch_id'] = $activeBranch['id'];
+        }
+        if (Schema::hasColumn('sales', 'branch_name')) {
+            $payload['branch_name'] = $activeBranch['name'];
+        }
+        if (Schema::hasColumn('sales', 'customer_id')) {
+            $payload['customer_id'] = $customer->id;
+        }
+        if (Schema::hasColumn('sales', 'customer_name')) {
+            $payload['customer_name'] = $customer->customer_name;
+        }
+        if (Schema::hasColumn('sales', 'user_id')) {
+            $payload['user_id'] = auth()->id();
+        }
+        if (Schema::hasColumn('sales', 'invoice_no')) {
+            $payload['invoice_no'] = 'OPENING-BAL-' . $customer->id;
+        }
+        if (Schema::hasColumn('sales', 'order_number')) {
+            $payload['order_number'] = 'OPENING-' . $customer->id;
+        }
+        if (Schema::hasColumn('sales', 'order_date')) {
+            $payload['order_date'] = $paymentDate;
+        }
+        if (Schema::hasColumn('sales', 'subtotal')) {
+            $payload['subtotal'] = $openingOutstanding;
+        }
+        if (Schema::hasColumn('sales', 'total')) {
+            $payload['total'] = $openingOutstanding;
+        }
+        if (Schema::hasColumn('sales', 'paid')) {
+            $payload['paid'] = max(0, $openingOutstanding - (float) ($customer->balance ?? 0));
+        }
+        if (Schema::hasColumn('sales', 'amount_paid')) {
+            $payload['amount_paid'] = max(0, $openingOutstanding - (float) ($customer->balance ?? 0));
+        }
+        if (Schema::hasColumn('sales', 'balance')) {
+            $payload['balance'] = (float) ($customer->balance ?? 0);
+        }
+        if (Schema::hasColumn('sales', 'payment_method')) {
+            $payload['payment_method'] = 'Opening Balance';
+        }
+        if (Schema::hasColumn('sales', 'payment_status')) {
+            $payload['payment_status'] = (float) ($customer->balance ?? 0) <= 0 ? 'paid' : 'partial';
+        }
+        if (Schema::hasColumn('sales', 'order_status')) {
+            $payload['order_status'] = (float) ($customer->balance ?? 0) <= 0 ? 'completed' : 'pending';
+        }
+
+        if ($existing) {
+            $existing->update($payload);
+            return $existing->fresh();
+        }
+
+        return Sale::create($payload);
     }
 
     public function activate($id)

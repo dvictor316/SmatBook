@@ -160,11 +160,16 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @if($outstandingOpeningBalance > 0 && $supportsStandalonePayments)
+                                @if($outstandingOpeningBalance > 0)
                                     <tr>
                                         <td>
                                             <div class="fw-semibold">Opening Balance</div>
-                                            <small class="text-muted">Balance brought forward on customer account</small>
+                                            <small class="text-muted">
+                                                Balance brought forward on customer account
+                                                @unless($supportsStandalonePayments)
+                                                    • This workspace will post it through an opening balance receivable record automatically.
+                                                @endunless
+                                            </small>
                                         </td>
                                         <td>{{ $customer->opening_balance_date ?: 'Opening' }}</td>
                                         <td class="text-end">₦{{ number_format($outstandingOpeningBalance, 2) }}</td>
@@ -175,17 +180,6 @@
                                                 <button class="btn btn-outline-secondary fill-allocation" type="button" data-full="{{ $outstandingOpeningBalance }}">Full</button>
                                             </div>
                                         </td>
-                                    </tr>
-                                @elseif($outstandingOpeningBalance > 0)
-                                    <tr>
-                                        <td>
-                                            <div class="fw-semibold">Opening Balance</div>
-                                            <small class="text-muted">This balance exists, but this database requires invoice-linked payments only.</small>
-                                        </td>
-                                        <td>{{ $customer->opening_balance_date ?: 'Opening' }}</td>
-                                        <td class="text-end">₦{{ number_format($outstandingOpeningBalance, 2) }}</td>
-                                        <td class="text-end fw-semibold">₦{{ number_format($outstandingOpeningBalance, 2) }}</td>
-                                        <td><span class="badge bg-light text-dark">Invoice-linked only</span></td>
                                     </tr>
                                 @endif
 
