@@ -142,6 +142,9 @@
                 @if(Route::has('finance.approvals.index'))
                     <li><a href="{{ route('finance.approvals.index') }}"><i class="fe fe-check-square"></i><span>Approval Queue</span></a></li>
                 @endif
+                @if(Route::has('finance.expense-claims.index'))
+                    <li><a href="{{ route('finance.expense-claims.index') }}"><i class="fe fe-wallet"></i><span>Expense Claims</span></a></li>
+                @endif
                 <li class="{{ request()->routeIs('branches.index') ? 'active' : '' }}">
                     <a href="{{ route('branches.index') }}" class="{{ request()->routeIs('branches.index') ? 'active' : '' }}">
                         <i class="fe fe-git-branch"></i><span>Branches</span>

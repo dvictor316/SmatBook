@@ -203,6 +203,13 @@
             'icon' => 'fa-check-square',
             'keywords' => ['approvals', 'approval queue', 'review', 'finance'],
         ] : null,
+        $headerHasProfessional && Route::has('finance.expense-claims.index') ? [
+            'title' => 'Expense Claims',
+            'subtitle' => 'Staff claims, reimbursement requests, and project-linked spending',
+            'url' => route('finance.expense-claims.index'),
+            'icon' => 'fa-wallet',
+            'keywords' => ['expense claims', 'reimbursements', 'staff claims', 'claims'],
+        ] : null,
         $headerHasEnterprise && Route::has('finance.fixed-assets.index') ? [
             'title' => 'Fixed Assets',
             'subtitle' => 'Asset register and depreciation runs',

@@ -141,6 +141,11 @@
                             <a href="{{ route('finance.approvals.index') }}" class="{{ Request::is('finance/approvals*') ? 'active' : '' }}"><i class="fe fe-check-square"></i> <span>Approval Queue</span></a>
                         </li>
                         @endif
+                        @if($sidebarHasProfessional && Route::has('finance.expense-claims.index'))
+                        <li>
+                            <a href="{{ route('finance.expense-claims.index') }}" class="{{ Request::is('finance/expense-claims*') ? 'active' : '' }}"><i class="fe fe-wallet"></i> <span>Expense Claims</span></a>
+                        </li>
+                        @endif
                         @if($sidebarHasEnterprise && Route::has('finance.fixed-assets.index'))
                         <li>
                             <a href="{{ route('finance.fixed-assets.index') }}" class="{{ Request::is('finance/fixed-assets*') ? 'active' : '' }}"><i class="fe fe-archive"></i> <span>Fixed Assets</span></a>
@@ -368,6 +373,11 @@
                         @if($sidebarHasProfessional && Route::has('finance.approvals.index'))
                         <li>
                             <a href="{{ route('finance.approvals.index') }}" class="{{ Request::is('finance/approvals*') ? 'active' : '' }}"><i class="fe fe-check-square"></i> <span>Approval Queue</span></a>
+                        </li>
+                        @endif
+                        @if($sidebarHasProfessional && Route::has('finance.expense-claims.index'))
+                        <li>
+                            <a href="{{ route('finance.expense-claims.index') }}" class="{{ Request::is('finance/expense-claims*') ? 'active' : '' }}"><i class="fe fe-wallet"></i> <span>Expense Claims</span></a>
                         </li>
                         @endif
                         @if($sidebarHasEnterprise && Route::has('finance.fixed-assets.index'))

@@ -135,6 +135,9 @@
                 @if(Route::has('finance.approvals.index'))
                     <li><a href="{{ route('finance.approvals.index') }}"><i class="fe fe-check-square"></i><span>Approval Queue</span></a></li>
                 @endif
+                @if(Route::has('finance.expense-claims.index'))
+                    <li><a href="{{ route('finance.expense-claims.index') }}"><i class="fe fe-wallet"></i><span>Expense Claims</span></a></li>
+                @endif
                 @if(Route::has('finance.fixed-assets.index'))
                     <li><a href="{{ route('finance.fixed-assets.index') }}"><i class="fe fe-archive"></i><span>Fixed Assets</span></a></li>
                 @endif

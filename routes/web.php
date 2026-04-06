@@ -714,24 +714,35 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
 
     // Finance operations
     Route::prefix('finance')->name('finance.')->group(function () {
-        Route::get('/recurring-transactions', [RecurringTransactionController::class, 'index'])->name('recurring.index');
-        Route::post('/recurring-transactions', [RecurringTransactionController::class, 'store'])->name('recurring.store');
-        Route::post('/recurring-transactions/{recurringTransaction}/run', [RecurringTransactionController::class, 'run'])->name('recurring.run');
-        Route::post('/recurring-transactions/{recurringTransaction}/toggle', [RecurringTransactionController::class, 'toggleStatus'])->name('recurring.toggle');
-        Route::post('/recurring-transactions/from-expense/{expense}', [RecurringTransactionController::class, 'createFromExpense'])->name('recurring.from-expense');
-        Route::post('/recurring-transactions/from-purchase/{purchase}', [RecurringTransactionController::class, 'createFromPurchase'])->name('recurring.from-purchase');
+        Route::middleware('plan.access:professional,enterprise')->group(function () {
+            Route::get('/recurring-transactions', [RecurringTransactionController::class, 'index'])->name('recurring.index');
+            Route::post('/recurring-transactions', [RecurringTransactionController::class, 'store'])->name('recurring.store');
+            Route::post('/recurring-transactions/{recurringTransaction}/run', [RecurringTransactionController::class, 'run'])->name('recurring.run');
+            Route::post('/recurring-transactions/{recurringTransaction}/toggle', [RecurringTransactionController::class, 'toggleStatus'])->name('recurring.toggle');
+            Route::post('/recurring-transactions/from-expense/{expense}', [RecurringTransactionController::class, 'createFromExpense'])->name('recurring.from-expense');
+            Route::post('/recurring-transactions/from-purchase/{purchase}', [RecurringTransactionController::class, 'createFromPurchase'])->name('recurring.from-purchase');
 
-        Route::get('/approvals', [FinanceApprovalController::class, 'index'])->name('approvals.index');
-        Route::post('/approvals/from-expense/{expense}', [FinanceApprovalController::class, 'submitExpense'])->name('approvals.from-expense');
-        Route::post('/approvals/from-purchase/{purchase}', [FinanceApprovalController::class, 'submitPurchase'])->name('approvals.from-purchase');
-        Route::post('/approvals/{financeApproval}/approve', [FinanceApprovalController::class, 'approve'])->name('approvals.approve');
-        Route::post('/approvals/{financeApproval}/reject', [FinanceApprovalController::class, 'reject'])->name('approvals.reject');
-        Route::get('/fixed-assets', [FixedAssetController::class, 'index'])->name('fixed-assets.index');
-        Route::post('/fixed-assets', [FixedAssetController::class, 'store'])->name('fixed-assets.store');
-        Route::post('/fixed-assets/{fixedAsset}/depreciate', [FixedAssetController::class, 'depreciate'])->name('fixed-assets.depreciate');
-        Route::get('/budgets', [BudgetController::class, 'index'])->name('budgets.index');
-        Route::post('/budgets', [BudgetController::class, 'store'])->name('budgets.store');
-        Route::post('/budgets/{budget}/toggle', [BudgetController::class, 'toggleStatus'])->name('budgets.toggle');
+            Route::get('/approvals', [FinanceApprovalController::class, 'index'])->name('approvals.index');
+            Route::post('/approvals/from-expense/{expense}', [FinanceApprovalController::class, 'submitExpense'])->name('approvals.from-expense');
+            Route::post('/approvals/from-purchase/{purchase}', [FinanceApprovalController::class, 'submitPurchase'])->name('approvals.from-purchase');
+            Route::post('/approvals/{financeApproval}/approve', [FinanceApprovalController::class, 'approve'])->name('approvals.approve');
+            Route::post('/approvals/{financeApproval}/reject', [FinanceApprovalController::class, 'reject'])->name('approvals.reject');
+
+            Route::get('/expense-claims', [\App\Http\Controllers\ExpenseClaimController::class, 'index'])->name('expense-claims.index');
+            Route::post('/expense-claims', [\App\Http\Controllers\ExpenseClaimController::class, 'store'])->name('expense-claims.store');
+            Route::post('/expense-claims/{expenseClaim}/approve', [\App\Http\Controllers\ExpenseClaimController::class, 'approve'])->name('expense-claims.approve');
+            Route::post('/expense-claims/{expenseClaim}/reject', [\App\Http\Controllers\ExpenseClaimController::class, 'reject'])->name('expense-claims.reject');
+            Route::post('/expense-claims/{expenseClaim}/reimburse', [\App\Http\Controllers\ExpenseClaimController::class, 'reimburse'])->name('expense-claims.reimburse');
+        });
+
+        Route::middleware('plan.access:enterprise')->group(function () {
+            Route::get('/fixed-assets', [FixedAssetController::class, 'index'])->name('fixed-assets.index');
+            Route::post('/fixed-assets', [FixedAssetController::class, 'store'])->name('fixed-assets.store');
+            Route::post('/fixed-assets/{fixedAsset}/depreciate', [FixedAssetController::class, 'depreciate'])->name('fixed-assets.depreciate');
+            Route::get('/budgets', [BudgetController::class, 'index'])->name('budgets.index');
+            Route::post('/budgets', [BudgetController::class, 'store'])->name('budgets.store');
+            Route::post('/budgets/{budget}/toggle', [BudgetController::class, 'toggleStatus'])->name('budgets.toggle');
+        });
     });
     
     // Estimates

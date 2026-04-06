@@ -38,4 +38,14 @@ class Project extends Model
     {
         return $this->hasMany(ProjectTask::class);
     }
+
+    public function expenses(): HasMany
+    {
+        return $this->hasMany(Expense::class);
+    }
+
+    public function claims(): HasMany
+    {
+        return $this->hasMany(ExpenseClaim::class);
+    }
 }

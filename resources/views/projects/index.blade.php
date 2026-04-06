@@ -262,6 +262,18 @@
                     <div class="pm-stat-value" style="font-size:1rem;line-height:1.35;">₦{{ number_format((float) $stats['budget'], 0) }} / ₦{{ number_format((float) $stats['spent'], 0) }}</div>
                 </div>
             </div>
+            <div class="col-6 col-lg-3">
+                <div class="pm-card pm-stat">
+                    <div class="pm-stat-label">Tracked Project Costs</div>
+                    <div class="pm-stat-value" style="font-size:1rem;line-height:1.35;">₦{{ number_format((float) ($stats['tracked_costs'] ?? 0), 0) }}</div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="pm-card pm-stat">
+                    <div class="pm-stat-label">Pending Claims</div>
+                    <div class="pm-stat-value" style="font-size:1rem;line-height:1.35;">₦{{ number_format((float) ($stats['pending_claims'] ?? 0), 0) }}</div>
+                </div>
+            </div>
         </div>
 
         <span id="project-management" class="pm-anchor-offset"></span>
@@ -281,6 +293,7 @@
                                     <th>Status</th>
                                     <th>Progress</th>
                                     <th>Budget</th>
+                                    <th>Tracked Cost</th>
                                     <th>Update</th>
                                 </tr>
                             </thead>
@@ -302,6 +315,10 @@
                                         </td>
                                         <td>₦{{ number_format((float) $project->budget, 0) }}</td>
                                         <td>
+                                            <div class="fw-semibold">₦{{ number_format((float) ($project->tracked_costs ?? 0), 0) }}</div>
+                                            <small class="text-muted">Claims pending: ₦{{ number_format((float) ($project->pending_claims_total ?? 0), 0) }}</small>
+                                        </td>
+                                        <td>
                                             <form method="POST" action="{{ route('projects.update', $project) }}" class="d-flex gap-2 align-items-center">
                                                 @csrf
                                                 @method('PATCH')
@@ -318,7 +335,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="5" class="text-center text-muted py-4">No projects yet. Create your first project.</td>
+                                        <td colspan="6" class="text-center text-muted py-4">No projects yet. Create your first project.</td>
                                     </tr>
                                 @endforelse
                             </tbody>

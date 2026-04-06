@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 use App\Support\GeoCurrency;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Expense extends Model{
     use \App\Traits\Multitenantable;
@@ -25,6 +26,8 @@ protected $fillable = [
     'notes', 
     'status', 
     'company_id',
+    'project_id',
+    'expense_claim_id',
     'branch_id',
     'branch_name',
     'created_by', 
@@ -57,6 +60,16 @@ protected $fillable = [
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function project(): BelongsTo
+    {
+        return $this->belongsTo(Project::class);
+    }
+
+    public function claim(): BelongsTo
+    {
+        return $this->belongsTo(ExpenseClaim::class, 'expense_claim_id');
     }
 
     /**

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Company;
+use App\Models\Expense;
+use App\Models\ExpenseClaim;
 use App\Models\Project;
 use App\Models\ProjectTask;
 use App\Models\Subscription;
@@ -63,12 +65,40 @@ class ProjectManagementController extends Controller
             ->latest('updated_at')
             ->get();
 
+        $trackedExpenseTotals = collect();
+        if (Schema::hasTable('expenses') && Schema::hasColumn('expenses', 'project_id')) {
+            $trackedExpenseTotals = Expense::query()
+                ->selectRaw('project_id, SUM(amount) as total')
+                ->whereNotNull('project_id')
+                ->groupBy('project_id')
+                ->pluck('total', 'project_id');
+        }
+
+        $pendingClaimTotals = collect();
+        if (Schema::hasTable('expense_claims')) {
+            $pendingClaimTotals = ExpenseClaim::query()
+                ->selectRaw('project_id, SUM(amount) as total')
+                ->whereNotNull('project_id')
+                ->whereIn('status', ['pending', 'approved'])
+                ->groupBy('project_id')
+                ->pluck('total', 'project_id');
+        }
+
+        $projects->transform(function (Project $project) use ($trackedExpenseTotals, $pendingClaimTotals) {
+            $project->tracked_costs = (float) ($trackedExpenseTotals[$project->id] ?? 0);
+            $project->pending_claims_total = (float) ($pendingClaimTotals[$project->id] ?? 0);
+
+            return $project;
+        });
+
         $stats = [
             'total' => $projects->count(),
             'in_progress' => $projects->where('status', 'in_progress')->count(),
             'completed' => $projects->where('status', 'completed')->count(),
             'budget' => $projects->sum('budget'),
             'spent' => $projects->sum('spent'),
+            'tracked_costs' => $projects->sum('tracked_costs'),
+            'pending_claims' => $projects->sum('pending_claims_total'),
         ];
 
         return view('projects.index', compact('projects', 'stats', 'planTier', 'isSuperAdmin'));
