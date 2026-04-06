@@ -492,35 +492,6 @@ class CustomerController extends Controller
         $this->applySaleBranchFilter($outstandingSalesQuery, 'sales');
         $outstandingSales = $outstandingSalesQuery->get();
 
-        $paymentHistoryQuery = Payment::with(['sale', 'account'])
-            ->where('customer_id', $customer->id)
-            ->latest();
-        $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
-        $userId = (int) (auth()->id() ?? 0);
-        if ($companyId > 0 && Schema::hasColumn('payments', 'company_id')) {
-            $paymentHistoryQuery->where('company_id', $companyId);
-        } elseif ($userId > 0 && Schema::hasColumn('payments', 'user_id')) {
-            $paymentHistoryQuery->where('user_id', $userId);
-        } elseif ($userId > 0 && Schema::hasColumn('payments', 'created_by')) {
-            $paymentHistoryQuery->where('created_by', $userId);
-        }
-        if (Schema::hasColumn('payments', 'branch_id') || Schema::hasColumn('payments', 'branch_name')) {
-            $activeBranch = $this->getActiveBranchContext();
-            $branchId = trim((string) ($activeBranch['id'] ?? ''));
-            $branchName = trim((string) ($activeBranch['name'] ?? ''));
-            if ($branchId !== '' || $branchName !== '') {
-                $paymentHistoryQuery->where(function ($sub) use ($branchId, $branchName) {
-                    if ($branchId !== '' && Schema::hasColumn('payments', 'branch_id')) {
-                        $sub->where('branch_id', $branchId);
-                    }
-                    if ($branchName !== '' && Schema::hasColumn('payments', 'branch_name')) {
-                        $sub->orWhere('branch_name', $branchName);
-                    }
-                });
-            }
-        }
-        $paymentHistory = $paymentHistoryQuery->limit(50)->get();
-
         $paymentDestinations = collect();
         if (Schema::hasTable('accounts')) {
             $accountsQuery = Account::query()->orderBy('name');
@@ -590,7 +561,6 @@ class CustomerController extends Controller
         return view('Customers.receive-payment', compact(
             'customer',
             'outstandingSales',
-            'paymentHistory',
             'paymentDestinations',
             'outstandingOpeningBalance',
             'outstandingInvoicesTotal',

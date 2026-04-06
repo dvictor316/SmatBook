@@ -68,7 +68,7 @@
                         <p class="text-muted mb-0">Define operating branches and choose the active branch context for the workspace.</p>
                     </div>
                     @if($activeBranch)
-                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2">
+                        <span class="badge bg-primary text-white px-3 py-2">
                             Active Branch: {{ $activeBranch['name'] }}
                         </span>
                     @endif
@@ -146,11 +146,12 @@
                                         </div>
                                         <div class="d-flex align-items-center gap-2 flex-wrap">
                                             @if(($activeBranch['id'] ?? null) === $branch['id'])
-                                                <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2">Active Branch</span>
+                                                <span class="badge bg-success text-white px-3 py-2">Active Branch</span>
                                             @else
                                                 <form method="POST" action="{{ route('settings.branches.activate') }}">
                                                     @csrf
                                                     <input type="hidden" name="branch_id" value="{{ $branch['id'] }}">
+                                                    <input type="hidden" name="redirect_to" value="{{ url()->full() }}">
                                                     <button type="submit" class="btn btn-outline-primary btn-sm">Make Active</button>
                                                 </form>
                                             @endif

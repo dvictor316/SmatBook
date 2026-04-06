@@ -491,7 +491,7 @@
                                             <td>{{ $invoice->created_at->format('d M Y') }}</td>
                                             <td>{{ $customer->currency ?: '₦' }}{{ number_format($invoice->total_amount, 2) }}</td>
                                             <td>
-                                                <span class="badge rounded-pill {{ $invoice->status === 'paid' ? 'bg-success-subtle text-success' : 'bg-warning-subtle text-warning-emphasis' }}">
+                                                <span class="badge rounded-pill {{ $invoice->status === 'paid' ? 'bg-success text-white' : 'bg-warning text-dark' }}">
                                                     {{ ucfirst($invoice->status) }}
                                                 </span>
                                             </td>

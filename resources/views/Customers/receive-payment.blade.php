@@ -193,47 +193,6 @@
                 </form>
             </div>
         </div>
-
-        <div class="card border-0 shadow-sm mt-4">
-            <div class="card-header bg-white">
-                <h5 class="card-title mb-1">Payment History</h5>
-                <p class="text-muted mb-0">Recent collections recorded for this customer.</p>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Date</th>
-                                <th>Reference</th>
-                                <th>Invoice</th>
-                                <th>Deposit To</th>
-                                <th>Method</th>
-                                <th class="text-end">Amount</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($paymentHistory as $payment)
-                                <tr>
-                                    <td>{{ optional($payment->created_at)->format('d M Y') ?: '-' }}</td>
-                                    <td>{{ $payment->reference ?: ($payment->payment_id ?: '-') }}</td>
-                                    <td>{{ $payment->sale?->invoice_no ?: ($payment->sale ? 'Invoice #' . $payment->sale->id : 'Opening Balance') }}</td>
-                                    <td>{{ $payment->account?->name ?: 'Not specified' }}</td>
-                                    <td>{{ $payment->method ?: '-' }}</td>
-                                    <td class="text-end fw-semibold">₦{{ number_format((float) $payment->amount, 2) }}</td>
-                                    <td><span class="badge bg-light text-dark">{{ $payment->status ?: 'Saved' }}</span></td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="7" class="text-center text-muted py-4">No payment history recorded for this customer yet.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
     </div>
 </div>
 
