@@ -22,6 +22,7 @@ class Payment extends Model
         'branch_id',
         'branch_name',
         'payment_account_id', // ADDED: Required to save the account link
+        'receipt_no',
         'reference',
         'amount',
         'method',
