@@ -374,8 +374,6 @@ class CustomerController extends Controller
         if (Schema::hasColumn('sales', 'balance')) {
             $query->withSum(['sales as sales_balance_sum' => function ($saleQuery) {
                 $saleQuery->where('balance', '>', 0);
-                $this->applySaleTenantScope($saleQuery);
-                $this->applySaleBranchFilter($saleQuery, 'sales');
             }], 'balance');
         }
     }
@@ -387,8 +385,6 @@ class CustomerController extends Controller
         }
 
         $query = Sale::query()->where('customer_id', $customerId)->where('balance', '>', 0);
-        $this->applySaleTenantScope($query);
-        $this->applySaleBranchFilter($query, 'sales');
 
         return (float) $query->sum('balance');
     }
@@ -406,8 +402,6 @@ class CustomerController extends Controller
 
         if (Schema::hasTable('sales') && Schema::hasColumn('sales', 'balance')) {
             $salesQuery = Sale::query()->where('balance', '>', 0);
-            $this->applySaleTenantScope($salesQuery);
-            $this->applySaleBranchFilter($salesQuery, 'sales');
             $salesBalances = (float) $salesQuery->sum('balance');
         }
 

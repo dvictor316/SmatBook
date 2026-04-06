@@ -9,6 +9,12 @@
                 @endslot
             @endcomponent
 
+            <div class="alert alert-info border-0 shadow-sm">
+                <strong>Total Supplier Payables:</strong>
+                ₦{{ number_format($totalPayables ?? 0, 2) }}
+                <span class="text-muted">across all supplier opening balances and unpaid purchases.</span>
+            </div>
+
             <div class="row mb-3">
                 <div class="col-sm-12 text-end">
                     <button type="button" class="btn btn-outline-primary me-2" data-bs-toggle="modal" data-bs-target="#importSuppliersModal">

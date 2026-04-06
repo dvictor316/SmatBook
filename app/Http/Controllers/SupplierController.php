@@ -111,7 +111,9 @@ class SupplierController extends Controller
             return $supplier;
         });
 
-        return view('Customers.suppliers', compact('suppliers'));
+        $totalPayables = $this->calculateTotalPayables();
+
+        return view('Customers.suppliers', compact('suppliers', 'totalPayables'));
     }
 
     public function create()
@@ -796,30 +798,28 @@ class SupplierController extends Controller
         return max(0, $total - $paid);
     }
 
-    private function supplierOutstandingBalances(array $supplierIds): array
+    private function calculateTotalPayables(): float
     {
-        if (empty($supplierIds) || !Schema::hasTable('purchases')) {
-            return [];
+        $openingBalances = 0.0;
+        $purchaseBalances = 0.0;
+
+        $supplierQuery = Supplier::query();
+        $this->applyTenantScope($supplierQuery);
+        if (Schema::hasColumn('suppliers', 'opening_balance')) {
+            $openingBalances = (float) $supplierQuery->sum('opening_balance');
         }
 
-        $query = Purchase::query()
-            ->select('supplier_id')
-            ->selectRaw('SUM(COALESCE(total_amount, 0)) as total_amount_sum')
-            ->whereIn('supplier_id', $supplierIds)
-            ->groupBy('supplier_id');
-        if (Schema::hasColumn('purchases', 'paid_amount')) {
-            $query->selectRaw('SUM(COALESCE(paid_amount, 0)) as paid_amount_sum');
-        } else {
-            $query->selectRaw('0 as paid_amount_sum');
+        if (Schema::hasTable('purchases')) {
+            $query = Purchase::query()
+                ->selectRaw('SUM(COALESCE(total_amount, 0)) as total_amount_sum')
+                ->selectRaw('SUM(COALESCE(paid_amount, 0)) as paid_amount_sum');
+            $this->applyTenantScope($query, 'purchases');
+            $this->applyBranchScopeToPurchases($query);
+            $result = $query->first();
+            $purchaseBalances = max(0, (float) ($result->total_amount_sum ?? 0) - (float) ($result->paid_amount_sum ?? 0));
         }
-        $this->applyTenantScope($query, 'purchases');
-        $this->applyBranchScopeToPurchases($query);
 
-        return $query->get()
-            ->mapWithKeys(fn ($row) => [
-                (int) $row->supplier_id => max(0, (float) $row->total_amount_sum - (float) $row->paid_amount_sum),
-            ])
-            ->all();
+        return $openingBalances + $purchaseBalances;
     }
 
     private function normalizeImportHeaderCell($value): string
