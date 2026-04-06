@@ -2,6 +2,15 @@
 @extends('layout.mainlayout')
 
 @section('content')
+@php
+    $paymentUser = auth()->user();
+    $paymentPlan = strtolower((string) ($paymentUser?->subscription?->plan_name ?? $paymentUser?->subscription?->plan ?? $paymentUser?->company?->plan ?? 'basic'));
+    $paymentRole = strtolower((string) ($paymentUser?->role ?? ''));
+    $canManagePaymentApprovals = in_array($paymentRole, ['super_admin', 'superadmin', 'administrator', 'admin'], true)
+        || str_contains($paymentPlan, 'professional')
+        || str_contains($paymentPlan, 'pro')
+        || str_contains($paymentPlan, 'enterprise');
+@endphp
 <style>
     .money-sm { font-size: 1.05rem !important; font-variant-numeric: tabular-nums; }
     .money-cell { font-size: 0.84rem; font-variant-numeric: tabular-nums; }
@@ -75,6 +84,7 @@
                                 <th>Sale Ref</th>
                                 <th>Destination Account</th>
                                 <th>Amount</th>
+                                <th>Status</th>
                                 <th>Date</th>
                                 <th class="text-end pe-4">Actions</th>
                             </tr>
@@ -105,6 +115,18 @@
                                 <td>
                                     <span class="fw-bold text-success money-cell">+ {{ number_format($payment->amount, 2) }}</span>
                                 </td>
+                                <td>
+                                    @php($statusLabel = trim((string) ($payment->status ?? 'Pending')))
+                                    @php($statusClass = match (strtolower($statusLabel)) {
+                                        'completed' => 'success',
+                                        'pending approval' => 'warning',
+                                        'rejected' => 'danger',
+                                        default => 'secondary',
+                                    })
+                                    <span class="badge bg-{{ $statusClass }}-subtle text-{{ $statusClass }} border border-{{ $statusClass }}-subtle">
+                                        {{ $statusLabel }}
+                                    </span>
+                                </td>
                                 <td>{{ $payment->created_at->format('M d, Y') }}</td>
                                 <td class="text-end pe-4">
                                     <div class="dropdown">
@@ -115,6 +137,18 @@
                                             <a class="dropdown-item" href="{{ route('payments.receipt', $payment->id) }}" target="_blank">
                                                 <i class="fas fa-print me-2 text-primary"></i>Print Receipt
                                             </a>
+                                            @if($canManagePaymentApprovals && !in_array((int) $payment->id, $pendingApprovalIds ?? [], true) && strtolower((string) ($payment->status ?? '')) !== 'pending approval')
+                                                <form action="{{ route('finance.approvals.from-payment', $payment->id) }}" method="POST">
+                                                    @csrf
+                                                    <button type="submit" class="dropdown-item">
+                                                        <i class="fas fa-user-check me-2 text-warning"></i>Submit For Approval
+                                                    </button>
+                                                </form>
+                                            @elseif($canManagePaymentApprovals && (in_array((int) $payment->id, $pendingApprovalIds ?? [], true) || strtolower((string) ($payment->status ?? '')) === 'pending approval'))
+                                                <span class="dropdown-item-text text-muted">
+                                                    <i class="fas fa-clock me-2 text-warning"></i>Awaiting Approval
+                                                </span>
+                                            @endif
                                             <div class="dropdown-divider"></div>
                                             <form action="{{ route('payments.destroy', $payment->id) }}" method="POST">
                                                 @csrf @method('DELETE')
@@ -285,6 +319,16 @@
                                 <input type="file" class="form-control" name="attachment">
                             </div>
                         </div>
+
+                        @if($canManagePaymentApprovals)
+                            <div class="col-12">
+                                <div class="form-check form-switch border rounded p-3 bg-light">
+                                    <input class="form-check-input" type="checkbox" role="switch" id="requireApproval" name="require_approval" value="1">
+                                    <label class="form-check-label fw-bold ms-2" for="requireApproval">Require approval before final ledger posting</label>
+                                    <div class="text-muted small mt-1">Use this for high-value receipts or sensitive payment adjustments.</div>
+                                </div>
+                            </div>
+                        @endif
                     </div>
                 </div>
                 <div class="modal-footer bg-light border-0 p-4">

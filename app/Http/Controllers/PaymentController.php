@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\{Payment, Sale, Account, Bank, Transaction, Subscription, User, Company, Customer};
+use App\Models\{Payment, Sale, Account, Bank, Transaction, Subscription, User, Company, Customer, FinanceApproval};
 use App\Support\LedgerService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\{Auth, DB, Log, File, Http, Schema, Storage};
@@ -104,6 +104,7 @@ class PaymentController extends Controller
             'status' => 'nullable|string|max:50',
             'note' => 'nullable|string|max:1000',
             'attachment' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:4096',
+            'require_approval' => 'nullable|boolean',
         ]);
 
         if (!$request->filled('sale_id') && !$request->filled('customer_id')) {
@@ -172,6 +173,8 @@ class PaymentController extends Controller
                     $resolvedAccountId = $fallbackAccount?->id;
                 }
 
+                $requiresApproval = $request->boolean('require_approval');
+
                 $payload = [
                     'sale_id' => $sale?->id,
                     'customer_id' => $sale?->customer_id ?? $customer?->id,
@@ -180,7 +183,7 @@ class PaymentController extends Controller
                     'reference' => $request->reference,
                     'amount' => (float) $request->amount,
                     'method' => $request->method ?: 'cash',
-                    'status' => $request->status ?: 'Pending',
+                    'status' => $requiresApproval ? 'Pending Approval' : ($request->status ?: 'Pending'),
                     'note' => $request->note,
                     'attachment' => $attachmentName,
                     'created_by' => Auth::id(),
@@ -197,6 +200,37 @@ class PaymentController extends Controller
                 }
 
                 $payment = Payment::create($payload);
+
+                if (empty($payment->payment_id)) {
+                    $payment->update([
+                        'payment_id' => 'PAY-' . str_pad((string) $payment->id, 6, '0', STR_PAD_LEFT),
+                    ]);
+                    $payment->refresh();
+                }
+
+                if ($requiresApproval) {
+                    FinanceApproval::create([
+                        'company_id' => Auth::user()?->company_id ?? session('current_tenant_id'),
+                        'branch_id' => $payment->branch_id,
+                        'branch_name' => $payment->branch_name,
+                        'requested_by' => Auth::id(),
+                        'approval_type' => 'payment',
+                        'approvable_type' => Payment::class,
+                        'approvable_id' => $payment->id,
+                        'reference_no' => $payment->reference ?: ($payment->payment_id ?? ('PAY-' . $payment->id)),
+                        'title' => 'Payment approval for ' . ($customer?->customer_name ?? $customer?->name ?? $sale?->customer?->customer_name ?? $sale?->customer?->name ?? ($payment->payment_id ?? ('Payment #' . $payment->id))),
+                        'amount' => $payment->amount,
+                        'status' => 'pending',
+                        'submitted_at' => now(),
+                        'snapshot' => [
+                            'defer_posting' => true,
+                            'sale_id' => $sale?->id,
+                            'customer_id' => $customer?->id ?? $sale?->customer_id,
+                        ],
+                    ]);
+
+                    return redirect()->route('payments.index')->with('success', 'Payment saved and sent for approval.');
+                }
 
                 if ($sale) {
                     $newPaid = min((float) ($sale->total ?? 0), (float) ($sale->paid ?? 0) + (float) $payment->amount);
@@ -462,6 +496,48 @@ class PaymentController extends Controller
             $paymentsQuery = $paymentsBase;
         }
 
+        $status = trim((string) $request->string('status'));
+        $search = trim((string) $request->string('q'));
+        $month = trim((string) $request->string('month'));
+        $fromDate = trim((string) $request->string('from_date'));
+        $toDate = trim((string) $request->string('to_date'));
+
+        if ($status !== '') {
+            $paymentsQuery->where('status', $status);
+        }
+        if ($search !== '') {
+            $paymentsQuery->where(function ($query) use ($search) {
+                $query->where('payment_id', 'like', '%' . $search . '%')
+                    ->orWhere('reference', 'like', '%' . $search . '%')
+                    ->orWhere('method', 'like', '%' . $search . '%');
+
+                if (Schema::hasTable('customers')) {
+                    $query->orWhereHas('customer', function ($sub) use ($search) {
+                        if (Schema::hasColumn('customers', 'customer_name')) {
+                            $sub->where('customer_name', 'like', '%' . $search . '%');
+                        }
+                        if (Schema::hasColumn('customers', 'name')) {
+                            $method = Schema::hasColumn('customers', 'customer_name') ? 'orWhere' : 'where';
+                            $sub->{$method}('name', 'like', '%' . $search . '%');
+                        }
+                    });
+                }
+            });
+        }
+        if ($month !== '') {
+            $paymentsQuery->whereBetween('created_at', [
+                now()->parse($month . '-01')->startOfMonth()->toDateString(),
+                now()->parse($month . '-01')->endOfMonth()->toDateString(),
+            ]);
+        } else {
+            if ($fromDate !== '') {
+                $paymentsQuery->whereDate('created_at', '>=', $fromDate);
+            }
+            if ($toDate !== '') {
+                $paymentsQuery->whereDate('created_at', '<=', $toDate);
+            }
+        }
+
         $salesBase = Sale::select('id', 'invoice_no', 'customer_id', 'balance', 'total', 'paid', 'amount_paid');
         $this->applyTenantScope($salesBase, 'sales');
         $salesQuery = clone $salesBase;
@@ -516,8 +592,15 @@ class PaymentController extends Controller
                 ->sum('balance');
         }
 
+        $pendingApprovalIds = FinanceApproval::query()
+            ->where('approvable_type', Payment::class)
+            ->where('status', 'pending')
+            ->pluck('approvable_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
         $data = [
-            'payments'      => $paymentsQuery->paginate(10),
+            'payments'      => $paymentsQuery->paginate(10)->appends($request->query()),
             'sales'         => $salesQuery->get(),
             'assetAccounts' => $assetAccountsQuery->get(),
             'bankAccounts'  => $bankAccounts,
@@ -527,6 +610,12 @@ class PaymentController extends Controller
             'outstandingBalance' => $outstandingBalance,
             'openPayment' => $openPayment,
             'customers' => $customersQuery->get(),
+            'pendingApprovalIds' => $pendingApprovalIds,
+            'status' => $status,
+            'search' => $search,
+            'month' => $month,
+            'fromDate' => $fromDate,
+            'toDate' => $toDate,
         ];
         return view('Finance.payments', $data);
     }

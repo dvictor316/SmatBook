@@ -1,7 +1,7 @@
 <!-- Page Header -->
 @php
     $routeName = Route::currentRouteName();
-    $knownFilterKeys = ['q', 'status', 'type', 'source_type', 'reimbursement_status', 'period_type', 'month', 'from_date', 'to_date'];
+    $knownFilterKeys = ['q', 'status', 'type', 'source_type', 'reimbursement_status', 'period_type', 'party_type', 'month', 'from_date', 'to_date'];
     $filterConfig = [
         'search_label' => 'Search',
         'search_placeholder' => 'Search records',
@@ -29,7 +29,14 @@
             'search_placeholder' => 'Reference, title, requester',
             'extra_fields' => [
                 ['name' => 'status', 'label' => 'Status', 'options' => ['pending' => 'Pending', 'approved' => 'Approved', 'rejected' => 'Rejected']],
-                ['name' => 'type', 'label' => 'Type', 'options' => ['expense' => 'Expense', 'purchase' => 'Purchase']],
+                ['name' => 'type', 'label' => 'Type', 'options' => ['expense' => 'Expense', 'purchase' => 'Purchase', 'payment' => 'Payment']],
+            ],
+        ],
+        'payments.index' => [
+            'search_label' => 'Payment Search',
+            'search_placeholder' => 'Receipt, reference, method, customer',
+            'extra_fields' => [
+                ['name' => 'status', 'label' => 'Status', 'options' => ['Completed' => 'Completed', 'Pending' => 'Pending', 'Pending Approval' => 'Pending Approval', 'Rejected' => 'Rejected']],
             ],
         ],
         'finance.recurring.index' => [

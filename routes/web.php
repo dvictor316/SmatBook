@@ -729,6 +729,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
             Route::get('/approvals', [FinanceApprovalController::class, 'index'])->name('approvals.index');
             Route::post('/approvals/from-expense/{expense}', [FinanceApprovalController::class, 'submitExpense'])->name('approvals.from-expense');
             Route::post('/approvals/from-purchase/{purchase}', [FinanceApprovalController::class, 'submitPurchase'])->name('approvals.from-purchase');
+            Route::post('/approvals/from-payment/{payment}', [FinanceApprovalController::class, 'submitPayment'])->name('approvals.from-payment');
             Route::post('/approvals/{financeApproval}/approve', [FinanceApprovalController::class, 'approve'])->name('approvals.approve');
             Route::post('/approvals/{financeApproval}/reject', [FinanceApprovalController::class, 'reject'])->name('approvals.reject');
 
