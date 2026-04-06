@@ -57,6 +57,7 @@
                             <th class="ps-4 py-3 text-muted">Product Name</th>
                             <th class="py-3 text-muted">SKU</th>
                             <th class="py-3 text-end text-muted">Stock</th>
+                            <th class="py-3 text-end text-muted">Reorder Level</th>
                             <th class="py-3 text-end text-muted">Value</th>
                             <th class="py-3 text-end text-primary">To Order</th>
                             <th class="pe-4 py-3 text-center text-muted">Action</th>
@@ -64,13 +65,18 @@
                     </thead>
                     <tbody>
                         @forelse ($products as $product)
-                            @php $needed = max(0, $target - $product->stock); @endphp
+                            @php
+                                $productThreshold = (int) ($product->reorder_level ?: $threshold);
+                                $productTarget = (int) (($product->reorder_quantity ?: 0) > 0 ? $product->reorder_quantity : $target);
+                                $needed = max(0, $productTarget - $product->stock);
+                            @endphp
                             <tr>
                                 <td class="ps-4 py-3 fw-bold text-dark">{{ $product->name }}</td>
                                 <td class="py-3 text-muted">{{ $product->sku }}</td>
                                 <td class="py-3 text-end">
                                     <span class="text-danger fw-bold">{{ number_format($product->stock) }}</span>
                                 </td>
+                                <td class="py-3 text-end text-muted">{{ number_format($productThreshold) }}</td>
                                 <td class="py-3 text-end text-muted">{{ number_format($product->stock * $product->purchase_price, 2) }}</td>
                                 <td class="py-3 text-end fw-bold text-primary">+{{ number_format($needed) }}</td>
                                 <td class="pe-4 py-3 text-center">
@@ -82,7 +88,7 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="6" class="text-center py-5 text-muted">All inventory is stable.</td></tr>
+                            <tr><td colspan="7" class="text-center py-5 text-muted">All inventory is stable.</td></tr>
                         @endforelse
                     </tbody>
                 </table>

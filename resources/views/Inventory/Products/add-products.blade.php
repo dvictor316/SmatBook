@@ -175,6 +175,16 @@
                             <input type="file" name="image" id="product_image_input" class="form-control @error('image') is-invalid @enderror">
                             <small class="text-muted">Leave this empty if the product has no image.</small>
                         </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label fw-bold">Reorder Level</label>
+                            <input type="number" name="reorder_level" min="0" class="form-control" value="{{ old('reorder_level', 0) }}">
+                            <small class="text-muted">Stock threshold that should trigger a low-stock alert for this item.</small>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label fw-bold">Suggested Reorder Qty</label>
+                            <input type="number" name="reorder_quantity" min="0" class="form-control" value="{{ old('reorder_quantity', 0) }}">
+                            <small class="text-muted">Recommended replenishment quantity when the item drops below its threshold.</small>
+                        </div>
                     </div>
 
                     <div class="text-end no-print mt-3">

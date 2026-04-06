@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\Purchase;
 use App\Models\PurchaseItem;
 use App\Models\Setting;
+use App\Models\StockTransferAudit;
 use App\Models\Subscription;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Http\Request;
@@ -611,6 +612,8 @@ class ProductController extends Controller
                 'category_id'      => 'required|exists:categories,id',
                 'unit_type'        => 'required|in:unit,sachet,roll,carton',
                 'branch_id'        => 'nullable|string',
+                'reorder_level'    => 'nullable|integer|min:0',
+                'reorder_quantity' => 'nullable|integer|min:0',
                 'description'      => 'nullable|string',
                 'barcode'          => 'nullable|string|max:191',
             ];
@@ -633,6 +636,8 @@ class ProductController extends Controller
             $validated['stock_cartons'] = (float) ($validated['stock_cartons'] ?? 0);
             $validated['stock_rolls'] = (float) ($validated['stock_rolls'] ?? 0);
             $validated['stock_units'] = (float) ($validated['stock_units'] ?? 0);
+            $validated['reorder_level'] = max(0, (int) ($validated['reorder_level'] ?? 0));
+            $validated['reorder_quantity'] = max(0, (int) ($validated['reorder_quantity'] ?? 0));
             $retailPrice = (float) ($validated['retail_price'] ?? $validated['price']);
             $validated['price'] = $retailPrice;
             if (Schema::hasColumn('products', 'retail_price')) {
@@ -703,6 +708,12 @@ class ProductController extends Controller
                 $validated['branch_name'] = $selectedBranch['name'] ?? null;
             } else {
                 unset($validated['branch_name']);
+            }
+            if (!Schema::hasColumn('products', 'reorder_level')) {
+                unset($validated['reorder_level']);
+            }
+            if (!Schema::hasColumn('products', 'reorder_quantity')) {
+                unset($validated['reorder_quantity']);
             }
             $product = Product::create($validated);
             if (Schema::hasTable('product_branch_stocks')) {
@@ -1076,6 +1087,8 @@ public function inventory(Request $request)
             'status'           => 'required|in:active,inactive',
             'description'      => 'nullable|string',
             'barcode'          => 'nullable|string|max:191',
+            'reorder_level'    => 'nullable|integer|min:0',
+            'reorder_quantity' => 'nullable|integer|min:0',
         ]);
 
         $validated['units_per_carton'] = (int) ($validated['units_per_carton'] ?? 0);
@@ -1083,6 +1096,8 @@ public function inventory(Request $request)
         $validated['stock_cartons'] = (float) ($validated['stock_cartons'] ?? 0);
         $validated['stock_rolls'] = (float) ($validated['stock_rolls'] ?? 0);
         $validated['stock_units'] = (float) ($validated['stock_units'] ?? 0);
+        $validated['reorder_level'] = max(0, (int) ($validated['reorder_level'] ?? 0));
+        $validated['reorder_quantity'] = max(0, (int) ($validated['reorder_quantity'] ?? 0));
         $retailPrice = (float) ($validated['retail_price'] ?? $validated['price']);
         $validated['price'] = $retailPrice;
         if (Schema::hasColumn('products', 'retail_price')) {
@@ -1133,6 +1148,13 @@ public function inventory(Request $request)
                 Storage::disk('public')->delete($product->image); 
             }
             $validated['image'] = $request->file('image')->store('products', 'public');
+        }
+
+        if (!Schema::hasColumn('products', 'reorder_level')) {
+            unset($validated['reorder_level']);
+        }
+        if (!Schema::hasColumn('products', 'reorder_quantity')) {
+            unset($validated['reorder_quantity']);
         }
 
         $validated['stock_quantity'] = $validated['stock']; 
@@ -1313,6 +1335,20 @@ public function inventory(Request $request)
                     DB::table('inventory_history')->insert($sourcePayload);
                     DB::table('inventory_history')->insert($destinationPayload);
                 }
+
+                if (Schema::hasTable('stock_transfer_audits')) {
+                    StockTransferAudit::query()->create([
+                        'company_id' => auth()->user()?->company_id ?? session('current_tenant_id'),
+                        'product_id' => $product->id,
+                        'from_branch_id' => $sourceContext['id'],
+                        'from_branch_name' => $sourceContext['name'],
+                        'to_branch_id' => $destinationContext['id'],
+                        'to_branch_name' => $destinationContext['name'],
+                        'quantity' => $quantity,
+                        'initiated_by' => auth()->id(),
+                        'notes' => 'Branch stock transfer',
+                    ]);
+                }
             });
         } catch (\Throwable $exception) {
             return redirect()->back()->withInput()->with('error', $exception->getMessage());
@@ -1322,6 +1358,16 @@ public function inventory(Request $request)
         $this->clearDashboardMetricsCache($validated['to_branch_id'] ?? null);
 
         return redirect()->back()->with('success', 'Stock transferred successfully between branches.');
+    }
+
+    public function transferAudit()
+    {
+        $audits = StockTransferAudit::query()
+            ->with(['product', 'initiator'])
+            ->latest()
+            ->paginate(20);
+
+        return view('Inventory.transfer-audit', compact('audits'));
     }
 
     /**

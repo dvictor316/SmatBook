@@ -96,6 +96,9 @@
                         <li><a href="{{ route('inventory.Products') }}">Stock Overview</a></li>
                         <li><a href="{{ route('reports.stock') }}">Stock Report</a></li>
                         <li><a href="{{ route('reports.low-stock') }}">Low Stock Alert</a></li>
+                        @if(Route::has('inventory.transfer-audit'))
+                            <li><a href="{{ route('inventory.transfer-audit') }}">Transfer Audit</a></li>
+                        @endif
                     </ul>
                 </li>
 

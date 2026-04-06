@@ -63,6 +63,11 @@
                         <li>
                             <a href="{{ url('inventory') }}" class="{{ Request::is('inventory', 'inventory-history') ? 'active' : '' }}"><i class="fe fe-archive"></i> <span>Inventory</span></a>
                         </li>
+                        @if(Route::has('inventory.transfer-audit') && $sidebarHasProfessional)
+                        <li>
+                            <a href="{{ route('inventory.transfer-audit') }}" class="{{ Request::is('inventory-transfer-audit') ? 'active' : '' }}"><i class="fe fe-shuffle"></i> <span>Transfer Audit</span></a>
+                        </li>
+                        @endif
 
                         <li class="submenu">
                             <a href="#"><i class="fe fe-file-plus"></i><span>Signature</span> <span class="menu-arrow"></span></a>
@@ -316,6 +321,11 @@
                     <li>
                         <a href="{{ url('inventory') }}" class="{{ Request::is('inventory', 'inventory-history') ? 'active' : '' }}"><i class="fe fe-archive"></i> <span>Inventory</span></a>
                     </li>
+                    @if(Route::has('inventory.transfer-audit') && $sidebarHasProfessional)
+                    <li>
+                        <a href="{{ route('inventory.transfer-audit') }}" class="{{ Request::is('inventory-transfer-audit') ? 'active' : '' }}"><i class="fe fe-shuffle"></i> <span>Transfer Audit</span></a>
+                    </li>
+                    @endif
                     
                     {{-- Signature Section --}}
                     <li class="menu-title"><span>Signature</span></li>

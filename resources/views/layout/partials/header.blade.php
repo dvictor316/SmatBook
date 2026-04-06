@@ -210,6 +210,13 @@
             'icon' => 'fa-wallet',
             'keywords' => ['expense claims', 'reimbursements', 'staff claims', 'claims'],
         ] : null,
+        $headerHasProfessional && Route::has('inventory.transfer-audit') ? [
+            'title' => 'Transfer Audit',
+            'subtitle' => 'Branch stock movement history and accountability',
+            'url' => route('inventory.transfer-audit'),
+            'icon' => 'fa-right-left',
+            'keywords' => ['transfer audit', 'stock transfer', 'branch transfer', 'inventory movement'],
+        ] : null,
         $headerHasEnterprise && Route::has('finance.fixed-assets.index') ? [
             'title' => 'Fixed Assets',
             'subtitle' => 'Asset register and depreciation runs',

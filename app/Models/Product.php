@@ -31,6 +31,8 @@ class Product extends Model
         'purchase_price', 
         'stock', 
         'stock_quantity', // Added to maintain parity with controller logic
+        'reorder_level',
+        'reorder_quantity',
         'units_per_carton', 
         'units_per_roll', 
         'base_unit_name', 

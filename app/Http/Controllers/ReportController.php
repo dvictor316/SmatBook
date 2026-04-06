@@ -604,8 +604,8 @@ public function purchase_report(Request $request)
 
             // 2. Query actual DB columns confirmed via MySQL: 'name' and 'stock'
             $products = $this->scopedTable('products')
-                ->select(['id', 'name', 'sku', 'stock', 'purchase_price', 'unit_type'])
-                ->where('stock', '<=', $threshold)
+                ->select(['id', 'name', 'sku', 'stock', 'purchase_price', 'unit_type', 'reorder_level', 'reorder_quantity'])
+                ->whereRaw('stock <= COALESCE(NULLIF(reorder_level, 0), ?)', [$threshold])
                 ->orderBy('stock', 'asc')
                 ->get();
 

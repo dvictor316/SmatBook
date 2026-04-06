@@ -105,6 +105,12 @@
                             <a class="{{ Request::is('inventory') ? 'active' : '' }}" href="{{ url('inventory') }}"><i
                                     class="fe fe-user"></i> <span>Inventory</span></a>
                         </li>
+                        @if($twoColHasProfessional && Route::has('inventory.transfer-audit'))
+                        <li>
+                            <a class="{{ Request::is('inventory-transfer-audit') ? 'active' : '' }}" href="{{ route('inventory.transfer-audit') }}"><i
+                                    class="fe fe-shuffle"></i> <span>Transfer Audit</span></a>
+                        </li>
+                        @endif
                         <!-- /Inventory -->
 
                         <!-- Signature -->

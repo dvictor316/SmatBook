@@ -91,6 +91,9 @@
 
                 {{-- Inventory --}}
                 <li><a href="{{ route('inventory.Products') }}"><i class="fe fe-archive"></i><span>Inventory</span></a></li>
+                @if(Route::has('inventory.transfer-audit'))
+                    <li><a href="{{ route('inventory.transfer-audit') }}"><i class="fe fe-shuffle"></i><span>Transfer Audit</span></a></li>
+                @endif
 
                 <li class="menu-title"><span>Sales</span></li>
 

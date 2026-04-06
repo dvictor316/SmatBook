@@ -82,6 +82,18 @@
                                     <input type="number" step="0.01" name="special_price" class="form-control" value="{{ old('special_price', $product->special_price) }}">
                                 </div>
                             </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Reorder Level</label>
+                                    <input type="number" name="reorder_level" min="0" class="form-control" value="{{ old('reorder_level', $product->reorder_level ?? 0) }}">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Suggested Reorder Qty</label>
+                                    <input type="number" name="reorder_quantity" min="0" class="form-control" value="{{ old('reorder_quantity', $product->reorder_quantity ?? 0) }}">
+                                </div>
+                            </div>
                         </div>
 
                         <h5 class="mb-3 mt-4">Packaging & Units (Required for Breakdown)</h5>
