@@ -606,6 +606,7 @@ class CustomerController extends Controller
 
         $request->validate([
             'payment_date' => 'required|date',
+            'received_amount' => 'nullable|numeric|min:0.01',
             'payment_target' => 'nullable|string|max:50',
             'reference' => 'nullable|string|max:191',
             'method' => 'nullable|string|max:100',
@@ -625,6 +626,10 @@ class CustomerController extends Controller
         $requestedTotal = round($openingAllocation + (float) $saleAllocations->sum(), 2);
         if ($requestedTotal <= 0) {
             return back()->withInput()->with('error', 'Enter at least one payment amount before saving.');
+        }
+        $receivedAmount = round((float) $request->input('received_amount', 0), 2);
+        if ($receivedAmount > 0 && abs($receivedAmount - $requestedTotal) > 0.009) {
+            return back()->withInput()->with('error', 'Amount received must match the total allocated amount before saving.');
         }
         if ($openingAllocation > 0 && $this->paymentsRequireSaleId()) {
             return back()->withInput()->with('error', 'This database requires every payment to be linked to an invoice, so opening balance collection is not available here yet.');

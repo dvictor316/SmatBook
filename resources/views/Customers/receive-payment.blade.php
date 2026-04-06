@@ -112,6 +112,23 @@
                             <label class="form-label">Reference No.</label>
                             <input type="text" name="reference" class="form-control" value="{{ old('reference') }}" placeholder="Optional reference">
                         </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Amount Received</label>
+                            <div class="input-group">
+                                <span class="input-group-text">₦</span>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0.01"
+                                    name="received_amount"
+                                    class="form-control"
+                                    value="{{ old('received_amount') }}"
+                                    placeholder="0.00"
+                                    data-received-amount
+                                >
+                            </div>
+                            <small class="text-muted">This should match the total you allocate below.</small>
+                        </div>
                         <div class="col-12">
                             <label class="form-label">Note</label>
                             <textarea name="note" rows="2" class="form-control" placeholder="Optional note for this collection">{{ old('note') }}</textarea>
@@ -253,6 +270,8 @@
 document.addEventListener('DOMContentLoaded', function () {
     const inputs = Array.from(document.querySelectorAll('.allocation-input'));
     const totalEl = document.querySelector('[data-allocation-total]');
+    const receivedAmountInput = document.querySelector('[data-received-amount]');
+    let receivedAmountManuallyEdited = Boolean((receivedAmountInput?.value || '').trim());
 
     function updateTotal() {
         const total = inputs.reduce((sum, input) => {
@@ -271,6 +290,10 @@ document.addEventListener('DOMContentLoaded', function () {
         if (totalEl) {
             totalEl.textContent = total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
+
+        if (receivedAmountInput && !receivedAmountManuallyEdited) {
+            receivedAmountInput.value = total > 0 ? total.toFixed(2) : '';
+        }
     }
 
     document.querySelectorAll('.fill-allocation').forEach(function (button) {
@@ -287,6 +310,12 @@ document.addEventListener('DOMContentLoaded', function () {
     inputs.forEach(function (input) {
         input.addEventListener('input', updateTotal);
     });
+
+    if (receivedAmountInput) {
+        receivedAmountInput.addEventListener('input', function () {
+            receivedAmountManuallyEdited = (receivedAmountInput.value || '').trim() !== '';
+        });
+    }
 
     updateTotal();
 });
