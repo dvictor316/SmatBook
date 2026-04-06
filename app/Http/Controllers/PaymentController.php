@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\{Payment, Sale, Account, Bank, Transaction, Subscription, User, Company, Customer, FinanceApproval};
 use App\Support\LedgerService;
+use App\Traits\HasUniqueReceiptNumber;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\{Auth, DB, Log, File, Http, Schema, Storage};
 use Illuminate\Support\Str;
@@ -13,6 +14,8 @@ use Flutterwave\Laravel\Facades\Flutterwave;
 
 class PaymentController extends Controller
 {
+    use HasUniqueReceiptNumber;
+
     private function applyTenantScope($query, string $table)
     {
         $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
@@ -181,6 +184,7 @@ class PaymentController extends Controller
                     'branch_id' => $sale?->branch_id ?? $activeBranch['id'],
                     'branch_name' => $sale?->branch_name ?? $sale?->branch_label ?? $activeBranch['name'],
                     'reference' => $request->reference,
+                    'receipt_no' => $this->generatePaymentReceiptNo(),
                     'amount' => (float) $request->amount,
                     'method' => $request->method ?: 'cash',
                     'status' => $requiresApproval ? 'Pending Approval' : ($request->status ?: 'Pending'),
@@ -470,6 +474,7 @@ class PaymentController extends Controller
                         'amount'     => $amountDue,
                         'method'     => 'Online Gateway',
                         'status'     => 'Completed',
+                        'receipt_no' => $this->generatePaymentReceiptNo(),
                         'created_by' => Auth::id() ?? $sale->user_id,
                     ]);
 

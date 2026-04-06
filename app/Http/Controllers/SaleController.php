@@ -12,6 +12,7 @@ use App\Models\Payment;
 use App\Models\Bank;
 use App\Models\Setting;
 use App\Models\User;
+use App\Traits\HasUniqueReceiptNumber;
 use App\Events\NewSaleRegistered; // The Pusher event we created
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -24,6 +25,8 @@ use App\Support\LedgerService;
 
 class SaleController extends Controller
 {
+    use HasUniqueReceiptNumber;
+
     public function __construct(private readonly BranchInventoryService $branchInventory)
     {
     }
@@ -576,10 +579,9 @@ public function customerDetails($id = null)
 
     try {
         // --- 1. GENERATE REQUIRED NUMBERS ---
-        $invoiceNo = $this->generateInvoiceNo();
-        $receiptNo = $this->generateReceiptNo();
-        // FIXED: Generating order_number to satisfy your DB constraint
-        $orderNumber = 'ORD-' . date('Ymd') . '-' . strtoupper(Str::random(6)); 
+        $invoiceNo = $this->generateSaleInvoiceNo();
+        $receiptNo = $this->generateSaleReceiptNo();
+        $orderNumber = $this->generateSaleOrderNo();
         
         $totalAmount = (float) $request->total;
         $amountPaid = (float) $request->paid;
@@ -757,11 +759,12 @@ $sale = Sale::create([
                 'branch_id' => $activeBranch['id'],
                 'branch_name' => $activeBranch['name'],
                 'amount'  => $finalPaid,
-            'method'  => $request->payment_method,
+                'method'  => $request->payment_method,
                 'status'  => $paymentRecordStatus,
                 'note'    => $finalBalance <= 0
                     ? ($paymentAccount?->name ? 'Initial POS Payment via ' . $paymentAccount->name : 'Initial POS Payment')
                     : ($paymentAccount?->name ? 'Deposit received via ' . $paymentAccount->name : 'Deposit received'),
+                'receipt_no' => $this->generatePaymentReceiptNo(),
                 'created_by' => auth()->id(),
             ];
             if (Schema::hasColumn('payments', 'payment_account_id')) {

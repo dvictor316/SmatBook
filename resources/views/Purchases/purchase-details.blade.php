@@ -5,7 +5,6 @@
     <div class="page-wrapper">
         <div class="content container-fluid">
             
-            {{-- Page Header --}}
             <div class="page-header">
                 <div class="row align-items-center">
                     <div class="col">
@@ -23,18 +22,13 @@
                         </div>
                     </div>
                     <div class="col-auto">
-                        <div class="d-print-none"> 
-                            {{-- Native Browser Print --}}
+                        <div class="d-print-none">
                             <button onclick="window.print()" class="btn btn-white text-black border me-1">
                                 <i class="fe fe-printer"></i> Print
                             </button>
-                            
-                            {{-- Fast Browser-Side PDF --}}
                             <button onclick="generatePDF()" class="btn btn-white text-black border me-1">
                                 <i class="fe fe-file-text"></i> PDF
                             </button>
-                            
-                            {{-- Fast Browser-Side Excel --}}
                             <button onclick="generateExcel()" class="btn btn-white text-black border">
                                 <i class="fe fe-file"></i> Excel
                             </button>
@@ -43,7 +37,6 @@
                 </div>
             </div>
 
-            {{-- The Invoice Content (This ID 'invoice-content' is used for PDF generation) --}}
             <div class="row justify-content-center" id="invoice-content" data-print-scope>
                 <div class="col-lg-12">
                     <div class="card">
@@ -157,6 +150,57 @@
                                         </div>
                                     </div>
 
+                                    @php
+                                        $totalAmount = (float) ($purchase->total_amount ?? 0);
+                                        $paidAmount = (float) ($purchase->paid_amount ?? 0);
+                                        $balanceAmount = max(0, $totalAmount - $paidAmount);
+                                    @endphp
+
+                                    <div class="row mt-4">
+                                        <div class="col-lg-7 col-md-6">
+                                            <div class="card shadow-sm border-0">
+                                                <div class="card-body">
+                                                    <h5 class="mb-3">Record Payment</h5>
+                                                    <form method="POST" action="{{ route('purchases.record-payment', $purchase->id) }}">
+                                                        @csrf
+                                                        <div class="row">
+                                                            <div class="col-md-6 mb-3">
+                                                                <label class="form-label">Amount</label>
+                                                                <input type="number" name="amount" step="0.01" min="0.01" class="form-control" value="{{ old('amount', $balanceAmount) }}" required>
+                                                            </div>
+                                                            <div class="col-md-6 mb-3">
+                                                                <label class="form-label">Payment Account</label>
+                                                                <select name="payment_account_id" class="form-select">
+                                                                    <option value="">Cash/Other</option>
+                                                                    @foreach($banks as $bank)
+                                                                        <option value="{{ $bank->id }}">{{ $bank->name ?? $bank->bank_name ?? 'Bank' }}</option>
+                                                                    @endforeach
+                                                                </select>
+                                                            </div>
+                                                            <div class="col-md-6 mb-3">
+                                                                <label class="form-label">Reference</label>
+                                                                <input type="text" name="reference" class="form-control" value="{{ old('reference') }}" maxlength="191">
+                                                            </div>
+                                                            <div class="col-md-6 mb-3">
+                                                                <label class="form-label">Notes</label>
+                                                                <input type="text" name="notes" class="form-control" value="{{ old('notes') }}" maxlength="500">
+                                                            </div>
+                                                        </div>
+                                                        <div class="d-flex flex-wrap gap-3">
+                                                            <div class="me-auto">
+                                                                <span class="text-muted">Paid:</span>
+                                                                <strong>{{ number_format($paidAmount, 2) }}</strong>
+                                                                <span class="text-muted ms-3">Balance:</span>
+                                                                <strong>{{ number_format($balanceAmount, 2) }}</strong>
+                                                            </div>
+                                                            <button type="submit" class="btn btn-primary">Record Payment</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <div class="invoice-sign text-end mt-5">
                                         <p class="mb-0">Authorized By</p>
                                         <img src="{{ asset('assets/img/signature.png') }}" alt="sign" width="120">
@@ -172,11 +216,9 @@
         </div>
     </div>
 
-    {{-- SCRIPTS FOR FAST EXPORT --}}
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    
-    <script>
-        // PDF LOGIC
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+            
+            <script>
         function generatePDF() {
             window.smartProbookExportElementToPdf('#invoice-content', {
                 filename: 'Purchase_{{ $purchase->purchase_no }}.pdf',
@@ -187,7 +229,6 @@
             });
         }
 
-        // EXCEL LOGIC
         function generateExcel() {
             let table = document.getElementById("items-table");
             let html = table.outerHTML;

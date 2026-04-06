@@ -8,14 +8,18 @@ use App\Models\Customer;
 use App\Models\Payment;
 use App\Models\Sale;
 use App\Support\LedgerService;
+use App\Traits\HasUniqueReceiptNumber;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class CustomerController extends Controller
 {
+    use HasUniqueReceiptNumber;
+
     private function applyTenantScope($query)
     {
         $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
@@ -683,6 +687,7 @@ class CustomerController extends Controller
                         'branch_name' => $sale->branch_name ?? $sale->branch_label ?? $activeBranch['name'],
                         'reference' => $referenceBase !== '' ? $referenceBase : ($sale->invoice_no ?: ('SALE-' . $sale->id . '-PAY')),
                         'amount' => $amount,
+                        'receipt_no' => $this->generatePaymentReceiptNo(),
                         'method' => $request->input('method') ?: 'Bank Transfer',
                         'status' => $remaining <= $amount ? 'Completed' : 'Pending',
                         'note' => $request->input('note') ?: 'Customer payment received.',
@@ -748,6 +753,7 @@ class CustomerController extends Controller
                             'branch_name' => $activeBranch['name'],
                             'reference' => $referenceBase !== '' ? $referenceBase : ('CUST-OPEN-' . $customer->id),
                             'amount' => $openingAmount,
+                            'receipt_no' => $this->generatePaymentReceiptNo(),
                             'method' => $request->input('method') ?: 'Bank Transfer',
                             'status' => 'Completed',
                             'note' => $request->input('note') ?: 'Customer opening balance payment received.',
@@ -844,6 +850,9 @@ class CustomerController extends Controller
         }
         if (Schema::hasColumn('sales', 'invoice_no')) {
             $payload['invoice_no'] = 'OPENING-BAL-' . $customer->id;
+        }
+        if (Schema::hasColumn('sales', 'receipt_no')) {
+            $payload['receipt_no'] = $this->generateSaleReceiptNo();
         }
         if (Schema::hasColumn('sales', 'order_number')) {
             $payload['order_number'] = 'OPENING-' . $customer->id;

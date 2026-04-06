@@ -89,26 +89,6 @@
     </li>
     @endif
 
-    @if(Route::has('finance.recurring.index') || Route::has('finance.approvals.index'))
-    <li class="submenu {{ Request::is('finance/recurring-transactions*', 'finance/approvals*') ? 'active subdrop' : '' }}">
-        <a href="#"><i class="fe fe-repeat"></i><span>Finance Ops</span><span class="menu-arrow"></span></a>
-        <ul>
-            @if(Route::has('finance.recurring.index'))
-                <li><a href="{{ route('finance.recurring.index') }}">Recurring Transactions</a></li>
-            @endif
-            @if(Route::has('finance.approvals.index'))
-                <li><a href="{{ route('finance.approvals.index') }}">Approval Queue</a></li>
-            @endif
-            @if(Route::has('finance.fixed-assets.index'))
-                <li><a href="{{ route('finance.fixed-assets.index') }}">Fixed Assets</a></li>
-            @endif
-            @if(Route::has('finance.budgets.index'))
-                <li><a href="{{ route('finance.budgets.index') }}">Budgets</a></li>
-            @endif
-        </ul>
-    </li>
-    @endif
-
     <li class="menu-title"><span>Sales</span></li>
 
     {{-- Invoices --}}

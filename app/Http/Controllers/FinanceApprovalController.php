@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Expense;
 use App\Models\FinanceApproval;
+use App\Models\Payment;
 use App\Models\Purchase;
 use App\Support\LedgerService;
 use Illuminate\Http\Request;
@@ -71,7 +72,7 @@ class FinanceApprovalController extends Controller
         if (in_array($status, ['pending', 'approved', 'rejected'], true)) {
             $query->where('status', $status);
         }
-        if (in_array($type, ['expense', 'purchase'], true)) {
+        if (in_array($type, ['expense', 'purchase', 'payment'], true)) {
             $query->where('approval_type', $type);
         }
         if ($search !== '') {
@@ -156,6 +157,34 @@ class FinanceApprovalController extends Controller
         return back()->with('success', 'Purchase submitted for approval.');
     }
 
+    public function submitPayment(Payment $payment)
+    {
+        $payment = $this->scopePaymentQuery()->findOrFail($payment->id);
+
+        $existing = $this->pendingApprovalFor(Payment::class, $payment->id);
+        if ($existing) {
+            return back()->with('info', 'This payment is already awaiting approval.');
+        }
+
+        FinanceApproval::create([
+            'company_id' => $payment->company_id ?? (Auth::user()?->company_id ?? session('current_tenant_id')),
+            'branch_id' => $payment->branch_id,
+            'branch_name' => $payment->branch_name,
+            'requested_by' => Auth::id(),
+            'approval_type' => 'payment',
+            'approvable_type' => Payment::class,
+            'approvable_id' => $payment->id,
+            'reference_no' => $payment->reference ?: ($payment->payment_id ?? ('PAY-' . $payment->id)),
+            'title' => 'Payment approval for ' . ($payment->customer?->customer_name ?? $payment->customer?->name ?? ($payment->payment_id ?? ('Payment #' . $payment->id))),
+            'amount' => $payment->amount,
+            'status' => 'pending',
+            'submitted_at' => now(),
+            'snapshot' => ['defer_posting' => false],
+        ]);
+
+        return back()->with('success', 'Payment submitted for approval.');
+    }
+
     public function approve(Request $request, FinanceApproval $financeApproval)
     {
         $approval = $this->scopeApprovalQuery()->findOrFail($financeApproval->id);
@@ -185,6 +214,14 @@ class FinanceApprovalController extends Controller
                 if ($approvable instanceof Purchase) {
                     LedgerService::postPurchase($approvable->fresh());
                 }
+                if ($approvable instanceof Payment) {
+                    $this->finalizePendingPayment($approvable->fresh());
+                }
+            }
+
+            $approvable = $approval->approvable;
+            if ($approvable instanceof Payment && empty($snapshot['defer_posting']) && strtolower((string) ($approvable->status ?? '')) === 'pending approval') {
+                $approvable->update(['status' => 'Completed']);
             }
         });
 
@@ -210,7 +247,63 @@ class FinanceApprovalController extends Controller
             'decision_notes' => $validated['decision_notes'] ?? null,
         ]);
 
+        $snapshot = (array) ($approval->snapshot ?? []);
+        $approvable = $approval->approvable;
+        if (!empty($snapshot['defer_posting']) && $approvable instanceof Payment && strtolower((string) ($approvable->status ?? '')) === 'pending approval') {
+            $approvable->update(['status' => 'Rejected']);
+        }
+
         return back()->with('success', 'Approval marked as rejected.');
+    }
+
+    private function finalizePendingPayment(Payment $payment): void
+    {
+        if ($payment->sale) {
+            $sale = $payment->sale->fresh();
+            $newPaid = min((float) ($sale->total ?? 0), (float) ($sale->paid ?? $sale->amount_paid ?? 0) + (float) $payment->amount);
+            $newBalance = max(0, (float) ($sale->total ?? 0) - $newPaid);
+            $saleUpdate = [];
+            if (Schema::hasColumn('sales', 'paid')) {
+                $saleUpdate['paid'] = $newPaid;
+            }
+            if (Schema::hasColumn('sales', 'amount_paid')) {
+                $saleUpdate['amount_paid'] = $newPaid;
+            }
+            if (Schema::hasColumn('sales', 'balance')) {
+                $saleUpdate['balance'] = $newBalance;
+            }
+            if (Schema::hasColumn('sales', 'payment_status')) {
+                $saleUpdate['payment_status'] = $newBalance <= 0 ? 'paid' : 'partial';
+            }
+            if (Schema::hasColumn('sales', 'order_status')) {
+                $saleUpdate['order_status'] = $newBalance <= 0 ? 'completed' : ($sale->order_status ?? 'pending');
+            }
+            if (!empty($saleUpdate)) {
+                $sale->update($saleUpdate);
+            }
+
+            $payment->update([
+                'status' => $newBalance <= 0 ? 'Completed' : 'Pending',
+                'note' => $payment->note ?: ($newBalance <= 0 ? 'Payment completed after approval' : 'Deposit received after approval'),
+            ]);
+
+            LedgerService::postSalePayment($sale->fresh(), $payment->fresh(), $payment->reference);
+            return;
+        }
+
+        if ($payment->customer && Schema::hasColumn('customers', 'balance')) {
+            $customer = $payment->customer->fresh();
+            $currentBalance = (float) ($customer->balance ?? 0);
+            $customer->update([
+                'balance' => max(0, $currentBalance - (float) $payment->amount),
+            ]);
+            $payment->update(['status' => 'Completed']);
+            LedgerService::postCustomerPayment($payment->fresh());
+            return;
+        }
+
+        $payment->update(['status' => 'Completed']);
+        LedgerService::postStandalonePayment($payment->fresh());
     }
 
     private function pendingApprovalFor(string $type, int $id): ?FinanceApproval
@@ -245,6 +338,15 @@ class FinanceApprovalController extends Controller
         $query = Purchase::query();
         $this->applyTenantScope($query, 'purchases');
         $this->applyBranchScope($query, 'purchases');
+
+        return $query;
+    }
+
+    private function scopePaymentQuery()
+    {
+        $query = Payment::query();
+        $this->applyTenantScope($query, 'payments');
+        $this->applyBranchScope($query, 'payments');
 
         return $query;
     }

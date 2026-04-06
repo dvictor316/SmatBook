@@ -122,6 +122,41 @@ class LedgerService
         );
     }
 
+    public static function postPurchasePayment(
+        Purchase $purchase,
+        float $amount,
+        ?string $paymentMethod = null,
+        ?string $reference = null
+    ): void {
+        if (!self::isReady() || $amount <= 0) {
+            return;
+        }
+
+        $payableAccount = self::resolveAccount('Accounts Payable', 'Liability', ['payable', 'creditor'], 'AUTO-LIB-AP');
+        $cashAccount = self::resolveCashAccount($paymentMethod);
+
+        $ref = $reference ?: ($purchase->purchase_no ?: ('PUR-' . $purchase->id)) . '-PAY';
+        $date = self::resolveDate($purchase->paid_at ?? $purchase->updated_at ?? now());
+        $userId = auth()->id();
+        $branchId = $purchase->branch_id ?? null;
+        $branchName = $purchase->branch_name ?? $purchase->branch_label ?? null;
+
+        self::postDoubleEntry(
+            debitAccountId: $payableAccount->id,
+            creditAccountId: $cashAccount->id,
+            amount: $amount,
+            date: $date,
+            reference: $ref,
+            description: 'Purchase payment: ' . $ref,
+            transactionType: Transaction::TYPE_PAYMENT,
+            relatedId: $purchase->id,
+            relatedType: Purchase::class,
+            userId: $userId,
+            branchId: $branchId,
+            branchName: $branchName
+        );
+    }
+
     public static function postSalePayment(Sale $sale, Payment $payment, ?string $externalReference = null): void
     {
         if (!self::isReady()) {
