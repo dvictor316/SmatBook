@@ -79,6 +79,18 @@
             </div>
         </div>
 
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <p class="text-muted mb-1">Selected Bank Available Balance</p>
+                        <h4 class="mb-0">₦<span data-selected-bank-balance>0.00</span></h4>
+                        <small class="text-muted">Choose a bank account to verify available funds before saving payment.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-white">
                 <h5 class="card-title mb-1">Make Supplier Payment</h5>
@@ -97,7 +109,9 @@
                             <select name="bank_id" class="form-select">
                                 <option value="">Select bank</option>
                                 @foreach($banks as $bank)
-                                    <option value="{{ $bank->id }}" @selected((string) old('bank_id') === (string) $bank->id)>{{ $bank->name }}</option>
+                                    <option value="{{ $bank->id }}" data-balance="{{ number_format((float) ($bank->balance ?? 0), 2) }}" @selected((string) old('bank_id') === (string) $bank->id)>
+                                        {{ $bank->name }} — ₦{{ number_format((float) ($bank->balance ?? 0), 2) }}
+                                    </option>
                                 @endforeach
                             </select>
                         </div>
@@ -116,6 +130,9 @@
                         <div class="col-12">
                             <label class="form-label">Note</label>
                             <textarea name="note" rows="2" class="form-control" placeholder="Optional note for this supplier payment">{{ old('note') }}</textarea>
+                        </div>
+                        <div class="col-12">
+                            <div class="alert alert-warning d-none" role="alert" data-bank-warning></div>
                         </div>
                     </div>
 
@@ -223,6 +240,42 @@
 document.addEventListener('DOMContentLoaded', function () {
     const inputs = Array.from(document.querySelectorAll('.allocation-input'));
     const totalEl = document.querySelector('[data-allocation-total]');
+    const bankSelect = document.querySelector('select[name="bank_id"]');
+    const bankBalanceEl = document.querySelector('[data-selected-bank-balance]');
+    const bankWarningEl = document.querySelector('[data-bank-warning]');
+    const paymentForm = document.querySelector('#supplierPaymentForm');
+
+    function formatCurrency(value) {
+        return value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function getSelectedBankBalance() {
+        if (!bankSelect) {
+            return 0;
+        }
+        const selectedOption = bankSelect.selectedOptions[0];
+        if (!selectedOption || !selectedOption.dataset.balance) {
+            return 0;
+        }
+        return parseFloat(selectedOption.dataset.balance.replace(/,/g, '')) || 0;
+    }
+
+    function updateBankBalance() {
+        if (!bankBalanceEl) {
+            return;
+        }
+
+        const balance = getSelectedBankBalance();
+        bankBalanceEl.textContent = formatCurrency(balance);
+
+        const currentTotal = parseFloat((totalEl?.textContent || '0').replace(/,/g, '')) || 0;
+        if (bankSelect?.value && currentTotal > balance && bankWarningEl) {
+            bankWarningEl.textContent = 'Selected bank balance is not sufficient for the current payment total of ₦' + formatCurrency(currentTotal) + '. Please choose another account or reduce the payment amount.';
+            bankWarningEl.classList.remove('d-none');
+        } else if (bankWarningEl) {
+            bankWarningEl.classList.add('d-none');
+        }
+    }
 
     function updateTotal() {
         const total = inputs.reduce((sum, input) => {
@@ -239,8 +292,9 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 0);
 
         if (totalEl) {
-            totalEl.textContent = total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            totalEl.textContent = formatCurrency(total);
         }
+        updateBankBalance();
     }
 
     document.querySelectorAll('.fill-allocation').forEach(function (button) {
@@ -257,6 +311,25 @@ document.addEventListener('DOMContentLoaded', function () {
     inputs.forEach(function (input) {
         input.addEventListener('input', updateTotal);
     });
+
+    if (bankSelect) {
+        bankSelect.addEventListener('change', updateBankBalance);
+    }
+
+    if (paymentForm) {
+        paymentForm.addEventListener('submit', function (event) {
+            const balance = getSelectedBankBalance();
+            const total = parseFloat((totalEl?.textContent || '0').replace(/,/g, '')) || 0;
+            if (bankSelect?.value && total > balance) {
+                event.preventDefault();
+                if (bankWarningEl) {
+                    bankWarningEl.textContent = 'Cannot save payment because the selected bank does not have enough funds to cover ₦' + formatCurrency(total) + '.';
+                    bankWarningEl.classList.remove('d-none');
+                    bankWarningEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+        });
+    }
 
     updateTotal();
 });

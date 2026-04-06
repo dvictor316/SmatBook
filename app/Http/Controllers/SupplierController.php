@@ -449,6 +449,14 @@ class SupplierController extends Controller
             return back()->withInput()->with('error', 'Enter at least one supplier payment amount before saving.');
         }
 
+        $totalPayment = round($allocations->sum(), 2);
+        if ($bank && Schema::hasColumn('banks', 'balance')) {
+            $availableBalance = (float) $bank->balance;
+            if ($totalPayment > $availableBalance) {
+                return back()->withInput()->with('error', 'Selected bank does not have enough funds to cover the payment total of ₦' . number_format($totalPayment, 2) . '.');
+            }
+        }
+
         $paymentDate = $request->input('payment_date');
         $paymentGroup = trim((string) $request->input('reference', '')) ?: ('SUPPAY-' . now()->format('YmdHis'));
         $bank = null;
