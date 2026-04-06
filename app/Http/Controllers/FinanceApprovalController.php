@@ -59,6 +59,10 @@ class FinanceApprovalController extends Controller
     {
         $status = strtolower(trim((string) $request->get('status', '')));
         $type = strtolower(trim((string) $request->get('type', '')));
+        $search = trim((string) $request->string('q'));
+        $month = trim((string) $request->string('month'));
+        $fromDate = trim((string) $request->string('from_date'));
+        $toDate = trim((string) $request->string('to_date'));
 
         $query = FinanceApproval::with(['requester', 'approver'])->latest('submitted_at');
         $this->applyTenantScope($query, 'finance_approvals');
@@ -70,10 +74,30 @@ class FinanceApprovalController extends Controller
         if (in_array($type, ['expense', 'purchase'], true)) {
             $query->where('approval_type', $type);
         }
+        if ($search !== '') {
+            $query->where(function ($sub) use ($search) {
+                $sub->where('title', 'like', '%' . $search . '%')
+                    ->orWhere('reference_no', 'like', '%' . $search . '%')
+                    ->orWhereHas('requester', fn ($q) => $q->where('name', 'like', '%' . $search . '%'));
+            });
+        }
+        if ($month !== '') {
+            $query->whereBetween('submitted_at', [
+                now()->parse($month . '-01')->startOfMonth()->toDateString(),
+                now()->parse($month . '-01')->endOfMonth()->toDateString(),
+            ]);
+        } else {
+            if ($fromDate !== '') {
+                $query->whereDate('submitted_at', '>=', $fromDate);
+            }
+            if ($toDate !== '') {
+                $query->whereDate('submitted_at', '<=', $toDate);
+            }
+        }
 
         $approvals = $query->paginate(20)->appends($request->query());
 
-        return view('Finance.approvals', compact('approvals', 'status', 'type'));
+        return view('Finance.approvals', compact('approvals', 'status', 'type', 'search', 'month', 'fromDate', 'toDate'));
     }
 
     public function submitExpense(Expense $expense)

@@ -57,16 +57,58 @@ class FixedAssetController extends Controller
         });
     }
 
-    public function index()
+    public function index(Request $request)
     {
+        $status = strtolower(trim((string) $request->string('status')));
+        $search = trim((string) $request->string('q'));
+        $month = trim((string) $request->string('month'));
+        $fromDate = trim((string) $request->string('from_date'));
+        $toDate = trim((string) $request->string('to_date'));
+
         $assetsQuery = FixedAsset::with(['assetAccount', 'depreciationAccount', 'expenseAccount'])->latest();
         $this->applyTenantScope($assetsQuery, 'fixed_assets');
         $this->applyBranchScope($assetsQuery, 'fixed_assets');
-        $assets = $assetsQuery->paginate(15);
+        if (in_array($status, ['active', 'fully_depreciated', 'disposed', 'archived'], true)) {
+            $assetsQuery->where('status', $status);
+        }
+        if ($search !== '') {
+            $assetsQuery->where(function ($query) use ($search) {
+                $query->where('name', 'like', '%' . $search . '%')
+                    ->orWhere('asset_code', 'like', '%' . $search . '%')
+                    ->orWhere('notes', 'like', '%' . $search . '%');
+            });
+        }
+        if ($month !== '') {
+            $assetsQuery->whereBetween('acquired_on', [
+                now()->parse($month . '-01')->startOfMonth()->toDateString(),
+                now()->parse($month . '-01')->endOfMonth()->toDateString(),
+            ]);
+        } else {
+            if ($fromDate !== '') {
+                $assetsQuery->whereDate('acquired_on', '>=', $fromDate);
+            }
+            if ($toDate !== '') {
+                $assetsQuery->whereDate('acquired_on', '<=', $toDate);
+            }
+        }
+        $assets = $assetsQuery->paginate(15)->appends($request->query());
 
         $historyQuery = FixedAssetDepreciation::with('asset')->latest('run_date');
         $this->applyTenantScope($historyQuery, 'fixed_asset_depreciations');
         $this->applyBranchScope($historyQuery, 'fixed_asset_depreciations');
+        if ($month !== '') {
+            $historyQuery->whereBetween('run_date', [
+                now()->parse($month . '-01')->startOfMonth()->toDateString(),
+                now()->parse($month . '-01')->endOfMonth()->toDateString(),
+            ]);
+        } else {
+            if ($fromDate !== '') {
+                $historyQuery->whereDate('run_date', '>=', $fromDate);
+            }
+            if ($toDate !== '') {
+                $historyQuery->whereDate('run_date', '<=', $toDate);
+            }
+        }
         $depreciations = $historyQuery->limit(20)->get();
 
         $accountQuery = Account::query()->where('is_active', true)->orderBy('name');
@@ -84,7 +126,18 @@ class FixedAssetController extends Controller
             'book_value' => (float) $assets->getCollection()->sum(fn ($asset) => (float) ($asset->book_value ?? 0)),
         ];
 
-        return view('Finance.fixed-assets', compact('assets', 'depreciations', 'assetAccounts', 'expenseAccounts', 'summary'));
+        return view('Finance.fixed-assets', compact(
+            'assets',
+            'depreciations',
+            'assetAccounts',
+            'expenseAccounts',
+            'summary',
+            'status',
+            'search',
+            'month',
+            'fromDate',
+            'toDate'
+        ));
     }
 
     public function store(Request $request)

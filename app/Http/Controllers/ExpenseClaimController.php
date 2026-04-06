@@ -18,26 +18,86 @@ class ExpenseClaimController extends Controller
 {
     public function index(Request $request): View
     {
-        $claims = ExpenseClaim::query()
-            ->with(['claimant', 'project', 'approver', 'reimbursementAccount'])
+        $status = strtolower(trim((string) $request->string('status')));
+        $reimbursementStatus = strtolower(trim((string) $request->string('reimbursement_status')));
+        $search = trim((string) $request->string('q'));
+        $month = trim((string) $request->string('month'));
+        $fromDate = trim((string) $request->string('from_date'));
+        $toDate = trim((string) $request->string('to_date'));
+        $projectId = (int) $request->integer('project_id');
+
+        $claimsQuery = ExpenseClaim::query()
+            ->with(['claimant', 'project', 'approver', 'reimbursementAccount']);
+
+        if (in_array($status, ['pending', 'approved', 'rejected', 'reimbursed'], true)) {
+            $claimsQuery->where('status', $status);
+        }
+
+        if (in_array($reimbursementStatus, ['unpaid', 'paid'], true)) {
+            $claimsQuery->where('reimbursement_status', $reimbursementStatus);
+        }
+
+        if ($projectId > 0) {
+            $claimsQuery->where('project_id', $projectId);
+        }
+
+        if ($search !== '') {
+            $claimsQuery->where(function ($query) use ($search) {
+                $query->where('title', 'like', '%' . $search . '%')
+                    ->orWhere('category', 'like', '%' . $search . '%')
+                    ->orWhere('notes', 'like', '%' . $search . '%')
+                    ->orWhereHas('claimant', fn ($sub) => $sub->where('name', 'like', '%' . $search . '%'))
+                    ->orWhereHas('project', fn ($sub) => $sub->where('name', 'like', '%' . $search . '%'));
+            });
+        }
+
+        if ($month !== '') {
+            $claimsQuery->whereBetween('expense_date', [
+                now()->parse($month . '-01')->startOfMonth()->toDateString(),
+                now()->parse($month . '-01')->endOfMonth()->toDateString(),
+            ]);
+        } else {
+            if ($fromDate !== '') {
+                $claimsQuery->whereDate('expense_date', '>=', $fromDate);
+            }
+            if ($toDate !== '') {
+                $claimsQuery->whereDate('expense_date', '<=', $toDate);
+            }
+        }
+
+        $claims = $claimsQuery
             ->latest('expense_date')
             ->latest('id')
-            ->paginate(15);
+            ->paginate(15)
+            ->appends($request->query());
 
         $projects = $this->availableProjects($request);
         $paymentAccounts = Schema::hasTable('accounts')
             ? Account::query()->where('type', 'Asset')->orderBy('name')->get(['id', 'name'])
             : collect();
 
+        $statsBase = clone $claimsQuery;
         $stats = [
-            'total' => ExpenseClaim::query()->count(),
-            'pending' => ExpenseClaim::query()->where('status', 'pending')->count(),
-            'approved' => ExpenseClaim::query()->where('status', 'approved')->count(),
-            'reimbursed' => ExpenseClaim::query()->where('status', 'reimbursed')->count(),
-            'pending_amount' => (float) ExpenseClaim::query()->whereIn('status', ['pending', 'approved'])->sum('amount'),
+            'total' => (clone $statsBase)->count(),
+            'pending' => (clone $statsBase)->where('status', 'pending')->count(),
+            'approved' => (clone $statsBase)->where('status', 'approved')->count(),
+            'reimbursed' => (clone $statsBase)->where('status', 'reimbursed')->count(),
+            'pending_amount' => (float) (clone $statsBase)->whereIn('status', ['pending', 'approved'])->sum('amount'),
         ];
 
-        return view('Finance.expense-claims', compact('claims', 'projects', 'paymentAccounts', 'stats'));
+        return view('Finance.expense-claims', compact(
+            'claims',
+            'projects',
+            'paymentAccounts',
+            'stats',
+            'status',
+            'reimbursementStatus',
+            'search',
+            'month',
+            'fromDate',
+            'toDate',
+            'projectId'
+        ));
     }
 
     public function store(Request $request): RedirectResponse

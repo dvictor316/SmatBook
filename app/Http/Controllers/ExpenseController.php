@@ -96,14 +96,45 @@ class ExpenseController extends Controller
         ];
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $this->syncBanksToAssetAccounts();
+
+        $status = trim((string) $request->string('status'));
+        $search = trim((string) $request->string('q'));
+        $month = trim((string) $request->string('month'));
+        $fromDate = trim((string) $request->string('from_date'));
+        $toDate = trim((string) $request->string('to_date'));
 
         $expensesQuery = Expense::with('creator')->latest();
         $this->applyTenantScope($expensesQuery, 'expenses');
         $this->applyBranchScope($expensesQuery, 'expenses');
-        $expenses = $expensesQuery->paginate(15);
+        if (in_array($status, ['Paid', 'Pending', 'Overdue'], true)) {
+            $expensesQuery->where('status', $status);
+        }
+        if ($search !== '') {
+            $expensesQuery->where(function ($query) use ($search) {
+                $query->where('expense_id', 'like', '%' . $search . '%')
+                    ->orWhere('company_name', 'like', '%' . $search . '%')
+                    ->orWhere('reference', 'like', '%' . $search . '%')
+                    ->orWhere('category', 'like', '%' . $search . '%')
+                    ->orWhere('payment_mode', 'like', '%' . $search . '%');
+            });
+        }
+        if ($month !== '') {
+            $expensesQuery->whereBetween('created_at', [
+                now()->parse($month . '-01')->startOfMonth()->toDateString(),
+                now()->parse($month . '-01')->endOfMonth()->toDateString(),
+            ]);
+        } else {
+            if ($fromDate !== '') {
+                $expensesQuery->whereDate('created_at', '>=', $fromDate);
+            }
+            if ($toDate !== '') {
+                $expensesQuery->whereDate('created_at', '<=', $toDate);
+            }
+        }
+        $expenses = $expensesQuery->paginate(15)->appends($request->query());
         $expenseAccounts = Schema::hasTable('accounts')
             ? $this->applyTenantScope(Account::where('type', 'Expense')->orderBy('name'), 'accounts')->get()
             : collect();
@@ -128,7 +159,18 @@ class ExpenseController extends Controller
         }
         $partyOptions = $partyOptions->filter()->unique()->values();
 
-        return view('Finance.expenses', compact('expenses', 'expenseAccounts', 'assetAccounts', 'partyOptions', 'categories'));
+        return view('Finance.expenses', compact(
+            'expenses',
+            'expenseAccounts',
+            'assetAccounts',
+            'partyOptions',
+            'categories',
+            'status',
+            'search',
+            'month',
+            'fromDate',
+            'toDate'
+        ));
     }
 
     public function store(Request $request)

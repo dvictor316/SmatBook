@@ -736,6 +736,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
             Route::post('/expense-claims/{expenseClaim}/approve', [\App\Http\Controllers\ExpenseClaimController::class, 'approve'])->name('expense-claims.approve');
             Route::post('/expense-claims/{expenseClaim}/reject', [\App\Http\Controllers\ExpenseClaimController::class, 'reject'])->name('expense-claims.reject');
             Route::post('/expense-claims/{expenseClaim}/reimburse', [\App\Http\Controllers\ExpenseClaimController::class, 'reimburse'])->name('expense-claims.reimburse');
+            Route::get('/collections', [\App\Http\Controllers\CollectionsHubController::class, 'index'])->name('collections.index');
         });
 
         Route::middleware('plan.access:enterprise')->group(function () {

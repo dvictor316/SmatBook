@@ -81,14 +81,47 @@ class RecurringTransactionController extends Controller
         });
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $activeBranch = $this->getActiveBranchContext();
+        $status = strtolower(trim((string) $request->string('status')));
+        $sourceType = strtolower(trim((string) $request->string('source_type')));
+        $search = trim((string) $request->string('q'));
+        $month = trim((string) $request->string('month'));
+        $fromDate = trim((string) $request->string('from_date'));
+        $toDate = trim((string) $request->string('to_date'));
 
         $templatesQuery = RecurringTransaction::query()->latest();
         $this->applyTenantScope($templatesQuery, 'recurring_transactions');
         $this->applyBranchScope($templatesQuery, 'recurring_transactions');
-        $templates = $templatesQuery->paginate(15);
+        if (in_array($status, ['active', 'paused'], true)) {
+            $templatesQuery->where('status', $status);
+        }
+        if (in_array($sourceType, ['expense', 'purchase'], true)) {
+            $templatesQuery->where('source_type', $sourceType);
+        }
+        if ($search !== '') {
+            $templatesQuery->where(function ($query) use ($search) {
+                $query->where('name', 'like', '%' . $search . '%')
+                    ->orWhere('notes', 'like', '%' . $search . '%')
+                    ->orWhere('payload->source_reference', 'like', '%' . $search . '%')
+                    ->orWhere('payload->source_name', 'like', '%' . $search . '%');
+            });
+        }
+        if ($month !== '') {
+            $templatesQuery->whereBetween('next_run_on', [
+                now()->parse($month . '-01')->startOfMonth()->toDateString(),
+                now()->parse($month . '-01')->endOfMonth()->toDateString(),
+            ]);
+        } else {
+            if ($fromDate !== '') {
+                $templatesQuery->whereDate('next_run_on', '>=', $fromDate);
+            }
+            if ($toDate !== '') {
+                $templatesQuery->whereDate('next_run_on', '<=', $toDate);
+            }
+        }
+        $templates = $templatesQuery->paginate(15)->appends($request->query());
 
         $expenseSourceQuery = Expense::query()->latest();
         $this->applyTenantScope($expenseSourceQuery, 'expenses');
@@ -104,7 +137,13 @@ class RecurringTransactionController extends Controller
             'templates',
             'expenseSources',
             'purchaseSources',
-            'activeBranch'
+            'activeBranch',
+            'status',
+            'sourceType',
+            'search',
+            'month',
+            'fromDate',
+            'toDate'
         ));
     }
 

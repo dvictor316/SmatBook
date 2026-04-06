@@ -1360,14 +1360,43 @@ public function inventory(Request $request)
         return redirect()->back()->with('success', 'Stock transferred successfully between branches.');
     }
 
-    public function transferAudit()
+    public function transferAudit(Request $request)
     {
-        $audits = StockTransferAudit::query()
-            ->with(['product', 'initiator'])
-            ->latest()
-            ->paginate(20);
+        $search = trim((string) $request->string('q'));
+        $month = trim((string) $request->string('month'));
+        $fromDate = trim((string) $request->string('from_date'));
+        $toDate = trim((string) $request->string('to_date'));
 
-        return view('Inventory.transfer-audit', compact('audits'));
+        $auditsQuery = StockTransferAudit::query()
+            ->with(['product', 'initiator'])
+            ->latest();
+
+        if ($search !== '') {
+            $auditsQuery->where(function ($query) use ($search) {
+                $query->where('from_branch_name', 'like', '%' . $search . '%')
+                    ->orWhere('to_branch_name', 'like', '%' . $search . '%')
+                    ->orWhere('notes', 'like', '%' . $search . '%')
+                    ->orWhereHas('product', fn ($sub) => $sub->where('name', 'like', '%' . $search . '%')->orWhere('sku', 'like', '%' . $search . '%'))
+                    ->orWhereHas('initiator', fn ($sub) => $sub->where('name', 'like', '%' . $search . '%'));
+            });
+        }
+        if ($month !== '') {
+            $auditsQuery->whereBetween('created_at', [
+                now()->parse($month . '-01')->startOfMonth()->toDateString(),
+                now()->parse($month . '-01')->endOfMonth()->toDateString(),
+            ]);
+        } else {
+            if ($fromDate !== '') {
+                $auditsQuery->whereDate('created_at', '>=', $fromDate);
+            }
+            if ($toDate !== '') {
+                $auditsQuery->whereDate('created_at', '<=', $toDate);
+            }
+        }
+
+        $audits = $auditsQuery->paginate(20)->appends($request->query());
+
+        return view('Inventory.transfer-audit', compact('audits', 'search', 'month', 'fromDate', 'toDate'));
     }
 
     /**

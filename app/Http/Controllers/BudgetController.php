@@ -55,12 +55,46 @@ class BudgetController extends Controller
         });
     }
 
-    public function index()
+    public function index(Request $request)
     {
+        $status = strtolower(trim((string) $request->string('status')));
+        $periodType = strtolower(trim((string) $request->string('period_type')));
+        $search = trim((string) $request->string('q'));
+        $month = trim((string) $request->string('month'));
+        $fromDate = trim((string) $request->string('from_date'));
+        $toDate = trim((string) $request->string('to_date'));
+
         $budgetQuery = Budget::with('account')->latest('start_date');
         $this->applyTenantScope($budgetQuery, 'budgets');
         $this->applyBranchScope($budgetQuery, 'budgets');
-        $budgets = $budgetQuery->paginate(15);
+        if (in_array($status, ['active', 'archived'], true)) {
+            $budgetQuery->where('status', $status);
+        }
+        if (in_array($periodType, ['monthly', 'quarterly', 'yearly', 'custom'], true)) {
+            $budgetQuery->where('period_type', $periodType);
+        }
+        if ($search !== '') {
+            $budgetQuery->where(function ($query) use ($search) {
+                $query->where('name', 'like', '%' . $search . '%')
+                    ->orWhere('notes', 'like', '%' . $search . '%')
+                    ->orWhereHas('account', fn ($sub) => $sub->where('name', 'like', '%' . $search . '%')->orWhere('code', 'like', '%' . $search . '%'));
+            });
+        }
+
+        if ($month !== '') {
+            $monthStart = now()->parse($month . '-01')->startOfMonth()->toDateString();
+            $monthEnd = now()->parse($month . '-01')->endOfMonth()->toDateString();
+            $budgetQuery->whereDate('start_date', '<=', $monthEnd)->whereDate('end_date', '>=', $monthStart);
+        } else {
+            if ($fromDate !== '') {
+                $budgetQuery->whereDate('end_date', '>=', $fromDate);
+            }
+            if ($toDate !== '') {
+                $budgetQuery->whereDate('start_date', '<=', $toDate);
+            }
+        }
+
+        $budgets = $budgetQuery->paginate(15)->appends($request->query());
 
         $budgets->getCollection()->transform(function (Budget $budget) {
             $budget->actual_amount = $this->calculateActualAmount($budget);
@@ -84,7 +118,17 @@ class BudgetController extends Controller
             'variance_total' => (float) $budgets->getCollection()->sum(fn ($budget) => (float) ($budget->variance_amount ?? 0)),
         ];
 
-        return view('Finance.budgets', compact('budgets', 'accounts', 'summary'));
+        return view('Finance.budgets', compact(
+            'budgets',
+            'accounts',
+            'summary',
+            'status',
+            'periodType',
+            'search',
+            'month',
+            'fromDate',
+            'toDate'
+        ));
     }
 
     public function store(Request $request)

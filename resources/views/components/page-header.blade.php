@@ -1,4 +1,86 @@
 <!-- Page Header -->
+@php
+    $routeName = Route::currentRouteName();
+    $knownFilterKeys = ['q', 'status', 'type', 'source_type', 'reimbursement_status', 'period_type', 'month', 'from_date', 'to_date'];
+    $filterConfig = [
+        'search_label' => 'Search',
+        'search_placeholder' => 'Search records',
+        'extra_fields' => [],
+    ];
+
+    $filterConfigs = [
+        'expenses.index' => [
+            'search_label' => 'Expense Search',
+            'search_placeholder' => 'Expense ID, supplier, reference',
+            'extra_fields' => [
+                ['name' => 'status', 'label' => 'Status', 'options' => ['Paid' => 'Paid', 'Pending' => 'Pending', 'Overdue' => 'Overdue']],
+            ],
+        ],
+        'finance.expense-claims.index' => [
+            'search_label' => 'Claim Search',
+            'search_placeholder' => 'Claim, employee, project',
+            'extra_fields' => [
+                ['name' => 'status', 'label' => 'Claim Status', 'options' => ['pending' => 'Pending', 'approved' => 'Approved', 'rejected' => 'Rejected', 'reimbursed' => 'Reimbursed']],
+                ['name' => 'reimbursement_status', 'label' => 'Reimbursement', 'options' => ['unpaid' => 'Unpaid', 'paid' => 'Paid']],
+            ],
+        ],
+        'finance.approvals.index' => [
+            'search_label' => 'Approval Search',
+            'search_placeholder' => 'Reference, title, requester',
+            'extra_fields' => [
+                ['name' => 'status', 'label' => 'Status', 'options' => ['pending' => 'Pending', 'approved' => 'Approved', 'rejected' => 'Rejected']],
+                ['name' => 'type', 'label' => 'Type', 'options' => ['expense' => 'Expense', 'purchase' => 'Purchase']],
+            ],
+        ],
+        'finance.recurring.index' => [
+            'search_label' => 'Template Search',
+            'search_placeholder' => 'Template, source ref, source name',
+            'extra_fields' => [
+                ['name' => 'status', 'label' => 'Status', 'options' => ['active' => 'Active', 'paused' => 'Paused']],
+                ['name' => 'source_type', 'label' => 'Source Type', 'options' => ['expense' => 'Expense', 'purchase' => 'Purchase']],
+            ],
+        ],
+        'finance.fixed-assets.index' => [
+            'search_label' => 'Asset Search',
+            'search_placeholder' => 'Asset, code, notes',
+            'extra_fields' => [
+                ['name' => 'status', 'label' => 'Status', 'options' => ['active' => 'Active', 'fully_depreciated' => 'Fully Depreciated', 'disposed' => 'Disposed', 'archived' => 'Archived']],
+            ],
+        ],
+        'finance.budgets.index' => [
+            'search_label' => 'Budget Search',
+            'search_placeholder' => 'Budget, account, note',
+            'extra_fields' => [
+                ['name' => 'status', 'label' => 'Status', 'options' => ['active' => 'Active', 'archived' => 'Archived']],
+                ['name' => 'period_type', 'label' => 'Period Type', 'options' => ['monthly' => 'Monthly', 'quarterly' => 'Quarterly', 'yearly' => 'Yearly', 'custom' => 'Custom']],
+            ],
+        ],
+        'finance.collections.index' => [
+            'search_label' => 'Receivables / Payables Search',
+            'search_placeholder' => 'Customer, supplier, invoice, purchase',
+            'extra_fields' => [],
+        ],
+        'inventory.transfer-audit' => [
+            'search_label' => 'Transfer Search',
+            'search_placeholder' => 'Product, branch, initiated by',
+            'extra_fields' => [],
+        ],
+    ];
+
+    if (isset($filterConfigs[$routeName])) {
+        $filterConfig = array_merge($filterConfig, $filterConfigs[$routeName]);
+    }
+
+    $activeFilterCount = 0;
+    foreach ($knownFilterKeys as $key) {
+        $value = request()->query($key);
+        if (is_array($value)) {
+            $activeFilterCount += count(array_filter($value, fn ($item) => filled($item)));
+        } elseif (filled($value)) {
+            $activeFilterCount++;
+        }
+    }
+@endphp
 @if(!Route::is(['companies','subscription','packages','plans-list']))
 <div class="page-header">
 
@@ -73,11 +155,61 @@
                         'purchase-transaction'
                     ]))
                     <li>
-                        <a class="btn btn-filters w-auto popup-toggle" data-bs-toggle="tooltip"
-                            data-bs-placement="bottom" title="Filter"><span class="me-2"><img
-                                    src="{{ URL::asset('/assets/img/icons/filter-icon.svg') }}"
-                                    alt="filter"></span>Filter
-                        </a>
+                        <div class="dropdown">
+                            <button class="btn btn-filters w-auto dropdown-toggle border-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <span class="me-2"><img src="{{ URL::asset('/assets/img/icons/filter-icon.svg') }}" alt="filter"></span>Filter
+                                @if($activeFilterCount > 0)
+                                    <span class="badge bg-primary ms-2">{{ $activeFilterCount }}</span>
+                                @endif
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-end p-3 shadow border-0" style="min-width: 340px;">
+                                <form method="GET" action="{{ url()->current() }}" class="shared-page-filter-form">
+                                    @foreach(request()->query() as $key => $value)
+                                        @if(!in_array($key, $knownFilterKeys, true) && !is_array($value))
+                                            <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                                        @endif
+                                    @endforeach
+
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">{{ $filterConfig['search_label'] }}</label>
+                                        <input type="text" name="q" class="form-control" value="{{ request('q') }}" placeholder="{{ $filterConfig['search_placeholder'] }}">
+                                    </div>
+
+                                    @foreach($filterConfig['extra_fields'] as $field)
+                                        <div class="mb-3">
+                                            <label class="form-label fw-semibold">{{ $field['label'] }}</label>
+                                            <select name="{{ $field['name'] }}" class="form-select">
+                                                <option value="">All</option>
+                                                @foreach($field['options'] as $optionValue => $optionLabel)
+                                                    <option value="{{ $optionValue }}" {{ (string) request($field['name']) === (string) $optionValue ? 'selected' : '' }}>{{ $optionLabel }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    @endforeach
+
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">Month</label>
+                                        <input type="month" name="month" class="form-control" value="{{ request('month') }}">
+                                    </div>
+
+                                    <div class="row g-2">
+                                        <div class="col-6">
+                                            <label class="form-label fw-semibold">From Date</label>
+                                            <input type="date" name="from_date" class="form-control" value="{{ request('from_date') }}">
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label fw-semibold">To Date</label>
+                                            <input type="date" name="to_date" class="form-control" value="{{ request('to_date') }}">
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex gap-2 mt-3">
+                                        <button type="submit" class="btn btn-primary flex-fill">Apply Filter</button>
+                                        <a href="{{ url()->current() }}" class="btn btn-light border flex-fill">Reset</a>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
                     </li>
                 @endif
                 @if(Route::is(['purchase-transaction']))

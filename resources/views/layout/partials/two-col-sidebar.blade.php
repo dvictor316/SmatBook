@@ -220,6 +220,13 @@
                                 <span>Expense Claims</span></a>
                         </li>
                         @endif
+                        @if($twoColHasProfessional && Route::has('finance.collections.index'))
+                        <li>
+                            <a class="{{ Request::is('finance/collections*') ? 'active' : '' }}" href="{{ route('finance.collections.index') }}"><i
+                                    class="fe fe-layers"></i>
+                                <span>Collections Hub</span></a>
+                        </li>
+                        @endif
                         @if($twoColHasEnterprise && Route::has('finance.fixed-assets.index'))
                         <li>
                             <a class="{{ Request::is('finance/fixed-assets*') ? 'active' : '' }}" href="{{ route('finance.fixed-assets.index') }}"><i

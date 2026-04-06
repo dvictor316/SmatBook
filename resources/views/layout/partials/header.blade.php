@@ -210,6 +210,13 @@
             'icon' => 'fa-wallet',
             'keywords' => ['expense claims', 'reimbursements', 'staff claims', 'claims'],
         ] : null,
+        $headerHasProfessional && Route::has('finance.collections.index') ? [
+            'title' => 'Collections Hub',
+            'subtitle' => 'Receivables and payables ageing across customers and suppliers',
+            'url' => route('finance.collections.index'),
+            'icon' => 'fa-hand-holding-dollar',
+            'keywords' => ['collections', 'receivables', 'payables', 'ageing', 'aging'],
+        ] : null,
         $headerHasProfessional && Route::has('inventory.transfer-audit') ? [
             'title' => 'Transfer Audit',
             'subtitle' => 'Branch stock movement history and accountability',
