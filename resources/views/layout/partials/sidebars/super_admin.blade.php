@@ -144,6 +144,9 @@
                 @if(Route::has('finance.collections.index'))
                     <li><a href="{{ route('finance.collections.index') }}"><i class="fe fe-layers"></i><span>Collections Hub</span></a></li>
                 @endif
+                @if(Route::has('finance.follow-ups.index'))
+                    <li><a href="{{ route('finance.follow-ups.index') }}"><i class="fe fe-calendar"></i><span>Follow-Ups</span></a></li>
+                @endif
                 @if(Route::has('finance.fixed-assets.index'))
                     <li><a href="{{ route('finance.fixed-assets.index') }}"><i class="fe fe-archive"></i><span>Fixed Assets</span></a></li>
                 @endif

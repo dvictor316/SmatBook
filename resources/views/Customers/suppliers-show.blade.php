@@ -17,6 +17,14 @@
                     <a href="{{ route('suppliers.pay', $supplier->id) }}" class="btn btn-success me-2">
                         <i class="far fa-credit-card me-1"></i>Pay Supplier
                     </a>
+                    <a href="{{ route('suppliers.statement', $supplier->id) }}" class="btn btn-outline-secondary me-2">
+                        <i class="far fa-file-alt me-1"></i>Statement
+                    </a>
+                    @if(Route::has('finance.follow-ups.index'))
+                        <a href="{{ route('finance.follow-ups.index') }}" class="btn btn-outline-dark me-2">
+                            <i class="far fa-calendar-check me-1"></i>Follow-Ups
+                        </a>
+                    @endif
                     <a href="{{ route('suppliers.edit', $supplier->id) }}" class="btn btn-outline-primary">
                         <i class="far fa-edit me-1"></i>Edit Supplier
                     </a>

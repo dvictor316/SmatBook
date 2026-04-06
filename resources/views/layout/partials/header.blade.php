@@ -217,6 +217,13 @@
             'icon' => 'fa-hand-holding-dollar',
             'keywords' => ['collections', 'receivables', 'payables', 'ageing', 'aging'],
         ] : null,
+        $headerHasProfessional && Route::has('finance.follow-ups.index') ? [
+            'title' => 'Collections Follow-Ups',
+            'subtitle' => 'Track customer and supplier callbacks, reminders, and next actions',
+            'url' => route('finance.follow-ups.index'),
+            'icon' => 'fa-calendar-check',
+            'keywords' => ['follow up', 'collections follow up', 'supplier follow up', 'customer follow up', 'reminder'],
+        ] : null,
         $headerHasProfessional && Route::has('inventory.transfer-audit') ? [
             'title' => 'Transfer Audit',
             'subtitle' => 'Branch stock movement history and accountability',

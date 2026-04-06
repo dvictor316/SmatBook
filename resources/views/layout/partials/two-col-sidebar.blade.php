@@ -227,6 +227,13 @@
                                 <span>Collections Hub</span></a>
                         </li>
                         @endif
+                        @if($twoColHasProfessional && Route::has('finance.follow-ups.index'))
+                        <li>
+                            <a class="{{ Request::is('finance/follow-ups*') ? 'active' : '' }}" href="{{ route('finance.follow-ups.index') }}"><i
+                                    class="fe fe-calendar"></i>
+                                <span>Follow-Ups</span></a>
+                        </li>
+                        @endif
                         @if($twoColHasEnterprise && Route::has('finance.fixed-assets.index'))
                         <li>
                             <a class="{{ Request::is('finance/fixed-assets*') ? 'active' : '' }}" href="{{ route('finance.fixed-assets.index') }}"><i

@@ -353,6 +353,81 @@ class SupplierController extends Controller
         ));
     }
 
+    public function statement(Request $request, $id)
+    {
+        $supplier = $this->applyTenantScope(Supplier::query())->findOrFail($id);
+        $purchaseDateColumn = Schema::hasColumn('purchases', 'purchase_date')
+            ? 'purchase_date'
+            : (Schema::hasColumn('purchases', 'date') ? 'date' : 'created_at');
+
+        $purchasesQuery = Purchase::query()->where('supplier_id', $supplier->id);
+        $this->applyTenantScope($purchasesQuery, 'purchases');
+        $this->applyBranchScopeToPurchases($purchasesQuery);
+        $purchases = $purchasesQuery->get();
+
+        $payments = collect();
+        if (Schema::hasTable('supplier_payments')) {
+            $paymentsQuery = SupplierPayment::query()->with('bank')->where('supplier_id', $supplier->id);
+            $this->applyTenantScope($paymentsQuery, 'supplier_payments');
+            $payments = $paymentsQuery->get();
+        }
+
+        $entries = collect();
+
+        if ((float) ($supplier->opening_balance ?? 0) > 0) {
+            $entries->push([
+                'date' => $supplier->opening_balance_date ?: optional($supplier->created_at)->toDateString() ?: now()->toDateString(),
+                'type' => 'opening_balance',
+                'reference' => 'SUP-OPEN-' . $supplier->id,
+                'description' => 'Supplier opening balance',
+                'debit' => 0,
+                'credit' => (float) $supplier->opening_balance,
+            ]);
+        }
+
+        $entries = $entries
+            ->merge($purchases->map(function ($purchase) use ($purchaseDateColumn) {
+                return [
+                    'date' => optional($purchase->{$purchaseDateColumn} ?? $purchase->created_at)->toDateString() ?: optional($purchase->created_at)->toDateString() ?: now()->toDateString(),
+                    'type' => 'purchase',
+                    'reference' => $purchase->purchase_no ?: ('PUR-' . $purchase->id),
+                    'description' => 'Purchase raised',
+                    'debit' => 0,
+                    'credit' => (float) ($purchase->total_amount ?? 0),
+                ];
+            }))
+            ->merge($payments->map(function ($payment) {
+                return [
+                    'date' => optional($payment->payment_date ?? $payment->created_at)->toDateString() ?: optional($payment->created_at)->toDateString() ?: now()->toDateString(),
+                    'type' => 'payment',
+                    'reference' => $payment->reference ?: ($payment->payment_group ?: ('PAY-' . $payment->id)),
+                    'description' => 'Supplier payment' . ($payment->bank?->name ? ' via ' . $payment->bank->name : ''),
+                    'debit' => (float) ($payment->amount ?? 0),
+                    'credit' => 0,
+                ];
+            }))
+            ->sortBy([
+                ['date', 'asc'],
+                ['reference', 'asc'],
+            ])
+            ->values();
+
+        $runningBalance = 0.0;
+        $entries = $entries->map(function ($entry) use (&$runningBalance) {
+            $runningBalance += (float) $entry['credit'] - (float) $entry['debit'];
+            $entry['balance'] = round($runningBalance, 2);
+            return $entry;
+        });
+
+        $summary = [
+            'total_billed' => round((float) $purchases->sum('total_amount') + (float) ($supplier->opening_balance ?? 0), 2),
+            'total_paid' => round((float) $payments->sum('amount'), 2),
+            'balance_due' => round(max(0, $runningBalance), 2),
+        ];
+
+        return view('Customers.supplier-statement', compact('supplier', 'entries', 'summary'));
+    }
+
     public function storePayment(Request $request, $id): RedirectResponse
     {
         $supplier = $this->applyTenantScope(Supplier::query())->findOrFail($id);

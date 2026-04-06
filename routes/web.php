@@ -617,6 +617,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::post('/', 'store')->name('store');
         Route::get('/{id}/pay', 'pay')->name('pay');
         Route::post('/{id}/pay', 'storePayment')->name('store-payment');
+        Route::get('/{id}/statement', 'statement')->name('statement');
         Route::get('/{id}', 'show')->name('show');
         Route::get('/{id}/edit', 'edit')->name('edit');
         Route::put('/{id}', 'update')->name('update');
@@ -737,6 +738,9 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
             Route::post('/expense-claims/{expenseClaim}/reject', [\App\Http\Controllers\ExpenseClaimController::class, 'reject'])->name('expense-claims.reject');
             Route::post('/expense-claims/{expenseClaim}/reimburse', [\App\Http\Controllers\ExpenseClaimController::class, 'reimburse'])->name('expense-claims.reimburse');
             Route::get('/collections', [\App\Http\Controllers\CollectionsHubController::class, 'index'])->name('collections.index');
+            Route::get('/follow-ups', [\App\Http\Controllers\CollectionFollowUpController::class, 'index'])->name('follow-ups.index');
+            Route::post('/follow-ups', [\App\Http\Controllers\CollectionFollowUpController::class, 'store'])->name('follow-ups.store');
+            Route::post('/follow-ups/{collectionFollowUp}/complete', [\App\Http\Controllers\CollectionFollowUpController::class, 'complete'])->name('follow-ups.complete');
         });
 
         Route::middleware('plan.access:enterprise')->group(function () {

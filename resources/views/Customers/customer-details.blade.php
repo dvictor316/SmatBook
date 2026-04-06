@@ -383,6 +383,11 @@
                     <a href="{{ route('customers.receive-payment', $customer->id) }}" class="btn btn-outline-success rounded-pill px-4">
                         <i class="fe fe-credit-card me-2"></i>Record Payment
                     </a>
+                    @if(Route::has('finance.follow-ups.index'))
+                        <a href="{{ route('finance.follow-ups.index') }}" class="btn btn-outline-secondary rounded-pill px-4">
+                            <i class="fe fe-calendar me-2"></i>Follow-Ups
+                        </a>
+                    @endif
                     <button onclick="window.print()" class="btn btn-light border rounded-pill px-4">
                         <i class="fe fe-printer me-2"></i>Print Dossier
                     </button>

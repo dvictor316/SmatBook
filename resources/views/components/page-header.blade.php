@@ -60,6 +60,14 @@
             'search_placeholder' => 'Customer, supplier, invoice, purchase',
             'extra_fields' => [],
         ],
+        'finance.follow-ups.index' => [
+            'search_label' => 'Follow-Up Search',
+            'search_placeholder' => 'Party, reminder, note',
+            'extra_fields' => [
+                ['name' => 'status', 'label' => 'Status', 'options' => ['open' => 'Open', 'completed' => 'Completed', 'cancelled' => 'Cancelled']],
+                ['name' => 'party_type', 'label' => 'Party Type', 'options' => ['customer' => 'Customer', 'supplier' => 'Supplier']],
+            ],
+        ],
         'inventory.transfer-audit' => [
             'search_label' => 'Transfer Search',
             'search_placeholder' => 'Product, branch, initiated by',
