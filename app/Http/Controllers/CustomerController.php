@@ -557,6 +557,11 @@ class CustomerController extends Controller
         $outstandingOpeningBalance = (float) ($customer->balance ?? 0);
         $outstandingInvoicesTotal = (float) $outstandingSales->sum('balance');
         $supportsStandalonePayments = !$this->paymentsRequireSaleId();
+        $paymentHistory = Payment::query()
+            ->where('customer_id', $customer->id)
+            ->orderByDesc('created_at')
+            ->limit(10)
+            ->get();
 
         return view('Customers.receive-payment', compact(
             'customer',
@@ -564,7 +569,8 @@ class CustomerController extends Controller
             'paymentDestinations',
             'outstandingOpeningBalance',
             'outstandingInvoicesTotal',
-            'supportsStandalonePayments'
+            'supportsStandalonePayments',
+            'paymentHistory'
         ));
     }
 
@@ -574,30 +580,14 @@ class CustomerController extends Controller
 
         $request->validate([
             'payment_date' => 'required|date',
-            'received_amount' => 'nullable|numeric|min:0.01',
+            'received_amount' => 'required|numeric|min:0.01',
             'payment_target' => 'nullable|string|max:50',
             'reference' => 'nullable|string|max:191',
             'method' => 'nullable|string|max:100',
             'note' => 'nullable|string|max:1000',
-            'allocations' => 'nullable|array',
         ]);
 
-        $rawAllocations = collect($request->input('allocations', []))
-            ->map(fn ($value) => round((float) $value, 2));
-
-        $saleAllocations = $rawAllocations
-            ->mapWithKeys(fn ($value, $saleId) => [(int) $saleId => max(0, (float) $value)])
-            ->filter(fn ($value) => $value > 0);
-
         $receivedAmount = round((float) $request->input('received_amount', 0), 2);
-
-        $requestedTotal = round((float) $saleAllocations->sum(), 2);
-        if ($requestedTotal <= 0) {
-            return back()->withInput()->with('error', 'Enter at least one payment amount before saving.');
-        }
-        if ($receivedAmount > 0 && abs($receivedAmount - $requestedTotal) > 0.009) {
-            return back()->withInput()->with('error', 'Amount received must match the total allocated amount before saving.');
-        }
 
         $activeBranch = $this->getActiveBranchContext();
         $referenceBase = trim((string) $request->input('reference', ''));
@@ -607,30 +597,32 @@ class CustomerController extends Controller
         try {
             DB::transaction(function () use (
                 $customer,
-                $saleAllocations,
+                $receivedAmount,
                 $request,
                 $activeBranch,
                 $referenceBase,
                 $paymentDate,
                 $resolvedAccountId
             ) {
-                $salesQuery = Sale::query()
+                // Get outstanding sales ordered by date
+                $outstandingSalesQuery = Sale::query()
                     ->where('customer_id', $customer->id)
-                    ->whereIn('id', $saleAllocations->keys())
-                    ->lockForUpdate();
-                $this->applySaleTenantScope($salesQuery);
-                $this->applySaleBranchFilter($salesQuery, 'sales');
-                $sales = $salesQuery->get()->keyBy('id');
+                    ->where('balance', '>', 0)
+                    ->orderBy('order_date')
+                    ->orderBy('id');
+                $this->applySaleTenantScope($outstandingSalesQuery);
+                $this->applySaleBranchFilter($outstandingSalesQuery, 'sales');
+                $outstandingSales = $outstandingSalesQuery->lockForUpdate()->get();
 
-                foreach ($saleAllocations as $saleId => $amountRequested) {
-                    /** @var \App\Models\Sale|null $sale */
-                    $sale = $sales->get($saleId);
-                    if (!$sale) {
-                        continue;
+                $remainingAmount = $receivedAmount;
+
+                foreach ($outstandingSales as $sale) {
+                    if ($remainingAmount <= 0) {
+                        break;
                     }
 
                     $remaining = round((float) ($sale->balance ?? 0), 2);
-                    $amount = min($remaining, max(0, (float) $amountRequested));
+                    $amount = min($remaining, $remainingAmount);
                     if ($amount <= 0) {
                         continue;
                     }
@@ -688,6 +680,8 @@ class CustomerController extends Controller
                     }
 
                     LedgerService::postSalePayment($sale->fresh(), $payment->fresh(), $payment->reference);
+
+                    $remainingAmount -= $amount;
                 }
 
             });
