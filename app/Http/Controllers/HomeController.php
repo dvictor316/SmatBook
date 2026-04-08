@@ -9,6 +9,7 @@ use App\Models\Quotation;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\{Auth, DB, Log, Schema, Storage, Hash};
 use Illuminate\Http\Request;
+use Carbon\Carbon;
 
 class HomeController extends Controller
 {
@@ -21,6 +22,27 @@ class HomeController extends Controller
         return collect($payload)
             ->filter(fn ($value, $column) => Schema::hasColumn('quotations', $column))
             ->all();
+    }
+
+    private function normalizeDateInput(?string $value): ?string
+    {
+        $value = trim((string) $value);
+        if ($value === '') {
+            return null;
+        }
+
+        foreach (['d-m-Y', 'Y-m-d', 'd/m/Y', 'm/d/Y'] as $format) {
+            try {
+                return Carbon::createFromFormat($format, $value)->toDateString();
+            } catch (\Throwable $e) {
+            }
+        }
+
+        try {
+            return Carbon::parse($value)->toDateString();
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 
     /*
@@ -519,6 +541,9 @@ class HomeController extends Controller
             $customer = Customer::find($validated['customer_id']);
         }
 
+        $issueDate = $this->normalizeDateInput($validated['issue_date'] ?? null) ?? now()->toDateString();
+        $expiryDate = $this->normalizeDateInput($validated['expiry_date'] ?? null) ?? now()->addDays(7)->toDateString();
+
         $payload = [
             'quotation_id' => $validated['quotation_id'],
             'customer_id' => $validated['customer_id'] ?? null,
@@ -527,8 +552,8 @@ class HomeController extends Controller
             'branch_id' => session('active_branch_id'),
             'branch_name' => session('active_branch_name'),
             'customer_name' => $customer?->customer_name ?? $customer?->name ?? 'Walk-in Customer',
-            'issue_date' => $validated['issue_date'] ?? now()->toDateString(),
-            'expiry_date' => $validated['expiry_date'] ?? now()->addDays(7)->toDateString(),
+            'issue_date' => $issueDate,
+            'expiry_date' => $expiryDate,
             'subtotal' => $subtotal,
             'tax' => $taxTotal,
             'discount' => $discountTotal,
