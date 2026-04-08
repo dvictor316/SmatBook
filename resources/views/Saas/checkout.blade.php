@@ -366,9 +366,9 @@
             @endif
 
             <h1>Payment Details</h1>
-            <p>Select your preferred gateway. Stripe runs in-page, while others open secure gateway checkout.</p>
+            <p>Select your preferred gateway. Test-mode gateways remain available, and bank transfer submissions can be reviewed manually.</p>
 
-            <form id="stripePaymentForm" method="POST" action="{{ route('saas.payment.process.checkout', $subscription->id) }}">
+            <form id="stripePaymentForm" method="POST" action="{{ route('saas.payment.process.checkout', $subscription->id) }}" enctype="multipart/form-data">
                 @csrf
                 <input type="hidden" name="gateway" id="selectedGatewayInput" value="stripe">
 
@@ -383,7 +383,7 @@
                     </div>
                     <div class="col-12">
                         <label class="field-label">Payment Gateway</label>
-                        <div class="gateway-grid">
+                        <div class="gateway-grid" style="grid-template-columns: repeat(4, minmax(0, 1fr));">
                             <label class="gateway-option">
                                 <input type="radio" name="gateway_option" value="stripe" checked>
                                 <span class="gateway-pill gateway-stripe">Stripe</span>
@@ -396,12 +396,47 @@
                                 <input type="radio" name="gateway_option" value="flutterwave">
                                 <span class="gateway-pill gateway-flutterwave">Flutterwave</span>
                             </label>
+                            <label class="gateway-option">
+                                <input type="radio" name="gateway_option" value="bank_transfer">
+                                <span class="gateway-pill">Transfer</span>
+                            </label>
                         </div>
                     </div>
                 </div>
 
                 <div class="stripe-note" id="gatewayHelpText">
                     Stripe checkout stays inside this page.
+                </div>
+
+                <div id="bankTransferFields" style="display:none; margin-top:16px;">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="field-label">Receiving Account</label>
+                            <select class="field-input" name="transfer_bank_id">
+                                <option value="">Select bank account</option>
+                                @foreach(($bankAccounts ?? collect()) as $bank)
+                                    <option value="{{ $bank->id }}" {{ (string) old('transfer_bank_id') === (string) $bank->id ? 'selected' : '' }}>
+                                        {{ $bank->name ?? 'Bank' }}
+                                        @if(!empty($bank->account_number))
+                                            - {{ $bank->account_number }}
+                                        @endif
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="field-label">Payer Name</label>
+                            <input class="field-input" type="text" name="transfer_payer_name" value="{{ old('transfer_payer_name', $checkoutProfileName) }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="field-label">Transfer Reference</label>
+                            <input class="field-input" type="text" name="transfer_reference" value="{{ old('transfer_reference') }}" placeholder="Bank transfer reference">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="field-label">Proof of Payment</label>
+                            <input class="field-input" type="file" name="transfer_proof" accept=".jpg,.jpeg,.png,.pdf">
+                        </div>
+                    </div>
                 </div>
 
                 <button class="pay-btn" type="submit" id="payNowBtn">
@@ -432,6 +467,7 @@
         const gatewayInput = document.getElementById('selectedGatewayInput');
         const gatewayRadios = Array.from(document.querySelectorAll('input[name="gateway_option"]'));
         const gatewayHelpText = document.getElementById('gatewayHelpText');
+        const bankTransferFields = document.getElementById('bankTransferFields');
         const publishableKey = @json($stripePublishableKey ?? '');
         const amountLabel = '₦{{ number_format((float) ($subscription->amount ?? 0), 2) }}';
 
@@ -439,6 +475,9 @@
 
         const setGatewayUI = (gateway) => {
             gatewayInput.value = gateway;
+            if (bankTransferFields) {
+                bankTransferFields.style.display = gateway === 'bank_transfer' ? 'block' : 'none';
+            }
             if (gateway === 'stripe') {
                 payNowBtn.innerHTML = `Pay ${amountLabel} with Stripe`;
                 gatewayHelpText.textContent = 'Stripe checkout stays inside this page.';
@@ -446,11 +485,17 @@
             }
             if (gateway === 'paystack') {
                 payNowBtn.innerHTML = `Continue to Paystack (${amountLabel})`;
-                gatewayHelpText.textContent = 'You will be redirected to Paystack secure checkout and returned automatically.';
+                gatewayHelpText.textContent = 'You will be redirected to Paystack secure checkout and returned automatically. Test keys remain supported.';
                 return;
             }
-            payNowBtn.innerHTML = `Continue to Flutterwave (${amountLabel})`;
-            gatewayHelpText.textContent = 'You will be redirected to Flutterwave secure checkout and returned automatically.';
+            if (gateway === 'flutterwave') {
+                payNowBtn.innerHTML = `Continue to Flutterwave (${amountLabel})`;
+                gatewayHelpText.textContent = 'You will be redirected to Flutterwave secure checkout and returned automatically. Test keys remain supported.';
+                return;
+            }
+
+            payNowBtn.innerHTML = `Submit Bank Transfer (${amountLabel})`;
+            gatewayHelpText.textContent = 'Submit your transfer details for manual verification without leaving this page.';
         };
 
         gatewayRadios.forEach((radio) => {

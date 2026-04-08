@@ -456,7 +456,11 @@ class SubscriptionController extends Controller
         }
 
         $request->validate([
-            'gateway' => 'required|in:stripe,paystack,flutterwave',
+            'gateway' => 'required|in:stripe,paystack,flutterwave,bank_transfer',
+            'transfer_bank_id' => 'nullable|required_if:gateway,bank_transfer|integer',
+            'transfer_payer_name' => 'nullable|required_if:gateway,bank_transfer|string|max:191',
+            'transfer_reference' => 'nullable|required_if:gateway,bank_transfer|string|max:191',
+            'transfer_proof' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:4096',
         ]);
 
         switch ($request->gateway) {
@@ -466,6 +470,8 @@ class SubscriptionController extends Controller
                 return $this->initPaystack($subscription);
             case 'flutterwave':
                 return $this->initFlutterwave($subscription);
+            case 'bank_transfer':
+                return $this->initBankTransfer($subscription, $request);
             default:
                 return redirect()->route('saas.checkout', $id)
                     ->with('error', 'Unsupported payment method selected.');
@@ -760,6 +766,34 @@ class SubscriptionController extends Controller
             return redirect()->route('saas.checkout', $subscription->id)
                 ->with('error', 'Flutterwave checkout is temporarily unavailable.');
         }
+    }
+
+    private function initBankTransfer(Subscription $subscription, Request $request)
+    {
+        $updates = [
+            'payment_gateway' => 'bank_transfer',
+            'payment_status' => 'pending_verification',
+            'status' => 'Pending',
+            'transfer_bank_id' => $request->input('transfer_bank_id'),
+            'transfer_reference' => trim((string) $request->input('transfer_reference')),
+            'transfer_payer_name' => trim((string) $request->input('transfer_payer_name')),
+            'transfer_submitted_at' => now(),
+        ];
+
+        if ($request->hasFile('transfer_proof')) {
+            $updates['transfer_proof'] = $request->file('transfer_proof')->store('transfers', 'public');
+        }
+
+        foreach (array_keys($updates) as $column) {
+            if (!Schema::hasColumn('subscriptions', $column)) {
+                unset($updates[$column]);
+            }
+        }
+
+        $subscription->update($updates);
+
+        return redirect()->route('saas.checkout', $subscription->id)
+            ->with('success', 'Bank transfer submitted successfully. Your payment is awaiting verification.');
     }
 
     /*

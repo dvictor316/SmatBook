@@ -341,9 +341,29 @@ class AuthController extends Controller
             Log::warning('Login alert email failed', ['error' => $mailError->getMessage()]);
         }
 
+        $intended = (string) $request->session()->pull('url.intended', '');
+        if ($this->isAllowedPostLoginRedirect($intended)) {
+            return redirect()->to($intended);
+        }
+
         // CRITICAL FIX: ALWAYS redirect to /home
         // HomeController@index will handle role-based redirects
         return redirect()->route('home');
+    }
+
+    private function isAllowedPostLoginRedirect(?string $target): bool
+    {
+        $target = trim((string) $target);
+        if ($target === '') {
+            return false;
+        }
+
+        $path = '/' . ltrim((string) parse_url($target, PHP_URL_PATH), '/');
+
+        return str_starts_with($path, '/saas/checkout/')
+            || str_starts_with($path, '/saas/setup/')
+            || str_starts_with($path, '/saas/success/')
+            || str_starts_with($path, '/membership-plans/upgrade');
     }
 
     public function logout(Request $request)
