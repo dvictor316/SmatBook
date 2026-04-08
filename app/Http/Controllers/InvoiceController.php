@@ -15,6 +15,17 @@ use Carbon\Carbon;
 
 class InvoiceController extends Controller
 {
+    private function onlyExistingColumns(string $table, array $payload): array
+    {
+        if (!Schema::hasTable($table)) {
+            return $payload;
+        }
+
+        return collect($payload)
+            ->filter(fn ($value, $column) => Schema::hasColumn($table, $column))
+            ->all();
+    }
+
     private function applyTenantScope($query, string $table)
     {
         $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
@@ -223,7 +234,6 @@ class InvoiceController extends Controller
                     'action' => $action,
                     'source' => 'invoice-create',
                 ],
-                'order_status' => $orderStatus,
             ];
 
             if (Schema::hasColumn('sales', 'order_date')) {
@@ -245,8 +255,11 @@ class InvoiceController extends Controller
             if ($branchName && Schema::hasColumn('sales', 'branch_name')) {
                 $salePayload['branch_name'] = $branchName;
             }
+            if (Schema::hasColumn('sales', 'order_status')) {
+                $salePayload['order_status'] = $orderStatus;
+            }
 
-            $sale = Sale::create($salePayload);
+            $sale = Sale::create($this->onlyExistingColumns('sales', $salePayload));
 
             foreach ($items as $item) {
                 $qty = (float) ($item['qty'] ?? 0);
@@ -277,7 +290,7 @@ class InvoiceController extends Controller
                     $saleItemPayload['branch_name'] = $branchName;
                 }
 
-                $sale->items()->create($saleItemPayload);
+                $sale->items()->create($this->onlyExistingColumns('sale_items', $saleItemPayload));
             }
 
             DB::commit();
