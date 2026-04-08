@@ -798,6 +798,33 @@ class SupplierController extends Controller
         return max(0, $total - $paid);
     }
 
+    private function supplierOutstandingBalances(array $supplierIds): array
+    {
+        $supplierIds = collect($supplierIds)
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn ($id) => $id > 0)
+            ->values();
+
+        if ($supplierIds->isEmpty() || !Schema::hasTable('purchases')) {
+            return [];
+        }
+
+        $query = Purchase::query()
+            ->whereIn('supplier_id', $supplierIds->all())
+            ->selectRaw('supplier_id, SUM(COALESCE(total_amount, 0)) as total_amount_sum, SUM(COALESCE(paid_amount, 0)) as paid_amount_sum')
+            ->groupBy('supplier_id');
+
+        $this->applyTenantScope($query, 'purchases');
+        $this->applyBranchScopeToPurchases($query);
+
+        return $query->get()
+            ->mapWithKeys(function ($row) {
+                $balance = max(0, (float) ($row->total_amount_sum ?? 0) - (float) ($row->paid_amount_sum ?? 0));
+                return [(int) $row->supplier_id => $balance];
+            })
+            ->all();
+    }
+
     private function calculateTotalPayables(): float
     {
         $openingBalances = 0.0;
