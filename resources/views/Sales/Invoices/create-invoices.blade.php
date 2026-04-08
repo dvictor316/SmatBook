@@ -1,6 +1,38 @@
 <?php $page = 'add-invoice'; ?>
 @extends('layout.mainlayout')
 @section('content')
+@php
+    $quotationPrefill = $quotationPrefill ?? session('quotation_prefill') ?? [];
+    $invoiceItems = old('items');
+    if (!is_array($invoiceItems)) {
+        $invoiceItems = $quotationPrefill['items'] ?? [[
+            'product_id' => '',
+            'name' => '',
+            'price_level' => 'retail',
+            'qty' => 1,
+            'rate' => '0.00',
+            'discount' => 0,
+            'tax' => 0,
+            'amount' => 0,
+        ]];
+    }
+    if (empty($invoiceItems)) {
+        $invoiceItems = [[
+            'product_id' => '',
+            'name' => '',
+            'price_level' => 'retail',
+            'qty' => 1,
+            'rate' => '0.00',
+            'discount' => 0,
+            'tax' => 0,
+            'amount' => 0,
+        ]];
+    }
+    $selectedCustomer = old('customer_id', $quotationPrefill['customer_id'] ?? ($selected_customer ?? ''));
+    $invoiceDate = old('invoice_date', $quotationPrefill['invoice_date'] ?? date('d-m-Y'));
+    $dueDate = old('due_date', $quotationPrefill['due_date'] ?? '');
+    $invoiceDescription = old('description', $quotationPrefill['description'] ?? '');
+@endphp
 <div class="page-wrapper">
     <div class="content container-fluid">
         <div class="card mb-0">
@@ -10,6 +42,10 @@
                         <h5>Add Invoice</h5>
                     </div>
                 </div>
+
+                @if(session('info'))
+                    <div class="alert alert-info border-0 shadow-sm">{{ session('info') }}</div>
+                @endif
                 
                 <form action="{{ route('invoices.store') }}" method="POST" enctype="multipart/form-data" id="invoice-form">
                     @csrf
@@ -26,7 +62,7 @@
                                                     <select class="form-control customer-select select2" name="customer_id" required>
                                                         <option value="">Choose Customer</option>
                                                         @foreach($customers as $customer)
-                                                            <option value="{{ $customer->id }}" {{ (isset($selected_customer) && $selected_customer == $customer->id) ? 'selected' : '' }}>
+                                                            <option value="{{ $customer->id }}" {{ (string) $selectedCustomer === (string) $customer->id ? 'selected' : '' }}>
                                                                 {{ $customer->customer_name ?? $customer->name }}
                                                             </option>
                                                         @endforeach
@@ -45,7 +81,7 @@
                                         <div class="input-block mb-3">
                                             <label>Invoice Date</label>
                                             <div class="cal-icon cal-icon-info">
-                                                <input type="text" name="invoice_date" class="datetimepicker form-control" value="{{ date('d-m-Y') }}">
+                                                <input type="text" name="invoice_date" class="datetimepicker form-control" value="{{ $invoiceDate }}">
                                             </div>
                                         </div>
                                     </div>
@@ -54,7 +90,7 @@
                                         <div class="input-block mb-3">
                                             <label>Due Date <span class="text-danger">*</span></label>
                                             <div class="cal-icon cal-icon-info">
-                                                <input type="text" name="due_date" class="datetimepicker form-control" required>
+                                                <input type="text" name="due_date" class="datetimepicker form-control" value="{{ $dueDate }}" required>
                                             </div>
                                         </div>
                                     </div>
@@ -93,36 +129,40 @@
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                <tr class="invoice-row">
-                                                    <td>
-                                                        <select name="items[0][product_id]" class="form-control product-select select2" onchange="syncInvoiceProduct(this)">
-                                                            <option value="">Custom item</option>
-                                                            @foreach($products as $product)
-                                                                <option value="{{ $product->id }}"
-                                                                    data-name="{{ $product->name }}"
-                                                                    data-retail="{{ $product->retail_price ?? $product->price ?? 0 }}"
-                                                                    data-wholesale="{{ $product->wholesale_price ?? 0 }}"
-                                                                    data-special="{{ $product->special_price ?? 0 }}">
-                                                                    {{ $product->name }}
-                                                                </option>
-                                                            @endforeach
-                                                        </select>
-                                                    </td>
-                                                    <td><input type="text" name="items[0][name]" class="form-control" placeholder="Item Name" required></td>
-                                                    <td>
-                                                        <select name="items[0][price_level]" class="form-control price-level-select" onchange="syncInvoiceProduct(this)">
-                                                            <option value="retail">Retail / Default</option>
-                                                            <option value="wholesale">Wholesale</option>
-                                                            <option value="special">Special Discount</option>
-                                                        </select>
-                                                    </td>
-                                                    <td><input type="number" name="items[0][qty]" class="form-control qty-input" value="1" min="1" oninput="calculateRow(this)"></td>
-                                                    <td><input type="number" name="items[0][rate]" class="form-control rate-input" value="0.00" step="0.01" oninput="calculateRow(this)"></td>
-                                                    <td><input type="number" name="items[0][discount]" class="form-control discount-input" value="0" oninput="calculateRow(this)"></td>
-                                                    <td><input type="number" name="items[0][tax]" class="form-control tax-input" value="0" oninput="calculateRow(this)"></td>
-                                                    <td class="fw-bold"><span class="row-total-text">₦0.00</span><input type="hidden" name="items[0][amount]" class="row-amount-hidden" value="0"></td>
-                                                    <td class="text-end"><button type="button" class="btn btn-sm btn-white text-danger delete-row"><i class="fas fa-trash-alt"></i></button></td>
-                                                </tr>
+                                                @foreach($invoiceItems as $index => $item)
+                                                    <tr class="invoice-row">
+                                                        <td>
+                                                            <select name="items[{{ $index }}][product_id]" class="form-control product-select select2" onchange="syncInvoiceProduct(this)">
+                                                                <option value="">Custom item</option>
+                                                                @foreach($products as $product)
+                                                                    <option value="{{ $product->id }}"
+                                                                        data-name="{{ $product->name }}"
+                                                                        data-retail="{{ $product->retail_price ?? $product->price ?? 0 }}"
+                                                                        data-wholesale="{{ $product->wholesale_price ?? 0 }}"
+                                                                        data-special="{{ $product->special_price ?? 0 }}"
+                                                                        {{ (string) ($item['product_id'] ?? '') === (string) $product->id ? 'selected' : '' }}>
+                                                                        {{ $product->name }}
+                                                                    </option>
+                                                                @endforeach
+                                                            </select>
+                                                        </td>
+                                                        <td><input type="text" name="items[{{ $index }}][name]" class="form-control" placeholder="Item Name" value="{{ $item['name'] ?? '' }}" required></td>
+                                                        <td>
+                                                            @php $priceLevel = $item['price_level'] ?? 'retail'; @endphp
+                                                            <select name="items[{{ $index }}][price_level]" class="form-control price-level-select" onchange="syncInvoiceProduct(this)">
+                                                                <option value="retail" {{ $priceLevel === 'retail' ? 'selected' : '' }}>Retail / Default</option>
+                                                                <option value="wholesale" {{ $priceLevel === 'wholesale' ? 'selected' : '' }}>Wholesale</option>
+                                                                <option value="special" {{ $priceLevel === 'special' ? 'selected' : '' }}>Special Discount</option>
+                                                            </select>
+                                                        </td>
+                                                        <td><input type="number" name="items[{{ $index }}][qty]" class="form-control qty-input" value="{{ $item['qty'] ?? 1 }}" min="1" oninput="calculateRow(this)"></td>
+                                                        <td><input type="number" name="items[{{ $index }}][rate]" class="form-control rate-input" value="{{ $item['rate'] ?? '0.00' }}" step="0.01" oninput="calculateRow(this)"></td>
+                                                        <td><input type="number" name="items[{{ $index }}][discount]" class="form-control discount-input" value="{{ $item['discount'] ?? 0 }}" oninput="calculateRow(this)"></td>
+                                                        <td><input type="number" name="items[{{ $index }}][tax]" class="form-control tax-input" value="{{ $item['tax'] ?? 0 }}" oninput="calculateRow(this)"></td>
+                                                        <td class="fw-bold"><span class="row-total-text">₦{{ number_format((float) ($item['amount'] ?? 0), 2) }}</span><input type="hidden" name="items[{{ $index }}][amount]" class="row-amount-hidden" value="{{ (float) ($item['amount'] ?? 0) }}"></td>
+                                                        <td class="text-end"><button type="button" class="btn btn-sm btn-white text-danger delete-row"><i class="fas fa-trash-alt"></i></button></td>
+                                                    </tr>
+                                                @endforeach
                                             </tbody>
                                         </table>
                                     </div>
@@ -137,7 +177,7 @@
                                 <div class="col-xl-6 col-lg-12">
                                     <div class="input-block mb-3">
                                         <label>Description / Notes</label>
-                                        <textarea class="form-control" name="description" rows="5" placeholder="Enter Description"></textarea>
+                                        <textarea class="form-control" name="description" rows="5" placeholder="Enter Description">{{ $invoiceDescription }}</textarea>
                                     </div>
                                 </div>
 
@@ -174,7 +214,7 @@
 
 
 <script>
-    let rowIndex = 1;
+    let rowIndex = {{ count($invoiceItems) }};
 
     function initInvoiceSelect2(scope) {
         if (typeof window.jQuery === 'undefined' || typeof jQuery.fn.select2 === 'undefined') {
@@ -197,9 +237,21 @@
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function() {
             initInvoiceSelect2(document);
+            document.querySelectorAll('.invoice-row').forEach(function(row) {
+                const rateInput = row.querySelector('.rate-input');
+                if (rateInput) {
+                    calculateRow(rateInput);
+                }
+            });
         });
     } else {
         initInvoiceSelect2(document);
+        document.querySelectorAll('.invoice-row').forEach(function(row) {
+            const rateInput = row.querySelector('.rate-input');
+            if (rateInput) {
+                calculateRow(rateInput);
+            }
+        });
     }
 
     // Add Row Logic

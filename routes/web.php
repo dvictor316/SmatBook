@@ -761,6 +761,12 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
     Route::controller(HomeController::class)->group(function () {
         Route::get('/quotations', 'quotations')->name('quotations');
         Route::get('/add-quotations', 'add_quotations')->name('add-quotations');
+        Route::get('/quotations/{id}/view', 'showQuotation')->name('quotations.show');
+        Route::post('/quotations/{id}/mark-sent', 'markQuotationSent')->name('quotations.mark-sent');
+        Route::post('/quotations/{id}/send', 'sendQuotation')->name('quotations.send');
+        Route::get('/quotations/{id}/download', 'downloadQuotation')->name('quotations.download');
+        Route::get('/quotations/{id}/convert-invoice', 'convertQuotationToInvoice')->name('quotations.convert-invoice');
+        Route::get('/quotations/{id}/clone-invoice', 'cloneQuotationAsInvoice')->name('quotations.clone-invoice');
         Route::get('/edit-quotations/{id?}', 'edit_quotations')->name('edit-quotations');
         Route::post('/quotations', 'storeQuotation')->name('quotations.store');
         Route::put('/quotations/{id}', 'updateQuotation')->name('quotations.update');

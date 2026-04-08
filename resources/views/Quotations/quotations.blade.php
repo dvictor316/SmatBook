@@ -90,31 +90,37 @@
                                                                     </form>
                                                                 </li>
                                                                 <li>
-                                                                    <a class="dropdown-item" href="javascript:void(0);"><i
+                                                                    <a class="dropdown-item" href="{{ route('quotations.show', $quotation->id) }}"><i
                                                                             class="fe fe-eye me-2"></i>View</a>
                                                                 </li>
                                                                 <li>
                                                                     <a class="dropdown-item"
-                                                                        href="{{ url('add-invoice') }}"><i
+                                                                        href="{{ route('quotations.convert-invoice', $quotation->id) }}"><i
                                                                             class="fe fe-file-text me-2"></i>Convert to
                                                                         Invoice</a>
                                                                 </li>
                                                                 <li>
-                                                                    <a class="dropdown-item" href="javascript:void(0);"><i
+                                                                    <form action="{{ route('quotations.mark-sent', $quotation->id) }}" method="POST" class="d-inline">
+                                                                        @csrf
+                                                                        <button class="dropdown-item" onclick="return confirm('Mark this quotation as sent?')"><i
                                                                             class="fe fe-arrow-right-circle me-2"></i>Mark
-                                                                        as
-                                                                        Sent</a>
+                                                                            as
+                                                                        Sent</button>
+                                                                    </form>
                                                                 </li>
                                                                 <li>
-                                                                    <a class="dropdown-item" href="javascript:void(0);"><i
-                                                                            class="fe fe-send me-2"></i>Send</a>
+                                                                    <form action="{{ route('quotations.send', $quotation->id) }}" method="POST" class="d-inline">
+                                                                        @csrf
+                                                                        <button class="dropdown-item"><i
+                                                                            class="fe fe-send me-2"></i>Send</button>
+                                                                    </form>
                                                                 </li>
                                                                 <li>
-                                                                    <a class="dropdown-item" href="javascript:void(0);"><i
+                                                                    <a class="dropdown-item" href="{{ route('quotations.clone-invoice', $quotation->id) }}"><i
                                                                             class="fe fe-copy me-2"></i>Clone as Invoice</a>
                                                                 </li>
                                                                 <li>
-                                                                    <a class="dropdown-item" href="javascript:void(0);"><i
+                                                                    <a class="dropdown-item" href="{{ route('quotations.download', $quotation->id) }}"><i
                                                                             class="fe fe-download me-2"></i>Download</a>
                                                                 </li>
                                                             </ul>
