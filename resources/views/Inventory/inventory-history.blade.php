@@ -54,6 +54,7 @@
                                     </thead>
                                     <tbody style="font-size: 12px;">
                                         @forelse ($inventoryHistories as $history)
+                                            @php $isEditableHistoryRow = is_numeric($history->id); @endphp
                                             <tr>
                                                 <td class="ps-4 text-muted">{{ $history->id }}</td>
                                                 <td>{{ \Carbon\Carbon::parse($history->created_at)->format('d M Y, H:i') }}</td>
@@ -78,11 +79,22 @@
                                                     <div class="dropdown dropdown-action">
                                                         <a href="#" class="btn-action-icon" data-bs-toggle="dropdown"><i class="fas fa-ellipsis-v"></i></a>
                                                         <div class="dropdown-menu dropdown-menu-right">
+                                                            @if($isEditableHistoryRow)
+                                                            <a class="dropdown-item edit-btn" href="javascript:void(0);"
+                                                                data-id="{{ $history->id }}"
+                                                                data-qty="{{ $history->quantity }}"
+                                                                data-type="{{ $history->type }}"
+                                                                data-bs-toggle="modal" data-bs-target="#edit_history_modal">
+                                                                <i class="far fa-edit me-2 text-primary"></i>Edit
+                                                            </a>
                                                             <a class="dropdown-item delete-btn" href="javascript:void(0);" 
                                                                 data-id="{{ $history->id }}"
                                                                 data-bs-toggle="modal" data-bs-target="#delete_history_modal">
                                                                 <i class="far fa-trash-alt me-2 text-danger"></i>Delete
                                                             </a>
+                                                            @else
+                                                            <span class="dropdown-item-text text-muted small">System-generated entry</span>
+                                                            @endif
                                                         </div>
                                                     </div>
                                                 </td>
@@ -104,6 +116,40 @@
         </div>
     </div>
 
+    {{-- Edit Modal --}}
+    <div class="modal fade" id="edit_history_modal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Movement Record</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form action="{{ route('inventory.history.update') }}" method="POST">
+                    @csrf
+                    <div class="modal-body">
+                        <input type="hidden" name="id" id="modal_edit_id">
+                        <div class="mb-3">
+                            <label class="form-label">Adjustment Quantity</label>
+                            <input type="number" step="0.01" min="0.01" name="quantity" id="modal_edit_qty" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Movement Type</label>
+                            <select name="type" id="modal_edit_type" class="form-control">
+                                <option value="in">Stock In</option>
+                                <option value="out">Stock Out</option>
+                            </select>
+                        </div>
+                        <small class="text-muted">This updates the history record only. It does not recalculate current stock.</small>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Update Record</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     {{-- Delete Modal --}}
     <div class="modal fade" id="delete_history_modal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-sm">
@@ -112,7 +158,7 @@
                     <i class="far fa-trash-alt text-danger mb-3" style="font-size: 40px;"></i>
                     <h5>Are you sure?</h5>
                     <p class="text-muted small">This only removes the log entry. It does not change current stock.</p>
-                    <form action="{{ url('inventory-history/delete') }}" method="POST">
+                    <form action="{{ route('inventory.history.delete') }}" method="POST">
                         @csrf
                         <input type="hidden" name="id" id="modal_delete_id">
                         <div class="d-grid gap-2 mt-4">
@@ -140,6 +186,12 @@
 
 <script>
     $(document).ready(function() {
+        $('.edit-btn').on('click', function() {
+            $('#modal_edit_id').val($(this).data('id'));
+            $('#modal_edit_qty').val($(this).data('qty'));
+            $('#modal_edit_type').val($(this).data('type'));
+        });
+
         $('.delete-btn').on('click', function() {
             $('#modal_delete_id').val($(this).data('id'));
         });

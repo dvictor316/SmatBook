@@ -1692,6 +1692,65 @@ public function inventory(Request $request)
         return view('Inventory.inventory-history', compact('inventoryHistories', 'activeBranch'));
     }
 
+    public function update_history(Request $request)
+    {
+        $validated = $request->validate([
+            'id' => 'required|integer',
+            'quantity' => 'required|numeric|min:0.01',
+            'type' => 'required|in:in,out',
+        ]);
+
+        if (!Schema::hasTable('inventory_history')) {
+            return redirect()->back()->with('error', 'Inventory history table is not available.');
+        }
+
+        $query = DB::table('inventory_history')->where('id', (int) $validated['id']);
+        $this->applyTenantScope($query, 'inventory_history');
+        $this->applyBranchScope($query, 'inventory_history');
+
+        $history = $query->first();
+        if (!$history) {
+            return redirect()->back()->with('error', 'Inventory history record not found for the active branch.');
+        }
+
+        DB::table('inventory_history')
+            ->where('id', (int) $validated['id'])
+            ->update([
+                'quantity' => (float) $validated['quantity'],
+                'type' => $validated['type'],
+                'updated_at' => now(),
+            ]);
+
+        $this->clearDashboardMetricsCache();
+
+        return redirect()->back()->with('success', 'Inventory history record updated successfully.');
+    }
+
+    public function delete_history(Request $request)
+    {
+        $validated = $request->validate([
+            'id' => 'required|integer',
+        ]);
+
+        if (!Schema::hasTable('inventory_history')) {
+            return redirect()->back()->with('error', 'Inventory history table is not available.');
+        }
+
+        $query = DB::table('inventory_history')->where('id', (int) $validated['id']);
+        $this->applyTenantScope($query, 'inventory_history');
+        $this->applyBranchScope($query, 'inventory_history');
+
+        $history = $query->first();
+        if (!$history) {
+            return redirect()->back()->with('error', 'Inventory history record not found for the active branch.');
+        }
+
+        DB::table('inventory_history')->where('id', (int) $validated['id'])->delete();
+        $this->clearDashboardMetricsCache();
+
+        return redirect()->back()->with('success', 'Inventory history record deleted successfully.');
+    }
+
     public function downloadImportTemplate()
     {
         $headers = [

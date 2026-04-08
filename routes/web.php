@@ -637,6 +637,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::put('/products/update/{id}', 'update')->name('inventory.Products.update');
         Route::delete('/products/delete/{id}', 'destroy')->name('inventory.Products.destroy');
         Route::get('/inventory-history/{id}', 'inventory_history')->name('inventory.history');
+        Route::post('/inventory-history/update', 'update_history')->name('inventory.history.update');
         Route::post('/inventory-history/delete', 'delete_history')->name('inventory.history.delete');
         Route::post('/inventory/adjust', 'adjust_stock')->name('inventory.adjust');
         Route::post('/inventory/transfer', 'transferStock')->name('inventory.transfer');
