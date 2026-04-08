@@ -44,7 +44,7 @@
                                         <h6 class="text-muted text-uppercase small fw-bold">Invoice Details</h6>
                                         <p class="mb-1 text-dark">Date: <strong>{{ $sale->created_at->format('d M Y') }}</strong></p>
                                         {{-- Fixed: Using payment_status --}}
-                                        <p class="mb-0 text-dark">Status: <strong class="text-uppercase">{{ $sale->payment_status }}</strong></p>
+                                        <p class="mb-0 text-dark">Status: <strong class="text-uppercase">{{ $sale->effective_payment_status ?? $sale->payment_status }}</strong></p>
                                     </div>
                                 </div>
                             </div>
@@ -65,9 +65,17 @@
                                             <span class="text-muted">Tax:</span>
                                             <span class="fw-bold text-dark">{{ number_format($sale->tax ?? 0, 2) }}</span>
                                         </div>
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span class="text-muted">Paid:</span>
+                                            <span class="fw-bold text-dark">{{ number_format($sale->effective_paid ?? $sale->amount_paid ?? 0, 2) }}</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span class="text-muted">Due:</span>
+                                            <span class="fw-bold {{ (($sale->effective_balance ?? $sale->balance ?? 0) > 0) ? 'text-danger' : 'text-success' }}">{{ number_format($sale->effective_balance ?? $sale->balance ?? 0, 2) }}</span>
+                                        </div>
                                         <div class="d-flex justify-content-between border-top pt-2">
                                             <span class="h5 mb-0">Total:</span>
-                                            <span class="h5 mb-0 text-primary">{{ number_format($sale->total, 2) }}</span>
+                                            <span class="h5 mb-0 text-primary">{{ number_format($sale->effective_total ?? $sale->total, 2) }}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -107,7 +115,7 @@
                                 <label class="form-label small fw-bold text-uppercase text-muted">Update Status</label>
                                 <select class="form-control select">
                                     @foreach(['paid', 'unpaid', 'partially paid', 'overdue', 'cancelled'] as $status)
-                                        <option value="{{ $status }}" {{ ($sale->payment_status == $status) ? 'selected' : '' }}>
+                                        <option value="{{ $status }}" {{ (($sale->effective_payment_status ?? $sale->payment_status) == $status) ? 'selected' : '' }}>
                                             {{ ucfirst($status) }}
                                         </option>
                                     @endforeach

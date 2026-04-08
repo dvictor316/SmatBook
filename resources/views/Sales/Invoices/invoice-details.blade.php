@@ -12,10 +12,11 @@
             ?: $invoiceCompany?->name
             ?: \App\Models\Setting::where('key', 'company_name')->value('value')
             ?: config('app.name', 'SmartProbook');
-        $appliedAmount = (float) ($sale->amount_paid ?? $sale->paid ?? 0);
+        $appliedAmount = (float) ($sale->effective_paid ?? $sale->amount_paid ?? $sale->paid ?? 0);
         $changeAmount = (float) ($sale->change_amount ?? 0);
         $tenderedAmount = $appliedAmount + max(0, $changeAmount);
-        $balanceDue = max(0, (float) ($sale->total ?? 0) - $appliedAmount);
+        $balanceDue = (float) ($sale->effective_balance ?? max(0, (float) ($sale->total ?? 0) - $appliedAmount));
+        $displayStatus = strtolower((string) ($sale->effective_payment_status ?? $sale->payment_status ?? 'unpaid'));
     @endphp
     <div class="page-wrapper">
         <div class="content container-fluid">
@@ -65,8 +66,8 @@
                                             <div class="col-md-6 text-md-end">
                                                 <div class="invoice-info">
                                                     {{-- Fixed: Changed 'status' to 'payment_status' and matched lowercase 'paid' --}}
-                                                    <h1 class="{{ ($sale->payment_status == 'paid') ? 'text-success' : 'text-danger' }} fw-bold mb-1">
-                                                        {{ strtoupper($sale->payment_status ?? 'UNPAID') }}
+                                                    <h1 class="{{ ($displayStatus == 'paid') ? 'text-success' : (($displayStatus == 'partial') ? 'text-info' : 'text-danger') }} fw-bold mb-1">
+                                                        {{ strtoupper($displayStatus) }}
                                                     </h1>
                                                     <p class="text-muted mb-0">Invoice #{{ $sale->invoice_no ?? $sale->id }}</p>
                                                 </div>

@@ -15,6 +15,17 @@ use Carbon\Carbon;
 
 class InvoiceController extends Controller
 {
+    private function applyComputedInvoiceState(Sale $sale): Sale
+    {
+        $financials = $this->normalizeInvoiceFinancials($sale);
+        $sale->effective_total = $financials['total'];
+        $sale->effective_paid = $financials['paid'];
+        $sale->effective_balance = $financials['balance'];
+        $sale->effective_payment_status = $financials['status'];
+
+        return $sale;
+    }
+
     private function normalizeInvoiceFinancials(Sale $sale): array
     {
         $total = max(0, (float) ($sale->total ?? 0));
@@ -117,15 +128,7 @@ class InvoiceController extends Controller
         }
 
         $invoices = $query->paginate(15)->withQueryString();
-        $invoices->getCollection()->transform(function ($invoice) {
-            $financials = $this->normalizeInvoiceFinancials($invoice);
-            $invoice->effective_total = $financials['total'];
-            $invoice->effective_paid = $financials['paid'];
-            $invoice->effective_balance = $financials['balance'];
-            $invoice->effective_payment_status = $financials['status'];
-
-            return $invoice;
-        });
+        $invoices->getCollection()->transform(fn ($invoice) => $this->applyComputedInvoiceState($invoice));
         $invoicescards = $this->getInvoiceStats();
         
         $latestSale = $this->applyTenantScope(Sale::query()->latest(), 'sales')->first();
@@ -370,6 +373,7 @@ class InvoiceController extends Controller
     public function edit($id)
     {
         $invoice = $this->applyTenantScope(Sale::query(), 'sales')->findOrFail($id);
+        $invoice = $this->applyComputedInvoiceState($invoice);
         $customers = $this->applyTenantScope(Customer::query(), 'customers')->get();
         return view('Sales.Invoices.edit', compact('invoice', 'customers'));
     }
@@ -385,16 +389,34 @@ class InvoiceController extends Controller
         
         $request->validate([
             'customer_name'  => 'required',
-            'total'          => 'required|numeric',
+            'total'          => 'required|numeric|min:0',
+            'amount_paid'    => 'nullable|numeric|min:0',
             'payment_status' => 'required'
         ]);
 
+        $total = max(0, (float) $request->total);
+        $requestedStatus = strtolower(trim((string) $request->payment_status));
+        $inputPaid = max(0, (float) ($request->amount_paid ?? 0));
+
+        if ($requestedStatus === 'paid') {
+            $amountPaid = $total;
+        } elseif ($requestedStatus === 'unpaid') {
+            $amountPaid = 0;
+        } else {
+            $amountPaid = min($inputPaid, $total);
+        }
+
+        $balance = max(0, $total - $amountPaid);
+        $computedStatus = $balance <= 0.0001 ? 'paid' : ($amountPaid > 0.0001 ? 'partial' : 'unpaid');
+
         $sale->update([
             'customer_name'  => $request->customer_name,
-            'total'          => $request->total,
+            'total'          => $total,
             'tax'            => $request->tax ?? 0,
-            'payment_status' => strtolower($request->payment_status),
-            'amount_paid'    => $request->amount_paid ?? $sale->amount_paid,
+            'payment_status' => $computedStatus,
+            'paid'           => $amountPaid,
+            'amount_paid'    => $amountPaid,
+            'balance'        => $balance,
         ]);
 
         return redirect()->route('invoices.index')->with('success', 'Invoice updated successfully');
@@ -406,6 +428,7 @@ class InvoiceController extends Controller
     public function show($id)
     {
         $sale = $this->applyTenantScope(Sale::with(['customer', 'items.product']), 'sales')->findOrFail($id);
+        $sale = $this->applyComputedInvoiceState($sale);
         return view('Sales.Invoices.invoice-details-admin', compact('sale'));
     }
 
@@ -417,6 +440,7 @@ class InvoiceController extends Controller
     public function invoice_details($id)
     {
         $sale = $this->applyTenantScope(Sale::with(['customer', 'items.product']), 'sales')->findOrFail($id);
+        $sale = $this->applyComputedInvoiceState($sale);
         return view('Sales.Invoices.invoice-details', compact('sale'));
     }
 

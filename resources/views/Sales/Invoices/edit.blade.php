@@ -45,15 +45,16 @@
 
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label fw-bold">Amount Already Paid ($)</label>
-                                    <input type="number" step="0.01" name="amount_paid" class="form-control" value="{{ old('amount_paid', $invoice->amount_paid) }}">
+                                    <input type="number" step="0.01" name="amount_paid" class="form-control" value="{{ old('amount_paid', $invoice->effective_paid ?? $invoice->amount_paid) }}">
+                                    <small class="text-muted">If fully paid, this should equal the total. Due amount will become zero automatically.</small>
                                 </div>
 
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label fw-bold">Payment Status</label>
                                     <select name="payment_status" class="form-control" required>
-                                        <option value="paid" {{ $invoice->payment_status == 'paid' ? 'selected' : '' }}>Paid</option>
-                                        <option value="unpaid" {{ $invoice->payment_status == 'unpaid' ? 'selected' : '' }}>Unpaid</option>
-                                        <option value="partial" {{ $invoice->payment_status == 'partial' ? 'selected' : '' }}>Partial</option>
+                                        <option value="paid" {{ ($invoice->effective_payment_status ?? $invoice->payment_status) == 'paid' ? 'selected' : '' }}>Paid</option>
+                                        <option value="unpaid" {{ ($invoice->effective_payment_status ?? $invoice->payment_status) == 'unpaid' ? 'selected' : '' }}>Unpaid</option>
+                                        <option value="partial" {{ ($invoice->effective_payment_status ?? $invoice->payment_status) == 'partial' ? 'selected' : '' }}>Partial</option>
                                     </select>
                                 </div>
 
