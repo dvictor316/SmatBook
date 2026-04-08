@@ -728,7 +728,7 @@ class PaymentController extends Controller
     {
         $payment = $this->findScopedPayment($payment->id);
         abort_if(!$payment, 404);
-        $payment->loadMissing(['sale', 'creator']);
+        $payment->loadMissing(['sale.items', 'sale.customer', 'customer', 'creator', 'account']);
         return view('Finance.payment-receipt', compact('payment'));
     }
 
