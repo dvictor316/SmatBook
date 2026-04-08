@@ -78,13 +78,6 @@
                                                     <div class="dropdown dropdown-action">
                                                         <a href="#" class="btn-action-icon" data-bs-toggle="dropdown"><i class="fas fa-ellipsis-v"></i></a>
                                                         <div class="dropdown-menu dropdown-menu-right">
-                                                            <a class="dropdown-item edit-btn" href="javascript:void(0);" 
-                                                                data-id="{{ $history->id }}" 
-                                                                data-qty="{{ $history->quantity }}" 
-                                                                data-type="{{ $history->type }}"
-                                                                data-bs-toggle="modal" data-bs-target="#edit_history_modal">
-                                                                <i class="far fa-edit me-2 text-primary"></i>Edit
-                                                            </a>
                                                             <a class="dropdown-item delete-btn" href="javascript:void(0);" 
                                                                 data-id="{{ $history->id }}"
                                                                 data-bs-toggle="modal" data-bs-target="#delete_history_modal">
@@ -107,39 +100,6 @@
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    {{-- Edit Modal --}}
-    <div class="modal fade" id="edit_history_modal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Edit Movement Record</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form action="{{ url('inventory-history/update') }}" method="POST">
-                    @csrf
-                    <div class="modal-body">
-                        <input type="hidden" name="id" id="modal_edit_id">
-                        <div class="mb-3">
-                            <label class="form-label">Adjustment Quantity</label>
-                            <input type="number" name="quantity" id="modal_edit_qty" class="form-control" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Movement Type</label>
-                            <select name="type" id="modal_edit_type" class="form-control">
-                                <option value="in">Stock In</option>
-                                <option value="out">Stock Out</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Update Record</button>
-                    </div>
-                </form>
             </div>
         </div>
     </div>
@@ -180,13 +140,6 @@
 
 <script>
     $(document).ready(function() {
-        // Populate Modals
-        $('.edit-btn').on('click', function() {
-            $('#modal_edit_id').val($(this).data('id'));
-            $('#modal_edit_qty').val($(this).data('qty'));
-            $('#modal_edit_type').val($(this).data('type'));
-        });
-
         $('.delete-btn').on('click', function() {
             $('#modal_delete_id').val($(this).data('id'));
         });

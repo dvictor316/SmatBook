@@ -24,25 +24,11 @@ class CustomerController extends Controller
     {
         $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
         $userId = (int) (auth()->id() ?? 0);
-        $activeBranch = $this->getActiveBranchContext();
-        $branchId = trim((string) ($activeBranch['id'] ?? ''));
-        $branchName = trim((string) ($activeBranch['name'] ?? ''));
 
         if ($companyId > 0 && Schema::hasColumn('customers', 'company_id')) {
             $query->where('company_id', $companyId);
         } elseif ($userId > 0 && Schema::hasColumn('customers', 'user_id')) {
             $query->where('user_id', $userId);
-        }
-
-        if ($branchId !== '' || $branchName !== '') {
-            $query->where(function ($sub) use ($branchId, $branchName) {
-                if ($branchId !== '' && Schema::hasColumn('customers', 'branch_id')) {
-                    $sub->where('branch_id', $branchId);
-                }
-                if ($branchName !== '' && Schema::hasColumn('customers', 'branch_name')) {
-                    $sub->orWhere('branch_name', $branchName);
-                }
-            });
         }
 
         return $query;
@@ -374,6 +360,8 @@ class CustomerController extends Controller
         if (Schema::hasColumn('sales', 'balance')) {
             $query->withSum(['sales as sales_balance_sum' => function ($saleQuery) {
                 $saleQuery->where('balance', '>', 0);
+                $this->applySaleTenantScope($saleQuery);
+                $this->applySaleBranchFilter($saleQuery, 'sales');
             }], 'balance');
         }
     }
@@ -385,6 +373,8 @@ class CustomerController extends Controller
         }
 
         $query = Sale::query()->where('customer_id', $customerId)->where('balance', '>', 0);
+        $this->applySaleTenantScope($query);
+        $this->applySaleBranchFilter($query, 'sales');
 
         return (float) $query->sum('balance');
     }
@@ -402,6 +392,8 @@ class CustomerController extends Controller
 
         if (Schema::hasTable('sales') && Schema::hasColumn('sales', 'balance')) {
             $salesQuery = Sale::query()->where('balance', '>', 0);
+            $this->applySaleTenantScope($salesQuery);
+            $this->applySaleBranchFilter($salesQuery, 'sales');
             $salesBalances = (float) $salesQuery->sum('balance');
         }
 
