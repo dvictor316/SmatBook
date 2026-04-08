@@ -5,7 +5,7 @@
     <div class="content container-fluid">
         @php
             $customerAttributes = method_exists($customer, 'getAttributes') ? $customer->getAttributes() : [];
-            $firstFilled = function (array $keys, $default = null) use ($customerAttributes) {
+            $firstFilled = function (array $keys, $default = null) use ($customer, $customerAttributes) {
                 foreach ($keys as $key) {
                     $value = $customerAttributes[$key] ?? data_get($customer, $key);
                     if (is_string($value)) {
