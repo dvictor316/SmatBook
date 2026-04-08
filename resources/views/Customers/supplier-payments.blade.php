@@ -94,7 +94,7 @@
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-white">
                 <h5 class="card-title mb-1">Make Supplier Payment</h5>
-                <p class="text-muted mb-0">Allocate the amount you want to pay against one or more outstanding purchases.</p>
+                <p class="text-muted mb-0">Enter one payment amount and the system will apply it automatically to outstanding purchases first, then any opening balance.</p>
             </div>
             <div class="card-body">
                 <form method="POST" action="{{ route('suppliers.store-payment', $supplier->id) }}" id="supplierPaymentForm">
@@ -131,9 +131,9 @@
                             <label class="form-label">Payment Amount</label>
                             <div class="input-group">
                                 <span class="input-group-text">₦</span>
-                                <input type="number" step="0.01" min="0" name="payment_amount" class="form-control" value="{{ old('payment_amount') }}" placeholder="0.00">
+                                <input type="number" step="0.01" min="0.01" name="payment_amount" class="form-control" value="{{ old('payment_amount') }}" placeholder="0.00">
                             </div>
-                            <small class="text-muted">Leave line allocations empty and the system will auto-allocate this amount across open bills and opening balance.</small>
+                            <small class="text-muted">This payment will be auto-allocated across open bills and then any opening balance.</small>
                         </div>
                         <div class="col-12">
                             <label class="form-label">Note</label>
@@ -146,8 +146,8 @@
 
                     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
                         <div>
-                            <h6 class="mb-1">Outstanding Purchases</h6>
-                            <small class="text-muted">Use “Full” for quick settlement, type a partial payment for any bill, or pay the supplier opening balance directly.</small>
+                            <h6 class="mb-1">Outstanding Summary</h6>
+                            <small class="text-muted">The payment above will be distributed automatically using the balances below.</small>
                         </div>
                         <div class="text-end">
                             <div class="small text-muted">Amount being paid</div>
@@ -164,7 +164,6 @@
                                     <th class="text-end">Total</th>
                                     <th class="text-end">Paid</th>
                                     <th class="text-end">Outstanding</th>
-                                    <th style="width: 220px;">Payment</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -178,12 +177,6 @@
                                         <td class="text-end">₦{{ number_format((float) ($summary['opening_balance_due'] ?? 0), 2) }}</td>
                                         <td class="text-end">₦0.00</td>
                                         <td class="text-end fw-semibold">₦{{ number_format((float) ($summary['opening_balance_due'] ?? 0), 2) }}</td>
-                                        <td>
-                                            <div class="input-group">
-                                                <input type="number" step="0.01" min="0" max="{{ (float) ($summary['opening_balance_due'] ?? 0) }}" name="opening_balance_amount" class="form-control allocation-input" value="{{ old('opening_balance_amount') }}" data-max="{{ (float) ($summary['opening_balance_due'] ?? 0) }}">
-                                                <button class="btn btn-outline-secondary fill-allocation" type="button" data-full="{{ (float) ($summary['opening_balance_due'] ?? 0) }}">Full</button>
-                                            </div>
-                                        </td>
                                     </tr>
                                 @endif
                                 @forelse($outstandingPurchases as $purchase)
@@ -196,16 +189,10 @@
                                         <td class="text-end">₦{{ number_format((float) ($purchase->total_amount ?? 0), 2) }}</td>
                                         <td class="text-end">₦{{ number_format((float) ($purchase->paid_amount ?? 0), 2) }}</td>
                                         <td class="text-end fw-semibold">₦{{ number_format((float) $purchase->outstanding_balance, 2) }}</td>
-                                        <td>
-                                            <div class="input-group">
-                                                <input type="number" step="0.01" min="0" max="{{ $purchase->outstanding_balance }}" name="allocations[{{ $purchase->id }}]" class="form-control allocation-input" value="{{ old('allocations.' . $purchase->id) }}" data-max="{{ $purchase->outstanding_balance }}">
-                                                <button class="btn btn-outline-secondary fill-allocation" type="button" data-full="{{ $purchase->outstanding_balance }}">Full</button>
-                                            </div>
-                                        </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="6" class="text-center text-muted py-4">No outstanding purchases found for this supplier.</td>
+                                        <td colspan="5" class="text-center text-muted py-4">No outstanding purchases found for this supplier.</td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -264,7 +251,7 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const inputs = Array.from(document.querySelectorAll('.allocation-input'));
+    const paymentAmountInput = document.querySelector('input[name="payment_amount"]');
     const totalEl = document.querySelector('[data-allocation-total]');
     const bankSelect = document.querySelector('select[name="bank_id"]');
     const bankBalanceEl = document.querySelector('[data-selected-bank-balance]');
@@ -304,18 +291,13 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function updateTotal() {
-        const total = inputs.reduce((sum, input) => {
-            const max = parseFloat(input.dataset.max || '0');
-            let value = parseFloat(input.value || '0');
-            if (value < 0 || Number.isNaN(value)) {
-                value = 0;
+        let total = parseFloat(paymentAmountInput?.value || '0');
+        if (Number.isNaN(total) || total < 0) {
+            total = 0;
+            if (paymentAmountInput) {
+                paymentAmountInput.value = '';
             }
-            if (max > 0 && value > max) {
-                value = max;
-                input.value = max.toFixed(2);
-            }
-            return sum + value;
-        }, 0);
+        }
 
         if (totalEl) {
             totalEl.textContent = formatCurrency(total);
@@ -323,20 +305,9 @@ document.addEventListener('DOMContentLoaded', function () {
         updateBankBalance();
     }
 
-    document.querySelectorAll('.fill-allocation').forEach(function (button) {
-        button.addEventListener('click', function () {
-            const input = button.closest('.input-group').querySelector('.allocation-input');
-            if (!input) {
-                return;
-            }
-            input.value = parseFloat(button.dataset.full || '0').toFixed(2);
-            updateTotal();
-        });
-    });
-
-    inputs.forEach(function (input) {
-        input.addEventListener('input', updateTotal);
-    });
+    if (paymentAmountInput) {
+        paymentAmountInput.addEventListener('input', updateTotal);
+    }
 
     if (bankSelect) {
         bankSelect.addEventListener('change', updateBankBalance);

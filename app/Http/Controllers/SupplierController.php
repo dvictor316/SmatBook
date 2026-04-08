@@ -455,6 +455,15 @@ class SupplierController extends Controller
         $openingBalancePayment = round(max(0, (float) $request->input('opening_balance_amount', 0)), 2);
         $paymentAmount = round(max(0, (float) $request->input('payment_amount', 0)), 2);
 
+        $paymentDate = $request->input('payment_date');
+        $paymentGroup = trim((string) $request->input('reference', '')) ?: ('SUPPAY-' . now()->format('YmdHis'));
+        $bank = null;
+        if ($request->filled('bank_id') && Schema::hasTable('banks')) {
+            $bankQuery = Bank::query();
+            $this->applyTenantScope($bankQuery, 'banks');
+            $bank = $bankQuery->find((int) $request->input('bank_id'));
+        }
+
         if ($paymentAmount > 0 && $allocations->isEmpty() && $openingBalancePayment <= 0) {
             $purchasesQuery = Purchase::query()
                 ->where('supplier_id', $supplier->id)
@@ -496,21 +505,12 @@ class SupplierController extends Controller
             return back()->withInput()->with('error', 'Enter at least one supplier payment amount before saving.');
         }
 
-        $totalPayment = round($allocations->sum() + $openingBalancePayment, 2);
+        $totalPayment = round($paymentAmount > 0 ? $paymentAmount : ($allocations->sum() + $openingBalancePayment), 2);
         if ($bank && Schema::hasColumn('banks', 'balance')) {
             $availableBalance = (float) $bank->balance;
             if ($totalPayment > $availableBalance) {
                 return back()->withInput()->with('error', 'Selected bank does not have enough funds to cover the payment total of ₦' . number_format($totalPayment, 2) . '.');
             }
-        }
-
-        $paymentDate = $request->input('payment_date');
-        $paymentGroup = trim((string) $request->input('reference', '')) ?: ('SUPPAY-' . now()->format('YmdHis'));
-        $bank = null;
-        if ($request->filled('bank_id') && Schema::hasTable('banks')) {
-            $bankQuery = Bank::query();
-            $this->applyTenantScope($bankQuery, 'banks');
-            $bank = $bankQuery->find((int) $request->input('bank_id'));
         }
 
         try {
