@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\{Company, Subscription, User, DeploymentManager};
 use App\Models\Customer;
+use App\Models\Product;
 use App\Models\Quotation;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\{Auth, DB, Log, Schema, Storage, Hash};
@@ -351,6 +352,7 @@ class HomeController extends Controller
     public function add_quotations()
     {
         $customers = collect();
+        $products = collect();
         if (Schema::hasTable('customers')) {
             $customerNameColumn = Schema::hasColumn('customers', 'name') ? 'name' : 'customer_name';
             $customersQuery = Customer::orderBy($customerNameColumn);
@@ -379,7 +381,34 @@ class HomeController extends Controller
 
             $customers = $customersQuery->get();
         }
-        return view('Quotations.add-quotations', compact('customers'));
+        if (Schema::hasTable('products')) {
+            $productsQuery = Product::query()->orderBy(Schema::hasColumn('products', 'name') ? 'name' : 'id');
+            $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+            $userId = (int) (Auth::id() ?? 0);
+            $branchId = trim((string) session('active_branch_id', ''));
+            $branchName = trim((string) session('active_branch_name', ''));
+
+            if ($companyId > 0 && Schema::hasColumn('products', 'company_id')) {
+                $productsQuery->where('company_id', $companyId)
+                    ->orWhere(function ($sub) use ($userId) {
+                        $sub->whereNull('company_id')
+                            ->where('user_id', $userId);
+                    });
+            }
+            if ($branchId !== '' || $branchName !== '') {
+                $productsQuery->where(function ($sub) use ($branchId, $branchName) {
+                    if ($branchId !== '' && Schema::hasColumn('products', 'branch_id')) {
+                        $sub->where('branch_id', $branchId);
+                    }
+                    if ($branchName !== '' && Schema::hasColumn('products', 'branch_name')) {
+                        $sub->orWhere('branch_name', $branchName);
+                    }
+                });
+            }
+
+            $products = $productsQuery->get();
+        }
+        return view('Quotations.add-quotations', compact('customers', 'products'));
     }
 
     public function edit_quotations($id = null)
@@ -425,10 +454,24 @@ class HomeController extends Controller
         $validated = $request->validate([
             'quotation_id' => 'nullable|string|max:100|unique:quotations,quotation_id',
             'customer_id' => $customerValidation,
+            'issue_date' => 'nullable|date',
+            'expiry_date' => 'nullable|date|after_or_equal:issue_date',
+            'items' => 'required|array|min:1',
+            'items.*.qty' => 'required|numeric|min:1',
+            'items.*.rate' => 'required|numeric|min:0',
             'total' => 'required|numeric|min:0',
             'status' => 'nullable|string|max:50',
-            'note' => 'nullable|string|max:1000',
+            'description' => 'nullable|string|max:5000',
+            'note' => 'nullable|string|max:5000',
         ]);
+
+        $items = collect($request->input('items', []))
+            ->filter(fn ($item) => filled($item['name'] ?? null) || filled($item['product_id'] ?? null))
+            ->values();
+
+        if ($items->isEmpty()) {
+            return back()->withInput()->with('error', 'Add at least one quotation item before saving.');
+        }
 
         if (empty($validated['quotation_id'])) {
             $seed = (int) (Quotation::max('id') ?? 0);
@@ -439,12 +482,44 @@ class HomeController extends Controller
             } while (Quotation::where('quotation_id', $candidate)->exists());
             $validated['quotation_id'] = $candidate;
         }
-        $validated['status'] = $validated['status'] ?? 'Pending';
+        $status = trim((string) ($validated['status'] ?? 'Pending'));
+        if ($request->input('action') === 'send' && $status === 'Pending') {
+            $status = 'Sent';
+        }
+        $validated['status'] = $status;
+
+        $subtotal = 0;
+        $discountTotal = 0;
+        $taxTotal = 0;
+
+        foreach ($items as $item) {
+            $qty = (float) ($item['qty'] ?? 0);
+            $rate = (float) ($item['rate'] ?? 0);
+            $discount = (float) ($item['discount'] ?? 0);
+            $tax = (float) ($item['tax'] ?? 0);
+            $lineSubtotal = $qty * $rate;
+            $subtotal += $lineSubtotal;
+            $discountTotal += $discount;
+            $taxTotal += $tax;
+        }
+
+        $customer = null;
+        if (!empty($validated['customer_id']) && Schema::hasTable('customers')) {
+            $customer = Customer::find($validated['customer_id']);
+        }
 
         $validated['company_id'] = Auth::user()?->company_id ?? session('current_tenant_id');
         $validated['user_id'] = Auth::id();
         $validated['branch_id'] = session('active_branch_id');
         $validated['branch_name'] = session('active_branch_name');
+        $validated['customer_name'] = $customer?->customer_name ?? $customer?->name ?? 'Walk-in Customer';
+        $validated['issue_date'] = $validated['issue_date'] ?? now()->toDateString();
+        $validated['expiry_date'] = $validated['expiry_date'] ?? now()->addDays(7)->toDateString();
+        $validated['subtotal'] = $subtotal;
+        $validated['tax'] = $taxTotal;
+        $validated['discount'] = $discountTotal;
+        $validated['description'] = $validated['description'] ?? $validated['note'] ?? null;
+        $validated['items_json'] = json_encode($items->all());
 
         Quotation::create($validated);
 

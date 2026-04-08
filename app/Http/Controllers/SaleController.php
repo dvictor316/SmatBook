@@ -11,6 +11,7 @@ use App\Models\Company;
 use App\Models\Payment;
 use App\Models\Bank;
 use App\Models\Setting;
+use App\Models\Transaction;
 use App\Models\User;
 use App\Traits\HasUniqueReceiptNumber;
 use App\Events\NewSaleRegistered; // The Pusher event we created
