@@ -192,13 +192,18 @@
                                 <label for="tax_id" class="form-label">Tax</label>
                                 <select id="tax_id" name="tax_id" class="form-select">
                                     <option value="">Select Tax</option>
-                                    @foreach($taxOptions as $tax)
+                                    @forelse($taxOptions as $tax)
                                         <option value="{{ $tax->id }}" 
                                             {{ old('tax_id') == $tax->id ? 'selected' : '' }}>
                                             {{ $tax->description ?? $tax->code ?? 'Tax' }}@if(isset($tax->rate)) ({{ rtrim(rtrim(number_format((float) $tax->rate, 4, '.', ''), '0'), '.') }}%)@endif
                                         </option>
-                                    @endforeach
+                                    @empty
+                                        <option value="" disabled>No tax codes configured</option>
+                                    @endforelse
                                 </select>
+                                @if($taxOptions->isEmpty())
+                                    <small class="text-muted d-block mt-2">No active tax codes are available yet.</small>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -256,7 +261,9 @@
                                     <p>Discount: <strong id="totalDiscount">0.00</strong></p>
                                     <p>VAT: <strong id="vatAmount">0.00</strong></p>
                                     <div class="form-check form-switch align-items-center mb-2">
+                                        <input type="hidden" name="round_off" value="0">
                                         <input class="form-check-input" type="checkbox" id="round_off" name="round_off" 
+                                               value="1"
                                                {{ old('round_off') ? 'checked' : '' }}>
                                         <label class="form-check-label" for="round_off">Round Off</label>
                                         <span class="ms-2" id="roundOffAmount">0.00</span>

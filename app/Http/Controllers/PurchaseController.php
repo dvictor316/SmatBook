@@ -181,7 +181,11 @@ private function applyBranchScope($query, string $table = 'purchases')
             $orderColumn = Schema::hasColumn('tax_codes', 'name')
                 ? 'name'
                 : (Schema::hasColumn('tax_codes', 'description') ? 'description' : 'code');
-            $taxOptions = TaxCode::orderBy($orderColumn)->get();
+            $taxQuery = TaxCode::query();
+            if (Schema::hasColumn('tax_codes', 'is_active')) {
+                $taxQuery->where('is_active', true);
+            }
+            $taxOptions = $taxQuery->orderBy($orderColumn)->get();
         }
         $banksQuery = Bank::orderBy('name');
         $this->applyTenantScope($banksQuery, 'banks');
@@ -212,6 +216,9 @@ private function applyBranchScope($query, string $table = 'purchases')
     public function store(Request $request)
     {
         $activeBranch = $this->getActiveBranchContext();
+        $request->merge([
+            'round_off' => $request->boolean('round_off'),
+        ]);
         $filteredProducts = collect($request->input('products', []))
             ->filter(function ($item) {
                 return filled($item['product_id'] ?? null);
@@ -478,6 +485,9 @@ public function show($id)
     public function update(Request $request, $id)
     {
         $activeBranch = $this->getActiveBranchContext();
+        $request->merge([
+            'round_off' => $request->boolean('round_off'),
+        ]);
         $purchaseQuery = Purchase::query();
         $this->applyTenantScope($purchaseQuery, 'purchases');
         $this->applyBranchScope($purchaseQuery, 'purchases');
