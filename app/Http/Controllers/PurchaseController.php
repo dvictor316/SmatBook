@@ -200,6 +200,18 @@ private function applyBranchScope($query, string $table = 'purchases')
     public function store(Request $request)
     {
         $activeBranch = $this->getActiveBranchContext();
+        $filteredProducts = collect($request->input('products', []))
+            ->filter(function ($item) {
+                return filled($item['product_id'] ?? null)
+                    || filled($item['quantity'] ?? null)
+                    || filled($item['rate'] ?? null)
+                    || filled($item['discount'] ?? null);
+            })
+            ->values()
+            ->all();
+
+        $request->merge(['products' => $filteredProducts]);
+
         // Validate the request (schema-safe)
         $validated = $request->validate([
             'purchase_id' => 'nullable|string|max:50',
@@ -216,10 +228,10 @@ private function applyBranchScope($query, string $table = 'purchases')
             'products.*.rate' => 'required|numeric|min:0',
             'products.*.unit' => 'nullable|string|max:20',
             'products.*.discount' => 'nullable|numeric|min:0',
-            'products.*.tax_id' => 'nullable|exists:taxes,id',
+            'products.*.tax_id' => 'nullable|exists:tax_codes,id',
             'discount_type' => 'in:percentage,fixed',
             'discount_value' => 'nullable|numeric|min:0',
-            'tax_id' => 'nullable|exists:taxes,id',
+            'tax_id' => 'nullable|exists:tax_codes,id',
             'bank_id' => 'nullable|exists:banks,id',
             'notes' => 'nullable|string|max:500',
             'terms_conditions' => 'nullable|string',

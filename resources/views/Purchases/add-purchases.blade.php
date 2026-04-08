@@ -1,14 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create Purchase</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-</head>
-<body>
-    <div class="container py-4">
+@extends('layout.mainlayout')
+
+@section('content')
+<div class="page-wrapper">
+    <div class="content container-fluid">
+    <div class="container-fluid py-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1>Create Purchase</h1>
             <a href="{{ route('purchases.index') }}" class="btn btn-secondary">
@@ -23,8 +18,16 @@
             </div>
         @endif
 
+        @if(session('error'))
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                {{ session('error') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        @endif
+
         @if($errors->any())
             <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <div class="fw-semibold mb-2">Please fix the highlighted purchase errors.</div>
                 <ul class="mb-0">
                     @foreach($errors->all() as $error)
                         <li>{{ $error }}</li>
@@ -297,10 +300,10 @@
             </div>
         </form>
     </div>
+    </div>
+</div>
 
-    <!-- JavaScript for dynamic product handling -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
+<script>
         document.addEventListener('DOMContentLoaded', function() {
             const products = @json($products);
             let productCounter = 0;
@@ -549,5 +552,4 @@
             });
         });
     </script>
-</body>
-</html>
+@endsection
