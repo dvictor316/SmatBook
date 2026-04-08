@@ -268,13 +268,16 @@ class InvoiceController extends Controller
                 $tax = (float) ($item['tax'] ?? 0);
                 $lineBase = $qty * $rate;
                 $lineAmount = max(0, $lineBase - $discount + $tax);
+                $lineDiscountPercent = $lineBase > 0
+                    ? round(min(100, ($discount / $lineBase) * 100), 2)
+                    : 0;
 
                 $saleItemPayload = [
                     'sale_id' => $sale->id,
                     'product_id' => $item['product_id'] ?? null,
                     'qty' => $qty,
                     'unit_price' => $rate,
-                    'discount' => $discount,
+                    'discount' => $lineDiscountPercent,
                     'tax' => $tax,
                     'subtotal' => $lineBase,
                     'total_price' => $lineAmount,
