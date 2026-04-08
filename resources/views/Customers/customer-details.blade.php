@@ -6,6 +6,9 @@
         @php
             $statusClass = ($customer->status ?? '') === 'active' ? 'is-active' : 'is-inactive';
             $profileImage = $customer->image ? asset('storage/' . $customer->image) : asset('assets/img/profiles/avatar-14.jpg');
+            $legacyAddress = trim((string) ($customer->address ?? ''));
+            $billingLineOne = $customer->billing_address_line1 ?: ($legacyAddress !== '' ? $legacyAddress : '-');
+            $shippingLineOne = $customer->shipping_address_line1 ?: ($legacyAddress !== '' ? $legacyAddress : '-');
         @endphp
 
         @if (session('success'))
@@ -450,7 +453,7 @@
                                 <div class="customer-section-title billing"><i class="fe fe-map-pin"></i><span>Billing Address</span></div>
                                 <div class="customer-address-name">{{ $customer->billing_name ?: $customer->customer_name }}</div>
                                 <p class="customer-address-lines">
-                                    {{ $customer->billing_address_line1 ?: '-' }}<br>
+                                    {{ $billingLineOne }}<br>
                                     {{ $customer->billing_address_line2 ?: '-' }}<br>
                                     {{ $customer->billing_city ?: '-' }}, {{ $customer->billing_state ?: '-' }}<br>
                                     {{ $customer->billing_country ?: '-' }} {{ $customer->billing_pincode ? '- ' . $customer->billing_pincode : '' }}
@@ -460,7 +463,7 @@
                                 <div class="customer-section-title shipping"><i class="fe fe-truck"></i><span>Shipping Address</span></div>
                                 <div class="customer-address-name">{{ $customer->shipping_name ?: $customer->customer_name }}</div>
                                 <p class="customer-address-lines">
-                                    {{ $customer->shipping_address_line1 ?: '-' }}<br>
+                                    {{ $shippingLineOne }}<br>
                                     {{ $customer->shipping_address_line2 ?: '-' }}<br>
                                     {{ $customer->shipping_city ?: '-' }}, {{ $customer->shipping_state ?: '-' }}<br>
                                     {{ $customer->shipping_country ?: '-' }} {{ $customer->shipping_pincode ? '- ' . $customer->shipping_pincode : '' }}
