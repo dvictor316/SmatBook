@@ -395,6 +395,47 @@
         color: #e11d48; padding: 10px; border-radius: 8px;
         margin-bottom: 16px; font-size: 12px; font-weight: 600; list-style: none;
     }
+    .error-pill ul {
+        margin: 0;
+        padding-left: 0;
+        list-style: none;
+    }
+    .flash-pill {
+        padding: 11px 12px;
+        border-radius: 10px;
+        margin-bottom: 12px;
+        font-size: 12px;
+        font-weight: 700;
+        line-height: 1.5;
+    }
+    .flash-pill.error {
+        background: #fff1f2;
+        color: #be123c;
+        border: 1px solid #fecdd3;
+    }
+    .flash-pill.info {
+        background: #eff6ff;
+        color: #1d4ed8;
+        border: 1px solid #bfdbfe;
+    }
+    .flash-pill.success {
+        background: #ecfdf3;
+        color: #166534;
+        border: 1px solid #86efac;
+    }
+    .input-smat.is-invalid {
+        border-color: #e11d48;
+        background: #fff7f7;
+        box-shadow: 0 0 0 4px rgba(225, 29, 72, 0.08);
+    }
+    .field-error {
+        display: block;
+        margin-top: 6px;
+        font-size: 11px;
+        font-weight: 700;
+        color: #be123c;
+        line-height: 1.45;
+    }
 
     .bottom-link { margin-top: 14px; text-align: center; font-size: 11px; color: #64748b; }
     .bottom-link a { color: var(--spa-primary); text-decoration: none; font-weight: 800; }
@@ -696,11 +737,28 @@
             <h1 class="form-title">Create Account</h1>
             <p class="form-subtitle">Enter your details to initialize this {{ $isManager ? 'management' : 'terminal' }} node.</p>
 
+            @if(session('error'))
+                <div class="flash-pill error">
+                    <i class="fas fa-exclamation-circle me-2"></i>{{ session('error') }}
+                </div>
+            @endif
+            @if(session('info'))
+                <div class="flash-pill info">
+                    <i class="fas fa-circle-info me-2"></i>{{ session('info') }}
+                </div>
+            @endif
+            @if(session('success'))
+                <div class="flash-pill success">
+                    <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
+                </div>
+            @endif
             @if($errors->any())
                 <div class="error-pill">
-                    @foreach($errors->all() as $error)
-                        <li><i class="fas fa-exclamation-triangle me-2"></i> {{ $error }}</li>
-                    @endforeach
+                    <ul>
+                        @foreach($errors->all() as $error)
+                            <li><i class="fas fa-exclamation-triangle me-2"></i> {{ $error }}</li>
+                        @endforeach
+                    </ul>
                 </div>
             @endif
 
@@ -719,25 +777,37 @@
                 <div class="field-grid mb-3">
                     <div>
                         <label class="label-caps">{{ $isManager ? 'Partner Name' : 'Full Name / Entity' }}</label>
-                        <input type="text" name="name" class="form-control input-smat w-100"
+                        <input type="text" name="name" class="form-control input-smat w-100 @error('name') is-invalid @enderror"
                                placeholder="{{ $isManager ? 'Management Entity' : 'Institutional Name' }}" value="{{ old('name') }}" required autofocus>
+                        @error('name')
+                            <span class="field-error">{{ $message }}</span>
+                        @enderror
                     </div>
                     <div>
                         <label class="label-caps">Profile Photo (Optional)</label>
-                        <input type="file" name="profile_photo" class="form-control input-smat w-100" accept="image/*">
+                        <input type="file" name="profile_photo" class="form-control input-smat w-100 @error('profile_photo') is-invalid @enderror" accept="image/*">
+                        @error('profile_photo')
+                            <span class="field-error">{{ $message }}</span>
+                        @enderror
                     </div>
                 </div>
 
                 <div class="field-grid mb-3">
                     <div>
                         <label class="label-caps">Email (or use phone below)</label>
-                        <input type="email" name="email" class="form-control input-smat w-100"
+                        <input type="email" name="email" class="form-control input-smat w-100 @error('email') is-invalid @enderror"
                                placeholder="admin@terminal.com" value="{{ old('email') }}">
+                        @error('email')
+                            <span class="field-error">{{ $message }}</span>
+                        @enderror
                     </div>
                     <div>
                         <label class="label-caps">Phone (or use email above)</label>
-                        <input type="text" name="phone" class="form-control input-smat w-100"
+                        <input type="text" name="phone" class="form-control input-smat w-100 @error('phone') is-invalid @enderror"
                                placeholder="+2348012345678" value="{{ old('phone') }}">
+                        @error('phone')
+                            <span class="field-error">{{ $message }}</span>
+                        @enderror
                     </div>
                 </div>
 
@@ -745,17 +815,23 @@
                     <div class="col-md-6">
                         <label class="label-caps">Master Passcode</label>
                         <div class="pass-container">
-                            <input type="password" name="password" id="p1" class="form-control input-smat w-100" placeholder="Min. 8 chars" minlength="8" pattern="(?=.*[A-Za-z])(?=.*\d).{8,}" title="Use at least 8 characters with letters and numbers." required>
+                            <input type="password" name="password" id="p1" class="form-control input-smat w-100 @error('password') is-invalid @enderror" placeholder="Min. 8 chars" minlength="8" pattern="(?=.*[A-Za-z])(?=.*\d).{8,}" title="Use at least 8 characters with letters and numbers." required>
                             <i class="far fa-eye toggle-eye" onclick="togglePass('p1', this)"></i>
                         </div>
+                        @error('password')
+                            <span class="field-error">{{ $message }}</span>
+                        @enderror
                         <small class="text-muted d-block mt-1" style="font-size:11px;">Use letters and numbers (symbol optional).</small>
                     </div>
                     <div class="col-md-6">
                         <label class="label-caps">Verify Passcode</label>
                         <div class="pass-container">
-                            <input type="password" name="password_confirmation" id="p2" class="form-control input-smat w-100" placeholder="Repeat" minlength="8" required>
+                            <input type="password" name="password_confirmation" id="p2" class="form-control input-smat w-100 @error('password_confirmation') is-invalid @enderror" placeholder="Repeat" minlength="8" required>
                             <i class="far fa-eye toggle-eye" onclick="togglePass('p2', this)"></i>
                         </div>
+                        @error('password_confirmation')
+                            <span class="field-error">{{ $message }}</span>
+                        @enderror
                     </div>
                 </div>
 

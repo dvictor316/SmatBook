@@ -346,6 +346,16 @@
                 @if(session('error'))
                     <div class="flash-msg error">{{ session('error') }}</div>
                 @endif
+                @if(session('info'))
+                    <div class="flash-msg success" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;">{{ session('info') }}</div>
+                @endif
+                @if($errors->any())
+                    <div class="flash-msg error" style="text-align:left;">
+                        @foreach($errors->all() as $error)
+                            <div><i class="fas fa-exclamation-triangle me-2"></i>{{ $error }}</div>
+                        @endforeach
+                    </div>
+                @endif
             </div>
             
             <div class="billing-toggle">
