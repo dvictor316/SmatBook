@@ -2190,6 +2190,58 @@
                                         </div>
                                     </div>
                                 </div>
+
+                                <div class="card card-rounded shadow-sm">
+                                    <div class="card-body">
+                                        <div class="dashboard-split-card">
+                                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                                <div>
+                                                    <h4 class="card-title card-title-dash mb-1">Workspace Readiness Board</h4>
+                                                    <p class="card-subtitle card-subtitle-dash mb-0 small">Fresh tenant health, activation pace, and setup momentum</p>
+                                                </div>
+                                                <span class="live-badge-soft">Live</span>
+                                            </div>
+
+                                            <div class="row g-2 mb-3">
+                                                @foreach([
+                                                    ['label' => 'Recent Tenants', 'value' => number_format($recentTenants->count() ?? 0)],
+                                                    ['label' => 'Paid Nodes', 'value' => number_format($metrics['paid_subs'] ?? 0)],
+                                                    ['label' => 'Pending Setup', 'value' => number_format($metrics['pending_setups'] ?? 0)],
+                                                    ['label' => 'Expiring Soon', 'value' => number_format($metrics['expiring_soon_subs'] ?? 0)],
+                                                ] as $readinessItem)
+                                                    <div class="col-sm-6">
+                                                        <div class="summary-fill h-100">
+                                                            <div class="label">{{ $readinessItem['label'] }}</div>
+                                                            <div class="value">{{ $readinessItem['value'] }}</div>
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+
+                                            <div class="small text-muted fw-semibold mb-2">Newest Company Nodes</div>
+                                            <div class="row g-2">
+                                                @forelse(($recentTenants ?? collect())->take(4) as $tenant)
+                                                    <div class="col-md-6">
+                                                        <div class="summary-fill h-100">
+                                                            <div class="label">{{ \Illuminate\Support\Str::limit($tenant->name ?? 'Tenant', 22) }}</div>
+                                                            <div class="value">{{ $tenant->subscription->plan_name ?? $tenant->subscription->plan ?? 'Pending Plan' }}</div>
+                                                            <div class="small text-muted mt-1">
+                                                                {{ optional($tenant->created_at)->diffForHumans() ?? 'Recently' }}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                @empty
+                                                    <div class="col-12">
+                                                        <div class="summary-fill">
+                                                            <div class="label">No recent companies</div>
+                                                            <div class="value">Waiting for new onboarding</div>
+                                                        </div>
+                                                    </div>
+                                                @endforelse
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             {{-- RIGHT COLUMN: Real-time Regional Distribution Map --}}
