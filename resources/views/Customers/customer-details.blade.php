@@ -7,8 +7,35 @@
             $statusClass = ($customer->status ?? '') === 'active' ? 'is-active' : 'is-inactive';
             $profileImage = $customer->image ? asset('storage/' . $customer->image) : asset('assets/img/profiles/avatar-14.jpg');
             $legacyAddress = trim((string) ($customer->address ?? ''));
+            $billingName = $customer->billing_name ?: $customer->customer_name;
+            $shippingName = $customer->shipping_name ?: $customer->customer_name;
             $billingLineOne = $customer->billing_address_line1 ?: ($legacyAddress !== '' ? $legacyAddress : '-');
             $shippingLineOne = $customer->shipping_address_line1 ?: ($legacyAddress !== '' ? $legacyAddress : '-');
+            $billingLineTwo = $customer->billing_address_line2 ?: '';
+            $shippingLineTwo = $customer->shipping_address_line2 ?: '';
+            $billingRegion = trim(implode(', ', array_filter([
+                $customer->billing_city ?: null,
+                $customer->billing_state ?: null,
+            ])));
+            $shippingRegion = trim(implode(', ', array_filter([
+                $customer->shipping_city ?: null,
+                $customer->shipping_state ?: null,
+            ])));
+            $billingCountryLine = trim(implode(' ', array_filter([
+                $customer->billing_country ?: null,
+                $customer->billing_pincode ? '- ' . $customer->billing_pincode : null,
+            ])));
+            $shippingCountryLine = trim(implode(' ', array_filter([
+                $customer->shipping_country ?: null,
+                $customer->shipping_pincode ? '- ' . $customer->shipping_pincode : null,
+            ])));
+            $displayBankName = $customer->bank_name ?: 'Not Set';
+            $displayAccountHolder = $customer->account_holder ?: $customer->customer_name ?: 'Not Set';
+            $displayAccountNumber = $customer->account_number ?: '**** **** ****';
+            $displayBankMeta = trim(implode(' ', array_filter([
+                $customer->ifsc ?: null,
+                $customer->branch ? '(' . $customer->branch . ')' : null,
+            ])));
         @endphp
 
         @if (session('success'))
@@ -451,22 +478,22 @@
                         <div class="customer-address-grid">
                             <div class="customer-address-box">
                                 <div class="customer-section-title billing"><i class="fe fe-map-pin"></i><span>Billing Address</span></div>
-                                <div class="customer-address-name">{{ $customer->billing_name ?: $customer->customer_name }}</div>
+                                <div class="customer-address-name">{{ $billingName }}</div>
                                 <p class="customer-address-lines">
                                     {{ $billingLineOne }}<br>
-                                    {{ $customer->billing_address_line2 ?: '-' }}<br>
-                                    {{ $customer->billing_city ?: '-' }}, {{ $customer->billing_state ?: '-' }}<br>
-                                    {{ $customer->billing_country ?: '-' }} {{ $customer->billing_pincode ? '- ' . $customer->billing_pincode : '' }}
+                                    {{ $billingLineTwo !== '' ? $billingLineTwo : '-' }}<br>
+                                    {{ $billingRegion !== '' ? $billingRegion : '-' }}<br>
+                                    {{ $billingCountryLine !== '' ? $billingCountryLine : '-' }}
                                 </p>
                             </div>
                             <div class="customer-address-box">
                                 <div class="customer-section-title shipping"><i class="fe fe-truck"></i><span>Shipping Address</span></div>
-                                <div class="customer-address-name">{{ $customer->shipping_name ?: $customer->customer_name }}</div>
+                                <div class="customer-address-name">{{ $shippingName }}</div>
                                 <p class="customer-address-lines">
                                     {{ $shippingLineOne }}<br>
-                                    {{ $customer->shipping_address_line2 ?: '-' }}<br>
-                                    {{ $customer->shipping_city ?: '-' }}, {{ $customer->shipping_state ?: '-' }}<br>
-                                    {{ $customer->shipping_country ?: '-' }} {{ $customer->shipping_pincode ? '- ' . $customer->shipping_pincode : '' }}
+                                    {{ $shippingLineTwo !== '' ? $shippingLineTwo : '-' }}<br>
+                                    {{ $shippingRegion !== '' ? $shippingRegion : '-' }}<br>
+                                    {{ $shippingCountryLine !== '' ? $shippingCountryLine : '-' }}
                                 </p>
                             </div>
                         </div>
@@ -515,21 +542,21 @@
                         <div class="bank-title"><i class="fe fe-credit-card"></i><span>Bank Account Details</span></div>
                         <div class="bank-row">
                             <span class="bank-label">Bank Name</span>
-                            <span class="bank-value">{{ $customer->bank_name ?: 'Not Set' }}</span>
+                            <span class="bank-value">{{ $displayBankName }}</span>
                         </div>
                         <div class="bank-row">
                             <span class="bank-label">Account Holder</span>
-                            <span class="bank-value">{{ $customer->account_holder ?: 'Not Set' }}</span>
+                            <span class="bank-value">{{ $displayAccountHolder }}</span>
                         </div>
                         <div class="bank-row">
                             <span class="bank-label">Account Number</span>
-                            <span class="bank-value">{{ $customer->account_number ?: '**** **** ****' }}</span>
+                            <span class="bank-value">{{ $displayAccountNumber }}</span>
                         </div>
                         <div class="bank-row">
                             <span class="bank-label">IFSC / Branch</span>
                             <span class="bank-value">
-                                @if ($customer->ifsc || $customer->branch)
-                                    {{ $customer->ifsc ?: 'N/A' }}{{ $customer->branch ? ' (' . $customer->branch . ')' : '' }}
+                                @if ($displayBankMeta !== '')
+                                    {{ $displayBankMeta }}
                                 @else
                                     Not Set
                                 @endif
