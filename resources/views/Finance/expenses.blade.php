@@ -213,7 +213,11 @@
                             <select class="form-select border-primary" name="account_id" required>
                                 <option value="">-- Choose Category --</option>
                                 @foreach(($categories ?? collect()) as $categoryOption)
-                                    <option value="{{ $categoryOption['value'] }}">{{ $categoryOption['label'] }}</option>
+                                    @php
+                                        $categoryValue = is_array($categoryOption) ? ($categoryOption['value'] ?? '') : ($categoryOption->value ?? '');
+                                        $categoryLabel = is_array($categoryOption) ? ($categoryOption['label'] ?? '') : ($categoryOption->label ?? '');
+                                    @endphp
+                                    <option value="{{ $categoryValue }}">{{ $categoryLabel }}</option>
                                 @endforeach
                                 @if(($categories ?? collect())->isEmpty())
                                     @foreach($expenseAccounts as $acc)
@@ -392,12 +396,16 @@
                                 <option value="">-- Choose Category --</option>
                                 @foreach(($categories ?? collect()) as $categoryOption)
                                     @php
-                                        $isSelectedCategory = $categoryOption['source'] === 'category'
-                                            ? (int) ($expense->category_id ?? 0) === (int) ($categoryOption['category_id'] ?? 0)
-                                            : strtolower((string) $expense->category) === strtolower((string) $categoryOption['label']);
+                                        $categoryValue = is_array($categoryOption) ? ($categoryOption['value'] ?? '') : ($categoryOption->value ?? '');
+                                        $categoryLabel = is_array($categoryOption) ? ($categoryOption['label'] ?? '') : ($categoryOption->label ?? '');
+                                        $categorySource = is_array($categoryOption) ? ($categoryOption['source'] ?? '') : ($categoryOption->source ?? '');
+                                        $categoryId = is_array($categoryOption) ? ($categoryOption['category_id'] ?? null) : ($categoryOption->category_id ?? null);
+                                        $isSelectedCategory = $categorySource === 'category'
+                                            ? (int) ($expense->category_id ?? 0) === (int) ($categoryId ?? 0)
+                                            : strtolower((string) $expense->category) === strtolower((string) $categoryLabel);
                                     @endphp
-                                    <option value="{{ $categoryOption['value'] }}" {{ $isSelectedCategory ? 'selected' : '' }}>
-                                        {{ $categoryOption['label'] }}
+                                    <option value="{{ $categoryValue }}" {{ $isSelectedCategory ? 'selected' : '' }}>
+                                        {{ $categoryLabel }}
                                     </option>
                                 @endforeach
                                 @if(($categories ?? collect())->isEmpty())

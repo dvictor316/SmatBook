@@ -57,9 +57,22 @@ class ExpenseController extends Controller
         }
 
         return $options
-            ->filter(fn ($option) => trim((string) ($option['label'] ?? '')) !== '')
-            ->unique(fn ($option) => strtolower(trim((string) ($option['label'] ?? ''))))
-            ->sortBy(fn ($option) => strtolower((string) $option['label']))
+            ->map(function ($option) {
+                $value = is_array($option) ? ($option['value'] ?? null) : ($option->value ?? null);
+                $label = is_array($option) ? ($option['label'] ?? null) : ($option->label ?? null);
+                $source = is_array($option) ? ($option['source'] ?? null) : ($option->source ?? null);
+                $categoryId = is_array($option) ? ($option['category_id'] ?? null) : ($option->category_id ?? null);
+
+                return (object) [
+                    'value' => $value !== null ? (string) $value : '',
+                    'label' => $label !== null ? (string) $label : '',
+                    'source' => $source !== null ? (string) $source : '',
+                    'category_id' => $categoryId !== null ? (int) $categoryId : null,
+                ];
+            })
+            ->filter(fn ($option) => trim((string) ($option->label ?? '')) !== '')
+            ->unique(fn ($option) => strtolower(trim((string) ($option->label ?? ''))))
+            ->sortBy(fn ($option) => strtolower((string) ($option->label ?? '')))
             ->values();
     }
 
