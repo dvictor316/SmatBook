@@ -101,32 +101,58 @@ class InvoiceController extends Controller
      */
     private function getInvoiceStats()
     {
+        $salesQuery = $this->applyTenantScope(Sale::query(), 'sales');
+        $sales = $salesQuery->get(['id', 'total', 'amount_paid', 'balance', 'payment_status']);
+
+        $allInvoiceAmount = (float) $sales->sum(fn ($sale) => (float) ($sale->total ?? 0));
+        $paidInvoices = $sales->filter(function ($sale) {
+            return strtolower((string) ($sale->payment_status ?? '')) === 'paid';
+        });
+
+        $paidInvoiceAmount = (float) $paidInvoices->sum(fn ($sale) => (float) ($sale->total ?? 0));
+        $totalReceivedAmount = (float) $sales->sum(fn ($sale) => (float) ($sale->amount_paid ?? 0));
+
+        $outstandingInvoices = $sales->filter(function ($sale) {
+            $storedBalance = (float) ($sale->balance ?? 0);
+            $computedBalance = max(0, (float) ($sale->total ?? 0) - (float) ($sale->amount_paid ?? 0));
+            $effectiveBalance = $storedBalance > 0 ? $storedBalance : $computedBalance;
+
+            return $effectiveBalance > 0.0001;
+        });
+
+        $outstandingAmount = (float) $outstandingInvoices->sum(function ($sale) {
+            $storedBalance = (float) ($sale->balance ?? 0);
+            $computedBalance = max(0, (float) ($sale->total ?? 0) - (float) ($sale->amount_paid ?? 0));
+
+            return $storedBalance > 0 ? $storedBalance : $computedBalance;
+        });
+
         return [
             [
                 'title' => 'All Invoices',
-                'amount' => $this->applyTenantScope(Sale::query(), 'sales')->sum('total'), 
-                'count' => $this->applyTenantScope(Sale::query(), 'sales')->count(),
+                'amount' => $allInvoiceAmount,
+                'count' => $sales->count(),
                 'icon' => 'file-text',
                 'class' => 'bg-primary-light'
             ],
             [
                 'title' => 'Paid Invoices',
-                'amount' => $this->applyTenantScope(Sale::where('payment_status', 'paid'), 'sales')->sum('total'),
-                'count' => $this->applyTenantScope(Sale::where('payment_status', 'paid'), 'sales')->count(),
+                'amount' => $paidInvoiceAmount,
+                'count' => $paidInvoices->count(),
                 'icon' => 'check-square',
                 'class' => 'bg-success-light'
             ],
             [
                 'title' => 'Unpaid Invoices',
-                'amount' => $this->applyTenantScope(Sale::where('payment_status', 'unpaid'), 'sales')->sum('total'),
-                'count' => $this->applyTenantScope(Sale::where('payment_status', 'unpaid'), 'sales')->count(),
+                'amount' => $outstandingAmount,
+                'count' => $outstandingInvoices->count(),
                 'icon' => 'clock',
                 'class' => 'bg-warning-light'
             ],
             [
                 'title' => 'Total Received',
-                'amount' => $this->applyTenantScope(Sale::query(), 'sales')->sum('amount_paid'), 
-                'count' => $this->applyTenantScope(Sale::where('amount_paid', '>', 0), 'sales')->count(),
+                'amount' => $totalReceivedAmount,
+                'count' => $sales->filter(fn ($sale) => (float) ($sale->amount_paid ?? 0) > 0)->count(),
                 'icon' => 'dollar-sign',
                 'class' => 'bg-info-light'
             ]
@@ -140,7 +166,8 @@ class InvoiceController extends Controller
     {
         $customers = $this->applyTenantScope(Customer::query(), 'customers')->get();
         $products = $this->applyTenantScope(Product::query(), 'products')->get();
-        return view('Sales.Invoices.create-invoices', compact('customers', 'products'));
+        $quotationPrefill = session('quotation_prefill');
+        return view('Sales.Invoices.create-invoices', compact('customers', 'products', 'quotationPrefill'));
     }
 
     public function add_invoice()
