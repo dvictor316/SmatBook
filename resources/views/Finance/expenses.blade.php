@@ -212,18 +212,14 @@
                             </div>
                             <select class="form-select border-primary" name="account_id" required>
                                 <option value="">-- Choose Category --</option>
-                                @if(($categories ?? collect())->isNotEmpty())
-                                    <optgroup label="Expense Categories">
-                                        @foreach($categories as $cat)
-                                            <option value="cat:{{ $cat->id }}">{{ $cat->name }}</option>
-                                        @endforeach
-                                    </optgroup>
-                                @endif
-                                <optgroup label="Chart of Accounts (Expense)">
+                                @foreach(($categories ?? collect()) as $categoryOption)
+                                    <option value="{{ $categoryOption['value'] }}">{{ $categoryOption['label'] }}</option>
+                                @endforeach
+                                @if(($categories ?? collect())->isEmpty())
                                     @foreach($expenseAccounts as $acc)
                                         <option value="{{ $acc->id }}">{{ $acc->name }} ({{ $acc->code }})</option>
                                     @endforeach
-                                </optgroup>
+                                @endif
                             </select>
                             <small class="text-muted">This defines where the money is spent.</small>
                         </div>
@@ -394,22 +390,23 @@
                             </div>
                             <select class="form-select border-primary" name="account_id" required>
                                 <option value="">-- Choose Category --</option>
-                                @if(($categories ?? collect())->isNotEmpty())
-                                    <optgroup label="Expense Categories">
-                                        @foreach($categories as $cat)
-                                            <option value="cat:{{ $cat->id }}" {{ (int) ($expense->category_id ?? 0) === (int) $cat->id ? 'selected' : '' }}>
-                                                {{ $cat->name }}
-                                            </option>
-                                        @endforeach
-                                    </optgroup>
-                                @endif
-                                <optgroup label="Chart of Accounts (Expense)">
+                                @foreach(($categories ?? collect()) as $categoryOption)
+                                    @php
+                                        $isSelectedCategory = $categoryOption['source'] === 'category'
+                                            ? (int) ($expense->category_id ?? 0) === (int) ($categoryOption['category_id'] ?? 0)
+                                            : strtolower((string) $expense->category) === strtolower((string) $categoryOption['label']);
+                                    @endphp
+                                    <option value="{{ $categoryOption['value'] }}" {{ $isSelectedCategory ? 'selected' : '' }}>
+                                        {{ $categoryOption['label'] }}
+                                    </option>
+                                @endforeach
+                                @if(($categories ?? collect())->isEmpty())
                                     @foreach($expenseAccounts as $acc)
                                         <option value="{{ $acc->id }}" {{ strtolower((string) $expense->category) === strtolower((string) $acc->name) ? 'selected' : '' }}>
                                             {{ $acc->name }} ({{ $acc->code }})
                                         </option>
                                     @endforeach
-                                </optgroup>
+                                @endif
                             </select>
                         </div>
                         <div class="col-md-6">

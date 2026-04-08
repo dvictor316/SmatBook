@@ -20,6 +20,49 @@ use RuntimeException;
 
 class ExpenseController extends Controller
 {
+    private function expenseCategoryOptions()
+    {
+        $options = collect();
+
+        if (Schema::hasTable('categories')) {
+            $categoryQuery = $this->applyTenantScope(Category::query()->orderBy('name'), 'categories');
+            $options = $options->merge(
+                $categoryQuery->get(['id', 'name'])->map(function ($category) {
+                    return [
+                        'value' => 'cat:' . $category->id,
+                        'label' => (string) $category->name,
+                        'source' => 'category',
+                        'category_id' => (int) $category->id,
+                    ];
+                })
+            );
+        }
+
+        if (Schema::hasTable('accounts')) {
+            $accountQuery = $this->applyTenantScope(Account::query()->where('type', 'Expense')->orderBy('name'), 'accounts');
+            if (Schema::hasColumn('accounts', 'branch_id') || Schema::hasColumn('accounts', 'branch_name')) {
+                $this->applyBranchScope($accountQuery, 'accounts');
+            }
+
+            $options = $options->merge(
+                $accountQuery->get(['id', 'name'])->map(function ($account) {
+                    return [
+                        'value' => (string) $account->id,
+                        'label' => (string) $account->name,
+                        'source' => 'account',
+                        'category_id' => null,
+                    ];
+                })
+            );
+        }
+
+        return $options
+            ->filter(fn ($option) => trim((string) ($option['label'] ?? '')) !== '')
+            ->unique(fn ($option) => strtolower(trim((string) ($option['label'] ?? ''))))
+            ->sortBy(fn ($option) => strtolower((string) $option['label']))
+            ->values();
+    }
+
     private function applyTenantScope($query, string $table)
     {
         $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
@@ -141,9 +184,7 @@ class ExpenseController extends Controller
         $assetAccounts = Schema::hasTable('accounts')
             ? $this->paymentSourceAccountsQuery()->get()
             : collect();
-        $categories = Schema::hasTable('categories')
-            ? $this->applyTenantScope(Category::orderBy('name'), 'categories')->get(['id', 'name'])
-            : collect();
+        $categories = $this->expenseCategoryOptions();
 
         $partyOptions = collect();
         if (Schema::hasTable('vendors') && Schema::hasColumn('vendors', 'name')) {
@@ -603,7 +644,8 @@ class ExpenseController extends Controller
             'name' => 'required|string|max:191',
         ]);
 
-        return DB::transaction(function () use ($validated) {
+        try {
+            return DB::transaction(function () use ($validated) {
             $categoryAttributes = ['name' => $validated['name']];
             $categoryValues = ['description' => null, 'image' => null, 'status' => 1];
             if (Schema::hasColumn('categories', 'company_id')) {
@@ -611,6 +653,14 @@ class ExpenseController extends Controller
             }
             if (Schema::hasColumn('categories', 'user_id')) {
                 $categoryValues['user_id'] = Auth::id();
+            }
+            if (Schema::hasColumn('categories', 'branch_id')) {
+                $categoryAttributes['branch_id'] = session('active_branch_id');
+                $categoryValues['branch_id'] = session('active_branch_id');
+            }
+            if (Schema::hasColumn('categories', 'branch_name')) {
+                $categoryAttributes['branch_name'] = session('active_branch_name');
+                $categoryValues['branch_name'] = session('active_branch_name');
             }
 
             $category = Category::firstOrCreate($categoryAttributes, $categoryValues);
@@ -633,11 +683,27 @@ class ExpenseController extends Controller
             if (Schema::hasColumn('accounts', 'user_id')) {
                 $accountValues['user_id'] = Auth::id();
             }
+            if (Schema::hasColumn('accounts', 'branch_id')) {
+                $accountAttributes['branch_id'] = session('active_branch_id');
+                $accountValues['branch_id'] = session('active_branch_id');
+            }
+            if (Schema::hasColumn('accounts', 'branch_name')) {
+                $accountAttributes['branch_name'] = session('active_branch_name');
+                $accountValues['branch_name'] = session('active_branch_name');
+            }
 
             Account::firstOrCreate($accountAttributes, $accountValues);
 
             return redirect()->route('expenses.index')->with('success', 'Expense category added successfully.');
         });
+        } catch (\Throwable $e) {
+            Log::error('Expense quick-add category failed', [
+                'error' => $e->getMessage(),
+                'user_id' => Auth::id(),
+            ]);
+
+            return redirect()->route('expenses.index')->with('error', 'Expense category could not be added. ' . $e->getMessage());
+        }
     }
 
     private function resolveExpenseAccountFromSelector(string $selector): array
