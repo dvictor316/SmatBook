@@ -304,7 +304,10 @@ class SupplierController extends Controller
         $this->applyTenantScope($purchasesQuery, 'purchases');
         $this->applyBranchScopeToPurchases($purchasesQuery);
         $outstandingPurchases = $purchasesQuery->get()->map(function ($purchase) {
-            $purchase->outstanding_balance = max(0, (float) ($purchase->total_amount ?? 0) - (float) ($purchase->paid_amount ?? 0));
+            $paidAmount = Schema::hasColumn('purchases', 'paid_amount')
+                ? (float) ($purchase->paid_amount ?? 0)
+                : 0.0;
+            $purchase->outstanding_balance = max(0, (float) ($purchase->total_amount ?? 0) - $paidAmount);
             return $purchase;
         })->filter(fn ($purchase) => $purchase->outstanding_balance > 0)->values();
 
@@ -341,9 +344,10 @@ class SupplierController extends Controller
         }
 
         $summary = [
-            'outstanding_payables' => (float) $outstandingPurchases->sum('outstanding_balance'),
+            'outstanding_payables' => (float) $outstandingPurchases->sum('outstanding_balance') + (float) ($supplier->opening_balance ?? 0),
             'total_paid' => (float) $supplierPayments->sum('amount'),
             'open_bills' => (int) $outstandingPurchases->count(),
+            'opening_balance_due' => (float) ($supplier->opening_balance ?? 0),
         ];
 
         return view('Customers.supplier-payments', compact(
@@ -440,18 +444,59 @@ class SupplierController extends Controller
             'reference' => 'nullable|string|max:191',
             'method' => 'nullable|string|max:100',
             'note' => 'nullable|string|max:1000',
-            'allocations' => 'required|array',
+            'payment_amount' => 'nullable|numeric|min:0',
+            'allocations' => 'nullable|array',
+            'opening_balance_amount' => 'nullable|numeric|min:0',
         ]);
 
         $allocations = collect($request->input('allocations', []))
             ->mapWithKeys(fn ($value, $purchaseId) => [(int) $purchaseId => round(max(0, (float) $value), 2)])
             ->filter(fn ($value) => $value > 0);
+        $openingBalancePayment = round(max(0, (float) $request->input('opening_balance_amount', 0)), 2);
+        $paymentAmount = round(max(0, (float) $request->input('payment_amount', 0)), 2);
 
-        if ($allocations->isEmpty()) {
+        if ($paymentAmount > 0 && $allocations->isEmpty() && $openingBalancePayment <= 0) {
+            $purchasesQuery = Purchase::query()
+                ->where('supplier_id', $supplier->id)
+                ->orderBy(
+                    Schema::hasColumn('purchases', 'purchase_date')
+                        ? 'purchase_date'
+                        : (Schema::hasColumn('purchases', 'date') ? 'date' : 'created_at')
+                )
+                ->orderBy('id');
+            $this->applyTenantScope($purchasesQuery, 'purchases');
+            $this->applyBranchScopeToPurchases($purchasesQuery);
+            $candidatePurchases = $purchasesQuery->get();
+
+            $remainingPaymentAmount = $paymentAmount;
+            foreach ($candidatePurchases as $purchase) {
+                if ($remainingPaymentAmount <= 0) {
+                    break;
+                }
+
+                $paidAmount = Schema::hasColumn('purchases', 'paid_amount')
+                    ? (float) ($purchase->paid_amount ?? 0)
+                    : 0.0;
+                $outstandingBalance = max(0, (float) ($purchase->total_amount ?? 0) - $paidAmount);
+                if ($outstandingBalance <= 0) {
+                    continue;
+                }
+
+                $allocated = min($outstandingBalance, $remainingPaymentAmount);
+                $allocations->put((int) $purchase->id, round($allocated, 2));
+                $remainingPaymentAmount = round($remainingPaymentAmount - $allocated, 2);
+            }
+
+            if ($remainingPaymentAmount > 0) {
+                $openingBalancePayment = min((float) ($supplier->opening_balance ?? 0), $remainingPaymentAmount);
+            }
+        }
+
+        if ($allocations->isEmpty() && $openingBalancePayment <= 0) {
             return back()->withInput()->with('error', 'Enter at least one supplier payment amount before saving.');
         }
 
-        $totalPayment = round($allocations->sum(), 2);
+        $totalPayment = round($allocations->sum() + $openingBalancePayment, 2);
         if ($bank && Schema::hasColumn('banks', 'balance')) {
             $availableBalance = (float) $bank->balance;
             if ($totalPayment > $availableBalance) {
@@ -469,7 +514,7 @@ class SupplierController extends Controller
         }
 
         try {
-            DB::transaction(function () use ($supplier, $allocations, $request, $paymentDate, $paymentGroup, $bank) {
+            DB::transaction(function () use ($supplier, $allocations, $openingBalancePayment, $request, $paymentDate, $paymentGroup, $bank) {
                 $purchasesQuery = Purchase::query()
                     ->where('supplier_id', $supplier->id)
                     ->whereIn('id', $allocations->keys())
@@ -531,6 +576,35 @@ class SupplierController extends Controller
                         $request->input('method') ?: ($bank?->name ?: 'Bank Transfer'),
                         $paymentGroup
                     );
+                }
+
+                if ($openingBalancePayment > 0) {
+                    $currentOpeningBalance = (float) ($supplier->opening_balance ?? 0);
+                    $amount = min($currentOpeningBalance, $openingBalancePayment);
+
+                    if ($amount > 0) {
+                        $supplier->opening_balance = max(0, $currentOpeningBalance - $amount);
+                        $supplier->save();
+
+                        if (Schema::hasTable('supplier_payments')) {
+                            SupplierPayment::create([
+                                'supplier_id' => $supplier->id,
+                                'purchase_id' => null,
+                                'company_id' => auth()->user()?->company_id ?? session('current_tenant_id'),
+                                'user_id' => auth()->id(),
+                                'branch_id' => $this->getActiveBranchContext()['id'],
+                                'branch_name' => $this->getActiveBranchContext()['name'],
+                                'bank_id' => $bank?->id,
+                                'payment_group' => $paymentGroup,
+                                'reference' => $paymentGroup,
+                                'amount' => $amount,
+                                'method' => $request->input('method') ?: 'Bank Transfer',
+                                'note' => $request->input('note') ?: 'Supplier opening balance payment.',
+                                'payment_date' => $paymentDate,
+                                'created_by' => auth()->id(),
+                            ]);
+                        }
+                    }
                 }
             });
         } catch (\Throwable $exception) {

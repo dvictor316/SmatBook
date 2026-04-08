@@ -127,6 +127,14 @@
                             <label class="form-label">Reference No.</label>
                             <input type="text" name="reference" class="form-control" value="{{ old('reference') }}" placeholder="Optional reference">
                         </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Payment Amount</label>
+                            <div class="input-group">
+                                <span class="input-group-text">₦</span>
+                                <input type="number" step="0.01" min="0" name="payment_amount" class="form-control" value="{{ old('payment_amount') }}" placeholder="0.00">
+                            </div>
+                            <small class="text-muted">Leave line allocations empty and the system will auto-allocate this amount across open bills and opening balance.</small>
+                        </div>
                         <div class="col-12">
                             <label class="form-label">Note</label>
                             <textarea name="note" rows="2" class="form-control" placeholder="Optional note for this supplier payment">{{ old('note') }}</textarea>
@@ -139,7 +147,7 @@
                     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
                         <div>
                             <h6 class="mb-1">Outstanding Purchases</h6>
-                            <small class="text-muted">Use “Full” for quick settlement or type a partial payment for any bill.</small>
+                            <small class="text-muted">Use “Full” for quick settlement, type a partial payment for any bill, or pay the supplier opening balance directly.</small>
                         </div>
                         <div class="text-end">
                             <div class="small text-muted">Amount being paid</div>
@@ -160,6 +168,24 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                @if((float) ($summary['opening_balance_due'] ?? 0) > 0)
+                                    <tr class="table-warning-subtle">
+                                        <td>
+                                            <div class="fw-semibold">Opening Balance</div>
+                                            <small class="text-muted">Supplier brought-forward balance</small>
+                                        </td>
+                                        <td>{{ $supplier->opening_balance_date ?? '-' }}</td>
+                                        <td class="text-end">₦{{ number_format((float) ($summary['opening_balance_due'] ?? 0), 2) }}</td>
+                                        <td class="text-end">₦0.00</td>
+                                        <td class="text-end fw-semibold">₦{{ number_format((float) ($summary['opening_balance_due'] ?? 0), 2) }}</td>
+                                        <td>
+                                            <div class="input-group">
+                                                <input type="number" step="0.01" min="0" max="{{ (float) ($summary['opening_balance_due'] ?? 0) }}" name="opening_balance_amount" class="form-control allocation-input" value="{{ old('opening_balance_amount') }}" data-max="{{ (float) ($summary['opening_balance_due'] ?? 0) }}">
+                                                <button class="btn btn-outline-secondary fill-allocation" type="button" data-full="{{ (float) ($summary['opening_balance_due'] ?? 0) }}">Full</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endif
                                 @forelse($outstandingPurchases as $purchase)
                                     <tr>
                                         <td>
