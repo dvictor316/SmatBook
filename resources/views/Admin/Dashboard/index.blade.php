@@ -4,18 +4,16 @@
 <style>
     /* FIXED SIDEBAR OFFSET & THEME COLORS */
     .pos-content-area {
-        margin-left: 250px; 
         padding: 30px;
-        transition: all 0.3s ease-in-out;
+        transition: padding 0.3s ease-in-out;
         background-color: #fdfaf0; 
         min-height: 100vh;
         margin-top: 60px;
+        box-sizing: border-box;
     }
 
-    body.mini-sidebar .pos-content-area { margin-left: 80px; }
-
     @media (max-width: 1200px) {
-        .pos-content-area { margin-left: 0 !important; padding: 15px; }
+        .pos-content-area { padding: 15px; }
     }
 
     /* Professional Header Styling */

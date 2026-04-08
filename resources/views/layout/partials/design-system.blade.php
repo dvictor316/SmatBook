@@ -159,10 +159,14 @@
     #layout-wrapper,
     #profile-content,
     .page-content-wrapper {
+        box-sizing: border-box;
+        max-width: 100%;
+        min-width: 0;
         overflow-x: hidden;
         overflow-y: visible;
         margin-top: 0 !important;
         padding-top: 0 !important;
+        transition: margin-left 0.3s ease, width 0.3s ease, max-width 0.3s ease, padding 0.3s ease;
     }
 
     /* Global sidebar scroll behavior (all roles, all pages). */

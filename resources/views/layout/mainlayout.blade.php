@@ -229,10 +229,12 @@
             margin-left: var(--sb-sidebar-w, 270px) !important;
             width: calc(100% - var(--sb-sidebar-w, 270px)) !important;
             max-width: calc(100% - var(--sb-sidebar-w, 270px)) !important;
+            box-sizing: border-box;
             padding-top: 0 !important;
             margin-top: 0 !important;
             min-height: calc(100vh - var(--sb-header-h, 76px));
-            transition: margin-left 0.3s ease;
+            min-width: 0;
+            transition: margin-left 0.3s ease, width 0.3s ease, max-width 0.3s ease, padding 0.3s ease;
             overflow-x: clip;
         }
 
@@ -260,6 +262,7 @@
         }
 
         .page-wrapper .content.container-fluid {
+            box-sizing: border-box;
             padding-top: 0 !important;
             padding-left: 12px !important;
             padding-right: 12px !important;
