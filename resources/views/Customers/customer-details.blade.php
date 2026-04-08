@@ -4,38 +4,55 @@
 <div class="page-wrapper customer-profile-page">
     <div class="content container-fluid">
         @php
+            $customerAttributes = method_exists($customer, 'getAttributes') ? $customer->getAttributes() : [];
+            $firstFilled = function (array $keys, $default = null) use ($customerAttributes) {
+                foreach ($keys as $key) {
+                    $value = $customerAttributes[$key] ?? data_get($customer, $key);
+                    if (is_string($value)) {
+                        $value = trim($value);
+                    }
+                    if ($value !== null && $value !== '') {
+                        return $value;
+                    }
+                }
+
+                return $default;
+            };
+
             $statusClass = ($customer->status ?? '') === 'active' ? 'is-active' : 'is-inactive';
             $profileImage = $customer->image ? asset('storage/' . $customer->image) : asset('assets/img/profiles/avatar-14.jpg');
-            $legacyAddress = trim((string) ($customer->address ?? ''));
-            $billingName = $customer->billing_name ?: $customer->customer_name;
-            $shippingName = $customer->shipping_name ?: $customer->customer_name;
-            $billingLineOne = $customer->billing_address_line1 ?: ($legacyAddress !== '' ? $legacyAddress : '-');
-            $shippingLineOne = $customer->shipping_address_line1 ?: ($legacyAddress !== '' ? $legacyAddress : '-');
-            $billingLineTwo = $customer->billing_address_line2 ?: '';
-            $shippingLineTwo = $customer->shipping_address_line2 ?: '';
+            $legacyAddress = trim((string) $firstFilled(['address', 'billing_address', 'shipping_address'], ''));
+            $billingName = $firstFilled(['billing_name', 'customer_name', 'name'], 'Customer');
+            $shippingName = $firstFilled(['shipping_name', 'customer_name', 'name'], 'Customer');
+            $billingLineOne = $firstFilled(['billing_address_line1', 'billing_address', 'address_line1', 'address'], $legacyAddress !== '' ? $legacyAddress : '-');
+            $shippingLineOne = $firstFilled(['shipping_address_line1', 'shipping_address', 'address_line1', 'address'], $legacyAddress !== '' ? $legacyAddress : '-');
+            $billingLineTwo = $firstFilled(['billing_address_line2', 'address_line2'], '');
+            $shippingLineTwo = $firstFilled(['shipping_address_line2', 'address_line2'], '');
             $billingRegion = trim(implode(', ', array_filter([
-                $customer->billing_city ?: null,
-                $customer->billing_state ?: null,
+                $firstFilled(['billing_city', 'city']) ?: null,
+                $firstFilled(['billing_state', 'state']) ?: null,
             ])));
             $shippingRegion = trim(implode(', ', array_filter([
-                $customer->shipping_city ?: null,
-                $customer->shipping_state ?: null,
+                $firstFilled(['shipping_city', 'city']) ?: null,
+                $firstFilled(['shipping_state', 'state']) ?: null,
             ])));
             $billingCountryLine = trim(implode(' ', array_filter([
-                $customer->billing_country ?: null,
-                $customer->billing_pincode ? '- ' . $customer->billing_pincode : null,
+                $firstFilled(['billing_country', 'country']) ?: null,
+                $firstFilled(['billing_pincode', 'billing_postcode', 'billing_zipcode', 'pincode', 'postcode', 'zipcode']) ? '- ' . $firstFilled(['billing_pincode', 'billing_postcode', 'billing_zipcode', 'pincode', 'postcode', 'zipcode']) : null,
             ])));
             $shippingCountryLine = trim(implode(' ', array_filter([
-                $customer->shipping_country ?: null,
-                $customer->shipping_pincode ? '- ' . $customer->shipping_pincode : null,
+                $firstFilled(['shipping_country', 'country']) ?: null,
+                $firstFilled(['shipping_pincode', 'shipping_postcode', 'shipping_zipcode', 'pincode', 'postcode', 'zipcode']) ? '- ' . $firstFilled(['shipping_pincode', 'shipping_postcode', 'shipping_zipcode', 'pincode', 'postcode', 'zipcode']) : null,
             ])));
-            $displayBankName = $customer->bank_name ?: 'Not Set';
-            $displayAccountHolder = $customer->account_holder ?: $customer->customer_name ?: 'Not Set';
-            $displayAccountNumber = $customer->account_number ?: '**** **** ****';
+            $displayBankName = $firstFilled(['bank_name', 'bank', 'bank_title'], 'Not Set');
+            $displayAccountHolder = $firstFilled(['account_holder', 'account_holder_name', 'holder_name', 'customer_name', 'name'], 'Not Set');
+            $rawAccountNumber = $firstFilled(['account_number', 'account_no', 'bank_account_number']);
+            $displayAccountNumber = $rawAccountNumber ?: '**** **** ****';
             $displayBankMeta = trim(implode(' ', array_filter([
-                $customer->ifsc ?: null,
-                $customer->branch ? '(' . $customer->branch . ')' : null,
+                $firstFilled(['ifsc', 'ifsc_code', 'swift_code', 'sort_code']) ?: null,
+                $firstFilled(['branch', 'bank_branch']) ? '(' . $firstFilled(['branch', 'bank_branch']) . ')' : null,
             ])));
+            $internalNotes = $firstFilled(['notes', 'internal_notes'], 'No internal notes available for this customer.');
         @endphp
 
         @if (session('success'))
@@ -566,7 +583,7 @@
 
                     <div class="customer-profile-notes">
                         <h6>Internal Notes</h6>
-                        <p>{{ $customer->notes ?: 'No internal notes available for this customer.' }}</p>
+                        <p>{{ $internalNotes }}</p>
                     </div>
                 </div>
             </div>
