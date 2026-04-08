@@ -809,9 +809,13 @@ class SupplierController extends Controller
             return [];
         }
 
+        $paidColumnExpression = Schema::hasColumn('purchases', 'paid_amount')
+            ? 'SUM(COALESCE(paid_amount, 0))'
+            : '0';
+
         $query = Purchase::query()
             ->whereIn('supplier_id', $supplierIds->all())
-            ->selectRaw('supplier_id, SUM(COALESCE(total_amount, 0)) as total_amount_sum, SUM(COALESCE(paid_amount, 0)) as paid_amount_sum')
+            ->selectRaw("supplier_id, SUM(COALESCE(total_amount, 0)) as total_amount_sum, {$paidColumnExpression} as paid_amount_sum")
             ->groupBy('supplier_id');
 
         $this->applyTenantScope($query, 'purchases');
@@ -837,9 +841,13 @@ class SupplierController extends Controller
         }
 
         if (Schema::hasTable('purchases')) {
+            $paidColumnExpression = Schema::hasColumn('purchases', 'paid_amount')
+                ? 'SUM(COALESCE(paid_amount, 0))'
+                : '0';
+
             $query = Purchase::query()
                 ->selectRaw('SUM(COALESCE(total_amount, 0)) as total_amount_sum')
-                ->selectRaw('SUM(COALESCE(paid_amount, 0)) as paid_amount_sum');
+                ->selectRaw("{$paidColumnExpression} as paid_amount_sum");
             $this->applyTenantScope($query, 'purchases');
             $this->applyBranchScopeToPurchases($query);
             $result = $query->first();
