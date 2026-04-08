@@ -214,10 +214,7 @@ private function applyBranchScope($query, string $table = 'purchases')
         $activeBranch = $this->getActiveBranchContext();
         $filteredProducts = collect($request->input('products', []))
             ->filter(function ($item) {
-                return filled($item['product_id'] ?? null)
-                    || filled($item['quantity'] ?? null)
-                    || filled($item['rate'] ?? null)
-                    || filled($item['discount'] ?? null);
+                return filled($item['product_id'] ?? null);
             })
             ->values()
             ->all();

@@ -37,7 +37,7 @@
             </div>
         @endif
 
-        <form action="{{ route('purchases.store') }}" method="POST" enctype="multipart/form-data" id="purchaseForm">
+        <form action="{{ route('purchases.store') }}" method="POST" enctype="multipart/form-data" id="purchaseForm" novalidate>
             @csrf
             
             <!-- Purchase Details Section -->
@@ -339,7 +339,7 @@
                 row.id = rowId;
                 row.innerHTML = `
                     <td>
-                        <select name="products[${rowIndex}][product_id]" class="form-select product-select" data-row="${rowIndex}" required>
+                        <select name="products[${rowIndex}][product_id]" class="form-select product-select" data-row="${rowIndex}">
                             ${buildProductOptions()}
                         </select>
                     </td>
