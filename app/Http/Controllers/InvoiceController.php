@@ -15,6 +15,52 @@ use Carbon\Carbon;
 
 class InvoiceController extends Controller
 {
+    private function ignoredAppliedPaymentStatuses(): array
+    {
+        return ['failed', 'cancelled', 'pending approval'];
+    }
+
+    private function resolveAppliedPaymentAmount(Sale $sale): ?float
+    {
+        if (!Schema::hasTable('payments') || empty($sale->id)) {
+            return null;
+        }
+
+        $ignoredStatuses = $this->ignoredAppliedPaymentStatuses();
+
+        if ($sale->relationLoaded('payments')) {
+            $payments = collect($sale->payments)->filter(function ($payment) use ($ignoredStatuses) {
+                $status = strtolower(trim((string) ($payment->status ?? '')));
+                return !in_array($status, $ignoredStatuses, true);
+            });
+
+            if ($payments->isEmpty()) {
+                return null;
+            }
+
+            return (float) $payments->sum(fn ($payment) => (float) ($payment->amount ?? 0));
+        }
+
+        $paymentQuery = DB::table('payments')->where('sale_id', $sale->id);
+
+        if (Schema::hasColumn('payments', 'company_id')) {
+            $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+            if ($companyId > 0) {
+                $paymentQuery->where('company_id', $companyId);
+            }
+        }
+
+        if (Schema::hasColumn('payments', 'status')) {
+            foreach ($ignoredStatuses as $ignoredStatus) {
+                $paymentQuery->whereRaw('LOWER(COALESCE(status, "")) <> ?', [$ignoredStatus]);
+            }
+        }
+
+        $paymentSum = (float) $paymentQuery->sum('amount');
+
+        return $paymentSum > 0 ? $paymentSum : null;
+    }
+
     private function applyComputedInvoiceState(Sale $sale): Sale
     {
         $financials = $this->normalizeInvoiceFinancials($sale);
@@ -29,18 +75,24 @@ class InvoiceController extends Controller
     private function normalizeInvoiceFinancials(Sale $sale): array
     {
         $total = max(0, (float) ($sale->total ?? 0));
+        $appliedPaymentAmount = $this->resolveAppliedPaymentAmount($sale);
         $storedPaid = max(0, (float) ($sale->amount_paid ?? $sale->paid ?? 0));
         $storedBalanceRaw = $sale->balance;
         $hasStoredBalance = $storedBalanceRaw !== null && $storedBalanceRaw !== '';
         $storedBalance = $hasStoredBalance ? max(0, (float) $storedBalanceRaw) : null;
         $computedBalance = max(0, $total - $storedPaid);
 
-        $effectiveBalance = $hasStoredBalance ? min($total, $storedBalance) : $computedBalance;
-        $effectivePaid = min($total, max(0, $total - $effectiveBalance));
-
-        if (!$hasStoredBalance && $storedPaid > 0) {
-            $effectivePaid = min($total, $storedPaid);
+        if ($appliedPaymentAmount !== null) {
+            $effectivePaid = min($total, max(0, $appliedPaymentAmount));
             $effectiveBalance = max(0, $total - $effectivePaid);
+        } else {
+            $effectiveBalance = $hasStoredBalance ? min($total, $storedBalance) : $computedBalance;
+            $effectivePaid = min($total, max(0, $total - $effectiveBalance));
+
+            if (!$hasStoredBalance && $storedPaid > 0) {
+                $effectivePaid = min($total, $storedPaid);
+                $effectiveBalance = max(0, $total - $effectivePaid);
+            }
         }
 
         $effectiveStatus = $effectiveBalance <= 0.0001
@@ -98,7 +150,12 @@ class InvoiceController extends Controller
      */
     private function renderInvoiceView(Request $request, $statusFilter = null)
     {
-        $query = Sale::with('customer')->latest();
+        $query = Sale::with([
+            'customer',
+            'payments' => function ($paymentQuery) {
+                $paymentQuery->select('id', 'sale_id', 'amount', 'status');
+            },
+        ])->latest();
         $this->applyTenantScope($query, 'sales');
 
         $effectiveStatus = $statusFilter ?: trim((string) $request->input('status', ''));
@@ -143,7 +200,11 @@ class InvoiceController extends Controller
     private function getInvoiceStats()
     {
         $salesQuery = $this->applyTenantScope(Sale::query(), 'sales');
-        $sales = $salesQuery->get(['id', 'total', 'amount_paid', 'balance', 'payment_status']);
+        $sales = $salesQuery
+            ->with(['payments' => function ($paymentQuery) {
+                $paymentQuery->select('id', 'sale_id', 'amount', 'status');
+            }])
+            ->get(['id', 'total', 'amount_paid', 'balance', 'payment_status']);
 
         $financialRows = $sales->map(function ($sale) {
             return $this->normalizeInvoiceFinancials($sale);
@@ -372,7 +433,12 @@ class InvoiceController extends Controller
      */
     public function edit($id)
     {
-        $invoice = $this->applyTenantScope(Sale::query(), 'sales')->findOrFail($id);
+        $invoice = $this->applyTenantScope(
+            Sale::with(['payments' => function ($paymentQuery) {
+                $paymentQuery->select('id', 'sale_id', 'amount', 'status');
+            }]),
+            'sales'
+        )->findOrFail($id);
         $invoice = $this->applyComputedInvoiceState($invoice);
         $customers = $this->applyTenantScope(Customer::query(), 'customers')->get();
         return view('Sales.Invoices.edit', compact('invoice', 'customers'));
@@ -427,7 +493,16 @@ class InvoiceController extends Controller
      */
     public function show($id)
     {
-        $sale = $this->applyTenantScope(Sale::with(['customer', 'items.product']), 'sales')->findOrFail($id);
+        $sale = $this->applyTenantScope(
+            Sale::with([
+                'customer',
+                'items.product',
+                'payments' => function ($paymentQuery) {
+                    $paymentQuery->select('id', 'sale_id', 'amount', 'status');
+                },
+            ]),
+            'sales'
+        )->findOrFail($id);
         $sale = $this->applyComputedInvoiceState($sale);
         return view('Sales.Invoices.invoice-details-admin', compact('sale'));
     }
@@ -439,7 +514,16 @@ class InvoiceController extends Controller
 
     public function invoice_details($id)
     {
-        $sale = $this->applyTenantScope(Sale::with(['customer', 'items.product']), 'sales')->findOrFail($id);
+        $sale = $this->applyTenantScope(
+            Sale::with([
+                'customer',
+                'items.product',
+                'payments' => function ($paymentQuery) {
+                    $paymentQuery->select('id', 'sale_id', 'amount', 'status');
+                },
+            ]),
+            'sales'
+        )->findOrFail($id);
         $sale = $this->applyComputedInvoiceState($sale);
         return view('Sales.Invoices.invoice-details', compact('sale'));
     }
