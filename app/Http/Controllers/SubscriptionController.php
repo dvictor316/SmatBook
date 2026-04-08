@@ -1105,7 +1105,7 @@ class SubscriptionController extends Controller
     {
         $subscription = Subscription::with(['user', 'company'])->findOrFail($id);
         $domain       = $this->resolveSessionDomain();
-        $protocol     = request()->secure() ? 'https://' : 'http://';
+        $protocol     = $this->resolveWorkspaceProtocol();
         $prefix       = $subscription->domain_prefix ?? $subscription->company?->domain_prefix;
 
         $workspaceUrl = $this->buildTenantDashboardUrl($prefix, $domain, $protocol);
@@ -1168,7 +1168,7 @@ class SubscriptionController extends Controller
         $domain       = $this->resolveSessionDomain();
         $prefix       = $subscription?->domain_prefix
                         ?? $subscription?->company?->domain_prefix;
-        $workspaceUrl = $this->buildTenantDashboardUrl($prefix, $domain, 'https://');
+        $workspaceUrl = $this->buildTenantDashboardUrl($prefix, $domain, $this->resolveWorkspaceProtocol());
 
         return view('Saas.success', [
             'subscription' => $subscription,
@@ -2148,13 +2148,47 @@ class SubscriptionController extends Controller
 
     private function resolveSessionDomain(): string
     {
-        $domain = strtolower(trim((string) env('SESSION_DOMAIN', 'smatprobook.com')));
+        $domain = trim((string) config('session.domain', ''), ". \t\n\r\0\x0B");
+
+        if ($domain === '') {
+            $appHost = trim((string) parse_url((string) config('app.url', ''), PHP_URL_HOST), ". \t\n\r\0\x0B");
+            if ($appHost !== '') {
+                $domain = $appHost;
+            }
+        }
+
+        if ($domain === '') {
+            $requestHost = trim((string) request()->getHost(), ". \t\n\r\0\x0B");
+            if ($requestHost !== '') {
+                $segments = array_values(array_filter(explode('.', $requestHost)));
+                if (count($segments) >= 2) {
+                    $domain = implode('.', array_slice($segments, -2));
+                } else {
+                    $domain = $requestHost;
+                }
+            }
+        }
+
+        if ($domain === '') {
+            $domain = strtolower(trim((string) env('SESSION_DOMAIN', 'smartprobook.com')));
+        }
+
         $domain = trim($domain, ". \t\n\r\0\x0B");
         if ($domain === '') {
-            $domain = 'smatprobook.com';
+            $domain = 'smartprobook.com';
         }
 
         return $domain;
+    }
+
+    private function resolveWorkspaceProtocol(): string
+    {
+        $configuredScheme = strtolower((string) parse_url((string) config('app.url', ''), PHP_URL_SCHEME));
+        if (in_array($configuredScheme, ['http', 'https'], true)) {
+            return $configuredScheme . '://';
+        }
+
+        return request()->secure() ? 'https://' : 'http://';
     }
 
     private function buildTenantDashboardUrl(?string $prefix, string $domain, string $protocol = 'https://'): ?string

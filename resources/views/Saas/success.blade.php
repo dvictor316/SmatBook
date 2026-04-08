@@ -3,6 +3,9 @@
 @section('page-title', 'Payment Successful')
 
 @section('content')
+@php
+    $shouldAutoRedirectToWorkspace = false;
+@endphp
 <style>
     .header,
     .sidebar,
@@ -217,6 +220,12 @@
         flex-shrink: 0;
     }
 
+    .auto-redirect-note {
+        margin-top: 12px;
+        font-size: 13px;
+        color: #64748b;
+    }
+
     @media (max-width: 768px) {
         #success-wrapper {
             padding: 16px 10px;
@@ -351,6 +360,7 @@
                     <p class="text-muted mb-0">Your dashboard is now active and ready to use.</p>
                     @php
                         $isWorkspaceOwner = auth()->check() && $subscription && (int) auth()->id() === (int) $subscription->user_id;
+                        $shouldAutoRedirectToWorkspace = $isWorkspaceOwner && filled($workspaceUrl);
                     @endphp
 
                     @if($subscription)
@@ -370,8 +380,13 @@
                         </a>
                         <div class="text-muted small mt-2">
                             <i class="fas fa-info-circle me-1"></i>
-                            {{ $isWorkspaceOwner ? "You're already signed in to this workspace." : 'Login with the credentials you set during registration' }}
+                            {{ $isWorkspaceOwner ? "You're already signed in to this workspace." : 'Use your registered credentials to access this workspace.' }}
                         </div>
+                        @if($shouldAutoRedirectToWorkspace)
+                        <div class="auto-redirect-note">
+                            Opening your new workspace automatically...
+                        </div>
+                        @endif
                     </div>
                     @endif
 
@@ -430,3 +445,15 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+@if(!empty($shouldAutoRedirectToWorkspace))
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        window.setTimeout(function () {
+            window.location.href = @json($workspaceUrl);
+        }, 1200);
+    });
+</script>
+@endif
+@endpush
