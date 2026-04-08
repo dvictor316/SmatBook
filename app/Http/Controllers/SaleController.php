@@ -156,6 +156,18 @@ class SaleController extends Controller
         });
     }
 
+    private function findScopedSale(int|string $saleId, array $with = []): ?Sale
+    {
+        $baseQuery = Sale::query()->with($with);
+        $this->applyTenantScope($baseQuery, 'sales');
+
+        $branchQuery = clone $baseQuery;
+        $this->applyBranchScope($branchQuery, 'sales');
+        $sale = $branchQuery->find($saleId);
+
+        return $sale ?: $baseQuery->find($saleId);
+    }
+
     private function clearDashboardMetricsCache(?string $branchId = null): void
     {
         $companyId = $this->tenantCompanyId();
@@ -522,15 +534,92 @@ public function customerDetails($id = null)
 
     public function showSale($id)
     {
-        $sale = Sale::with(['customer', 'items.product', 'user'])
-            ->tap(fn ($query) => $this->applyTenantScope($query, 'sales'))
-            ->findOrFail($id);
+        $sale = $this->findScopedSale($id, ['customer', 'items.product', 'user']);
+        abort_if(!$sale, 404);
         $activeBranch = $this->getActiveBranchContext();
         $bankAccounts = Schema::hasTable('banks')
             ? Bank::query()->orderBy('name')->get()
             : collect();
 
         return view('Sales.show', compact('sale', 'activeBranch', 'bankAccounts'));
+    }
+
+    public function destroy($id)
+    {
+        $sale = $this->findScopedSale($id, ['items.product', 'payments']);
+        if (!$sale) {
+            return redirect()->route('pos.sales')->with('error', 'Sale record not found.');
+        }
+
+        DB::beginTransaction();
+
+        try {
+            $activeBranch = $this->getActiveBranchContext();
+
+            foreach ($sale->items as $item) {
+                $product = Product::query()->lockForUpdate()->find($item->product_id);
+                if (!$product) {
+                    continue;
+                }
+
+                $quantity = $this->resolveStockUnitsForSale(
+                    $product,
+                    [
+                        'unitType' => $item->unit_type ?? 'unit',
+                        'stockUnits' => $item->stock_units ?? null,
+                    ],
+                    (float) ($item->qty ?? $item->quantity ?? 0)
+                );
+
+                if ($quantity <= 0) {
+                    continue;
+                }
+
+                $product->increment('stock', $quantity);
+                if (Schema::hasColumn('products', 'stock_quantity')) {
+                    $product->increment('stock_quantity', $quantity);
+                }
+
+                $this->branchInventory->adjustBranchStock(
+                    $product,
+                    $quantity,
+                    [
+                        'id' => $sale->branch_id ?? $activeBranch['id'],
+                        'name' => $sale->branch_name ?? $activeBranch['name'],
+                    ],
+                    (int) ($product->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id') ?? 0)
+                );
+            }
+
+            if (method_exists($sale, 'payments')) {
+                $paymentIds = $sale->payments->pluck('id')->filter()->all();
+                if (!empty($paymentIds)) {
+                    Transaction::query()
+                        ->whereIn('related_id', $paymentIds)
+                        ->where('related_type', Payment::class)
+                        ->delete();
+                    Payment::query()->whereIn('id', $paymentIds)->delete();
+                }
+            }
+
+            Transaction::query()
+                ->where('related_id', $sale->id)
+                ->where('related_type', Sale::class)
+                ->delete();
+
+            $sale->items()->delete();
+            $sale->delete();
+
+            DB::commit();
+
+            $this->clearDashboardMetricsCache($sale->branch_id ?? null);
+
+            return redirect()->route('pos.sales')->with('success', 'POS sale deleted successfully.');
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return back()->with('error', 'Failed to delete POS sale: ' . $e->getMessage());
+        }
     }
 
     public function store(Request $request)

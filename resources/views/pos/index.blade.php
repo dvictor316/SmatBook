@@ -2322,6 +2322,7 @@ window.POS_ENABLE_FALLBACK = function () {
     const saleStoreUrl = @json(route('sales.store'));
     const invoiceRouteTemplate = @json(route('sales.invoice.show', ':id'));
     const csrfToken = @json(csrf_token());
+    let splitAutoSync = false;
 
     function getSelectedUnitType() {
         const active = document.querySelector('input[name="unit_type"]:checked');
@@ -2523,12 +2524,54 @@ window.POS_ENABLE_FALLBACK = function () {
         return { total, paid, change };
     }
 
+    function syncSplitCounterpart(changedField) {
+        if (splitAutoSync || paymentMethod?.value !== 'Split') {
+            return;
+        }
+
+        const totalText = grandTotal?.textContent || '0';
+        const total = parseFloat(totalText.replace(/[^\d.]/g, '')) || 0;
+        const cashPaid = parseFloat(amountPaid?.value || '0') || 0;
+        const transferPaid = parseFloat(transferAmount?.value || '0') || 0;
+        const cardPaid = parseFloat(cardAmount?.value || '0') || 0;
+
+        splitAutoSync = true;
+        const remainingBase = Math.max(0, total - cashPaid);
+
+        if (changedField === 'transfer' && cardAmount) {
+            cardAmount.value = Math.max(0, remainingBase - transferPaid).toFixed(2);
+        }
+
+        if (changedField === 'card' && transferAmount) {
+            transferAmount.value = Math.max(0, remainingBase - cardPaid).toFixed(2);
+        }
+
+        splitAutoSync = false;
+        updateChange();
+    }
+
     function toggleSplitFields() {
         const isSplit = paymentMethod?.value === 'Split';
         splitTransferWrap?.classList.toggle('d-none', !isSplit);
         splitTransferAccountWrap?.classList.toggle('d-none', !isSplit);
         splitCardWrap?.classList.toggle('d-none', !isSplit);
         splitCardAccountWrap?.classList.toggle('d-none', !isSplit);
+
+        if (isSplit && amountPaid) {
+            const currentCash = parseFloat(amountPaid.value || '0') || 0;
+            const totalText = grandTotal?.textContent || '0';
+            const total = parseFloat(totalText.replace(/[^\d.]/g, '')) || 0;
+            if (Math.abs(currentCash - total) < 0.01) {
+                amountPaid.value = '0.00';
+            }
+            if (transferAmount && !transferAmount.value) {
+                transferAmount.value = '0.00';
+            }
+            if (cardAmount && !cardAmount.value) {
+                cardAmount.value = total.toFixed(2);
+            }
+        }
+
         updateChange();
     }
 
@@ -2569,7 +2612,13 @@ window.POS_ENABLE_FALLBACK = function () {
         if (sumTax) sumTax.textContent = totTax > 0 ? '+ ' + fmt.format(totTax) : fmt.format(0);
         if (grandTotal) grandTotal.textContent = fmt.format(totGrand);
         if (hdrCartCount) hdrCartCount.textContent = String(cart.length);
-        if (amountPaid) amountPaid.value = totGrand.toFixed(2);
+        if (paymentMethod?.value === 'Split') {
+            if (amountPaid && !amountPaid.value) {
+                amountPaid.value = '0.00';
+            }
+        } else if (amountPaid) {
+            amountPaid.value = totGrand.toFixed(2);
+        }
         updateChange();
     }
 
@@ -2719,8 +2768,21 @@ window.POS_ENABLE_FALLBACK = function () {
         input?.addEventListener('input', updateItemTotal);
     });
     discountTypeInput?.addEventListener('change', updateItemTotal);
-    [amountPaid, transferAmount, cardAmount].forEach((input) => {
-        input?.addEventListener('input', updateChange);
+    amountPaid?.addEventListener('input', function () {
+        if (paymentMethod?.value === 'Split') {
+            const lastEdited = document.activeElement === transferAmount ? 'transfer' : (document.activeElement === cardAmount ? 'card' : null);
+            if (lastEdited) {
+                syncSplitCounterpart(lastEdited);
+                return;
+            }
+        }
+        updateChange();
+    });
+    transferAmount?.addEventListener('input', function () {
+        syncSplitCounterpart('transfer');
+    });
+    cardAmount?.addEventListener('input', function () {
+        syncSplitCounterpart('card');
     });
     paymentMethod?.addEventListener('change', toggleSplitFields);
 
