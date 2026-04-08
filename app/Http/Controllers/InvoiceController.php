@@ -15,6 +15,35 @@ use Carbon\Carbon;
 
 class InvoiceController extends Controller
 {
+    private function normalizeInvoiceFinancials(Sale $sale): array
+    {
+        $total = max(0, (float) ($sale->total ?? 0));
+        $storedPaid = max(0, (float) ($sale->amount_paid ?? $sale->paid ?? 0));
+        $storedBalanceRaw = $sale->balance;
+        $hasStoredBalance = $storedBalanceRaw !== null && $storedBalanceRaw !== '';
+        $storedBalance = $hasStoredBalance ? max(0, (float) $storedBalanceRaw) : null;
+        $computedBalance = max(0, $total - $storedPaid);
+
+        $effectiveBalance = $hasStoredBalance ? min($total, $storedBalance) : $computedBalance;
+        $effectivePaid = min($total, max(0, $total - $effectiveBalance));
+
+        if (!$hasStoredBalance && $storedPaid > 0) {
+            $effectivePaid = min($total, $storedPaid);
+            $effectiveBalance = max(0, $total - $effectivePaid);
+        }
+
+        $effectiveStatus = $effectiveBalance <= 0.0001
+            ? 'paid'
+            : ($effectivePaid > 0.0001 ? 'partial' : 'unpaid');
+
+        return [
+            'total' => $total,
+            'paid' => $effectivePaid,
+            'balance' => $effectiveBalance,
+            'status' => $effectiveStatus,
+        ];
+    }
+
     private function onlyExistingColumns(string $table, array $payload): array
     {
         if (!Schema::hasTable($table)) {
@@ -88,6 +117,15 @@ class InvoiceController extends Controller
         }
 
         $invoices = $query->paginate(15)->withQueryString();
+        $invoices->getCollection()->transform(function ($invoice) {
+            $financials = $this->normalizeInvoiceFinancials($invoice);
+            $invoice->effective_total = $financials['total'];
+            $invoice->effective_paid = $financials['paid'];
+            $invoice->effective_balance = $financials['balance'];
+            $invoice->effective_payment_status = $financials['status'];
+
+            return $invoice;
+        });
         $invoicescards = $this->getInvoiceStats();
         
         $latestSale = $this->applyTenantScope(Sale::query()->latest(), 'sales')->first();
@@ -104,34 +142,22 @@ class InvoiceController extends Controller
         $salesQuery = $this->applyTenantScope(Sale::query(), 'sales');
         $sales = $salesQuery->get(['id', 'total', 'amount_paid', 'balance', 'payment_status']);
 
-        $allInvoiceAmount = (float) $sales->sum(fn ($sale) => (float) ($sale->total ?? 0));
-        $paidInvoices = $sales->filter(function ($sale) {
-            return strtolower((string) ($sale->payment_status ?? '')) === 'paid';
+        $financialRows = $sales->map(function ($sale) {
+            return $this->normalizeInvoiceFinancials($sale);
         });
 
-        $paidInvoiceAmount = (float) $paidInvoices->sum(fn ($sale) => (float) ($sale->total ?? 0));
-        $totalReceivedAmount = (float) $sales->sum(fn ($sale) => (float) ($sale->amount_paid ?? 0));
-
-        $outstandingInvoices = $sales->filter(function ($sale) {
-            $storedBalance = (float) ($sale->balance ?? 0);
-            $computedBalance = max(0, (float) ($sale->total ?? 0) - (float) ($sale->amount_paid ?? 0));
-            $effectiveBalance = $storedBalance > 0 ? $storedBalance : $computedBalance;
-
-            return $effectiveBalance > 0.0001;
-        });
-
-        $outstandingAmount = (float) $outstandingInvoices->sum(function ($sale) {
-            $storedBalance = (float) ($sale->balance ?? 0);
-            $computedBalance = max(0, (float) ($sale->total ?? 0) - (float) ($sale->amount_paid ?? 0));
-
-            return $storedBalance > 0 ? $storedBalance : $computedBalance;
-        });
+        $allInvoiceAmount = (float) $financialRows->sum('total');
+        $paidInvoices = $financialRows->filter(fn ($row) => $row['status'] === 'paid');
+        $outstandingInvoices = $financialRows->filter(fn ($row) => $row['balance'] > 0.0001);
+        $paidInvoiceAmount = (float) $paidInvoices->sum('total');
+        $outstandingAmount = (float) $outstandingInvoices->sum('balance');
+        $totalReceivedAmount = (float) $financialRows->sum('paid');
 
         return [
             [
                 'title' => 'All Invoices',
                 'amount' => $allInvoiceAmount,
-                'count' => $sales->count(),
+                'count' => $financialRows->count(),
                 'icon' => 'file-text',
                 'class' => 'bg-primary-light'
             ],
@@ -152,7 +178,7 @@ class InvoiceController extends Controller
             [
                 'title' => 'Total Received',
                 'amount' => $totalReceivedAmount,
-                'count' => $sales->filter(fn ($sale) => (float) ($sale->amount_paid ?? 0) > 0)->count(),
+                'count' => $financialRows->filter(fn ($row) => $row['paid'] > 0.0001)->count(),
                 'icon' => 'dollar-sign',
                 'class' => 'bg-info-light'
             ]

@@ -106,18 +106,20 @@
                                                     </span>
                                                 </td>
                                                 <td class="text-muted">{{ $invoice->created_at->format('d M Y') }}</td>
-                                                <td class="fw-bold text-dark">${{ number_format($invoice->total, 2) }}</td>
+                                                <td class="fw-bold text-dark">${{ number_format($invoice->effective_balance ?? $invoice->total, 2) }}</td>
                                                 <td>
                                                     @php
-                                                        $statusClass = match(strtolower($invoice->payment_status ?? $invoice->status)) {
+                                                        $displayStatus = strtolower($invoice->effective_payment_status ?? $invoice->payment_status ?? $invoice->status);
+                                                        $statusClass = match($displayStatus) {
                                                             'paid' => 'bg-success-light text-success',
+                                                            'partial' => 'bg-info-light text-info',
                                                             'unpaid', 'pending' => 'bg-warning-light text-warning',
                                                             'cancelled' => 'bg-danger-light text-danger',
                                                             'overdue' => 'bg-soft-danger text-danger',
                                                             default => 'bg-light text-dark',
                                                         };
                                                     @endphp
-                                                    <span class="badge {{ $statusClass }} rounded-1 text-uppercase">{{ $invoice->payment_status ?? $invoice->status }}</span>
+                                                    <span class="badge {{ $statusClass }} rounded-1 text-uppercase">{{ $invoice->effective_payment_status ?? $invoice->payment_status ?? $invoice->status }}</span>
                                                 </td>
                                                 <td class="text-end d-print-none">
                                                     <div class="dropdown dropdown-action">
