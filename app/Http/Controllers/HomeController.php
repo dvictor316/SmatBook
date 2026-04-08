@@ -12,6 +12,17 @@ use Illuminate\Http\Request;
 
 class HomeController extends Controller
 {
+    private function onlyExistingQuotationColumns(array $payload): array
+    {
+        if (!Schema::hasTable('quotations')) {
+            return $payload;
+        }
+
+        return collect($payload)
+            ->filter(fn ($value, $column) => Schema::hasColumn('quotations', $column))
+            ->all();
+    }
+
     /*
     |--------------------------------------------------------------------------
     | INDEX — Master router for all user types
@@ -508,22 +519,42 @@ class HomeController extends Controller
             $customer = Customer::find($validated['customer_id']);
         }
 
-        $validated['company_id'] = Auth::user()?->company_id ?? session('current_tenant_id');
-        $validated['user_id'] = Auth::id();
-        $validated['branch_id'] = session('active_branch_id');
-        $validated['branch_name'] = session('active_branch_name');
-        $validated['customer_name'] = $customer?->customer_name ?? $customer?->name ?? 'Walk-in Customer';
-        $validated['issue_date'] = $validated['issue_date'] ?? now()->toDateString();
-        $validated['expiry_date'] = $validated['expiry_date'] ?? now()->addDays(7)->toDateString();
-        $validated['subtotal'] = $subtotal;
-        $validated['tax'] = $taxTotal;
-        $validated['discount'] = $discountTotal;
-        $validated['description'] = $validated['description'] ?? $validated['note'] ?? null;
-        $validated['items_json'] = json_encode($items->all());
+        $payload = [
+            'quotation_id' => $validated['quotation_id'],
+            'customer_id' => $validated['customer_id'] ?? null,
+            'company_id' => Auth::user()?->company_id ?? session('current_tenant_id'),
+            'user_id' => Auth::id(),
+            'branch_id' => session('active_branch_id'),
+            'branch_name' => session('active_branch_name'),
+            'customer_name' => $customer?->customer_name ?? $customer?->name ?? 'Walk-in Customer',
+            'issue_date' => $validated['issue_date'] ?? now()->toDateString(),
+            'expiry_date' => $validated['expiry_date'] ?? now()->addDays(7)->toDateString(),
+            'subtotal' => $subtotal,
+            'tax' => $taxTotal,
+            'discount' => $discountTotal,
+            'total' => $validated['total'],
+            'status' => $validated['status'],
+            'description' => $validated['description'] ?? $validated['note'] ?? null,
+            'items_json' => json_encode($items->all()),
+            'note' => $validated['note'] ?? $validated['description'] ?? null,
+        ];
 
-        Quotation::create($validated);
+        try {
+            Quotation::create($this->onlyExistingQuotationColumns($payload));
+        } catch (\Throwable $e) {
+            Log::error('Quotation create failed', [
+                'message' => $e->getMessage(),
+                'user_id' => Auth::id(),
+            ]);
 
-        return redirect()->route('quotations')->with('success', 'Quotation created successfully.');
+            return back()->withInput()->with('error', 'Quotation could not be saved. ' . $e->getMessage());
+        }
+
+        $message = $request->input('action') === 'send'
+            ? 'Quotation saved and marked as sent.'
+            : 'Quotation created successfully.';
+
+        return redirect()->route('quotations')->with('success', $message);
     }
 
     public function updateQuotation(Request $request, $id)
@@ -540,11 +571,17 @@ class HomeController extends Controller
         ]);
 
         $validated['status'] = $validated['status'] ?? 'Pending';
-        $validated['company_id'] = $quotation->company_id ?? (Auth::user()?->company_id ?? session('current_tenant_id'));
-        $validated['user_id'] = $quotation->user_id ?? Auth::id();
-        $validated['branch_id'] = $quotation->branch_id ?? session('active_branch_id');
-        $validated['branch_name'] = $quotation->branch_name ?? session('active_branch_name');
-        $quotation->update($validated);
+        $quotation->update($this->onlyExistingQuotationColumns([
+            'quotation_id' => $validated['quotation_id'],
+            'customer_id' => $validated['customer_id'] ?? null,
+            'company_id' => $quotation->company_id ?? (Auth::user()?->company_id ?? session('current_tenant_id')),
+            'user_id' => $quotation->user_id ?? Auth::id(),
+            'branch_id' => $quotation->branch_id ?? session('active_branch_id'),
+            'branch_name' => $quotation->branch_name ?? session('active_branch_name'),
+            'total' => $validated['total'],
+            'status' => $validated['status'],
+            'note' => $validated['note'] ?? null,
+        ]));
 
         return redirect()->route('quotations')->with('success', 'Quotation updated successfully.');
     }
