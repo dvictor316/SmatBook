@@ -2,17 +2,20 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\ActiveBranchResolver;
 use Closure;
 use Illuminate\Http\Request;
 
 class RequireActiveBranch
 {
+    public function __construct(
+        private readonly ActiveBranchResolver $activeBranchResolver
+    ) {
+    }
+
     public function handle(Request $request, Closure $next)
     {
-        $branchId = trim((string) session('active_branch_id', ''));
-        $branchName = trim((string) session('active_branch_name', ''));
-
-        if ($branchId !== '' || $branchName !== '') {
+        if ($this->activeBranchResolver->ensureSession($request->user())) {
             return $next($request);
         }
 

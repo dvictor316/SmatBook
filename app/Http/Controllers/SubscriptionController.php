@@ -456,26 +456,10 @@ class SubscriptionController extends Controller
         }
 
         $request->validate([
-            'gateway' => 'required|in:stripe,paystack,flutterwave,bank_transfer',
-            'transfer_bank_id' => 'nullable|required_if:gateway,bank_transfer|integer',
-            'transfer_payer_name' => 'nullable|required_if:gateway,bank_transfer|string|max:191',
-            'transfer_reference' => 'nullable|required_if:gateway,bank_transfer|string|max:191',
-            'transfer_proof' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:4096',
+            'gateway' => 'required|in:paystack',
         ]);
 
-        switch ($request->gateway) {
-            case 'stripe':
-                return $this->initStripe($subscription, $request);
-            case 'paystack':
-                return $this->initPaystack($subscription);
-            case 'flutterwave':
-                return $this->initFlutterwave($subscription);
-            case 'bank_transfer':
-                return $this->initBankTransfer($subscription, $request);
-            default:
-                return redirect()->route('saas.checkout', $id)
-                    ->with('error', 'Unsupported payment method selected.');
-        }
+        return $this->initPaystack($subscription);
     }
 
     /*

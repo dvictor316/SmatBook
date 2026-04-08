@@ -2,6 +2,7 @@
 
 namespace App\Exceptions;
 
+use App\Support\ActiveBranchResolver;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\QueryException;
@@ -74,10 +75,7 @@ class Handler extends ExceptionHandler
                 return null;
             }
 
-            $branchId = trim((string) session('active_branch_id', ''));
-            $branchName = trim((string) session('active_branch_name', ''));
-
-            if ($branchId !== '' || $branchName !== '') {
+            if (app(ActiveBranchResolver::class)->ensureSession(Auth::user())) {
                 return null;
             }
 

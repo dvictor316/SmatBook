@@ -366,11 +366,11 @@
             @endif
 
             <h1>Payment Details</h1>
-            <p>Select your preferred gateway. Test-mode gateways remain available, and bank transfer submissions can be reviewed manually.</p>
+            <p>Paystack is enabled for this checkout flow. Test mode still works with your Paystack test keys.</p>
 
-            <form id="stripePaymentForm" method="POST" action="{{ route('saas.payment.process.checkout', $subscription->id) }}" enctype="multipart/form-data">
+            <form id="paystackPaymentForm" method="POST" action="{{ route('saas.payment.process.checkout', $subscription->id) }}">
                 @csrf
-                <input type="hidden" name="gateway" id="selectedGatewayInput" value="stripe">
+                <input type="hidden" name="gateway" value="paystack">
 
                 <div class="row g-3">
                     <div class="col-md-6">
@@ -383,70 +383,23 @@
                     </div>
                     <div class="col-12">
                         <label class="field-label">Payment Gateway</label>
-                        <div class="gateway-grid" style="grid-template-columns: repeat(4, minmax(0, 1fr));">
+                        <div class="gateway-grid" style="grid-template-columns: 1fr;">
                             <label class="gateway-option">
-                                <input type="radio" name="gateway_option" value="stripe" checked>
-                                <span class="gateway-pill gateway-stripe">Stripe</span>
-                            </label>
-                            <label class="gateway-option">
-                                <input type="radio" name="gateway_option" value="paystack">
+                                <input type="radio" checked disabled>
                                 <span class="gateway-pill gateway-paystack">Paystack</span>
-                            </label>
-                            <label class="gateway-option">
-                                <input type="radio" name="gateway_option" value="flutterwave">
-                                <span class="gateway-pill gateway-flutterwave">Flutterwave</span>
-                            </label>
-                            <label class="gateway-option">
-                                <input type="radio" name="gateway_option" value="bank_transfer">
-                                <span class="gateway-pill">Transfer</span>
                             </label>
                         </div>
                     </div>
                 </div>
 
                 <div class="stripe-note" id="gatewayHelpText">
-                    Stripe checkout stays inside this page.
-                </div>
-
-                <div id="bankTransferFields" style="display:none; margin-top:16px;">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="field-label">Receiving Account</label>
-                            <select class="field-input" name="transfer_bank_id">
-                                <option value="">Select bank account</option>
-                                @foreach(($bankAccounts ?? collect()) as $bank)
-                                    <option value="{{ $bank->id }}" {{ (string) old('transfer_bank_id') === (string) $bank->id ? 'selected' : '' }}>
-                                        {{ $bank->name ?? 'Bank' }}
-                                        @if(!empty($bank->account_number))
-                                            - {{ $bank->account_number }}
-                                        @endif
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="field-label">Payer Name</label>
-                            <input class="field-input" type="text" name="transfer_payer_name" value="{{ old('transfer_payer_name', $checkoutProfileName) }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="field-label">Transfer Reference</label>
-                            <input class="field-input" type="text" name="transfer_reference" value="{{ old('transfer_reference') }}" placeholder="Bank transfer reference">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="field-label">Proof of Payment</label>
-                            <input class="field-input" type="file" name="transfer_proof" accept=".jpg,.jpeg,.png,.pdf">
-                        </div>
-                    </div>
+                    You will be redirected to Paystack secure checkout and returned automatically.
                 </div>
 
                 <button class="pay-btn" type="submit" id="payNowBtn">
-                    Pay ₦{{ number_format((float) ($subscription->amount ?? 0), 2) }} with Stripe
+                    Continue to Paystack (₦{{ number_format((float) ($subscription->amount ?? 0), 2) }})
                 </button>
             </form>
-
-            <div id="embeddedStripeWrap">
-                <div id="embeddedStripeCheckout"></div>
-            </div>
 
             <a class="secondary-link" href="{{ route('saas.setup', $subscription->id) }}">
                 <i class="fas fa-arrow-left"></i> Back to setup
@@ -457,116 +410,15 @@
 @endsection
 
 @push('scripts')
-<script src="https://js.stripe.com/v3"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const form = document.getElementById('stripePaymentForm');
+        const form = document.getElementById('paystackPaymentForm');
         const payNowBtn = document.getElementById('payNowBtn');
-        const embeddedWrap = document.getElementById('embeddedStripeWrap');
-        const embeddedTarget = document.getElementById('embeddedStripeCheckout');
-        const gatewayInput = document.getElementById('selectedGatewayInput');
-        const gatewayRadios = Array.from(document.querySelectorAll('input[name="gateway_option"]'));
-        const gatewayHelpText = document.getElementById('gatewayHelpText');
-        const bankTransferFields = document.getElementById('bankTransferFields');
-        const publishableKey = @json($stripePublishableKey ?? '');
-        const amountLabel = '₦{{ number_format((float) ($subscription->amount ?? 0), 2) }}';
-
         if (!form || !payNowBtn) return;
 
-        const setGatewayUI = (gateway) => {
-            gatewayInput.value = gateway;
-            if (bankTransferFields) {
-                bankTransferFields.style.display = gateway === 'bank_transfer' ? 'block' : 'none';
-            }
-            if (gateway === 'stripe') {
-                payNowBtn.innerHTML = `Pay ${amountLabel} with Stripe`;
-                gatewayHelpText.textContent = 'Stripe checkout stays inside this page.';
-                return;
-            }
-            if (gateway === 'paystack') {
-                payNowBtn.innerHTML = `Continue to Paystack (${amountLabel})`;
-                gatewayHelpText.textContent = 'You will be redirected to Paystack secure checkout and returned automatically. Test keys remain supported.';
-                return;
-            }
-            if (gateway === 'flutterwave') {
-                payNowBtn.innerHTML = `Continue to Flutterwave (${amountLabel})`;
-                gatewayHelpText.textContent = 'You will be redirected to Flutterwave secure checkout and returned automatically. Test keys remain supported.';
-                return;
-            }
-
-            payNowBtn.innerHTML = `Submit Bank Transfer (${amountLabel})`;
-            gatewayHelpText.textContent = 'Submit your transfer details for manual verification without leaving this page.';
-        };
-
-        gatewayRadios.forEach((radio) => {
-            radio.addEventListener('change', function () {
-                if (this.checked) {
-                    if (embeddedWrap) {
-                        embeddedWrap.style.display = 'none';
-                        embeddedTarget.innerHTML = '';
-                    }
-                    form.style.display = 'block';
-                    setGatewayUI(this.value);
-                }
-            });
-        });
-
-        setGatewayUI('stripe');
-
-        form.addEventListener('submit', async function (e) {
-            const selectedGateway = gatewayInput.value || 'stripe';
-
-            if (selectedGateway !== 'stripe') {
-                return;
-            }
-
-            e.preventDefault();
+        form.addEventListener('submit', function () {
             payNowBtn.disabled = true;
-            payNowBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Preparing secure checkout...';
-
-            if (!publishableKey) {
-                form.submit();
-                return;
-            }
-
-            try {
-                const response = await fetch(form.action, {
-                    method: 'POST',
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': form.querySelector('input[name="_token"]').value,
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: JSON.stringify({
-                        gateway: selectedGateway,
-                        embedded: 1,
-                        ui_mode: 'embedded'
-                    })
-                });
-
-                const payload = await response.json();
-                if (payload.redirect_url) {
-                    window.location.href = payload.redirect_url;
-                    return;
-                }
-                if (!response.ok || !payload.client_secret) {
-                    throw new Error(payload.message || 'Unable to initialize Stripe checkout.');
-                }
-
-                const stripe = Stripe(publishableKey);
-                const checkout = await stripe.initEmbeddedCheckout({
-                    clientSecret: payload.client_secret,
-                });
-
-                form.style.display = 'none';
-                embeddedWrap.style.display = 'block';
-                checkout.mount('#embeddedStripeCheckout');
-            } catch (error) {
-                alert(error.message || 'Stripe checkout is unavailable right now.');
-                payNowBtn.disabled = false;
-                setGatewayUI('stripe');
-            }
+            payNowBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Redirecting to Paystack...';
         });
     });
 </script>

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\{User, Company, Subscription, Plan, DeploymentManager};
+use App\Support\ActiveBranchResolver;
 use App\Support\SystemEventMailer;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
@@ -316,6 +317,7 @@ class AuthController extends Controller
         $request->session()->regenerate();
         
         $user = Auth::user();
+        app(ActiveBranchResolver::class)->ensureSession($user);
 
         Log::info('User logged in', [
             'user_id' => $user->id,
@@ -373,6 +375,8 @@ class AuthController extends Controller
             'url.intended',
             'current_tenant_id',
             'current_tenant_name',
+            'active_branch_id',
+            'active_branch_name',
             'selected_plan_id',
             'selected_plan',
             'selected_cycle',
@@ -475,6 +479,7 @@ class AuthController extends Controller
     private function handlePostLoginRedirect()
     {
         $user = Auth::user();
+        app(ActiveBranchResolver::class)->ensureSession($user);
 
         // Super Admin
         if ($this->isSuperAdmin($user)) {
