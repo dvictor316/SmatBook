@@ -2,6 +2,11 @@
 @extends('layout.mainlayout')
 
 @section('content')
+    @php
+        $totalAmount = (float) ($purchase->total_amount ?? 0);
+        $paidAmount = (float) ($purchase->paid_amount ?? 0);
+        $balanceAmount = max(0, $totalAmount - $paidAmount);
+    @endphp
     <div class="page-wrapper">
         <div class="content container-fluid">
             
@@ -151,12 +156,6 @@
                                             </div>
                                         </div>
                                     </div>
-
-                                    @php
-                                        $totalAmount = (float) ($purchase->total_amount ?? 0);
-                                        $paidAmount = (float) ($purchase->paid_amount ?? 0);
-                                        $balanceAmount = max(0, $totalAmount - $paidAmount);
-                                    @endphp
 
                                     <div class="row mt-4">
                                         <div class="col-lg-7 col-md-6">
