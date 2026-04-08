@@ -1704,11 +1704,7 @@ public function inventory(Request $request)
             return redirect()->back()->with('error', 'Inventory history table is not available.');
         }
 
-        $query = DB::table('inventory_history')->where('id', (int) $validated['id']);
-        $this->applyTenantScope($query, 'inventory_history');
-        $this->applyBranchScope($query, 'inventory_history');
-
-        $history = $query->first();
+        $history = $this->findEditableInventoryHistoryRecord((int) $validated['id']);
         if (!$history) {
             return redirect()->back()->with('error', 'Inventory history record not found for the active branch.');
         }
@@ -1736,11 +1732,7 @@ public function inventory(Request $request)
             return redirect()->back()->with('error', 'Inventory history table is not available.');
         }
 
-        $query = DB::table('inventory_history')->where('id', (int) $validated['id']);
-        $this->applyTenantScope($query, 'inventory_history');
-        $this->applyBranchScope($query, 'inventory_history');
-
-        $history = $query->first();
+        $history = $this->findEditableInventoryHistoryRecord((int) $validated['id']);
         if (!$history) {
             return redirect()->back()->with('error', 'Inventory history record not found for the active branch.');
         }
@@ -1749,6 +1741,63 @@ public function inventory(Request $request)
         $this->clearDashboardMetricsCache();
 
         return redirect()->back()->with('success', 'Inventory history record deleted successfully.');
+    }
+
+    private function findEditableInventoryHistoryRecord(int $historyId): ?object
+    {
+        $activeBranch = $this->getActiveBranchContext();
+        $branchId = trim((string) ($activeBranch['id'] ?? ''));
+        $branchName = trim((string) ($activeBranch['name'] ?? ''));
+
+        $query = DB::table('inventory_history')
+            ->join('products', 'inventory_history.product_id', '=', 'products.id')
+            ->select('inventory_history.*')
+            ->where('inventory_history.id', $historyId);
+
+        $this->applyTenantScope($query, 'inventory_history');
+        $this->applyTenantScope($query, 'products');
+
+        if ($branchId !== '' || $branchName !== '') {
+            $query->where(function ($sub) use ($branchId, $branchName) {
+                $matched = false;
+                if ($branchId !== '' && Schema::hasColumn('inventory_history', 'branch_id')) {
+                    $sub->where('inventory_history.branch_id', $branchId);
+                    $matched = true;
+                }
+                if ($branchName !== '' && Schema::hasColumn('inventory_history', 'branch_name')) {
+                    $method = $matched ? 'orWhere' : 'where';
+                    $sub->{$method}('inventory_history.branch_name', $branchName);
+                    $matched = true;
+                }
+                if ($branchId !== '' && Schema::hasColumn('products', 'branch_id')) {
+                    $method = $matched ? 'orWhere' : 'where';
+                    $sub->{$method}(function ($fallback) use ($branchId) {
+                        if (Schema::hasColumn('inventory_history', 'branch_id')) {
+                            $fallback->whereNull('inventory_history.branch_id');
+                        }
+                        if (Schema::hasColumn('inventory_history', 'branch_name')) {
+                            $fallback->whereNull('inventory_history.branch_name');
+                        }
+                        $fallback->where('products.branch_id', $branchId);
+                    });
+                    $matched = true;
+                }
+                if ($branchName !== '' && Schema::hasColumn('products', 'branch_name')) {
+                    $method = $matched ? 'orWhere' : 'where';
+                    $sub->{$method}(function ($fallback) use ($branchName) {
+                        if (Schema::hasColumn('inventory_history', 'branch_id')) {
+                            $fallback->whereNull('inventory_history.branch_id');
+                        }
+                        if (Schema::hasColumn('inventory_history', 'branch_name')) {
+                            $fallback->whereNull('inventory_history.branch_name');
+                        }
+                        $fallback->where('products.branch_name', $branchName);
+                    });
+                }
+            });
+        }
+
+        return $query->first();
     }
 
     public function downloadImportTemplate()
