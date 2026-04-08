@@ -209,9 +209,9 @@ class InvoiceController extends Controller
             $totalAmount = (float) $request->total_amount;
             $paidAmount = $isPaid ? $totalAmount : 0;
             $balanceAmount = max(0, $totalAmount - $paidAmount);
-            $paymentStatus = $isDraft
-                ? 'draft'
-                : ($isPaid ? 'paid' : ($requestedStatus === 'partially paid' ? 'partial' : 'unpaid'));
+            $paymentStatus = $isPaid
+                ? 'paid'
+                : ($requestedStatus === 'partially paid' ? 'partial' : 'unpaid');
             $orderStatus = $isDraft ? 'draft' : ($action === 'send' ? 'sent' : 'pending');
 
             $salePayload = [
