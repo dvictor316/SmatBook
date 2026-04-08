@@ -435,7 +435,7 @@ class SubscriptionController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | PROCESS PAYMENT — Stripe-only
+    | PROCESS PAYMENT — gateway selection
     | Route: POST /saas/payment/process/{id}   name: saas.payment.process.checkout
     |--------------------------------------------------------------------------
     */
@@ -456,10 +456,14 @@ class SubscriptionController extends Controller
         }
 
         $request->validate([
-            'gateway' => 'required|in:paystack',
+            'gateway' => 'required|in:stripe,paystack,flutterwave',
         ]);
 
-        return $this->initPaystack($subscription);
+        return match ((string) $request->input('gateway')) {
+            'stripe' => $this->initStripe($subscription, $request),
+            'flutterwave' => $this->initFlutterwave($subscription),
+            default => $this->initPaystack($subscription),
+        };
     }
 
     /*

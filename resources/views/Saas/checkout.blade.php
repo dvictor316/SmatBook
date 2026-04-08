@@ -366,11 +366,11 @@
             @endif
 
             <h1>Payment Details</h1>
-            <p>Paystack is enabled for this checkout flow. Test mode still works with your Paystack test keys.</p>
+            <p>Choose your preferred payment gateway. Paystack, Stripe, and Flutterwave remain available for test mode.</p>
 
-            <form id="paystackPaymentForm" method="POST" action="{{ route('saas.payment.process.checkout', $subscription->id) }}">
+            <form id="checkoutPaymentForm" method="POST" action="{{ route('saas.payment.process.checkout', $subscription->id) }}">
                 @csrf
-                <input type="hidden" name="gateway" value="paystack">
+                <input type="hidden" name="gateway" id="selectedGatewayInput" value="paystack">
 
                 <div class="row g-3">
                     <div class="col-md-6">
@@ -383,10 +383,18 @@
                     </div>
                     <div class="col-12">
                         <label class="field-label">Payment Gateway</label>
-                        <div class="gateway-grid" style="grid-template-columns: 1fr;">
+                        <div class="gateway-grid">
                             <label class="gateway-option">
-                                <input type="radio" checked disabled>
+                                <input type="radio" name="gateway_option" value="stripe">
+                                <span class="gateway-pill gateway-stripe">Stripe</span>
+                            </label>
+                            <label class="gateway-option">
+                                <input type="radio" name="gateway_option" value="paystack" checked>
                                 <span class="gateway-pill gateway-paystack">Paystack</span>
+                            </label>
+                            <label class="gateway-option">
+                                <input type="radio" name="gateway_option" value="flutterwave">
+                                <span class="gateway-pill gateway-flutterwave">Flutterwave</span>
                             </label>
                         </div>
                     </div>
@@ -412,13 +420,49 @@
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const form = document.getElementById('paystackPaymentForm');
+        const form = document.getElementById('checkoutPaymentForm');
         const payNowBtn = document.getElementById('payNowBtn');
+        const gatewayInput = document.getElementById('selectedGatewayInput');
+        const gatewayRadios = Array.from(document.querySelectorAll('input[name="gateway_option"]'));
+        const gatewayHelpText = document.getElementById('gatewayHelpText');
         if (!form || !payNowBtn) return;
+
+        const amountLabel = '₦{{ number_format((float) ($subscription->amount ?? 0), 2) }}';
+
+        const setGatewayUI = (gateway) => {
+            if (gatewayInput) {
+                gatewayInput.value = gateway;
+            }
+
+            if (gateway === 'stripe') {
+                payNowBtn.innerHTML = `Continue to Stripe (${amountLabel})`;
+                gatewayHelpText.textContent = 'You will be redirected to Stripe secure checkout and returned automatically.';
+                return;
+            }
+
+            if (gateway === 'flutterwave') {
+                payNowBtn.innerHTML = `Continue to Flutterwave (${amountLabel})`;
+                gatewayHelpText.textContent = 'You will be redirected to Flutterwave secure checkout and returned automatically.';
+                return;
+            }
+
+            payNowBtn.innerHTML = `Continue to Paystack (${amountLabel})`;
+            gatewayHelpText.textContent = 'You will be redirected to Paystack secure checkout and returned automatically.';
+        };
+
+        gatewayRadios.forEach((radio) => {
+            radio.addEventListener('change', function () {
+                if (this.checked) {
+                    setGatewayUI(this.value);
+                }
+            });
+        });
+
+        setGatewayUI(gatewayInput ? gatewayInput.value : 'paystack');
 
         form.addEventListener('submit', function () {
             payNowBtn.disabled = true;
-            payNowBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Redirecting to Paystack...';
+            payNowBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Redirecting to secure checkout...';
         });
     });
 </script>
