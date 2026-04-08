@@ -356,13 +356,16 @@ class RecurringTransactionController extends Controller
             'tax_id' => $source->tax_id ?? null,
             'total_amount' => $source->total_amount ?? 0,
             'tax_amount' => $source->tax_amount ?? 0,
-            'paid_amount' => 0,
             'status' => $template->approval_required ? 'pending approval' : ($source->status ?: 'received'),
             'company_id' => Auth::user()?->company_id ?? session('current_tenant_id'),
             'user_id' => Auth::id(),
             'branch_id' => $template->branch_id ?: $source->branch_id,
             'branch_name' => $template->branch_name ?: $source->branch_name,
         ];
+
+        if (Schema::hasColumn('purchases', 'paid_amount')) {
+            $payload['paid_amount'] = 0;
+        }
 
         $purchase = Purchase::create(array_filter($payload, fn ($value) => $value !== null || $value === 0));
 
