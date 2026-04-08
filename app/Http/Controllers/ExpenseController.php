@@ -139,7 +139,7 @@ class ExpenseController extends Controller
             ? $this->applyTenantScope(Account::where('type', 'Expense')->orderBy('name'), 'accounts')->get()
             : collect();
         $assetAccounts = Schema::hasTable('accounts')
-            ? $this->applyTenantScope(Account::where('type', 'Asset')->orderBy('name'), 'accounts')->get()
+            ? $this->paymentSourceAccountsQuery()->get()
             : collect();
         $categories = Schema::hasTable('categories')
             ? $this->applyTenantScope(Category::orderBy('name'), 'categories')->get(['id', 'name'])
@@ -579,9 +579,11 @@ class ExpenseController extends Controller
                 $accountValues['user_id'] = Auth::id();
             }
             if (Schema::hasColumn('accounts', 'branch_id')) {
+                $accountAttributes['branch_id'] = $sessionBranch['id'];
                 $accountValues['branch_id'] = $sessionBranch['id'];
             }
             if (Schema::hasColumn('accounts', 'branch_name')) {
+                $accountAttributes['branch_name'] = $sessionBranch['name'];
                 $accountValues['branch_name'] = $sessionBranch['name'];
             }
 
@@ -733,7 +735,9 @@ class ExpenseController extends Controller
             return;
         }
 
-        $banks = $this->applyTenantScope(Bank::query(), 'banks')->get(['name', 'balance']);
+        $banksQuery = $this->applyTenantScope(Bank::query(), 'banks');
+        $this->applyBranchScope($banksQuery, 'banks');
+        $banks = $banksQuery->get();
         foreach ($banks as $bank) {
             if (!$bank->name) {
                 continue;
@@ -754,9 +758,58 @@ class ExpenseController extends Controller
             if (Schema::hasColumn('accounts', 'user_id')) {
                 $accountValues['user_id'] = Auth::id();
             }
+            if (Schema::hasColumn('accounts', 'branch_id')) {
+                $accountAttributes['branch_id'] = $bank->branch_id ?? session('active_branch_id');
+                $accountValues['branch_id'] = $bank->branch_id ?? session('active_branch_id');
+            }
+            if (Schema::hasColumn('accounts', 'branch_name')) {
+                $accountAttributes['branch_name'] = $bank->branch_name ?? session('active_branch_name');
+                $accountValues['branch_name'] = $bank->branch_name ?? session('active_branch_name');
+            }
 
             Account::firstOrCreate($accountAttributes, $accountValues);
         }
+    }
+
+    private function paymentSourceAccountsQuery()
+    {
+        $query = $this->applyTenantScope(Account::where('type', 'Asset')->orderBy('name'), 'accounts');
+
+        if (Schema::hasColumn('accounts', 'branch_id') || Schema::hasColumn('accounts', 'branch_name')) {
+            $branchId = trim((string) session('active_branch_id', ''));
+            $branchName = trim((string) session('active_branch_name', ''));
+            if ($branchId !== '' || $branchName !== '') {
+                $query->where(function ($sub) use ($branchId, $branchName) {
+                    if ($branchId !== '' && Schema::hasColumn('accounts', 'branch_id')) {
+                        $sub->where('branch_id', $branchId);
+                    }
+                    if ($branchName !== '' && Schema::hasColumn('accounts', 'branch_name')) {
+                        $sub->orWhere('branch_name', $branchName);
+                    }
+                    if (Schema::hasColumn('accounts', 'branch_id') || Schema::hasColumn('accounts', 'branch_name')) {
+                        $sub->orWhere(function ($fallback) {
+                            if (Schema::hasColumn('accounts', 'branch_id')) {
+                                $fallback->whereNull('branch_id');
+                            }
+                            if (Schema::hasColumn('accounts', 'branch_name')) {
+                                $method = Schema::hasColumn('accounts', 'branch_id') ? 'whereNull' : 'orWhereNull';
+                                $fallback->{$method}('branch_name');
+                            }
+                        });
+                    }
+                });
+            }
+        }
+
+        return $query->where(function ($sub) {
+            if (Schema::hasColumn('accounts', 'sub_type')) {
+                $sub->where('sub_type', 'Current Asset');
+            }
+            $sub->orWhere('name', 'like', '%bank%')
+                ->orWhere('name', 'like', '%cash%')
+                ->orWhere('name', 'like', '%wallet%')
+                ->orWhere('name', 'like', '%pos%');
+        });
     }
 
     private function resolveExpenseAttachmentPath(?string $filename): ?string

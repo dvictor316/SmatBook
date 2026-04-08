@@ -77,9 +77,9 @@
                                                 <div class="invoice-info">
                                                     <strong class="customer-text-one">Supplier:</strong>
                                                     <p class="invoice-details-two">
-                                                        {{ $purchase->vendor->name ?? 'N/A' }}<br>
-                                                        {{ $purchase->vendor->address ?? 'No Address Provided' }}<br>
-                                                        {{ $purchase->vendor->email ?? '' }}
+                                                        {{ $purchase->supplier->name ?? $purchase->vendor->name ?? 'N/A' }}<br>
+                                                        {{ $purchase->supplier->address ?? $purchase->vendor->address ?? 'No Address Provided' }}<br>
+                                                        {{ $purchase->supplier->email ?? $purchase->vendor->email ?? '' }}
                                                     </p>
                                                 </div>
                                             </div>
@@ -87,9 +87,9 @@
                                                 <div class="invoice-info text-md-end">
                                                     <strong class="customer-text-one">Payment Bank:</strong>
                                                     <p class="invoice-details-two">
-                                                        {{ $purchase->bank->bank_name ?? 'Cash/Other' }}<br>
-                                                        {{ $purchase->bank->account_no ?? '' }}<br>
-                                                        {{ $purchase->bank->holder_name ?? '' }}
+                                                        {{ $purchase->bank->name ?? 'Cash/Other' }}<br>
+                                                        {{ $purchase->bank->account_number ?? '' }}<br>
+                                                        {{ $purchase->bank->account_holder_name ?? '' }}
                                                     </p>
                                                 </div>
                                             </div>
@@ -141,6 +141,8 @@
                                                     <div class="invoice-total-inner">
                                                         <p>Subtotal <span>{{ number_format($purchase->total_amount - ($purchase->tax_amount ?? 0), 2) }}</span></p>
                                                         <p>Tax <span>{{ number_format($purchase->tax_amount ?? 0, 2) }}</span></p>
+                                                        <p>Amount Paid <span>{{ number_format($paidAmount, 2) }}</span></p>
+                                                        <p>Balance Due <span>{{ number_format($balanceAmount, 2) }}</span></p>
                                                     </div>
                                                     <div class="invoice-total-footer bg-light p-2">
                                                         <h4 class="mb-0">Grand Total <span>{{ number_format($purchase->total_amount, 2) }}</span></h4>
@@ -196,6 +198,36 @@
                                                             <button type="submit" class="btn btn-primary">Record Payment</button>
                                                         </div>
                                                     </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-5 col-md-6">
+                                            <div class="card shadow-sm border-0">
+                                                <div class="card-body">
+                                                    <h5 class="mb-3">Payment History</h5>
+                                                    @forelse(($purchase->supplierPayments ?? collect())->sortByDesc('payment_date') as $payment)
+                                                        <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                                                            <div>
+                                                                <div class="fw-semibold">{{ $payment->reference ?? ('PAY-' . $payment->id) }}</div>
+                                                                <small class="text-muted">
+                                                                    {{ optional($payment->payment_date)->format('d M Y') ?? optional($payment->created_at)->format('d M Y') }}
+                                                                    @if(!empty($payment->method))
+                                                                        • {{ $payment->method }}
+                                                                    @endif
+                                                                </small>
+                                                            </div>
+                                                            <div class="text-end">
+                                                                <div class="fw-bold text-success">{{ number_format((float) ($payment->amount ?? 0), 2) }}</div>
+                                                                <form method="POST" action="{{ route('purchases.destroy-payment', [$purchase->id, $payment->id]) }}" onsubmit="return confirm('Delete this payment and reverse its purchase payment entry?')">
+                                                                    @csrf
+                                                                    @method('DELETE')
+                                                                    <button type="submit" class="btn btn-link btn-sm text-danger p-0">Delete</button>
+                                                                </form>
+                                                            </div>
+                                                        </div>
+                                                    @empty
+                                                        <div class="text-muted">No payments recorded yet.</div>
+                                                    @endforelse
                                                 </div>
                                             </div>
                                         </div>

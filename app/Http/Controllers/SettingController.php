@@ -200,7 +200,26 @@ class SettingController extends Controller
     {
         $bankAccounts = collect();
         if (Schema::hasTable('banks')) {
-            $bankAccounts = Bank::query()->latest()->get();
+            $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+            $branchId = (string) session('active_branch_id', '');
+            $branchName = (string) session('active_branch_name', '');
+
+            $bankAccounts = Bank::query()
+                ->when($companyId > 0 && Schema::hasColumn('banks', 'company_id'), function ($query) use ($companyId) {
+                    $query->where('company_id', $companyId);
+                })
+                ->when($branchId !== '' || $branchName !== '', function ($query) use ($branchId, $branchName) {
+                    $query->where(function ($sub) use ($branchId, $branchName) {
+                        if ($branchId !== '' && Schema::hasColumn('banks', 'branch_id')) {
+                            $sub->where('branch_id', $branchId);
+                        }
+                        if ($branchName !== '' && Schema::hasColumn('banks', 'branch_name')) {
+                            $sub->orWhere('branch_name', $branchName);
+                        }
+                    });
+                })
+                ->latest()
+                ->get();
         }
 
         return view('Settings.bank-account', [
@@ -969,9 +988,27 @@ class SettingController extends Controller
 
     public function storeBankAccount(Request $request)
     {
+        $companyId = (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $branchId = (string) session('active_branch_id', '');
+        $branchName = (string) session('active_branch_name', '');
+
         $validated = $request->validate([
             'bank_name' => 'required|string|max:191',
-            'account_number' => 'required|string|max:100|unique:banks,account_number',
+            'account_number' => [
+                'required',
+                'string',
+                'max:100',
+                Rule::unique('banks', 'account_number')->where(function ($query) use ($companyId, $branchId, $branchName) {
+                    if ($companyId > 0 && Schema::hasColumn('banks', 'company_id')) {
+                        $query->where('company_id', $companyId);
+                    }
+                    if ($branchId !== '' && Schema::hasColumn('banks', 'branch_id')) {
+                        $query->where('branch_id', $branchId);
+                    } elseif ($branchName !== '' && Schema::hasColumn('banks', 'branch_name')) {
+                        $query->where('branch_name', $branchName);
+                    }
+                }),
+            ],
             'account_holder_name' => 'nullable|string|max:191',
             'branch' => 'nullable|string|max:191',
             'ifsc_code' => 'nullable|string|max:100',
@@ -1014,13 +1051,28 @@ class SettingController extends Controller
 
     public function updateBankAccount(Request $request, Bank $bank)
     {
+        $companyId = (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $branchId = (string) session('active_branch_id', '');
+        $branchName = (string) session('active_branch_name', '');
+
         $validated = $request->validate([
             'bank_name' => 'required|string|max:191',
             'account_number' => [
                 'required',
                 'string',
                 'max:100',
-                Rule::unique('banks', 'account_number')->ignore($bank->id),
+                Rule::unique('banks', 'account_number')
+                    ->ignore($bank->id)
+                    ->where(function ($query) use ($companyId, $branchId, $branchName) {
+                        if ($companyId > 0 && Schema::hasColumn('banks', 'company_id')) {
+                            $query->where('company_id', $companyId);
+                        }
+                        if ($branchId !== '' && Schema::hasColumn('banks', 'branch_id')) {
+                            $query->where('branch_id', $branchId);
+                        } elseif ($branchName !== '' && Schema::hasColumn('banks', 'branch_name')) {
+                            $query->where('branch_name', $branchName);
+                        }
+                    }),
             ],
             'account_holder_name' => 'nullable|string|max:191',
             'branch' => 'nullable|string|max:191',

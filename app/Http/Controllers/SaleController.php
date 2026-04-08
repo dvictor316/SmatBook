@@ -530,7 +530,7 @@ public function customerDetails($id = null)
             ? Bank::query()->orderBy('name')->get()
             : collect();
 
-        return view('sales.show', compact('sale', 'activeBranch', 'bankAccounts'));
+        return view('Sales.show', compact('sale', 'activeBranch', 'bankAccounts'));
     }
 
     public function store(Request $request)
@@ -912,7 +912,7 @@ public function create()
      $customers = Customer::orderBy('customer_name', 'asc')->get();
         $products = Product::orderBy('name', 'asc')->get();
 
-        return view('sales.edit', compact('sale', 'customers', 'products'));
+        return view('Sales.edit', compact('sale', 'customers', 'products'));
     }
 
     public function update(Request $request, $id)

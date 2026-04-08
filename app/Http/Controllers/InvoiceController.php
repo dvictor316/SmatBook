@@ -10,6 +10,7 @@ use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Carbon\Carbon;
 
 class InvoiceController extends Controller
@@ -141,13 +142,14 @@ class InvoiceController extends Controller
      */
     public function store(Request $request)
     {
-        // 1. Validation
         $request->validate([
-            'customer_id' => 'required',
+            'customer_id' => 'required|exists:customers,id',
             'invoice_date' => 'required',
             'due_date' => 'required',
             'items' => 'required|array|min:1',
-            'total_amount' => 'required|numeric'
+            'items.*.qty' => 'required|numeric|min:1',
+            'items.*.rate' => 'required|numeric|min:0',
+            'total_amount' => 'required|numeric|min:0',
         ]);
 
         try {
@@ -156,44 +158,131 @@ class InvoiceController extends Controller
             $invoiceDate = $request->invoice_date ? Carbon::parse($request->invoice_date)->toDateString() : now()->toDateString();
             $dueDate = Carbon::parse($request->due_date)->toDateString();
 
-            // 2. Create the main Invoice record
-            $invoice = Invoice::create([
-                'customer_id'  => $request->customer_id,
-                'invoice_date' => $invoiceDate,
-                'due_date'     => $dueDate,
-                'status'       => $request->status ?? 'Unpaid',
-                'description'  => $request->description,
-                'expenses'     => $request->expenses ?? 0,
-                'amount'       => $request->total_amount,
-                'total'        => $request->total_amount,
-                'total_amount' => $request->total_amount,
-            ]);
+            $items = collect($request->input('items', []))
+                ->filter(fn ($item) => filled($item['name'] ?? null) || filled($item['product_id'] ?? null))
+                ->values();
 
-            // 3. Save line items only when invoice_items table/model exists.
-            $invoiceItemModel = '\\App\\Models\\InvoiceItem';
-            if (class_exists($invoiceItemModel) && Schema::hasTable('invoice_items')) {
-                foreach ($request->items as $item) {
-                    if (!empty($item['product_id']) || !empty($item['name'])) {
-                        $invoiceItemModel::create([
-                            'invoice_id' => $invoice->id,
-                            'product_id' => $item['product_id'] ?? null,
-                            'name'       => $item['name'] ?? 'Product',
-                            'quantity'   => $item['qty'],
-                            'rate'       => $item['rate'],
-                            'discount'   => $item['discount'] ?? 0,
-                            'tax'        => $item['tax'] ?? 0,
-                            'amount'     => $item['amount'] ?? ($item['qty'] * $item['rate']),
-                        ]);
-                    }
+            if ($items->isEmpty()) {
+                return back()->withInput()->with('error', 'Add at least one invoice item before saving.');
+            }
+
+            $customer = $this->applyTenantScope(Customer::query(), 'customers')->findOrFail((int) $request->customer_id);
+            $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+            $branchId = session('active_branch_id');
+            $branchName = session('active_branch_name');
+
+            $action = trim((string) $request->input('action', 'save'));
+            $requestedStatus = strtolower(trim((string) $request->input('status', 'unpaid')));
+            $isDraft = $action === 'save' || $requestedStatus === 'draft';
+            $isPaid = $requestedStatus === 'paid' && !$isDraft;
+
+            do {
+                $invoiceNo = 'INV-' . now()->format('ymd') . '-' . strtoupper(Str::random(6));
+            } while (Sale::withTrashed()->where('invoice_no', $invoiceNo)->exists());
+
+            $subtotal = 0;
+            $taxTotal = 0;
+            $discountTotal = 0;
+
+            foreach ($items as $item) {
+                $qty = (float) ($item['qty'] ?? 0);
+                $rate = (float) ($item['rate'] ?? 0);
+                $discount = (float) ($item['discount'] ?? 0);
+                $tax = (float) ($item['tax'] ?? 0);
+                $lineBase = $qty * $rate;
+                $subtotal += $lineBase;
+                $discountTotal += $discount;
+                $taxTotal += $tax;
+            }
+
+            $totalAmount = (float) $request->total_amount;
+            $paidAmount = $isPaid ? $totalAmount : 0;
+            $balanceAmount = max(0, $totalAmount - $paidAmount);
+            $paymentStatus = $isDraft
+                ? 'draft'
+                : ($isPaid ? 'paid' : ($requestedStatus === 'partially paid' ? 'partial' : 'unpaid'));
+            $orderStatus = $isDraft ? 'draft' : ($action === 'send' ? 'sent' : 'pending');
+
+            $salePayload = [
+                'invoice_no' => $invoiceNo,
+                'order_date' => $invoiceDate,
+                'delivery_date' => $dueDate,
+                'customer_id' => $customer->id,
+                'customer_name' => $customer->customer_name ?? $customer->name,
+                'user_id' => auth()->id(),
+                'subtotal' => $subtotal,
+                'discount' => $discountTotal,
+                'tax' => $taxTotal,
+                'shipping_cost' => (float) ($request->expenses ?? 0),
+                'total' => $totalAmount,
+                'paid' => $paidAmount,
+                'amount_paid' => $paidAmount,
+                'balance' => $balanceAmount,
+                'currency' => 'NGN',
+                'payment_method' => $action === 'send' ? 'send' : 'manual',
+                'payment_status' => $paymentStatus,
+                'payment_details' => [
+                    'description' => $request->description,
+                    'action' => $action,
+                    'source' => 'invoice-create',
+                ],
+                'order_status' => $orderStatus,
+            ];
+
+            if ($companyId > 0 && Schema::hasColumn('sales', 'company_id')) {
+                $salePayload['company_id'] = $companyId;
+            }
+            if ($branchId && Schema::hasColumn('sales', 'branch_id')) {
+                $salePayload['branch_id'] = $branchId;
+            }
+            if ($branchName && Schema::hasColumn('sales', 'branch_name')) {
+                $salePayload['branch_name'] = $branchName;
+            }
+
+            $sale = Sale::create($salePayload);
+
+            foreach ($items as $item) {
+                $qty = (float) ($item['qty'] ?? 0);
+                $rate = (float) ($item['rate'] ?? 0);
+                $discount = (float) ($item['discount'] ?? 0);
+                $tax = (float) ($item['tax'] ?? 0);
+                $lineBase = $qty * $rate;
+                $lineAmount = max(0, $lineBase - $discount + $tax);
+
+                $saleItemPayload = [
+                    'sale_id' => $sale->id,
+                    'product_id' => $item['product_id'] ?? null,
+                    'qty' => $qty,
+                    'unit_price' => $rate,
+                    'discount' => $discount,
+                    'tax' => $tax,
+                    'subtotal' => $lineBase,
+                    'total_price' => $lineAmount,
+                ];
+
+                if ($companyId > 0 && Schema::hasColumn('sale_items', 'company_id')) {
+                    $saleItemPayload['company_id'] = $companyId;
                 }
+                if ($branchId && Schema::hasColumn('sale_items', 'branch_id')) {
+                    $saleItemPayload['branch_id'] = $branchId;
+                }
+                if ($branchName && Schema::hasColumn('sale_items', 'branch_name')) {
+                    $saleItemPayload['branch_name'] = $branchName;
+                }
+
+                $sale->items()->create($saleItemPayload);
             }
 
             DB::commit();
-            return redirect()->route('invoices.index')->with('success', 'Invoice Created Successfully');
+            $message = $action === 'send'
+                ? 'Invoice saved and marked ready to send.'
+                : ($isDraft ? 'Invoice draft saved successfully.' : 'Invoice created successfully.');
+
+            return redirect()->route('invoices.index')->with('success', $message);
 
         } catch (\Exception $e) {
             DB::rollback();
-            return back()->with('error', 'Something went wrong: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'Something went wrong: ' . $e->getMessage());
         }
     }
 

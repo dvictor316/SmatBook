@@ -36,10 +36,10 @@
                     <h5 class="section-title"><i class="fas fa-file-invoice me-2"></i>General Details</h5>
                     <div class="row g-3 mb-5">
                         <div class="col-md-4">
-                            <label class="form-label fw-bold small">Customer</label>
+                                <label class="form-label fw-bold small">Customer</label>
                             <select class="form-select" name="customer_id" required>
                                 @foreach($customers as $customer)
-                                    <option value="{{ $customer->id }}" {{ $sale->customer_id == $customer->id ? 'selected' : '' }}>{{ $customer->name }}</option>
+                                    <option value="{{ $customer->id }}" {{ $sale->customer_id == $customer->id ? 'selected' : '' }}>{{ $customer->customer_name ?? $customer->name }}</option>
                                 @endforeach
                             </select>
                         </div>

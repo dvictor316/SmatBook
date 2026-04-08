@@ -134,6 +134,9 @@
                                             <i class="fas fa-ellipsis-v"></i>
                                         </button>
                                         <div class="dropdown-menu dropdown-menu-end shadow-sm">
+                                            <a class="dropdown-item" href="{{ route('payments.show', $payment->id) }}">
+                                                <i class="fas fa-eye me-2 text-info"></i>View Details
+                                            </a>
                                             <a class="dropdown-item" href="{{ route('payments.receipt', $payment->id) }}" target="_blank">
                                                 <i class="fas fa-print me-2 text-primary"></i>Print Receipt
                                             </a>

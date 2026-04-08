@@ -23,6 +23,7 @@ use App\Exports\PurchaseExport;
 use App\Models\Transaction;
 use App\Support\BranchInventoryService;
 use App\Support\LedgerService;
+use App\Models\Transaction as LedgerTransaction;
 // -----------------------------
 
 class PurchaseController extends Controller
@@ -99,6 +100,14 @@ private function applyBranchScope($query, string $table = 'purchases')
         $this->applyTenantScope($purchaseQuery, 'purchases');
         $this->applyBranchScope($purchaseQuery, 'purchases');
         $purchases = $purchaseQuery->orderBy('created_at', 'desc')->paginate(10);
+        $purchases->getCollection()->transform(function (Purchase $purchase) {
+            $paidAmount = $this->resolvePurchasePaidAmount($purchase);
+            $purchase->setAttribute('paid_amount', $paidAmount);
+            $purchase->setAttribute('balance_amount', max(0, (float) ($purchase->total_amount ?? 0) - $paidAmount));
+            $purchase->setAttribute('status', $this->resolvePurchaseStatus($purchase, $paidAmount));
+
+            return $purchase;
+        });
 
         // 2. Fetch Products (CRITICAL: This fixes the "Product data not loaded" error)
         $productQuery = Product::with('category')->latest();
@@ -141,6 +150,14 @@ private function applyBranchScope($query, string $table = 'purchases')
         $this->applyTenantScope($purchaseQuery, 'purchases');
         $this->applyBranchScope($purchaseQuery, 'purchases');
         $purchases = $purchaseQuery->latest()->paginate(10);
+        $purchases->getCollection()->transform(function (Purchase $purchase) {
+            $paidAmount = $this->resolvePurchasePaidAmount($purchase);
+            $purchase->setAttribute('paid_amount', $paidAmount);
+            $purchase->setAttribute('balance_amount', max(0, (float) ($purchase->total_amount ?? 0) - $paidAmount));
+            $purchase->setAttribute('status', $this->resolvePurchaseStatus($purchase, $paidAmount));
+
+            return $purchase;
+        });
 
         return view('Purchases.purchases', [
             'products'  => $products,
@@ -389,7 +406,7 @@ private function applyBranchScope($query, string $table = 'purchases')
 public function show($id)
 {
     // Fetch purchase with vendor relationship
-    $purchaseQuery = Purchase::with(['vendor', 'bank', 'items.product']);
+    $purchaseQuery = Purchase::with(['vendor', 'supplier', 'bank', 'items.product', 'supplierPayments']);
     $this->applyTenantScope($purchaseQuery, 'purchases');
     $this->applyBranchScope($purchaseQuery, 'purchases');
     $purchase = $purchaseQuery->findOrFail($id);
@@ -409,6 +426,11 @@ public function show($id)
     $banks = Schema::hasTable('banks')
         ? Bank::query()->orderBy('name')->get()
         : collect();
+
+    $paidAmount = $this->resolvePurchasePaidAmount($purchase);
+    $purchase->setAttribute('paid_amount', $paidAmount);
+    $purchase->setAttribute('balance_amount', max(0, (float) ($purchase->total_amount ?? 0) - $paidAmount));
+    $purchase->setAttribute('status', $this->resolvePurchaseStatus($purchase, $paidAmount));
 
     return view('Purchases.purchase-details', [
         'purchase' => $purchase,
@@ -682,7 +704,7 @@ public function show($id)
         ]);
 
         $total = (float) ($purchase->total_amount ?? 0);
-        $currentPaid = (float) ($purchase->paid_amount ?? 0);
+        $currentPaid = $this->resolvePurchasePaidAmount($purchase);
         $amount = (float) $validated['amount'];
         $remaining = max(0, $total - $currentPaid);
         if ($amount > $remaining) {
@@ -736,6 +758,80 @@ public function show($id)
         return redirect()
             ->route('purchases.show', $purchase->id)
             ->with('success', 'Purchase payment recorded.');
+    }
+
+    public function destroyPayment($purchaseId, $paymentId)
+    {
+        $purchaseQuery = Purchase::query();
+        $this->applyTenantScope($purchaseQuery, 'purchases');
+        $this->applyBranchScope($purchaseQuery, 'purchases');
+        $purchase = $purchaseQuery->find($purchaseId);
+
+        if (!$purchase) {
+            return redirect()->route('purchases.index')->with('error', 'Purchase not found for the active branch.');
+        }
+
+        $paymentQuery = SupplierPayment::query()->where('purchase_id', $purchase->id);
+        if (Schema::hasColumn('supplier_payments', 'company_id')) {
+            $paymentQuery->where('company_id', auth()->user()?->company_id ?? session('current_tenant_id'));
+        }
+        $payment = $paymentQuery->find($paymentId);
+
+        if (!$payment) {
+            return redirect()->route('purchases.show', $purchase->id)->with('error', 'Payment record not found.');
+        }
+
+        DB::transaction(function () use ($purchase, $payment) {
+            LedgerTransaction::query()
+                ->where('related_id', $purchase->id)
+                ->where('related_type', Purchase::class)
+                ->where('transaction_type', LedgerTransaction::TYPE_PAYMENT)
+                ->where('reference', $payment->reference)
+                ->delete();
+
+            $payment->delete();
+
+            $updatedPaid = $this->resolvePurchasePaidAmount($purchase->fresh());
+            if (Schema::hasColumn('purchases', 'paid_amount')) {
+                $purchase->paid_amount = $updatedPaid;
+            }
+            $purchase->status = $this->resolvePurchaseStatus($purchase, $updatedPaid);
+            $purchase->save();
+        });
+
+        return redirect()->route('purchases.show', $purchase->id)->with('success', 'Purchase payment deleted successfully.');
+    }
+
+    private function resolvePurchasePaidAmount(Purchase $purchase): float
+    {
+        $paidFromColumn = Schema::hasColumn('purchases', 'paid_amount')
+            ? (float) ($purchase->paid_amount ?? 0)
+            : 0.0;
+
+        $paidFromPayments = 0.0;
+        if (Schema::hasTable('supplier_payments')) {
+            if ($purchase->relationLoaded('supplierPayments')) {
+                $paidFromPayments = (float) $purchase->supplierPayments->sum('amount');
+            } else {
+                $paidFromPayments = (float) SupplierPayment::query()
+                    ->where('purchase_id', $purchase->id)
+                    ->sum('amount');
+            }
+        }
+
+        return round(max($paidFromColumn, $paidFromPayments), 2);
+    }
+
+    private function resolvePurchaseStatus(Purchase $purchase, ?float $paidAmount = null): string
+    {
+        $paidAmount = $paidAmount ?? $this->resolvePurchasePaidAmount($purchase);
+        $totalAmount = (float) ($purchase->total_amount ?? 0);
+
+        if ($paidAmount <= 0) {
+            return $purchase->status ?: 'pending';
+        }
+
+        return $paidAmount >= $totalAmount ? 'paid' : 'partial';
     }
 
     /**
