@@ -14,19 +14,19 @@ return new class extends Migration
 
         Schema::table('customers', function (Blueprint $table) {
             if (!Schema::hasColumn('customers', 'bank_name')) {
-                $table->string('bank_name')->nullable()->after('shipping_pincode');
+                $table->string('bank_name')->nullable();
             }
             if (!Schema::hasColumn('customers', 'account_holder')) {
-                $table->string('account_holder')->nullable()->after('bank_name');
+                $table->string('account_holder')->nullable();
             }
             if (!Schema::hasColumn('customers', 'account_number')) {
-                $table->string('account_number')->nullable()->after('account_holder');
+                $table->string('account_number')->nullable();
             }
             if (!Schema::hasColumn('customers', 'ifsc')) {
-                $table->string('ifsc')->nullable()->after('account_number');
+                $table->string('ifsc')->nullable();
             }
             if (!Schema::hasColumn('customers', 'branch')) {
-                $table->string('branch')->nullable()->after('ifsc');
+                $table->string('branch')->nullable();
             }
         });
     }
