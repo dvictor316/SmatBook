@@ -476,6 +476,18 @@ class SupplierController extends Controller
             $this->applyTenantScope($purchasesQuery, 'purchases');
             $this->applyBranchScopeToPurchases($purchasesQuery);
             $candidatePurchases = $purchasesQuery->get();
+            if ($candidatePurchases->isEmpty()) {
+                $fallbackPurchasesQuery = Purchase::query()
+                    ->where('supplier_id', $supplier->id)
+                    ->orderBy(
+                        Schema::hasColumn('purchases', 'purchase_date')
+                            ? 'purchase_date'
+                            : (Schema::hasColumn('purchases', 'date') ? 'date' : 'created_at')
+                    )
+                    ->orderBy('id');
+                $this->applyTenantScope($fallbackPurchasesQuery, 'purchases');
+                $candidatePurchases = $fallbackPurchasesQuery->get();
+            }
 
             $remainingPaymentAmount = $paymentAmount;
             foreach ($candidatePurchases as $purchase) {
@@ -522,6 +534,14 @@ class SupplierController extends Controller
                 $this->applyTenantScope($purchasesQuery, 'purchases');
                 $this->applyBranchScopeToPurchases($purchasesQuery);
                 $purchases = $purchasesQuery->get()->keyBy('id');
+                if ($purchases->isEmpty() && $allocations->isNotEmpty()) {
+                    $fallbackPurchasesQuery = Purchase::query()
+                        ->where('supplier_id', $supplier->id)
+                        ->whereIn('id', $allocations->keys())
+                        ->lockForUpdate();
+                    $this->applyTenantScope($fallbackPurchasesQuery, 'purchases');
+                    $purchases = $fallbackPurchasesQuery->get()->keyBy('id');
+                }
                 $activeBranch = $this->getActiveBranchContext();
 
                 foreach ($allocations as $purchaseId => $amountRequested) {
