@@ -45,6 +45,15 @@ class HomeController extends Controller
         }
     }
 
+    private function generateUniqueQuotationId(): string
+    {
+        do {
+            $candidate = 'QTN-' . now()->format('ymd') . '-' . strtoupper(substr(bin2hex(random_bytes(3)), 0, 6));
+        } while (Quotation::where('quotation_id', $candidate)->exists());
+
+        return $candidate;
+    }
+
     /*
     |--------------------------------------------------------------------------
     | INDEX — Master router for all user types
@@ -507,13 +516,7 @@ class HomeController extends Controller
         }
 
         if (empty($validated['quotation_id'])) {
-            $seed = (int) (Quotation::max('id') ?? 0);
-            $sequence = max(1, $seed + 1);
-            do {
-                $candidate = 'QTN-' . str_pad((string) $sequence, 5, '0', STR_PAD_LEFT);
-                $sequence++;
-            } while (Quotation::where('quotation_id', $candidate)->exists());
-            $validated['quotation_id'] = $candidate;
+            $validated['quotation_id'] = $this->generateUniqueQuotationId();
         }
         $status = trim((string) ($validated['status'] ?? 'Pending'));
         if ($request->input('action') === 'send' && $status === 'Pending') {
