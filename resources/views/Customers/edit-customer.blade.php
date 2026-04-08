@@ -134,7 +134,9 @@
                         <h5 class="form-title">Bank Details</h5>
                         <div class="row">
                             <div class="col-lg-4"><div class="input-block mb-3"><label>Bank Name</label><input type="text" name="bank_name" class="form-control" value="{{ old('bank_name', $customer->bank_name) }}"></div></div>
+                            <div class="col-lg-4"><div class="input-block mb-3"><label>Account Holder</label><input type="text" name="account_holder" class="form-control" value="{{ old('account_holder', $customer->account_holder) }}"></div></div>
                             <div class="col-lg-4"><div class="input-block mb-3"><label>Account Number</label><input type="text" name="account_number" class="form-control" value="{{ old('account_number', $customer->account_number) }}"></div></div>
+                            <div class="col-lg-4"><div class="input-block mb-3"><label>IFSC / Sort Code</label><input type="text" name="ifsc" class="form-control" value="{{ old('ifsc', $customer->ifsc) }}"></div></div>
                             <div class="col-lg-4"><div class="input-block mb-3"><label>Branch</label><input type="text" name="branch" class="form-control" value="{{ old('branch', $customer->branch) }}"></div></div>
                         </div>
                     </div>
