@@ -205,15 +205,12 @@ class InvoiceController extends Controller
 
             $salePayload = [
                 'invoice_no' => $invoiceNo,
-                'order_date' => $invoiceDate,
-                'delivery_date' => $dueDate,
                 'customer_id' => $customer->id,
                 'customer_name' => $customer->customer_name ?? $customer->name,
                 'user_id' => auth()->id(),
                 'subtotal' => $subtotal,
                 'discount' => $discountTotal,
                 'tax' => $taxTotal,
-                'shipping_cost' => (float) ($request->expenses ?? 0),
                 'total' => $totalAmount,
                 'paid' => $paidAmount,
                 'amount_paid' => $paidAmount,
@@ -228,6 +225,16 @@ class InvoiceController extends Controller
                 ],
                 'order_status' => $orderStatus,
             ];
+
+            if (Schema::hasColumn('sales', 'order_date')) {
+                $salePayload['order_date'] = $invoiceDate;
+            }
+            if (Schema::hasColumn('sales', 'delivery_date')) {
+                $salePayload['delivery_date'] = $dueDate;
+            }
+            if (Schema::hasColumn('sales', 'shipping_cost')) {
+                $salePayload['shipping_cost'] = (float) ($request->expenses ?? 0);
+            }
 
             if ($companyId > 0 && Schema::hasColumn('sales', 'company_id')) {
                 $salePayload['company_id'] = $companyId;

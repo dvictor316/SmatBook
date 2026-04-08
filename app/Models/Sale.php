@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use App\Support\GeoCurrency;
 
@@ -52,17 +53,17 @@ class Sale extends Model
         parent::boot();
 
         static::creating(function ($sale) {
-            if (empty($sale->order_number)) {
+            if (Schema::hasColumn('sales', 'order_number') && empty($sale->order_number)) {
                 $sale->order_number = 'ORD-' . date('Ymd') . '-' . strtoupper(bin2hex(random_bytes(3)));
             }
-            if (empty($sale->receipt_no)) {
+            if (Schema::hasColumn('sales', 'receipt_no') && empty($sale->receipt_no)) {
                 do {
                     $receiptNumber = 'REC-' . now()->format('ymd') . '-' . strtoupper(Str::random(6));
                 } while (self::where('receipt_no', $receiptNumber)->exists());
 
                 $sale->receipt_no = $receiptNumber;
             }
-            if (empty($sale->order_date)) {
+            if (Schema::hasColumn('sales', 'order_date') && empty($sale->order_date)) {
                 $sale->order_date = today();
             }
         });
