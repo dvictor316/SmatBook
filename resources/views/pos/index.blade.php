@@ -2788,6 +2788,7 @@ window.POS_ENABLE_FALLBACK = function () {
 
     processBtn?.addEventListener('click', async function (e) {
         e.preventDefault();
+        let printWindow = null;
 
         if (!cart.length) {
             alertFallback('Cart is empty.');
@@ -2811,6 +2812,12 @@ window.POS_ENABLE_FALLBACK = function () {
                 alertFallback('Choose the POS account.');
                 return;
             }
+        }
+
+        printWindow = window.open('', '_blank');
+        if (printWindow) {
+            printWindow.document.write('<!doctype html><html><head><title>Preparing receipt...</title></head><body style="font-family: Arial, sans-serif; padding: 24px;">Preparing receipt...</body></html>');
+            printWindow.document.close();
         }
 
         processBtn.disabled = true;
@@ -2853,7 +2860,11 @@ window.POS_ENABLE_FALLBACK = function () {
 
             if (result.sale_id) {
                 const invoiceUrl = invoiceRouteTemplate.replace(':id', result.sale_id) + '?autoprint=1';
-                window.open(invoiceUrl, '_blank');
+                if (printWindow && !printWindow.closed) {
+                    printWindow.location.href = invoiceUrl;
+                } else {
+                    window.open(invoiceUrl, '_blank');
+                }
             }
 
             cart.length = 0;
@@ -2870,6 +2881,9 @@ window.POS_ENABLE_FALLBACK = function () {
             if (productSearch) productSearch.value = '';
             applyVanillaSelection({ dataset: {} });
         } catch (error) {
+            if (printWindow && !printWindow.closed) {
+                printWindow.close();
+            }
             alertFallback(error.message || 'Failed to process sale.');
         } finally {
             processBtn.disabled = false;
