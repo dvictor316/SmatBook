@@ -82,6 +82,18 @@ class PaymentController extends Controller
         return $query;
     }
 
+    private function findScopedPayment(int|string $paymentId): ?Payment
+    {
+        $baseQuery = Payment::query();
+        $this->applyTenantScope($baseQuery, 'payments');
+
+        $branchQuery = clone $baseQuery;
+        $this->applyBranchScope($branchQuery, 'payments');
+        $payment = $branchQuery->find($paymentId);
+
+        return $payment ?: $baseQuery->find($paymentId);
+    }
+
     public function store(Request $request)
     {
         $requiresSaleId = false;
@@ -647,7 +659,8 @@ class PaymentController extends Controller
 
     public function destroy(Payment $payment)
     {
-        $payment = $this->applyTenantScope(Payment::query(), 'payments')->findOrFail($payment->id);
+        $payment = $this->findScopedPayment($payment->id);
+        abort_if(!$payment, 404);
 
         try {
             DB::transaction(function () use ($payment) {
@@ -684,7 +697,8 @@ class PaymentController extends Controller
 
     public function show(Payment $payment)
     {
-        $payment = $this->applyTenantScope(Payment::query(), 'payments')->findOrFail($payment->id);
+        $payment = $this->findScopedPayment($payment->id);
+        abort_if(!$payment, 404);
         return redirect()->route('payments.receipt', $payment->id)
             ->with('info', 'Payment receipt opened.');
     }
@@ -697,20 +711,23 @@ class PaymentController extends Controller
 
     public function edit(Payment $payment)
     {
-        $payment = $this->applyTenantScope(Payment::query(), 'payments')->findOrFail($payment->id);
+        $payment = $this->findScopedPayment($payment->id);
+        abort_if(!$payment, 404);
         return redirect()->route('payments.index')
             ->with('info', 'Direct payment editing is not enabled yet. Use delete and recreate if needed.');
     }
 
     public function update(Request $request, Payment $payment)
     {
-        $payment = $this->applyTenantScope(Payment::query(), 'payments')->findOrFail($payment->id);
+        $payment = $this->findScopedPayment($payment->id);
+        abort_if(!$payment, 404);
         return redirect()->route('payments.index')->with('info', 'Update is not enabled on this page yet.');
     }
 
     public function receipt(Payment $payment)
     {
-        $payment = $this->applyTenantScope(Payment::query(), 'payments')->findOrFail($payment->id);
+        $payment = $this->findScopedPayment($payment->id);
+        abort_if(!$payment, 404);
         $payment->loadMissing(['sale', 'creator']);
         return view('Finance.payment-receipt', compact('payment'));
     }

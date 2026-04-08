@@ -92,6 +92,18 @@ private function applyBranchScope($query, string $table = 'purchases')
         });
     }
 
+    private function findScopedPurchase(int|string $purchaseId, array $with = [])
+    {
+        $baseQuery = Purchase::query()->with($with);
+        $this->applyTenantScope($baseQuery, 'purchases');
+
+        $branchQuery = clone $baseQuery;
+        $this->applyBranchScope($branchQuery, 'purchases');
+        $purchase = $branchQuery->find($purchaseId);
+
+        return $purchase ?: $baseQuery->find($purchaseId);
+    }
+
     public function index()
     {
         $activeBranch = $this->getActiveBranchContext();
@@ -405,11 +417,8 @@ private function applyBranchScope($query, string $table = 'purchases')
  */
 public function show($id)
 {
-    // Fetch purchase with vendor relationship
-    $purchaseQuery = Purchase::with(['vendor', 'supplier', 'bank', 'items.product', 'supplierPayments']);
-    $this->applyTenantScope($purchaseQuery, 'purchases');
-    $this->applyBranchScope($purchaseQuery, 'purchases');
-    $purchase = $purchaseQuery->findOrFail($id);
+    $purchase = $this->findScopedPurchase($id, ['vendor', 'supplier', 'bank', 'items.product', 'supplierPayments']);
+    abort_if(!$purchase, 404);
     $activeBranch = $this->getActiveBranchContext();
 
     // Logic: Look for the vendor's specific logo first.
@@ -762,13 +771,10 @@ public function show($id)
 
     public function destroyPayment($purchaseId, $paymentId)
     {
-        $purchaseQuery = Purchase::query();
-        $this->applyTenantScope($purchaseQuery, 'purchases');
-        $this->applyBranchScope($purchaseQuery, 'purchases');
-        $purchase = $purchaseQuery->find($purchaseId);
+        $purchase = $this->findScopedPurchase($purchaseId);
 
         if (!$purchase) {
-            return redirect()->route('purchases.index')->with('error', 'Purchase not found for the active branch.');
+            return redirect()->route('purchases.index')->with('error', 'Purchase record not found.');
         }
 
         $paymentQuery = SupplierPayment::query()->where('purchase_id', $purchase->id);
