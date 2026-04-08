@@ -141,7 +141,10 @@
                                                 <td class="text-end fw-bold text-danger">{{ $currencySymbol }}{{ number_format($row->total_due + $row->opening_balance, 2) }}</td>
                                                 <td class="text-end fw-bold text-primary">{{ $currencySymbol }}{{ number_format($runningTotal, 2) }}</td>
                                                 <td class="text-end">
-                                                    <a href="{{ route('reports.customer-statement', $row->customer_id) }}" class="btn btn-sm btn-outline-primary">View Statement</a>
+                                                    <div class="d-inline-flex gap-2">
+                                                        <a href="{{ route('customers.receive-payment', $row->customer_id) }}" class="btn btn-sm btn-primary">Receive Payment</a>
+                                                        <a href="{{ route('reports.customer-statement', $row->customer_id) }}" class="btn btn-sm btn-outline-primary">View Statement</a>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         @empty

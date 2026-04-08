@@ -761,6 +761,7 @@ class SettingController extends Controller
     {
         $validated = $request->validate([
             'branch_id' => 'required|string',
+            'redirect_to' => 'nullable|string|max:2000',
         ]);
 
         $branches = collect($this->getCompanyScopedJsonSettingArray('branches_json'));
@@ -775,7 +776,39 @@ class SettingController extends Controller
             'active_branch_name' => $branch['name'],
         ]);
 
-        return redirect()->back()->with('success', 'Active branch changed to ' . $branch['name'] . '.');
+        return redirect()
+            ->to($this->resolveBranchActivationRedirect($validated['redirect_to'] ?? null))
+            ->with('success', 'Active branch changed to ' . $branch['name'] . '.');
+    }
+
+    private function resolveBranchActivationRedirect(?string $redirectTo): string
+    {
+        $fallback = route('home');
+        $redirectTo = trim((string) $redirectTo);
+
+        if ($redirectTo === '') {
+            return $fallback;
+        }
+
+        $path = '/' . ltrim((string) parse_url($redirectTo, PHP_URL_PATH), '/');
+
+        if ($path === '/' || $path === '') {
+            return $fallback;
+        }
+
+        if (str_starts_with($path, '/reports/customer-statement/')) {
+            return route('reports.accounts-receivable');
+        }
+
+        if (str_starts_with($path, '/customers/') && !str_ends_with($path, '/receive-payment')) {
+            return route('customers.index');
+        }
+
+        if (str_starts_with($path, '/customers/') && str_ends_with($path, '/receive-payment')) {
+            return route('customers.index');
+        }
+
+        return $redirectTo;
     }
 
     public function storeManualJournal(Request $request)

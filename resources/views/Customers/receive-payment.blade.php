@@ -81,7 +81,7 @@
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-white">
                 <h5 class="card-title mb-1">Receive Payment for {{ $customer->customer_name }}</h5>
-                <p class="text-muted mb-0">Enter the amount received and save. The system will allocate the payment automatically to outstanding invoices.</p>
+                <p class="text-muted mb-0">Enter the amount received and save. The system will allocate the payment automatically to outstanding invoices first, then to any opening balance due.</p>
             </div>
             <div class="card-body">
                 @php $paymentHistory = $paymentHistory ?? collect(); @endphp
@@ -128,7 +128,7 @@
                                     data-received-amount
                                 >
                             </div>
-                            <small class="text-muted">This will be automatically allocated to outstanding invoices.</small>
+                            <small class="text-muted">This will be automatically allocated to outstanding invoices and then any opening balance.</small>
                         </div>
                         <div class="col-12">
                             <label class="form-label">Note</label>

@@ -1074,6 +1074,7 @@
                         <form method="POST" action="{{ route('settings.branches.activate') }}">
                             @csrf
                             <input type="hidden" name="branch_id" value="{{ $branch['id'] }}">
+                            <input type="hidden" name="redirect_to" value="{{ url()->full() }}">
                             <button type="submit" class="dropdown-item d-flex justify-content-between align-items-center">
                                 <span>{{ $branch['name'] }}</span>
                                 @if(($activeBranchId ?? null) === ($branch['id'] ?? null))

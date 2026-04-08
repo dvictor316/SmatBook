@@ -604,6 +604,8 @@ class CustomerController extends Controller
                 $paymentDate,
                 $resolvedAccountId
             ) {
+                $customer = Customer::query()->lockForUpdate()->findOrFail($customer->id);
+
                 // Get outstanding sales ordered by date
                 $outstandingSalesQuery = Sale::query()
                     ->where('customer_id', $customer->id)
@@ -684,6 +686,66 @@ class CustomerController extends Controller
                     $remainingAmount -= $amount;
                 }
 
+                $openingOutstanding = round((float) ($customer->balance ?? 0), 2);
+                if ($remainingAmount > 0 && $openingOutstanding > 0) {
+                    $openingPaymentAmount = min($openingOutstanding, $remainingAmount);
+                    $openingSale = $this->createOrRefreshOpeningBalanceSale(
+                        $customer,
+                        $openingOutstanding,
+                        $activeBranch,
+                        $paymentDate
+                    );
+
+                    $paymentPayload = [
+                        'sale_id' => $openingSale?->id,
+                        'customer_id' => $customer->id,
+                        'branch_id' => $openingSale?->branch_id ?? $activeBranch['id'],
+                        'branch_name' => $openingSale?->branch_name ?? $activeBranch['name'],
+                        'reference' => $referenceBase !== '' ? $referenceBase : ('OPENING-BAL-' . $customer->id),
+                        'amount' => $openingPaymentAmount,
+                        'receipt_no' => $this->generatePaymentReceiptNo(),
+                        'method' => $request->input('method') ?: 'Bank Transfer',
+                        'status' => $openingOutstanding <= $openingPaymentAmount ? 'Completed' : 'Pending',
+                        'note' => $request->input('note') ?: 'Customer opening balance payment received.',
+                        'created_by' => auth()->id(),
+                    ];
+
+                    if (Schema::hasColumn('payments', 'payment_account_id')) {
+                        $paymentPayload['payment_account_id'] = $resolvedAccountId;
+                    }
+                    if (Schema::hasColumn('payments', 'company_id')) {
+                        $paymentPayload['company_id'] = auth()->user()?->company_id ?? session('current_tenant_id');
+                    }
+                    if (Schema::hasColumn('payments', 'user_id')) {
+                        $paymentPayload['user_id'] = auth()->id();
+                    }
+
+                    $openingPayment = Payment::create($paymentPayload);
+                    $openingPayment->forceFill([
+                        'created_at' => $paymentDate,
+                        'updated_at' => $paymentDate,
+                    ])->saveQuietly();
+
+                    $customer->update([
+                        'balance' => max(0, $openingOutstanding - $openingPaymentAmount),
+                    ]);
+
+                    if ($openingSale) {
+                        $openingSale = $this->createOrRefreshOpeningBalanceSale(
+                            $customer->fresh(),
+                            $openingOutstanding,
+                            $activeBranch,
+                            $paymentDate
+                        );
+                        $openingPayment->sale_id = $openingSale?->id;
+                        $openingPayment->saveQuietly();
+                    }
+
+                    LedgerService::postCustomerPayment($openingPayment->fresh());
+
+                    $remainingAmount -= $openingPaymentAmount;
+                }
+
             });
         } catch (\Throwable $exception) {
             return back()->withInput()->with('error', 'Customer payment could not be saved. ' . $exception->getMessage());
@@ -705,6 +767,10 @@ class CustomerController extends Controller
             ->where('invoice_no', 'OPENING-BAL-' . $customer->id);
         $this->applySaleTenantScope($query);
         $existing = $query->latest('id')->first();
+        $existingPaid = (float) ($existing?->paid ?? $existing?->amount_paid ?? 0);
+        $openingSaleTotal = $existing
+            ? max((float) ($existing->total ?? 0), $openingOutstanding + $existingPaid)
+            : $openingOutstanding;
 
         $payload = [];
         if (Schema::hasColumn('sales', 'company_id')) {
@@ -738,16 +804,16 @@ class CustomerController extends Controller
             $payload['order_date'] = $paymentDate;
         }
         if (Schema::hasColumn('sales', 'subtotal')) {
-            $payload['subtotal'] = $openingOutstanding;
+            $payload['subtotal'] = $openingSaleTotal;
         }
         if (Schema::hasColumn('sales', 'total')) {
-            $payload['total'] = $openingOutstanding;
+            $payload['total'] = $openingSaleTotal;
         }
         if (Schema::hasColumn('sales', 'paid')) {
-            $payload['paid'] = max(0, $openingOutstanding - (float) ($customer->balance ?? 0));
+            $payload['paid'] = max(0, $openingSaleTotal - (float) ($customer->balance ?? 0));
         }
         if (Schema::hasColumn('sales', 'amount_paid')) {
-            $payload['amount_paid'] = max(0, $openingOutstanding - (float) ($customer->balance ?? 0));
+            $payload['amount_paid'] = max(0, $openingSaleTotal - (float) ($customer->balance ?? 0));
         }
         if (Schema::hasColumn('sales', 'balance')) {
             $payload['balance'] = (float) ($customer->balance ?? 0);
