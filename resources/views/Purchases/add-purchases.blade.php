@@ -50,7 +50,7 @@
                             <div class="col-md-4">
                                 <label for="purchase_id" class="form-label">Purchase ID</label>
                                 <input type="text" id="purchase_id" name="purchase_id" 
-                                       value="{{ old('purchase_id', 'PUR-' . strtoupper(uniqid())) }}" 
+                                       value="{{ old('purchase_id', $purchaseId) }}" 
                                        class="form-control" readonly>
                             </div>
 
@@ -107,9 +107,9 @@
                             <div class="col-md-4">
                                 <label for="reference_no" class="form-label">Reference No</label>
                                 <input type="text" id="reference_no" name="reference_no" 
-                                       value="{{ old('reference_no') }}" 
+                                       value="{{ old('reference_no', $referenceNo) }}" 
                                        class="form-control @error('reference_no') is-invalid @enderror" 
-                                       placeholder="Enter Reference Number">
+                                       placeholder="Auto-generated reference number">
                                 @error('reference_no')
                                     <div class="invalid-feedback d-block">{{ $message }}</div>
                                 @enderror
@@ -119,9 +119,9 @@
                             <div class="col-md-4">
                                 <label for="invoice_serial_no" class="form-label">Supplier Invoice Serial No</label>
                                 <input type="text" id="invoice_serial_no" name="invoice_serial_no" 
-                                       value="{{ old('invoice_serial_no') }}" 
+                                       value="{{ old('invoice_serial_no', $invoiceSerialNo) }}" 
                                        class="form-control @error('invoice_serial_no') is-invalid @enderror" 
-                                       placeholder="Enter Serial No">
+                                       placeholder="Auto-generated serial number">
                                 @error('invoice_serial_no')
                                     <div class="invalid-feedback d-block">{{ $message }}</div>
                                 @enderror
@@ -195,7 +195,7 @@
                                     @foreach($taxOptions as $tax)
                                         <option value="{{ $tax->id }}" 
                                             {{ old('tax_id') == $tax->id ? 'selected' : '' }}>
-                                            {{ $tax->name }}
+                                            {{ $tax->description ?? $tax->code ?? 'Tax' }}@if(isset($tax->rate)) ({{ rtrim(rtrim(number_format((float) $tax->rate, 4, '.', ''), '0'), '.') }}%)@endif
                                         </option>
                                     @endforeach
                                 </select>
@@ -362,7 +362,7 @@
                         <select name="products[${rowIndex}][tax_id]" class="form-select tax-select" data-row="${rowIndex}" onchange="updateProductAmount(${rowIndex})">
                             <option value="">No Tax</option>
                             @foreach($taxOptions as $tax)
-                                <option value="{{ $tax->id }}">{{ $tax->name }}</option>
+                                <option value="{{ $tax->id }}">{{ $tax->description ?? $tax->code ?? 'Tax' }}@if(isset($tax->rate)) ({{ rtrim(rtrim(number_format((float) $tax->rate, 4, '.', ''), '0'), '.') }}%)@endif</option>
                             @endforeach
                         </select>
                     </td>
@@ -428,6 +428,17 @@
                 const lastRow = rows[rows.length - 1];
                 const productSelect = lastRow.querySelector('.product-select');
                 return productSelect && productSelect.value;
+            }
+
+            function rowHasSelectedProduct(row) {
+                const productSelect = row.querySelector('.product-select');
+                return !!(productSelect && productSelect.value);
+            }
+
+            function toggleRowInputs(row, enabled) {
+                row.querySelectorAll('select, input').forEach((field) => {
+                    field.disabled = !enabled;
+                });
             }
 
             addBtn.addEventListener('click', function() {
@@ -530,7 +541,8 @@
             document.getElementById('purchaseForm').addEventListener('submit', function(e) {
                 const supplierId = document.getElementById('supplier_id').value;
                 const purchaseDate = document.getElementById('purchase_date').value;
-                const productRows = document.querySelectorAll('#productsTableBody tr:not(#noProductsRow)');
+                const productRows = Array.from(document.querySelectorAll('#productsTableBody tr:not(#noProductsRow)'));
+                const filledRows = productRows.filter(rowHasSelectedProduct);
                 
                 if (!supplierId) {
                     e.preventDefault();
@@ -544,11 +556,15 @@
                     return;
                 }
                 
-                if (productRows.length === 0) {
+                if (filledRows.length === 0) {
                     e.preventDefault();
-                    alert('Please add at least one product');
+                    alert('Please select at least one product before saving this purchase');
                     return;
                 }
+
+                productRows.forEach((row) => {
+                    toggleRowInputs(row, rowHasSelectedProduct(row));
+                });
             });
         });
     </script>

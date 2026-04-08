@@ -190,8 +190,20 @@ private function applyBranchScope($query, string $table = 'purchases')
         
         // Generate a unique purchase ID
         $purchaseId = 'PUR-' . date('Ymd') . '-' . strtoupper(Str::random(6));
+        $referenceNo = 'REF-' . date('ymd') . '-' . strtoupper(Str::random(4));
+        $invoiceSerialNo = 'INV-' . date('ymd') . '-' . strtoupper(Str::random(4));
         
-        return view('Purchases.add-purchases', compact('vendors', 'suppliers', 'products', 'taxOptions', 'banks', 'purchaseId', 'activeBranch'));
+        return view('Purchases.add-purchases', compact(
+            'vendors',
+            'suppliers',
+            'products',
+            'taxOptions',
+            'banks',
+            'purchaseId',
+            'referenceNo',
+            'invoiceSerialNo',
+            'activeBranch'
+        ));
     }
 
     /**
