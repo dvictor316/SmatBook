@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\{User, Company, Subscription, Plan, DeploymentManager};
 use App\Support\ActiveBranchResolver;
+use App\Support\DeviceSessionManager;
 use App\Support\SystemEventMailer;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
@@ -317,6 +318,17 @@ class AuthController extends Controller
         $request->session()->regenerate();
         
         $user = Auth::user();
+        $deviceSession = app(DeviceSessionManager::class)->ensureCurrentSession($request, $user);
+        if (($deviceSession['allowed'] ?? true) !== true) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect()->route('saas-login')->withErrors([
+                'login' => (string) ($deviceSession['message'] ?? 'This account cannot be used on another device right now.'),
+            ]);
+        }
+
         app(ActiveBranchResolver::class)->ensureSession($user);
 
         Log::info('User logged in', [
@@ -370,6 +382,7 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
+        app(DeviceSessionManager::class)->forgetCurrentSession($request);
         Auth::logout();
         $request->session()->forget([
             'url.intended',
@@ -858,6 +871,16 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials, $request->filled('remember'))) {
             $request->session()->regenerate();
+            $deviceSession = app(DeviceSessionManager::class)->ensureCurrentSession($request, Auth::user());
+            if (($deviceSession['allowed'] ?? true) !== true) {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                return back()->withErrors([
+                    'email' => (string) ($deviceSession['message'] ?? 'This account cannot be used on another device right now.'),
+                ])->withInput($request->only('email'));
+            }
             
             $subdomain = $request->route('subdomain');
             $company = Company::where('domain_prefix', $subdomain)->first();

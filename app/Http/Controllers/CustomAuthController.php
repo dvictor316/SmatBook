@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\{User, Company, Plan, Invoice};
+use App\Support\DeviceSessionManager;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\{
     Auth,
@@ -59,6 +60,17 @@ class CustomAuthController extends Controller
 
         if (Auth::attempt($credentials, $request->filled('remember'))) {
             $request->session()->regenerate();
+            $deviceSession = app(DeviceSessionManager::class)->ensureCurrentSession($request, Auth::user());
+            if (($deviceSession['allowed'] ?? true) !== true) {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                return redirect()
+                    ->route('login')
+                    ->withErrors(['email' => (string) ($deviceSession['message'] ?? 'This account cannot be used on another device right now.')])
+                    ->withInput($request->except('password'));
+            }
 
             return redirect()
                 ->intended(route('home'))
@@ -79,6 +91,7 @@ class CustomAuthController extends Controller
      */
     public function signOut(Request $request)
     {
+        app(DeviceSessionManager::class)->forgetCurrentSession($request);
         Auth::logout();
 
         $request->session()->invalidate();
@@ -711,8 +724,9 @@ class CustomAuthController extends Controller
         }
     }
 
-    public function logout(Request $request)
+public function logout(Request $request)
 {
+    app(DeviceSessionManager::class)->forgetCurrentSession($request);
     Auth::logout();
 
     $request->session()->invalidate();
