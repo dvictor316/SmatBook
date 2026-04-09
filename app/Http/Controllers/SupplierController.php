@@ -934,10 +934,15 @@ class SupplierController extends Controller
             return 0.0;
         }
 
+        $purchaseColumns = ['id', 'supplier_id', 'total_amount'];
+        if (Schema::hasColumn('purchases', 'paid_amount')) {
+            $purchaseColumns[] = 'paid_amount';
+        }
+
         $query = Purchase::query()->where('supplier_id', $supplierId);
         $this->applyTenantScope($query, 'purchases');
         $this->applyBranchScopeToPurchases($query);
-        $purchases = $query->get(['id', 'supplier_id', 'total_amount', 'paid_amount']);
+        $purchases = $query->get($purchaseColumns);
 
         return round((float) $purchases->sum(fn ($purchase) => $this->resolvePurchaseOutstandingAmount($purchase)), 2);
     }
@@ -955,7 +960,12 @@ class SupplierController extends Controller
 
         $query = Purchase::query()
             ->whereIn('supplier_id', $supplierIds->all())
-            ->select(['id', 'supplier_id', 'total_amount', 'paid_amount']);
+            ->select(array_values(array_filter([
+                'id',
+                'supplier_id',
+                'total_amount',
+                Schema::hasColumn('purchases', 'paid_amount') ? 'paid_amount' : null,
+            ])));
 
         $this->applyTenantScope($query, 'purchases');
         $this->applyBranchScopeToPurchases($query);
@@ -978,7 +988,12 @@ class SupplierController extends Controller
         }
 
         if (Schema::hasTable('purchases')) {
-            $query = Purchase::query()->select(['id', 'supplier_id', 'total_amount', 'paid_amount']);
+            $query = Purchase::query()->select(array_values(array_filter([
+                'id',
+                'supplier_id',
+                'total_amount',
+                Schema::hasColumn('purchases', 'paid_amount') ? 'paid_amount' : null,
+            ])));
             $this->applyTenantScope($query, 'purchases');
             $this->applyBranchScopeToPurchases($query);
             $purchaseBalances = round((float) $query->get()->sum(fn ($purchase) => $this->resolvePurchaseOutstandingAmount($purchase)), 2);
