@@ -2779,6 +2779,14 @@ window.POS_ENABLE_FALLBACK = function () {
             if (discountTypeInput) discountTypeInput.value = 'percent';
             if (priceTierInput) priceTierInput.value = 'retail';
             applyVanillaSelection({ dataset: {} });
+            showAlert({
+                icon: 'success',
+                title: 'Added',
+                timer: 1000,
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false
+            });
         });
     }
 
