@@ -760,6 +760,12 @@ body.mini-sidebar .pos-full-page-wrapper {
     z-index: 10;
 }
 
+.cart-table {
+    position: relative;
+    z-index: 2;
+    background: transparent;
+}
+
 .cart-table thead th:first-child {
     border-top-left-radius: 14px;
 }
@@ -835,9 +841,11 @@ body.mini-sidebar .pos-full-page-wrapper {
     align-items: center;
     justify-content: center;
     padding: 28px 20px;
+    z-index: 1;
     background:
         radial-gradient(circle at top, rgba(250, 204, 21, 0.10) 0%, rgba(250, 204, 21, 0) 58%),
         linear-gradient(180deg, #fffefb 0%, #fffcf6 100%);
+    transition: opacity 0.2s ease;
 }
 
 .cart-empty-shell {
@@ -886,7 +894,9 @@ body.mini-sidebar .pos-full-page-wrapper {
 }
 
 .cart-wrapper.has-items .cart-empty-state {
-    display: none;
+    opacity: 0.12;
+    pointer-events: none;
+    filter: grayscale(1);
 }
 
 /* Summary Panel */
