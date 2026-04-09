@@ -523,10 +523,15 @@ class CustomerController extends Controller
     public function receivePayment($id)
     {
         $customer = $this->applyTenantScope(Customer::query())->findOrFail($id);
+        $openingReference = 'OPENING-BAL-' . $customer->id;
 
         $outstandingSalesQuery = Sale::query()
             ->where('customer_id', $customer->id)
             ->where('balance', '>', 0)
+            ->where(function ($query) use ($openingReference) {
+                $query->whereNull('invoice_no')
+                    ->orWhere('invoice_no', '!=', $openingReference);
+            })
             ->orderBy('order_date')
             ->orderBy('id');
         $this->applySaleTenantScope($outstandingSalesQuery);
@@ -681,6 +686,11 @@ class CustomerController extends Controller
                 $outstandingSalesQuery = Sale::query()
                     ->where('customer_id', $customer->id)
                     ->where('balance', '>', 0)
+                    ->where(function ($query) use ($customer) {
+                        $openingReference = 'OPENING-BAL-' . $customer->id;
+                        $query->whereNull('invoice_no')
+                            ->orWhere('invoice_no', '!=', $openingReference);
+                    })
                     ->orderBy('order_date')
                     ->orderBy('id');
                 $this->applySaleTenantScope($outstandingSalesQuery);
