@@ -843,11 +843,19 @@ class CustomerController extends Controller
             return null;
         }
 
-        $query = Sale::query()
-            ->where('customer_id', $customer->id)
-            ->where('invoice_no', 'OPENING-BAL-' . $customer->id);
+        $openingReference = 'OPENING-BAL-' . $customer->id;
+        $query = method_exists(Sale::class, 'withTrashed')
+            ? Sale::withTrashed()
+            : Sale::query();
+
+        $query->where('invoice_no', $openingReference);
         $this->applySaleTenantScope($query);
         $existing = $query->latest('id')->first();
+
+        if ($existing && method_exists($existing, 'trashed') && $existing->trashed()) {
+            $existing->restore();
+        }
+
         $existingPaid = (float) ($existing?->paid ?? $existing?->amount_paid ?? 0);
         $openingSaleTotal = $existing
             ? max((float) ($existing->total ?? 0), $openingOutstanding + $existingPaid)
@@ -873,7 +881,7 @@ class CustomerController extends Controller
             $payload['user_id'] = auth()->id();
         }
         if (Schema::hasColumn('sales', 'invoice_no')) {
-            $payload['invoice_no'] = 'OPENING-BAL-' . $customer->id;
+            $payload['invoice_no'] = $openingReference;
         }
         if (Schema::hasColumn('sales', 'receipt_no')) {
             $payload['receipt_no'] = $this->generateSaleReceiptNo();
