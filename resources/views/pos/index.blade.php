@@ -2659,6 +2659,19 @@ window.POS_ENABLE_FALLBACK = function () {
         });
 
         cartBody.innerHTML = html;
+        const hasItems = cart.length > 0;
+        const cartEmptyState = document.getElementById('cart-empty-state');
+        const cartWrapper = document.querySelector('.cart-wrapper');
+
+        if (cartWrapper) {
+            cartWrapper.classList.toggle('has-items', hasItems);
+        }
+
+        if (cartEmptyState) {
+            cartEmptyState.hidden = hasItems;
+            cartEmptyState.style.display = hasItems ? 'none' : 'flex';
+        }
+
         if (sumSubtotal) sumSubtotal.textContent = fmt.format(totSub);
         if (sumDiscount) sumDiscount.textContent = totDisc > 0 ? '- ' + fmt.format(totDisc) : fmt.format(0);
         if (sumTax) sumTax.textContent = totTax > 0 ? '+ ' + fmt.format(totTax) : fmt.format(0);
