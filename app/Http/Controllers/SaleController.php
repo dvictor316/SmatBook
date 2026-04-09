@@ -738,6 +738,10 @@ $sale = Sale::create([
             $qty = (float) $itemData['qty'];
             $requestedStockUnits = $this->resolveStockUnitsForSale($product, $itemData, $qty);
 
+            if ($availableStock <= 0) {
+                throw new \Exception("{$product->name} is out of stock and cannot be sold.");
+            }
+
             if ($availableStock < $requestedStockUnits) {
                 throw new \Exception("Insufficient stock for {$product->name}.");
             }

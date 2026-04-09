@@ -1222,6 +1222,7 @@ label {
                 $categoryName = $p->category->name ?? 'Uncategorized';
                 $minStockLevel = (int) ($p->min_stock_level ?? 15);
                 $availableStock = (float) ($p->available_stock ?? $p->stock ?? 0);
+                $isOutOfStock = $availableStock <= 0;
             @endphp
             <div class="product-card"
                 title="{{ $p->name }}"
@@ -1241,7 +1242,9 @@ label {
                 data-upr="{{ $unitsPerRoll }}"
                 data-base-unit="{{ strtolower($p->base_unit_name ?? 'unit') }}"
                 data-min-stock="{{ $minStockLevel }}"
-                data-img="{{ $p->image_url }}">
+                data-img="{{ $p->image_url }}"
+                data-out-of-stock="{{ $isOutOfStock ? '1' : '0' }}"
+                @if($isOutOfStock) aria-disabled="true" style="pointer-events:none; opacity:.55; filter:grayscale(.15);" @endif>
                 <div class="product-card-img">
                     @if($p->image_url)
                         <img src="{{ $p->image_url }}" alt="{{ $p->name }}">
@@ -2404,6 +2407,19 @@ window.POS_ENABLE_FALLBACK = function () {
             if (quickStock) quickStock.textContent = '0';
             if (quickHealth) { quickHealth.classList.remove('low'); quickHealth.classList.add('ok'); quickHealth.textContent = 'OK'; }
             if (hdrSelected) hdrSelected.textContent = 'None';
+            currentProductId = '';
+            return;
+        }
+
+        const stock = parseFloat(data.stock || '0') || 0;
+        if (stock <= 0 || String(data.outOfStock || '0') === '1') {
+            alertFallback(`${data.name || 'This product'} is out of stock and cannot be sold.`);
+            if (productSelect) {
+                productSelect.value = '';
+            }
+            if (productSearch) {
+                productSearch.value = '';
+            }
             currentProductId = '';
             return;
         }
