@@ -9,9 +9,45 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 class GeneralLedgerController extends Controller
 {
+    private function applyTenantScope($query, string $table)
+    {
+        $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $userId = (int) (Auth::id() ?? 0);
+
+        if ($companyId > 0 && Schema::hasColumn($table, 'company_id')) {
+            $query->where("{$table}.company_id", $companyId);
+        } elseif ($userId > 0 && Schema::hasColumn($table, 'user_id')) {
+            $query->where("{$table}.user_id", $userId);
+        } elseif ($userId > 0 && Schema::hasColumn($table, 'created_by')) {
+            $query->where("{$table}.created_by", $userId);
+        }
+
+        return $query;
+    }
+
+    private function applyBranchScope($query, string $table)
+    {
+        $branchId = trim((string) session('active_branch_id', ''));
+        $branchName = trim((string) session('active_branch_name', ''));
+
+        if ($branchId === '' && $branchName === '') {
+            return $query;
+        }
+
+        return $query->where(function ($sub) use ($table, $branchId, $branchName) {
+            if ($branchId !== '' && Schema::hasColumn($table, 'branch_id')) {
+                $sub->where("{$table}.branch_id", $branchId);
+            }
+            if ($branchName !== '' && Schema::hasColumn($table, 'branch_name')) {
+                $sub->orWhere("{$table}.branch_name", $branchName);
+            }
+        });
+    }
+
     public function index(Request $request)
     {
         $startDate = $request->filled('start_date')
@@ -35,10 +71,15 @@ class GeneralLedgerController extends Controller
             ]);
         }
 
-        $accounts = Account::orderBy('code')->orderBy('name')->get(['id', 'code', 'name']);
+        $accountsQuery = Account::query()->orderBy('code')->orderBy('name');
+        $this->applyTenantScope($accountsQuery, 'accounts');
+        $this->applyBranchScope($accountsQuery, 'accounts');
+        $accounts = $accountsQuery->get(['id', 'code', 'name']);
 
         $query = Transaction::query()->with('account')
             ->whereBetween('transaction_date', [$startDate, $endDate]);
+        $this->applyTenantScope($query, 'transactions');
+        $this->applyBranchScope($query, 'transactions');
 
         $selectedAccountId = $request->input('account_id');
         if ($selectedAccountId) {
@@ -62,7 +103,29 @@ class GeneralLedgerController extends Controller
         $isSuperAdmin = in_array(strtolower((string) ($user->role ?? '')), ['super_admin', 'superadmin'], true)
             || strtolower((string) ($user->email ?? '')) === 'donvictorlive@gmail.com';
 
-        if (!$isSuperAdmin && Schema::hasColumn('transactions', 'user_id')) {
+        if ($isSuperAdmin) {
+            $globalQuery = Transaction::query()->with('account')
+                ->whereBetween('transaction_date', [$startDate, $endDate]);
+
+            $selectedAccountId = $request->input('account_id');
+            if ($selectedAccountId) {
+                $globalQuery->where('account_id', $selectedAccountId);
+            }
+
+            $search = trim((string) $request->input('search', ''));
+            if ($search !== '') {
+                $globalQuery->where(function ($q) use ($search) {
+                    $q->where('reference', 'like', '%' . $search . '%')
+                        ->orWhere('description', 'like', '%' . $search . '%')
+                        ->orWhereHas('account', function ($a) use ($search) {
+                            $a->where('name', 'like', '%' . $search . '%')
+                                ->orWhere('code', 'like', '%' . $search . '%');
+                        });
+                });
+            }
+
+            $query = $globalQuery;
+        } elseif (Schema::hasColumn('transactions', 'user_id')) {
             $userIds = $this->companyUserIds($user);
             $query->whereIn('user_id', $userIds);
         }

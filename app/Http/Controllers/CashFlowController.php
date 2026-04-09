@@ -254,11 +254,12 @@ class CashFlowController extends Controller
 
     private function resolveCashAccountIds()
     {
-        $accountsQuery = Account::query();
-        $accountsQuery = $this->applyTenantScope($accountsQuery, 'accounts');
+        $baseQuery = Account::query();
+        $baseQuery = $this->applyTenantScope($baseQuery, 'accounts');
+        $baseQuery = $this->applyBranchScope($baseQuery, 'accounts');
 
-        $cashAccountIds = $accountsQuery
-            ->where('type', 'Asset')
+        $cashAccountIds = (clone $baseQuery)
+            ->whereRaw('LOWER(COALESCE(type, "")) = ?', ['asset'])
             ->where(function ($query) {
                 $query->whereIn('sub_type', ['Bank', 'Cash', 'Cash and Bank', 'Cash & Bank', 'Cash/Bank'])
                     ->orWhere(function ($q) {
@@ -273,7 +274,9 @@ class CashFlowController extends Controller
             ->pluck('id');
 
         if ($cashAccountIds->isEmpty()) {
-            $cashAccountIds = $accountsQuery->where('type', 'Asset')->pluck('id');
+            $cashAccountIds = (clone $baseQuery)
+                ->whereRaw('LOWER(COALESCE(type, "")) = ?', ['asset'])
+                ->pluck('id');
         }
 
         return $cashAccountIds;

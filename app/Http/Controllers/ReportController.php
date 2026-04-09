@@ -402,7 +402,7 @@ public function purchase_report(Request $request)
                 Schema::hasColumn('purchases', 'branch_name')
                     ? DB::raw("COALESCE(purchases.branch_name, 'Workspace Default') as BranchName")
                     : DB::raw("'Workspace Default' as BranchName"),
-                DB::raw("COALESCE(purchases.{$purchaseAmountColumn}, 0) as Amount"),
+                DB::raw("ABS(COALESCE(purchases.{$purchaseAmountColumn}, 0)) as Amount"),
                 DB::raw("purchases.{$purchaseDateColumn} as Date"),
                 $purchaseStatusColumn
                     ? DB::raw("COALESCE(purchases.{$purchaseStatusColumn}, 'received') as Type")
@@ -442,7 +442,7 @@ public function purchase_report(Request $request)
 
             if ($hasPurchaseRows) {
                 $purchases = $query->orderByDesc("purchases.{$purchaseDateColumn}")->paginate(20);
-                $totalSum = (float) ((clone $query)->sum("purchases.{$purchaseAmountColumn}") ?? 0);
+                $totalSum = (float) ((clone $query)->sum(DB::raw("ABS(COALESCE(purchases.{$purchaseAmountColumn}, 0))")) ?? 0);
             }
         }
     }
@@ -538,12 +538,16 @@ public function purchase_report(Request $request)
         $prevTo = \Carbon\Carbon::parse($toDate)->subYear()->toDateString();
 
         $fetchData = function($start, $end) {
+            $salesDateColumn = Schema::hasColumn('sales', 'order_date')
+                ? 'order_date'
+                : (Schema::hasColumn('sales', 'date') ? 'date' : 'created_at');
+
             $sales = $this->scopedTable('sales')->select([
-                DB::raw('DATE(created_at) as log_date'),
+                DB::raw("DATE({$salesDateColumn}) as log_date"),
                 DB::raw('total as amount'),
                 DB::raw("'Inflow' as type"),
                 DB::raw("'Sales' as label")
-            ])->whereBetween('created_at', [$start.' 00:00:00', $end.' 23:59:59']);
+            ])->whereBetween($salesDateColumn, [$start.' 00:00:00', $end.' 23:59:59']);
             $this->applySalesScope($sales, 'sales');
 
             $other = $this->scopedTable('payments')->select([
@@ -551,7 +555,10 @@ public function purchase_report(Request $request)
                 DB::raw('amount as amount'),
                 DB::raw("'Inflow' as type"),
                 DB::raw("'Misc' as label")
-            ])->where('payment_method', '!=', 'Sales Payment')
+            ])->where(function ($query) {
+                $query->whereNull('sale_id')
+                    ->orWhere('payment_method', '!=', 'Sales Payment');
+            })
             ->whereBetween('created_at', [$start.' 00:00:00', $end.' 23:59:59']);
             $this->applyPaymentBranchFilter($other, 'payments');
 
@@ -562,6 +569,7 @@ public function purchase_report(Request $request)
                 DB::raw("COALESCE(category, 'Expense') as label")
             ])->whereBetween('created_at', [$start.' 00:00:00', $end.' 23:59:59']);
             $this->applyTenantScope($exp, 'expenses');
+            $this->applyGenericBranchFilter($exp, 'expenses');
 
             return $sales->unionAll($other)->unionAll($exp);
         };
@@ -2208,7 +2216,7 @@ public function destroy($id)
                     DB::raw("DATE(purchases.{$purchaseDateColumn}) as report_date"),
                     DB::raw('0 as income'),
                     DB::raw('0 as operating_expense'),
-                    DB::raw('SUM(COALESCE(purchases.total_amount, 0)) as purchase_expense'),
+                    DB::raw('SUM(ABS(COALESCE(purchases.total_amount, 0))) as purchase_expense'),
                 ])
                 ->groupBy(DB::raw("DATE(purchases.{$purchaseDateColumn})"));
         } elseif (Schema::hasTable('inventory_history') && Schema::hasTable('products')) {
@@ -2307,16 +2315,19 @@ public function destroy($id)
             $query->select([
                 'purchases.id as Id',
                 $supplierSelect,
-                'purchases.created_at as Date',
+                DB::raw('COALESCE(purchases.purchase_date, purchases.date, purchases.created_at) as Date'),
                 DB::raw("COALESCE(purchases.purchase_no, CONCAT('PUR-', purchases.id)) as RefNo"),
-                'purchases.total_amount as TotalAmount',
+                DB::raw('ABS(COALESCE(purchases.total_amount, 0)) as TotalAmount'),
                 DB::raw("'N/A' as PaymentMethod"),
                 DB::raw('0 as Discount'),
                 'purchases.tax_amount as TaxAmount',
             ]);
 
             if ($request->filled('start_date') && $request->filled('end_date')) {
-                $query->whereBetween(DB::raw('DATE(purchases.created_at)'), [$request->start_date, $request->end_date]);
+                $query->whereBetween(
+                    DB::raw('DATE(COALESCE(purchases.purchase_date, purchases.date, purchases.created_at))'),
+                    [$request->start_date, $request->end_date]
+                );
             }
 
             if ($request->filled('search')) {
@@ -2329,7 +2340,7 @@ public function destroy($id)
                 });
             }
 
-            $taxpurchases = $query->orderByDesc('purchases.created_at')
+            $taxpurchases = $query->orderByDesc(DB::raw('COALESCE(purchases.purchase_date, purchases.date, purchases.created_at)'))
                 ->get()
                 ->map(fn ($item) => (array) $item);
 
@@ -2382,7 +2393,7 @@ public function destroy($id)
                     ->where('sales.tax', '>', 0)
                     ->tap(fn ($q) => $this->applyTenantScope($q, 'sales'))
                     ->tap(fn ($q) => $this->applySaleBranchFilter($q, 'sales'))
-                    ->max('sales.created_at');
+                    ->max(Schema::hasColumn('sales', 'order_date') ? 'sales.order_date' : 'sales.created_at');
 
                 $effectiveEnd = $latestTaxDate
                     ? \Carbon\Carbon::parse($latestTaxDate)->endOfDay()
@@ -2397,7 +2408,7 @@ public function destroy($id)
                 ->select([
                     'sales.id as Id',
                     DB::raw("COALESCE(customers.customer_name, sales.customer_name, 'Walk-in Customer') as Customer"),
-                    'sales.created_at as Date',
+                    DB::raw('COALESCE(sales.order_date, sales.date, sales.created_at) as Date'),
                     'sales.invoice_no as InvoiceNo',
                     'sales.total as TotalAmount',
                     DB::raw("COALESCE(sales.payment_method, 'N/A') as PaymentMethod"),
@@ -2409,7 +2420,10 @@ public function destroy($id)
                 ->tap(fn ($q) => $this->applySaleBranchFilter($q, 'sales'));
 
             if ($start_date && $end_date) {
-                $query->whereBetween(DB::raw('DATE(sales.created_at)'), [$start_date, $end_date]);
+                $query->whereBetween(
+                    DB::raw('DATE(COALESCE(sales.order_date, sales.date, sales.created_at))'),
+                    [$start_date, $end_date]
+                );
             }
 
             if ($request->filled('search')) {
@@ -2421,7 +2435,7 @@ public function destroy($id)
                 });
             }
 
-            $taxsales = $query->orderByDesc('sales.created_at')
+            $taxsales = $query->orderByDesc(DB::raw('COALESCE(sales.order_date, sales.date, sales.created_at)'))
                 ->limit(2000)
                 ->get()
                 ->map(function ($item) {
