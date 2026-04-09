@@ -2393,39 +2393,6 @@ public function destroy($id)
                 ->get()
                 ->map(fn ($item) => (array) $item);
 
-            if ($taxpurchases->isEmpty() && Schema::hasTable('inventory_history') && Schema::hasTable('products')) {
-                $fallback = $this->scopedTable('inventory_history')
-                    ->join('products', 'inventory_history.product_id', '=', 'products.id')
-                    ->select([
-                        'inventory_history.id as Id',
-                        DB::raw("'Inventory History' as Supplier"),
-                        'inventory_history.created_at as Date',
-                        DB::raw("CONCAT('HIST-IN-', inventory_history.id) as RefNo"),
-                        DB::raw('COALESCE(inventory_history.quantity, 0) * COALESCE(products.purchase_price, products.price, 0) as TotalAmount'),
-                        DB::raw("'N/A' as PaymentMethod"),
-                        DB::raw('0 as Discount'),
-                        DB::raw('0 as TaxAmount'),
-                    ])
-                    ->whereRaw("LOWER(COALESCE(inventory_history.type, '')) = 'in'");
-
-                if ($request->filled('start_date') && $request->filled('end_date')) {
-                    $fallback->whereBetween(DB::raw('DATE(inventory_history.created_at)'), [$request->start_date, $request->end_date]);
-                }
-
-                if ($request->filled('search')) {
-                    $search = trim((string) $request->search);
-                    $fallback->where(function ($q) use ($search) {
-                        $q->where('products.name', 'like', '%' . $search . '%')
-                            ->orWhere('products.sku', 'like', '%' . $search . '%')
-                            ->orWhere('inventory_history.id', 'like', '%' . $search . '%');
-                    });
-                }
-
-                $taxpurchases = $fallback->orderByDesc('inventory_history.created_at')
-                    ->get()
-                    ->map(fn ($item) => (array) $item);
-            }
-
             return $this->renderReportView('tax-purchase', compact('taxpurchases'));
         }
 
