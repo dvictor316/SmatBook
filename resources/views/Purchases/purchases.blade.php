@@ -136,7 +136,7 @@
                                             <td>{{ ($purchases->currentPage() - 1) * $purchases->perPage() + $loop->iteration }}</td>
                                             <td><strong>{{ $purchase->purchase_no ?? ('PUR-' . $purchase->id) }}</strong></td>
                                             <td>{{ $purchase->supplier?->name ?? $purchase->vendor?->name ?? 'Supplier' }}</td>
-                                            <td>{{ number_format((float) ($purchase->total_amount ?? 0), 2) }}</td>
+                                            <td>{{ number_format((float) ($purchase->resolved_total_amount ?? $purchase->total_amount ?? 0), 2) }}</td>
                                             <td>{{ number_format((float) ($purchase->paid_amount ?? 0), 2) }}</td>
                                             <td>
                                                 @php

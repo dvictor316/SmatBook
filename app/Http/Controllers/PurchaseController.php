@@ -113,9 +113,11 @@ private function applyBranchScope($query, string $table = 'purchases')
         $this->applyBranchScope($purchaseQuery, 'purchases');
         $purchases = $purchaseQuery->orderBy('created_at', 'desc')->paginate(10);
         $purchases->getCollection()->transform(function (Purchase $purchase) {
+            $normalizedTotalAmount = abs((float) ($purchase->total_amount ?? 0));
             $paidAmount = $this->resolvePurchasePaidAmount($purchase);
+            $purchase->setAttribute('resolved_total_amount', $normalizedTotalAmount);
             $purchase->setAttribute('paid_amount', $paidAmount);
-            $purchase->setAttribute('balance_amount', max(0, (float) ($purchase->total_amount ?? 0) - $paidAmount));
+            $purchase->setAttribute('balance_amount', max(0, $normalizedTotalAmount - $paidAmount));
             $purchase->setAttribute('status', $this->resolvePurchaseStatus($purchase, $paidAmount));
 
             return $purchase;
@@ -163,9 +165,11 @@ private function applyBranchScope($query, string $table = 'purchases')
         $this->applyBranchScope($purchaseQuery, 'purchases');
         $purchases = $purchaseQuery->latest()->paginate(10);
         $purchases->getCollection()->transform(function (Purchase $purchase) {
+            $normalizedTotalAmount = abs((float) ($purchase->total_amount ?? 0));
             $paidAmount = $this->resolvePurchasePaidAmount($purchase);
+            $purchase->setAttribute('resolved_total_amount', $normalizedTotalAmount);
             $purchase->setAttribute('paid_amount', $paidAmount);
-            $purchase->setAttribute('balance_amount', max(0, (float) ($purchase->total_amount ?? 0) - $paidAmount));
+            $purchase->setAttribute('balance_amount', max(0, $normalizedTotalAmount - $paidAmount));
             $purchase->setAttribute('status', $this->resolvePurchaseStatus($purchase, $paidAmount));
 
             return $purchase;
