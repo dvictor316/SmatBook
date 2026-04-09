@@ -2411,8 +2411,8 @@ window.POS_ENABLE_FALLBACK = function () {
             return;
         }
 
-        const stock = parseFloat(data.stock || '0') || 0;
-        if (stock <= 0 || String(data.outOfStock || '0') === '1') {
+        const availableStock = parseFloat(data.stock || '0') || 0;
+        if (availableStock <= 0 || String(data.outOfStock || '0') === '1') {
             alertFallback(`${data.name || 'This product'} is out of stock and cannot be sold.`);
             if (productSelect) {
                 productSelect.value = '';
@@ -2464,7 +2464,7 @@ window.POS_ENABLE_FALLBACK = function () {
         if (quickMinStock) quickMinStock.textContent = data.minStock || '15';
         if (quickStock) quickStock.textContent = data.stock || '0';
 
-        const stock = parseFloat(data.stock || '0') || 0;
+        const stock = availableStock;
         const minStock = parseFloat(data.minStock || '15') || 15;
         if (quickHealth) {
             if (stock <= minStock) {
