@@ -850,7 +850,9 @@ body.mini-sidebar .pos-full-page-wrapper {
     background:
         radial-gradient(circle at top, rgba(250, 204, 21, 0.10) 0%, rgba(250, 204, 21, 0) 58%),
         linear-gradient(180deg, #fffefb 0%, #fffcf6 100%);
-    transition: opacity 0.2s ease, transform 0.2s ease, filter 0.2s ease;
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.18s ease, visibility 0.18s ease;
 }
 
 .cart-empty-shell {
@@ -899,14 +901,9 @@ body.mini-sidebar .pos-full-page-wrapper {
 }
 
 .cart-wrapper.has-items .cart-empty-state {
-    opacity: 0.04;
+    opacity: 0;
+    visibility: hidden;
     pointer-events: none;
-    filter: grayscale(1);
-    transform: scale(0.985);
-}
-
-.cart-wrapper.has-items .cart-empty-shell {
-    box-shadow: none;
 }
 
 /* Summary Panel */
