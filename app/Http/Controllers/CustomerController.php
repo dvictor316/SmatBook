@@ -418,6 +418,55 @@ class CustomerController extends Controller
         return false;
     }
 
+    private function resolveCustomerOpeningBalanceSnapshot(Customer $customer): array
+    {
+        $openingReference = 'OPENING-BAL-' . $customer->id;
+        $openingSaleQuery = Sale::query()
+            ->where('customer_id', $customer->id)
+            ->where('invoice_no', $openingReference);
+        $this->applySaleTenantScope($openingSaleQuery);
+        $this->applySaleBranchFilter($openingSaleQuery, 'sales');
+        $openingSale = $openingSaleQuery->latest('id')->first();
+
+        $openingPaymentsQuery = Payment::query()->where('customer_id', $customer->id);
+        $this->applyTenantScope($openingPaymentsQuery);
+        if (Schema::hasTable('payments')) {
+            $branchId = trim((string) ($this->getActiveBranchContext()['id'] ?? ''));
+            $branchName = trim((string) ($this->getActiveBranchContext()['name'] ?? ''));
+            if ($branchId !== '' || $branchName !== '') {
+                $openingPaymentsQuery->where(function ($sub) use ($branchId, $branchName) {
+                    if ($branchId !== '' && Schema::hasColumn('payments', 'branch_id')) {
+                        $sub->where('branch_id', $branchId);
+                    }
+                    if ($branchName !== '' && Schema::hasColumn('payments', 'branch_name')) {
+                        $sub->orWhere('branch_name', $branchName);
+                    }
+                });
+            }
+        }
+
+        $openingPayments = $openingSale
+            ? (clone $openingPaymentsQuery)->where('sale_id', $openingSale->id)->get()
+            : collect();
+        $openingPaid = round((float) $openingPayments->sum('amount'), 2);
+
+        $openingOriginal = $openingSale
+            ? max(
+                (float) ($openingSale->total ?? 0),
+                (float) ($openingSale->paid ?? $openingSale->amount_paid ?? 0) + (float) ($openingSale->balance ?? 0),
+                (float) ($customer->balance ?? 0) + $openingPaid
+            )
+            : max(0, (float) ($customer->balance ?? 0) + $openingPaid);
+
+        return [
+            'sale' => $openingSale,
+            'payments' => $openingPayments,
+            'original' => round($openingOriginal, 2),
+            'paid' => $openingPaid,
+            'due' => round(max(0, $openingOriginal - $openingPaid), 2),
+        ];
+    }
+
     private function resolveReceivePaymentAccountId(?string $paymentTarget): ?int
     {
         $paymentTarget = trim((string) $paymentTarget);
@@ -546,14 +595,42 @@ class CustomerController extends Controller
         }
 
         $customer->computed_balance = (float) ($customer->balance ?? 0) + (float) $outstandingSales->sum('balance');
-        $outstandingOpeningBalance = (float) ($customer->balance ?? 0);
+        $openingSnapshot = $this->resolveCustomerOpeningBalanceSnapshot($customer);
+        $outstandingOpeningBalance = (float) ($openingSnapshot['due'] ?? 0);
         $outstandingInvoicesTotal = (float) $outstandingSales->sum('balance');
         $supportsStandalonePayments = !$this->paymentsRequireSaleId();
         $paymentHistory = Payment::query()
             ->where('customer_id', $customer->id)
-            ->orderByDesc('created_at')
-            ->limit(10)
+            ->orderBy('created_at')
             ->get();
+
+        $paymentTimeline = collect();
+        $runningOpeningBalance = (float) ($openingSnapshot['original'] ?? 0);
+        if ($runningOpeningBalance > 0) {
+            $paymentTimeline->push([
+                'date' => $customer->opening_balance_date
+                    ?: ($openingSnapshot['sale']?->order_date ?: ($openingSnapshot['sale']?->created_at ?: $customer->created_at)),
+                'reference' => 'OPENING',
+                'type' => 'Opening Balance',
+                'amount' => $runningOpeningBalance,
+                'running_balance' => $runningOpeningBalance,
+            ]);
+        }
+
+        foreach ($paymentHistory as $payment) {
+            $isOpeningPayment = !empty($openingSnapshot['sale']) && (int) $payment->sale_id === (int) $openingSnapshot['sale']->id;
+            if ($isOpeningPayment) {
+                $runningOpeningBalance = max(0, $runningOpeningBalance - (float) $payment->amount);
+            }
+
+            $paymentTimeline->push([
+                'date' => $payment->created_at,
+                'reference' => $payment->reference ?: ($payment->payment_id ?: ('PAY-' . $payment->id)),
+                'type' => $isOpeningPayment ? 'Opening Balance Payment' : 'Payment',
+                'amount' => (float) $payment->amount,
+                'running_balance' => $isOpeningPayment ? $runningOpeningBalance : null,
+            ]);
+        }
 
         return view('Customers.receive-payment', compact(
             'customer',
@@ -562,7 +639,9 @@ class CustomerController extends Controller
             'outstandingOpeningBalance',
             'outstandingInvoicesTotal',
             'supportsStandalonePayments',
-            'paymentHistory'
+            'paymentHistory',
+            'openingSnapshot',
+            'paymentTimeline'
         ));
     }
 

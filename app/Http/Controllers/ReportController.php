@@ -1162,6 +1162,13 @@ private function paymentReportRelations(): array
 
         $sales = $salesQuery->orderBy('order_date')->orderBy('created_at')->get();
         $salesIds = $sales->pluck('id')->all();
+        $openingReference = 'OPENING-BAL-' . $customer->id;
+        $openingSale = $sales->first(function ($sale) use ($openingReference) {
+            return (string) ($sale->invoice_no ?? '') === $openingReference;
+        });
+        $regularSales = $sales->reject(function ($sale) use ($openingReference) {
+            return (string) ($sale->invoice_no ?? '') === $openingReference;
+        })->values();
 
         $payments = collect();
         if (Schema::hasTable('payments') && !empty($salesIds)) {
@@ -1171,8 +1178,32 @@ private function paymentReportRelations(): array
             $payments = $paymentQuery->orderBy('created_at')->get();
         }
 
+        $openingPayments = $openingSale
+            ? $payments->where('sale_id', $openingSale->id)->values()
+            : collect();
+        $openingPaid = (float) $openingPayments->sum('amount');
+        $openingOriginal = $openingSale
+            ? max(
+                (float) ($openingSale->total ?? 0),
+                (float) ($openingSale->paid ?? $openingSale->amount_paid ?? 0) + (float) ($openingSale->balance ?? 0),
+                (float) ($customer->balance ?? 0) + $openingPaid
+            )
+            : max(0, (float) ($customer->balance ?? 0) + $openingPaid);
+
         $entries = collect();
-        foreach ($sales as $sale) {
+        if ($openingOriginal > 0) {
+            $entries->push([
+                'date' => $customer->opening_balance_date
+                    ?: ($openingSale?->order_date ?: ($openingSale?->created_at ?: ($customer->created_at ? $customer->created_at->copy()->startOfDay()->subSecond() : now()->copy()->startOfDay()->subSecond()))),
+                'reference' => 'OPENING',
+                'type' => 'Opening Balance',
+                'description' => 'Opening balance on customer account',
+                'debit' => $openingOriginal,
+                'credit' => 0.0,
+            ]);
+        }
+
+        foreach ($regularSales as $sale) {
             $entries->push([
                 'date' => $sale->order_date ?: $sale->created_at,
                 'reference' => $sale->invoice_no ?: ('SALE-' . $sale->id),
@@ -1188,23 +1219,12 @@ private function paymentReportRelations(): array
                 'date' => $payment->created_at,
                 'reference' => $payment->payment_id ?: ('PAY-' . $payment->id),
                 'type' => 'Payment',
-                'description' => $payment->note ?: 'Payment received',
+                'description' => $payment->note
+                    ?: (($openingSale && (int) $payment->sale_id === (int) $openingSale->id)
+                        ? 'Opening balance payment received'
+                        : 'Payment received'),
                 'debit' => 0.0,
                 'credit' => (float) ($payment->amount ?? 0),
-            ]);
-        }
-
-        if (($customer->balance ?? 0) > 0) {
-            $openingDate = $customer->created_at
-                ? $customer->created_at->copy()->startOfDay()->subSecond()
-                : now()->copy()->startOfDay()->subSecond();
-            $entries->push([
-                'date' => $openingDate,
-                'reference' => 'OPENING',
-                'type' => 'Opening Balance',
-                'description' => 'Opening balance on customer account',
-                'debit' => (float) $customer->balance,
-                'credit' => 0.0,
             ]);
         }
 
@@ -1243,9 +1263,9 @@ private function paymentReportRelations(): array
             return $entry;
         });
 
-        $totalInvoiced = (float) $sales->sum('total');
+        $totalInvoiced = $openingOriginal + (float) $regularSales->sum('total');
         $totalPaid = (float) $payments->sum('amount');
-        $balanceDue = (float) $sales->sum('balance') + (float) ($customer->balance ?? 0);
+        $balanceDue = max(0, $totalInvoiced - $totalPaid);
 
         return view('Reports.Reports.customer-statement', [
             'customer' => $customer,

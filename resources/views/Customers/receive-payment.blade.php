@@ -62,8 +62,11 @@
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-body">
                         <p class="text-muted mb-1">Opening Balance</p>
-                        <h4 class="mb-0">₦{{ number_format($outstandingOpeningBalance, 2) }}</h4>
-                        <small class="text-muted">Customer balance brought forward</small>
+                        <h4 class="mb-0">₦{{ number_format((float) ($openingSnapshot['original'] ?? $outstandingOpeningBalance), 2) }}</h4>
+                        <small class="text-muted">
+                            Paid: ₦{{ number_format((float) ($openingSnapshot['paid'] ?? 0), 2) }}
+                            · Due: ₦{{ number_format((float) ($openingSnapshot['due'] ?? $outstandingOpeningBalance), 2) }}
+                        </small>
                     </div>
                 </div>
             </div>
@@ -150,7 +153,7 @@
         <div class="card border-0 shadow-sm mt-4">
             <div class="card-header bg-white">
                 <h5 class="card-title mb-1">Payment History</h5>
-                <p class="text-muted mb-0">Recent collections recorded for this customer.</p>
+                <p class="text-muted mb-0">Opening balance and collections in running order.</p>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
@@ -159,27 +162,25 @@
                             <tr>
                                 <th>Date</th>
                                 <th>Reference</th>
-                                <th>Invoice</th>
-                                <th>Deposit To</th>
-                                <th>Method</th>
+                                <th>Type</th>
                                 <th class="text-end">Amount</th>
-                                <th>Status</th>
+                                <th class="text-end">Running Balance</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($paymentHistory as $payment)
+                            @forelse(($paymentTimeline ?? collect()) as $entry)
                                 <tr>
-                                    <td>{{ optional($payment->created_at)->format('d M Y') ?: '-' }}</td>
-                                    <td>{{ $payment->reference ?: ($payment->payment_id ?: '-') }}</td>
-                                    <td>{{ $payment->sale?->invoice_no ?: ($payment->sale ? 'Invoice #' . $payment->sale->id : 'Opening Balance') }}</td>
-                                    <td>{{ $payment->account?->name ?: 'Not specified' }}</td>
-                                    <td>{{ $payment->method ?: '-' }}</td>
-                                    <td class="text-end fw-semibold">₦{{ number_format((float) $payment->amount, 2) }}</td>
-                                    <td><span class="badge bg-light text-dark">{{ $payment->status ?: 'Saved' }}</span></td>
+                                    <td>{{ optional($entry['date'] ?? null)->format('d M Y') ?: \Carbon\Carbon::parse($entry['date'])->format('d M Y') }}</td>
+                                    <td>{{ $entry['reference'] }}</td>
+                                    <td>{{ $entry['type'] }}</td>
+                                    <td class="text-end fw-semibold">₦{{ number_format((float) ($entry['amount'] ?? 0), 2) }}</td>
+                                    <td class="text-end fw-semibold">
+                                        {{ isset($entry['running_balance']) && $entry['running_balance'] !== null ? '₦' . number_format((float) $entry['running_balance'], 2) : '—' }}
+                                    </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="text-center text-muted py-4">No payment history recorded for this customer yet.</td>
+                                    <td colspan="5" class="text-center text-muted py-4">No payment history recorded for this customer yet.</td>
                                 </tr>
                             @endforelse
                         </tbody>

@@ -680,13 +680,35 @@ class PaymentController extends Controller
                 if ($sale) {
                     $paid = (float) $sale->payments()->sum('amount');
                     $balance = max(0, (float) ($sale->total ?? 0) - $paid);
-                    $sale->update([
+                    $saleUpdate = [
                         'paid' => $paid,
                         'amount_paid' => $paid,
                         'balance' => $balance,
                         'payment_status' => $balance <= 0 ? 'paid' : ($paid > 0 ? 'partial' : 'unpaid'),
-                        'order_status' => $balance <= 0 ? 'completed' : 'pending',
-                    ]);
+                    ];
+                    if (Schema::hasColumn('sales', 'order_status')) {
+                        $saleUpdate['order_status'] = $balance <= 0 ? 'completed' : 'pending';
+                    }
+                    $sale->update($saleUpdate);
+
+                    if (
+                        Schema::hasColumn('sales', 'invoice_no')
+                        && Schema::hasColumn('customers', 'balance')
+                        && str_starts_with((string) ($sale->invoice_no ?? ''), 'OPENING-BAL-')
+                        && !empty($sale->customer_id)
+                    ) {
+                        $customer = Customer::query()->find($sale->customer_id);
+                        if ($customer) {
+                            $customer->update(['balance' => $balance]);
+                        }
+                    }
+                } elseif (!empty($payment->customer_id) && Schema::hasColumn('customers', 'balance')) {
+                    $customer = Customer::query()->find($payment->customer_id);
+                    if ($customer) {
+                        $customer->update([
+                            'balance' => round((float) ($customer->balance ?? 0) + (float) ($payment->amount ?? 0), 2),
+                        ]);
+                    }
                 }
             });
             return redirect()->route('payments.index')->with('success', 'Transaction purged.');
