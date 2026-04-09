@@ -2,6 +2,8 @@
     $user = Auth::user();
     $notifications = [];
     $unreadNotificationCount = 0;
+    $unreadChatCount = 0;
+    $unreadMailCount = 0;
 
     if ($user && Schema::hasTable('notifications')) {
         $notifications = \Illuminate\Support\Facades\Cache::remember(
@@ -27,6 +29,31 @@
                     ->whereNull('read_at')
                     ->count();
             }
+        );
+    }
+
+    if ($user && Schema::hasTable('chats')) {
+        $unreadChatCount = \Illuminate\Support\Facades\Cache::remember(
+            'ui:header:chats:count:' . $user->id,
+            now()->addSeconds(15),
+            function () use ($user) {
+                return (int) \App\Models\Chat::query()
+                    ->where('receiver_id', $user->id)
+                    ->where(function ($query) {
+                        $query->whereNull('meta')
+                            ->orWhere('meta->read', '!=', true)
+                            ->orWhere('meta->read', '!=', 'true');
+                    })
+                    ->count();
+            }
+        );
+    }
+
+    if ($user && Schema::hasTable('messages')) {
+        $unreadMailCount = \Illuminate\Support\Facades\Cache::remember(
+            'ui:header:mail:count:' . $user->id,
+            now()->addSeconds(15),
+            fn () => (int) $user->unreadCount()
         );
     }
 
@@ -618,6 +645,30 @@
         color: #64748b;
         font-size: 19px;
     }
+    .header-indicator {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        color: #64748b;
+        font-size: 18px;
+        text-decoration: none;
+        transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+    }
+    .header-indicator:hover,
+    .notification-bell:hover {
+        background: #f8fafc;
+        color: #1e293b;
+        transform: translateY(-1px);
+    }
+    .header-indicator.has-alert,
+    .notification-bell.has-alert {
+        color: #0f172a;
+    }
+    .header-indicator .badge,
     .notification-bell .badge {
         position: absolute;
         top: 7px; right: 7px;
@@ -628,6 +679,32 @@
         align-items: center;
         justify-content: center;
         border-radius: 10px;
+    }
+    .header-indicator .badge {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: #fff;
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.28);
+    }
+    .header-indicator::after,
+    .notification-bell::after {
+        content: '';
+        position: absolute;
+        top: 7px;
+        right: 8px;
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: #ef4444;
+        border: 2px solid #fff;
+        box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.12);
+        opacity: 0;
+        transform: scale(0.75);
+        transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+    .header-indicator.has-alert::after,
+    .notification-bell.has-alert::after {
+        opacity: 1;
+        transform: scale(1);
     }
 
     .user-profile {
@@ -1115,13 +1192,49 @@
             </div>
         </div>
 
+        @if(Route::has('chat.index'))
+            <a
+                href="{{ route('chat.index') }}"
+                class="header-indicator {{ $unreadChatCount > 0 ? 'has-alert' : '' }}"
+                id="headerChatIndicator"
+                aria-label="Chat messages"
+                title="Chat messages"
+            >
+                <i class="fas fa-comments"></i>
+                <span
+                    class="badge rounded-pill"
+                    id="headerChatBadge"
+                    @if($unreadChatCount <= 0) hidden @endif
+                >{{ $unreadChatCount }}</span>
+            </a>
+        @endif
+
+        @if(Route::has('inbox'))
+            <a
+                href="{{ route('inbox') }}"
+                class="header-indicator {{ $unreadMailCount > 0 ? 'has-alert' : '' }}"
+                id="headerMailIndicator"
+                aria-label="Inbox mail"
+                title="Inbox mail"
+            >
+                <i class="fas fa-envelope"></i>
+                <span
+                    class="badge rounded-pill"
+                    id="headerMailBadge"
+                    @if($unreadMailCount <= 0) hidden @endif
+                >{{ $unreadMailCount }}</span>
+            </a>
+        @endif
+
         {{-- Notifications --}}
         <div class="dropdown">
-            <a href="#" class="notification-bell" data-bs-toggle="dropdown">
+            <a href="#" class="notification-bell {{ $unreadNotificationCount > 0 ? 'has-alert' : '' }}" id="headerNotificationIndicator" data-bs-toggle="dropdown">
                 <i class="fas fa-bell"></i>
-                @if($unreadNotificationCount > 0)
-                    <span class="badge rounded-pill bg-danger">{{ $unreadNotificationCount }}</span>
-                @endif
+                <span
+                    class="badge rounded-pill bg-danger"
+                    id="headerNotificationBadge"
+                    @if($unreadNotificationCount <= 0) hidden @endif
+                >{{ $unreadNotificationCount }}</span>
             </a>
             <div class="dropdown-menu dropdown-menu-end" style="min-width:320px">
                 <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
@@ -1295,6 +1408,44 @@ document.addEventListener('DOMContentLoaded', function () {
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
     const markAllRead = document.getElementById('markAllNotificationsRead');
     const notificationItems = document.querySelectorAll('.header-notification-item');
+    const headerSummaryUrl = @json(Route::has('notifications.summary') ? route('notifications.summary') : null);
+    const notificationBadge = document.getElementById('headerNotificationBadge');
+    const notificationIndicator = document.getElementById('headerNotificationIndicator');
+    const chatBadge = document.getElementById('headerChatBadge');
+    const chatIndicator = document.getElementById('headerChatIndicator');
+    const mailBadge = document.getElementById('headerMailBadge');
+    const mailIndicator = document.getElementById('headerMailIndicator');
+
+    const applyHeaderBadge = (badgeEl, indicatorEl, count) => {
+        if (!badgeEl || !indicatorEl) return;
+        const value = Number(count || 0);
+        badgeEl.textContent = String(value);
+        badgeEl.hidden = value <= 0;
+        indicatorEl.classList.toggle('has-alert', value > 0);
+    };
+
+    const refreshHeaderAttention = async () => {
+        if (!headerSummaryUrl) return;
+
+        try {
+            const response = await fetch(headerSummaryUrl, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                credentials: 'same-origin'
+            });
+
+            if (!response.ok) return;
+
+            const data = await response.json();
+            applyHeaderBadge(notificationBadge, notificationIndicator, data.notification_count);
+            applyHeaderBadge(chatBadge, chatIndicator, data.chat_count);
+            applyHeaderBadge(mailBadge, mailIndicator, data.mail_count);
+        } catch (error) {
+            console.error('Header attention refresh failed', error);
+        }
+    };
 
     if (markAllRead) {
         markAllRead.addEventListener('click', async function (e) {
@@ -1309,6 +1460,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     },
                     credentials: 'same-origin'
                 });
+                await refreshHeaderAttention();
                 window.location.reload();
             } catch (error) {
                 console.error('Notification mark-all-read failed', error);
@@ -1331,11 +1483,15 @@ document.addEventListener('DOMContentLoaded', function () {
                     },
                     credentials: 'same-origin'
                 });
+                await refreshHeaderAttention();
             } catch (error) {
                 console.error('Notification mark-read failed', error);
             }
         });
     });
+
+    refreshHeaderAttention();
+    window.setInterval(refreshHeaderAttention, 30000);
 
     /* ════════════════════════════════════════════
        SIDEBAR DETECTION
