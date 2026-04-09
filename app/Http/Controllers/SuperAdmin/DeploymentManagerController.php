@@ -1471,17 +1471,20 @@ private function formatDeploymentAmount(float $amount): string
             'message' => 'required|string|min:10',
         ]);
 
-        ActivityLog::create([
-            'user_id' => Auth::id(),
-            'module' => 'deployment_support',
-            'description' => $validated['subject'],
-            'action' => 'ticket_created',
-            'properties' => json_encode([
-                'priority' => $validated['priority'],
+        ActivityLog::record(
+            'deployment_support',
+            'ticket_created',
+            $validated['subject'],
+            [
+                'user_id' => Auth::id(),
                 'company_id' => $validated['company_id'] ?? null,
-                'message' => $validated['message'],
-            ]),
-        ]);
+                'properties' => [
+                    'priority' => $validated['priority'],
+                    'company_id' => $validated['company_id'] ?? null,
+                    'message' => $validated['message'],
+                ],
+            ]
+        );
 
         return redirect()->route('deployment.support.tickets')->with('success', 'Support ticket created successfully.');
     }

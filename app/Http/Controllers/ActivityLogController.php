@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\ActivityLog;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class ActivityLogController extends Controller
@@ -15,11 +16,7 @@ class ActivityLogController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        $query = ActivityLog::query()->with('user');
-
-        if (!$this->canViewAll($user)) {
-            $query->where('user_id', $user?->id);
-        }
+        $query = $this->baseQuery($user);
 
         $search = trim((string) $request->input('search', ''));
         if ($search !== '') {
@@ -119,11 +116,7 @@ class ActivityLogController extends Controller
     public function export(Request $request)
     {
         $user = Auth::user();
-        $query = ActivityLog::query()->with('user');
-
-        if (!$this->canViewAll($user)) {
-            $query->where('user_id', $user?->id);
-        }
+        $query = $this->baseQuery($user);
 
         $search = trim((string) $request->input('search', ''));
         if ($search !== '') {
@@ -186,5 +179,28 @@ class ActivityLogController extends Controller
         return in_array($role, ['super_admin', 'administrator', 'superadmin'], true)
             || in_array($relatedRole, ['super_admin', 'administrator', 'superadmin'], true)
             || (string) $user?->email === 'donvictorlive@gmail.com';
+    }
+
+    private function baseQuery($user)
+    {
+        $query = ActivityLog::withoutGlobalScopes()->with('user');
+        $companyId = (int) ($user?->company_id ?? session('current_tenant_id') ?? 0);
+
+        if (!$this->canViewAll($user)) {
+            return $query->where('user_id', $user?->id);
+        }
+
+        $role = strtolower(trim((string) ($user?->role ?? '')));
+        $isCentralSuperAdmin = in_array($role, ['super_admin', 'superadmin'], true)
+            || (string) $user?->email === 'donvictorlive@gmail.com';
+
+        if (!$isCentralSuperAdmin && $companyId > 0 && Schema::hasColumn('activity_logs', 'company_id')) {
+            $query->where(function ($scopedQuery) use ($companyId) {
+                $scopedQuery->where('company_id', $companyId)
+                    ->orWhereNull('company_id');
+            });
+        }
+
+        return $query;
     }
 }

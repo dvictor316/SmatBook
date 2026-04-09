@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Subscription;
 use App\Models\User;
 use App\Models\DeploymentManager;
+use App\Models\ActivityLog;
 use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -96,6 +97,15 @@ class UserController extends Controller
         }
 
         $user->save();
+
+        ActivityLog::record('users', 'create_user', 'Created user ' . $user->name, [
+            'user_id' => Auth::id(),
+            'properties' => [
+                'created_user_id' => $user->id,
+                'created_user_email' => $user->email,
+                'created_user_role' => $user->role,
+            ],
+        ]);
         
         return redirect()->route($this->usersIndexRoute())
             ->with('success', 'User created successfully.');
@@ -153,6 +163,15 @@ class UserController extends Controller
         }
 
         $user->save();
+
+        ActivityLog::record('users', 'update_user', 'Updated user ' . $user->name, [
+            'user_id' => Auth::id(),
+            'properties' => [
+                'updated_user_id' => $user->id,
+                'updated_user_email' => $user->email,
+                'updated_user_role' => $user->role,
+            ],
+        ]);
         
         return redirect()->route($this->usersIndexRoute())
             ->with('success', 'User updated successfully!');
@@ -187,6 +206,14 @@ class UserController extends Controller
             Storage::disk('public')->delete($user->profile_photo);
         }
 
+        ActivityLog::record('users', 'delete_user', 'Deleted user ' . $user->name, [
+            'user_id' => Auth::id(),
+            'properties' => [
+                'deleted_user_id' => $user->id,
+                'deleted_user_email' => $user->email,
+            ],
+        ]);
+
         $user->delete();
         
         return redirect()->route($this->usersIndexRoute())
@@ -215,6 +242,15 @@ class UserController extends Controller
                     'status' => 'active',
                     'is_verified' => 1,
                     'email_verified_at' => now()
+                ]);
+
+                ActivityLog::record('users', 'activate_user', 'Activated user ' . $deploymentManager->user->name, [
+                    'user_id' => Auth::id(),
+                    'company_id' => $deploymentManager->user->company_id,
+                    'properties' => [
+                        'activated_user_id' => $deploymentManager->user->id,
+                        'deployment_manager_id' => $deploymentManager->id,
+                    ],
                 ]);
             }
 
@@ -246,6 +282,15 @@ class UserController extends Controller
             if ($deploymentManager->user) {
                 $deploymentManager->user->update([
                     'status' => 'inactive'
+                ]);
+
+                ActivityLog::record('users', 'deactivate_user', 'Deactivated user ' . $deploymentManager->user->name, [
+                    'user_id' => Auth::id(),
+                    'company_id' => $deploymentManager->user->company_id,
+                    'properties' => [
+                        'deactivated_user_id' => $deploymentManager->user->id,
+                        'deployment_manager_id' => $deploymentManager->id,
+                    ],
                 ]);
             }
 
