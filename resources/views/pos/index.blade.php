@@ -1972,7 +1972,12 @@ $(document).ready(function() {
             return;
         }
 
-        let qty = parseFloat($('#quantity').val()) || 1;
+        let qty = parseFloat($('#quantity').val());
+        if (!Number.isFinite(qty) || qty <= 0) {
+            showAlert({ icon: 'warning', title: 'Invalid Quantity', text: 'Quantity must be greater than zero.', confirmButtonColor: '#2563eb' });
+            $('#quantity').val(1);
+            return;
+        }
         const unitMeta = resolveUnitMetrics(opt);
         let stock = opt.data('stock');
         const maxAllowed = Math.max(unitMeta.maxQty, 0);
@@ -2683,7 +2688,12 @@ window.POS_ENABLE_FALLBACK = function () {
             const unitMeta = getUnitMetrics(data);
             const priceMeta = getBasePrice(data);
             const price = parseFloat(priceInput?.value || (priceMeta.value * unitMeta.multiplier) || '0') || 0;
-            const qty = parseFloat(qtyInput?.value || '1') || 1;
+            const qty = parseFloat(qtyInput?.value || '0');
+            if (!Number.isFinite(qty) || qty <= 0) {
+                alertFallback('Quantity must be greater than zero.');
+                if (qtyInput) qtyInput.value = '1';
+                return;
+            }
             if (unitMeta.maxQty <= 0) {
                 alertFallback('No stock is available for this product.');
                 return;
@@ -2808,6 +2818,11 @@ window.POS_ENABLE_FALLBACK = function () {
 
         if (!cart.length) {
             alertFallback('Cart is empty.');
+            return;
+        }
+
+        if (cart.some((item) => !Number.isFinite(parseFloat(item.qty)) || (parseFloat(item.qty) || 0) <= 0)) {
+            alertFallback('All cart quantities must be greater than zero.');
             return;
         }
 
