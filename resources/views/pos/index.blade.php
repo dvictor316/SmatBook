@@ -2358,6 +2358,15 @@ window.POS_ENABLE_FALLBACK = function () {
     let currentProductId = '';
 
     const alertFallback = (message) => window.alert(message);
+    const showAlert = (options) => {
+        if (window.Swal && typeof Swal.fire === 'function') {
+            return Swal.fire(options);
+        }
+        if (options?.icon === 'success') {
+            return;
+        }
+        return alertFallback(options?.text || options?.title || 'Action required');
+    };
     const saleStoreUrl = @json(route('sales.store'));
     const invoiceRouteTemplate = @json(route('sales.invoice.show', ':id'));
     const csrfToken = @json(csrf_token());
