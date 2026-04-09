@@ -1148,47 +1148,55 @@ public function show($id)
      */
     public function purchaseOrders()
     {
-        if (Schema::hasTable('purchase_orders')) {
-            $orders = DB::table('purchase_orders')
-                ->leftJoin('vendors', 'purchase_orders.vendor_id', '=', 'vendors.id')
-                ->select([
-                    'purchase_orders.id',
-                    DB::raw("COALESCE(purchase_orders.purchase_id, CONCAT('PO-', purchase_orders.id)) as purchase_id"),
-                    DB::raw("COALESCE(vendors.name, 'N/A') as vendor_name"),
-                    DB::raw("COALESCE(purchase_orders.total_amount, 0) as total_amount"),
-                    DB::raw("COALESCE(purchase_orders.payment_mode, 'N/A') as payment_mode"),
-                    DB::raw("COALESCE(purchase_orders.status, 'Pending') as status"),
-                    DB::raw("DATE_FORMAT(COALESCE(purchase_orders.created_at, NOW()), '%d %b %Y') as row_date"),
-                ])
-                ->orderByDesc('purchase_orders.id')
-                ->paginate(10);
-        } else {
-            $orders = Purchase::with('vendor')
-                ->orderByDesc('created_at')
-                ->paginate(10);
-        }
+        $ordersQuery = Purchase::with(['vendor', 'supplier', 'bank']);
+        $this->applyTenantScope($ordersQuery, 'purchases');
+        $this->applyBranchScope($ordersQuery, 'purchases');
 
-        $purchase_orders = $orders->getCollection()->map(function ($row, $index) {
-            $id = (int) ($row->id ?? $row['id'] ?? 0);
-            $vendorName = $row->vendor_name ?? $row->vendor?->name ?? 'N/A';
-            $amount = (float) ($row->total_amount ?? $row->total ?? 0);
-            $status = (string) ($row->status ?? 'Pending');
+        $orders = $ordersQuery
+            ->orderByDesc('created_at')
+            ->paginate(10);
 
-            $statusClass = strcasecmp($status, 'Received') === 0 || strcasecmp($status, 'Completed') === 0
-                ? 'badge bg-success-light text-success'
-                : (strcasecmp($status, 'Pending') === 0
-                    ? 'badge bg-warning-light text-warning'
-                    : 'badge bg-info-light text-info');
+        $purchase_orders = $orders->getCollection()->map(function ($row) {
+            $id = (int) ($row->id ?? 0);
+            $vendorName = $row->supplier?->name
+                ?? $row->vendor?->name
+                ?? $row->supplier_name
+                ?? $row->vendor_name
+                ?? 'Unassigned Supplier';
+            $vendorPhone = $row->supplier?->phone
+                ?? $row->vendor?->phone
+                ?? $row->supplier_phone
+                ?? $row->vendor_phone
+                ?? '';
+            $amount = abs((float) ($row->resolved_total_amount ?? $row->total_amount ?? $row->total ?? 0));
+            $paidAmount = $this->resolvePurchasePaidAmount($row);
+            $status = $this->resolvePurchaseStatus($row, $paidAmount);
+
+            $statusClass = match (strtolower($status)) {
+                'paid', 'received', 'completed' => 'badge bg-success-light text-success',
+                'partial' => 'badge bg-info-light text-info',
+                'pending', 'draft' => 'badge bg-warning-light text-warning',
+                default => 'badge bg-secondary-light text-secondary',
+            };
+
+            $paymentMode = $row->payment_mode
+                ?? $row->payment_method
+                ?? ($row->bank?->name ? 'Bank: ' . $row->bank->name : null)
+                ?? ($paidAmount > 0 ? 'Manual Payment' : 'Not set');
+
+            $rowDate = $row->purchase_date
+                ?? $row->date
+                ?? $row->created_at;
 
             return [
                 'Id' => $id,
-                'PurchaseID' => $row->purchase_id ?? $row->purchase_no ?? ('PO-' . $id),
+                'PurchaseID' => $row->purchase_no ?? $row->purchase_id ?? ('PO-' . $id),
                 'Vendor' => $vendorName,
-                'Phone' => $row->vendor?->phone ?? '',
+                'Phone' => $vendorPhone,
                 'Amount' => number_format($amount, 2),
-                'PaymentMode' => $row->payment_mode ?? $row->payment_method ?? 'N/A',
-                'Date' => $row->row_date ?? optional($row->created_at)->format('d M Y'),
-                'Status' => $status,
+                'PaymentMode' => $paymentMode,
+                'Date' => $rowDate ? \Carbon\Carbon::parse($rowDate)->format('d M Y') : 'N/A',
+                'Status' => ucfirst($status),
                 'Class' => $statusClass,
             ];
         });
