@@ -901,6 +901,7 @@ body.mini-sidebar .pos-full-page-wrapper {
 }
 
 .cart-wrapper.has-items .cart-empty-state {
+    display: none;
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
@@ -2092,6 +2093,7 @@ $(document).ready(function() {
 
         $('#cart-body').html(html);
         $('.cart-wrapper').toggleClass('has-items', cart.length > 0);
+        $('#cart-empty-state').toggle(cart.length === 0);
         $('#sum-subtotal').text(fmt.format(totSub));
         $('#sum-discount').text(totDisc > 0 ? '- ' + fmt.format(totDisc) : fmt.format(0));
         $('#sum-tax').text(totTax > 0 ? '+ ' + fmt.format(totTax) : fmt.format(0));
