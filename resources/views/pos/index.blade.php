@@ -855,6 +855,10 @@ body.mini-sidebar .pos-full-page-wrapper {
     transition: opacity 0.18s ease, visibility 0.18s ease;
 }
 
+.cart-empty-state[hidden] {
+    display: none !important;
+}
+
 .cart-empty-shell {
     width: min(100%, 320px);
     padding: 26px 22px;
@@ -2092,8 +2096,16 @@ $(document).ready(function() {
         }
 
         $('#cart-body').html(html);
-        $('.cart-wrapper').toggleClass('has-items', cart.length > 0);
-        $('#cart-empty-state').toggle(cart.length === 0);
+        const hasItems = cart.length > 0;
+        const cartEmptyState = document.getElementById('cart-empty-state');
+
+        $('.cart-wrapper').toggleClass('has-items', hasItems);
+
+        if (cartEmptyState) {
+            cartEmptyState.hidden = hasItems;
+            cartEmptyState.style.display = hasItems ? 'none' : 'flex';
+        }
+
         $('#sum-subtotal').text(fmt.format(totSub));
         $('#sum-discount').text(totDisc > 0 ? '- ' + fmt.format(totDisc) : fmt.format(0));
         $('#sum-tax').text(totTax > 0 ? '+ ' + fmt.format(totTax) : fmt.format(0));
