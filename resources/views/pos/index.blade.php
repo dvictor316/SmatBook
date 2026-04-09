@@ -911,6 +911,12 @@ body.mini-sidebar .pos-full-page-wrapper {
     pointer-events: none;
 }
 
+.pos-toast-sm .swal2-title {
+    font-size: 0.82rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0 !important;
+}
+
 /* Summary Panel */
 .summary-panel {
     background: linear-gradient(135deg, #fafafa 0%, #ffffff 100%);
@@ -2790,11 +2796,14 @@ window.POS_ENABLE_FALLBACK = function () {
             applyVanillaSelection({ dataset: {} });
             showAlert({
                 icon: 'success',
-                title: 'Added',
+                title: 'Item added to cart',
                 timer: 1000,
                 toast: true,
                 position: 'top-end',
-                showConfirmButton: false
+                showConfirmButton: false,
+                customClass: {
+                    popup: 'pos-toast-sm'
+                }
             });
         });
     }
