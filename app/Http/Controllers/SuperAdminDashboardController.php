@@ -17,6 +17,13 @@ use App\Support\SystemEventMailer;
 
 class SuperAdminDashboardController extends Controller
 {
+    private function resolveDeploymentManager(string|int $id): DeploymentManager
+    {
+        return DeploymentManager::withoutGlobalScopes()
+            ->where('id', $id)
+            ->orWhere('user_id', $id)
+            ->firstOrFail();
+    }
 
     public function index()
     {
@@ -620,7 +627,7 @@ class SuperAdminDashboardController extends Controller
         try {
             DB::beginTransaction();
 
-            $manager = DeploymentManager::findOrFail($id);
+            $manager = $this->resolveDeploymentManager($id);
             
             $manager->update([
                 'status' => 'active',
@@ -659,7 +666,7 @@ class SuperAdminDashboardController extends Controller
     {
         try {
             DB::beginTransaction();
-            $manager = DeploymentManager::findOrFail($id);
+            $manager = $this->resolveDeploymentManager($id);
             
             $manager->update([
                 'status' => 'rejected',
@@ -693,7 +700,7 @@ class SuperAdminDashboardController extends Controller
     {
         try {
             DB::beginTransaction();
-            $manager = DeploymentManager::findOrFail($id);
+            $manager = $this->resolveDeploymentManager($id);
             
             $manager->update(['status' => 'suspended']);
             User::where('id', $manager->user_id)->update(['is_verified' => 0]);
@@ -723,7 +730,7 @@ class SuperAdminDashboardController extends Controller
     {
         try {
             DB::transaction(function () use ($id) {
-                $manager = DeploymentManager::findOrFail($id);
+                $manager = $this->resolveDeploymentManager($id);
                 $userId = $manager->user_id;
 
                 $manager->delete();
@@ -743,7 +750,7 @@ class SuperAdminDashboardController extends Controller
     {
         try {
             DB::beginTransaction();
-            $manager = DeploymentManager::findOrFail($id);
+            $manager = $this->resolveDeploymentManager($id);
             
             $manager->update(['status' => 'active']);
             User::where('id', $manager->user_id)->update(['is_verified' => 1]);
@@ -766,7 +773,7 @@ class SuperAdminDashboardController extends Controller
 
     public function emailManager(Request $request, $id)
     {
-        $manager = DeploymentManager::with('user')->findOrFail($id);
+        $manager = $this->resolveDeploymentManager($id)->load('user');
 
         $recipient = $manager->user?->email;
         if (!filter_var($recipient, FILTER_VALIDATE_EMAIL)) {

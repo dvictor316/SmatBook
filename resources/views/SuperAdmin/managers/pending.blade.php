@@ -41,7 +41,7 @@
                                     <tr>
                                         <td>
                                             <h2 class="table-avatar">
-                                                <a href="#">{{ $manager->name }} <span>Deployment Manager</span></a>
+                                                <a href="#">{{ $manager->manager_name ?? $manager->business_name ?? 'Deployment Manager' }} <span>Deployment Manager</span></a>
                                             </h2>
                                         </td>
                                         <td>{{ $manager->email }}</td>

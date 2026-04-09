@@ -766,6 +766,11 @@ body.mini-sidebar .pos-full-page-wrapper {
     background: transparent;
 }
 
+.cart-table tbody {
+    position: relative;
+    z-index: 2;
+}
+
 .cart-table thead th:first-child {
     border-top-left-radius: 14px;
 }
@@ -841,11 +846,11 @@ body.mini-sidebar .pos-full-page-wrapper {
     align-items: center;
     justify-content: center;
     padding: 28px 20px;
-    z-index: 1;
+    z-index: 0;
     background:
         radial-gradient(circle at top, rgba(250, 204, 21, 0.10) 0%, rgba(250, 204, 21, 0) 58%),
         linear-gradient(180deg, #fffefb 0%, #fffcf6 100%);
-    transition: opacity 0.2s ease;
+    transition: opacity 0.2s ease, transform 0.2s ease, filter 0.2s ease;
 }
 
 .cart-empty-shell {
@@ -894,9 +899,14 @@ body.mini-sidebar .pos-full-page-wrapper {
 }
 
 .cart-wrapper.has-items .cart-empty-state {
-    opacity: 0.12;
+    opacity: 0.04;
     pointer-events: none;
     filter: grayscale(1);
+    transform: scale(0.985);
+}
+
+.cart-wrapper.has-items .cart-empty-shell {
+    box-shadow: none;
 }
 
 /* Summary Panel */
