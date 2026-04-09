@@ -61,11 +61,11 @@
             <div class="col-md-3">
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-body">
-                        <p class="text-muted mb-1">Opening Balance</p>
-                        <h4 class="mb-0">₦{{ number_format((float) ($openingSnapshot['original'] ?? $outstandingOpeningBalance), 2) }}</h4>
+                        <p class="text-muted mb-1">Opening Balance Due</p>
+                        <h4 class="mb-0">₦{{ number_format((float) ($openingSnapshot['due'] ?? $outstandingOpeningBalance), 2) }}</h4>
                         <small class="text-muted">
-                            Paid: ₦{{ number_format((float) ($openingSnapshot['paid'] ?? 0), 2) }}
-                            · Due: ₦{{ number_format((float) ($openingSnapshot['due'] ?? $outstandingOpeningBalance), 2) }}
+                            Original: ₦{{ number_format((float) ($openingSnapshot['original'] ?? $outstandingOpeningBalance), 2) }}
+                            · Paid: ₦{{ number_format((float) ($openingSnapshot['paid'] ?? 0), 2) }}
                         </small>
                     </div>
                 </div>
@@ -75,7 +75,10 @@
                     <div class="card-body">
                         <p class="mb-1 text-white-50">Total Amount Due</p>
                         <h3 class="mb-0">₦{{ number_format(($outstandingInvoicesTotal + $outstandingOpeningBalance), 2) }}</h3>
-                        <small class="text-white-50">Allocate full or partial collections below</small>
+                        <small class="text-white-50">
+                            Invoices: ₦{{ number_format($outstandingInvoicesTotal, 2) }}
+                            · Opening Balance Due: ₦{{ number_format($outstandingOpeningBalance, 2) }}
+                        </small>
                     </div>
                 </div>
             </div>
