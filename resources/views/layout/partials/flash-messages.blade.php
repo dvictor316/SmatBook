@@ -10,23 +10,20 @@
 @if ($flashMessages->isNotEmpty() || $errors->any())
     <style>
         .global-flash-stack {
-            position: fixed;
-            top: calc(var(--sb-header-h, 76px) + 16px);
-            right: 18px;
-            z-index: 2000;
-            width: min(420px, calc(100vw - 24px));
+            position: relative;
+            z-index: 20;
+            width: 100%;
+            max-width: 1280px;
+            margin: 0 auto 16px;
             display: grid;
             gap: 10px;
-            pointer-events: none;
         }
 
         .global-flash-stack .alert {
-            pointer-events: auto;
             margin: 0;
             border: 0;
-            border-radius: 16px;
-            box-shadow: 0 16px 38px rgba(15, 23, 42, 0.14);
-            backdrop-filter: blur(8px);
+            border-radius: 14px;
+            box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
         }
 
         .global-flash-stack .alert .btn-close {
@@ -61,17 +58,14 @@
 
         @media (max-width: 991.98px) {
             .global-flash-stack {
-                left: 12px;
-                right: 12px;
-                width: auto;
-                top: calc(var(--sb-header-h, 76px) + 12px);
+                margin: 0 12px 16px;
             }
         }
     </style>
 
     <div class="global-flash-stack" data-global-flash-stack>
         @foreach ($flashMessages as $flash)
-            <div class="alert alert-{{ $flash['type'] }} alert-dismissible fade show" role="alert" data-auto-dismiss="false">
+            <div class="alert alert-{{ $flash['type'] }} alert-dismissible fade show" role="alert" data-auto-dismiss="false" data-flash-message>
                 <div class="flash-body">
                     <i class="fas {{ $flash['icon'] }}"></i>
                     <div class="flash-copy">{{ $flash['message'] }}</div>
@@ -81,7 +75,7 @@
         @endforeach
 
         @if ($errors->any())
-            <div class="alert alert-danger alert-dismissible fade show" role="alert" data-auto-dismiss="false">
+            <div class="alert alert-danger alert-dismissible fade show" role="alert" data-auto-dismiss="false" data-flash-message>
                 <div class="flash-body">
                     <i class="fas fa-circle-xmark"></i>
                     <div class="flash-copy">
@@ -97,5 +91,39 @@
             </div>
         @endif
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const flashStack = document.querySelector('[data-global-flash-stack]');
+            if (!flashStack) {
+                return;
+            }
+
+            const normalize = (value) => (value || '')
+                .replace(/\s+/g, ' ')
+                .trim()
+                .toLowerCase();
+
+            const inlineAlerts = Array.from(document.querySelectorAll('.alert'))
+                .filter((alert) => !alert.closest('[data-global-flash-stack]'))
+                .map((alert) => normalize(alert.textContent))
+                .filter(Boolean);
+
+            if (inlineAlerts.length === 0) {
+                return;
+            }
+
+            flashStack.querySelectorAll('[data-flash-message]').forEach((alert) => {
+                const flashText = normalize(alert.textContent);
+                if (flashText && inlineAlerts.includes(flashText)) {
+                    alert.remove();
+                }
+            });
+
+            if (!flashStack.querySelector('[data-flash-message]')) {
+                flashStack.remove();
+            }
+        });
+    </script>
 
 @endif
