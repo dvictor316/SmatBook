@@ -2436,13 +2436,16 @@ public function destroy($id)
         {
             $start_date = $request->input('start_date');
             $end_date = $request->input('end_date');
+            $salesDateExpression = Schema::hasColumn('sales', 'order_date')
+                ? 'sales.order_date'
+                : (Schema::hasColumn('sales', 'date') ? 'sales.date' : 'sales.created_at');
 
             if (!$start_date || !$end_date) {
                 $latestTaxDate = $this->scopedTable('sales')
                     ->where('sales.tax', '>', 0)
                     ->tap(fn ($q) => $this->applyTenantScope($q, 'sales'))
                     ->tap(fn ($q) => $this->applySaleBranchFilter($q, 'sales'))
-                    ->max(Schema::hasColumn('sales', 'order_date') ? 'sales.order_date' : 'sales.created_at');
+                    ->max(str_replace('sales.', '', $salesDateExpression));
 
                 $effectiveEnd = $latestTaxDate
                     ? \Carbon\Carbon::parse($latestTaxDate)->endOfDay()
@@ -2457,7 +2460,7 @@ public function destroy($id)
                 ->select([
                     'sales.id as Id',
                     DB::raw("COALESCE(customers.customer_name, sales.customer_name, 'Walk-in Customer') as Customer"),
-                    DB::raw('COALESCE(sales.order_date, sales.date, sales.created_at) as Date'),
+                    DB::raw("{$salesDateExpression} as Date"),
                     'sales.invoice_no as InvoiceNo',
                     'sales.total as TotalAmount',
                     DB::raw("COALESCE(sales.payment_method, 'N/A') as PaymentMethod"),
@@ -2470,7 +2473,7 @@ public function destroy($id)
 
             if ($start_date && $end_date) {
                 $query->whereBetween(
-                    DB::raw('DATE(COALESCE(sales.order_date, sales.date, sales.created_at))'),
+                    DB::raw("DATE({$salesDateExpression})"),
                     [$start_date, $end_date]
                 );
             }
@@ -2484,7 +2487,7 @@ public function destroy($id)
                 });
             }
 
-            $taxsales = $query->orderByDesc(DB::raw('COALESCE(sales.order_date, sales.date, sales.created_at)'))
+            $taxsales = $query->orderByDesc(DB::raw($salesDateExpression))
                 ->limit(2000)
                 ->get()
                 ->map(function ($item) {
