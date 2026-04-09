@@ -174,8 +174,8 @@
                                             <small class="text-muted">Supplier brought-forward balance</small>
                                         </td>
                                         <td>{{ $supplier->opening_balance_date ?? '-' }}</td>
-                                        <td class="text-end">₦{{ number_format((float) ($summary['opening_balance_due'] ?? 0), 2) }}</td>
-                                        <td class="text-end">₦0.00</td>
+                                        <td class="text-end">₦{{ number_format((float) ($summary['opening_balance_original'] ?? $summary['opening_balance_due'] ?? 0), 2) }}</td>
+                                        <td class="text-end">₦{{ number_format((float) ($summary['opening_balance_paid'] ?? 0), 2) }}</td>
                                         <td class="text-end fw-semibold">₦{{ number_format((float) ($summary['opening_balance_due'] ?? 0), 2) }}</td>
                                     </tr>
                                 @endif
@@ -186,8 +186,8 @@
                                             <small class="text-muted">{{ $purchase->reference_no ?? $purchase->invoice_serial_no ?? 'Outstanding purchase bill' }}</small>
                                         </td>
                                         <td>{{ optional($purchase->purchase_date ?? $purchase->created_at)->format('d M Y') ?: optional($purchase->created_at)->format('d M Y') }}</td>
-                                        <td class="text-end">₦{{ number_format((float) ($purchase->total_amount ?? 0), 2) }}</td>
-                                        <td class="text-end">₦{{ number_format((float) ($purchase->paid_amount ?? 0), 2) }}</td>
+                                        <td class="text-end">₦{{ number_format((float) ($purchase->resolved_total_amount ?? $purchase->total_amount ?? 0), 2) }}</td>
+                                        <td class="text-end">₦{{ number_format((float) ($purchase->resolved_paid_amount ?? $purchase->paid_amount ?? 0), 2) }}</td>
                                         <td class="text-end fw-semibold">₦{{ number_format((float) $purchase->outstanding_balance, 2) }}</td>
                                     </tr>
                                 @empty

@@ -69,7 +69,7 @@
                 <div class="card">
                     <div class="card-body">
                         <p class="text-muted mb-1">Opening Balance</p>
-                        <h4 class="fw-bold mb-0">{{ number_format((float) ($supplier->opening_balance ?? 0), 2) }}</h4>
+                        <h4 class="fw-bold mb-0">{{ number_format((float) ($summary['opening_balance_original'] ?? $supplier->opening_balance ?? 0), 2) }}</h4>
                         <small class="text-muted">as of {{ $supplier->opening_balance_date ?? '—' }}</small>
                     </div>
                 </div>
@@ -132,7 +132,7 @@
                                         <small class="text-muted">{{ $receivedQty }} received / {{ $totalQty }} total</small>
                                     </td>
                                     <td class="text-end">
-                                        {{ number_format((float) ($totalColumn ? ($purchase->{$totalColumn} ?? 0) : 0), 2) }}
+                                        {{ number_format((float) ($purchase->resolved_total_amount ?? ($totalColumn ? ($purchase->{$totalColumn} ?? 0) : 0)), 2) }}
                                     </td>
                                     <td class="text-end">
                                         <button class="btn btn-sm btn-outline-secondary me-2" type="button" data-bs-toggle="collapse" data-bs-target="#purchase-items-{{ $purchase->id }}">

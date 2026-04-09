@@ -712,7 +712,7 @@ public function show($id)
             'notes' => 'nullable|string|max:500',
         ]);
 
-        $total = (float) ($purchase->total_amount ?? 0);
+        $total = abs((float) ($purchase->total_amount ?? 0));
         $currentPaid = $this->resolvePurchasePaidAmount($purchase);
         $amount = (float) $validated['amount'];
         $remaining = max(0, $total - $currentPaid);
@@ -831,7 +831,7 @@ public function show($id)
     private function resolvePurchaseStatus(Purchase $purchase, ?float $paidAmount = null): string
     {
         $paidAmount = $paidAmount ?? $this->resolvePurchasePaidAmount($purchase);
-        $totalAmount = (float) ($purchase->total_amount ?? 0);
+        $totalAmount = abs((float) ($purchase->total_amount ?? 0));
 
         if ($paidAmount <= 0) {
             return $purchase->status ?: 'pending';

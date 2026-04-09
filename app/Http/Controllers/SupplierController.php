@@ -17,6 +17,53 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class SupplierController extends Controller
 {
+    private function purchaseGrossTotal($purchase): float
+    {
+        return round(abs((float) ($purchase->total_amount ?? 0)), 2);
+    }
+
+    private function supplierPaymentQueryForSupplier(int $supplierId)
+    {
+        $query = SupplierPayment::query()->where('supplier_id', $supplierId);
+        $this->applyTenantScope($query, 'supplier_payments');
+        return $query;
+    }
+
+    private function openingBalancePaidTotal(int $supplierId): float
+    {
+        if (!Schema::hasTable('supplier_payments')) {
+            return 0.0;
+        }
+
+        return round((float) $this->supplierPaymentQueryForSupplier($supplierId)
+            ->whereNull('purchase_id')
+            ->sum('amount'), 2);
+    }
+
+    private function resolvePurchasePaidAmount($purchase): float
+    {
+        $paidFromColumn = Schema::hasColumn('purchases', 'paid_amount')
+            ? (float) ($purchase->paid_amount ?? 0)
+            : 0.0;
+
+        if (!Schema::hasTable('supplier_payments') || empty($purchase->id)) {
+            return round(max(0, $paidFromColumn), 2);
+        }
+
+        $paidFromPayments = (float) $this->supplierPaymentQueryForSupplier((int) $purchase->supplier_id)
+            ->where('purchase_id', $purchase->id)
+            ->sum('amount');
+
+        return round(max($paidFromColumn, $paidFromPayments), 2);
+    }
+
+    private function resolvePurchaseOutstandingAmount($purchase): float
+    {
+        $grossTotal = $this->purchaseGrossTotal($purchase);
+        $paidAmount = $this->resolvePurchasePaidAmount($purchase);
+        return round(max(0, $grossTotal - $paidAmount), 2);
+    }
+
     private function applyTenantScope($query, string $table = 'suppliers')
     {
         $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
@@ -195,6 +242,12 @@ class SupplierController extends Controller
                 ->orderByDesc($purchaseDateColumn)
                 ->limit(25)
                 ->get()
+                ->map(function ($purchase) {
+                    $purchase->resolved_total_amount = $this->purchaseGrossTotal($purchase);
+                    $purchase->resolved_paid_amount = $this->resolvePurchasePaidAmount($purchase);
+                    $purchase->resolved_outstanding_amount = $this->resolvePurchaseOutstandingAmount($purchase);
+                    return $purchase;
+                })
             : collect();
 
         $summary = [
@@ -210,12 +263,14 @@ class SupplierController extends Controller
             $this->applyBranchScopeToPurchases($summaryQuery);
             $summary['total_purchases'] = (clone $summaryQuery)->count();
             if ($totalColumn) {
-                $summary['total_spend'] = (float) ((clone $summaryQuery)->sum($totalColumn) ?? 0);
+                $summary['total_spend'] = round((float) $purchases->sum('resolved_total_amount'), 2);
             }
         }
 
         $summary['outstanding_payables'] = $this->calculateSupplierOutstandingBalance($supplier->id);
         $summary['total_paid'] = 0;
+        $summary['opening_balance_paid'] = $this->openingBalancePaidTotal($supplier->id);
+        $summary['opening_balance_original'] = round((float) ($supplier->opening_balance ?? 0) + $summary['opening_balance_paid'], 2);
 
         $purchaseItemsByPurchase = collect();
         if ($hasPurchases && Schema::hasTable('purchase_items')) {
@@ -304,10 +359,9 @@ class SupplierController extends Controller
         $this->applyTenantScope($purchasesQuery, 'purchases');
         $this->applyBranchScopeToPurchases($purchasesQuery);
         $outstandingPurchases = $purchasesQuery->get()->map(function ($purchase) {
-            $paidAmount = Schema::hasColumn('purchases', 'paid_amount')
-                ? (float) ($purchase->paid_amount ?? 0)
-                : 0.0;
-            $purchase->outstanding_balance = max(0, (float) ($purchase->total_amount ?? 0) - $paidAmount);
+            $purchase->resolved_total_amount = $this->purchaseGrossTotal($purchase);
+            $purchase->resolved_paid_amount = $this->resolvePurchasePaidAmount($purchase);
+            $purchase->outstanding_balance = $this->resolvePurchaseOutstandingAmount($purchase);
             return $purchase;
         })->filter(fn ($purchase) => $purchase->outstanding_balance > 0)->values();
 
@@ -343,11 +397,14 @@ class SupplierController extends Controller
             $supplierPayments = $supplierPaymentsQuery->limit(50)->get();
         }
 
+        $openingBalancePaid = $this->openingBalancePaidTotal($supplier->id);
         $summary = [
-            'outstanding_payables' => (float) $outstandingPurchases->sum('outstanding_balance') + (float) ($supplier->opening_balance ?? 0),
+            'outstanding_payables' => round((float) $outstandingPurchases->sum('outstanding_balance') + (float) ($supplier->opening_balance ?? 0), 2),
             'total_paid' => (float) $supplierPayments->sum('amount'),
             'open_bills' => (int) $outstandingPurchases->count(),
-            'opening_balance_due' => (float) ($supplier->opening_balance ?? 0),
+            'opening_balance_due' => round((float) ($supplier->opening_balance ?? 0), 2),
+            'opening_balance_paid' => $openingBalancePaid,
+            'opening_balance_original' => round((float) ($supplier->opening_balance ?? 0) + $openingBalancePaid, 2),
         ];
 
         return view('Customers.supplier-payments', compact(
@@ -495,10 +552,7 @@ class SupplierController extends Controller
                     break;
                 }
 
-                $paidAmount = Schema::hasColumn('purchases', 'paid_amount')
-                    ? (float) ($purchase->paid_amount ?? 0)
-                    : 0.0;
-                $outstandingBalance = max(0, (float) ($purchase->total_amount ?? 0) - $paidAmount);
+                $outstandingBalance = $this->resolvePurchaseOutstandingAmount($purchase);
                 if ($outstandingBalance <= 0) {
                     continue;
                 }
@@ -551,13 +605,13 @@ class SupplierController extends Controller
                         continue;
                     }
 
-                    $remaining = max(0, (float) ($purchase->total_amount ?? 0) - (float) ($purchase->paid_amount ?? 0));
+                    $remaining = $this->resolvePurchaseOutstandingAmount($purchase);
                     $amount = min($remaining, max(0, (float) $amountRequested));
                     if ($amount <= 0) {
                         continue;
                     }
 
-                    $newPaid = round((float) ($purchase->paid_amount ?? 0) + $amount, 2);
+                    $newPaid = round($this->resolvePurchasePaidAmount($purchase) + $amount, 2);
                     if (Schema::hasColumn('purchases', 'paid_amount')) {
                         $purchase->paid_amount = $newPaid;
                     }
@@ -567,7 +621,7 @@ class SupplierController extends Controller
                     if (Schema::hasColumn('purchases', 'bank_id') && $bank) {
                         $purchase->bank_id = $bank->id;
                     }
-                    $newBalance = max(0, (float) ($purchase->total_amount ?? 0) - $newPaid);
+                    $newBalance = max(0, $this->purchaseGrossTotal($purchase) - $newPaid);
                     $purchase->status = $newBalance <= 0 ? 'paid' : 'partial';
                     $purchase->save();
 
@@ -883,13 +937,9 @@ class SupplierController extends Controller
         $query = Purchase::query()->where('supplier_id', $supplierId);
         $this->applyTenantScope($query, 'purchases');
         $this->applyBranchScopeToPurchases($query);
+        $purchases = $query->get(['id', 'supplier_id', 'total_amount', 'paid_amount']);
 
-        $total = (float) $query->sum('total_amount');
-        $paid = Schema::hasColumn('purchases', 'paid_amount')
-            ? (float) (clone $query)->sum('paid_amount')
-            : 0.0;
-
-        return max(0, $total - $paid);
+        return round((float) $purchases->sum(fn ($purchase) => $this->resolvePurchaseOutstandingAmount($purchase)), 2);
     }
 
     private function supplierOutstandingBalances(array $supplierIds): array
@@ -903,23 +953,16 @@ class SupplierController extends Controller
             return [];
         }
 
-        $paidColumnExpression = Schema::hasColumn('purchases', 'paid_amount')
-            ? 'SUM(COALESCE(paid_amount, 0))'
-            : '0';
-
         $query = Purchase::query()
             ->whereIn('supplier_id', $supplierIds->all())
-            ->selectRaw("supplier_id, SUM(COALESCE(total_amount, 0)) as total_amount_sum, {$paidColumnExpression} as paid_amount_sum")
-            ->groupBy('supplier_id');
+            ->select(['id', 'supplier_id', 'total_amount', 'paid_amount']);
 
         $this->applyTenantScope($query, 'purchases');
         $this->applyBranchScopeToPurchases($query);
 
         return $query->get()
-            ->mapWithKeys(function ($row) {
-                $balance = max(0, (float) ($row->total_amount_sum ?? 0) - (float) ($row->paid_amount_sum ?? 0));
-                return [(int) $row->supplier_id => $balance];
-            })
+            ->groupBy('supplier_id')
+            ->map(fn ($purchases) => round((float) collect($purchases)->sum(fn ($purchase) => $this->resolvePurchaseOutstandingAmount($purchase)), 2))
             ->all();
     }
 
@@ -935,17 +978,10 @@ class SupplierController extends Controller
         }
 
         if (Schema::hasTable('purchases')) {
-            $paidColumnExpression = Schema::hasColumn('purchases', 'paid_amount')
-                ? 'SUM(COALESCE(paid_amount, 0))'
-                : '0';
-
-            $query = Purchase::query()
-                ->selectRaw('SUM(COALESCE(total_amount, 0)) as total_amount_sum')
-                ->selectRaw("{$paidColumnExpression} as paid_amount_sum");
+            $query = Purchase::query()->select(['id', 'supplier_id', 'total_amount', 'paid_amount']);
             $this->applyTenantScope($query, 'purchases');
             $this->applyBranchScopeToPurchases($query);
-            $result = $query->first();
-            $purchaseBalances = max(0, (float) ($result->total_amount_sum ?? 0) - (float) ($result->paid_amount_sum ?? 0));
+            $purchaseBalances = round((float) $query->get()->sum(fn ($purchase) => $this->resolvePurchaseOutstandingAmount($purchase)), 2);
         }
 
         return $openingBalances + $purchaseBalances;
