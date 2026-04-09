@@ -3,6 +3,7 @@
 namespace App\Exceptions;
 
 use App\Support\ActiveBranchResolver;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\QueryException;
@@ -68,6 +69,21 @@ class Handler extends ExceptionHandler
             return back()
                 ->withInput($safeInput)
                 ->withErrors(['error' => $message]);
+        });
+
+        $this->renderable(function (AuthenticationException $e, $request) {
+            $message = 'Your session expired. Please log in again to continue.';
+
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $message], 401);
+            }
+
+            $loginUrl = app(\App\Http\Middleware\Authenticate::class)->redirectTo($request)
+                ?: route('saas-login');
+
+            return redirect()
+                ->guest($loginUrl)
+                ->with('error', $message);
         });
 
         $this->renderable(function (NotFoundHttpException $e, $request) {
@@ -161,6 +177,7 @@ class Handler extends ExceptionHandler
             if ($e instanceof HttpException
                 || $e instanceof NotFoundHttpException
                 || $e instanceof TokenMismatchException
+                || $e instanceof AuthenticationException
                 || $e instanceof QueryException
                 || $e instanceof ModelNotFoundException) {
                 return null;
