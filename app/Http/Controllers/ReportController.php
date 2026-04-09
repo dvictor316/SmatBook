@@ -1192,9 +1192,18 @@ private function paymentReportRelations(): array
 
         $entries = collect();
         if ($openingOriginal > 0) {
+            $openingEventAt = $customer->opening_balance_date
+                ? Carbon::parse($customer->opening_balance_date)->startOfDay()
+                : ($openingSale?->created_at
+                    ?: ($openingSale?->order_date
+                        ? Carbon::parse($openingSale->order_date)->startOfDay()
+                        : ($customer->created_at ? $customer->created_at->copy()->startOfDay()->subSecond() : now()->copy()->startOfDay()->subSecond())));
+
             $entries->push([
                 'date' => $customer->opening_balance_date
                     ?: ($openingSale?->order_date ?: ($openingSale?->created_at ?: ($customer->created_at ? $customer->created_at->copy()->startOfDay()->subSecond() : now()->copy()->startOfDay()->subSecond()))),
+                'sort_at' => $openingEventAt,
+                'sort_rank' => 0,
                 'reference' => 'OPENING',
                 'type' => 'Opening Balance',
                 'description' => 'Opening balance on customer account',
@@ -1204,8 +1213,13 @@ private function paymentReportRelations(): array
         }
 
         foreach ($regularSales as $sale) {
+            $saleEventAt = $sale->created_at
+                ?: ($sale->order_date ? Carbon::parse($sale->order_date)->endOfDay() : now());
+
             $entries->push([
                 'date' => $sale->order_date ?: $sale->created_at,
+                'sort_at' => $saleEventAt,
+                'sort_rank' => 2,
                 'reference' => $sale->invoice_no ?: ('SALE-' . $sale->id),
                 'type' => 'Invoice',
                 'description' => 'Invoice issued',
@@ -1215,8 +1229,12 @@ private function paymentReportRelations(): array
         }
 
         foreach ($payments as $payment) {
+            $paymentEventAt = $payment->created_at ?: now();
+
             $entries->push([
                 'date' => $payment->created_at,
+                'sort_at' => $paymentEventAt,
+                'sort_rank' => 1,
                 'reference' => $payment->payment_id ?: ('PAY-' . $payment->id),
                 'type' => 'Payment',
                 'description' => $payment->note
@@ -1230,7 +1248,14 @@ private function paymentReportRelations(): array
 
         $entries = $entries
             ->sortBy(function ($entry) {
-                return \Carbon\Carbon::parse($entry['date'])->format('Y-m-d H:i:s') . '|' . $entry['reference'];
+                $sortAt = $entry['sort_at'] ?? $entry['date'];
+                $sortRank = (int) ($entry['sort_rank'] ?? 9);
+
+                return Carbon::parse($sortAt)->format('Y-m-d H:i:s.u')
+                    . '|'
+                    . str_pad((string) $sortRank, 2, '0', STR_PAD_LEFT)
+                    . '|'
+                    . $entry['reference'];
             })
             ->values();
 
@@ -1258,10 +1283,11 @@ private function paymentReportRelations(): array
 
         $runningBalance = 0.0;
         $entries = $entries->map(function ($entry) use (&$runningBalance) {
-            $runningBalance += (float) $entry['debit'] - (float) $entry['credit'];
-            $entry['balance'] = $runningBalance;
-            return $entry;
-        });
+                $runningBalance += (float) $entry['debit'] - (float) $entry['credit'];
+                $entry['balance'] = $runningBalance;
+                unset($entry['sort_at'], $entry['sort_rank']);
+                return $entry;
+            });
 
         $totalInvoiced = $openingOriginal + (float) $regularSales->sum('total');
         $totalPaid = (float) $payments->sum('amount');
