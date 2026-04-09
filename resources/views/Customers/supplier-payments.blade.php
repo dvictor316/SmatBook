@@ -2,6 +2,13 @@
 @extends('layout.mainlayout')
 
 @section('content')
+<style>
+    .supplier-open-count-card .supplier-open-count-value {
+        color: #facc15;
+        font-weight: 800;
+        text-shadow: 0 0 18px rgba(250, 204, 21, 0.18);
+    }
+</style>
 <div class="page-wrapper">
     <div class="content container-fluid">
         <div class="page-header">
@@ -69,10 +76,10 @@
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card border-0 shadow-sm h-100 bg-dark text-white">
+                <div class="card border-0 shadow-sm h-100 bg-dark text-white supplier-open-count-card">
                     <div class="card-body">
                         <p class="mb-1 text-white-50">Open Purchase Count</p>
-                        <h3 class="mb-0">{{ $summary['open_bills'] }}</h3>
+                        <h3 class="mb-0 supplier-open-count-value">{{ $summary['open_bills'] }}</h3>
                         <small class="text-white-50">Pay in full or partially across multiple bills</small>
                     </div>
                 </div>
