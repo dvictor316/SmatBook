@@ -3,9 +3,11 @@
 
 @section('content')
     @php
-        $totalAmount = (float) ($purchase->total_amount ?? 0);
+        $totalAmount = abs((float) ($purchase->resolved_total_amount ?? $purchase->total_amount ?? 0));
         $paidAmount = (float) ($purchase->paid_amount ?? 0);
         $balanceAmount = max(0, $totalAmount - $paidAmount);
+        $taxAmount = abs((float) ($purchase->tax_amount ?? 0));
+        $subTotalAmount = max(0, $totalAmount - $taxAmount);
     @endphp
     <div class="page-wrapper">
         <div class="content container-fluid">
@@ -144,13 +146,13 @@
                                             <div class="invoice-total-card">
                                                 <div class="invoice-total-box">
                                                     <div class="invoice-total-inner">
-                                                        <p>Subtotal <span>{{ number_format($purchase->total_amount - ($purchase->tax_amount ?? 0), 2) }}</span></p>
-                                                        <p>Tax <span>{{ number_format($purchase->tax_amount ?? 0, 2) }}</span></p>
+                                                        <p>Subtotal <span>{{ number_format($subTotalAmount, 2) }}</span></p>
+                                                        <p>Tax <span>{{ number_format($taxAmount, 2) }}</span></p>
                                                         <p>Amount Paid <span>{{ number_format($paidAmount, 2) }}</span></p>
                                                         <p>Balance Due <span>{{ number_format($balanceAmount, 2) }}</span></p>
                                                     </div>
                                                     <div class="invoice-total-footer bg-light p-2">
-                                                        <h4 class="mb-0">Grand Total <span>{{ number_format($purchase->total_amount, 2) }}</span></h4>
+                                                        <h4 class="mb-0">Grand Total <span>{{ number_format($totalAmount, 2) }}</span></h4>
                                                     </div>
                                                 </div>
                                             </div>

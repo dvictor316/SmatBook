@@ -436,9 +436,11 @@ public function show($id)
         ? Bank::query()->orderBy('name')->get()
         : collect();
 
+    $normalizedTotalAmount = abs((float) ($purchase->total_amount ?? 0));
     $paidAmount = $this->resolvePurchasePaidAmount($purchase);
+    $purchase->setAttribute('resolved_total_amount', $normalizedTotalAmount);
     $purchase->setAttribute('paid_amount', $paidAmount);
-    $purchase->setAttribute('balance_amount', max(0, (float) ($purchase->total_amount ?? 0) - $paidAmount));
+    $purchase->setAttribute('balance_amount', max(0, $normalizedTotalAmount - $paidAmount));
     $purchase->setAttribute('status', $this->resolvePurchaseStatus($purchase, $paidAmount));
 
     return view('Purchases.purchase-details', [
@@ -466,6 +468,13 @@ public function show($id)
         $logo = $vendorLogo ?: (\App\Models\Setting::where('key', 'site_logo')->value('value') ?: 'assets/img/logo.png');
 
         // Load the view and pass the data
+        $normalizedTotalAmount = abs((float) ($purchase->total_amount ?? 0));
+        $paidAmount = $this->resolvePurchasePaidAmount($purchase);
+        $purchase->setAttribute('resolved_total_amount', $normalizedTotalAmount);
+        $purchase->setAttribute('paid_amount', $paidAmount);
+        $purchase->setAttribute('balance_amount', max(0, $normalizedTotalAmount - $paidAmount));
+        $purchase->setAttribute('status', $this->resolvePurchaseStatus($purchase, $paidAmount));
+
         $pdf = Pdf::loadView('Purchases.purchase-details', compact('purchase', 'logo'));
         
         // Return the file for download
@@ -685,7 +694,7 @@ public function show($id)
 
         $purchase->status = 'paid';
         if (Schema::hasColumn('purchases', 'paid_amount')) {
-            $purchase->paid_amount = (float) ($purchase->total_amount ?? 0);
+            $purchase->paid_amount = abs((float) ($purchase->total_amount ?? 0));
         }
         if (Schema::hasColumn('purchases', 'paid_at')) {
             $purchase->paid_at = now();
