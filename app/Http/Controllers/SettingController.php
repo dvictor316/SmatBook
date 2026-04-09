@@ -827,6 +827,34 @@ class SettingController extends Controller
             return route('customers.index');
         }
 
+        // Record-specific pages are often branch-sensitive. After changing branch,
+        // send users to the nearest stable listing page instead of a stale detail URL.
+        $resourceFallbacks = [
+            '/suppliers/' => Route::has('suppliers.index') ? route('suppliers.index') : $fallback,
+            '/customers/' => Route::has('customers.index') ? route('customers.index') : $fallback,
+            '/vendors/' => Route::has('vendors.index') ? route('vendors.index') : $fallback,
+            '/purchases/' => Route::has('purchases.index') ? route('purchases.index') : $fallback,
+            '/purchase-orders/' => Route::has('purchase-orders') ? route('purchase-orders') : $fallback,
+            '/products/' => Route::has('products.index') ? route('products.index') : $fallback,
+            '/invoices/' => Route::has('invoice.index') ? route('invoice.index') : $fallback,
+            '/sales/' => Route::has('sales.index') ? route('sales.index') : $fallback,
+            '/expenses/' => Route::has('expenses.index') ? route('expenses.index') : $fallback,
+            '/quotations/' => Route::has('quotations.index') ? route('quotations.index') : $fallback,
+            '/chat/' => Route::has('chat.index') ? route('chat.index') : $fallback,
+            '/messages/' => Route::has('messages.index') ? route('messages.index') : $fallback,
+        ];
+
+        foreach ($resourceFallbacks as $prefix => $target) {
+            if (str_starts_with($path, $prefix)) {
+                return $target;
+            }
+        }
+
+        $segments = array_values(array_filter(explode('/', trim($path, '/'))));
+        if (count($segments) >= 2 && is_numeric($segments[1])) {
+            return $fallback;
+        }
+
         return $redirectTo;
     }
 
