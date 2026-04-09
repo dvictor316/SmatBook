@@ -78,8 +78,7 @@ class Handler extends ExceptionHandler
                 return response()->json(['message' => $message], 401);
             }
 
-            $loginUrl = app(\App\Http\Middleware\Authenticate::class)->redirectTo($request)
-                ?: route('saas-login');
+            $loginUrl = $this->resolveLoginRedirect($request);
 
             return redirect()
                 ->guest($loginUrl)
@@ -221,5 +220,17 @@ class Handler extends ExceptionHandler
         }
 
         return 'Database error occurred. Please contact support if it persists.';
+    }
+
+    private function resolveLoginRedirect($request): string
+    {
+        $host = (string) $request->getHost();
+        $mainDomain = 'smatbook.com';
+
+        if ($host !== $mainDomain && str_contains($host, $mainDomain)) {
+            return route('login');
+        }
+
+        return route('saas-login');
     }
 }
