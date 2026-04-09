@@ -78,9 +78,14 @@
             <div class="col-md-3">
                 <div class="card border-0 shadow-sm h-100 bg-dark text-white supplier-open-count-card">
                     <div class="card-body">
-                        <p class="mb-1 text-white-50">Open Purchase Count</p>
-                        <h3 class="mb-0 supplier-open-count-value">{{ $summary['open_bills'] }}</h3>
-                        <small class="text-white-50">Pay in full or partially across multiple bills</small>
+                        <p class="mb-1 text-white-50">Open Balance Count</p>
+                        <h3 class="mb-0 supplier-open-count-value">{{ $summary['open_obligations'] ?? $summary['open_bills'] }}</h3>
+                        <small class="text-white-50">
+                            {{ $summary['open_bills'] }} purchase bill(s)
+                            @if(($summary['opening_balance_due'] ?? 0) > 0)
+                                + opening balance
+                            @endif
+                        </small>
                     </div>
                 </div>
             </div>

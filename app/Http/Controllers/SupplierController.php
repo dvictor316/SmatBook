@@ -398,13 +398,16 @@ class SupplierController extends Controller
         }
 
         $openingBalancePaid = $this->openingBalancePaidTotal($supplier->id);
+        $openingBalanceDue = round((float) ($supplier->opening_balance ?? 0), 2);
+        $openBills = (int) $outstandingPurchases->count();
         $summary = [
-            'outstanding_payables' => round((float) $outstandingPurchases->sum('outstanding_balance') + (float) ($supplier->opening_balance ?? 0), 2),
+            'outstanding_payables' => round((float) $outstandingPurchases->sum('outstanding_balance') + $openingBalanceDue, 2),
             'total_paid' => (float) $supplierPayments->sum('amount'),
-            'open_bills' => (int) $outstandingPurchases->count(),
-            'opening_balance_due' => round((float) ($supplier->opening_balance ?? 0), 2),
+            'open_bills' => $openBills,
+            'opening_balance_due' => $openingBalanceDue,
             'opening_balance_paid' => $openingBalancePaid,
-            'opening_balance_original' => round((float) ($supplier->opening_balance ?? 0) + $openingBalancePaid, 2),
+            'opening_balance_original' => round($openingBalanceDue + $openingBalancePaid, 2),
+            'open_obligations' => $openBills + ($openingBalanceDue > 0 ? 1 : 0),
         ];
 
         return view('Customers.supplier-payments', compact(
