@@ -3,17 +3,17 @@
 @section('content')
 <style>
     .pos-content-area {
-        margin-left: var(--sb-sidebar-w, 270px); padding: 30px; transition: all 0.3s;
-        background-color: #fdfaf0; min-height: 100vh; margin-top: 60px;
+        padding: 24px;
+        background: #f6f8fc;
+        min-height: 100vh;
     }
-    body.mini-sidebar .pos-content-area { margin-left: var(--sb-sidebar-collapsed, 80px); }
     @media (max-width: 991.98px) {
-        .pos-content-area { margin-left: 0 !important; padding: 15px; }
+        .pos-content-area { padding: 16px; }
     }
-    .edit-card { border: none; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); background: #fff; }
-    .section-title { color: #0369a1; font-weight: 700; border-bottom: 2px solid #d4af37; padding-bottom: 10px; margin-bottom: 25px; }
-    .table-thead-blue th { background-color: #0369a1 !important; color: white !important; text-transform: uppercase; font-size: 11px; }
-    .grand-total-box { background: #f8f9fa; border: 1px dashed #d4af37; padding: 20px; border-radius: 10px; }
+    .edit-card { border: 1px solid #e3eaf4; border-radius: 20px; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05); background: #fff; }
+    .section-title { color: #0f172a; font-weight: 700; border-bottom: 1px solid #dfe8f7; padding-bottom: 10px; margin-bottom: 25px; }
+    .table-thead-blue th { background-color: #f5f8ff !important; color: #5b6b87 !important; text-transform: uppercase; font-size: 11px; letter-spacing: .04em; }
+    .grand-total-box { background: #f8fafc; border: 1px solid #dbe4f0; padding: 20px; border-radius: 16px; }
     .form-control-sm, .form-select-sm { border: 1px solid #ced4da; }
 </style>
 
@@ -21,7 +21,7 @@
     <div class="container-fluid">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <h3 class="fw-bold mb-0" style="color: #0369a1;">Edit Sale Transaction</h3>
+                <h3 class="fw-bold mb-0" style="color: #0f172a;">Edit Sale Transaction</h3>
                 <p class="text-muted small">Invoice: <span class="fw-bold text-dark">#{{ $sale->invoice_no }}</span></p>
             </div>
             <a href="{{ route('sales.index') }}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i> Back</a>
@@ -122,7 +122,7 @@
                             <div class="grand-total-box">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <span class="fw-bold text-muted">Grand Total:</span>
-                                    <h3 class="fw-bold text-primary mb-0" id="grand-total">₦{{ number_format($sale->total, 2) }}</h3>
+                                <h3 class="fw-bold text-dark mb-0" id="grand-total">₦{{ number_format($sale->total, 2) }}</h3>
                                 </div>
                                 <input type="hidden" name="final_total" id="final_total_input" value="{{ $sale->total }}">
                             </div>

@@ -2,98 +2,88 @@
 
 @section('content')
 <style>
-    /* EXACT MEASUREMENTS FROM YOUR INDEX PAGE */
     .pos-content-area {
-        margin-left: var(--sb-sidebar-w, 270px); 
-        padding: 30px;
-        transition: all 0.3s ease-in-out;
-        background-color: #fdfaf0; 
+        padding: 24px;
+        background: #f6f8fc;
         min-height: 100vh;
-        margin-top: 60px;
     }
-
-    body.mini-sidebar .pos-content-area { margin-left: var(--sb-sidebar-collapsed, 80px); }
 
     @media (max-width: 991.98px) {
-        .pos-content-area { margin-left: 0 !important; padding: 15px; }
+        .pos-content-area { padding: 16px; }
     }
 
-    /* Professional Header from Index */
     .report-header {
-        border-left: 5px solid #d4af37;
-        padding-left: 15px;
+        background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
+        border: 1px solid #dfe7f3;
+        border-radius: 20px;
+        padding: 24px;
         margin-bottom: 30px;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
     }
 
-    /* THE INVOICE CONTAINER - Keeps it centered and prevents bulging */
     .invoice-fit-container {
         width: 100%;
         max-width: 950px; 
         margin: 0 auto; 
     }
 
-    /* SLIM BLUE HEADER - Fixed Height & White Font */
     .inv-header {
-        background-color: #0369a1; /* Your index blue */
-        padding: 8px 20px;
+        background: #f5f8ff;
+        padding: 14px 20px;
         border-radius: 12px 12px 0 0;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        border-bottom: 3px solid #d4af37;
+        border-bottom: 1px solid #dfe8f7;
     }
     
     .inv-header h5, 
     .inv-header .inv-date {
-        color: #ffffff !important; /* Strictly white */
+        color: #0f172a !important;
         margin-bottom: 0 !important;
         font-weight: 700;
         font-size: 0.9rem;
     }
 
-    /* Card & Stats Styling */
     .show-card { 
-        border: none; 
-        border-radius: 15px; 
+        border: 1px solid #e3eaf4;
+        border-radius: 20px; 
         overflow: hidden;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
         background: #fff;
     }
     
     .stat-box { 
         padding: 15px; 
-        border: 1px solid rgba(212, 175, 55, 0.2); 
-        border-radius: 12px;
+        border: 1px solid #e6edf7;
+        border-radius: 16px;
         text-align: center;
         background: #fff;
     }
-    .stat-label { font-size: 10px; font-weight: 800; color: #996515; text-transform: uppercase; }
-    .stat-value { font-size: 1.1rem; font-weight: 700; color: #0369a1; }
+    .stat-label { font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: .04em; }
+    .stat-value { font-size: 1.1rem; font-weight: 700; color: #0f172a; }
 
-    .btn-gold {
-        background-color: #996515;
-        color: white;
-        border: none;
-        font-size: 12px;
-        font-weight: 600;
-    }
-    .btn-gold:hover { background-color: #d4af37; color: white; }
-
-    /* Table consistency with Index */
     .table thead th {
-        background-color: #0369a1; 
-        color: #ffffff;
+        background-color: #f5f8ff; 
+        color: #5b6b87;
         text-transform: uppercase;
         font-size: 11px;
         padding: 12px;
+        letter-spacing: .04em;
+    }
+
+    .badge-soft-branch {
+        background: #f8fafc;
+        color: #334155;
+        border: 1px solid #e2e8f0;
     }
 
     @media print {
         .no-print { display: none !important; }
-        .pos-content-area { margin: 0 !important; padding: 0 !important; background: white !important; }
+        .pos-content-area { padding: 0 !important; background: white !important; }
     }
 </style>
 
@@ -103,11 +93,11 @@
         {{-- Show View Header --}}
         <div class="report-header no-print">
             <div>
-                <h3 class="fw-bold mb-0" style="color: #0369a1;">Sale Details</h3>
+                <h3 class="fw-bold mb-0" style="color: #0f172a;">Sale Details</h3>
                 <p class="text-muted small mb-0">Invoice Information & Payment Tracking</p>
                 <div class="mt-2">
-                    <span class="badge bg-light border text-primary px-3 py-2">
-                        <i class="fas fa-code-branch me-2"></i>
+                    <span class="badge badge-soft-branch px-3 py-2">
+                        <i class="fas fa-code-branch me-2 text-primary"></i>
                         Active Branch: {{ $sale->branch_label ?? $activeBranch['name'] ?? 'Workspace Default' }}
                     </span>
                 </div>
@@ -117,7 +107,7 @@
                 <button onclick="window.print()" class="btn btn-sm btn-outline-primary px-3 shadow-sm">
                     <i class="fas fa-print me-1"></i> Print
                 </button>
-                <button class="btn btn-gold btn-sm px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#addPaymentModal">
+                <button class="btn btn-primary btn-sm px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#addPaymentModal">
                     <i class="fas fa-money-bill-wave me-1"></i> Record Pay
                 </button>
                 <a href="{{ route('sales.index') }}" class="btn btn-sm btn-outline-secondary px-3 shadow-sm">Back</a>
@@ -206,7 +196,7 @@
 
                 <div class="row">
                     <div class="col-md-7">
-                        <h6 class="fw-bold text-dark mb-3"><i class="fas fa-history me-2 text-warning"></i>Payment Logs</h6>
+                        <h6 class="fw-bold text-dark mb-3"><i class="fas fa-history me-2 text-primary"></i>Payment Logs</h6>
                         <div class="ps-3 border-start border-3 border-info">
                             @forelse($sale->payments as $payment)
                             <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">

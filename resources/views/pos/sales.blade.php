@@ -3,27 +3,25 @@
 @section('content')
 <style>
     .pos-content-area {
-        margin-left: var(--sb-sidebar-w, 270px);
-        padding: 30px;
-        transition: all 0.3s ease-in-out;
-        background-color: #fdfaf0;
+        padding: 24px;
         min-height: 100vh;
-        margin-top: 60px;
+        background: #f6f8fc;
     }
 
-    body.mini-sidebar .pos-content-area { margin-left: var(--sb-sidebar-collapsed, 80px); }
-
     @media (max-width: 991.98px) {
-        .pos-content-area { margin-left: 0 !important; padding: 15px; }
+        .pos-content-area { padding: 16px; }
     }
 
     .report-header {
-        border-left: 5px solid #d4af37;
-        padding-left: 15px;
+        background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
+        border: 1px solid #dfe7f3;
+        border-radius: 20px;
+        padding: 24px;
         margin-bottom: 30px;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
     }
 
     .header-search-container {
@@ -33,11 +31,12 @@
 
     .header-search-input {
         height: 40px;
-        border-radius: 8px;
-        border: 1.5px solid #d4af37;
+        border-radius: 12px;
+        border: 1px solid #d9e2ef;
         padding-left: 35px;
         font-size: 13px;
         background: #fff;
+        box-shadow: none;
     }
 
     .header-search-icon {
@@ -45,58 +44,105 @@
         left: 12px;
         top: 50%;
         transform: translateY(-50%);
-        color: #996515;
+        color: #94a3b8;
     }
 
     .filter-card {
         background: #ffffff;
-        border: 1px solid rgba(212, 175, 55, 0.2);
-        border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        border: 1px solid #e3eaf4;
+        border-radius: 18px;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
     }
 
     .sales-table-card {
-        border: none;
-        border-radius: 15px;
+        border: 1px solid #e3eaf4;
+        border-radius: 20px;
         overflow: hidden;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
     }
 
     .table thead th {
-        background-color: #0369a1;
-        color: #ffffff;
+        background-color: #f5f8ff;
+        color: #5b6b87;
         text-transform: uppercase;
         font-size: 11px;
         padding: 15px;
         border: none;
+        letter-spacing: 0.04em;
+        font-weight: 800;
+    }
+
+    .table tbody td {
+        border-color: #edf2f7;
+    }
+
+    .table tbody tr:hover {
+        background: #fafcff;
     }
 
     .status-badge {
-        font-weight: 600;
-        padding: 6px 12px;
+        font-weight: 700;
+        padding: 7px 12px;
         border-radius: 50px;
         font-size: 10px;
     }
 
-    .btn-gold {
-        background-color: #996515;
-        color: white;
-        border: none;
+    .btn-soft-clear {
+        background: #fff;
+        color: #475569;
+        border: 1px solid #d9e2ef;
     }
-    .btn-gold:hover { background-color: #d4af37; color: white; }
+
+    .btn-soft-clear:hover {
+        background: #f8fafc;
+        color: #334155;
+    }
+
+    .badge-soft-branch {
+        background: #f8fafc;
+        color: #334155;
+        border: 1px solid #e2e8f0;
+    }
+
+    .sale-avatar {
+        width: 28px;
+        height: 28px;
+        background: #eef4ff;
+        color: #3156c8;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .status-paid {
+        background: #dcfce7;
+        color: #166534;
+        border-color: #bbf7d0;
+    }
+
+    .status-partial {
+        background: #fef3c7;
+        color: #92400e;
+        border-color: #fde68a;
+    }
+
+    .status-unpaid {
+        background: #fee2e2;
+        color: #b91c1c;
+        border-color: #fecaca;
+    }
 </style>
 
 <div class="pos-content-area">
     <div class="report-header">
         <div>
-            <h3 class="fw-bold mb-0" style="color: #0369a1;">POS Sales</h3>
-            <p class="text-muted small mb-0">All POS sales listed in purchase order sequence.</p>
-            <div class="mt-2">
-                <span class="badge bg-light border text-primary px-3 py-2">
-                    <i class="fas fa-code-branch me-2"></i>
-                    Active Branch: {{ $activeBranch['name'] ?? 'All Business Activity' }}
-                </span>
-            </div>
+                <h3 class="fw-bold mb-0" style="color: #0f172a;">POS Sales</h3>
+                <p class="text-muted small mb-0">All POS sales listed in purchase order sequence.</p>
+                <div class="mt-2">
+                    <span class="badge badge-soft-branch px-3 py-2">
+                        <i class="fas fa-code-branch me-2 text-primary"></i>
+                        Active Branch: {{ $activeBranch['name'] ?? 'All Business Activity' }}
+                    </span>
+                </div>
         </div>
         <div class="d-none d-md-flex gap-3 align-items-center">
             <div class="header-search-container">
@@ -104,7 +150,7 @@
                 <input type="text" id="quick-invoice-id-search" class="form-control header-search-input" placeholder="Quick Search Invoice ID...">
             </div>
             <span class="badge bg-white text-dark border p-2 shadow-sm">
-                <i class="fas fa-calendar-alt text-warning me-2"></i>{{ date('D, M d, Y') }}
+                <i class="fas fa-calendar-alt text-primary me-2"></i>{{ date('D, M d, Y') }}
             </span>
         </div>
     </div>
@@ -115,14 +161,14 @@
                 <div class="col-md-3">
                     <label class="form-label small fw-bold text-muted">Invoice No</label>
                     <div class="input-group input-group-sm">
-                        <span class="input-group-text bg-white border-end-0"><i class="fas fa-hashtag text-warning"></i></span>
+                        <span class="input-group-text bg-white border-end-0"><i class="fas fa-hashtag text-muted"></i></span>
                         <input type="text" name="invoice_no" class="form-control border-start-0" placeholder="e.g. INV-100" value="{{ request('invoice_no') }}">
                     </div>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label small fw-bold text-muted">Customer</label>
                     <div class="input-group input-group-sm">
-                        <span class="input-group-text bg-white border-end-0"><i class="fas fa-user text-warning"></i></span>
+                        <span class="input-group-text bg-white border-end-0"><i class="fas fa-user text-muted"></i></span>
                         <input type="text" name="customer_name" class="form-control border-start-0" placeholder="Name" value="{{ request('customer_name') }}">
                     </div>
                 </div>
@@ -164,10 +210,10 @@
                             $itemsCount = $sale->items?->count() ?? 0;
                             $itemsQty = $sale->items?->sum('qty') ?? 0;
                             $badgeStyle = match($sale->payment_status) {
-                                'paid' => 'bg-success-subtle text-success border-success',
-                                'partial' => 'bg-warning-subtle text-warning border-warning',
-                                'unpaid' => 'bg-danger-subtle text-danger border-danger',
-                                default => 'bg-secondary-subtle text-secondary'
+                                'paid' => 'status-paid',
+                                'partial' => 'status-partial',
+                                'unpaid' => 'status-unpaid',
+                                default => 'bg-light text-secondary border'
                             };
                         @endphp
                         <tr>
@@ -177,7 +223,7 @@
                             </td>
                             <td>
                                 <div class="d-flex align-items-center">
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 28px; height: 28px; background: #f0f9ff; color: #0369a1; font-size: 11px; font-weight: bold;">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center me-2 sale-avatar">
                                         {{ substr($sale->customer_name ?? 'W', 0, 1) }}
                                     </div>
                                     <span class="fw-medium text-dark">{{ $sale->customer_name ?? 'Walk-in Customer' }}</span>
@@ -187,7 +233,7 @@
                                 <div class="fw-bold text-dark">{{ $itemsCount }} item(s)</div>
                                 <small class="text-muted" style="font-size: 10px;">Qty: {{ number_format($itemsQty, 2) }}</small>
                             </td>
-                            <td class="text-end fw-bold text-primary" style="font-size: 15px;">
+                            <td class="text-end fw-bold text-dark" style="font-size: 15px;">
                                 ₦{{ number_format($sale->total, 2) }}
                             </td>
                             <td class="text-center">
@@ -235,7 +281,7 @@
             <div class="text-center py-5">
                 <i class="fas fa-receipt fa-4x text-light mb-3"></i>
                 <h5 class="text-muted">No POS sales found.</h5>
-                <a href="{{ route('pos.sales') }}" class="btn btn-gold btn-sm mt-2">Clear All Filters</a>
+                <a href="{{ route('pos.sales') }}" class="btn btn-soft-clear btn-sm mt-2">Clear All Filters</a>
             </div>
             @endif
         </div>
