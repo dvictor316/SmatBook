@@ -2325,6 +2325,9 @@ public function destroy($id)
         public function tax_purchase(Request $request)
         {
             $query = $this->scopedTable('purchases')->where('purchases.tax_amount', '>', 0);
+            $purchaseDateExpression = Schema::hasColumn('purchases', 'purchase_date')
+                ? 'purchases.purchase_date'
+                : (Schema::hasColumn('purchases', 'date') ? 'purchases.date' : 'purchases.created_at');
 
             $supplierSelect = DB::raw("'N/A' as Supplier");
             $supplierSearchColumn = null;
@@ -2361,7 +2364,7 @@ public function destroy($id)
             $query->select([
                 'purchases.id as Id',
                 $supplierSelect,
-                DB::raw('COALESCE(purchases.purchase_date, purchases.date, purchases.created_at) as Date'),
+                DB::raw("{$purchaseDateExpression} as Date"),
                 DB::raw("COALESCE(purchases.purchase_no, CONCAT('PUR-', purchases.id)) as RefNo"),
                 DB::raw('ABS(COALESCE(purchases.total_amount, 0)) as TotalAmount'),
                 DB::raw("'N/A' as PaymentMethod"),
@@ -2371,7 +2374,7 @@ public function destroy($id)
 
             if ($request->filled('start_date') && $request->filled('end_date')) {
                 $query->whereBetween(
-                    DB::raw('DATE(COALESCE(purchases.purchase_date, purchases.date, purchases.created_at))'),
+                    DB::raw("DATE({$purchaseDateExpression})"),
                     [$request->start_date, $request->end_date]
                 );
             }
@@ -2386,7 +2389,7 @@ public function destroy($id)
                 });
             }
 
-            $taxpurchases = $query->orderByDesc(DB::raw('COALESCE(purchases.purchase_date, purchases.date, purchases.created_at)'))
+            $taxpurchases = $query->orderByDesc(DB::raw($purchaseDateExpression))
                 ->get()
                 ->map(fn ($item) => (array) $item);
 
