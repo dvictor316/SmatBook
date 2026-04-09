@@ -647,6 +647,38 @@
     @endphp
 
     <div class="invoice-wrapper" id="invoice_content">
+        @php
+            $paymentDetails = $sale->payment_details;
+            if (is_string($paymentDetails)) {
+                $paymentDetails = json_decode($paymentDetails, true);
+            }
+            $paymentDetails = is_array($paymentDetails) ? $paymentDetails : [];
+            $splitDetails = $paymentDetails['split'] ?? [];
+            $splitDetails = is_array($splitDetails) ? $splitDetails : [];
+
+            $splitLines = [];
+            $cashSplitAmount = (float) ($splitDetails['cash'] ?? 0);
+            $transferSplitAmount = (float) ($splitDetails['transfer'] ?? 0);
+            $cardSplitAmount = (float) ($splitDetails['card'] ?? $splitDetails['pos'] ?? 0);
+
+            if ($cashSplitAmount > 0) {
+                $splitLines[] = ['label' => 'Cash', 'amount' => $cashSplitAmount, 'account' => null];
+            }
+            if ($transferSplitAmount > 0) {
+                $splitLines[] = [
+                    'label' => 'Transfer',
+                    'amount' => $transferSplitAmount,
+                    'account' => $paymentDetails['transfer_account_name'] ?? null,
+                ];
+            }
+            if ($cardSplitAmount > 0) {
+                $splitLines[] = [
+                    'label' => 'POS',
+                    'amount' => $cardSplitAmount,
+                    'account' => $paymentDetails['card_account_name'] ?? null,
+                ];
+            }
+        @endphp
         <!-- Action Buttons -->
         <div class="no-print-controls">
             <button onclick="printInvoice()" class="btn-action btn-print">
@@ -707,6 +739,19 @@
                 <div class="payment-badge">
                     {{ strtoupper($sale->payment_method ?? 'Cash') }}
                 </div>
+                @if(!empty($splitLines))
+                    <div style="margin-top: 10px; display: inline-flex; flex-direction: column; gap: 4px; align-items: flex-end;">
+                        @foreach($splitLines as $splitLine)
+                            <div style="font-size: 12px; color: var(--gray-700);">
+                                <strong>{{ $splitLine['label'] }}:</strong>
+                                ₦{{ number_format((float) $splitLine['amount'], 2) }}
+                                @if(!empty($splitLine['account']))
+                                    <span style="color: var(--gray-500);">via {{ $splitLine['account'] }}</span>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
                 @if($sale->reference_no ?? false)
                     <div style="font-size: 12px; color: var(--gray-700); margin-top: 5px;">
                         Ref: {{ $sale->reference_no }}
@@ -856,6 +901,17 @@
                             <td class="label">Applied to Sale</td>
                             <td class="value">₦{{ number_format($appliedAmount, 2) }}</td>
                         </tr>
+                        @foreach($splitLines as $splitLine)
+                        <tr class="paid-row">
+                            <td class="label">
+                                {{ $splitLine['label'] }}
+                                @if(!empty($splitLine['account']))
+                                    <span style="display:block; font-size:11px; color: var(--gray-500); font-weight:400;">{{ $splitLine['account'] }}</span>
+                                @endif
+                            </td>
+                            <td class="value">₦{{ number_format((float) $splitLine['amount'], 2) }}</td>
+                        </tr>
+                        @endforeach
                         <tr class="change-row">
                             <td class="label">Change</td>
                             <td class="value">₦{{ number_format($changeAmount, 2) }}</td>

@@ -17,6 +17,36 @@
         $tenderedAmount = $appliedAmount + max(0, $changeAmount);
         $balanceDue = (float) ($sale->effective_balance ?? max(0, (float) ($sale->total ?? 0) - $appliedAmount));
         $displayStatus = strtolower((string) ($sale->effective_payment_status ?? $sale->payment_status ?? 'unpaid'));
+        $paymentDetails = $sale->payment_details;
+        if (is_string($paymentDetails)) {
+            $paymentDetails = json_decode($paymentDetails, true);
+        }
+        $paymentDetails = is_array($paymentDetails) ? $paymentDetails : [];
+        $splitDetails = $paymentDetails['split'] ?? [];
+        $splitDetails = is_array($splitDetails) ? $splitDetails : [];
+
+        $splitLines = [];
+        $cashSplitAmount = (float) ($splitDetails['cash'] ?? 0);
+        $transferSplitAmount = (float) ($splitDetails['transfer'] ?? 0);
+        $cardSplitAmount = (float) ($splitDetails['card'] ?? $splitDetails['pos'] ?? 0);
+
+        if ($cashSplitAmount > 0) {
+            $splitLines[] = ['label' => 'Cash', 'amount' => $cashSplitAmount, 'account' => null];
+        }
+        if ($transferSplitAmount > 0) {
+            $splitLines[] = [
+                'label' => 'Transfer',
+                'amount' => $transferSplitAmount,
+                'account' => $paymentDetails['transfer_account_name'] ?? null,
+            ];
+        }
+        if ($cardSplitAmount > 0) {
+            $splitLines[] = [
+                'label' => 'POS',
+                'amount' => $cardSplitAmount,
+                'account' => $paymentDetails['card_account_name'] ?? null,
+            ];
+        }
     @endphp
     <div class="page-wrapper">
         <div class="content container-fluid">
@@ -93,6 +123,34 @@
                                         </div>
                                     </div>
 
+                                    @if(!empty($splitLines))
+                                        <div class="invoice-item border rounded px-3 py-3 mb-4" style="background: #fbfcff;">
+                                            <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+                                                <div>
+                                                    <p class="mb-1 text-muted small text-uppercase">Payment Breakdown</p>
+                                                    <h6 class="fw-bold mb-0">Channels used for this receipt</h6>
+                                                </div>
+                                                <div class="text-end">
+                                                    <p class="mb-1 text-muted small text-uppercase">Total Applied</p>
+                                                    <h5 class="fw-bold mb-0">₦{{ number_format($appliedAmount, 2) }}</h5>
+                                                </div>
+                                            </div>
+                                            <div class="row mt-3">
+                                                @foreach($splitLines as $splitLine)
+                                                    <div class="col-md-4 mb-2">
+                                                        <div class="border rounded p-3 h-100 bg-white">
+                                                            <p class="mb-1 text-muted small text-uppercase">{{ $splitLine['label'] }}</p>
+                                                            <h6 class="fw-bold mb-1">₦{{ number_format((float) $splitLine['amount'], 2) }}</h6>
+                                                            @if(!empty($splitLine['account']))
+                                                                <p class="mb-0 text-muted small">{{ $splitLine['account'] }}</p>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    @endif
+
                                     {{-- 3. Populated Items Table --}}
                                     <div class="invoice-add-table mt-4">
                                         <div class="table-responsive">
@@ -164,6 +222,17 @@
                                                     <span>Applied to Sale</span>
                                                     <span>{{ number_format($appliedAmount, 2) }}</span>
                                                 </div>
+                                                @foreach($splitLines as $splitLine)
+                                                    <div class="d-flex justify-content-between mb-2 text-muted">
+                                                        <span>
+                                                            {{ $splitLine['label'] }}
+                                                            @if(!empty($splitLine['account']))
+                                                                <small class="d-block">{{ $splitLine['account'] }}</small>
+                                                            @endif
+                                                        </span>
+                                                        <span>{{ number_format((float) $splitLine['amount'], 2) }}</span>
+                                                    </div>
+                                                @endforeach
                                                 <div class="d-flex justify-content-between mb-2 text-muted">
                                                     <span>Change</span>
                                                     <span>{{ number_format($changeAmount, 2) }}</span>
