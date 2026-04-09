@@ -178,7 +178,7 @@
                                                     <div class="dropdown dropdown-action">
                                                         <a href="#" class="btn-action-icon" data-bs-toggle="dropdown"><i class="fas fa-ellipsis-v"></i></a>
                                                         <div class="dropdown-menu dropdown-menu-end shadow-lg border-0">
-                                                            <a class="dropdown-item" href="{{ route('super_admin.subscriptions.show', $transaction->id) }}"><i class="far fa-eye me-2"></i>View Details</a>
+                                                            <a class="dropdown-item" href="{{ route('purchase-details', $transaction->id) }}"><i class="far fa-eye me-2"></i>View Details</a>
                                                             <a class="dropdown-item" href="{{ route('super_admin.subscriptions.edit', $transaction->id) }}"><i class="far fa-edit me-2"></i>Update Status</a>
                                                             <div class="dropdown-divider"></div>
                                                             <a class="dropdown-item text-danger" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#delete_modal_{{ $transaction->id }}"><i class="far fa-trash-alt me-2"></i>Delete Record</a>

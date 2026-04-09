@@ -152,7 +152,11 @@
                                                         <p>Balance Due <span>{{ number_format($balanceAmount, 2) }}</span></p>
                                                     </div>
                                                     <div class="invoice-total-footer bg-light p-2">
-                                                        <h4 class="mb-0">Grand Total <span>{{ number_format($totalAmount, 2) }}</span></h4>
+                                                        @if($balanceAmount > 0)
+                                                            <h4 class="mb-0">Purchase Value <span>{{ number_format($totalAmount, 2) }}</span></h4>
+                                                        @else
+                                                            <h4 class="mb-0 text-success">Settled in Full <span>₦0.00 Due</span></h4>
+                                                        @endif
                                                     </div>
                                                 </div>
                                             </div>
