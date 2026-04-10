@@ -235,17 +235,18 @@ use App\Support\AppMailer;
             }
 
             return $query->where(function ($sub) use ($paymentsTable, $branchId, $branchName) {
-            if ($branchId !== '' && Schema::hasColumn('payments', 'branch_id')) {
-                $sub->where("{$paymentsTable}.branch_id", $branchId);
-            }
-            if ($branchName !== '' && Schema::hasColumn('payments', 'branch_name')) {
-                $sub->orWhere("{$paymentsTable}.branch_name", $branchName);
-            }
+                if ($branchId !== '' && Schema::hasColumn('payments', 'branch_id')) {
+                    $sub->where("{$paymentsTable}.branch_id", $branchId);
+                }
+                if ($branchName !== '' && Schema::hasColumn('payments', 'branch_name')) {
+                    $sub->orWhere("{$paymentsTable}.branch_name", $branchName);
+                }
 
                 if (Schema::hasTable('sales')) {
-                    $sub->orWhereHas('sale', function ($saleQuery) {
-                        $this->applySaleBranchFilter($saleQuery, 'sales');
-                    });
+                    $matchingSales = $this->scopedTable('sales')->select('sales.id');
+                    $this->applySalesScope($matchingSales, 'sales');
+
+                    $sub->orWhereIn("{$paymentsTable}.sale_id", $matchingSales);
                 }
             });
         }
