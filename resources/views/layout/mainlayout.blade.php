@@ -86,6 +86,7 @@
 
     @include('layout.partials.head')
     @include('layout.partials.design-system')
+    @yield('style')
 
     {{-- GLOBAL PRINT STYLES --}}
     <style>
