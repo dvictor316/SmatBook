@@ -1461,16 +1461,9 @@ private function paymentReportRelations(): array
                 unset($entry['sort_at'], $entry['sort_rank'], $entry['sort_sequence'], $entry['sort_id']);
                 return $entry;
             });
-
-        $regularFinancials = $regularSales->map(function ($sale) use ($payments) {
-            $sale->setRelation('payments', $payments->where('sale_id', $sale->id)->values());
-            return $this->normalizeInvoiceFinancials($sale);
-        });
-
-        $openingDue = max(0, $openingOriginal - $openingPaid);
-        $totalInvoiced = $openingOriginal + (float) $regularFinancials->sum('total');
-        $totalPaid = $openingPaid + (float) $regularFinancials->sum('paid');
-        $balanceDue = $openingDue + (float) $regularFinancials->sum('balance');
+        $totalInvoiced = (float) $entries->sum(fn ($entry) => (float) ($entry['debit'] ?? 0));
+        $totalPaid = (float) $entries->sum(fn ($entry) => (float) ($entry['credit'] ?? 0));
+        $balanceDue = (float) round($totalInvoiced - $totalPaid, 2);
 
         return view('Reports.Reports.customer-statement', [
             'customer' => $customer,
