@@ -851,7 +851,7 @@ class CustomerController extends Controller
 
         $activeBranch = $this->getActiveBranchContext();
         $referenceBase = trim((string) $request->input('reference', ''));
-        $paymentDate = $request->input('payment_date');
+        $paymentDate = $this->normalizePaymentTimestamp($request->input('payment_date'));
         $resolvedAccountId = $this->resolveReceivePaymentAccountId($request->input('payment_target'));
 
         try {
@@ -1107,6 +1107,26 @@ class CustomerController extends Controller
         }
 
         return Sale::create($payload);
+    }
+
+    private function normalizePaymentTimestamp(?string $paymentDate): string
+    {
+        $now = now();
+        $raw = trim((string) $paymentDate);
+
+        if ($raw === '') {
+            return $now->toDateTimeString();
+        }
+
+        $parsed = \Illuminate\Support\Carbon::parse($raw);
+
+        // When a date-only value is submitted, keep today's real clock time
+        // so statement ordering reflects when the entry was actually made.
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $raw) === 1) {
+            $parsed->setTime($now->hour, $now->minute, $now->second, $now->microsecond);
+        }
+
+        return $parsed->toDateTimeString();
     }
 
     public function activate($id)

@@ -1385,22 +1385,9 @@ private function paymentReportRelations(): array
             $salePayments = $payments->where('sale_id', $sale->id)->values();
             $sale->setRelation('payments', $salePayments);
             $financials = $this->normalizeInvoiceFinancials($sale);
-            $saleEventAt = $this->statementEntryTime(
-                $sale->created_at,
-                $sale->order_date,
-                true
-            ) ?: now();
-
-            $earliestSalePaymentAt = $salePayments
-                ->pluck('created_at')
-                ->filter()
-                ->map(fn ($value) => Carbon::parse($value))
-                ->sort()
-                ->first();
-
-            if ($earliestSalePaymentAt && $saleEventAt->greaterThanOrEqualTo($earliestSalePaymentAt)) {
-                $saleEventAt = $earliestSalePaymentAt->copy()->subSecond();
-            }
+            $saleEventAt = $sale->created_at
+                ? Carbon::parse($sale->created_at)
+                : ($sale->order_date ? Carbon::parse($sale->order_date)->startOfDay() : now());
 
             $entries->push([
                 'date' => $sale->created_at ?: $sale->order_date,
@@ -1423,7 +1410,7 @@ private function paymentReportRelations(): array
                     $entries->push([
                         'date' => $payment->created_at,
                         'sort_at' => $paymentEventAt,
-                        'sort_rank' => 2,
+                    'sort_rank' => 1,
                         'sort_id' => (int) ($payment->id ?? 0),
                         'visible' => true,
                         'reference' => $payment->payment_id ?: ('PAY-' . $payment->id),
@@ -1438,8 +1425,8 @@ private function paymentReportRelations(): array
             if ($untrackedPaid > 0) {
                 $entries->push([
                     'date' => $sale->created_at ?: $sale->order_date,
-                    'sort_at' => $saleEventAt->copy(),
-                    'sort_rank' => 1,
+                    'sort_at' => $saleEventAt->copy()->addMicrosecond(),
+                    'sort_rank' => 2,
                     'sort_id' => (int) ($sale->id ?? 0),
                     'visible' => true,
                     'reference' => ($sale->invoice_no ?: ('SALE-' . $sale->id)) . '-APPLIED',
