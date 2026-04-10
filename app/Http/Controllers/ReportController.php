@@ -1321,8 +1321,13 @@ private function paymentReportRelations(): array
 
         $entries = collect();
         if ($openingOriginal > 0) {
-            $openingEventAt = $openingSale?->created_at
-                ?: ($customer->created_at ? $customer->created_at->copy()->subSecond() : now()->copy()->subSecond());
+            $openingEventAt = $customer->opening_balance_date
+                ? Carbon::parse($customer->opening_balance_date)->startOfDay()
+                : ($openingSale?->order_date
+                    ? Carbon::parse($openingSale->order_date)->startOfDay()
+                    : ($openingSale?->created_at
+                        ? Carbon::parse($openingSale->created_at)->startOfDay()
+                        : ($customer->created_at ? $customer->created_at->copy()->startOfDay()->subSecond() : now()->copy()->startOfDay()->subSecond())));
 
             $entries->push([
                 'date' => $customer->opening_balance_date
@@ -1362,9 +1367,9 @@ private function paymentReportRelations(): array
             $sale->setRelation('payments', $salePayments);
             $financials = $this->normalizeInvoiceFinancials($sale);
             $actualPaid = (float) $salePayments->sum('amount');
-            $saleEventAt = $sale->created_at
-                ? Carbon::parse($sale->created_at)
-                : ($sale->order_date ? Carbon::parse($sale->order_date)->startOfDay() : now());
+            $saleEventAt = $sale->order_date
+                ? Carbon::parse($sale->order_date)->startOfDay()
+                : ($sale->created_at ? Carbon::parse($sale->created_at)->startOfDay() : now()->copy()->startOfDay());
 
             $entries->push([
                 'date' => $sale->order_date ?: $sale->created_at,
