@@ -1344,6 +1344,7 @@
 
     {{-- FOOTER SCRIPTS --}}
     @include('layout.partials.footer-scripts')
+    @yield('script')
     @stack('scripts')
 
     @livewireScripts
