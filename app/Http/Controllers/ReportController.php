@@ -1399,19 +1399,6 @@ private function paymentReportRelations(): array
                     ]);
                 });
 
-            $untrackedPaid = max(0, round((float) ($financials['paid'] ?? 0) - $actualPaid, 2));
-            if ($untrackedPaid > 0) {
-                $entries->push([
-                    'date' => $sale->order_date ?: $sale->created_at,
-                    'sort_at' => $saleEventAt->copy(),
-                    'sort_id' => (int) ($sale->id ?? 0),
-                    'reference' => ($sale->invoice_no ?: ('SALE-' . $sale->id)) . '-APPLIED',
-                    'type' => 'Payment',
-                    'description' => 'Applied payment recorded on invoice',
-                    'debit' => 0.0,
-                    'credit' => $untrackedPaid,
-                ]);
-            }
         }
 
         $entries = $entries
