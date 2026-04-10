@@ -25,32 +25,131 @@
 
 @section('style')
 <style>
-    #profitLossTable { font-size: 12.5px !important; border-collapse: separate; border-spacing: 0; }
+    .pl-report-shell {
+        color: #17315f;
+    }
+    .pl-page-header .page-title {
+        font-size: 1.45rem;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        margin-bottom: 0.15rem;
+    }
+    .pl-page-header .breadcrumb {
+        font-size: 0.74rem !important;
+        margin-bottom: 0;
+    }
+    .pl-page-header .btn {
+        font-size: 0.76rem !important;
+        padding: 0.55rem 0.95rem !important;
+    }
+    .pl-summary-card {
+        border: 1px solid rgba(191, 219, 254, 0.82) !important;
+        border-radius: 18px !important;
+        box-shadow: 0 14px 34px rgba(37, 99, 235, 0.08) !important;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(246, 250, 255, 0.96)) !important;
+    }
+    .pl-summary-card .card-body {
+        padding: 1rem 1.05rem !important;
+    }
+    .pl-summary-label {
+        font-size: 0.68rem !important;
+        letter-spacing: 0.08em;
+        line-height: 1.3;
+    }
+    .pl-summary-card h3 {
+        font-size: 1rem !important;
+        line-height: 1.2;
+        margin-bottom: 0;
+    }
+    .pl-summary-meta {
+        font-size: 0.72rem;
+        line-height: 1.35;
+    }
+    .pl-filter-card {
+        border: 1px solid rgba(191, 219, 254, 0.82) !important;
+        border-radius: 20px !important;
+        box-shadow: 0 16px 36px rgba(37, 99, 235, 0.08) !important;
+    }
+    .pl-filter-card .card-body {
+        padding: 1rem 1.1rem !important;
+    }
+    .pl-filter-card .form-label {
+        font-size: 0.68rem !important;
+        letter-spacing: 0.08em;
+        margin-bottom: 0.38rem;
+    }
+    .pl-filter-card .form-control {
+        font-size: 0.83rem !important;
+        min-height: 40px;
+    }
+    .pl-table-card {
+        border: 1px solid rgba(191, 219, 254, 0.82) !important;
+        border-radius: 22px !important;
+        box-shadow: 0 18px 42px rgba(37, 99, 235, 0.08) !important;
+        overflow: hidden;
+    }
+    .pl-table-card .card-body {
+        padding: 0.95rem !important;
+    }
+    #profitLossTable {
+        font-size: 11.5px !important;
+        border-collapse: separate;
+        border-spacing: 0;
+        margin-bottom: 0 !important;
+    }
     #profitLossTable thead th { 
-        font-size: 0.75rem !important; 
+        font-size: 0.68rem !important; 
         text-transform: uppercase; 
         letter-spacing: 0.08em; 
         background-color: #f1f5f9; 
         color: #102a5a;
         border-bottom: 1px solid #dbe7f5;
+        padding-top: 0.8rem !important;
+        padding-bottom: 0.8rem !important;
     }
-    .card-body h3 { font-size: 1.18rem; font-weight: 800; letter-spacing: -0.2px; }
-    .badge { font-size: 0.72rem; padding: 0.4rem 0.7rem; }
-    .money-sm { font-size: 0.9rem !important; font-variant-numeric: tabular-nums; }
-    .table-money { font-size: 0.82rem; font-variant-numeric: tabular-nums; }
+    #profitLossTable tbody td,
+    #profitLossTable tfoot td {
+        font-size: 0.78rem !important;
+        padding-top: 0.82rem !important;
+        padding-bottom: 0.82rem !important;
+        vertical-align: middle;
+    }
+    #profitLossTable tbody tr:hover {
+        background: rgba(59, 130, 246, 0.03);
+    }
+    #profitLossTable tfoot {
+        background: #f8fbff !important;
+    }
+    .badge { font-size: 0.66rem; padding: 0.36rem 0.62rem; letter-spacing: 0.04em; }
+    .money-sm { font-size: 0.96rem !important; font-variant-numeric: tabular-nums; }
+    .table-money { font-size: 0.78rem; font-variant-numeric: tabular-nums; }
     .report-metric-title { letter-spacing: 0.08em; }
+    .pl-date-cell {
+        font-size: 0.76rem;
+        color: #5f7395 !important;
+    }
+    .pl-pagination {
+        font-size: 0.8rem;
+    }
 
     .dt-buttons { margin-bottom: 15px; gap: 5px; display: flex; }
     .dt-button { 
         border: 1px solid #d1d5db !important;
         background: #fff !important;
-        font-size: 0.76rem !important;
+        font-size: 0.72rem !important;
         font-weight: 600 !important;
         border-radius: 999px !important;
-        padding: 0.5rem 0.9rem !important;
+        padding: 0.46rem 0.82rem !important;
         color: #102a5a !important;
     }
     .dt-button:hover { background: #f9fafb !important; }
+    div.dataTables_wrapper div.dataTables_filter input {
+        font-size: 0.8rem !important;
+        min-height: 36px;
+    }
+    div.dataTables_wrapper div.dataTables_filter label {
+        font-size: 0.76rem !important;
+    }
 
     @media print {
         .no-print, .filter-card, .dataTables_filter, .dt-buttons, .pagination-wrapper { display: none !important; }
@@ -58,19 +157,38 @@
         .card { border: 1px solid #eee !important; box-shadow: none !important; margin-bottom: 10px !important; }
         .table { width: 100% !important; }
     }
+
+    @media (max-width: 991.98px) {
+        .pl-page-header .page-title {
+            font-size: 1.2rem;
+        }
+        .pl-summary-card .card-body,
+        .pl-filter-card .card-body,
+        .pl-table-card .card-body {
+            padding: 0.9rem !important;
+        }
+        #profitLossTable {
+            font-size: 11px !important;
+        }
+        #profitLossTable thead th,
+        #profitLossTable tbody td,
+        #profitLossTable tfoot td {
+            white-space: nowrap;
+        }
+    }
 </style>
 @endsection
 
 @section('content')
 <div class="page-wrapper">
-    <div class="content container-fluid">
+    <div class="content container-fluid pl-report-shell">
 
         {{-- Header Section --}}
-        <div class="page-header mb-4">
+        <div class="page-header mb-4 pl-page-header">
             <div class="row align-items-center">
                 <div class="col">
                     <h3 class="page-title">{{ __('Financial Statement (P&L)') }}</h3>
-                    <ul class="breadcrumb" style="font-size: 12px;">
+                    <ul class="breadcrumb">
                         <li class="breadcrumb-item"><a href="{{ route('home', $routeParams) }}">Dashboard</a></li>
                         <li class="breadcrumb-item active">Profit & Loss</li>
                     </ul>
@@ -95,34 +213,34 @@
         {{-- Summary Cards (Grand Totals) --}}
         <div class="row mb-4">
             <div class="col-md-3">
-                <div class="card bg-success-light border-0 shadow-sm">
+                <div class="card pl-summary-card">
                     <div class="card-body">
-                        <h6 class="text-success small text-uppercase fw-bold report-metric-title">{{ __('Overall Revenue') }}</h6>
+                        <h6 class="text-success text-uppercase fw-bold report-metric-title pl-summary-label">{{ __('Overall Revenue') }}</h6>
                         <h3 class="mb-0 text-success money-sm">₦{{ number_format($grandIncome, 2) }}</h3>
                     </div>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card bg-info-light border-0 shadow-sm">
+                <div class="card pl-summary-card">
                     <div class="card-body">
-                        <h6 class="text-info small text-uppercase fw-bold report-metric-title">{{ __('Purchase Cost') }}</h6>
+                        <h6 class="text-info text-uppercase fw-bold report-metric-title pl-summary-label">{{ __('Purchase Cost') }}</h6>
                         <h3 class="mb-0 text-info money-sm">₦{{ number_format($grandPurchaseExpense, 2) }}</h3>
                     </div>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card bg-danger-light border-0 shadow-sm">
+                <div class="card pl-summary-card">
                     <div class="card-body">
-                        <h6 class="text-danger small text-uppercase fw-bold report-metric-title">{{ __('Total Expenses') }}</h6>
-                        <div class="small text-muted mb-1">OpEx: ₦{{ number_format($grandOperatingExpense, 2) }}</div>
+                        <h6 class="text-danger text-uppercase fw-bold report-metric-title pl-summary-label">{{ __('Total Expenses') }}</h6>
+                        <div class="text-muted mb-1 pl-summary-meta">OpEx: ₦{{ number_format($grandOperatingExpense, 2) }}</div>
                         <h3 class="mb-0 text-danger money-sm">₦{{ number_format($grandExpense, 2) }}</h3>
                     </div>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card {{ $grandNet >= 0 ? 'bg-primary-light' : 'bg-warning-light' }} border-0 shadow-sm">
+                <div class="card pl-summary-card">
                     <div class="card-body">
-                        <h6 class="{{ $grandNet >= 0 ? 'text-primary' : 'text-warning' }} small text-uppercase fw-bold report-metric-title">{{ __('Net Profit/Loss') }}</h6>
+                        <h6 class="{{ $grandNet >= 0 ? 'text-primary' : 'text-warning' }} text-uppercase fw-bold report-metric-title pl-summary-label">{{ __('Net Profit/Loss') }}</h6>
                         <h3 class="mb-0 {{ $grandNet >= 0 ? 'text-primary' : 'text-warning' }} money-sm">₦{{ number_format($grandNet, 2) }}</h3>
                     </div>
                 </div>
@@ -130,7 +248,7 @@
         </div>
 
         {{-- Filter Form --}}
-        <div class="card shadow-sm border-0 mb-4 filter-card no-print">
+        <div class="card mb-4 filter-card no-print pl-filter-card">
             <div class="card-body">
                 {{-- CORRECTED ROUTE: reports.profit-loss --}}
                 <form method="GET" action="{{ route('reports.profit-loss', $routeParams) }}">
@@ -158,7 +276,7 @@
         </div>
 
         {{-- Data Table --}}
-        <div class="card mb-4 border-0 shadow-sm">
+        <div class="card mb-4 pl-table-card">
             <div class="card-body p-3">
                 <div class="table-responsive">
                     <table id="profitLossTable" class="table table-hover">
@@ -177,7 +295,7 @@
                             @foreach($profitLossData as $item)
                                 @php $dailyProfit = $item->income - $item->expense; @endphp
                                 <tr>
-                                    <td class="fw-bold text-muted">{{ \Carbon\Carbon::parse($item->report_date)->format('D, d M Y') }}</td>
+                                    <td class="fw-bold pl-date-cell">{{ \Carbon\Carbon::parse($item->report_date)->format('D, d M Y') }}</td>
                                     <td class="text-success fw-semibold table-money">+{{ number_format($item->income, 2) }}</td>
                                     <td class="text-info table-money">-{{ number_format($item->purchase_expense ?? 0, 2) }}</td>
                                     <td class="text-secondary table-money">-{{ number_format($item->operating_expense ?? 0, 2) }}</td>
@@ -211,7 +329,7 @@
                         </tfoot>
                     </table>
                 </div>
-                <div class="mt-3 pagination-wrapper no-print">
+                <div class="mt-3 pagination-wrapper no-print pl-pagination">
                     {{ $profitLossData->appends(request()->query())->links() }}
                 </div>
             </div>
