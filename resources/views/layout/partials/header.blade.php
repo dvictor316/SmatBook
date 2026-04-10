@@ -801,7 +801,7 @@
             width: 280px !important;
             height: calc(100vh - 70px) !important;
             z-index: 1045 !important;
-            overflow-y: auto !important;
+            overflow: hidden !important;
             -webkit-overflow-scrolling: touch !important;
             overscroll-behavior: contain;
             transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
@@ -824,7 +824,7 @@
             width: 280px !important;
             height: calc(100vh - 70px) !important;
             z-index: 1045 !important;
-            overflow-y: auto !important;
+            overflow: hidden !important;
             -webkit-overflow-scrolling: touch !important;
             overscroll-behavior: contain;
             transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;

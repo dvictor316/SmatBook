@@ -2055,6 +2055,33 @@ public function destroy($id)
         }
     }
 
+    public function email_summary_report(Request $request)
+    {
+        $validated = $request->validate([
+            'subject' => 'required|string|max:255',
+            'body' => 'nullable|string',
+            'lines' => 'nullable|array',
+            'lines.*' => 'nullable|string|max:500',
+            'recipient' => 'nullable|email',
+        ]);
+
+        $body = trim((string) ($validated['body'] ?? ''));
+
+        if ($body === '') {
+            $body = collect($validated['lines'] ?? [])
+                ->filter(fn ($line) => filled($line))
+                ->implode("\n");
+        }
+
+        $request->merge([
+            'subject' => $validated['subject'],
+            'body' => $body !== '' ? $body : 'Your requested report summary is ready.',
+            'recipient' => $validated['recipient'] ?? null,
+        ]);
+
+        return $this->email_report($request);
+    }
+
     /*
         |--------------------------------------------------------------------------
         | 1. PURCHASE RETURNS (Debit Notes)

@@ -621,7 +621,9 @@ Route::get('/purchases/{id}/excel', [PurchaseController::class, 'exportExcel'])-
             // The existing route for the view
             Route::get('/low-stock-report', [ReportController::class, 'low_stock_report'])->name('low-stock-report');
 
-            // The NEW route for the email AJAX action
+            // AJAX email actions used by the reports UI.
+            Route::post('/email-report', [ReportController::class, 'email_report'])->name('reports.email-report');
+            Route::post('/email-summary', [ReportController::class, 'email_summary_report'])->name('reports.email-summary');
             Route::post('/email-low-stock', [ReportController::class, 'email_low_stock_report'])->name('reports.email-low-stock');
         });
 
