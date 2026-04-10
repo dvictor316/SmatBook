@@ -1308,7 +1308,7 @@ private function paymentReportRelations(): array
                     . str_pad((string) ($payment->id ?? 0), 12, '0', STR_PAD_LEFT);
             })
             ->values()
-            ->each(function ($payment) use (&$entries, $openingSale) {
+            ->each(function ($payment) use (&$entries, $openingSale, $nextEntrySequence) {
                 $paymentEventAt = $payment->created_at ?: now();
 
                 $entries->push([
@@ -1369,7 +1369,7 @@ private function paymentReportRelations(): array
                         . str_pad((string) ($payment->id ?? 0), 12, '0', STR_PAD_LEFT);
                 })
                 ->values()
-                ->each(function ($payment) use (&$entries, $sale) {
+                ->each(function ($payment) use (&$entries, $sale, $nextEntrySequence) {
                     $paymentEventAt = $payment->created_at ?: now();
 
                     $entries->push([
