@@ -52,7 +52,7 @@
         padding: 1rem 1.05rem !important;
     }
     .pl-summary-label {
-        font-size: 0.56rem !important;
+        font-size: 0.5rem !important;
         letter-spacing: 0.08em;
         line-height: 1.3;
         margin-bottom: 0.4rem !important;
@@ -65,14 +65,14 @@
     .pl-summary-card .money-sm,
     .pl-summary-card h3.money-sm,
     .pl-summary-card .card-body h3.money-sm {
-        font-size: 0.74rem !important;
-        line-height: 1.12 !important;
+        font-size: 0.6rem !important;
+        line-height: 1.08 !important;
         font-weight: 800 !important;
         letter-spacing: -0.02em;
         word-break: break-word;
     }
     .pl-summary-meta {
-        font-size: 0.58rem;
+        font-size: 0.52rem;
         line-height: 1.3;
     }
     .pl-filter-card {
@@ -173,12 +173,12 @@
             font-size: 1.2rem;
         }
         .pl-summary-label {
-            font-size: 0.52rem !important;
+            font-size: 0.48rem !important;
         }
         .pl-summary-card .money-sm,
         .pl-summary-card h3.money-sm,
         .pl-summary-card .card-body h3.money-sm {
-            font-size: 0.68rem !important;
+            font-size: 0.56rem !important;
         }
         .pl-summary-card .card-body,
         .pl-filter-card .card-body,
