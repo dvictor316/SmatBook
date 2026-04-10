@@ -56,7 +56,7 @@
         {{-- 3. Summary Widget --}}
         <div class="row">
             <div class="col-md-4">
-                <div class="card bg-white shadow-sm border-0 mb-4 border-start border-danger border-4">
+                <div class="card bg-white shadow-sm border-0 mb-4 border-start border-danger border-4 expense-total-card">
                     <div class="card-body">
                         <div class="d-flex align-items-center">
                             <div class="avatar avatar-lg bg-danger-light me-3">
@@ -145,6 +145,15 @@
         </div>
     </div>
 </div>
+<style>
+    .expense-total-card h3 {
+        font-size: clamp(0.92rem, 1.7vw, 1.05rem);
+        line-height: 1.2;
+        font-variant-numeric: tabular-nums;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+</style>
 @endsection
 
 @section('script')

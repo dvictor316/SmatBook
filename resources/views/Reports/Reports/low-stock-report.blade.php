@@ -114,8 +114,12 @@
     }
     .low-stock-metric-card h4 {
         color: #102a5a;
-        font-size: 1.2rem;
+        font-size: clamp(0.9rem, 1.7vw, 1.02rem);
         letter-spacing: -0.02em;
+        line-height: 1.2;
+        font-variant-numeric: tabular-nums;
+        overflow-wrap: anywhere;
+        word-break: break-word;
     }
     .low-stock-metric-label {
         font-size: 0.72rem;

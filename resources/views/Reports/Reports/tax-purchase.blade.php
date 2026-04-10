@@ -17,7 +17,15 @@
         color: #102a5a;
         border-bottom: 1px solid #dbe7f5;
     }
-    .card-body h3 { font-size: 1.25rem; font-weight: 800; letter-spacing: -0.02em; }
+    .card-body h3 {
+        font-size: clamp(0.9rem, 1.7vw, 1.02rem);
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        line-height: 1.2;
+        font-variant-numeric: tabular-nums;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
     
     .dt-buttons { margin-bottom: 15px; gap: 5px; display: flex; }
     .dt-button { 

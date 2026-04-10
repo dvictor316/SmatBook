@@ -55,7 +55,7 @@
 
     .summary-grid {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 0.85rem;
         margin-bottom: 1.5rem;
     }
@@ -66,6 +66,7 @@
         background: #ffffff;
         border: 1px solid #dbe7f5;
         box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+        min-width: 0;
     }
 
     .summary-label {
@@ -79,12 +80,30 @@
     }
 
     .summary-amount {
-        font-size: 1.02rem;
+        font-size: clamp(0.84rem, 1.35vw, 0.98rem);
         font-weight: 800;
+        line-height: 1.2;
+        font-variant-numeric: tabular-nums;
+        overflow-wrap: anywhere;
+        word-break: break-word;
     }
 
     .table-card {
         border-top: 1px solid #dbe7f5;
+        border-radius: 18px;
+        overflow: hidden;
+        border: 1px solid #dbe7f5;
+        background: #fff;
+    }
+
+    .table-scroll {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .table {
+        margin-bottom: 0;
+        min-width: 680px;
     }
 
     .table thead th {
@@ -170,6 +189,16 @@
         .table thead th,
         .table tbody td {
             font-size: 0.78rem !important;
+        }
+        .summary-amount {
+            font-size: 0.82rem;
+        }
+        .export-actions {
+            flex-wrap: wrap;
+            justify-content: flex-start;
+        }
+        .table {
+            min-width: 620px;
         }
     }
     @media print { .no-print { display: none !important; } .page-wrapper { padding-top: 0; } }
@@ -271,6 +300,7 @@
 
         {{-- Table --}}
         <div class="table-card">
+            <div class="table-scroll">
             <table class="table align-middle" id="trialBalanceTable">
                 <thead>
                     <tr>
@@ -302,6 +332,7 @@
                     </tr>
                 </tfoot>
             </table>
+            </div>
         </div>
 
         @php $isBalanced = abs($totalDebits - $totalCredits) < 0.01; @endphp

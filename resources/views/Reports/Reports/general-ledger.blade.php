@@ -2,6 +2,15 @@
 @extends('layout.mainlayout')
 
 @section('content')
+<style>
+    .ledger-summary-value {
+        font-size: clamp(0.9rem, 1.6vw, 1.02rem);
+        line-height: 1.2;
+        font-variant-numeric: tabular-nums;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+</style>
 <div class="page-wrapper">
     <div class="content container-fluid">
         <div class="page-header mb-3">
@@ -61,13 +70,13 @@
 
         <div class="row mb-3">
             <div class="col-md-3">
-                <div class="card border-0 shadow-sm"><div class="card-body py-3"><div class="small text-muted">Total Debit</div><div class="h5 mb-0">₦{{ number_format((float)($totals['debit'] ?? 0), 2) }}</div></div></div>
+                <div class="card border-0 shadow-sm"><div class="card-body py-3"><div class="small text-muted">Total Debit</div><div class="h5 mb-0 ledger-summary-value">₦{{ number_format((float)($totals['debit'] ?? 0), 2) }}</div></div></div>
             </div>
             <div class="col-md-3">
-                <div class="card border-0 shadow-sm"><div class="card-body py-3"><div class="small text-muted">Total Credit</div><div class="h5 mb-0">₦{{ number_format((float)($totals['credit'] ?? 0), 2) }}</div></div></div>
+                <div class="card border-0 shadow-sm"><div class="card-body py-3"><div class="small text-muted">Total Credit</div><div class="h5 mb-0 ledger-summary-value">₦{{ number_format((float)($totals['credit'] ?? 0), 2) }}</div></div></div>
             </div>
             <div class="col-md-3">
-                <div class="card border-0 shadow-sm"><div class="card-body py-3"><div class="small text-muted">Difference</div><div class="h5 mb-0">₦{{ number_format(abs((float)($totals['debit'] ?? 0) - (float)($totals['credit'] ?? 0)), 2) }}</div></div></div>
+                <div class="card border-0 shadow-sm"><div class="card-body py-3"><div class="small text-muted">Difference</div><div class="h5 mb-0 ledger-summary-value">₦{{ number_format(abs((float)($totals['debit'] ?? 0) - (float)($totals['credit'] ?? 0)), 2) }}</div></div></div>
             </div>
         </div>
 

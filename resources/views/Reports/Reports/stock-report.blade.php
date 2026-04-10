@@ -169,8 +169,12 @@
         color: rgba(255, 255, 255, 0.86);
     }
     .report-metric-value {
-        font-size: 1.35rem;
+        font-size: clamp(0.92rem, 1.7vw, 1.05rem);
         letter-spacing: -0.02em;
+        line-height: 1.2;
+        font-variant-numeric: tabular-nums;
+        overflow-wrap: anywhere;
+        word-break: break-word;
     }
     #stockTable thead th {
         font-size: 0.74rem;
@@ -179,6 +183,11 @@
     }
     #stockTable tbody td {
         font-size: 0.94rem;
+    }
+    @media (max-width: 767.98px) {
+        .report-metric-value {
+            font-size: 0.88rem;
+        }
     }
     @media print { .no-print { display: none !important; } }
 </style>

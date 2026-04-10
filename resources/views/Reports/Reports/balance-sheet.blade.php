@@ -47,7 +47,7 @@
 
     .summary-grid {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 1rem;
         margin-bottom: 1.75rem;
     }
@@ -58,6 +58,7 @@
         background: #ffffff;
         border: 1px solid #dbe7f5;
         box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+        min-width: 0;
     }
 
     .summary-label {
@@ -71,8 +72,12 @@
     }
 
     .summary-amount {
-        font-size: 1.15rem;
+        font-size: clamp(0.86rem, 1.4vw, 1rem);
         font-weight: 800;
+        line-height: 1.2;
+        font-variant-numeric: tabular-nums;
+        overflow-wrap: anywhere;
+        word-break: break-word;
     }
 
     /* Grid Structure */
@@ -138,8 +143,10 @@
 
     /* Faint lines between items */
     .account-row {
-        display: flex;
-        justify-content: space-between;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 0.75rem;
+        align-items: start;
         padding: 6px 0;
         font-size: 0.72rem;
         border-bottom: 1px solid var(--border-faint); /* Faint separating line */
@@ -152,11 +159,17 @@
     .account-name {
         font-weight: 500;
         color: #334155;
+        min-width: 0;
+        overflow-wrap: anywhere;
     }
 
     .account-val {
         font-weight: 600;
         font-variant-numeric: tabular-nums;
+        font-size: 0.7rem;
+        text-align: right;
+        overflow-wrap: anywhere;
+        word-break: break-word;
     }
 
     .txn-list {
@@ -167,6 +180,8 @@
         overflow: hidden;
         max-height: 220px;
         overflow-y: auto;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
     }
 
     .txn-item {
@@ -177,6 +192,7 @@
         padding: 5px 8px;
         font-size: 0.64rem;
         border-bottom: 1px solid #eef2f7;
+        min-width: 560px;
     }
 
     .txn-item:last-child { border-bottom: none; }
@@ -194,6 +210,7 @@
         font-size: 0.72rem;
         border-top: 1px solid var(--text-dark);
         color: var(--text-dark);
+        gap: 0.75rem;
     }
 
     .grand-total-row {
@@ -205,6 +222,7 @@
         font-size: 0.78rem;
         border-top: 1.5px solid var(--text-dark);
         border-bottom: 3.5px double var(--text-dark);
+        gap: 0.75rem;
     }
 
     /* Verification strip */
@@ -260,6 +278,24 @@
 
         .company-name {
             font-size: 1.15rem;
+        }
+
+        .summary-amount {
+            font-size: 0.82rem;
+        }
+
+        .account-row,
+        .subtotal-row,
+        .grand-total-row {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.28rem;
+        }
+
+        .account-val,
+        .subtotal-row span:last-child,
+        .grand-total-row span:last-child {
+            text-align: left;
         }
     }
 

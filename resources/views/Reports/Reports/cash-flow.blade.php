@@ -24,6 +24,7 @@
         border: 1px solid #dbe7f5;
         text-align: center;
         box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+        min-width: 0;
     }
     .summary-label {
         font-size: 0.72rem;
@@ -34,7 +35,14 @@
         margin-bottom: 4px;
         letter-spacing: 0.08em;
     }
-    .summary-amount { font-size: 1.2rem; font-weight: 800; }
+    .summary-amount {
+        font-size: clamp(0.88rem, 1.5vw, 1rem);
+        font-weight: 800;
+        line-height: 1.2;
+        font-variant-numeric: tabular-nums;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
 
     .section-title { 
         background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
@@ -47,7 +55,8 @@
         border-radius: 14px 14px 0 0;
         letter-spacing: 0.06em;
     }
-    .cash-table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #dbe7f5; border-top: 0; border-radius: 0 0 18px 18px; overflow: hidden; }
+    .cash-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .cash-table { width: 100%; min-width: 640px; border-collapse: collapse; background: #fff; border: 1px solid #dbe7f5; border-top: 0; border-radius: 0 0 18px 18px; overflow: hidden; }
     .cash-table tr { border-bottom: 1px solid #f1f5f9; }
     .cash-table td { padding: 0.95rem 0.85rem; font-size: 0.94rem; }
     .amt-col { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
@@ -148,6 +157,7 @@
         </div>
 
         <div class="section-title">01. Cash Inflows (Receipts)</div>
+        <div class="cash-table-wrap">
         <table class="cash-table">
             @forelse($inflows as $inflow)
             <tr>
@@ -163,8 +173,10 @@
                 <td class="amt-col text-success">₦{{ number_format($totalInflow, 2) }}</td>
             </tr>
         </table>
+        </div>
 
         <div class="section-title" style="background: linear-gradient(135deg, #64748b 0%, #475569 100%);">02. Cash Outflows (Payments)</div>
+        <div class="cash-table-wrap">
         <table class="cash-table">
             @forelse($outflows as $outflow)
             <tr>
@@ -180,6 +192,7 @@
                 <td class="amt-col text-danger">(₦{{ number_format($totalOutflow, 2) }})</td>
             </tr>
         </table>
+        </div>
 
         <div class="total-row d-flex justify-content-between">
             <span class="text-uppercase">Net Cash Position at Period End</span>
