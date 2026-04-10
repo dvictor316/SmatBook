@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\{Subscription, Plan, User, Company, DeploymentManager, Domain, Bank, Setting};
+use App\Support\AppMailer;
 use App\Support\DeploymentCommissionPayoutService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -1912,7 +1913,7 @@ class SubscriptionController extends Controller
             $domain = env('SESSION_DOMAIN', 'smatprobook.com');
             $prefix = $company?->domain_prefix ?? $subscription->domain_prefix;
             $url    = $prefix ? 'https://' . $prefix . '.' . $domain : 'https://' . $domain;
-            Mail::send('emails.welcome', [
+            AppMailer::sendView('emails.welcome', [
                 'userName'     => $user->name,
                 'workspaceUrl' => $url,
                 'planName'     => $subscription->plan_name ?? $subscription->plan,
@@ -1931,7 +1932,7 @@ class SubscriptionController extends Controller
             $domain = env('SESSION_DOMAIN', 'smatprobook.com');
             $prefix = $company?->domain_prefix;
             $url    = $prefix ? 'https://' . $prefix . '.' . $domain : 'https://' . $domain;
-            Mail::send('emails.customer-welcome', [
+            AppMailer::sendView('emails.customer-welcome', [
                 'email'        => $user->email,
                 'password'     => $password,
                 'name'         => $user->name,
@@ -1974,7 +1975,7 @@ class SubscriptionController extends Controller
         ];
 
         try {
-            Mail::send('emails.system-event', [
+            AppMailer::sendView('emails.system-event', [
                 'title' => "Transfer {$decisionLabel}",
                 'intro' => $message,
                 'details' => $details,

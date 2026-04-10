@@ -10,7 +10,7 @@ use Illuminate\Validation\Rule;
 use App\Models\{Company, User, Subscription, ActivityLog, DeploymentManager, DeploymentCompany, Plan, Setting};
 use App\Models\DeploymentManagerPayout;
 use App\Models\Role;
-use App\Support\{SystemEventMailer, DeploymentCommissionPayoutService};
+use App\Support\{AppMailer, SystemEventMailer, DeploymentCommissionPayoutService};
 
 class DeploymentManagerController extends Controller
 {
@@ -1018,7 +1018,7 @@ private function formatDeploymentAmount(float $amount): string
         $loginUrl = route('saas-login');
 
         try {
-            Mail::send('emails.customer-welcome', [
+            AppMailer::sendView('emails.customer-welcome', [
                 'email' => $user->email,
                 'password' => $tempPassword,
                 'name' => $user->name,

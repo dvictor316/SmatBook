@@ -5,9 +5,9 @@ namespace App\Support;
 use App\Models\EmailAuditLog;
 use App\Models\Setting;
 use App\Models\User;
+use App\Support\AppMailer;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 
 class SystemEventMailer
@@ -90,7 +90,7 @@ class SystemEventMailer
         foreach ($recipients as $email) {
             $auditId = self::createAudit($title, $email, $subject, $details);
             try {
-                Mail::send('emails.system-event', [
+                AppMailer::sendView('emails.system-event', [
                     'title' => $title,
                     'intro' => $intro,
                     'details' => $details,

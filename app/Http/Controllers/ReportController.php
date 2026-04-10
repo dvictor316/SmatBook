@@ -25,6 +25,7 @@ use App\Models\Customer;
 use App\Models\Sale;
 use App\Models\Setting;
 use App\Support\LedgerService;
+use App\Support\AppMailer;
 
 
 
@@ -1958,7 +1959,7 @@ public function destroy($id)
                 return response()->json(['success' => false, 'message' => 'No valid recipient email found. Please update your profile email or mail settings.'], 422);
             }
 
-            Mail::to($recipient)->send(new LowStockReportMail($pdf->output()));
+            AppMailer::sendMailable($recipient, new LowStockReportMail($pdf->output()));
             return response()->json(['success' => true, 'message' => "Report sent to {$recipient} successfully!"]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Failed to send email: ' . $e->getMessage()]);
@@ -1982,7 +1983,7 @@ public function destroy($id)
         }
 
         try {
-            Mail::send('emails.system-event', [
+            AppMailer::sendView('emails.system-event', [
                 'title' => 'Report Delivery',
                 'intro' => 'Your requested report summary is ready.',
                 'details' => [

@@ -13,6 +13,7 @@ use App\Models\Company;
 use App\Models\Plan; // Added Plan model
 use App\Models\Subscription;
 use App\Models\Setting;
+use App\Support\AppMailer;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -242,13 +243,9 @@ class LandingController extends Controller
                 $validated['message'],
             ]);
 
-            $preferredMailer = strtolower((string) config('mail.default'));
-            $smtpReady = trim((string) config('mail.mailers.smtp.host')) !== ''
-                && trim((string) config('mail.mailers.smtp.username')) !== ''
-                && trim((string) config('mail.mailers.smtp.password')) !== '';
-            $deliveryMailer = ($preferredMailer === 'log' && $smtpReady) ? 'smtp' : $preferredMailer;
+            $deliveryMailer = AppMailer::preferredMailer();
 
-            Mail::mailer($deliveryMailer)->raw($body, function ($message) use ($recipients, $validated, $subject) {
+            AppMailer::raw($body, function ($message) use ($recipients, $validated, $subject) {
                 $message->from(Setting::mailFromAddress(), Setting::mailFromName())
                     ->to($recipients)
                     ->subject($subject);

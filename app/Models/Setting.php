@@ -84,10 +84,10 @@ class Setting extends Model
     {
         $candidates = [
             (string) self::get('mail_from_name', ''),
-            (string) self::get('company_name', ''),
-            (string) config('app.name', ''),
             (string) config('mail.from.name', ''),
+            (string) self::get('company_name', ''),
             (string) env('MAIL_FROM_NAME', ''),
+            (string) config('app.name', ''),
             (string) ($fallback ?? ''),
             'SmartProbook',
         ];

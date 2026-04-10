@@ -6,6 +6,7 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use App\Support\AppMailer;
 
 class Kernel extends ConsoleKernel
 {
@@ -70,7 +71,7 @@ class Kernel extends ConsoleKernel
                 'sources'          => 'Automated System Check'
             ];
 
-            Mail::to('support@smartprobook.com')->send(new \App\Mail\DailyBusinessSummary($data));
+            AppMailer::sendMailable('support@smartprobook.com', new \App\Mail\DailyBusinessSummary($data));
             
         })->dailyAt('21:00');
     }
