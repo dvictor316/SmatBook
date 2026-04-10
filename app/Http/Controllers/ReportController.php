@@ -1438,8 +1438,8 @@ private function paymentReportRelations(): array
             if ($untrackedPaid > 0) {
                 $entries->push([
                     'date' => $sale->created_at ?: $sale->order_date,
-                    'sort_at' => $saleEventAt->copy()->addMillisecond(),
-                    'sort_rank' => 3,
+                    'sort_at' => $saleEventAt->copy(),
+                    'sort_rank' => 1,
                     'sort_id' => (int) ($sale->id ?? 0),
                     'visible' => true,
                     'reference' => ($sale->invoice_no ?: ('SALE-' . $sale->id)) . '-APPLIED',
