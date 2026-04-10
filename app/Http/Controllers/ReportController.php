@@ -1321,9 +1321,11 @@ private function paymentReportRelations(): array
 
         $entries = collect();
         if ($openingOriginal > 0) {
-            $openingEventAt = $openingSale?->created_at
-                ? Carbon::parse($openingSale->created_at)
-                : ($customer->created_at ? $customer->created_at->copy()->subSecond() : now()->copy()->subSecond());
+            $openingEventAt = $this->statementEntryTime(
+                $openingSale?->created_at,
+                $customer->opening_balance_date ?: $openingSale?->order_date,
+                true
+            ) ?: ($customer->created_at ? $customer->created_at->copy()->subSecond() : now()->copy()->subSecond());
 
             $entries->push([
                 'date' => $customer->opening_balance_date
@@ -1362,9 +1364,11 @@ private function paymentReportRelations(): array
             $salePayments = $payments->where('sale_id', $sale->id)->values();
             $sale->setRelation('payments', $salePayments);
             $financials = $this->normalizeInvoiceFinancials($sale);
-            $saleEventAt = $sale->created_at
-                ? Carbon::parse($sale->created_at)
-                : ($sale->order_date ? Carbon::parse($sale->order_date)->startOfDay() : now());
+            $saleEventAt = $this->statementEntryTime(
+                $sale->created_at,
+                $sale->order_date,
+                true
+            ) ?: now();
 
             $entries->push([
                 'date' => $sale->created_at ?: $sale->order_date,
@@ -1463,6 +1467,18 @@ private function paymentReportRelations(): array
                 'end_date' => $endDate,
             ],
         ]);
+    }
+
+    private function statementEntryTime(mixed $createdAt, mixed $businessDate = null, bool $preferEarlierBusinessDate = false): ?Carbon
+    {
+        $created = $createdAt ? Carbon::parse($createdAt) : null;
+        $business = $businessDate ? Carbon::parse($businessDate)->startOfDay() : null;
+
+        if ($created && $business && $preferEarlierBusinessDate) {
+            return $business->lt($created) ? $business : $created;
+        }
+
+        return $created ?: $business;
     }
 
 
