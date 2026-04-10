@@ -1331,6 +1331,7 @@ private function paymentReportRelations(): array
                 'date' => $customer->opening_balance_date
                     ?: ($openingSale?->order_date ?: ($openingSale?->created_at ?: ($customer->created_at ? $customer->created_at->copy()->startOfDay()->subSecond() : now()->copy()->startOfDay()->subSecond()))),
                 'sort_at' => $openingEventAt,
+                'sort_rank' => 0,
                 'sort_id' => 0,
                 'reference' => 'OPENING',
                 'type' => 'Opening Balance',
@@ -1348,6 +1349,7 @@ private function paymentReportRelations(): array
                 $entries->push([
                     'date' => $payment->created_at,
                     'sort_at' => $paymentEventAt,
+                    'sort_rank' => 2,
                     'sort_id' => (int) ($payment->id ?? 0),
                     'reference' => $payment->payment_id ?: ('PAY-' . $payment->id),
                     'type' => 'Payment',
@@ -1370,9 +1372,21 @@ private function paymentReportRelations(): array
                 true
             ) ?: now();
 
+            $earliestSalePaymentAt = $salePayments
+                ->pluck('created_at')
+                ->filter()
+                ->map(fn ($value) => Carbon::parse($value))
+                ->sort()
+                ->first();
+
+            if ($earliestSalePaymentAt && $saleEventAt->greaterThanOrEqualTo($earliestSalePaymentAt)) {
+                $saleEventAt = $earliestSalePaymentAt->copy()->subSecond();
+            }
+
             $entries->push([
                 'date' => $sale->created_at ?: $sale->order_date,
                 'sort_at' => $saleEventAt,
+                'sort_rank' => 1,
                 'sort_id' => (int) ($sale->id ?? 0),
                 'reference' => $sale->invoice_no ?: ('SALE-' . $sale->id),
                 'type' => 'Invoice',
@@ -1389,6 +1403,7 @@ private function paymentReportRelations(): array
                     $entries->push([
                         'date' => $payment->created_at,
                         'sort_at' => $paymentEventAt,
+                        'sort_rank' => 2,
                         'sort_id' => (int) ($payment->id ?? 0),
                         'reference' => $payment->payment_id ?: ('PAY-' . $payment->id),
                         'type' => 'Payment',
@@ -1403,9 +1418,12 @@ private function paymentReportRelations(): array
         $entries = $entries
             ->sortBy(function ($entry) {
                 $sortAt = $entry['sort_at'] ?? $entry['date'];
+                $sortRank = (int) ($entry['sort_rank'] ?? 9);
                 $sortId = (int) ($entry['sort_id'] ?? 0);
 
                 return Carbon::parse($sortAt)->format('Y-m-d H:i:s.u')
+                    . '|'
+                    . str_pad((string) $sortRank, 4, '0', STR_PAD_LEFT)
                     . '|'
                     . str_pad((string) $sortId, 12, '0', STR_PAD_LEFT)
                     . '|'
