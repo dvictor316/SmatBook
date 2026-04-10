@@ -15,6 +15,20 @@ use App\Exports\BalanceSheetExport;
 
 class BalanceSheetController extends Controller
 {
+    private function applyTransactionScope($query, Request $request)
+    {
+        $companyId = (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $userId = (int) ($request->user()?->id ?? 0);
+
+        if ($companyId > 0 && Schema::hasColumn('transactions', 'company_id')) {
+            $query->where('company_id', $companyId);
+        } elseif ($userId > 0 && Schema::hasColumn('transactions', 'user_id')) {
+            $query->where('user_id', $userId);
+        }
+
+        return $query;
+    }
+
     private function resolveActiveBranch(Request $request): array
     {
         $branchScope = (string) $request->get('branch_scope', '');
@@ -114,10 +128,7 @@ class BalanceSheetController extends Controller
         }
 
         // 1. Get all accounts with sums up to the report date (branch-safe)
-        $companyId = (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0);
-        $userId = (int) ($request->user()?->id ?? 0);
-
-        $txnTotals = Transaction::query()
+        $txnTotalsQuery = Transaction::query()
             ->selectRaw('account_id, SUM(debit) as total_debit, SUM(credit) as total_credit')
             ->where('transaction_date', '<=', $reportDate)
             ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
@@ -132,7 +143,10 @@ class BalanceSheetController extends Controller
                         $sub->orWhere('branch_name', $branchName);
                     }
                 });
-            })
+            });
+        $this->applyTransactionScope($txnTotalsQuery, $request);
+
+        $txnTotals = $txnTotalsQuery
             ->groupBy('account_id')
             ->get()
             ->keyBy('account_id');
@@ -153,13 +167,14 @@ class BalanceSheetController extends Controller
                     }
                 });
             });
+        $this->applyTransactionScope($ledgerTotalsQuery, $request);
 
         $ledgerTotals = $ledgerTotalsQuery->first();
         $ledgerDebits = (float) ($ledgerTotals->total_debit ?? 0);
         $ledgerCredits = (float) ($ledgerTotals->total_credit ?? 0);
         $ledgerDifference = $ledgerDebits - $ledgerCredits;
 
-        $imbalancedEntries = Transaction::query()
+        $imbalancedEntriesQuery = Transaction::query()
             ->selectRaw('related_type, related_id, transaction_type, reference, SUM(debit) as total_debit, SUM(credit) as total_credit')
             ->where('transaction_date', '<=', $reportDate)
             ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
@@ -174,7 +189,10 @@ class BalanceSheetController extends Controller
                         $sub->orWhere('branch_name', $branchName);
                     }
                 });
-            })
+            });
+        $this->applyTransactionScope($imbalancedEntriesQuery, $request);
+
+        $imbalancedEntries = $imbalancedEntriesQuery
             ->groupBy('related_type', 'related_id', 'transaction_type', 'reference')
             ->havingRaw('ABS(SUM(debit) - SUM(credit)) > 0.01')
             ->orderByRaw('ABS(SUM(debit) - SUM(credit)) DESC')
@@ -202,6 +220,8 @@ class BalanceSheetController extends Controller
                     }
                 });
             });
+
+        $this->applyAccountScope($accountsQuery, $request);
 
         $accounts = $accountsQuery->get();
 
@@ -240,11 +260,16 @@ class BalanceSheetController extends Controller
         });
         $fixedAssets = $assetAccounts->filter(function ($a) {
             $subType = strtolower(trim((string) ($a->sub_type ?? '')));
-            return $subType !== '' && str_contains($subType, 'fixed');
+            return $subType !== '' && (str_contains($subType, 'fixed') || str_contains($subType, 'non-current') || str_contains($subType, 'non current'));
         });
+        $uncategorizedAssets = $assetAccounts->reject(function ($account) use ($currentAssets, $fixedAssets) {
+            return $currentAssets->contains('id', $account->id) || $fixedAssets->contains('id', $account->id);
+        });
+
         if ($currentAssets->isEmpty() && $fixedAssets->isEmpty()) {
-            // Fallback for ledgers where asset sub_type has not been categorized yet
             $currentAssets = $assetAccounts;
+        } elseif ($uncategorizedAssets->isNotEmpty()) {
+            $currentAssets = $currentAssets->concat($uncategorizedAssets)->unique('id')->values();
         }
         $currentLiabilities = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type ?? null) === 'liability');
         $equity = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type ?? null) === 'equity'); // Changed from equityAccounts to equity

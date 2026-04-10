@@ -13,6 +13,34 @@ use App\Exports\TrialBalanceExport;
 
 class TrialBalanceController extends Controller
 {
+    private function applyTransactionScope($query, Request $request)
+    {
+        $companyId = (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $userId = (int) ($request->user()?->id ?? 0);
+
+        if ($companyId > 0 && Schema::hasColumn('transactions', 'company_id')) {
+            $query->where('company_id', $companyId);
+        } elseif ($userId > 0 && Schema::hasColumn('transactions', 'user_id')) {
+            $query->where('user_id', $userId);
+        }
+
+        return $query;
+    }
+
+    private function applyAccountScope($query, Request $request)
+    {
+        $companyId = (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $userId = (int) ($request->user()?->id ?? 0);
+
+        if ($companyId > 0 && Schema::hasColumn('accounts', 'company_id')) {
+            $query->where('company_id', $companyId);
+        } elseif ($userId > 0 && Schema::hasColumn('accounts', 'user_id')) {
+            $query->where('user_id', $userId);
+        }
+
+        return $query;
+    }
+
     private function resolveActiveBranch(Request $request): array
     {
         $branchScope = (string) $request->get('branch_scope', '');
@@ -65,9 +93,6 @@ class TrialBalanceController extends Controller
     public function index(Request $request)
     {
         $activeBranch = $this->resolveActiveBranch($request);
-        $companyId = (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0);
-        $userId = (int) ($request->user()?->id ?? 0);
-
         // 1. Set Date Range (Default: latest transaction month)
         $start = $request->start_date ? Carbon::parse($request->start_date) : null;
         $end = $request->end_date ? Carbon::parse($request->end_date) : null;
@@ -78,7 +103,9 @@ class TrialBalanceController extends Controller
         }
 
         if (!$start || !$end) {
-            $latestTxnDate = Transaction::max('transaction_date');
+            $latestTransactionQuery = Transaction::query();
+            $this->applyTransactionScope($latestTransactionQuery, $request);
+            $latestTxnDate = $latestTransactionQuery->max('transaction_date');
             $effectiveEnd = $latestTxnDate
                 ? Carbon::parse($latestTxnDate)->endOfDay()
                 : Carbon::now()->endOfDay();
@@ -87,7 +114,7 @@ class TrialBalanceController extends Controller
         }
 
         // 3. Get Account Data with Summed Transactions (Optimized + Branch-safe)
-        $txnTotals = Transaction::query()
+        $txnTotalsQuery = Transaction::query()
             ->selectRaw('account_id, SUM(debit) as total_debit, SUM(credit) as total_credit')
             ->whereDate('transaction_date', '<=', $end->toDateString())
             ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
@@ -102,7 +129,10 @@ class TrialBalanceController extends Controller
                         $sub->orWhere('branch_name', $branchName);
                     }
                 });
-            })
+            });
+        $this->applyTransactionScope($txnTotalsQuery, $request);
+
+        $txnTotals = $txnTotalsQuery
             ->groupBy('account_id')
             ->get()
             ->keyBy('account_id');
@@ -123,13 +153,14 @@ class TrialBalanceController extends Controller
                     }
                 });
             });
+        $this->applyTransactionScope($ledgerTotalsQuery, $request);
 
         $ledgerTotals = $ledgerTotalsQuery->first();
         $ledgerDebits = (float) ($ledgerTotals->total_debit ?? 0);
         $ledgerCredits = (float) ($ledgerTotals->total_credit ?? 0);
         $ledgerDifference = $ledgerDebits - $ledgerCredits;
 
-        $imbalancedEntries = Transaction::query()
+        $imbalancedEntriesQuery = Transaction::query()
             ->selectRaw('related_type, related_id, transaction_type, reference, SUM(debit) as total_debit, SUM(credit) as total_credit')
             ->whereDate('transaction_date', '<=', $end->toDateString())
             ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
@@ -144,7 +175,10 @@ class TrialBalanceController extends Controller
                         $sub->orWhere('branch_name', $branchName);
                     }
                 });
-            })
+            });
+        $this->applyTransactionScope($imbalancedEntriesQuery, $request);
+
+        $imbalancedEntries = $imbalancedEntriesQuery
             ->groupBy('related_type', 'related_id', 'transaction_type', 'reference')
             ->havingRaw('ABS(SUM(debit) - SUM(credit)) > 0.01')
             ->orderByRaw('ABS(SUM(debit) - SUM(credit)) DESC')
@@ -172,6 +206,7 @@ class TrialBalanceController extends Controller
                     }
                 });
             });
+        $this->applyAccountScope($accountsQuery, $request);
 
         $accounts = $accountsQuery->get();
 
@@ -237,7 +272,9 @@ class TrialBalanceController extends Controller
         $endDate = $request->end_date ? Carbon::parse($request->end_date) : null;
 
         if (!$startDate || !$endDate) {
-            $latestTxnDate = Transaction::max('transaction_date');
+            $latestTransactionQuery = Transaction::query();
+            $this->applyTransactionScope($latestTransactionQuery, $request);
+            $latestTxnDate = $latestTransactionQuery->max('transaction_date');
             $effectiveEnd = $latestTxnDate
                 ? Carbon::parse($latestTxnDate)->endOfDay()
                 : Carbon::now()->endOfDay();
