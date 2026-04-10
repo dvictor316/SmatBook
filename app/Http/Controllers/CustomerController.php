@@ -9,6 +9,7 @@ use App\Models\Payment;
 use App\Models\Sale;
 use App\Support\LedgerService;
 use App\Traits\HasUniqueReceiptNumber;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
@@ -39,7 +40,10 @@ class CustomerController extends Controller
      */
     public function index(Request $request)
     {
-        $customers = $this->buildCustomerQuery($request)
+        $customerQuery = $this->buildCustomerQuery($request);
+        $summaryCustomers = (clone $customerQuery)->get();
+
+        $customers = $customerQuery
             ->paginate(20)
             ->withQueryString();
 
@@ -48,9 +52,10 @@ class CustomerController extends Controller
             return $customer;
         });
 
-        $totalReceivables = $this->calculateTotalReceivables();
+        $summary = $this->buildCustomerListSummary($summaryCustomers);
+        $reportMeta = $this->buildCustomerListReportMeta($request, $summaryCustomers);
 
-        return view('Customers.customers', compact('customers', 'totalReceivables'));
+        return view('Customers.customers', compact('customers', 'summary', 'reportMeta'));
     }
 
     /**
@@ -229,7 +234,10 @@ class CustomerController extends Controller
      */
     public function activeView(Request $request)
     {
-        $customers = $this->buildCustomerQuery($request, 'active')
+        $customerQuery = $this->buildCustomerQuery($request, 'active');
+        $summaryCustomers = (clone $customerQuery)->get();
+
+        $customers = $customerQuery
             ->paginate(20)
             ->withQueryString();
 
@@ -238,14 +246,18 @@ class CustomerController extends Controller
             return $customer;
         });
 
-        $totalReceivables = $this->calculateTotalReceivables();
+        $summary = $this->buildCustomerListSummary($summaryCustomers);
+        $reportMeta = $this->buildCustomerListReportMeta($request, $summaryCustomers, 'Active Customers');
 
-        return view('Customers.customers', compact('customers', 'totalReceivables'));
+        return view('Customers.customers', compact('customers', 'summary', 'reportMeta'));
     }
 
     public function deactiveView(Request $request)
     {
-        $customers = $this->buildCustomerQuery($request, 'deactive')
+        $customerQuery = $this->buildCustomerQuery($request, 'deactive');
+        $summaryCustomers = (clone $customerQuery)->get();
+
+        $customers = $customerQuery
             ->paginate(20)
             ->withQueryString();
 
@@ -254,9 +266,10 @@ class CustomerController extends Controller
             return $customer;
         });
 
-        $totalReceivables = $this->calculateTotalReceivables();
+        $summary = $this->buildCustomerListSummary($summaryCustomers);
+        $reportMeta = $this->buildCustomerListReportMeta($request, $summaryCustomers, 'Inactive Customers');
 
-        return view('Customers.customers', compact('customers', 'totalReceivables'));
+        return view('Customers.customers', compact('customers', 'summary', 'reportMeta'));
     }
 
     private function buildCustomerQuery(Request $request, ?string $fixedStatus = null)
@@ -279,9 +292,112 @@ class CustomerController extends Controller
             $query->where('status', trim((string) $request->input('status')));
         }
 
+        $this->applyCustomerCreatedAtFilter($query, $request);
+
         $this->withSalesBalances($query);
 
         return $query;
+    }
+
+    private function applyCustomerCreatedAtFilter($query, Request $request): void
+    {
+        [$rangeStart, $rangeEnd] = $this->resolveCustomerQuickRange($request->input('quick_range'));
+
+        $startDate = $request->filled('start_date')
+            ? Carbon::parse($request->input('start_date'))->startOfDay()
+            : $rangeStart;
+        $endDate = $request->filled('end_date')
+            ? Carbon::parse($request->input('end_date'))->endOfDay()
+            : $rangeEnd;
+
+        if ($startDate) {
+            $query->where('created_at', '>=', $startDate);
+        }
+
+        if ($endDate) {
+            $query->where('created_at', '<=', $endDate);
+        }
+    }
+
+    private function resolveCustomerQuickRange(?string $quickRange): array
+    {
+        $quickRange = strtolower(trim((string) $quickRange));
+        $now = now();
+
+        return match ($quickRange) {
+            'today' => [$now->copy()->startOfDay(), $now->copy()->endOfDay()],
+            'yesterday' => [$now->copy()->subDay()->startOfDay(), $now->copy()->subDay()->endOfDay()],
+            'this_week' => [$now->copy()->startOfWeek(), $now->copy()->endOfWeek()],
+            'last_week' => [$now->copy()->subWeek()->startOfWeek(), $now->copy()->subWeek()->endOfWeek()],
+            'last_7_days' => [$now->copy()->subDays(6)->startOfDay(), $now->copy()->endOfDay()],
+            'last_30_days' => [$now->copy()->subDays(29)->startOfDay(), $now->copy()->endOfDay()],
+            'this_month' => [$now->copy()->startOfMonth(), $now->copy()->endOfMonth()],
+            'last_month' => [$now->copy()->subMonthNoOverflow()->startOfMonth(), $now->copy()->subMonthNoOverflow()->endOfMonth()],
+            'this_year' => [$now->copy()->startOfYear(), $now->copy()->endOfYear()],
+            'last_year' => [$now->copy()->subYear()->startOfYear(), $now->copy()->subYear()->endOfYear()],
+            default => [null, null],
+        };
+    }
+
+    private function buildCustomerListSummary($customers): array
+    {
+        $normalized = collect($customers)->map(function ($customer) {
+            $computedBalance = (float) ($customer->balance ?? 0) + (float) ($customer->sales_balance_sum ?? 0);
+            $customer->computed_balance = $computedBalance;
+
+            return $customer;
+        });
+
+        return [
+            'total_customers' => $normalized->count(),
+            'active_customers' => $normalized->filter(fn ($customer) => strtolower((string) ($customer->status ?? '')) === 'active')->count(),
+            'contacts_on_file' => $normalized->filter(fn ($customer) => filled($customer->phone) || filled($customer->email))->count(),
+            'total_opening_balance' => (float) $normalized->sum(fn ($customer) => (float) ($customer->balance ?? 0)),
+            'total_invoice_due' => (float) $normalized->sum(fn ($customer) => (float) ($customer->sales_balance_sum ?? 0)),
+            'total_receivables' => (float) $normalized->sum(fn ($customer) => (float) ($customer->computed_balance ?? 0)),
+        ];
+    }
+
+    private function buildCustomerListReportMeta(Request $request, $customers, string $title = 'Customers'): array
+    {
+        [$rangeStart, $rangeEnd] = $this->resolveCustomerQuickRange($request->input('quick_range'));
+
+        $periodFrom = $request->filled('start_date')
+            ? Carbon::parse($request->input('start_date'))->startOfDay()
+            : $rangeStart;
+        $periodTo = $request->filled('end_date')
+            ? Carbon::parse($request->input('end_date'))->endOfDay()
+            : $rangeEnd;
+
+        $quickRangeLabels = [
+            'today' => 'Today',
+            'yesterday' => 'Yesterday',
+            'this_week' => 'This Week',
+            'last_week' => 'Last Week',
+            'last_7_days' => 'Last 7 Days',
+            'last_30_days' => 'Last 30 Days',
+            'this_month' => 'This Month',
+            'last_month' => 'Last Month',
+            'this_year' => 'This Year',
+            'last_year' => 'Last Year',
+        ];
+
+        $quickRange = strtolower(trim((string) $request->input('quick_range')));
+        $branch = $this->getActiveBranchContext();
+        $latestCustomer = collect($customers)->sortByDesc('created_at')->first();
+
+        return [
+            'title' => $title,
+            'generated_at' => now(),
+            'period_from' => $periodFrom,
+            'period_to' => $periodTo,
+            'period_label' => $periodFrom && $periodTo
+                ? $periodFrom->format('d M Y') . ' to ' . $periodTo->format('d M Y')
+                : ($quickRangeLabels[$quickRange] ?? 'All customer records'),
+            'branch_name' => $branch['name'] ?? 'Workspace Default',
+            'status_scope' => $request->filled('status') ? ucfirst((string) $request->input('status')) : 'All statuses',
+            'latest_customer_date' => $latestCustomer?->created_at,
+        ];
     }
 
     private function getActiveBranchContext(): array
