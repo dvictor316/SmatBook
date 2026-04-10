@@ -577,6 +577,14 @@ Route::post('/settings', [SettingController::class, 'update'])->name('settings.u
 
         // Standard resource routes (creates all CRUD routes)
         Route::resource('purchases', PurchaseController::class);
+        Route::get('/purchase-add', function (\Illuminate\Http\Request $request) {
+            $params = array_filter([
+                'product_id' => $request->query('product_id'),
+                'quantity' => $request->query('quantity', $request->query('qty')),
+            ], fn ($value) => filled($value));
+
+            return redirect()->route('purchases.create', $params);
+        })->name('purchase-add.legacy');
 
         // If you need custom pages, add the methods to your controller:
         Route::get('/add-purchase-return', [PurchaseController::class, 'createReturn'])->name('add-purchase-return');

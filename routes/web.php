@@ -779,6 +779,14 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
 
     // Purchases
     Route::resource('purchases', PurchaseController::class);
+    Route::get('/purchase-add', function (\Illuminate\Http\Request $request) {
+        $params = array_filter([
+            'product_id' => $request->query('product_id'),
+            'quantity' => $request->query('quantity', $request->query('qty')),
+        ], fn ($value) => filled($value));
+
+        return redirect()->route('purchases.create', $params);
+    })->name('purchase-add.legacy');
     Route::post('/purchases/{id}/mark-paid', [PurchaseController::class, 'markPaid'])->name('purchases.mark-paid');
     Route::post('/purchases/{id}/payments', [PurchaseController::class, 'recordPayment'])->name('purchases.record-payment');
     Route::delete('/purchases/{purchaseId}/payments/{paymentId}', [PurchaseController::class, 'destroyPayment'])->name('purchases.destroy-payment');
