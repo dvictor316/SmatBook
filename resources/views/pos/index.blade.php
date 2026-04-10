@@ -1420,6 +1420,7 @@ label {
                 <!-- Customer -->
                 <div class="mb-3">
                     <label>Customer</label>
+                    <input type="text" id="customer-search-input" class="form-control mb-2" placeholder="Search customer name...">
                     <select id="customer-select" class="form-select">
                         <option value="">Walk-in Customer</option>
                         @foreach($customers as $c)
@@ -1580,7 +1581,11 @@ $(document).ready(function() {
 
     const hasSelect2 = !!($.fn && $.fn.select2);
     if (hasSelect2) {
-        $('#customer-select').select2({ width: '100%' });
+        $('#customer-select').select2({
+            width: '100%',
+            placeholder: 'Search customer name...',
+            allowClear: true
+        });
         $('#product-search').select2({
             width: '100%',
             placeholder: 'Search product name...',
@@ -2355,6 +2360,7 @@ window.POS_ENABLE_FALLBACK = function () {
     const splitCardAccountWrap = document.getElementById('split-card-account-wrap');
     const changeAmount = document.getElementById('change-amount');
     const customerSelect = document.getElementById('customer-select');
+    const customerSearchInput = document.getElementById('customer-search-input');
     const processBtn = document.getElementById('process-btn');
     const btnText = document.getElementById('btn-text');
     const btnLoading = document.getElementById('btn-loading');
@@ -2377,6 +2383,43 @@ window.POS_ENABLE_FALLBACK = function () {
     const invoiceRouteTemplate = @json(route('sales.invoice.show', ':id'));
     const csrfToken = @json(csrf_token());
     let splitAutoSync = false;
+    const customerOptionsSnapshot = customerSelect
+        ? Array.from(customerSelect.options).map((option) => ({
+            value: option.value,
+            label: option.textContent || '',
+        }))
+        : [];
+
+    function filterCustomerOptions(keyword) {
+        if (!customerSelect) {
+            return;
+        }
+
+        const query = String(keyword || '').toLowerCase().trim();
+        const selectedValue = customerSelect.value;
+        const filteredOptions = customerOptionsSnapshot.filter((option) => {
+            if (option.value === '') {
+                return true;
+            }
+
+            return query === '' || option.label.toLowerCase().includes(query);
+        });
+
+        customerSelect.innerHTML = '';
+        filteredOptions.forEach((option) => {
+            const node = document.createElement('option');
+            node.value = option.value;
+            node.textContent = option.label;
+            if (option.value === selectedValue) {
+                node.selected = true;
+            }
+            customerSelect.appendChild(node);
+        });
+
+        if (selectedValue && !filteredOptions.some((option) => option.value === selectedValue)) {
+            customerSelect.value = '';
+        }
+    }
 
     function getSelectedUnitType() {
         const active = document.querySelector('input[name="unit_type"]:checked');
@@ -2572,6 +2615,10 @@ window.POS_ENABLE_FALLBACK = function () {
         if (itemTotal) itemTotal.textContent = fmt.format(total);
         return { sub, discVal, taxVal, total, discountType, discount };
     }
+
+    customerSearchInput?.addEventListener('input', function () {
+        filterCustomerOptions(customerSearchInput.value);
+    });
 
     function updateChange() {
         const totalText = grandTotal?.textContent || '0';

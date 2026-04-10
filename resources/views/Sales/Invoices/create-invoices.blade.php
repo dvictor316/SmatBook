@@ -57,6 +57,7 @@
                                     <div class="col-lg-4 col-md-6 col-sm-12">
                                         <div class="input-block mb-3">
                                             <label>Customer Name <span class="text-danger">*</span></label>
+                                            <input type="text" id="invoice-customer-search" class="form-control mb-2" placeholder="Search customer name...">
                                             <ul class="form-group-plus css-equal-heights">
                                                 <li>
                                                     <select class="form-control customer-select select2" name="customer_id" required>
@@ -215,6 +216,7 @@
 
 <script>
     let rowIndex = {{ count($invoiceItems) }};
+    let customerOptionSnapshots = [];
 
     function initInvoiceSelect2(scope) {
         if (typeof window.jQuery === 'undefined' || typeof jQuery.fn.select2 === 'undefined') {
@@ -224,7 +226,7 @@
         const $scope = scope ? jQuery(scope) : jQuery(document);
         $scope.find('.customer-select').not('.select2-hidden-accessible').select2({
             width: '100%',
-            placeholder: 'Choose Customer',
+            placeholder: 'Search customer name...',
             allowClear: true
         });
         $scope.find('.product-select').not('.select2-hidden-accessible').select2({
@@ -234,8 +236,60 @@
         });
     }
 
+    function snapshotCustomerOptions() {
+        const customerSelect = document.querySelector('.customer-select');
+        if (!customerSelect) {
+            customerOptionSnapshots = [];
+            return;
+        }
+
+        customerOptionSnapshots = Array.from(customerSelect.options).map(function(option) {
+            return {
+                value: option.value,
+                label: option.textContent || '',
+            };
+        });
+    }
+
+    function filterInvoiceCustomerOptions(keyword) {
+        const customerSelect = document.querySelector('.customer-select');
+        if (!customerSelect) {
+            return;
+        }
+
+        const query = String(keyword || '').toLowerCase().trim();
+        const selectedValue = customerSelect.value;
+        const filteredOptions = customerOptionSnapshots.filter(function(option) {
+            if (option.value === '') {
+                return true;
+            }
+
+            return query === '' || option.label.toLowerCase().includes(query);
+        });
+
+        customerSelect.innerHTML = '';
+        filteredOptions.forEach(function(option) {
+            const node = document.createElement('option');
+            node.value = option.value;
+            node.textContent = option.label;
+            if (option.value === selectedValue) {
+                node.selected = true;
+            }
+            customerSelect.appendChild(node);
+        });
+
+        if (selectedValue && !filteredOptions.some(function(option) { return option.value === selectedValue; })) {
+            customerSelect.value = '';
+        }
+
+        if (typeof window.jQuery !== 'undefined' && typeof jQuery.fn.select2 !== 'undefined') {
+            jQuery(customerSelect).trigger('change.select2');
+        }
+    }
+
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function() {
+            snapshotCustomerOptions();
             initInvoiceSelect2(document);
             document.querySelectorAll('.invoice-row').forEach(function(row) {
                 const rateInput = row.querySelector('.rate-input');
@@ -243,8 +297,16 @@
                     calculateRow(rateInput);
                 }
             });
+
+            const invoiceCustomerSearch = document.getElementById('invoice-customer-search');
+            if (invoiceCustomerSearch) {
+                invoiceCustomerSearch.addEventListener('input', function() {
+                    filterInvoiceCustomerOptions(invoiceCustomerSearch.value);
+                });
+            }
         });
     } else {
+        snapshotCustomerOptions();
         initInvoiceSelect2(document);
         document.querySelectorAll('.invoice-row').forEach(function(row) {
             const rateInput = row.querySelector('.rate-input');
@@ -252,6 +314,13 @@
                 calculateRow(rateInput);
             }
         });
+
+        const invoiceCustomerSearch = document.getElementById('invoice-customer-search');
+        if (invoiceCustomerSearch) {
+            invoiceCustomerSearch.addEventListener('input', function() {
+                filterInvoiceCustomerOptions(invoiceCustomerSearch.value);
+            });
+        }
     }
 
     // Add Row Logic
