@@ -351,6 +351,18 @@ class CustomerController extends Controller
         return $query;
     }
 
+    private function excludeOpeningBalanceSales($query, string $salesTable = 'sales')
+    {
+        if (!Schema::hasColumn('sales', 'invoice_no')) {
+            return $query;
+        }
+
+        return $query->where(function ($sub) use ($salesTable) {
+            $sub->whereNull("{$salesTable}.invoice_no")
+                ->orWhere("{$salesTable}.invoice_no", 'not like', 'OPENING-BAL-%');
+        });
+    }
+
     private function withSalesBalances($query): void
     {
         if (!Schema::hasTable('sales') || !Schema::hasColumn('sales', 'customer_id')) {
@@ -360,6 +372,7 @@ class CustomerController extends Controller
         if (Schema::hasColumn('sales', 'balance')) {
             $query->withSum(['sales as sales_balance_sum' => function ($saleQuery) {
                 $saleQuery->where('balance', '>', 0);
+                $this->excludeOpeningBalanceSales($saleQuery, 'sales');
                 $this->applySaleTenantScope($saleQuery);
                 $this->applySaleBranchFilter($saleQuery, 'sales');
             }], 'balance');
@@ -373,6 +386,7 @@ class CustomerController extends Controller
         }
 
         $query = Sale::query()->where('customer_id', $customerId)->where('balance', '>', 0);
+        $this->excludeOpeningBalanceSales($query, 'sales');
         $this->applySaleTenantScope($query);
         $this->applySaleBranchFilter($query, 'sales');
 
@@ -392,6 +406,7 @@ class CustomerController extends Controller
 
         if (Schema::hasTable('sales') && Schema::hasColumn('sales', 'balance')) {
             $salesQuery = Sale::query()->where('balance', '>', 0);
+            $this->excludeOpeningBalanceSales($salesQuery, 'sales');
             $this->applySaleTenantScope($salesQuery);
             $this->applySaleBranchFilter($salesQuery, 'sales');
             $salesBalances = (float) $salesQuery->sum('balance');
