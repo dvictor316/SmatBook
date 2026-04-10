@@ -1506,6 +1506,73 @@ document.addEventListener('DOMContentLoaded', function () {
             || document.querySelector('.sidebar');
     }
 
+    const SIDEBAR_SCROLL_KEY = 'smartprobook.sidebar.scrollTop';
+    let sidebarScrollRestoreLocked = false;
+
+    function getSidebarScrollContainer() {
+        const sidebar = getSidebar();
+        if (!sidebar) return null;
+
+        return sidebar.querySelector('.sidebar-inner')
+            || sidebar.querySelector('.sidebar-body')
+            || sidebar.querySelector('.sidebar-content')
+            || sidebar;
+    }
+
+    function saveSidebarScrollPosition() {
+        const container = getSidebarScrollContainer();
+        if (!container) return;
+        try {
+            sessionStorage.setItem(SIDEBAR_SCROLL_KEY, String(container.scrollTop || 0));
+        } catch (error) {
+            // Ignore storage failures and keep the sidebar usable.
+        }
+    }
+
+    function restoreSidebarScrollPosition() {
+        if (sidebarScrollRestoreLocked) return;
+
+        const container = getSidebarScrollContainer();
+        if (!container) return;
+
+        let storedScrollTop = null;
+
+        try {
+            storedScrollTop = sessionStorage.getItem(SIDEBAR_SCROLL_KEY);
+        } catch (error) {
+            storedScrollTop = null;
+        }
+
+        if (storedScrollTop === null || storedScrollTop === '') {
+            return;
+        }
+
+        const nextScrollTop = parseInt(storedScrollTop, 10);
+        if (Number.isNaN(nextScrollTop)) {
+            return;
+        }
+
+        sidebarScrollRestoreLocked = true;
+
+        window.requestAnimationFrame(function () {
+            container.scrollTop = nextScrollTop;
+            window.setTimeout(function () {
+                container.scrollTop = nextScrollTop;
+                sidebarScrollRestoreLocked = false;
+            }, 120);
+        });
+    }
+
+    function bindSidebarScrollPersistence() {
+        const container = getSidebarScrollContainer();
+        if (!container || container.dataset.scrollPersistenceBound === 'true') {
+            return;
+        }
+
+        container.dataset.scrollPersistenceBound = 'true';
+        container.addEventListener('scroll', saveSidebarScrollPosition, { passive: true });
+    }
+
     const overlay      = document.getElementById('sidebar-overlay');
     const mobileBtn    = document.getElementById('mobile_btn');
     const desktopBtn   = document.getElementById('toggle_btn');
@@ -1633,6 +1700,13 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     normalizeSidebarState();
+    bindSidebarScrollPersistence();
+    restoreSidebarScrollPosition();
+
+    window.addEventListener('load', function () {
+        bindSidebarScrollPersistence();
+        restoreSidebarScrollPosition();
+    });
 
     // Close mobile sidebar if user clicks anywhere outside it (e.g., branch dropdown)
     document.addEventListener('click', function (e) {
@@ -1647,6 +1721,15 @@ document.addEventListener('DOMContentLoaded', function () {
     if (window.jQuery) {
         window.jQuery(document).off('click', '#toggle_btn');
     }
+
+    document.addEventListener('click', function (e) {
+        const link = e.target.closest('a[href]');
+        const sidebar = getSidebar();
+        if (!link || !sidebar || !sidebar.contains(link)) return;
+        const href = (link.getAttribute('href') || '').trim();
+        if (href === '' || href === '#' || href.toLowerCase() === 'javascript:void(0);') return;
+        saveSidebarScrollPosition();
+    }, true);
 
     /* ════════════════════════════════════════════
        SEARCH
