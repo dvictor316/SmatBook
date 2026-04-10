@@ -1,4 +1,14 @@
 @php
+    $suppressGlobalFlash = request()->routeIs([
+        'login',
+        'saas-login',
+        'saas-register',
+        'forgot-password',
+        'password.request',
+        'password.reset',
+        'lock-screen',
+    ]);
+
     $flashMessages = collect([
         ['type' => 'success', 'icon' => 'fa-check-circle', 'message' => session('success')],
         ['type' => 'danger', 'icon' => 'fa-exclamation-triangle', 'message' => session('error')],
@@ -7,7 +17,7 @@
     ])->filter(fn ($item) => filled($item['message']))->values();
 @endphp
 
-@if ($flashMessages->isNotEmpty() || $errors->any())
+@if (!$suppressGlobalFlash && ($flashMessages->isNotEmpty() || $errors->any()))
     <style>
         .global-flash-stack {
             position: relative;
