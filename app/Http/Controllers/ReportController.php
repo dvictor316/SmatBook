@@ -1333,6 +1333,7 @@ private function paymentReportRelations(): array
                 'sort_at' => $openingEventAt,
                 'sort_rank' => 0,
                 'sort_id' => 0,
+                'visible' => true,
                 'reference' => 'OPENING',
                 'type' => 'Opening Balance',
                 'description' => 'Opening balance on customer account',
@@ -1351,6 +1352,7 @@ private function paymentReportRelations(): array
                     'sort_at' => $paymentEventAt,
                     'sort_rank' => 2,
                     'sort_id' => (int) ($payment->id ?? 0),
+                    'visible' => true,
                     'reference' => $payment->payment_id ?: ('PAY-' . $payment->id),
                     'type' => 'Payment',
                     'description' => $payment->note
@@ -1388,6 +1390,7 @@ private function paymentReportRelations(): array
                 'sort_at' => $saleEventAt,
                 'sort_rank' => 1,
                 'sort_id' => (int) ($sale->id ?? 0),
+                'visible' => true,
                 'reference' => $sale->invoice_no ?: ('SALE-' . $sale->id),
                 'type' => 'Invoice',
                 'description' => 'Invoice issued',
@@ -1405,6 +1408,7 @@ private function paymentReportRelations(): array
                         'sort_at' => $paymentEventAt,
                         'sort_rank' => 2,
                         'sort_id' => (int) ($payment->id ?? 0),
+                        'visible' => true,
                         'reference' => $payment->payment_id ?: ('PAY-' . $payment->id),
                         'type' => 'Payment',
                         'description' => $payment->note ?: 'Customer payment received.',
@@ -1412,6 +1416,22 @@ private function paymentReportRelations(): array
                         'credit' => (float) ($payment->amount ?? 0),
                     ]);
                 });
+
+            $untrackedPaid = max(0, round((float) ($financials['paid'] ?? 0) - (float) $salePayments->sum('amount'), 2));
+            if ($untrackedPaid > 0) {
+                $entries->push([
+                    'date' => $sale->created_at ?: $sale->order_date,
+                    'sort_at' => $saleEventAt->copy()->addMillisecond(),
+                    'sort_rank' => 3,
+                    'sort_id' => (int) ($sale->id ?? 0),
+                    'visible' => false,
+                    'reference' => ($sale->invoice_no ?: ('SALE-' . $sale->id)) . '-APPLIED',
+                    'type' => 'Payment',
+                    'description' => 'Applied payment recorded on invoice',
+                    'debit' => 0.0,
+                    'credit' => $untrackedPaid,
+                ]);
+            }
 
         }
 
@@ -1464,10 +1484,12 @@ private function paymentReportRelations(): array
         $totalInvoiced = (float) $entries->sum(fn ($entry) => (float) ($entry['debit'] ?? 0));
         $totalPaid = (float) $entries->sum(fn ($entry) => (float) ($entry['credit'] ?? 0));
         $balanceDue = (float) round($totalInvoiced - $totalPaid, 2);
+        $visibleEntries = $entries->filter(fn ($entry) => (bool) ($entry['visible'] ?? true))
+            ->values();
 
         return view('Reports.Reports.customer-statement', [
             'customer' => $customer,
-            'entries' => $entries,
+            'entries' => $visibleEntries,
             'totalInvoiced' => $totalInvoiced,
             'totalPaid' => $totalPaid,
             'balanceDue' => $balanceDue,
