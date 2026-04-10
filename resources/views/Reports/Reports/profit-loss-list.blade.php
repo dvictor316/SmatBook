@@ -49,30 +49,31 @@
         background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(246, 250, 255, 0.96)) !important;
     }
     .pl-summary-card .card-body {
-        padding: 1rem 1.05rem !important;
+        padding: 1.1rem 1.15rem !important;
     }
     .pl-summary-label {
-        font-size: 0.5rem !important;
+        font-size: 0.68rem !important;
         letter-spacing: 0.08em;
         line-height: 1.3;
         margin-bottom: 0.4rem !important;
     }
     .pl-summary-card h3 {
-        font-size: 0.82rem !important;
+        font-size: 1.05rem !important;
         line-height: 1.15;
         margin-bottom: 0;
     }
     .pl-summary-card .money-sm,
     .pl-summary-card h3.money-sm,
     .pl-summary-card .card-body h3.money-sm {
-        font-size: 0.6rem !important;
-        line-height: 1.08 !important;
+        font-size: 1.1rem !important;
+        line-height: 1.18 !important;
         font-weight: 800 !important;
         letter-spacing: -0.02em;
-        word-break: break-word;
+        word-break: normal;
+        overflow-wrap: anywhere;
     }
     .pl-summary-meta {
-        font-size: 0.52rem;
+        font-size: 0.72rem;
         line-height: 1.3;
     }
     .pl-filter-card {
@@ -131,7 +132,7 @@
         background: #f8fbff !important;
     }
     .badge { font-size: 0.66rem; padding: 0.36rem 0.62rem; letter-spacing: 0.04em; }
-    .money-sm { font-size: 0.96rem !important; font-variant-numeric: tabular-nums; }
+    .money-sm { font-size: 1.1rem !important; font-variant-numeric: tabular-nums; }
     .table-money { font-size: 0.78rem; font-variant-numeric: tabular-nums; }
     .report-metric-title { letter-spacing: 0.08em; }
     .pl-date-cell {
@@ -173,12 +174,12 @@
             font-size: 1.2rem;
         }
         .pl-summary-label {
-            font-size: 0.48rem !important;
+            font-size: 0.6rem !important;
         }
         .pl-summary-card .money-sm,
         .pl-summary-card h3.money-sm,
         .pl-summary-card .card-body h3.money-sm {
-            font-size: 0.56rem !important;
+            font-size: 0.92rem !important;
         }
         .pl-summary-card .card-body,
         .pl-filter-card .card-body,

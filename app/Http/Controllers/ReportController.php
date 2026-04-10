@@ -2051,7 +2051,10 @@ public function destroy($id)
             return response()->json(['success' => true, 'message' => "Report emailed to {$recipient} successfully."]);
         } catch (\Throwable $e) {
             Log::error('Report email failed', ['error' => $e->getMessage()]);
-            return response()->json(['success' => false, 'message' => 'Email failed: ' . $e->getMessage()], 500);
+            return response()->json([
+                'success' => false,
+                'message' => $this->friendlyMailErrorMessage($e),
+            ], 500);
         }
     }
 
@@ -2080,6 +2083,22 @@ public function destroy($id)
         ]);
 
         return $this->email_report($request);
+    }
+
+    private function friendlyMailErrorMessage(\Throwable $e): string
+    {
+        $message = $e->getMessage();
+
+        if (Str::contains($message, [
+            'Username and Password not accepted',
+            'BadCredentials',
+            'Failed to authenticate on SMTP server',
+            'Expected response code "235" but got code "535"',
+        ])) {
+            return 'Email failed: SMTP login was rejected. Update the Gmail address and App Password in mail settings or .env, then try again.';
+        }
+
+        return 'Email failed: ' . $message;
     }
 
     /*
