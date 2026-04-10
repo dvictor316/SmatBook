@@ -2392,7 +2392,7 @@ window.POS_ENABLE_FALLBACK = function () {
 
     function filterCustomerOptions(keyword) {
         if (!customerSelect) {
-            return;
+            return [];
         }
 
         const query = String(keyword || '').toLowerCase().trim();
@@ -2419,6 +2419,39 @@ window.POS_ENABLE_FALLBACK = function () {
         if (selectedValue && !filteredOptions.some((option) => option.value === selectedValue)) {
             customerSelect.value = '';
         }
+
+        return filteredOptions;
+    }
+
+    function selectCustomerMatch(keyword, preferExact = false) {
+        if (!customerSelect) {
+            return false;
+        }
+
+        const query = String(keyword || '').toLowerCase().trim();
+        if (query === '') {
+            customerSelect.value = '';
+            return false;
+        }
+
+        const matches = filterCustomerOptions(query).filter((option) => option.value !== '');
+        if (!matches.length) {
+            customerSelect.value = '';
+            return false;
+        }
+
+        const exactMatch = matches.find((option) => option.label.toLowerCase() === query);
+        const startsWithMatch = matches.find((option) => option.label.toLowerCase().startsWith(query));
+        const selectedMatch = preferExact ? (exactMatch || startsWithMatch || matches[0]) : (startsWithMatch || exactMatch || matches[0]);
+
+        if (!selectedMatch) {
+            return false;
+        }
+
+        customerSelect.value = selectedMatch.value;
+        customerSelect.dispatchEvent(new Event('change', { bubbles: true }));
+
+        return true;
     }
 
     function getSelectedUnitType() {
@@ -2617,7 +2650,23 @@ window.POS_ENABLE_FALLBACK = function () {
     }
 
     customerSearchInput?.addEventListener('input', function () {
-        filterCustomerOptions(customerSearchInput.value);
+        const query = customerSearchInput.value;
+        filterCustomerOptions(query);
+
+        if (query.trim() !== '') {
+            selectCustomerMatch(query);
+        } else if (customerSelect) {
+            customerSelect.value = '';
+        }
+    });
+
+    customerSearchInput?.addEventListener('keydown', function (event) {
+        if (event.key !== 'Enter') {
+            return;
+        }
+
+        event.preventDefault();
+        selectCustomerMatch(customerSearchInput.value, true);
     });
 
     function updateChange() {
