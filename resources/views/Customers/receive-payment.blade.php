@@ -3,6 +3,9 @@
 @section('content')
 <div class="page-wrapper">
     <div class="content container-fluid">
+        @php
+            $autoReference = 'CRP-' . now()->format('ymdHis') . '-' . str_pad((string) $customer->id, 4, '0', STR_PAD_LEFT);
+        @endphp
         <div class="page-header">
             <div class="row align-items-center">
                 <div class="col">
@@ -117,7 +120,7 @@
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Reference No.</label>
-                            <input type="text" name="reference" class="form-control" value="{{ old('reference') }}" placeholder="Optional reference">
+                            <input type="text" name="reference" class="form-control" value="{{ old('reference', $autoReference) }}" placeholder="Optional reference">
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Amount Received</label>
