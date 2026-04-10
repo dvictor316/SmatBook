@@ -226,47 +226,9 @@
         max-height: calc(100vh - var(--sb-header-h)) !important;
     }
 
-    /* Force jQuery slimscroll wrappers to allow actual inner scrolling. */
-    .sidebar .slimScrollDiv,
-    #sidebar .slimScrollDiv {
-        height: calc(100vh - var(--sb-header-h)) !important;
-        max-height: calc(100vh - var(--sb-header-h)) !important;
-        overflow-x: hidden !important;
-        overflow-y: auto !important;
+    .sidebar .sidebar-inner.slimscroll,
+    #sidebar .sidebar-inner.slimscroll {
         scrollbar-width: thin;
-    }
-
-    .sidebar .slimScrollDiv > .sidebar-inner,
-    #sidebar .slimScrollDiv > .sidebar-inner {
-        height: 100% !important;
-        max-height: 100% !important;
-        overflow: hidden !important;
-        scrollbar-width: none !important;
-        -ms-overflow-style: none !important;
-    }
-
-    .sidebar .slimScrollDiv > .sidebar-inner::-webkit-scrollbar,
-    #sidebar .slimScrollDiv > .sidebar-inner::-webkit-scrollbar {
-        width: 0 !important;
-        height: 0 !important;
-    }
-
-    .sidebar .slimScrollDiv #sidebar-menu,
-    #sidebar .slimScrollDiv #sidebar-menu,
-    .sidebar .slimScrollDiv .sidebar-menu,
-    #sidebar .slimScrollDiv .sidebar-menu {
-        overflow: hidden !important;
-        max-height: none !important;
-        scrollbar-width: none !important;
-        -ms-overflow-style: none !important;
-    }
-
-    .sidebar .slimScrollDiv #sidebar-menu::-webkit-scrollbar,
-    #sidebar .slimScrollDiv #sidebar-menu::-webkit-scrollbar,
-    .sidebar .slimScrollDiv .sidebar-menu::-webkit-scrollbar,
-    #sidebar .slimScrollDiv .sidebar-menu::-webkit-scrollbar {
-        width: 0 !important;
-        height: 0 !important;
     }
 
     .sb-card {

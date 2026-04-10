@@ -11,7 +11,8 @@ Version      : 1.0
 
 	var $wrapper = $('.main-wrapper');
 	var $pageWrapper = $('.page-wrapper');
-	var $slimScrolls = $('.slimscroll');
+	var $slimScrolls = $('.slimscroll').not('.sidebar .sidebar-inner, #sidebar .sidebar-inner');
+	var $sidebarScrollContainers = $('.sidebar .sidebar-inner, #sidebar .sidebar-inner, .deployment-sidebar .sidebar-content, .deployment-sidebar .sidebar-inner');
 
 	// Sidebar
 	var Sidemenu = function () {
@@ -291,7 +292,27 @@ Version      : 1.0
 
 
 
-	// Sidebar Slimscroll
+	// Sidebar native scroll
+
+	if ($sidebarScrollContainers.length > 0) {
+		var sidebarHeight = $(window).height() - 60;
+		$sidebarScrollContainers.css({
+			height: sidebarHeight,
+			'max-height': sidebarHeight,
+			'overflow-y': 'auto',
+			'overflow-x': 'hidden'
+		});
+
+		$(window).resize(function () {
+			var resizedSidebarHeight = $(window).height() - 60;
+			$sidebarScrollContainers.css({
+				height: resizedSidebarHeight,
+				'max-height': resizedSidebarHeight
+			});
+		});
+	}
+
+	// Non-sidebar Slimscroll
 
 	if ($slimScrolls.length > 0) {
 		$slimScrolls.slimScroll({
@@ -307,11 +328,9 @@ Version      : 1.0
 		});
 		var wHeight = $(window).height() - 60;
 		$slimScrolls.height(wHeight);
-		$('.sidebar .slimScrollDiv').height(wHeight);
 		$(window).resize(function () {
 			var rHeight = $(window).height() - 60;
 			$slimScrolls.height(rHeight);
-			$('.sidebar .slimScrollDiv').height(rHeight);
 		});
 	}
 
