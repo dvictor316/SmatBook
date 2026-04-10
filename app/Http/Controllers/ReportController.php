@@ -1184,7 +1184,7 @@ private function paymentReportRelations(): array
         $this->applySaleBranchFilter($salesQuery, 'sales');
 
         $salesSummary = $salesQuery
-            ->selectRaw('customer_id, SUM(total) as total_invoiced, SUM(amount_paid) as total_paid, SUM(balance) as total_due, COUNT(*) as invoice_count')
+            ->selectRaw('customer_id, SUM(total) as total_invoiced, SUM(amount_paid) as total_paid, SUM(balance) as total_due, COUNT(*) as invoice_count, MIN(COALESCE(created_at, order_date)) as first_activity_at')
             ->groupBy('customer_id')
             ->get();
 
@@ -1214,6 +1214,8 @@ private function paymentReportRelations(): array
                 'total_due' => (float) $row->total_due,
                 'invoice_count' => (int) $row->invoice_count,
                 'opening_balance' => (float) ($customer?->balance ?? 0),
+                'sort_at' => $row->first_activity_at ?: $customer?->created_at,
+                'sort_id' => (int) ($customer?->id ?? $row->customer_id ?? 0),
             ];
         }
 
@@ -1229,13 +1231,22 @@ private function paymentReportRelations(): array
                     'total_due' => 0.0,
                     'invoice_count' => 0,
                     'opening_balance' => (float) $customer->balance,
+                    'sort_at' => $customer->created_at,
+                    'sort_id' => (int) $customer->id,
                 ];
             }
         }
 
         $receivables = collect(array_values($receivableMap))
-            ->sortByDesc(function ($row) {
-                return (float) $row['total_due'] + (float) $row['opening_balance'];
+            ->sortBy(function ($row) {
+                $sortAt = $row['sort_at'] ?? null;
+                $sortId = (int) ($row['sort_id'] ?? 0);
+
+                return ($sortAt ? Carbon::parse($sortAt)->format('Y-m-d H:i:s.u') : '9999-12-31 23:59:59.999999')
+                    . '|'
+                    . str_pad((string) $sortId, 12, '0', STR_PAD_LEFT)
+                    . '|'
+                    . ($row['customer_name'] ?? '');
             })
             ->map(fn ($row) => (object) $row)
             ->values();
@@ -1455,7 +1466,7 @@ private function paymentReportRelations(): array
         $entries = $entries->map(function ($entry) use (&$runningBalance) {
                 $runningBalance += (float) $entry['debit'] - (float) $entry['credit'];
                 $entry['balance'] = $runningBalance;
-                unset($entry['sort_at'], $entry['sort_rank'], $entry['sort_sequence']);
+                unset($entry['sort_at'], $entry['sort_rank'], $entry['sort_sequence'], $entry['sort_id']);
                 return $entry;
             });
 
