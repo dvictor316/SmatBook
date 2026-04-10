@@ -1340,15 +1340,13 @@ private function paymentReportRelations(): array
         if ($openingOriginal > 0) {
             $openingEventAt = $this->statementEntryTime(
                 $openingSale?->created_at,
-                $customer->opening_balance_date ?: $openingSale?->order_date,
-                true
+                $customer->opening_balance_date ?: $openingSale?->order_date
             ) ?: ($customer->created_at ? $customer->created_at->copy()->subSecond() : now()->copy()->subSecond());
 
             $entries->push([
                 'date' => $customer->opening_balance_date
                     ?: ($openingSale?->order_date ?: ($openingSale?->created_at ?: ($customer->created_at ? $customer->created_at->copy()->startOfDay()->subSecond() : now()->copy()->startOfDay()->subSecond()))),
                 'sort_at' => $openingEventAt,
-                'sort_rank' => 0,
                 'sort_id' => 0,
                 'visible' => true,
                 'reference' => 'OPENING',
@@ -1367,7 +1365,6 @@ private function paymentReportRelations(): array
                 $entries->push([
                     'date' => $payment->created_at,
                     'sort_at' => $paymentEventAt,
-                    'sort_rank' => 2,
                     'sort_id' => (int) ($payment->id ?? 0),
                     'visible' => true,
                     'reference' => $payment->payment_id ?: ('PAY-' . $payment->id),
@@ -1387,14 +1384,12 @@ private function paymentReportRelations(): array
             $financials = $this->normalizeInvoiceFinancials($sale);
             $saleEventAt = $this->statementEntryTime(
                 $sale->created_at,
-                $sale->order_date,
-                true
+                $sale->order_date
             ) ?: now();
 
             $entries->push([
                 'date' => $sale->created_at ?: $sale->order_date,
                 'sort_at' => $saleEventAt,
-                'sort_rank' => 1,
                 'sort_id' => (int) ($sale->id ?? 0),
                 'visible' => true,
                 'reference' => $sale->invoice_no ?: ('SALE-' . $sale->id),
@@ -1412,7 +1407,6 @@ private function paymentReportRelations(): array
                     $entries->push([
                         'date' => $payment->created_at,
                         'sort_at' => $paymentEventAt,
-                        'sort_rank' => 2,
                         'sort_id' => (int) ($payment->id ?? 0),
                         'visible' => true,
                         'reference' => $payment->payment_id ?: ('PAY-' . $payment->id),
@@ -1427,8 +1421,7 @@ private function paymentReportRelations(): array
             if ($untrackedPaid > 0) {
                 $entries->push([
                     'date' => $sale->created_at ?: $sale->order_date,
-                    'sort_at' => $saleEventAt->copy()->addMicrosecond(),
-                    'sort_rank' => 3,
+                    'sort_at' => $this->statementSyntheticEntryTime($sale),
                     'sort_id' => (int) ($sale->id ?? 0),
                     'visible' => true,
                     'reference' => ($sale->invoice_no ?: ('SALE-' . $sale->id)) . '-APPLIED',
@@ -1444,12 +1437,9 @@ private function paymentReportRelations(): array
         $entries = $entries
             ->sortBy(function ($entry) {
                 $sortAt = $entry['sort_at'] ?? $entry['date'];
-                $sortRank = (int) ($entry['sort_rank'] ?? 9);
                 $sortId = (int) ($entry['sort_id'] ?? 0);
 
                 return Carbon::parse($sortAt)->format('Y-m-d H:i:s.u')
-                    . '|'
-                    . str_pad((string) $sortRank, 4, '0', STR_PAD_LEFT)
                     . '|'
                     . str_pad((string) $sortId, 12, '0', STR_PAD_LEFT)
                     . '|'
@@ -1515,6 +1505,19 @@ private function paymentReportRelations(): array
         }
 
         return $created ?: $business;
+    }
+
+    private function statementSyntheticEntryTime(Sale $sale): Carbon
+    {
+        $created = $sale->created_at ? Carbon::parse($sale->created_at) : null;
+        $updated = $sale->updated_at ? Carbon::parse($sale->updated_at) : null;
+        $business = $sale->order_date ? Carbon::parse($sale->order_date)->startOfDay() : null;
+
+        if ($updated && $created && $updated->greaterThan($created)) {
+            return $updated;
+        }
+
+        return $created ?: ($updated ?: ($business ?: now()));
     }
 
 
