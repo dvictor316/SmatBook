@@ -187,7 +187,7 @@ private function applyBranchScope($query, string $table = 'purchases')
     /**
      * Show the form for creating a new purchase.
      */
-    public function create()
+    public function create(Request $request)
     {
         $activeBranch = $this->getActiveBranchContext();
         $vendorsQuery = Vendor::orderBy('name');
@@ -229,6 +229,26 @@ private function applyBranchScope($query, string $table = 'purchases')
         $purchaseId = 'PUR-' . date('Ymd') . '-' . strtoupper(Str::random(6));
         $referenceNo = 'REF-' . date('ymd') . '-' . strtoupper(Str::random(4));
         $invoiceSerialNo = 'INV-' . date('ymd') . '-' . strtoupper(Str::random(4));
+
+        $prefillProductId = (int) ($request->query('product_id') ?? 0);
+        $prefillQuantity = max(0.01, (float) ($request->query('quantity', $request->query('qty', 1)) ?? 1));
+        $initialProducts = [];
+
+        if ($prefillProductId > 0) {
+            $prefillProduct = $products->firstWhere('id', $prefillProductId);
+
+            if ($prefillProduct) {
+                $initialProducts[] = [
+                    'product_id' => $prefillProduct->id,
+                    'product_name' => (string) ($prefillProduct->name ?? ''),
+                    'quantity' => $prefillQuantity,
+                    'unit' => (string) ($prefillProduct->unit ?? ''),
+                    'rate' => (float) ($prefillProduct->purchase_price ?? $prefillProduct->price ?? 0),
+                    'discount' => 0,
+                    'tax_id' => null,
+                ];
+            }
+        }
         
         return view('Purchases.add-purchases', compact(
             'vendors',
@@ -239,7 +259,8 @@ private function applyBranchScope($query, string $table = 'purchases')
             'purchaseId',
             'referenceNo',
             'invoiceSerialNo',
-            'activeBranch'
+            'activeBranch',
+            'initialProducts'
         ));
     }
 

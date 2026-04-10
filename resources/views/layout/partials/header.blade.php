@@ -1509,21 +1509,60 @@ document.addEventListener('DOMContentLoaded', function () {
     const SIDEBAR_SCROLL_KEY = 'smartprobook.sidebar.scrollTop';
     let sidebarScrollRestoreLocked = false;
 
-    function getSidebarScrollContainer() {
+    function getSidebarScrollContainers() {
         const sidebar = getSidebar();
-        if (!sidebar) return null;
+        if (!sidebar) return [];
 
-        return sidebar.querySelector('.sidebar-inner')
-            || sidebar.querySelector('.sidebar-body')
-            || sidebar.querySelector('.sidebar-content')
-            || sidebar;
+        const containers = [];
+        const slimScrollWrapper = sidebar.querySelector('.slimScrollDiv');
+        const sidebarInner = sidebar.querySelector('.sidebar-inner');
+        const sidebarBody = sidebar.querySelector('.sidebar-body');
+        const sidebarContent = sidebar.querySelector('.sidebar-content');
+
+        if (slimScrollWrapper) {
+            containers.push(slimScrollWrapper);
+        }
+
+        if (sidebarInner?.parentElement?.classList.contains('slimScrollDiv')) {
+            containers.push(sidebarInner.parentElement);
+        }
+
+        if (sidebarInner) {
+            containers.push(sidebarInner);
+        }
+
+        if (sidebarBody) {
+            containers.push(sidebarBody);
+        }
+
+        if (sidebarContent) {
+            containers.push(sidebarContent);
+        }
+
+        containers.push(sidebar);
+
+        return Array.from(new Set(containers.filter(Boolean)));
+    }
+
+    function getSidebarScrollPosition() {
+        const containers = getSidebarScrollContainers();
+        if (!containers.length) return 0;
+
+        return containers.reduce(function (currentScrollTop, container) {
+            return Math.max(currentScrollTop, Math.round(container.scrollTop || 0));
+        }, 0);
+    }
+
+    function applySidebarScrollPosition(nextScrollTop) {
+        getSidebarScrollContainers().forEach(function (container) {
+            container.scrollTop = nextScrollTop;
+        });
     }
 
     function saveSidebarScrollPosition() {
-        const container = getSidebarScrollContainer();
-        if (!container) return;
+        const nextScrollTop = getSidebarScrollPosition();
         try {
-            sessionStorage.setItem(SIDEBAR_SCROLL_KEY, String(container.scrollTop || 0));
+            sessionStorage.setItem(SIDEBAR_SCROLL_KEY, String(nextScrollTop));
         } catch (error) {
             // Ignore storage failures and keep the sidebar usable.
         }
@@ -1532,8 +1571,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function restoreSidebarScrollPosition() {
         if (sidebarScrollRestoreLocked) return;
 
-        const container = getSidebarScrollContainer();
-        if (!container) return;
+        if (!getSidebarScrollContainers().length) return;
 
         let storedScrollTop = null;
 
@@ -1554,23 +1592,34 @@ document.addEventListener('DOMContentLoaded', function () {
 
         sidebarScrollRestoreLocked = true;
 
+        applySidebarScrollPosition(nextScrollTop);
+
         window.requestAnimationFrame(function () {
-            container.scrollTop = nextScrollTop;
+            applySidebarScrollPosition(nextScrollTop);
             window.setTimeout(function () {
-                container.scrollTop = nextScrollTop;
-                sidebarScrollRestoreLocked = false;
+                applySidebarScrollPosition(nextScrollTop);
+                window.setTimeout(function () {
+                    applySidebarScrollPosition(nextScrollTop);
+                    sidebarScrollRestoreLocked = false;
+                }, 180);
             }, 120);
         });
     }
 
     function bindSidebarScrollPersistence() {
-        const container = getSidebarScrollContainer();
-        if (!container || container.dataset.scrollPersistenceBound === 'true') {
-            return;
-        }
+        getSidebarScrollContainers().forEach(function (container) {
+            if (container.dataset.scrollPersistenceBound === 'true') {
+                return;
+            }
 
-        container.dataset.scrollPersistenceBound = 'true';
-        container.addEventListener('scroll', saveSidebarScrollPosition, { passive: true });
+            container.dataset.scrollPersistenceBound = 'true';
+            container.addEventListener('scroll', saveSidebarScrollPosition, { passive: true });
+        });
+    }
+
+    function refreshSidebarScrollPersistence() {
+        bindSidebarScrollPersistence();
+        restoreSidebarScrollPosition();
     }
 
     const overlay      = document.getElementById('sidebar-overlay');
@@ -1700,13 +1749,13 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     normalizeSidebarState();
-    bindSidebarScrollPersistence();
-    restoreSidebarScrollPosition();
+    refreshSidebarScrollPersistence();
 
-    window.addEventListener('load', function () {
-        bindSidebarScrollPersistence();
-        restoreSidebarScrollPosition();
-    });
+    document.addEventListener('DOMContentLoaded', refreshSidebarScrollPersistence);
+    window.addEventListener('load', refreshSidebarScrollPersistence);
+    window.addEventListener('pageshow', refreshSidebarScrollPersistence);
+    window.addEventListener('pagehide', saveSidebarScrollPosition);
+    window.addEventListener('beforeunload', saveSidebarScrollPosition);
 
     // Close mobile sidebar if user clicks anywhere outside it (e.g., branch dropdown)
     document.addEventListener('click', function (e) {

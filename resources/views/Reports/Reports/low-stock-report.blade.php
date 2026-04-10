@@ -69,6 +69,10 @@
                                 $productThreshold = (int) ($product->reorder_level ?: $threshold);
                                 $productTarget = (int) (($product->reorder_quantity ?: 0) > 0 ? $product->reorder_quantity : $target);
                                 $needed = max(0, $productTarget - $product->stock);
+                                $restockQuery = ['product_id' => $product->id];
+                                if ($needed > 0) {
+                                    $restockQuery['quantity'] = $needed;
+                                }
                             @endphp
                             <tr>
                                 <td class="ps-4 py-3 fw-bold text-dark">{{ $product->name }}</td>
@@ -80,7 +84,7 @@
                                 <td class="py-3 text-end text-muted">{{ number_format($product->stock * $product->purchase_price, 2) }}</td>
                                 <td class="py-3 text-end fw-bold text-primary">+{{ number_format($needed) }}</td>
                                 <td class="pe-4 py-3 text-center">
-                                    <a href="{{ url('purchase-add') }}?product_id={{ $product->id }}&qty={{ $needed }}" 
+                                    <a href="{{ route('purchases.create', $restockQuery) }}" 
                                        class="btn btn-danger btn-xs py-1 px-3 fw-bold" 
                                        style="background: #ef4444 !important; border: none; font-size: 10px;">
                                         RESTOCK

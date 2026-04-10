@@ -313,6 +313,7 @@
 <script>
         document.addEventListener('DOMContentLoaded', function() {
             const products = @json($products);
+            const initialRows = @json(old('products', $initialProducts ?? []));
             let productCounter = 0;
 
             const tableBody = document.getElementById('productsTableBody');
@@ -339,9 +340,18 @@
                     .replace(/'/g, '&#39;');
             }
 
-            function createEmptyRow() {
+            function createEmptyRow(seed = {}) {
                 const rowId = `productRow_${productCounter}`;
                 const rowIndex = productCounter;
+                const normalizedSeed = {
+                    product_id: seed.product_id ? String(seed.product_id) : '',
+                    product_name: seed.product_name ?? '',
+                    quantity: Number(seed.quantity ?? 1),
+                    unit: seed.unit ?? '',
+                    rate: Number(seed.rate ?? 0),
+                    discount: Number(seed.discount ?? 0),
+                    tax_id: seed.tax_id ? String(seed.tax_id) : '',
+                };
                 const row = document.createElement('tr');
                 row.id = rowId;
                 row.innerHTML = `
@@ -351,18 +361,18 @@
                         </select>
                     </td>
                     <td>
-                        <input type="number" name="products[${rowIndex}][quantity]" value="1" class="form-control quantity-input" min="1"
+                        <input type="number" name="products[${rowIndex}][quantity]" value="${normalizedSeed.quantity > 0 ? normalizedSeed.quantity : 1}" class="form-control quantity-input" min="0.01" step="0.01"
                                data-row="${rowIndex}" onchange="updateProductAmount(${rowIndex})">
                     </td>
                     <td>
-                        <input type="text" name="products[${rowIndex}][unit]" value="" class="form-control unit-input" data-row="${rowIndex}">
+                        <input type="text" name="products[${rowIndex}][unit]" value="${escapeHtml(normalizedSeed.unit)}" class="form-control unit-input" data-row="${rowIndex}">
                     </td>
                     <td>
-                        <input type="number" name="products[${rowIndex}][rate]" value="0" class="form-control rate-input" step="0.01" min="0"
+                        <input type="number" name="products[${rowIndex}][rate]" value="${normalizedSeed.rate}" class="form-control rate-input" step="0.01" min="0"
                                data-row="${rowIndex}" onchange="updateProductAmount(${rowIndex})">
                     </td>
                     <td>
-                        <input type="number" name="products[${rowIndex}][discount]" value="0" class="form-control discount-input" step="0.01" min="0"
+                        <input type="number" name="products[${rowIndex}][discount]" value="${normalizedSeed.discount}" class="form-control discount-input" step="0.01" min="0"
                                data-row="${rowIndex}" onchange="updateProductAmount(${rowIndex})">
                     </td>
                     <td>
@@ -382,7 +392,63 @@
                 tableBody.appendChild(row);
                 productCounter += 1;
                 bindRowEvents(row);
+
+                const productSelect = row.querySelector('.product-select');
+                const taxSelect = row.querySelector('.tax-select');
+
+                if (productSelect && normalizedSeed.product_id) {
+                    productSelect.value = normalizedSeed.product_id;
+                }
+
+                if (taxSelect && normalizedSeed.tax_id) {
+                    taxSelect.value = normalizedSeed.tax_id;
+                }
+
+                if (normalizedSeed.product_id) {
+                    syncSelectedProductDetails(row, normalizedSeed.product_name);
+                } else {
+                    updateProductAmount(rowIndex);
+                }
+
                 return row;
+            }
+
+            function syncSelectedProductDetails(row, seededProductName = '') {
+                const productSelect = row.querySelector('.product-select');
+                if (!productSelect) {
+                    return;
+                }
+
+                const selectedOption = productSelect.options[productSelect.selectedIndex];
+                const rowIndex = productSelect.getAttribute('data-row');
+                let nameField = document.querySelector(`input[name="products[${rowIndex}][product_name]"]`);
+                const unitInput = row.querySelector('.unit-input');
+                const rateInput = row.querySelector('.rate-input');
+
+                const unit = selectedOption?.getAttribute('data-unit') || '';
+                const price = Number(selectedOption?.getAttribute('data-price') || 0);
+                const productName = selectedOption?.getAttribute('data-name') || seededProductName || '';
+
+                if (!nameField && productName) {
+                    nameField = document.createElement('input');
+                    nameField.type = 'hidden';
+                    nameField.name = `products[${rowIndex}][product_name]`;
+                    row.querySelector('td').appendChild(nameField);
+                }
+
+                if (nameField) {
+                    nameField.value = productName;
+                }
+
+                if (unitInput && !String(unitInput.value || '').trim()) {
+                    unitInput.value = unit;
+                }
+
+                if (rateInput && Number(rateInput.value || 0) <= 0) {
+                    rateInput.value = price;
+                }
+
+                updateProductAmount(rowIndex);
             }
 
             function bindRowEvents(row) {
@@ -392,34 +458,7 @@
                 }
 
                 productSelect.addEventListener('change', function() {
-                    const selectedOption = this.options[this.selectedIndex];
-                    const rowIndex = this.getAttribute('data-row');
-                    const nameField = document.querySelector(`input[name="products[${rowIndex}][product_name]"]`);
-                    const unitInput = row.querySelector('.unit-input');
-                    const rateInput = row.querySelector('.rate-input');
-
-                    const unit = selectedOption.getAttribute('data-unit') || '';
-                    const price = selectedOption.getAttribute('data-price') || 0;
-                    const productName = selectedOption.getAttribute('data-name') || '';
-
-                    if (!nameField && productName) {
-                        const hiddenName = document.createElement('input');
-                        hiddenName.type = 'hidden';
-                        hiddenName.name = `products[${rowIndex}][product_name]`;
-                        hiddenName.value = productName;
-                        row.querySelector('td').appendChild(hiddenName);
-                    } else if (nameField) {
-                        nameField.value = productName;
-                    }
-
-                    if (unitInput) {
-                        unitInput.value = unit;
-                    }
-                    if (rateInput && Number(rateInput.value || 0) <= 0) {
-                        rateInput.value = price;
-                    }
-
-                    updateProductAmount(rowIndex);
+                    syncSelectedProductDetails(row);
 
                     if (isLastRowFilled()) {
                         createEmptyRow();
@@ -452,7 +491,16 @@
                 createEmptyRow();
             });
 
-            createEmptyRow();
+            if (Array.isArray(initialRows) && initialRows.length > 0) {
+                initialRows.forEach((row) => createEmptyRow(row));
+                if (isLastRowFilled()) {
+                    createEmptyRow();
+                }
+            } else {
+                createEmptyRow();
+            }
+
+            updateTotals();
             
             // Global functions for inline event handlers
             window.updateProductAmount = function(rowIndex) {
