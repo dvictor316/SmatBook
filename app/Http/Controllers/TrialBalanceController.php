@@ -231,10 +231,10 @@ class TrialBalanceController extends Controller
                 }
             } else {
                 $net = $openingBalance + $cr - $dr;
-                if ($net <= 0) {
-                    $account->credit_balance = abs($net);
+                if ($net >= 0) {
+                    $account->credit_balance = $net;
                 } else {
-                    $account->debit_balance = $net;
+                    $account->debit_balance = abs($net);
                 }
             }
 
@@ -338,10 +338,10 @@ class TrialBalanceController extends Controller
                 } 
                 // Liabilities, Equity, Revenue usually have Credit balances
                 else {
-                    if ($netBalance <= 0) {
-                        $creditBalance = abs($netBalance);
+                    if ($netBalance >= 0) {
+                        $creditBalance = $netBalance;
                     } else {
-                        $debitBalance = $netBalance;
+                        $debitBalance = abs($netBalance);
                     }
                 }
 

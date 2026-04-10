@@ -347,7 +347,7 @@ use App\Support\AppMailer;
                 // Liability/Equity/Revenue logic
                 else {
                     $netBalance = $openingBalance + $totalCredit - $totalDebit;
-                    $netBalance <= 0 ? $creditBalance = abs($netBalance) : $debitBalance = $netBalance;
+                    $netBalance >= 0 ? $creditBalance = $netBalance : $debitBalance = abs($netBalance);
                 }
 
                 // Return a plain ARRAY to prevent the "stdClass" error
