@@ -31,6 +31,19 @@ use App\Support\AppMailer;
 
     class ReportController extends Controller
     {
+        private function calculateReportSideBalances(float $amount, bool $isDebitNormal): array
+        {
+            if ($isDebitNormal) {
+                return $amount >= 0
+                    ? ['debit' => $amount, 'credit' => 0.0]
+                    : ['debit' => 0.0, 'credit' => abs($amount)];
+            }
+
+            return $amount >= 0
+                ? ['debit' => 0.0, 'credit' => $amount]
+                : ['debit' => abs($amount), 'credit' => 0.0];
+        }
+
         private function ignoredAppliedPaymentStatuses(): array
         {
             return ['failed', 'cancelled', 'pending approval'];
@@ -327,8 +340,10 @@ use App\Support\AppMailer;
             ->get()
             ->keyBy('account_id');
 
+        $openingTotals = ['debit' => 0.0, 'credit' => 0.0];
+
         $accounts = $accountsBase
-            ->map(function($account) use ($txnTotals) {
+            ->map(function($account) use ($txnTotals, &$openingTotals) {
                 $totals = $txnTotals->get($account->id);
                 $totalDebit = (float) ($totals->total_debit ?? 0);
                 $totalCredit = (float) ($totals->total_credit ?? 0);
@@ -339,16 +354,21 @@ use App\Support\AppMailer;
 
                 $normalizedType = strtolower(trim((string) ($account->type ?? '')));
 
-                // Asset/Expense logic
-                if (in_array($normalizedType, ['asset', 'expense'], true)) {
-                    $netBalance = $openingBalance + $totalDebit - $totalCredit;
-                    $netBalance >= 0 ? $debitBalance = $netBalance : $creditBalance = abs($netBalance);
-                } 
-                // Liability/Equity/Revenue logic
-                else {
-                    $netBalance = $openingBalance + $totalCredit - $totalDebit;
-                    $netBalance >= 0 ? $creditBalance = $netBalance : $debitBalance = abs($netBalance);
+                $isDebitNormal = in_array($normalizedType, ['asset', 'expense'], true);
+
+                if (abs($openingBalance) > 0.0001) {
+                    $openingSide = $this->calculateReportSideBalances($openingBalance, $isDebitNormal);
+                    $openingTotals['debit'] += $openingSide['debit'];
+                    $openingTotals['credit'] += $openingSide['credit'];
                 }
+
+                $netBalance = $isDebitNormal
+                    ? $openingBalance + $totalDebit - $totalCredit
+                    : $openingBalance + $totalCredit - $totalDebit;
+
+                $netSide = $this->calculateReportSideBalances($netBalance, $isDebitNormal);
+                $debitBalance = $netSide['debit'];
+                $creditBalance = $netSide['credit'];
 
                 // Return a plain ARRAY to prevent the "stdClass" error
                 $hasActivity = ($totalDebit > 0) || ($totalCredit > 0) || (abs($openingBalance) > 0);
@@ -365,6 +385,21 @@ use App\Support\AppMailer;
             ->filter(fn($acc) => $acc['has_activity'])
             ->sortBy('code')
             ->values();
+
+        $openingDifference = round($openingTotals['debit'] - $openingTotals['credit'], 2);
+
+        if (abs($openingDifference) >= 0.01) {
+            $accounts->push([
+                'code' => 'SYS-OPENING-EQUITY',
+                'name' => 'Opening Balance Equity',
+                'type' => 'Equity',
+                'debit_balance' => $openingDifference < 0 ? abs($openingDifference) : 0.0,
+                'credit_balance' => $openingDifference > 0 ? abs($openingDifference) : 0.0,
+                'has_activity' => true,
+            ]);
+        }
+
+        $accounts = $accounts->sortBy('code')->values();
 
         // 3. Totals
         $totalDebits = $accounts->sum('debit_balance');

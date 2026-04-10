@@ -15,6 +15,19 @@ use App\Exports\BalanceSheetExport;
 
 class BalanceSheetController extends Controller
 {
+    private function calculateSideBalances(float $amount, bool $isDebitNormal): array
+    {
+        if ($isDebitNormal) {
+            return $amount >= 0
+                ? ['debit' => $amount, 'credit' => 0.0]
+                : ['debit' => 0.0, 'credit' => abs($amount)];
+        }
+
+        return $amount >= 0
+            ? ['debit' => 0.0, 'credit' => $amount]
+            : ['debit' => abs($amount), 'credit' => 0.0];
+    }
+
     private function applyTransactionScope($query, Request $request)
     {
         $companyId = (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0);
@@ -233,17 +246,25 @@ class BalanceSheetController extends Controller
         });
 
         // 2. Transform balances based on Account Type
-        $accounts->transform(function ($account) {
+        $openingTotals = ['debit' => 0.0, 'credit' => 0.0];
+
+        $accounts->transform(function ($account) use (&$openingTotals) {
             $dr = ($account->total_debit ?? 0);
             $cr = ($account->total_credit ?? 0);
-            $opening = $account->opening_balance ?? 0;
+            $opening = (float) ($account->opening_balance ?? 0);
             $type = $this->normalizeAccountType($account->type ?? null);
+            $isDebitNormal = in_array($type, ['asset', 'expense'], true);
 
-            if (in_array($type, ['asset', 'expense'], true)) {
-                $account->balance = ($opening + $dr) - $cr;
-            } else {
-                $account->balance = ($opening + $cr) - $dr;
+            if (abs($opening) > 0.0001) {
+                $openingSide = $this->calculateSideBalances($opening, $isDebitNormal);
+                $openingTotals['debit'] += $openingSide['debit'];
+                $openingTotals['credit'] += $openingSide['credit'];
             }
+
+            $account->balance = $isDebitNormal
+                ? ($opening + $dr) - $cr
+                : ($opening + $cr) - $dr;
+
             return $account;
         });
 
@@ -273,6 +294,19 @@ class BalanceSheetController extends Controller
         }
         $currentLiabilities = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type ?? null) === 'liability');
         $equity = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type ?? null) === 'equity'); // Changed from equityAccounts to equity
+        $openingDifference = round($openingTotals['debit'] - $openingTotals['credit'], 2);
+
+        if (abs($openingDifference) >= 0.01) {
+            $equity = $equity->concat([
+                (object) [
+                    'id' => null,
+                    'code' => 'SYS-OPENING-EQUITY',
+                    'name' => 'Opening Balance Equity',
+                    'type' => 'Equity',
+                    'balance' => $openingDifference,
+                ],
+            ]);
+        }
 
         // 5. Final Totals
         $totalCurrentAssets = $currentAssets->sum('balance');

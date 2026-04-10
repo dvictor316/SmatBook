@@ -13,6 +13,19 @@ use App\Exports\TrialBalanceExport;
 
 class TrialBalanceController extends Controller
 {
+    private function calculateSideBalances(float $amount, bool $isDebitNormal): array
+    {
+        if ($isDebitNormal) {
+            return $amount >= 0
+                ? ['debit' => $amount, 'credit' => 0.0]
+                : ['debit' => 0.0, 'credit' => abs($amount)];
+        }
+
+        return $amount >= 0
+            ? ['debit' => 0.0, 'credit' => $amount]
+            : ['debit' => abs($amount), 'credit' => 0.0];
+    }
+
     private function applyTransactionScope($query, Request $request)
     {
         $companyId = (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0);
@@ -209,40 +222,54 @@ class TrialBalanceController extends Controller
         $this->applyAccountScope($accountsQuery, $request);
 
         $accounts = $accountsQuery->get();
+        $openingTotals = ['debit' => 0.0, 'credit' => 0.0];
 
         // 4. Calculate Net Position for each account
-        $accounts = $accounts->map(function ($account) use ($txnTotals) {
+        $accounts = $accounts->map(function ($account) use ($txnTotals, &$openingTotals) {
             $totals = $txnTotals->get($account->id);
             $dr = (float) ($totals->total_debit ?? 0);
             $cr = (float) ($totals->total_credit ?? 0);
             $openingBalance = (float) ($account->opening_balance ?? 0);
             $type = strtolower((string) ($account->type ?? ''));
+            $isDebitNormal = in_array($type, ['asset', 'expense'], true);
 
             $account->debit_balance = 0;
             $account->credit_balance = 0;
 
-            // Debit-Normal accounts (Asset/Expense) vs Credit-Normal (Liability/Equity/Revenue)
-            if (in_array($type, ['asset', 'expense'], true)) {
-                $net = $openingBalance + $dr - $cr;
-                if ($net >= 0) {
-                    $account->debit_balance = $net;
-                } else {
-                    $account->credit_balance = abs($net);
-                }
-            } else {
-                $net = $openingBalance + $cr - $dr;
-                if ($net >= 0) {
-                    $account->credit_balance = $net;
-                } else {
-                    $account->debit_balance = abs($net);
-                }
+            if (abs($openingBalance) > 0.0001) {
+                $openingSide = $this->calculateSideBalances($openingBalance, $isDebitNormal);
+                $openingTotals['debit'] += $openingSide['debit'];
+                $openingTotals['credit'] += $openingSide['credit'];
             }
 
+            $net = $isDebitNormal
+                ? $openingBalance + $dr - $cr
+                : $openingBalance + $cr - $dr;
+
+            $netSide = $this->calculateSideBalances($net, $isDebitNormal);
+            $account->debit_balance = $netSide['debit'];
+            $account->credit_balance = $netSide['credit'];
             $account->has_activity = ($dr > 0) || ($cr > 0) || (abs($openingBalance) > 0);
             return $account;
         })
         ->filter(fn($acc) => $acc->has_activity)
         ->sortBy('code');
+
+        $openingDifference = round($openingTotals['debit'] - $openingTotals['credit'], 2);
+
+        if (abs($openingDifference) >= 0.01) {
+            $accounts->push((object) [
+                'id' => null,
+                'code' => 'SYS-OPENING-EQUITY',
+                'name' => 'Opening Balance Equity',
+                'type' => 'Equity',
+                'debit_balance' => $openingDifference < 0 ? abs($openingDifference) : 0.0,
+                'credit_balance' => $openingDifference > 0 ? abs($openingDifference) : 0.0,
+                'has_activity' => true,
+            ]);
+        }
+
+        $accounts = $accounts->sortBy('code')->values();
 
         // 5. Final variables exactly as requested by your Blade View
         return view('Reports.Reports.trial-balance', [
