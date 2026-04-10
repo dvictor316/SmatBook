@@ -2088,8 +2088,10 @@ $(document).ready(function() {
                                 step="1"
                                 value="${item.qty}"
                                 class="cart-qty-input"
+                                inputmode="decimal"
                                 onchange="updateCartQty(${i}, this.value)"
-                                oninput="updateCartQty(${i}, this.value)"
+                                onblur="updateCartQty(${i}, this.value)"
+                                onkeydown="if (event.key === 'Enter') { event.preventDefault(); updateCartQty(${i}, this.value); this.blur(); }"
                             >
                         </td>
                         <td class="text-end fw-bold tabular-nums" style="color: var(--text-primary);">${fmt.format(item.total)}</td>
@@ -2135,8 +2137,10 @@ $(document).ready(function() {
     };
 
     window.updateCartQty = function(i, value) {
-        const nextQty = Math.max(0.01, parseFloat(value) || 0.01);
         if (!cart[i]) return;
+
+        const parsedQty = parseFloat(value);
+        const nextQty = Number.isFinite(parsedQty) ? Math.max(0.01, parsedQty) : Math.max(0.01, parseFloat(cart[i].qty) || 0.01);
 
         cart[i].qty = nextQty;
         calculateCartLine(cart[i]);
@@ -2799,12 +2803,12 @@ window.POS_ENABLE_FALLBACK = function () {
     }
 
     if (cartBody) {
-        cartBody.addEventListener('input', function (e) {
-            const target = e.target;
+        const commitCartQtyInput = function (target) {
             if (!target || !target.classList.contains('cart-qty-input')) return;
             const index = parseInt(target.getAttribute('data-index') || '0', 10);
             if (Number.isNaN(index) || !cart[index]) return;
-            const qty = Math.max(0.01, parseFloat(target.value || '1') || 0.01);
+            const parsedQty = parseFloat(target.value);
+            const qty = Number.isFinite(parsedQty) ? Math.max(0.01, parsedQty) : Math.max(0.01, parseFloat(cart[index].qty || '1') || 0.01);
             target.value = String(qty);
             cart[index].qty = qty;
             const price = cart[index].price;
@@ -2820,6 +2824,22 @@ window.POS_ENABLE_FALLBACK = function () {
             cart[index].taxVal = taxVal;
             cart[index].total = afterDisc + taxVal;
             renderCart();
+        };
+
+        cartBody.addEventListener('change', function (e) {
+            const target = e.target;
+            commitCartQtyInput(target);
+        });
+        cartBody.addEventListener('focusout', function (e) {
+            const target = e.target;
+            commitCartQtyInput(target);
+        });
+        cartBody.addEventListener('keydown', function (e) {
+            const target = e.target;
+            if (!target || !target.classList.contains('cart-qty-input') || e.key !== 'Enter') return;
+            e.preventDefault();
+            commitCartQtyInput(target);
+            target.blur();
         });
         cartBody.addEventListener('click', function (e) {
             const target = e.target.closest('button[data-remove]');
