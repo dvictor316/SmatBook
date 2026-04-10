@@ -338,10 +338,10 @@
     .bg-warning-subtle { background-color: #fef3c7 !important; }
     .bg-danger-subtle { background-color: #fee2e2 !important; }
     .bg-info-subtle { background-color: #dbeafe !important; }
-    .text-success { color: #15803d !important; }
-    .text-warning { color: #b45309 !important; }
-    .text-danger { color: #b91c1c !important; }
-    .text-info { color: #1d4ed8 !important; }
+    .receive-history-table .text-success { color: #166534 !important; }
+    .receive-history-table .text-warning { color: #92400e !important; }
+    .receive-history-table .text-danger { color: #991b1b !important; }
+    .receive-history-table .text-info { color: #1e3a8a !important; }
 
     @media (max-width: 991.98px) {
         .receive-report-stamp {
