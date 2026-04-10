@@ -1372,7 +1372,7 @@ label {
                     </div>
                     <div class="col-6">
                         <label id="qty-label">Quantity</label>
-                        <input type="number" id="quantity" class="form-control fw-bold tabular-nums" value="1" min="1" step="1">
+                        <input type="number" id="quantity" class="form-control fw-bold tabular-nums" value="1" min="0.01" step="1" inputmode="decimal">
                     </div>
                     <div class="col-6">
                         <label style="color: var(--danger-500);">Discount</label>
@@ -2085,7 +2085,7 @@ $(document).ready(function() {
                             <input
                                 type="number"
                                 min="0.01"
-                                step="0.01"
+                                step="1"
                                 value="${item.qty}"
                                 class="cart-qty-input"
                                 onchange="updateCartQty(${i}, this.value)"
@@ -2759,7 +2759,7 @@ window.POS_ENABLE_FALLBACK = function () {
                         <small style="color: var(--text-secondary); font-size: 0.75rem;">${item.qty} ${item.unitLabel || 'unit'} × ${fmt.format(item.price)}</small>
                     </td>
                     <td class="text-center">
-                        <input type="number" min="1" step="1" value="${item.qty}" class="cart-qty-input" data-index="${i}">
+                        <input type="number" min="0.01" step="1" value="${item.qty}" class="cart-qty-input" data-index="${i}" inputmode="decimal">
                     </td>
                     <td class="text-end fw-bold tabular-nums" style="color: var(--text-primary);">${fmt.format(item.total)}</td>
                     <td class="text-center">
@@ -2804,7 +2804,7 @@ window.POS_ENABLE_FALLBACK = function () {
             if (!target || !target.classList.contains('cart-qty-input')) return;
             const index = parseInt(target.getAttribute('data-index') || '0', 10);
             if (Number.isNaN(index) || !cart[index]) return;
-            const qty = Math.max(1, Math.round(parseFloat(target.value || '1') || 1));
+            const qty = Math.max(0.01, parseFloat(target.value || '1') || 0.01);
             target.value = String(qty);
             cart[index].qty = qty;
             const price = cart[index].price;

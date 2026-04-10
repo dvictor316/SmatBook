@@ -619,7 +619,8 @@ class CustomerController extends Controller
         $outstandingOpeningBalance = (float) ($openingSnapshot['due'] ?? 0);
         $outstandingInvoicesTotal = (float) $outstandingSales->sum('balance');
         $supportsStandalonePayments = !$this->paymentsRequireSaleId();
-        $paymentHistory = Payment::query()
+        $activeBranch = $this->getActiveBranchContext();
+        $paymentHistory = Payment::with(['account', 'sale', 'creator'])
             ->where('customer_id', $customer->id)
             ->orderBy('created_at')
             ->get();
@@ -627,13 +628,30 @@ class CustomerController extends Controller
         $paymentTimeline = collect();
         $runningOpeningBalance = (float) ($openingSnapshot['original'] ?? 0);
         if ($runningOpeningBalance > 0) {
+            $openingDate = $customer->opening_balance_date
+                ? \Illuminate\Support\Carbon::parse($customer->opening_balance_date)->startOfDay()
+                : ($openingSnapshot['sale']?->order_date
+                    ? \Illuminate\Support\Carbon::parse($openingSnapshot['sale']->order_date)->startOfDay()
+                    : ($openingSnapshot['sale']?->created_at ?: $customer->created_at));
+
             $paymentTimeline->push([
-                'date' => $customer->opening_balance_date
-                    ?: ($openingSnapshot['sale']?->order_date ?: ($openingSnapshot['sale']?->created_at ?: $customer->created_at)),
+                'date' => $openingDate,
                 'reference' => 'OPENING',
+                'payment_id' => $openingSnapshot['sale']?->invoice_no ?: 'OPENING-BAL-' . $customer->id,
                 'type' => 'Opening Balance',
+                'entry_icon' => 'fa-flag-checkered',
+                'method' => 'Opening Entry',
+                'status' => $runningOpeningBalance > 0 ? 'Outstanding' : 'Cleared',
+                'status_class' => $runningOpeningBalance > 0 ? 'warning' : 'success',
+                'account' => 'Customer Opening Balance',
+                'branch' => $openingSnapshot['sale']?->branch_name ?: ($activeBranch['name'] ?? 'Workspace Default'),
+                'note' => 'Opening balance carried into customer ledger.',
+                'source_label' => 'Opening Entry',
+                'invoice_amount' => $runningOpeningBalance,
+                'payment_amount' => 0.0,
                 'amount' => $runningOpeningBalance,
                 'running_balance' => $runningOpeningBalance,
+                'created_by' => 'System',
             ]);
         }
 
@@ -646,11 +664,45 @@ class CustomerController extends Controller
             $paymentTimeline->push([
                 'date' => $payment->created_at,
                 'reference' => $payment->reference ?: ($payment->payment_id ?: ('PAY-' . $payment->id)),
-                'type' => $isOpeningPayment ? 'Opening Balance Payment' : 'Payment',
+                'payment_id' => $payment->payment_id ?: ('PAY-' . $payment->id),
+                'type' => $isOpeningPayment ? 'Opening Balance / Payment' : 'Payment',
+                'entry_icon' => $isOpeningPayment ? 'fa-wallet' : 'fa-money-bill-wave',
+                'method' => $payment->method ?: 'Unspecified',
+                'status' => $payment->status ?: 'Completed',
+                'status_class' => match (strtolower((string) ($payment->status ?? 'completed'))) {
+                    'completed', 'paid', 'success' => 'success',
+                    'pending', 'partial' => 'warning',
+                    'failed', 'cancelled' => 'danger',
+                    default => 'info',
+                },
+                'account' => $payment->account?->name ?: 'Not assigned',
+                'branch' => $payment->branch_name ?: ($payment->sale?->branch_name ?: ($activeBranch['name'] ?? 'Workspace Default')),
+                'note' => $payment->note ?: ($isOpeningPayment ? 'Opening balance payment received.' : 'Customer payment received.'),
+                'source_label' => $isOpeningPayment ? 'Opening Balance Allocation' : (($payment->sale?->invoice_no) ?: 'Direct Customer Payment'),
+                'invoice_amount' => 0.0,
+                'payment_amount' => (float) $payment->amount,
                 'amount' => (float) $payment->amount,
                 'running_balance' => $isOpeningPayment ? $runningOpeningBalance : null,
+                'created_by' => $payment->creator?->name ?: 'System',
             ]);
         }
+
+        $timelineDates = collect([
+            $paymentTimeline->first()['date'] ?? null,
+            $paymentTimeline->last()['date'] ?? null,
+        ])->filter();
+
+        $reportMeta = [
+            'generated_at' => now(),
+            'period_from' => $timelineDates->isNotEmpty() ? \Illuminate\Support\Carbon::parse($paymentTimeline->min('date'))->copy() : now(),
+            'period_to' => $timelineDates->isNotEmpty() ? \Illuminate\Support\Carbon::parse($paymentTimeline->max('date'))->copy() : now(),
+            'branch_name' => $activeBranch['name'] ?? 'Workspace Default',
+            'customer_code' => 'CL-' . str_pad((string) $customer->id, 4, '0', STR_PAD_LEFT),
+            'open_invoice_count' => $outstandingSales->count(),
+            'history_count' => $paymentTimeline->count(),
+            'latest_account' => $paymentHistory->last()?->account?->name ?: 'Not assigned',
+            'latest_method' => $paymentHistory->last()?->method ?: 'Not specified',
+        ];
 
         return view('Customers.receive-payment', compact(
             'customer',
@@ -661,7 +713,8 @@ class CustomerController extends Controller
             'supportsStandalonePayments',
             'paymentHistory',
             'openingSnapshot',
-            'paymentTimeline'
+            'paymentTimeline',
+            'reportMeta'
         ));
     }
 

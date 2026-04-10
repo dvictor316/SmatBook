@@ -158,35 +158,105 @@
 
         <div class="card border-0 shadow-sm mt-4">
             <div class="card-header bg-white">
-                <h5 class="card-title mb-1">Payment History</h5>
-                <p class="text-muted mb-0">Opening balance and collections in running order.</p>
+                <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
+                    <div>
+                        <h5 class="card-title mb-1 d-flex align-items-center gap-2">
+                            <i class="fas fa-file-invoice-dollar text-primary"></i>
+                            Payment History
+                        </h5>
+                        <p class="text-muted mb-0">Opening balance and collections in running order with account, branch, method and running balance context.</p>
+                    </div>
+                    <div class="receive-report-stamp">
+                        <div><span>Coverage:</span> {{ optional($reportMeta['period_from'] ?? null)->format('d M Y, h:i A') }} to {{ optional($reportMeta['period_to'] ?? null)->format('d M Y, h:i A') }}</div>
+                        <div><span>Generated:</span> {{ optional($reportMeta['generated_at'] ?? null)->format('d M Y, h:i A') }}</div>
+                        <div><span>Branch:</span> {{ $reportMeta['branch_name'] ?? 'Workspace Default' }}</div>
+                    </div>
+                </div>
             </div>
             <div class="card-body">
+                <div class="receive-report-overview mb-4">
+                    <div class="overview-item">
+                        <span class="overview-label"><i class="fas fa-id-badge"></i> Customer Code</span>
+                        <strong>{{ $reportMeta['customer_code'] ?? ('CL-' . str_pad((string) $customer->id, 4, '0', STR_PAD_LEFT)) }}</strong>
+                    </div>
+                    <div class="overview-item">
+                        <span class="overview-label"><i class="fas fa-file-invoice"></i> Open Invoices</span>
+                        <strong>{{ $reportMeta['open_invoice_count'] ?? $outstandingSales->count() }}</strong>
+                    </div>
+                    <div class="overview-item">
+                        <span class="overview-label"><i class="fas fa-stream"></i> Ledger Rows</span>
+                        <strong>{{ $reportMeta['history_count'] ?? ($paymentTimeline ?? collect())->count() }}</strong>
+                    </div>
+                    <div class="overview-item">
+                        <span class="overview-label"><i class="fas fa-university"></i> Latest Account</span>
+                        <strong>{{ $reportMeta['latest_account'] ?? 'Not assigned' }}</strong>
+                    </div>
+                    <div class="overview-item">
+                        <span class="overview-label"><i class="fas fa-credit-card"></i> Latest Method</span>
+                        <strong>{{ $reportMeta['latest_method'] ?? 'Not specified' }}</strong>
+                    </div>
+                    <div class="overview-item">
+                        <span class="overview-label"><i class="fas fa-scale-balanced"></i> Balance Due</span>
+                        <strong>₦{{ number_format(($outstandingInvoicesTotal + $outstandingOpeningBalance), 2) }}</strong>
+                    </div>
+                </div>
+
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
+                    <table class="table table-hover align-middle mb-0 receive-history-table">
                         <thead class="table-light">
                             <tr>
-                                <th>Date</th>
+                                <th>Date / Time</th>
+                                <th>Entry</th>
                                 <th>Reference</th>
+                                <th>Payment ID</th>
                                 <th>Type</th>
-                                <th class="text-end">Amount</th>
+                                <th>Method</th>
+                                <th>Deposit / Account</th>
+                                <th>Branch</th>
+                                <th>Note / Source</th>
+                                <th class="text-end">Invoice</th>
+                                <th class="text-end">Payment</th>
                                 <th class="text-end">Running Balance</th>
+                                <th>Status</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse(($paymentTimeline ?? collect()) as $entry)
                                 <tr>
-                                    <td>{{ optional($entry['date'] ?? null)->format('d M Y') ?: \Carbon\Carbon::parse($entry['date'])->format('d M Y') }}</td>
-                                    <td>{{ $entry['reference'] }}</td>
+                                    <td>
+                                        <div class="fw-semibold">{{ optional($entry['date'] ?? null)->format('d M Y') ?: \Carbon\Carbon::parse($entry['date'])->format('d M Y') }}</div>
+                                        <small class="text-muted">{{ optional($entry['date'] ?? null)->format('h:i A') ?: \Carbon\Carbon::parse($entry['date'])->format('h:i A') }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="entry-pill">
+                                            <i class="fas {{ $entry['entry_icon'] ?? 'fa-receipt' }}"></i>
+                                            {{ $entry['source_label'] ?? 'Ledger Entry' }}
+                                        </span>
+                                    </td>
+                                    <td class="fw-semibold">{{ $entry['reference'] }}</td>
+                                    <td>{{ $entry['payment_id'] ?? '—' }}</td>
                                     <td>{{ $entry['type'] }}</td>
-                                    <td class="text-end fw-semibold">₦{{ number_format((float) ($entry['amount'] ?? 0), 2) }}</td>
+                                    <td>{{ $entry['method'] ?? '—' }}</td>
+                                    <td>{{ $entry['account'] ?? '—' }}</td>
+                                    <td>{{ $entry['branch'] ?? '—' }}</td>
+                                    <td>
+                                        <div>{{ $entry['note'] ?? '—' }}</div>
+                                        <small class="text-muted">By {{ $entry['created_by'] ?? 'System' }}</small>
+                                    </td>
+                                    <td class="text-end fw-semibold text-danger">₦{{ number_format((float) ($entry['invoice_amount'] ?? 0), 2) }}</td>
+                                    <td class="text-end fw-semibold text-success">₦{{ number_format((float) ($entry['payment_amount'] ?? 0), 2) }}</td>
                                     <td class="text-end fw-semibold">
                                         {{ isset($entry['running_balance']) && $entry['running_balance'] !== null ? '₦' . number_format((float) $entry['running_balance'], 2) : '—' }}
+                                    </td>
+                                    <td>
+                                        <span class="badge rounded-pill bg-{{ $entry['status_class'] ?? 'secondary' }}-subtle text-{{ $entry['status_class'] ?? 'secondary' }}">
+                                            {{ $entry['status'] ?? 'Recorded' }}
+                                        </span>
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="text-center text-muted py-4">No payment history recorded for this customer yet.</td>
+                                    <td colspan="13" class="text-center text-muted py-4">No payment history recorded for this customer yet.</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -196,5 +266,92 @@
         </div>
     </div>
 </div>
+
+<style>
+    .receive-report-stamp {
+        font-size: 0.76rem;
+        line-height: 1.55;
+        color: #64748b;
+        background: linear-gradient(135deg, #eff6ff, #f8fafc);
+        border: 1px solid #dbeafe;
+        border-radius: 16px;
+        padding: 0.9rem 1rem;
+        min-width: 280px;
+    }
+
+    .receive-report-stamp span,
+    .overview-label {
+        color: #334155;
+        font-weight: 700;
+    }
+
+    .receive-report-overview {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        gap: 0.85rem;
+    }
+
+    .overview-item {
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 0.9rem 1rem;
+        background: #f8fbff;
+    }
+
+    .overview-item strong {
+        display: block;
+        margin-top: 0.35rem;
+        color: #0f172a;
+        font-size: 0.92rem;
+    }
+
+    .receive-history-table {
+        font-size: 0.82rem;
+    }
+
+    .receive-history-table thead th {
+        font-size: 0.73rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .receive-history-table tbody td {
+        vertical-align: top;
+        padding-top: 0.9rem;
+        padding-bottom: 0.9rem;
+    }
+
+    .entry-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.45rem 0.75rem;
+        border-radius: 999px;
+        background: #eef2ff;
+        color: #3730a3;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .bg-success-subtle { background-color: #dcfce7 !important; }
+    .bg-warning-subtle { background-color: #fef3c7 !important; }
+    .bg-danger-subtle { background-color: #fee2e2 !important; }
+    .bg-info-subtle { background-color: #dbeafe !important; }
+    .text-success { color: #15803d !important; }
+    .text-warning { color: #b45309 !important; }
+    .text-danger { color: #b91c1c !important; }
+    .text-info { color: #1d4ed8 !important; }
+
+    @media (max-width: 991.98px) {
+        .receive-report-stamp {
+            min-width: auto;
+        }
+
+        .receive-history-table {
+            font-size: 0.78rem;
+        }
+    }
+</style>
 
 @endsection
