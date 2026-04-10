@@ -30,6 +30,81 @@ use App\Support\LedgerService;
 
     class ReportController extends Controller
     {
+        private function ignoredAppliedPaymentStatuses(): array
+        {
+            return ['failed', 'cancelled', 'pending approval'];
+        }
+
+        private function resolveAppliedPaymentAmount(Sale $sale): ?float
+        {
+            if (!Schema::hasTable('payments') || empty($sale->id)) {
+                return null;
+            }
+
+            $ignoredStatuses = $this->ignoredAppliedPaymentStatuses();
+
+            if ($sale->relationLoaded('payments')) {
+                $payments = collect($sale->payments)->filter(function ($payment) use ($ignoredStatuses) {
+                    $status = strtolower(trim((string) ($payment->status ?? '')));
+                    return !in_array($status, $ignoredStatuses, true);
+                });
+
+                if ($payments->isEmpty()) {
+                    return null;
+                }
+
+                return (float) $payments->sum(fn ($payment) => (float) ($payment->amount ?? 0));
+            }
+
+            $paymentQuery = DB::table('payments')->where('sale_id', $sale->id);
+            $this->applyTenantScope($paymentQuery, 'payments');
+
+            if (Schema::hasColumn('payments', 'status')) {
+                foreach ($ignoredStatuses as $ignoredStatus) {
+                    $paymentQuery->whereRaw('LOWER(COALESCE(status, "")) <> ?', [$ignoredStatus]);
+                }
+            }
+
+            $paymentSum = (float) $paymentQuery->sum('amount');
+
+            return $paymentSum > 0 ? $paymentSum : null;
+        }
+
+        private function normalizeInvoiceFinancials(Sale $sale): array
+        {
+            $total = max(0, (float) ($sale->total ?? 0));
+            $appliedPaymentAmount = $this->resolveAppliedPaymentAmount($sale);
+            $storedPaid = max(0, (float) ($sale->amount_paid ?? $sale->paid ?? 0));
+            $storedBalanceRaw = $sale->balance;
+            $hasStoredBalance = $storedBalanceRaw !== null && $storedBalanceRaw !== '';
+            $storedBalance = $hasStoredBalance ? max(0, (float) $storedBalanceRaw) : null;
+            $computedBalance = max(0, $total - $storedPaid);
+
+            if ($appliedPaymentAmount !== null) {
+                $effectivePaid = min($total, max(0, $appliedPaymentAmount));
+                $effectiveBalance = max(0, $total - $effectivePaid);
+            } else {
+                $effectiveBalance = $hasStoredBalance ? min($total, $storedBalance) : $computedBalance;
+                $effectivePaid = min($total, max(0, $total - $effectiveBalance));
+
+                if (!$hasStoredBalance && $storedPaid > 0) {
+                    $effectivePaid = min($total, $storedPaid);
+                    $effectiveBalance = max(0, $total - $effectivePaid);
+                }
+            }
+
+            $effectiveStatus = $effectiveBalance <= 0.0001
+                ? 'paid'
+                : ($effectivePaid > 0.0001 ? 'partial' : 'unpaid');
+
+            return [
+                'total' => $total,
+                'paid' => $effectivePaid,
+                'balance' => $effectiveBalance,
+                'status' => $effectiveStatus,
+            ];
+        }
+
         // ... rest of the code
         private function applyTenantScope($query, string $table)
         {
@@ -1178,6 +1253,12 @@ private function paymentReportRelations(): array
             $payments = $paymentQuery->orderBy('created_at')->get();
         }
 
+        $ignoredStatuses = $this->ignoredAppliedPaymentStatuses();
+        $payments = $payments->filter(function ($payment) use ($ignoredStatuses) {
+            $status = strtolower(trim((string) ($payment->status ?? '')));
+            return !in_array($status, $ignoredStatuses, true);
+        })->values();
+
         $openingPayments = $openingSale
             ? $payments->where('sale_id', $openingSale->id)->values()
             : collect();
@@ -1213,6 +1294,10 @@ private function paymentReportRelations(): array
         }
 
         foreach ($regularSales as $sale) {
+            $salePayments = $payments->where('sale_id', $sale->id)->values();
+            $sale->setRelation('payments', $salePayments);
+            $financials = $this->normalizeInvoiceFinancials($sale);
+            $actualPaid = (float) $salePayments->sum('amount');
             $saleEventAt = $sale->order_date
                 ? Carbon::parse($sale->order_date)->startOfDay()
                 : ($sale->created_at ? Carbon::parse($sale->created_at) : now());
@@ -1234,13 +1319,27 @@ private function paymentReportRelations(): array
             $entries->push([
                 'date' => $sale->order_date ?: $sale->created_at,
                 'sort_at' => $saleEventAt,
-                'sort_sequence' => (int) ($sale->id ?? 0),
+                'sort_sequence' => ((int) ($sale->id ?? 0) * 10),
                 'reference' => $sale->invoice_no ?: ('SALE-' . $sale->id),
                 'type' => 'Invoice',
                 'description' => 'Invoice issued',
-                'debit' => (float) ($sale->total ?? 0),
+                'debit' => (float) ($financials['total'] ?? 0),
                 'credit' => 0.0,
             ]);
+
+            $untrackedPaid = max(0, round((float) ($financials['paid'] ?? 0) - $actualPaid, 2));
+            if ($untrackedPaid > 0) {
+                $entries->push([
+                    'date' => $sale->order_date ?: $sale->created_at,
+                    'sort_at' => $saleEventAt->copy(),
+                    'sort_sequence' => ((int) ($sale->id ?? 0) * 10) + 9,
+                    'reference' => ($sale->invoice_no ?: ('SALE-' . $sale->id)) . '-APPLIED',
+                    'type' => 'Payment',
+                    'description' => 'Applied payment recorded on invoice',
+                    'debit' => 0.0,
+                    'credit' => $untrackedPaid,
+                ]);
+            }
         }
 
         foreach ($payments as $payment) {
@@ -1249,7 +1348,7 @@ private function paymentReportRelations(): array
             $entries->push([
                 'date' => $payment->created_at,
                 'sort_at' => $paymentEventAt,
-                'sort_sequence' => (int) ($payment->id ?? 0),
+                'sort_sequence' => ((int) ($payment->id ?? 0) * 10) + 5,
                 'reference' => $payment->payment_id ?: ('PAY-' . $payment->id),
                 'type' => 'Payment',
                 'description' => $payment->note
@@ -1304,9 +1403,15 @@ private function paymentReportRelations(): array
                 return $entry;
             });
 
-        $totalInvoiced = $openingOriginal + (float) $regularSales->sum('total');
-        $totalPaid = (float) $payments->sum('amount');
-        $balanceDue = max(0, $totalInvoiced - $totalPaid);
+        $regularFinancials = $regularSales->map(function ($sale) use ($payments) {
+            $sale->setRelation('payments', $payments->where('sale_id', $sale->id)->values());
+            return $this->normalizeInvoiceFinancials($sale);
+        });
+
+        $openingDue = max(0, $openingOriginal - $openingPaid);
+        $totalInvoiced = $openingOriginal + (float) $regularFinancials->sum('total');
+        $totalPaid = $openingPaid + (float) $regularFinancials->sum('paid');
+        $balanceDue = $openingDue + (float) $regularFinancials->sum('balance');
 
         return view('Reports.Reports.customer-statement', [
             'customer' => $customer,
