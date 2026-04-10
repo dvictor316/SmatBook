@@ -7,6 +7,7 @@ use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\Signature;
 use App\Models\Product;
+use App\Support\BranchInventoryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -15,6 +16,10 @@ use Carbon\Carbon;
 
 class InvoiceController extends Controller
 {
+    public function __construct(private readonly BranchInventoryService $branchInventory)
+    {
+    }
+
     private function ignoredAppliedPaymentStatuses(): array
     {
         return ['failed', 'cancelled', 'pending approval'];
@@ -130,6 +135,14 @@ class InvoiceController extends Controller
         }
 
         return $query;
+    }
+
+    private function getActiveBranchContext(): array
+    {
+        return [
+            'id' => session('active_branch_id') ? (string) session('active_branch_id') : null,
+            'name' => session('active_branch_name') ? (string) session('active_branch_name') : null,
+        ];
     }
 
     /**
@@ -296,8 +309,9 @@ class InvoiceController extends Controller
 
             $customer = $this->applyTenantScope(Customer::query(), 'customers')->findOrFail((int) $request->customer_id);
             $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
-            $branchId = session('active_branch_id');
-            $branchName = session('active_branch_name');
+            $activeBranch = $this->getActiveBranchContext();
+            $branchId = $activeBranch['id'];
+            $branchName = $activeBranch['name'];
 
             $action = trim((string) $request->input('action', 'save'));
             $requestedStatus = strtolower(trim((string) $request->input('status', 'unpaid')));
@@ -321,6 +335,34 @@ class InvoiceController extends Controller
                 $subtotal += $lineBase;
                 $discountTotal += $discount;
                 $taxTotal += $tax;
+            }
+
+            foreach ($items as $item) {
+                $productId = (int) ($item['product_id'] ?? 0);
+                if ($productId <= 0) {
+                    continue;
+                }
+
+                $productQuery = Product::query()->lockForUpdate()->whereKey($productId);
+                if ($companyId > 0 && Schema::hasColumn('products', 'company_id')) {
+                    $productQuery->where('company_id', $companyId);
+                }
+
+                $product = $productQuery->first();
+                if (!$product) {
+                    throw new \Exception('One of the selected products could not be found for this workspace.');
+                }
+
+                $requestedQty = max(0, (float) ($item['qty'] ?? 0));
+                $availableStock = (float) $this->branchInventory->getAvailableStock($product, $activeBranch);
+
+                if ($availableStock <= 0) {
+                    throw new \Exception("{$product->name} is out of stock and cannot be invoiced.");
+                }
+
+                if ($requestedQty > $availableStock) {
+                    throw new \Exception("Insufficient stock for {$product->name}. Available: {$availableStock}, requested: {$requestedQty}.");
+                }
             }
 
             $totalAmount = (float) $request->total_amount;
