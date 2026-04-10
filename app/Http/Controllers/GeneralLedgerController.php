@@ -98,34 +98,9 @@ class GeneralLedgerController extends Controller
             });
         }
 
-        // Tenant-safe scoping for non-super-admin users
         $user = Auth::user();
-        $isSuperAdmin = in_array(strtolower((string) ($user->role ?? '')), ['super_admin', 'superadmin'], true)
-            || strtolower((string) ($user->email ?? '')) === 'donvictorlive@gmail.com';
 
-        if ($isSuperAdmin) {
-            $globalQuery = Transaction::query()->with('account')
-                ->whereBetween('transaction_date', [$startDate, $endDate]);
-
-            $selectedAccountId = $request->input('account_id');
-            if ($selectedAccountId) {
-                $globalQuery->where('account_id', $selectedAccountId);
-            }
-
-            $search = trim((string) $request->input('search', ''));
-            if ($search !== '') {
-                $globalQuery->where(function ($q) use ($search) {
-                    $q->where('reference', 'like', '%' . $search . '%')
-                        ->orWhere('description', 'like', '%' . $search . '%')
-                        ->orWhereHas('account', function ($a) use ($search) {
-                            $a->where('name', 'like', '%' . $search . '%')
-                                ->orWhere('code', 'like', '%' . $search . '%');
-                        });
-                });
-            }
-
-            $query = $globalQuery;
-        } elseif (Schema::hasColumn('transactions', 'user_id')) {
+        if ($user && Schema::hasColumn('transactions', 'user_id')) {
             $userIds = $this->companyUserIds($user);
             $query->whereIn('user_id', $userIds);
         }
