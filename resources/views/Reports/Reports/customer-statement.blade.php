@@ -123,6 +123,7 @@
                                     <thead class="thead-light">
                                         <tr>
                                             <th>Date</th>
+                                            <th>Time</th>
                                             <th>Reference</th>
                                             <th>Type</th>
                                             <th>Description</th>
@@ -134,7 +135,8 @@
                                     <tbody>
                                         @forelse ($entries as $entry)
                                             <tr>
-                                                <td>{{ \Carbon\Carbon::parse($entry['date'])->format('d M Y') }}</td>
+                                                <td>{{ \Carbon\Carbon::parse($entry['entry_at'] ?? $entry['date'])->format('d M Y') }}</td>
+                                                <td>{{ \Carbon\Carbon::parse($entry['entry_at'] ?? $entry['date'])->format('h:i:s A') }}</td>
                                                 <td class="fw-semibold">{{ $entry['reference'] }}</td>
                                                 <td>{{ $entry['type'] }}</td>
                                                 <td>{{ $entry['description'] }}</td>
@@ -144,7 +146,7 @@
                                             </tr>
                                         @empty
                                             <tr>
-                                                <td colspan="7" class="text-center text-muted py-4">No transactions recorded for this customer yet.</td>
+                                                <td colspan="8" class="text-center text-muted py-4">No transactions recorded for this customer yet.</td>
                                             </tr>
                                         @endforelse
                                     </tbody>

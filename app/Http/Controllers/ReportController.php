@@ -1283,7 +1283,7 @@ private function paymentReportRelations(): array
         $this->applyTenantScope($salesQuery, 'sales');
         $this->applySaleBranchFilter($salesQuery, 'sales');
 
-        $sales = $salesQuery->orderBy('order_date')->orderBy('created_at')->get();
+        $sales = $salesQuery->orderBy('created_at')->orderBy('id')->get();
         $salesIds = $sales->pluck('id')->all();
         $openingReference = 'OPENING-BAL-' . $customer->id;
         $openingSale = $sales->first(function ($sale) use ($openingReference) {
@@ -1321,13 +1321,9 @@ private function paymentReportRelations(): array
 
         $entries = collect();
         if ($openingOriginal > 0) {
-            $openingEventAt = $customer->opening_balance_date
-                ? Carbon::parse($customer->opening_balance_date)->startOfDay()
-                : ($openingSale?->order_date
-                    ? Carbon::parse($openingSale->order_date)->startOfDay()
-                    : ($openingSale?->created_at
-                        ? Carbon::parse($openingSale->created_at)->startOfDay()
-                        : ($customer->created_at ? $customer->created_at->copy()->startOfDay()->subSecond() : now()->copy()->startOfDay()->subSecond())));
+            $openingEventAt = $openingSale?->created_at
+                ? Carbon::parse($openingSale->created_at)
+                : ($customer->created_at ? $customer->created_at->copy()->subSecond() : now()->copy()->subSecond());
 
             $entries->push([
                 'date' => $customer->opening_balance_date
@@ -1366,13 +1362,12 @@ private function paymentReportRelations(): array
             $salePayments = $payments->where('sale_id', $sale->id)->values();
             $sale->setRelation('payments', $salePayments);
             $financials = $this->normalizeInvoiceFinancials($sale);
-            $actualPaid = (float) $salePayments->sum('amount');
-            $saleEventAt = $sale->order_date
-                ? Carbon::parse($sale->order_date)->startOfDay()
-                : ($sale->created_at ? Carbon::parse($sale->created_at)->startOfDay() : now()->copy()->startOfDay());
+            $saleEventAt = $sale->created_at
+                ? Carbon::parse($sale->created_at)
+                : ($sale->order_date ? Carbon::parse($sale->order_date)->startOfDay() : now());
 
             $entries->push([
-                'date' => $sale->order_date ?: $sale->created_at,
+                'date' => $sale->created_at ?: $sale->order_date,
                 'sort_at' => $saleEventAt,
                 'sort_id' => (int) ($sale->id ?? 0),
                 'reference' => $sale->invoice_no ?: ('SALE-' . $sale->id),
@@ -1425,7 +1420,7 @@ private function paymentReportRelations(): array
         $endDate = $request->input('end_date');
         if ($startDate || $endDate) {
             $entries = $entries->filter(function ($entry) use ($startDate, $endDate) {
-                $entryDate = \Carbon\Carbon::parse($entry['date']);
+                $entryDate = \Carbon\Carbon::parse($entry['sort_at'] ?? $entry['date']);
                 if ($startDate && $entryDate->lt(\Carbon\Carbon::parse($startDate)->startOfDay())) {
                     return false;
                 }
@@ -1440,6 +1435,7 @@ private function paymentReportRelations(): array
         $entries = $entries->map(function ($entry) use (&$runningBalance) {
                 $runningBalance += (float) $entry['debit'] - (float) $entry['credit'];
                 $entry['balance'] = $runningBalance;
+                $entry['entry_at'] = $entry['sort_at'] ?? $entry['date'];
                 unset($entry['sort_at'], $entry['sort_rank'], $entry['sort_sequence'], $entry['sort_id']);
                 return $entry;
             });
