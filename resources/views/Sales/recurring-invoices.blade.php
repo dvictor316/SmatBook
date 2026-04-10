@@ -56,17 +56,8 @@
                                                 <td>{{ $invoice['Category'] }}</td>
                                                 <td>{{ $invoice['IssuedOn'] }}</td>
                                                 <td>
-                                                    <h2 class="table-avatar">
-                                                        <a href="{{ url('profile') }}" class="avatar avatar-sm me-2">
-                                                            <img class="avatar-img rounded-circle" 
-                                                                 src="{{ asset('assets/img/profiles/' . ($invoice['Image'] ?? 'avatar-01.jpg')) }}" 
-                                                                 alt="User Image">
-                                                        </a>
-                                                        <a href="{{ url('profile') }}">
-                                                            {{ $invoice['InvoiceTo'] }}
-                                                            <span>{{ $invoice['Email'] ?? 'no-email@example.com' }}</span>
-                                                        </a>
-                                                    </h2>
+                                                    <div class="fw-semibold text-dark">{{ $invoice['InvoiceTo'] }}</div>
+                                                    <div class="text-muted small">{{ $invoice['Email'] ?? 'No customer email' }}</div>
                                                 </td>
                                                 <td>₦{{ $invoice['TotalAmount'] }}</td>
                                                 <td>₦{{ $invoice['PaidAmount'] }}</td>

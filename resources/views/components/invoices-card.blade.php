@@ -12,11 +12,10 @@
                                 <div class="dash-title text-muted small">{{ $card['title'] ?? 'Metric' }}</div>
                                 <div class="dash-counts">
                                     <h4 class="fw-bold">
-                                        {{-- Format as currency if it looks like a price --}}
-                                        @if(is_numeric($card['amount'] ?? null))
+                                        @if(($card['is_currency'] ?? true) && is_numeric($card['amount'] ?? null))
                                             ₦{{ number_format($card['amount'], 2) }}
                                         @else
-                                            {{ $card['amount'] ?? '0.00' }}
+                                            {{ $card['amount'] ?? '0' }}
                                         @endif
                                     </h4>
                                 </div>

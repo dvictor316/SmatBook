@@ -46,7 +46,7 @@ public function index()
 
     // Cards remain the same...
     $invoicescards = [
-        ['title' => 'All Invoices', 'amount' => $salesData->count(), 'class' => 'bg-primary-light', 'icon' => 'fe fe-file-text'],
+        ['title' => 'All Invoices', 'amount' => $salesData->count(), 'count' => $salesData->count(), 'is_currency' => false, 'class' => 'bg-primary-light', 'icon' => 'fe fe-file-text'],
         ['title' => 'Total Amount', 'amount' => '₦' . number_format($salesData->sum('total'), 2), 'class' => 'bg-success-light', 'icon' => 'fe fe-database'],
         ['title' => 'Total Paid', 'amount' => '₦' . number_format($salesData->sum('amount_paid'), 2), 'class' => 'bg-info-light', 'icon' => 'fe fe-check-square'],
         ['title' => 'Total Pending', 'amount' => '₦' . number_format($salesData->sum('balance'), 2), 'class' => 'bg-warning-light', 'icon' => 'fe fe-clock']
