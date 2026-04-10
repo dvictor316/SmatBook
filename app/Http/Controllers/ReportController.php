@@ -1273,6 +1273,12 @@ private function paymentReportRelations(): array
             : max(0, (float) ($customer->balance ?? 0) + $openingPaid);
 
         $entries = collect();
+        $entrySequence = 0;
+        $nextEntrySequence = function () use (&$entrySequence) {
+            $entrySequence++;
+
+            return $entrySequence;
+        };
         if ($openingOriginal > 0) {
             $openingEventAt = $customer->opening_balance_date
                 ? Carbon::parse($customer->opening_balance_date)->startOfDay()
@@ -1285,7 +1291,8 @@ private function paymentReportRelations(): array
                 'date' => $customer->opening_balance_date
                     ?: ($openingSale?->order_date ?: ($openingSale?->created_at ?: ($customer->created_at ? $customer->created_at->copy()->startOfDay()->subSecond() : now()->copy()->startOfDay()->subSecond()))),
                 'sort_at' => $openingEventAt,
-                'sort_sequence' => 0,
+                'sort_rank' => 0,
+                'sort_sequence' => $nextEntrySequence(),
                 'reference' => 'OPENING',
                 'type' => 'Opening Balance',
                 'description' => 'Opening balance on customer account',
@@ -1307,7 +1314,8 @@ private function paymentReportRelations(): array
                 $entries->push([
                     'date' => $payment->created_at,
                     'sort_at' => $paymentEventAt,
-                    'sort_sequence' => ((int) ($payment->id ?? 0) * 10) + 5,
+                    'sort_rank' => 2,
+                    'sort_sequence' => $nextEntrySequence(),
                     'reference' => $payment->payment_id ?: ('PAY-' . $payment->id),
                     'type' => 'Payment',
                     'description' => $payment->note
@@ -1345,7 +1353,8 @@ private function paymentReportRelations(): array
             $entries->push([
                 'date' => $sale->order_date ?: $sale->created_at,
                 'sort_at' => $saleEventAt,
-                'sort_sequence' => ((int) ($sale->id ?? 0) * 10),
+                'sort_rank' => 1,
+                'sort_sequence' => $nextEntrySequence(),
                 'reference' => $sale->invoice_no ?: ('SALE-' . $sale->id),
                 'type' => 'Invoice',
                 'description' => 'Invoice issued',
@@ -1366,7 +1375,8 @@ private function paymentReportRelations(): array
                     $entries->push([
                         'date' => $payment->created_at,
                         'sort_at' => $paymentEventAt,
-                        'sort_sequence' => ((int) ($payment->id ?? 0) * 10) + 5,
+                        'sort_rank' => 2,
+                        'sort_sequence' => $nextEntrySequence(),
                         'reference' => $payment->payment_id ?: ('PAY-' . $payment->id),
                         'type' => 'Payment',
                         'description' => $payment->note ?: 'Customer payment received.',
@@ -1380,7 +1390,8 @@ private function paymentReportRelations(): array
                 $entries->push([
                     'date' => $sale->order_date ?: $sale->created_at,
                     'sort_at' => $saleEventAt->copy(),
-                    'sort_sequence' => ((int) ($sale->id ?? 0) * 10) + 9,
+                    'sort_rank' => 3,
+                    'sort_sequence' => $nextEntrySequence(),
                     'reference' => ($sale->invoice_no ?: ('SALE-' . $sale->id)) . '-APPLIED',
                     'type' => 'Payment',
                     'description' => 'Applied payment recorded on invoice',
@@ -1393,9 +1404,12 @@ private function paymentReportRelations(): array
         $entries = $entries
             ->sortBy(function ($entry) {
                 $sortAt = $entry['sort_at'] ?? $entry['date'];
+                $sortRank = (int) ($entry['sort_rank'] ?? 9);
                 $sortSequence = (int) ($entry['sort_sequence'] ?? 0);
 
                 return Carbon::parse($sortAt)->format('Y-m-d H:i:s.u')
+                    . '|'
+                    . str_pad((string) $sortRank, 4, '0', STR_PAD_LEFT)
                     . '|'
                     . str_pad((string) $sortSequence, 12, '0', STR_PAD_LEFT)
                     . '|'
@@ -1429,7 +1443,7 @@ private function paymentReportRelations(): array
         $entries = $entries->map(function ($entry) use (&$runningBalance) {
                 $runningBalance += (float) $entry['debit'] - (float) $entry['credit'];
                 $entry['balance'] = $runningBalance;
-                unset($entry['sort_at'], $entry['sort_sequence']);
+                unset($entry['sort_at'], $entry['sort_rank'], $entry['sort_sequence']);
                 return $entry;
             });
 
