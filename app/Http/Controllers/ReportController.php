@@ -2175,6 +2175,18 @@ public function destroy($id)
         */
         public function credit_notes(Request $request) 
         {
+            if (!Schema::hasTable('credit_notes') || !Schema::hasTable('credit_note_items')) {
+                $purchasereturns = new LengthAwarePaginator([], 0, 10, 1, [
+                    'path' => $request->url(),
+                    'query' => $request->query(),
+                ]);
+
+                return view('Sales.credit-notes', [
+                    'purchasereturns' => $purchasereturns,
+                    'totalRefunded' => 0,
+                ])->with('warning', 'Sales return item records are not available on this workspace yet.');
+            }
+
             $query = $this->scopedTable('credit_note_items')
                 ->join('credit_notes', 'credit_note_items.credit_note_id', '=', 'credit_notes.id')
                 ->join('products', 'credit_note_items.product_id', '=', 'products.id')
