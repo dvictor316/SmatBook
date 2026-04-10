@@ -6,6 +6,8 @@ use App\Models\ActiveUserSession;
 use App\Models\Subscription;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 
 class DeviceSessionManager
@@ -24,6 +26,7 @@ class DeviceSessionManager
         $companyId = $this->resolveCompanyId($user);
         $fingerprint = $this->fingerprint($request);
         $this->pruneExpired($user->id, $companyId);
+        $this->pruneMissingBackedSessions($user->id, $companyId);
 
         ActiveUserSession::query()
             ->where('user_id', $user->id)
@@ -125,6 +128,55 @@ class DeviceSessionManager
         }
 
         $query->delete();
+    }
+
+    private function pruneMissingBackedSessions(?int $userId = null, ?int $companyId = null): void
+    {
+        if (!Schema::hasTable('active_user_sessions')) {
+            return;
+        }
+
+        $query = ActiveUserSession::query();
+
+        if ($userId) {
+            $query->where('user_id', $userId);
+        }
+
+        if ($companyId) {
+            $query->where('company_id', $companyId);
+        }
+
+        $query->get()->each(function (ActiveUserSession $session) {
+            if (!$this->backingSessionExists((string) ($session->session_id ?? ''))) {
+                $session->delete();
+            }
+        });
+    }
+
+    private function backingSessionExists(string $sessionId): bool
+    {
+        if ($sessionId === '') {
+            return false;
+        }
+
+        $driver = strtolower((string) config('session.driver', 'file'));
+
+        if ($driver === 'file') {
+            $sessionPath = rtrim((string) config('session.files'), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $sessionId;
+
+            return File::exists($sessionPath);
+        }
+
+        if ($driver === 'database') {
+            $table = (string) config('session.table', 'sessions');
+            if (!Schema::hasTable($table)) {
+                return false;
+            }
+
+            return DB::table($table)->where('id', $sessionId)->exists();
+        }
+
+        return true;
     }
 
     private function allowedUserSessions(User $user): ?int
