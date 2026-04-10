@@ -52,18 +52,28 @@
         padding: 1rem 1.05rem !important;
     }
     .pl-summary-label {
-        font-size: 0.68rem !important;
+        font-size: 0.56rem !important;
         letter-spacing: 0.08em;
         line-height: 1.3;
+        margin-bottom: 0.4rem !important;
     }
     .pl-summary-card h3 {
-        font-size: 1rem !important;
-        line-height: 1.2;
+        font-size: 0.82rem !important;
+        line-height: 1.15;
         margin-bottom: 0;
     }
+    .pl-summary-card .money-sm,
+    .pl-summary-card h3.money-sm,
+    .pl-summary-card .card-body h3.money-sm {
+        font-size: 0.74rem !important;
+        line-height: 1.12 !important;
+        font-weight: 800 !important;
+        letter-spacing: -0.02em;
+        word-break: break-word;
+    }
     .pl-summary-meta {
-        font-size: 0.72rem;
-        line-height: 1.35;
+        font-size: 0.58rem;
+        line-height: 1.3;
     }
     .pl-filter-card {
         border: 1px solid rgba(191, 219, 254, 0.82) !important;
@@ -161,6 +171,14 @@
     @media (max-width: 991.98px) {
         .pl-page-header .page-title {
             font-size: 1.2rem;
+        }
+        .pl-summary-label {
+            font-size: 0.52rem !important;
+        }
+        .pl-summary-card .money-sm,
+        .pl-summary-card h3.money-sm,
+        .pl-summary-card .card-body h3.money-sm {
+            font-size: 0.68rem !important;
         }
         .pl-summary-card .card-body,
         .pl-filter-card .card-body,
