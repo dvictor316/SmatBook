@@ -1293,6 +1293,31 @@ private function paymentReportRelations(): array
             ]);
         }
 
+        $openingPayments
+            ->sortBy(function ($payment) {
+                return ($payment->created_at ? Carbon::parse($payment->created_at)->format('Y-m-d H:i:s.u') : now()->format('Y-m-d H:i:s.u'))
+                    . '|'
+                    . str_pad((string) ($payment->id ?? 0), 12, '0', STR_PAD_LEFT);
+            })
+            ->values()
+            ->each(function ($payment) use (&$entries, $openingSale) {
+                $paymentEventAt = $payment->created_at ?: now();
+
+                $entries->push([
+                    'date' => $payment->created_at,
+                    'sort_at' => $paymentEventAt,
+                    'sort_sequence' => ((int) ($payment->id ?? 0) * 10) + 5,
+                    'reference' => $payment->payment_id ?: ('PAY-' . $payment->id),
+                    'type' => 'Payment',
+                    'description' => $payment->note
+                        ?: (($openingSale && (int) $payment->sale_id === (int) $openingSale->id)
+                            ? 'Opening balance payment received'
+                            : 'Payment received'),
+                    'debit' => 0.0,
+                    'credit' => (float) ($payment->amount ?? 0),
+                ]);
+            });
+
         foreach ($regularSales as $sale) {
             $salePayments = $payments->where('sale_id', $sale->id)->values();
             $sale->setRelation('payments', $salePayments);
@@ -1327,6 +1352,28 @@ private function paymentReportRelations(): array
                 'credit' => 0.0,
             ]);
 
+            $salePayments
+                ->sortBy(function ($payment) {
+                    return ($payment->created_at ? Carbon::parse($payment->created_at)->format('Y-m-d H:i:s.u') : now()->format('Y-m-d H:i:s.u'))
+                        . '|'
+                        . str_pad((string) ($payment->id ?? 0), 12, '0', STR_PAD_LEFT);
+                })
+                ->values()
+                ->each(function ($payment) use (&$entries, $sale) {
+                    $paymentEventAt = $payment->created_at ?: now();
+
+                    $entries->push([
+                        'date' => $payment->created_at,
+                        'sort_at' => $paymentEventAt,
+                        'sort_sequence' => ((int) ($payment->id ?? 0) * 10) + 5,
+                        'reference' => $payment->payment_id ?: ('PAY-' . $payment->id),
+                        'type' => 'Payment',
+                        'description' => $payment->note ?: 'Customer payment received.',
+                        'debit' => 0.0,
+                        'credit' => (float) ($payment->amount ?? 0),
+                    ]);
+                });
+
             $untrackedPaid = max(0, round((float) ($financials['paid'] ?? 0) - $actualPaid, 2));
             if ($untrackedPaid > 0) {
                 $entries->push([
@@ -1340,24 +1387,6 @@ private function paymentReportRelations(): array
                     'credit' => $untrackedPaid,
                 ]);
             }
-        }
-
-        foreach ($payments as $payment) {
-            $paymentEventAt = $payment->created_at ?: now();
-
-            $entries->push([
-                'date' => $payment->created_at,
-                'sort_at' => $paymentEventAt,
-                'sort_sequence' => ((int) ($payment->id ?? 0) * 10) + 5,
-                'reference' => $payment->payment_id ?: ('PAY-' . $payment->id),
-                'type' => 'Payment',
-                'description' => $payment->note
-                    ?: (($openingSale && (int) $payment->sale_id === (int) $openingSale->id)
-                        ? 'Opening balance payment received'
-                        : 'Payment received'),
-                'debit' => 0.0,
-                'credit' => (float) ($payment->amount ?? 0),
-            ]);
         }
 
         $entries = $entries
