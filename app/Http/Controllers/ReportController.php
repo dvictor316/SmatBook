@@ -1171,7 +1171,11 @@ private function paymentReportRelations(): array
 
         $salesQuery = Sale::query()
             ->whereNotNull('customer_id')
-            ->where('balance', '>', 0);
+            ->where('balance', '>', 0)
+            ->where(function ($query) {
+                $query->whereNull('invoice_no')
+                    ->orWhere('invoice_no', 'not like', 'OPENING-BAL-%');
+            });
 
         if ($request->filled('start_date')) {
             $salesQuery->whereDate('created_at', '>=', $request->start_date);
@@ -1201,9 +1205,22 @@ private function paymentReportRelations(): array
             ->get()
             ->keyBy('id');
 
+        $openingReferenceMap = [];
+        foreach ($openingCustomers as $customer) {
+            $openingReferenceMap[$customer->id] = 'OPENING-BAL-' . $customer->id;
+        }
+
+        $openingSales = Sale::query()
+            ->whereIn('customer_id', array_keys($openingReferenceMap))
+            ->whereIn('invoice_no', array_values($openingReferenceMap));
+        $this->applyTenantScope($openingSales, 'sales');
+        $this->applySaleBranchFilter($openingSales, 'sales');
+        $openingSales = $openingSales->get()->keyBy('customer_id');
+
         $receivableMap = [];
         foreach ($salesSummary as $row) {
             $customer = $customerMap->get($row->customer_id);
+            $openingSale = $openingSales->get($row->customer_id);
             $receivableMap[$row->customer_id] = [
                 'customer_id' => $row->customer_id,
                 'customer_name' => $customer?->customer_name ?? $customer?->name ?? 'Walk-in Customer',
@@ -1213,7 +1230,7 @@ private function paymentReportRelations(): array
                 'total_paid' => (float) $row->total_paid,
                 'total_due' => (float) $row->total_due,
                 'invoice_count' => (int) $row->invoice_count,
-                'opening_balance' => (float) ($customer?->balance ?? 0),
+                'opening_balance' => $openingSale ? 0.0 : (float) ($customer?->balance ?? 0),
                 'sort_at' => $row->first_activity_at ?: $customer?->created_at,
                 'sort_id' => (int) ($customer?->id ?? $row->customer_id ?? 0),
             ];
@@ -1424,7 +1441,7 @@ private function paymentReportRelations(): array
                     'sort_at' => $saleEventAt->copy()->addMillisecond(),
                     'sort_rank' => 3,
                     'sort_id' => (int) ($sale->id ?? 0),
-                    'visible' => false,
+                    'visible' => true,
                     'reference' => ($sale->invoice_no ?: ('SALE-' . $sale->id)) . '-APPLIED',
                     'type' => 'Payment',
                     'description' => 'Applied payment recorded on invoice',
@@ -1484,12 +1501,9 @@ private function paymentReportRelations(): array
         $totalInvoiced = (float) $entries->sum(fn ($entry) => (float) ($entry['debit'] ?? 0));
         $totalPaid = (float) $entries->sum(fn ($entry) => (float) ($entry['credit'] ?? 0));
         $balanceDue = (float) round($totalInvoiced - $totalPaid, 2);
-        $visibleEntries = $entries->filter(fn ($entry) => (bool) ($entry['visible'] ?? true))
-            ->values();
-
         return view('Reports.Reports.customer-statement', [
             'customer' => $customer,
-            'entries' => $visibleEntries,
+            'entries' => $entries,
             'totalInvoiced' => $totalInvoiced,
             'totalPaid' => $totalPaid,
             'balanceDue' => $balanceDue,
