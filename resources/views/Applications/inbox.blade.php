@@ -89,7 +89,7 @@
                     <div class="modal-body p-4">
                         <div class="mb-3">
                             <label class="form-label fw-bold">To:</label>
-                            <select name="receiver_id" class="form-control select2" required>
+                            <select name="receiver_id" id="compose-recipient-select" class="form-control" required>
                                 <option value="">Select Recipient...</option>
                                 @foreach(\App\Models\User::where('id', '!=', Auth::id())->get() as $user)
                                     <option value="{{ $user->id }}">{{ $user->name }} ({{ $user->email }})</option>
@@ -137,6 +137,30 @@
             box-shadow: inset 0 0 5px rgba(0,0,0,0.05); 
         }
 
+        #compose_modal .select2-container {
+            width: 100% !important;
+        }
+
+        #compose_modal .select2-container .select2-selection--single {
+            height: 56px;
+            border-radius: 10px;
+            border: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+        }
+
+        #compose_modal .select2-container .select2-selection__rendered {
+            line-height: 1.4;
+            padding-left: 0;
+            color: #212529;
+        }
+
+        #compose_modal .select2-container .select2-selection__arrow {
+            height: 54px;
+            right: 10px;
+        }
+
         @media print {
             .page-wrapper { margin-left: 0 !important; }
             .col-xl-4, .btn-print, .compose-btn, .modal { display: none !important; }
@@ -151,6 +175,37 @@
             item.addEventListener('click', function() {
                 document.querySelectorAll('.folder-link').forEach(i => i.classList.remove('active-folder'));
                 this.classList.add('active-folder');
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const composeModal = document.getElementById('compose_modal');
+            const recipientSelect = $('#compose-recipient-select');
+
+            if (!composeModal || !recipientSelect.length || !$.fn.select2) {
+                return;
+            }
+
+            const initializeRecipientSearch = function () {
+                if (recipientSelect.hasClass('select2-hidden-accessible')) {
+                    return;
+                }
+
+                recipientSelect.select2({
+                    dropdownParent: $('#compose_modal'),
+                    width: '100%',
+                    placeholder: 'Search recipient by name or email',
+                    allowClear: true
+                });
+            };
+
+            composeModal.addEventListener('shown.bs.modal', function () {
+                initializeRecipientSearch();
+                recipientSelect.select2('open');
+            });
+
+            composeModal.addEventListener('hidden.bs.modal', function () {
+                recipientSelect.val('').trigger('change');
             });
         });
 
