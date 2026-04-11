@@ -36,13 +36,24 @@
                     <h5 class="section-title"><i class="fas fa-file-invoice me-2"></i>General Details</h5>
                     <div class="row g-3 mb-5">
                         <div class="col-md-4">
-                                <label class="form-label fw-bold small">Customer</label>
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <label class="form-label fw-bold small mb-0">Customer</label>
+                                    @php
+                                        $customerCreateUrl = \Illuminate\Support\Facades\Route::has('customers.index')
+                                            ? route('customers.index')
+                                            : url('/customers');
+                                    @endphp
+                                    <a href="{{ $customerCreateUrl }}" class="small fw-semibold" target="_blank" rel="noopener">
+                                        <i class="fas fa-plus-circle me-1"></i>Add Customer
+                                    </a>
+                                </div>
                             <select class="form-select" name="customer_id" required>
                                 <option value="">Select customer</option>
                                 @foreach($customers as $customer)
                                     <option value="{{ $customer->id }}" {{ $sale->customer_id == $customer->id ? 'selected' : '' }}>{{ $customer->customer_name ?? $customer->name }}</option>
                                 @endforeach
                             </select>
+                            <small class="text-muted">If the customer is missing, add one first, then return and save this sale.</small>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label fw-bold small">Sale Date</label>
