@@ -425,11 +425,14 @@
                                 <option value="">-- Choose Category --</option>
                                 @foreach($editExpenseCategoryOptions as $categoryOption)
                                     @php
-                                        $isSelectedCategory = ($categoryOption['source'] ?? '') === 'category'
-                                            ? (int) ($expense->category_id ?? 0) === (int) ($categoryOption['category_id'] ?? 0)
-                                            : str_contains((string) ($categoryOption['value'] ?? ''), 'cat:')
-                                                ? strtolower((string) $expense->category) === strtolower((string) ($categoryOption['label'] ?? ''))
-                                                : strtolower((string) $expense->category) === strtolower(trim(preg_replace('/\s+\([^)]*\)$/', '', (string) ($categoryOption['label'] ?? ''))));
+                                        if (($categoryOption['source'] ?? '') === 'category') {
+                                            $isSelectedCategory = (int) ($expense->category_id ?? 0) === (int) ($categoryOption['category_id'] ?? 0);
+                                        } elseif (str_contains((string) ($categoryOption['value'] ?? ''), 'cat:')) {
+                                            $isSelectedCategory = strtolower((string) $expense->category) === strtolower((string) ($categoryOption['label'] ?? ''));
+                                        } else {
+                                            $normalizedOptionLabel = trim(preg_replace('/\s+\([^)]*\)$/', '', (string) ($categoryOption['label'] ?? '')));
+                                            $isSelectedCategory = strtolower((string) $expense->category) === strtolower($normalizedOptionLabel);
+                                        }
                                     @endphp
                                     <option value="{{ $categoryOption['value'] }}" {{ $isSelectedCategory ? 'selected' : '' }}>
                                         {{ $categoryOption['label'] }}
