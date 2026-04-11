@@ -2,12 +2,11 @@
 
 @section('content')
 <style>
-    /* Dynamic Sidebar Adjustment */
     .pos-content-area {
         margin-left: var(--sb-sidebar-w, 270px); 
         padding: 30px;
         transition: all 0.3s ease-in-out;
-        background-color: #fdfaf0; 
+        background-color: #f8fafc;
         min-height: 100vh;
         margin-top: 60px;
     }
@@ -18,10 +17,8 @@
         .pos-content-area { margin-left: 0 !important; padding: 15px; }
     }
 
-    /* Professional Header & Search */
     .report-header {
-        border-left: 5px solid #d4af37;
-        padding-left: 15px;
+        padding: 0;
         margin-bottom: 30px;
         display: flex;
         justify-content: space-between;
@@ -34,12 +31,13 @@
     }
 
     .header-search-input {
-        height: 40px;
-        border-radius: 8px;
-        border: 1.5px solid #d4af37;
+        height: 42px;
+        border-radius: 12px;
+        border: 1px solid #dbe4f0;
         padding-left: 35px;
         font-size: 13px;
         background: #fff;
+        box-shadow: none;
     }
 
     .header-search-icon {
@@ -47,30 +45,30 @@
         left: 12px;
         top: 50%;
         transform: translateY(-50%);
-        color: #996515;
+        color: #94a3b8;
     }
 
     .filter-card {
         background: #ffffff;
-        border: 1px solid rgba(212, 175, 55, 0.2);
-        border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        border: 1px solid #e2e8f0;
+        border-radius: 18px;
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.04);
     }
 
     .sales-table-card {
-        border: none;
-        border-radius: 15px;
+        border: 1px solid #e2e8f0;
+        border-radius: 18px;
         overflow: hidden;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.04);
     }
 
     .table thead th {
-        background-color: #0369a1; 
-        color: #ffffff;
+        background-color: #f8fafc;
+        color: #64748b;
         text-transform: uppercase;
         font-size: 11px;
         padding: 15px;
-        border: none;
+        border-bottom: 1px solid #e2e8f0;
     }
 
     .status-badge {
@@ -80,22 +78,49 @@
         font-size: 10px;
     }
 
-    .btn-gold {
-        background-color: #996515;
-        color: white;
-        border: none;
+    .table tbody td {
+        border-color: #eef2f7;
     }
-    .btn-gold:hover { background-color: #d4af37; color: white; }
+
+    .branch-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 14px;
+        border: 1px solid #dbe4f0;
+        border-radius: 12px;
+        background: #fff;
+        color: #2563eb;
+        font-weight: 600;
+    }
+
+    .page-title {
+        color: #0f172a;
+    }
+
+    .amount-text {
+        color: #0f172a;
+        font-size: 15px;
+    }
+
+    .table-action-btn {
+        color: #475569;
+    }
+
+    .table-action-btn:hover {
+        color: #2563eb;
+        background: #f8fafc;
+    }
 </style>
 
 <div class="pos-content-area">
     {{-- Page Header with Quick ID Search --}}
     <div class="report-header">
         <div>
-            <h3 class="fw-bold mb-0" style="color: #0369a1;">Sales Transactions</h3>
+            <h3 class="fw-bold mb-0 page-title">Sales Transactions</h3>
             <p class="text-muted small mb-0">Manage history and track invoice statuses.</p>
             <div class="mt-2">
-                <span class="badge bg-light border text-primary px-3 py-2">
+                <span class="branch-chip">
                     <i class="fas fa-code-branch me-2"></i>
                     Active Branch: {{ $activeBranch['name'] ?? 'All Business Activity' }}
                 </span>
@@ -122,14 +147,14 @@
                 <div class="col-md-3">
                     <label class="form-label small fw-bold text-muted">Invoice No</label>
                     <div class="input-group input-group-sm">
-                        <span class="input-group-text bg-white border-end-0"><i class="fas fa-hashtag text-warning"></i></span>
+                        <span class="input-group-text bg-white border-end-0"><i class="fas fa-hashtag text-muted"></i></span>
                         <input type="text" name="invoice_no" class="form-control border-start-0" placeholder="e.g. INV-100" value="{{ request('invoice_no') }}">
                     </div>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label small fw-bold text-muted">Customer</label>
                     <div class="input-group input-group-sm">
-                        <span class="input-group-text bg-white border-end-0"><i class="fas fa-user text-warning"></i></span>
+                        <span class="input-group-text bg-white border-end-0"><i class="fas fa-user text-muted"></i></span>
                         <input type="text" name="customer_name" class="form-control border-start-0" placeholder="Name" value="{{ request('customer_name') }}">
                     </div>
                 </div>
@@ -175,18 +200,18 @@
                             </td>
                             <td>
                                 <div class="d-flex align-items-center">
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 28px; height: 28px; background: #f0f9ff; color: #0369a1; font-size: 11px; font-weight: bold;">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 28px; height: 28px; background: #f8fafc; color: #475569; font-size: 11px; font-weight: bold;">
                                         {{ substr($sale->customer_name ?? 'W', 0, 1) }}
                                     </div>
                                     <span class="fw-medium text-dark">{{ $sale->customer_name ?? 'Walk-in Customer' }}</span>
                                 </div>
                             </td>
                             <td>
-                                <span class="badge bg-light border text-primary">
+                                <span class="badge bg-light border text-dark">
                                     {{ $sale->branch_label ?? 'Workspace Default' }}
                                 </span>
                             </td>
-                            <td class="text-end fw-bold text-primary" style="font-size: 15px;">
+                            <td class="text-end fw-bold amount-text">
                                 ₦{{ number_format($sale->total, 2) }}
                             </td>
                             <td class="text-center">
@@ -208,10 +233,10 @@
                             </td>
                             <td class="text-center pe-4">
                                 <div class="btn-group shadow-sm border rounded">
-                                    <a href="{{ route('sales.show', $sale->id) }}" class="btn btn-sm btn-white text-primary" title="View Detail">
+                                    <a href="{{ route('sales.show', $sale->id) }}" class="btn btn-sm btn-white table-action-btn" title="View Detail">
                                         <i class="fas fa-eye"></i>
                                     </a>
-                                    <a href="{{ route('sales.edit', $sale->id) }}" class="btn btn-sm btn-white text-warning" title="Edit">
+                                    <a href="{{ route('sales.edit', $sale->id) }}" class="btn btn-sm btn-white table-action-btn" title="Edit">
                                         <i class="fas fa-edit"></i>
                                     </a>
                                 </div>
@@ -235,7 +260,7 @@
             <div class="text-center py-5">
                 <i class="fas fa-receipt fa-4x text-light mb-3"></i>
                 <h5 class="text-muted">No sales records found.</h5>
-                <a href="{{ route('sales.index') }}" class="btn btn-gold btn-sm mt-2">Clear All Filters</a>
+                <a href="{{ route('sales.index') }}" class="btn btn-outline-secondary btn-sm mt-2">Clear All Filters</a>
             </div>
             @endif
         </div>
