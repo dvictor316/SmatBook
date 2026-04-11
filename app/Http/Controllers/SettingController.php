@@ -1048,7 +1048,12 @@ class SettingController extends Controller
 
     private function resolveReconciliationSuspenseAccount(): Account
     {
-        $attributes = ['code' => 'EQT-RECON-SUSPENSE'];
+        $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $branchId = (string) session('active_branch_id', '');
+        $branchName = (string) session('active_branch_name', '');
+        $code = $companyId > 0 ? 'EQT-RECON-SUSPENSE-' . $companyId : 'EQT-RECON-SUSPENSE';
+
+        $attributes = ['code' => $code];
         $values = [
             'name' => 'Bank Reconciliation Suspense',
             'type' => Account::TYPE_EQUITY,
@@ -1058,9 +1063,21 @@ class SettingController extends Controller
             'current_balance' => 0,
             'is_active' => true,
         ];
+        if (Schema::hasColumn('accounts', 'company_id') && $companyId > 0) {
+            $values['company_id'] = $companyId;
+        }
+        if (Schema::hasColumn('accounts', 'user_id') && auth()->id()) {
+            $values['user_id'] = auth()->id();
+        }
+        if (Schema::hasColumn('accounts', 'branch_id') && $branchId !== '') {
+            $values['branch_id'] = $branchId;
+        }
+        if (Schema::hasColumn('accounts', 'branch_name') && $branchName !== '') {
+            $values['branch_name'] = $branchName;
+        }
 
         if (method_exists(Account::class, 'withTrashed')) {
-            $account = Account::withTrashed()->where($attributes)->first();
+            $account = Account::withoutGlobalScopes()->withTrashed()->where($attributes)->first();
             if ($account) {
                 if (method_exists($account, 'trashed') && $account->trashed()) {
                     $account->restore();
@@ -1073,7 +1090,7 @@ class SettingController extends Controller
             }
         }
 
-        return Account::query()->firstOrCreate($attributes, $values);
+        return Account::withoutGlobalScopes()->firstOrCreate($attributes, $values);
     }
 
     public function storeBankAccount(Request $request)
