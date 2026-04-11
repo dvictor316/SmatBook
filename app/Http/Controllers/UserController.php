@@ -17,12 +17,49 @@ use Illuminate\Support\Str;
 
 class UserController extends Controller
 {
+    private function scopedUsersQuery()
+    {
+        $query = User::query();
+        $actor = Auth::user();
+
+        if ($this->isCentralAdmin($actor)) {
+            return $query;
+        }
+
+        $companyId = (int) ($actor?->company_id ?? session('current_tenant_id') ?? 0);
+        $userId = (int) ($actor?->id ?? 0);
+
+        if ($companyId > 0 && Schema::hasColumn('users', 'company_id')) {
+            $query->where(function ($sub) use ($companyId, $userId) {
+                $sub->where('company_id', $companyId);
+
+                if ($userId > 0 && Schema::hasColumn('users', 'user_id')) {
+                    $sub->orWhere(function ($fallback) use ($userId) {
+                        $fallback->whereNull('company_id')
+                            ->where('user_id', $userId);
+                    });
+                }
+            });
+        } elseif ($userId > 0 && Schema::hasColumn('users', 'user_id')) {
+            $query->where('user_id', $userId);
+        } elseif ($userId > 0) {
+            $query->where('id', $userId);
+        }
+
+        return $query;
+    }
+
+    private function findScopedUser($id): User
+    {
+        return $this->scopedUsersQuery()->findOrFail($id);
+    }
+
     /**
      * Display a listing of users FOR SUPER ADMIN
      */
     public function userIndex()
     {
-        $users = User::query()
+        $users = $this->scopedUsersQuery()
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
@@ -116,7 +153,7 @@ class UserController extends Controller
      */
     public function edit($id)
     {
-        $user = User::findOrFail($id);
+        $user = $this->findScopedUser($id);
         $roles = $this->getRoles();
         return view('UserManagement.edit', compact('user', 'roles'));
     }
@@ -126,7 +163,7 @@ class UserController extends Controller
      */
     public function show($id)
     {
-        $user = User::findOrFail($id);
+        $user = $this->findScopedUser($id);
         return view('UserManagement.show', compact('user'));
     }
 
@@ -135,7 +172,7 @@ class UserController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $user = User::findOrFail($id);
+        $user = $this->findScopedUser($id);
 
         $request->validate([
             'name'  => 'required|string|max:255',
@@ -200,7 +237,7 @@ class UserController extends Controller
      */
     public function destroy($id)
     {
-        $user = User::findOrFail($id);
+        $user = $this->findScopedUser($id);
 
         if ($user->profile_photo) {
             Storage::disk('public')->delete($user->profile_photo);
@@ -310,7 +347,7 @@ class UserController extends Controller
      */
     public function exportUsers()
     {
-        $users = User::orderBy('created_at', 'desc')->get();
+        $users = $this->scopedUsersQuery()->orderBy('created_at', 'desc')->get();
         
         $filename = 'users_export_' . date('Y-m-d') . '.csv';
         
@@ -351,7 +388,7 @@ class UserController extends Controller
      */
     public function activityLog($id)
     {
-        $user = User::findOrFail($id);
+        $user = $this->findScopedUser($id);
         return view('UserManagement.activity', compact('user'));
     }
 
