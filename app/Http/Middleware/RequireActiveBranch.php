@@ -21,6 +21,9 @@ class RequireActiveBranch
 
         $path = ltrim($request->path(), '/');
         $allow = [
+            '',
+            'home',
+            'dashboard',
             'settings/branches',
             'settings/branches/activate',
             'branches',

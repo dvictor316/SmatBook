@@ -95,15 +95,15 @@ class Handler extends ExceptionHandler
                 }
             }
 
-            $message = 'Please select an active branch to continue.';
+            $message = 'Dashboard loaded without branch selection. You can choose a branch anytime from Settings.';
 
             if ($request->expectsJson()) {
                 return response()->json(['message' => $message], 404);
             }
 
             return redirect()
-                ->to(\App\Support\SafeRoute::to('branches.index', '/settings/branches'))
-                ->with('error', $message);
+                ->route('home')
+                ->with('info', $message);
         });
 
         $this->renderable(function (NotFoundHttpException $e, $request) {

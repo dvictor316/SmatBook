@@ -254,7 +254,7 @@ class AuthController extends Controller
         }
 
         if (Auth::check()) {
-            return $this->redirectAuthenticatedUser($request);
+            return $this->handlePostLoginRedirect();
         }
 
         $request->session()->regenerateToken();
@@ -329,11 +329,7 @@ class AuthController extends Controller
             ]);
         }
 
-        if (!app(ActiveBranchResolver::class)->ensureSession($user)) {
-            return redirect()
-                ->route('branches.index')
-                ->with('error', 'Please select an active branch to continue.');
-        }
+        app(ActiveBranchResolver::class)->ensureSession($user);
 
         Log::info('User logged in', [
             'user_id' => $user->id,
@@ -497,11 +493,7 @@ class AuthController extends Controller
     {
         $user = Auth::user();
 
-        if (!app(ActiveBranchResolver::class)->ensureSession($user)) {
-            return redirect()
-                ->route('branches.index')
-                ->with('error', 'Please select an active branch to continue.');
-        }
+        app(ActiveBranchResolver::class)->ensureSession($user);
 
         // Super Admin
         if ($this->isSuperAdmin($user)) {
@@ -516,17 +508,6 @@ class AuthController extends Controller
         // Regular users - redirect to /home
         // HomeController@index will handle the rest
         return redirect()->route('home');
-    }
-
-    private function redirectAuthenticatedUser(Request $request)
-    {
-        if (!app(ActiveBranchResolver::class)->ensureSession(Auth::user())) {
-            return redirect()
-                ->route('branches.index')
-                ->with('error', 'Please select an active branch to continue.');
-        }
-
-        return $this->handlePostLoginRedirect();
     }
 
     /*
