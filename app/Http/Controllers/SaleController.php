@@ -441,6 +441,8 @@ public function customerDetails($id = null)
         try {
             $products = collect();
             if (Schema::hasTable('products')) {
+                $this->branchInventory->backfillMissingBranchStocks($activeBranch, $this->tenantCompanyId());
+
                 $hasCategories = Schema::hasTable('categories') && Schema::hasColumn('products', 'category_id');
                 $hasBranchStocksBranchId = Schema::hasTable('product_branch_stocks')
                     && Schema::hasColumn('product_branch_stocks', 'branch_id');

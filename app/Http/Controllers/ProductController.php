@@ -471,6 +471,7 @@ class ProductController extends Controller
         try {
             $search = $request->input('search');
             $activeBranch = $this->getActiveBranchContext();
+            $this->branchInventory->backfillMissingBranchStocks($activeBranch, $this->tenantCompanyId());
             $hasCategories = Schema::hasTable('categories') && Schema::hasColumn('products', 'category_id');
             $hasBranchStocksTable = Schema::hasTable('product_branch_stocks');
             $hasBranchStocksBranchId = $hasBranchStocksTable && Schema::hasColumn('product_branch_stocks', 'branch_id');
