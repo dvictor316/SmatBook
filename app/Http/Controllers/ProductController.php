@@ -1089,6 +1089,8 @@ public function inventory(Request $request)
     public function update(Request $request, $id)
     {
         $product = Product::findOrFail($id);
+        $activeBranch = $this->getActiveBranchContext();
+        $currentBranchStock = $this->branchInventory->getAvailableStock($product, $activeBranch);
 
         $validated = $request->validate([
             'name'             => 'required|string|max:191',
@@ -1182,7 +1184,20 @@ public function inventory(Request $request)
 
         $validated['stock_quantity'] = $validated['stock']; 
         $product->update($validated);
-        $this->clearDashboardMetricsCache();
+
+        $newBranchStock = (float) ($validated['stock'] ?? 0);
+        $branchDelta = $newBranchStock - (float) $currentBranchStock;
+
+        if (abs($branchDelta) > 0.0001) {
+            $this->branchInventory->adjustBranchStock(
+                $product->fresh(),
+                $branchDelta,
+                $activeBranch,
+                $this->tenantCompanyId()
+            );
+        }
+
+        $this->clearDashboardMetricsCache($activeBranch['id'] ?? null);
 
         return redirect()->route('product-list')->with('success', 'Update pushed to ' . env('SESSION_DOMAIN'));
     }

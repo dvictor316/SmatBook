@@ -68,6 +68,7 @@
                                 <div class="form-group">
                                     <label>Total Stock Quantity *</label>
                                     <input type="number" name="stock" class="form-control" value="{{ old('stock', $product->stock) }}" required>
+                                    <small class="text-muted d-block mt-1">Updating this value will set the sellable stock for the current active branch.</small>
                                 </div>
                             </div>
                             <div class="col-md-4">
