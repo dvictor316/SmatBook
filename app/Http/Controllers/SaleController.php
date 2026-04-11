@@ -169,6 +169,25 @@ class SaleController extends Controller
         return $sale ?: $baseQuery->find($saleId);
     }
 
+    private function scopedCustomers()
+    {
+        $query = Customer::query();
+        $this->applyTenantScope($query, 'customers');
+        $this->applyBranchScope($query, 'customers');
+
+        $customerNameColumn = $this->customerNameColumn() ?: 'id';
+        return $query->orderBy($customerNameColumn, 'asc');
+    }
+
+    private function scopedProducts()
+    {
+        $query = Product::query()->orderBy('name', 'asc');
+        $this->applyTenantScope($query, 'products');
+        $this->applyBranchScope($query, 'products');
+
+        return $query;
+    }
+
     private function clearDashboardMetricsCache(?string $branchId = null): void
     {
         $companyId = $this->tenantCompanyId();
@@ -997,24 +1016,34 @@ $sale = Sale::create([
 
 public function create()
 {
-    $customers = Customer::all();
-    $products = Product::orderBy('name', 'asc')->get();
+    $customers = $this->scopedCustomers()->get();
+    $products = $this->scopedProducts()->get();
 
     return view('Sales.Invoices.create-invoices', compact('customers', 'products'));
 }
 
     public function edit($id)
     {
-        $sale = Sale::with('items.product')->findOrFail($id);
-     $customers = Customer::orderBy('customer_name', 'asc')->get();
-        $products = Product::orderBy('name', 'asc')->get();
+        $sale = $this->findScopedSale($id, ['items.product']);
+        abort_if(!$sale, 404);
+
+        $customers = $this->scopedCustomers()->get();
+        if ($sale->customer_id && !$customers->contains('id', $sale->customer_id)) {
+            $currentCustomer = Customer::query()->find($sale->customer_id);
+            if ($currentCustomer) {
+                $customers = $customers->prepend($currentCustomer)->unique('id')->values();
+            }
+        }
+
+        $products = $this->scopedProducts()->get();
 
         return view('Sales.edit', compact('sale', 'customers', 'products'));
     }
 
     public function update(Request $request, $id)
     {
-        $sale = Sale::findOrFail($id);
+        $sale = $this->findScopedSale($id);
+        abort_if(!$sale, 404);
 
         $request->validate([
             'customer_id' => 'required|exists:customers,id',
@@ -1028,7 +1057,9 @@ public function create()
         DB::transaction(function () use ($request, $sale) {
             $sale->update([
                 'customer_id' => $request->customer_id,
-                'reference_no' => $request->reference_no,
+                'reference_no' => trim((string) $request->reference_no) !== ''
+                    ? trim((string) $request->reference_no)
+                    : ('REF-' . now()->format('ymd') . '-' . strtoupper(Str::random(4))),
                 'total' => $request->final_total,
             ]);
 

@@ -38,6 +38,7 @@
                         <div class="col-md-4">
                                 <label class="form-label fw-bold small">Customer</label>
                             <select class="form-select" name="customer_id" required>
+                                <option value="">Select customer</option>
                                 @foreach($customers as $customer)
                                     <option value="{{ $customer->id }}" {{ $sale->customer_id == $customer->id ? 'selected' : '' }}>{{ $customer->customer_name ?? $customer->name }}</option>
                                 @endforeach
@@ -49,7 +50,7 @@
                         </div>
                         <div class="col-md-4">
                             <label class="form-label fw-bold small">Reference No</label>
-                            <input type="text" class="form-control" name="reference_no" value="{{ $sale->reference_no }}">
+                            <input type="text" class="form-control" name="reference_no" value="{{ $sale->reference_no ?: ('REF-' . now()->format('ymd') . '-' . strtoupper(\Illuminate\Support\Str::random(4))) }}">
                         </div>
                     </div>
 
