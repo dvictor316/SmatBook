@@ -362,18 +362,18 @@
                     </td>
                     <td>
                         <input type="number" name="products[${rowIndex}][quantity]" value="${normalizedSeed.quantity > 0 ? normalizedSeed.quantity : 1}" class="form-control quantity-input" min="0.01" step="0.01"
-                               data-row="${rowIndex}" onchange="updateProductAmount(${rowIndex})">
+                               data-row="${rowIndex}" onchange="updateProductAmount(${rowIndex})" oninput="updateProductAmount(${rowIndex})">
                     </td>
                     <td>
                         <input type="text" name="products[${rowIndex}][unit]" value="${escapeHtml(normalizedSeed.unit)}" class="form-control unit-input" data-row="${rowIndex}">
                     </td>
                     <td>
                         <input type="number" name="products[${rowIndex}][rate]" value="${normalizedSeed.rate}" class="form-control rate-input" step="0.01" min="0"
-                               data-row="${rowIndex}" onchange="updateProductAmount(${rowIndex})">
+                               data-row="${rowIndex}" onchange="updateProductAmount(${rowIndex})" oninput="updateProductAmount(${rowIndex})">
                     </td>
                     <td>
                         <input type="number" name="products[${rowIndex}][discount]" value="${normalizedSeed.discount}" class="form-control discount-input" step="0.01" min="0"
-                               data-row="${rowIndex}" onchange="updateProductAmount(${rowIndex})">
+                               data-row="${rowIndex}" onchange="updateProductAmount(${rowIndex})" oninput="updateProductAmount(${rowIndex})">
                     </td>
                     <td>
                         <select name="products[${rowIndex}][tax_id]" class="form-select tax-select" data-row="${rowIndex}" onchange="updateProductAmount(${rowIndex})">
