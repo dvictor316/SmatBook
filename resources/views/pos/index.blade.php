@@ -1488,7 +1488,7 @@ label {
                                 <option value="Cash">Cash</option>
                                 <option value="Split">Split (Cash + Transfer + POS)</option>
                             </select>
-                            <small class="text-muted">POS accepts cash or split (cash + transfer + POS). No credit sales.</small>
+                            <small class="text-muted">POS accepts cash or split (cash + transfer + POS). Transfer and POS accounts below are your business receiving accounts. No credit sales.</small>
                         </div>
                         <div class="col-md-6">
                             <label>Cash Amount</label>
@@ -1499,16 +1499,16 @@ label {
                             <input type="number" id="transfer-amount" class="form-control form-control-lg fw-bold text-end tabular-nums" style="font-size: 1rem; color: var(--primary-600);">
                         </div>
                         <div class="col-md-6 d-none" id="split-transfer-account-wrap">
-                            <label>Transfer Account</label>
+                            <label>Business Transfer Account</label>
                             <select id="transfer-account" class="form-select">
-                                <option value="">-- Choose Bank --</option>
+                                <option value="">-- Choose Business Bank --</option>
                                 @foreach($bankAccounts as $bank)
                                     <option value="{{ $bank->id }}">{{ $bank->name }}</option>
                                 @endforeach
                             </select>
                             @if($bankAccounts->isEmpty())
                                 <small class="text-muted d-block mt-2">
-                                    No bank details yet.
+                                    No business bank details yet.
                                     <a href="{{ route('bank-account') }}" class="fw-bold text-primary">Create bank details</a>
                                 </small>
                             @endif
@@ -1518,16 +1518,16 @@ label {
                             <input type="number" id="card-amount" class="form-control form-control-lg fw-bold text-end tabular-nums" style="font-size: 1rem; color: var(--primary-600);">
                         </div>
                         <div class="col-md-6 d-none" id="split-card-account-wrap">
-                            <label>POS Account</label>
+                            <label>Business POS Account</label>
                             <select id="card-account" class="form-select">
-                                <option value="">-- Choose Bank --</option>
+                                <option value="">-- Choose Business Bank --</option>
                                 @foreach($bankAccounts as $bank)
                                     <option value="{{ $bank->id }}">{{ $bank->name }}</option>
                                 @endforeach
                             </select>
                             @if($bankAccounts->isEmpty())
                                 <small class="text-muted d-block mt-2">
-                                    No bank details yet.
+                                    No business bank details yet.
                                     <a href="{{ route('bank-account') }}" class="fw-bold text-primary">Create bank details</a>
                                 </small>
                             @endif
