@@ -969,20 +969,23 @@ class SettingController extends Controller
         $bankAccount = Account::query()->findOrFail($validated['account_id']);
         $suspenseAccount = $this->resolveReconciliationSuspenseAccount();
 
-        $reference = 'BREC-' . now()->format('Ymd-His') . '-' . $bank->id;
+        $referenceBase = 'BREC-' . now()->format('Ymd-His') . '-' . $bank->id;
         $memo = trim((string) ($validated['memo'] ?? ''));
         $description = $memo !== ''
             ? $memo
             : 'Bank reconciliation adjustment for ' . ($bank->name ?: 'Bank Account');
 
-        DB::transaction(function () use ($validated, $difference, $bankAccount, $suspenseAccount, $reference, $description, $request) {
+        DB::transaction(function () use ($validated, $difference, $bankAccount, $suspenseAccount, $referenceBase, $description, $request) {
             $debitToBank = $difference > 0 ? abs($difference) : 0;
             $creditToBank = $difference < 0 ? abs($difference) : 0;
+            $companyId = (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0);
+            $branchId = session('active_branch_id');
+            $branchName = session('active_branch_name');
 
-            Transaction::create([
+            $bankEntry = [
                 'account_id' => $bankAccount->id,
                 'transaction_date' => $validated['transaction_date'],
-                'reference' => $reference,
+                'reference' => $referenceBase . '-BANK',
                 'description' => $description,
                 'debit' => $debitToBank,
                 'credit' => $creditToBank,
@@ -991,12 +994,12 @@ class SettingController extends Controller
                 'related_id' => null,
                 'related_type' => null,
                 'user_id' => $request->user()?->id,
-            ]);
+            ];
 
-            Transaction::create([
+            $suspenseEntry = [
                 'account_id' => $suspenseAccount->id,
                 'transaction_date' => $validated['transaction_date'],
-                'reference' => $reference,
+                'reference' => $referenceBase . '-SUSPENSE',
                 'description' => $description,
                 'debit' => $creditToBank,
                 'credit' => $debitToBank,
@@ -1005,7 +1008,23 @@ class SettingController extends Controller
                 'related_id' => null,
                 'related_type' => null,
                 'user_id' => $request->user()?->id,
-            ]);
+            ];
+
+            if (Schema::hasColumn('transactions', 'company_id') && $companyId > 0) {
+                $bankEntry['company_id'] = $companyId;
+                $suspenseEntry['company_id'] = $companyId;
+            }
+            if (Schema::hasColumn('transactions', 'branch_id') && !empty($branchId)) {
+                $bankEntry['branch_id'] = (string) $branchId;
+                $suspenseEntry['branch_id'] = (string) $branchId;
+            }
+            if (Schema::hasColumn('transactions', 'branch_name') && !empty($branchName)) {
+                $bankEntry['branch_name'] = (string) $branchName;
+                $suspenseEntry['branch_name'] = (string) $branchName;
+            }
+
+            Transaction::create($bankEntry);
+            Transaction::create($suspenseEntry);
         });
 
         return redirect()->route('bank-reconciliation')->with('success', 'Reconciliation adjustment posted successfully.');
