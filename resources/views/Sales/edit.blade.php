@@ -38,12 +38,7 @@
                         <div class="col-md-4">
                                 <div class="d-flex justify-content-between align-items-center mb-1">
                                     <label class="form-label fw-bold small mb-0">Customer</label>
-                                    @php
-                                        $customerCreateUrl = \Illuminate\Support\Facades\Route::has('customers.index')
-                                            ? route('customers.index')
-                                            : url('/customers');
-                                    @endphp
-                                    <a href="{{ $customerCreateUrl }}" class="small fw-semibold" target="_blank" rel="noopener">
+                                    <a href="{{ url('/customers/create') }}" class="small fw-semibold" target="_blank" rel="noopener">
                                         <i class="fas fa-plus-circle me-1"></i>Add Customer
                                     </a>
                                 </div>

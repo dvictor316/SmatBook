@@ -73,7 +73,7 @@ class CustomerController extends Controller
     {
         $request->validate([
             'customer_name' => 'required|string|max:191',
-            'email'         => 'nullable|email|max:191|unique:customers,email',
+            'email'         => 'nullable|email|max:191',
             'phone'         => 'nullable|string|max:191',
             'balance'       => 'nullable|numeric|min:0',
             'opening_balance_date' => 'nullable|date',
@@ -186,7 +186,7 @@ class CustomerController extends Controller
 
         $request->validate([
             'customer_name' => 'required|string|max:191',
-            'email'         => 'nullable|email|max:191|unique:customers,email,' . $id,
+            'email'         => 'nullable|email|max:191',
             'image'         => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'status'        => 'required|in:active,deactive',
             'balance'       => 'nullable|numeric|min:0',
