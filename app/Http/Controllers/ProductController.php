@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\Support\Str;
 use App\Support\BranchInventoryService;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -575,6 +576,27 @@ class ProductController extends Controller
 
         $products = collect();
         return view('Inventory.Products.units', compact('products', 'units'));
+    }
+
+    public function serveImage(string $path)
+    {
+        $path = ltrim(trim($path), '/');
+
+        if ($path === '' || str_contains($path, '..')) {
+            abort(404);
+        }
+
+        if (!Storage::disk('public')->exists($path)) {
+            abort(404);
+        }
+
+        $absolutePath = Storage::disk('public')->path($path);
+        $mimeType = Storage::disk('public')->mimeType($path) ?: 'application/octet-stream';
+
+        return response()->file($absolutePath, [
+            'Content-Type' => $mimeType,
+            'Cache-Control' => 'public, max-age=86400',
+        ]);
     }
 
     /**

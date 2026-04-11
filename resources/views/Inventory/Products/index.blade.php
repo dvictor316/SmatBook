@@ -249,7 +249,8 @@
                                         <td>
                                             <div class="d-flex align-items-center">
                                                 @if($product->image_url)
-                                                    <img src="{{ $product->image_url }}" class="rounded me-2" width="35" height="35" alt="{{ $product->name }}">
+                                                    <img src="{{ $product->image_url }}" class="rounded me-2" width="35" height="35" alt="{{ $product->name }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-flex';">
+                                                    <span class="product-thumb-empty" style="display:none;"><i class="fas fa-box-open"></i></span>
                                                 @else
                                                     <span class="product-thumb-empty"><i class="fas fa-box-open"></i></span>
                                                 @endif

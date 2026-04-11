@@ -1272,15 +1272,18 @@ label {
                 data-min-stock="{{ $minStockLevel }}"
                 data-img="{{ $p->image_url }}"
                 data-out-of-stock="{{ $isOutOfStock ? '1' : '0' }}"
-                @if($isOutOfStock) aria-disabled="true" style="pointer-events:none; opacity:.55; filter:grayscale(.15);" @endif>
+                @if($isOutOfStock) aria-disabled="true" style="opacity:.55; filter:grayscale(.15);" @endif>
                 <div class="product-card-img">
                     @if($p->image_url)
-                        <img src="{{ $p->image_url }}" alt="{{ $p->name }}">
+                        <img src="{{ $p->image_url }}" alt="{{ $p->name }}" onerror="this.style.display='none'; this.parentElement.querySelector('.product-fallback-icon')?.classList.remove('d-none');">
                     @else
-                        <div class="d-flex align-items-center justify-content-center h-100 w-100 text-primary bg-light">
+                        <div class="d-flex align-items-center justify-content-center h-100 w-100 text-primary bg-light product-fallback-icon">
                             <i class="fas fa-box-open"></i>
                         </div>
                     @endif
+                    <div class="d-none align-items-center justify-content-center h-100 w-100 text-primary bg-light product-fallback-icon">
+                        <i class="fas fa-box-open"></i>
+                    </div>
                 </div>
             </div>
             @endforeach

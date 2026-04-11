@@ -113,6 +113,9 @@ class Product extends Model
         }
 
         $normalized = ltrim($image, '/');
+        $publicDiskPath = Str::startsWith($normalized, 'public/')
+            ? ltrim(substr($normalized, 7), '/')
+            : $normalized;
 
         if (Str::startsWith($normalized, 'storage/')) {
             return asset($normalized);
@@ -122,8 +125,8 @@ class Product extends Model
             return asset($normalized);
         }
 
-        if (Storage::disk('public')->exists($normalized)) {
-            return Storage::url($normalized);
+        if ($publicDiskPath !== '' && Storage::disk('public')->exists($publicDiskPath)) {
+            return route('products.image', ['path' => $publicDiskPath]);
         }
 
         if (file_exists(public_path('storage/' . $normalized))) {

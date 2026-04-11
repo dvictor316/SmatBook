@@ -490,7 +490,7 @@ public function customerDetails($id = null)
 
                         return $product;
                     })
-                    ->filter(fn ($product) => (float) ($product->available_stock ?? 0) > 0)
+                    ->sortByDesc(fn ($product) => (float) ($product->available_stock ?? 0) > 0 ? 1 : 0)
                     ->values();
             }
 
