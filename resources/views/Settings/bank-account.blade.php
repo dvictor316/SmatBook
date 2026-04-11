@@ -170,7 +170,7 @@
                         <div class="modal-body">
                             <div class="mb-3">
                                 <label class="form-label">Bank Name</label>
-                                <input type="text" class="form-control" name="bank_name" value="{{ old('bank_name', $account->name) }}" required>
+                                <input type="text" class="form-control js-bank-code-source" data-bank-code-part="bank" name="bank_name" value="{{ old('bank_name', $account->name) }}" required>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Account Holder Name</label>
@@ -178,15 +178,16 @@
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Account Number</label>
-                                <input type="text" class="form-control" name="account_number" value="{{ old('account_number', $account->account_number) }}" required>
+                                <input type="text" class="form-control js-bank-code-source" data-bank-code-part="account" name="account_number" value="{{ old('account_number', $account->account_number) }}" required>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Branch</label>
-                                <input type="text" class="form-control" name="branch" value="{{ old('branch', $account->branch ?? '') }}">
+                                <input type="text" class="form-control js-bank-code-source" data-bank-code-part="branch" name="branch" value="{{ old('branch', $account->branch ?? '') }}">
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">IFSC Code</label>
-                                <input type="text" class="form-control" name="ifsc_code" value="{{ old('ifsc_code', $account->ifsc_code ?? ($account->swift_code ?? '')) }}">
+                                <input type="text" class="form-control js-bank-code-target" name="ifsc_code" value="{{ old('ifsc_code', $account->ifsc_code ?? ($account->swift_code ?? '')) }}">
+                                <small class="text-muted d-block mt-2">A suggested code is filled from the bank, branch and account number if you leave this blank.</small>
                             </div>
                             <div class="mb-0">
                                 <label class="form-label">Opening Balance</label>
@@ -232,4 +233,48 @@
         });
     </script>
     @endif
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const sanitizeAlphaNum = (value) => String(value || '').replace(/[^a-z0-9]/gi, '').toUpperCase();
+            const sanitizeDigits = (value) => String(value || '').replace(/\D/g, '');
+            const buildSuggestedCode = (bank, branch, account) => {
+                const bankSeed = (sanitizeAlphaNum(bank).slice(0, 4) || 'BANK').padEnd(4, 'X');
+                const branchSeed = (sanitizeAlphaNum(branch).slice(0, 3) || 'BRN').padEnd(3, 'X');
+                const accountSeed = (sanitizeDigits(account).slice(-4) || '0000').padStart(4, '0');
+                return `${bankSeed}-${branchSeed}-${accountSeed}`;
+            };
+
+            document.querySelectorAll('form').forEach((form) => {
+                const target = form.querySelector('.js-bank-code-target');
+                if (!target) return;
+
+                const bankInput = form.querySelector('.js-bank-code-source[data-bank-code-part="bank"]');
+                const branchInput = form.querySelector('.js-bank-code-source[data-bank-code-part="branch"]');
+                const accountInput = form.querySelector('.js-bank-code-source[data-bank-code-part="account"]');
+
+                let manuallyEdited = target.value.trim() !== '';
+
+                const syncSuggestedCode = () => {
+                    if (manuallyEdited) return;
+                    target.value = buildSuggestedCode(
+                        bankInput ? bankInput.value : '',
+                        branchInput ? branchInput.value : '',
+                        accountInput ? accountInput.value : ''
+                    );
+                };
+
+                [bankInput, branchInput, accountInput].forEach((input) => {
+                    if (!input) return;
+                    input.addEventListener('input', syncSuggestedCode);
+                });
+
+                target.addEventListener('input', () => {
+                    manuallyEdited = target.value.trim() !== '';
+                });
+
+                syncSuggestedCode();
+            });
+        });
+    </script>
 @endsection

@@ -6489,13 +6489,13 @@
                         <div class="col-lg-12 col-md-12">
                             <div class="input-block mb-3">
                                 <label>Bank Name <span class="text-danger">*</span></label>
-                                <input type="text" name="bank_name" class="form-control" placeholder="Enter Bank Name" required>
+                                <input type="text" name="bank_name" class="form-control js-bank-code-source" data-bank-code-part="bank" placeholder="Enter Bank Name" required>
                             </div>
                         </div>
                         <div class="col-lg-12 col-md-12">
                             <div class="input-block mb-3">
                                 <label>Account Number <span class="text-danger">*</span></label>
-                                <input type="text" name="account_number" class="form-control" placeholder="Enter Account Number" required>
+                                <input type="text" name="account_number" class="form-control js-bank-code-source" data-bank-code-part="account" placeholder="Enter Account Number" required>
                             </div>
                         </div>
                         <div class="col-lg-12 col-md-12">
@@ -6508,13 +6508,14 @@
                         <div class="col-lg-12 col-md-12">
                             <div class="input-block mb-3">
                                 <label>Branch Name <span class="text-danger">*</span></label>
-                                <input type="text" name="branch" class="form-control" placeholder="Enter Branch Name">
+                                <input type="text" name="branch" class="form-control js-bank-code-source" data-bank-code-part="branch" placeholder="Enter Branch Name">
                             </div>
                         </div>
                         <div class="col-lg-12 col-md-12">
                             <div class="input-block mb-3">
                                 <label>IFSC / Swift Code</label>
-                                <input type="text" name="ifsc_code" class="form-control" placeholder="Enter IFSC or Swift code">
+                                <input type="text" name="ifsc_code" class="form-control js-bank-code-target" placeholder="Auto-generated from bank, branch and account number">
+                                <small class="text-muted d-block mt-2">A suggested code will be filled in automatically. You can still edit it if you have an official one.</small>
                             </div>
                         </div>
                         <div class="col-lg-12 col-md-12">

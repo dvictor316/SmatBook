@@ -82,6 +82,18 @@ class SettingController extends Controller
         $this->setJsonSettingArray($this->companyScopedSettingKey($baseKey), $value);
     }
 
+    private function buildSuggestedBankCode(?string $bankName, ?string $branchName, ?string $accountNumber): ?string
+    {
+        $bankSeed = strtoupper(Str::padRight(Str::substr(preg_replace('/[^A-Za-z0-9]/', '', (string) $bankName), 0, 4), 4, 'X'));
+        $branchSeed = strtoupper(Str::padRight(Str::substr(preg_replace('/[^A-Za-z0-9]/', '', (string) $branchName), 0, 3), 3, 'X'));
+        $accountSeed = preg_replace('/\D/', '', (string) $accountNumber);
+        $accountSeed = $accountSeed !== '' ? Str::padLeft(Str::substr($accountSeed, -4), 4, '0') : '0000';
+
+        $code = trim("{$bankSeed}-{$branchSeed}-{$accountSeed}", '-');
+
+        return $code !== '' ? $code : null;
+    }
+
     /**
      * Display Main Settings
      * Matches: resources/views/Settings/setting.blade.php
@@ -1051,14 +1063,23 @@ class SettingController extends Controller
             'balance' => (float) ($validated['opening_balance'] ?? 0),
         ];
 
+        $routingCode = trim((string) ($validated['ifsc_code'] ?? ''));
+        if ($routingCode === '') {
+            $routingCode = (string) $this->buildSuggestedBankCode(
+                $validated['bank_name'] ?? null,
+                $validated['branch'] ?? null,
+                $validated['account_number'] ?? null
+            );
+        }
+
         if (Schema::hasColumn('banks', 'account_holder_name')) {
             $payload['account_holder_name'] = $validated['account_holder_name'] ?? null;
         }
         if (Schema::hasColumn('banks', 'ifsc_code')) {
-            $payload['ifsc_code'] = $validated['ifsc_code'] ?? null;
+            $payload['ifsc_code'] = $routingCode !== '' ? $routingCode : null;
         }
         if (Schema::hasColumn('banks', 'swift_code')) {
-            $payload['swift_code'] = $validated['ifsc_code'] ?? null;
+            $payload['swift_code'] = $routingCode !== '' ? $routingCode : null;
         }
         if (Schema::hasColumn('banks', 'company_id')) {
             $payload['company_id'] = $request->user()?->company_id;
@@ -1116,14 +1137,23 @@ class SettingController extends Controller
             'balance' => (float) ($validated['opening_balance'] ?? 0),
         ];
 
+        $routingCode = trim((string) ($validated['ifsc_code'] ?? ''));
+        if ($routingCode === '') {
+            $routingCode = (string) $this->buildSuggestedBankCode(
+                $validated['bank_name'] ?? null,
+                $validated['branch'] ?? null,
+                $validated['account_number'] ?? null
+            );
+        }
+
         if (Schema::hasColumn('banks', 'account_holder_name')) {
             $payload['account_holder_name'] = $validated['account_holder_name'] ?? null;
         }
         if (Schema::hasColumn('banks', 'ifsc_code')) {
-            $payload['ifsc_code'] = $validated['ifsc_code'] ?? null;
+            $payload['ifsc_code'] = $routingCode !== '' ? $routingCode : null;
         }
         if (Schema::hasColumn('banks', 'swift_code')) {
-            $payload['swift_code'] = $validated['ifsc_code'] ?? null;
+            $payload['swift_code'] = $routingCode !== '' ? $routingCode : null;
         }
 
         $bank->update($payload);
