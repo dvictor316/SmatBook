@@ -96,11 +96,13 @@
 
     .page-title {
         color: #0f172a;
+        font-size: 1.15rem;
+        letter-spacing: -0.02em;
     }
 
     .amount-text {
         color: #0f172a;
-        font-size: 15px;
+        font-size: 0.95rem;
     }
 
     .table-action-btn {
@@ -110,6 +112,44 @@
     .table-action-btn:hover {
         color: #2563eb;
         background: #f8fafc;
+    }
+
+    .report-header .text-muted.small {
+        font-size: 0.9rem !important;
+    }
+
+    .header-search-input {
+        font-size: 0.88rem;
+    }
+
+    .branch-chip {
+        font-size: 0.84rem;
+        padding: 8px 12px;
+    }
+
+    .filter-card .form-label {
+        font-size: 0.72rem !important;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+    }
+
+    .filter-card .form-control,
+    .filter-card .input-group-text,
+    .filter-card .btn,
+    .filter-card .form-control-sm {
+        font-size: 0.86rem;
+    }
+
+    .sales-table-card .table tbody td {
+        font-size: 0.92rem;
+    }
+
+    .sales-table-card .table tbody small {
+        font-size: 0.72rem !important;
+    }
+
+    .sales-table-card .badge {
+        font-size: 0.75rem;
     }
 </style>
 
