@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Database\QueryException;
 use Illuminate\Validation\Rule;
 
 class SettingController extends Controller
@@ -969,63 +970,78 @@ class SettingController extends Controller
         $bankAccount = Account::query()->findOrFail($validated['account_id']);
         $suspenseAccount = $this->resolveReconciliationSuspenseAccount();
 
-        $referenceBase = 'BREC-' . now()->format('Ymd-His') . '-' . $bank->id;
+        $referenceBase = 'BREC-' . now()->format('Ymd-His') . '-' . $bank->id . '-' . strtoupper(Str::random(6));
         $memo = trim((string) ($validated['memo'] ?? ''));
         $description = $memo !== ''
             ? $memo
             : 'Bank reconciliation adjustment for ' . ($bank->name ?: 'Bank Account');
 
-        DB::transaction(function () use ($validated, $difference, $bankAccount, $suspenseAccount, $referenceBase, $description, $request) {
-            $debitToBank = $difference > 0 ? abs($difference) : 0;
-            $creditToBank = $difference < 0 ? abs($difference) : 0;
-            $companyId = (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0);
-            $branchId = session('active_branch_id');
-            $branchName = session('active_branch_name');
+        try {
+            DB::transaction(function () use ($validated, $difference, $bankAccount, $suspenseAccount, $referenceBase, $description, $request) {
+                $debitToBank = $difference > 0 ? abs($difference) : 0;
+                $creditToBank = $difference < 0 ? abs($difference) : 0;
+                $companyId = (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0);
+                $branchId = session('active_branch_id');
+                $branchName = session('active_branch_name');
 
-            $bankEntry = [
-                'account_id' => $bankAccount->id,
-                'transaction_date' => $validated['transaction_date'],
-                'reference' => $referenceBase . '-BANK',
-                'description' => $description,
-                'debit' => $debitToBank,
-                'credit' => $creditToBank,
-                'balance' => 0,
-                'transaction_type' => Transaction::TYPE_ADJUSTMENT,
-                'related_id' => null,
-                'related_type' => null,
+                $bankEntry = [
+                    'account_id' => $bankAccount->id,
+                    'transaction_date' => $validated['transaction_date'],
+                    'reference' => $referenceBase . '-BANK',
+                    'description' => $description,
+                    'debit' => $debitToBank,
+                    'credit' => $creditToBank,
+                    'balance' => 0,
+                    'transaction_type' => Transaction::TYPE_ADJUSTMENT,
+                    'related_id' => null,
+                    'related_type' => null,
+                    'user_id' => $request->user()?->id,
+                ];
+
+                $suspenseEntry = [
+                    'account_id' => $suspenseAccount->id,
+                    'transaction_date' => $validated['transaction_date'],
+                    'reference' => $referenceBase . '-SUSPENSE',
+                    'description' => $description,
+                    'debit' => $creditToBank,
+                    'credit' => $debitToBank,
+                    'balance' => 0,
+                    'transaction_type' => Transaction::TYPE_ADJUSTMENT,
+                    'related_id' => null,
+                    'related_type' => null,
+                    'user_id' => $request->user()?->id,
+                ];
+
+                if (Schema::hasColumn('transactions', 'company_id') && $companyId > 0) {
+                    $bankEntry['company_id'] = $companyId;
+                    $suspenseEntry['company_id'] = $companyId;
+                }
+                if (Schema::hasColumn('transactions', 'branch_id') && !empty($branchId)) {
+                    $bankEntry['branch_id'] = (string) $branchId;
+                    $suspenseEntry['branch_id'] = (string) $branchId;
+                }
+                if (Schema::hasColumn('transactions', 'branch_name') && !empty($branchName)) {
+                    $bankEntry['branch_name'] = (string) $branchName;
+                    $suspenseEntry['branch_name'] = (string) $branchName;
+                }
+
+                Transaction::create($bankEntry);
+                Transaction::create($suspenseEntry);
+            });
+        } catch (QueryException $e) {
+            Log::error('Bank reconciliation adjustment failed', [
+                'bank_id' => $validated['bank_id'],
+                'account_id' => $validated['account_id'],
+                'reference_base' => $referenceBase,
+                'error' => $e->getMessage(),
+                'sql_state' => $e->errorInfo[0] ?? null,
+                'driver_code' => $e->errorInfo[1] ?? null,
                 'user_id' => $request->user()?->id,
-            ];
+            ]);
 
-            $suspenseEntry = [
-                'account_id' => $suspenseAccount->id,
-                'transaction_date' => $validated['transaction_date'],
-                'reference' => $referenceBase . '-SUSPENSE',
-                'description' => $description,
-                'debit' => $creditToBank,
-                'credit' => $debitToBank,
-                'balance' => 0,
-                'transaction_type' => Transaction::TYPE_ADJUSTMENT,
-                'related_id' => null,
-                'related_type' => null,
-                'user_id' => $request->user()?->id,
-            ];
-
-            if (Schema::hasColumn('transactions', 'company_id') && $companyId > 0) {
-                $bankEntry['company_id'] = $companyId;
-                $suspenseEntry['company_id'] = $companyId;
-            }
-            if (Schema::hasColumn('transactions', 'branch_id') && !empty($branchId)) {
-                $bankEntry['branch_id'] = (string) $branchId;
-                $suspenseEntry['branch_id'] = (string) $branchId;
-            }
-            if (Schema::hasColumn('transactions', 'branch_name') && !empty($branchName)) {
-                $bankEntry['branch_name'] = (string) $branchName;
-                $suspenseEntry['branch_name'] = (string) $branchName;
-            }
-
-            Transaction::create($bankEntry);
-            Transaction::create($suspenseEntry);
-        });
+            return redirect()->route('bank-reconciliation')
+                ->with('error', 'Bank reconciliation adjustment failed. Please try again once; if it persists, the exact duplicate details are now logged.');
+        }
 
         return redirect()->route('bank-reconciliation')->with('success', 'Reconciliation adjustment posted successfully.');
     }
