@@ -2,9 +2,11 @@
 
 namespace App\Support;
 
+use App\Models\Company;
 use App\Models\Setting;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 
 class ActiveBranchResolver
 {
@@ -36,20 +38,68 @@ class ActiveBranchResolver
         $branches = $this->branchesForUser($user);
 
         if ($branches->isEmpty()) {
-            return null;
+            return $this->seedDefaultBranch($user);
         }
 
         return $branches->firstWhere('is_active', true) ?: $branches->first();
     }
 
+    public function seedDefaultBranch(?Authenticatable $user = null, ?string $preferredName = null): ?array
+    {
+        $companyId = $this->resolveCompanyId($user);
+        if ($companyId <= 0) {
+            return null;
+        }
+
+        $key = "branches_json_company_{$companyId}";
+        $raw = Setting::where('key', $key)->value('value');
+        $decoded = json_decode((string) $raw, true);
+        $branches = collect(is_array($decoded) ? $decoded : [])
+            ->filter(fn ($branch) => !empty($branch['id']) && !empty($branch['name']))
+            ->values();
+
+        if ($branches->isNotEmpty()) {
+            $existing = $branches->firstWhere('is_active', true) ?: $branches->first();
+
+            return [
+                'id' => trim((string) ($existing['id'] ?? '')),
+                'name' => trim((string) ($existing['name'] ?? '')),
+                'is_active' => (bool) ($existing['is_active'] ?? true),
+            ];
+        }
+
+        $company = Company::find($companyId);
+        $branchName = trim((string) ($preferredName
+            ?: $company?->company_name
+            ?: $company?->name
+            ?: data_get($user, 'name')
+            ?: 'Main Branch'));
+
+        $branch = [
+            'id' => (string) Str::uuid(),
+            'name' => $branchName !== '' ? $branchName : 'Main Branch',
+            'code' => $this->makeBranchCode($branchName !== '' ? $branchName : 'Main Branch'),
+            'manager' => '',
+            'phone' => '',
+            'address' => '',
+            'is_active' => true,
+        ];
+
+        Setting::updateOrCreate(
+            ['key' => $key],
+            ['value' => json_encode([$branch])]
+        );
+
+        return [
+            'id' => (string) $branch['id'],
+            'name' => (string) $branch['name'],
+            'is_active' => true,
+        ];
+    }
+
     private function branchesForUser(?Authenticatable $user = null): Collection
     {
-        $companyId = (int) (
-            data_get($user, 'company_id')
-            ?? data_get($user, 'company.id')
-            ?? session('current_tenant_id')
-            ?? 0
-        );
+        $companyId = $this->resolveCompanyId($user);
 
         $keys = $companyId > 0
             ? ["branches_json_company_{$companyId}", 'branches_json']
@@ -80,5 +130,22 @@ class ActiveBranchResolver
         }
 
         return collect();
+    }
+
+    private function resolveCompanyId(?Authenticatable $user = null): int
+    {
+        return (int) (
+            data_get($user, 'company_id')
+            ?? data_get($user, 'company.id')
+            ?? session('current_tenant_id')
+            ?? 0
+        );
+    }
+
+    private function makeBranchCode(string $name): string
+    {
+        $code = strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $name), 0, 4));
+
+        return $code !== '' ? $code . '-' . now()->format('Hi') : 'MAIN-' . now()->format('Hi');
     }
 }

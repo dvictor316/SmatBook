@@ -249,6 +249,27 @@
 
                 <div class="row g-4 mb-5">
                     <div class="col-md-6">
+                        <label class="label-caps">Business / Entity Name</label>
+                        <input type="text" name="customer_name" class="form-control input-smat @error('customer_name') is-invalid @enderror"
+                               value="{{ old('customer_name', Auth::user()->company?->company_name ?? Auth::user()->name) }}"
+                               placeholder="e.g. Desmond Retail Hub" required>
+                        @error('customer_name')
+                            <div class="text-danger small mt-2 fw-bold"><i class="fas fa-info-circle me-1"></i> {{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="col-md-6">
+                        <label class="label-caps">First Branch Name</label>
+                        <input type="text" name="branch_name" class="form-control input-smat @error('branch_name') is-invalid @enderror"
+                               value="{{ old('branch_name', 'Main Branch') }}"
+                               placeholder="e.g. Head Office" required>
+                        @error('branch_name')
+                            <div class="text-danger small mt-2 fw-bold"><i class="fas fa-info-circle me-1"></i> {{ $message }}</div>
+                        @enderror
+                    </div>
+                </div>
+
+                <div class="row g-4 mb-5">
+                    <div class="col-md-6">
                         <label class="label-caps">User Capacity</label>
                         <select name="employees" class="form-select input-smat">
                             <option value="1-10">1-10 Staff Members</option>

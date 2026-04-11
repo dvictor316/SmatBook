@@ -280,7 +280,13 @@
                 <div class="mb-3">
                     <label class="label-caps">Business / Entity Name</label>
                     <input type="text" name="customer_name" class="form-control input-smat w-100" 
-                           placeholder="e.g. Acme Corporation" value="{{ old('customer_name') }}" required autofocus>
+                           placeholder="e.g. Acme Corporation" value="{{ old('customer_name', Auth::user()->company?->company_name ?? Auth::user()->name) }}" required autofocus>
+                </div>
+
+                <div class="mb-3">
+                    <label class="label-caps">First Branch Name</label>
+                    <input type="text" name="branch_name" class="form-control input-smat w-100"
+                           placeholder="e.g. Head Office" value="{{ old('branch_name', 'Main Branch') }}" required>
                 </div>
 
                 <div class="mb-3">

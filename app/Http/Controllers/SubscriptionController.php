@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\{Subscription, Plan, User, Company, DeploymentManager, Domain, Bank, Setting};
 use App\Support\AppMailer;
+use App\Support\ActiveBranchResolver;
 use App\Support\DeploymentCommissionPayoutService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -242,8 +243,10 @@ class SubscriptionController extends Controller
     public function store(Request $request)
     {
         $request->validate([
+            'customer_name'   => 'required|string|max:191',
             'domain_prefix'   => 'required|alpha_dash|unique:subscriptions,domain_prefix|unique:companies,domain_prefix',
             'subscription_id' => 'required|exists:subscriptions,id',
+            'branch_name'     => 'required|string|max:191',
             'employees'       => 'nullable|string',
         ]);
 
@@ -267,7 +270,8 @@ class SubscriptionController extends Controller
                 ['user_id' => $user->id],
                 [
                     'domain_prefix' => $prefix,
-                    'company_name'  => $user->name . "'s Workspace",
+                    'company_name'  => (string) $request->customer_name,
+                    'name'          => (string) $request->customer_name,
                     'status'        => 'pending',
                     'owner_id'      => $user->id,
                 ]
@@ -275,6 +279,15 @@ class SubscriptionController extends Controller
 
             $subscription->update(['company_id' => $company->id]);
             $user->update(['company_id' => $company->id]);
+            session(['current_tenant_id' => $company->id]);
+
+            $defaultBranch = app(ActiveBranchResolver::class)->seedDefaultBranch($user->fresh(), (string) $request->branch_name);
+            if ($defaultBranch) {
+                session([
+                    'active_branch_id' => $defaultBranch['id'],
+                    'active_branch_name' => $defaultBranch['name'],
+                ]);
+            }
 
             if (in_array($user->role, ['deployment_manager', 'manager'])) {
                 DeploymentManager::firstOrCreate(
