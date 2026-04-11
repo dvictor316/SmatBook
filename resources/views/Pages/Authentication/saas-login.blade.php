@@ -588,6 +588,12 @@
                     </div>
                 @endif
 
+                @if(session('error'))
+                    <div class="auth-alert auth-alert-error">
+                        <i class="fas fa-exclamation-triangle me-2"></i>{{ session('error') }}
+                    </div>
+                @endif
+
                 @if($errors->any())
                     <div class="auth-alert auth-alert-error">
                         <i class="fas fa-exclamation-triangle me-2"></i>{{ $errors->first() }}

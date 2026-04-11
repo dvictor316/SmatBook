@@ -38,41 +38,23 @@ class Handler extends ExceptionHandler
 
         // Graceful recovery for "Page Expired" (419), especially on registration flows.
         $this->renderable(function (TokenMismatchException $e, $request) {
+            $message = 'Your session expired. Please login again to continue.';
+
             if ($request->expectsJson()) {
-                return response()->json([
-                    'message' => 'Your session expired. Please refresh and try again.',
-                ], 419);
+                return response()->json(['message' => $message], 419);
             }
 
-            $safeInput = $request->except(['password', 'password_confirmation', 'current_password']);
-            $isAuthScreen = $request->routeIs([
-                'login',
-                'login-account',
-                'saas-login',
-                'register',
-                'saas-register',
-                'forgot-password',
-                'password.reset',
-            ]);
-
+            Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
-            $message = 'Your session expired. Please try again.';
-
-            if ($isAuthScreen) {
-                return redirect()->to($request->url())
-                    ->withInput($safeInput)
-                    ->withErrors(['error' => $message]);
-            }
-
-            return back()
-                ->withInput($safeInput)
-                ->withErrors(['error' => $message]);
+            return redirect()
+                ->guest($this->resolveLoginRedirect($request))
+                ->withErrors(['login' => $message]);
         });
 
         $this->renderable(function (AuthenticationException $e, $request) {
-            $message = 'Your session expired. Please log in again to continue.';
+            $message = 'Your session expired. Please login again to continue.';
 
             if ($request->expectsJson()) {
                 return response()->json(['message' => $message], 401);
@@ -80,9 +62,14 @@ class Handler extends ExceptionHandler
 
             $loginUrl = $this->resolveLoginRedirect($request);
 
+            if ($request->hasSession()) {
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+            }
+
             return redirect()
                 ->guest($loginUrl)
-                ->with('error', $message);
+                ->withErrors(['login' => $message]);
         });
 
         $this->renderable(function (NotFoundHttpException $e, $request) {
