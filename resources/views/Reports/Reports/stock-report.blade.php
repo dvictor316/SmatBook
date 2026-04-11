@@ -9,8 +9,8 @@
         <div class="page-header mb-3 no-print">
             <div class="row align-items-center">
                 <div class="col">
-                    <h4 class="fw-bold mb-1 report-page-title">Stock & Valuation Ledger</h4>
-                    <p class="text-muted mb-0 report-page-subtitle">Consolidated purchase versus sales analysis.</p>
+                    <h4 class="fw-bold mb-1 report-page-title">Warehouse Stock Report</h4>
+                    <p class="text-muted mb-0 report-page-subtitle">Live stock on hand for the active branch warehouse.</p>
                 </div>
                 <div class="col-auto">
                     <div class="btn-group btn-group-sm shadow-sm">
@@ -28,8 +28,8 @@
             </div>
         </div>
         @include('Reports.partials.context-strip', [
-            'reportLabel' => 'Inventory Valuation Report',
-            'periodLabel' => 'Window: ' . $fromDate . ' to ' . $toDate,
+            'reportLabel' => 'Warehouse Inventory Report',
+            'periodLabel' => 'As At: ' . $toDate,
         ])
 
         {{-- Filters --}}
@@ -40,17 +40,9 @@
                         ? 'inventory.Products'
                         : (\Illuminate\Support\Facades\Route::has('inventory') ? 'inventory' : null);
                 @endphp
-                <form action="{{ $stockRouteName ? route($stockRouteName) : url('/inventory') }}" method="GET">
+                <form action="{{ route('stock') }}" method="GET">
                     <div class="row gx-2 align-items-end">
-                        <div class="col-md-3">
-                            <label class="report-filter-label">Start Date</label>
-                            <input type="date" name="from_date" class="form-control form-control-sm border-0 bg-light" value="{{ $fromDate }}">
-                        </div>
-                        <div class="col-md-3">
-                            <label class="report-filter-label">End Date</label>
-                            <input type="date" name="to_date" class="form-control form-control-sm border-0 bg-light" value="{{ $toDate }}">
-                        </div>
-                        <div class="col-md-4">
+                        <div class="col-md-10">
                             <label class="report-filter-label">Product Filter</label>
                             <select name="product_id" class="form-select form-select-sm border-0 bg-light">
                                 <option value="">All Inventory Items</option>
@@ -67,62 +59,83 @@
             </div>
         </div>
 
-        @php 
-            $tValIn = $stockreports->sum('ValIn');
-            $tValOut = $stockreports->sum('ValOut');
-            $tNet = $tValIn - $tValOut;
+        @php
+            $totalUnits = $stockreports->sum('QtyOnHand');
+            $totalCostValue = $stockreports->sum('CostValue');
+            $totalSalesValue = $stockreports->sum('SalesValue');
+            $lowStockCount = $stockreports->where('Status', 'Low Stock')->count();
         @endphp
 
         {{-- Summary Cards --}}
         <div class="row g-2 mb-3">
             <div class="col-md-4">
                 <div class="card border shadow-none mb-0 report-metric-card"><div class="card-body p-3">
-                    <p class="text-muted mb-1 fw-bold uppercase report-metric-label">Total Purchases (In)</p>
-                    <h4 class="text-success fw-bold mb-0 report-metric-value">₦{{ number_format($tValIn, 2) }}</h4>
+                    <p class="text-muted mb-1 fw-bold uppercase report-metric-label">Products In Warehouse</p>
+                    <h4 class="text-success fw-bold mb-0 report-metric-value">{{ number_format($stockreports->count()) }}</h4>
                 </div></div>
             </div>
             <div class="col-md-4">
                 <div class="card border shadow-none mb-0 report-metric-card"><div class="card-body p-3">
-                    <p class="text-muted mb-1 fw-bold uppercase report-metric-label">Total Sales (Out)</p>
-                    <h4 class="text-danger fw-bold mb-0 report-metric-value">₦{{ number_format($tValOut, 2) }}</h4>
+                    <p class="text-muted mb-1 fw-bold uppercase report-metric-label">Units On Hand</p>
+                    <h4 class="text-danger fw-bold mb-0 report-metric-value">{{ number_format($totalUnits, 2) }}</h4>
                 </div></div>
             </div>
             <div class="col-md-4">
-                <div class="card border-0 {{ $tNet >= 0 ? 'bg-indigo' : 'bg-danger' }} mb-0 shadow-sm report-metric-card report-metric-card--emphasis">
+                <div class="card border-0 bg-indigo mb-0 shadow-sm report-metric-card report-metric-card--emphasis">
                     <div class="card-body p-3 text-white">
-                        <p class="text-white mb-1 fw-bold uppercase report-metric-label report-metric-label--light">Net Valuation Change</p>
-                        <h4 class="text-white fw-bold mb-0 report-metric-value">₦{{ number_format($tNet, 2) }}</h4>
+                        <p class="text-white mb-1 fw-bold uppercase report-metric-label report-metric-label--light">Warehouse Cost Value</p>
+                        <h4 class="text-white fw-bold mb-0 report-metric-value">₦{{ number_format($totalCostValue, 2) }}</h4>
                     </div>
                 </div>
             </div>
+            <div class="col-md-4">
+                <div class="card border shadow-none mb-0 report-metric-card"><div class="card-body p-3">
+                    <p class="text-muted mb-1 fw-bold uppercase report-metric-label">Warehouse Selling Value</p>
+                    <h4 class="text-primary fw-bold mb-0 report-metric-value">₦{{ number_format($totalSalesValue, 2) }}</h4>
+                </div></div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border shadow-none mb-0 report-metric-card"><div class="card-body p-3">
+                    <p class="text-muted mb-1 fw-bold uppercase report-metric-label">Low Stock Items</p>
+                    <h4 class="text-warning fw-bold mb-0 report-metric-value">{{ number_format($lowStockCount) }}</h4>
+                </div></div>
+            </div>
         </div>
 
-        {{-- Ledger Table --}}
+        {{-- Warehouse Table --}}
         <div class="card border shadow-none overflow-hidden">
             <div class="table-responsive">
                 <table class="table table-sm mb-0" id="stockTable">
                     <thead>
                         <tr>
-                            <th class="ps-3 py-2 text-muted">Date</th>
-                            <th class="py-2 text-center text-muted">Orders</th>
-                            <th class="py-2 text-end text-muted">Purchase Value</th>
-                            <th class="py-2 text-end text-muted">Sales Value</th>
-                            <th class="pe-3 py-2 text-end text-muted">Net Flow</th>
+                            <th class="ps-3 py-2 text-muted">Product</th>
+                            <th class="py-2 text-muted">SKU</th>
+                            <th class="py-2 text-end text-muted">Qty On Hand</th>
+                            <th class="py-2 text-end text-muted">Purchase Price</th>
+                            <th class="py-2 text-end text-muted">Selling Price</th>
+                            <th class="py-2 text-end text-muted">Cost Value</th>
+                            <th class="py-2 text-end text-muted">Selling Value</th>
+                            <th class="py-2 text-end text-muted">Reorder Level</th>
+                            <th class="pe-3 py-2 text-end text-muted">Status</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($stockreports as $report)
                         <tr class="accounting-row">
-                            <td class="ps-3 py-2 fw-bold text-dark">{{ $report['Date'] }}</td>
-                            <td class="py-2 text-center text-muted">{{ number_format($report['QtyIn'] + $report['QtyOut']) }}</td>
-                            <td class="py-2 text-end text-success">₦{{ number_format($report['ValIn'], 2) }}</td>
-                            <td class="py-2 text-end text-danger">₦{{ number_format($report['ValOut'], 2) }}</td>
-                            <td class="pe-3 py-2 text-end fw-bold {{ $report['NetValue'] >= 0 ? 'text-indigo' : 'text-danger' }}">
-                                ₦{{ number_format($report['NetValue'], 2) }}
+                            <td class="ps-3 py-2 fw-bold text-dark">{{ $report['Product'] }}</td>
+                            <td class="py-2 text-muted">{{ $report['Sku'] ?: 'N/A' }}</td>
+                            <td class="py-2 text-end fw-bold {{ $report['QtyOnHand'] <= 0 ? 'text-danger' : 'text-dark' }}">{{ number_format($report['QtyOnHand'], 2) }}</td>
+                            <td class="py-2 text-end text-success">₦{{ number_format($report['PurchasePrice'], 2) }}</td>
+                            <td class="py-2 text-end text-primary">₦{{ number_format($report['SalesPrice'], 2) }}</td>
+                            <td class="py-2 text-end text-success">₦{{ number_format($report['CostValue'], 2) }}</td>
+                            <td class="py-2 text-end text-primary">₦{{ number_format($report['SalesValue'], 2) }}</td>
+                            <td class="py-2 text-end text-muted">{{ number_format($report['ReorderLevel'], 2) }}</td>
+                            <td class="pe-3 py-2 text-end fw-bold {{ $report['Status'] === 'Out of Stock' ? 'text-danger' : ($report['Status'] === 'Low Stock' ? 'text-warning' : 'text-indigo') }}">
+                                {{ $report['Status'] }}
                             </td>
                         </tr>
                         @empty
-                        <tr><td colspan="5" class="text-center py-5 text-muted">No records found.</td></tr>
+                        <tr><td colspan="9" class="text-center py-5 text-muted">No stock records found.</td></tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -213,9 +226,9 @@
         const doc = new jsPDF('p', 'pt', 'a4');
         
         doc.setFontSize(16);
-        doc.text("Stock & Valuation Ledger", 40, 40);
+        doc.text("Warehouse Stock Report", 40, 40);
         doc.setFontSize(10);
-        doc.text("Report Period: {{ $fromDate }} to {{ $toDate }}", 40, 60);
+        doc.text("As At: {{ $toDate }}", 40, 60);
 
         doc.autoTable({
             html: '#stockTable',

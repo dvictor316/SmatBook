@@ -1772,8 +1772,6 @@ public function destroy($id)
 
         $user = Auth::user();
         $companyId = (int) ($user?->company_id ?? 0);
-        $fromStart = Carbon::parse($fromDate)->startOfDay()->toDateTimeString();
-        $toEnd = Carbon::parse($toDate)->endOfDay()->toDateTimeString();
 
         $applyTenantScope = function ($query, string $table) use ($companyId, $user) {
             if ($companyId > 0 && Schema::hasColumn($table, 'company_id')) {
@@ -1800,205 +1798,82 @@ public function destroy($id)
             ->tap(fn ($q) => $applyTenantScope($q, 'products'))
             ->get();
 
-        if (!Schema::hasTable('purchase_items') || !Schema::hasTable('sale_items')) {
-            return view('Reports.Reports.stock-report', [
-                'stockreports' => collect(),
-                'fromDate' => $fromDate,
-                'toDate' => $toDate,
-                'products' => $products,
-                'productId' => $productId,
-                'activeBranch' => $activeBranch,
-            ])->with('error', 'Inventory movement tables are missing.');
-        }
+        $stockColumn = Schema::hasColumn('products', 'stock')
+            ? 'stock'
+            : (Schema::hasColumn('products', 'stock_quantity') ? 'stock_quantity' : null);
+        $purchasePriceColumn = Schema::hasColumn('products', 'purchase_price')
+            ? 'purchase_price'
+            : (Schema::hasColumn('products', 'cost_price') ? 'cost_price' : null);
+        $salesPriceColumn = Schema::hasColumn('products', 'retail_price')
+            ? 'retail_price'
+            : (Schema::hasColumn('products', 'price') ? 'price' : null);
+        $reorderColumn = Schema::hasColumn('products', 'reorder_level')
+            ? 'reorder_level'
+            : (Schema::hasColumn('products', 'min_stock_level') ? 'min_stock_level' : null);
+        $hasBranchStocks = Schema::hasTable('product_branch_stocks');
+        $hasBranchId = $hasBranchStocks && Schema::hasColumn('product_branch_stocks', 'branch_id');
+        $hasBranchName = $hasBranchStocks && Schema::hasColumn('product_branch_stocks', 'branch_name');
+        $branchId = (string) ($activeBranch['id'] ?? '');
+        $branchName = (string) ($activeBranch['name'] ?? '');
 
-        $purchaseDateColumn = Schema::hasColumn('purchases', 'purchase_date')
-            ? 'purchase_date'
-            : (Schema::hasColumn('purchases', 'date') ? 'date' : 'created_at');
+        $purchaseExpr = $purchasePriceColumn ? "products.{$purchasePriceColumn}" : '0';
+        $salesExpr = $salesPriceColumn ? "products.{$salesPriceColumn}" : $purchaseExpr;
+        $reorderExpr = $reorderColumn ? "products.{$reorderColumn}" : '0';
+        $stockExpr = $stockColumn ? "products.{$stockColumn}" : '0';
 
-        $saleDateColumn = Schema::hasColumn('sales', 'order_date')
-            ? 'order_date'
-            : (Schema::hasColumn('sales', 'date') ? 'date' : 'created_at');
-
-        $hasPurchaseQty = Schema::hasColumn('purchase_items', 'qty');
-        $hasPurchaseQuantity = Schema::hasColumn('purchase_items', 'quantity');
-        $hasPurchaseUnitPrice = Schema::hasColumn('purchase_items', 'unit_price');
-        $hasPurchaseRate = Schema::hasColumn('purchase_items', 'rate');
-        $hasSaleQty = Schema::hasColumn('sale_items', 'qty');
-        $hasSaleQuantity = Schema::hasColumn('sale_items', 'quantity');
-        $hasSaleUnitPrice = Schema::hasColumn('sale_items', 'unit_price');
-        $hasSaleRate = Schema::hasColumn('sale_items', 'rate');
-        $saleTotalColumn = Schema::hasColumn('sale_items', 'total_price')
-            ? 'total_price'
-            : (Schema::hasColumn('sale_items', 'subtotal') ? 'subtotal' : null);
-
-        $purchaseQtyExpr = match (true) {
-            $hasPurchaseQty && $hasPurchaseQuantity =>
-                'COALESCE(NULLIF(purchase_items.qty, 0), purchase_items.quantity, 0)',
-            $hasPurchaseQty => 'COALESCE(purchase_items.qty, 0)',
-            $hasPurchaseQuantity => 'COALESCE(purchase_items.quantity, 0)',
-            default => '0',
-        };
-        $purchasePriceExpr = match (true) {
-            $hasPurchaseUnitPrice && $hasPurchaseRate =>
-                'COALESCE(NULLIF(purchase_items.unit_price, 0), purchase_items.rate, 0)',
-            $hasPurchaseUnitPrice => 'COALESCE(purchase_items.unit_price, 0)',
-            $hasPurchaseRate => 'COALESCE(purchase_items.rate, 0)',
-            default => '0',
-        };
-        $saleQtyExpr = match (true) {
-            $hasSaleQty && $hasSaleQuantity =>
-                'COALESCE(NULLIF(sale_items.qty, 0), sale_items.quantity, 0)',
-            $hasSaleQty => 'COALESCE(sale_items.qty, 0)',
-            $hasSaleQuantity => 'COALESCE(sale_items.quantity, 0)',
-            default => '0',
-        };
-        $saleUnitPriceExpr = match (true) {
-            $hasSaleUnitPrice && $hasSaleRate =>
-                'COALESCE(NULLIF(sale_items.unit_price, 0), sale_items.rate, 0)',
-            $hasSaleUnitPrice => 'COALESCE(sale_items.unit_price, 0)',
-            $hasSaleRate => 'COALESCE(sale_items.rate, 0)',
-            default => '0',
-        };
-        $saleTotalExpr = $saleTotalColumn
-            ? "COALESCE(sale_items.{$saleTotalColumn}, ({$saleQtyExpr} * {$saleUnitPriceExpr}))"
-            : "({$saleQtyExpr} * {$saleUnitPriceExpr})";
-
-        $stockIn = $this->scopedTable('purchase_items')
-            ->join('purchases', 'purchase_items.purchase_id', '=', 'purchases.id')
+        $productsQuery = $this->scopedTable('products')
             ->select([
-                DB::raw('DATE(purchases.' . $purchaseDateColumn . ') as log_date'),
-                DB::raw("SUM({$purchaseQtyExpr}) as qty_in"),
-                DB::raw('0 as qty_out'),
-                DB::raw("SUM({$purchaseQtyExpr} * {$purchasePriceExpr}) as val_in"),
-                DB::raw('0 as val_out'),
+                'products.id',
+                'products.name',
+                'products.sku',
+                DB::raw("COALESCE({$purchaseExpr}, 0) as purchase_price"),
+                DB::raw("COALESCE({$salesExpr}, 0) as sales_price"),
+                DB::raw("COALESCE({$reorderExpr}, 0) as reorder_level"),
             ])
-            ->whereBetween('purchases.' . $purchaseDateColumn, [$fromStart, $toEnd])
-            ->when(!empty($productId), fn ($q) => $q->where('purchase_items.product_id', $productId))
-            ->tap(fn ($q) => $applyTenantScope($q, 'purchases'))
-            ->groupBy('log_date');
+            ->tap(fn ($q) => $applyTenantScope($q, 'products'))
+            ->when(!empty($productId), fn ($q) => $q->where('products.id', $productId));
 
-        $stockInExists = (clone $stockIn)->exists();
+        if ($hasBranchStocks && ($branchId !== '' || $branchName !== '')) {
+            $productsQuery->leftJoin('product_branch_stocks', function ($join) use ($branchId, $branchName, $hasBranchId, $hasBranchName) {
+                $join->on('product_branch_stocks.product_id', '=', 'products.id');
 
-        if (!$stockInExists) {
-            if (Schema::hasTable('inventory_history') && Schema::hasTable('products')) {
-                $historyStockIn = $this->scopedTable('inventory_history')
-                    ->join('products', 'inventory_history.product_id', '=', 'products.id')
-                    ->select([
-                        DB::raw('DATE(inventory_history.created_at) as log_date'),
-                        DB::raw('SUM(COALESCE(inventory_history.quantity, 0)) as qty_in'),
-                        DB::raw('0 as qty_out'),
-                        DB::raw('SUM(COALESCE(inventory_history.quantity, 0) * COALESCE(products.purchase_price, products.price, 0)) as val_in'),
-                        DB::raw('0 as val_out'),
-                    ])
-                    ->whereRaw("LOWER(COALESCE(inventory_history.type, '')) = 'in'")
-                    ->whereBetween('inventory_history.created_at', [$fromStart, $toEnd])
-                    ->when(!empty($productId), fn ($q) => $q->where('inventory_history.product_id', $productId))
-                    ->when(
-                        $companyId > 0 && Schema::hasColumn('products', 'company_id'),
-                        fn ($q) => $q->where('products.company_id', $companyId)
-                    )
-                    ->groupBy('log_date');
+                if ($branchId !== '' && $hasBranchId) {
+                    $join->where('product_branch_stocks.branch_id', '=', $branchId);
+                } elseif ($branchName !== '' && $hasBranchName) {
+                    $join->where('product_branch_stocks.branch_name', '=', $branchName);
+                }
+            });
 
-                $this->applyInventoryHistoryBranchFilter($historyStockIn, 'inventory_history');
-
-                $stockIn = DB::query()->fromSub($historyStockIn, 'stk_in');
-            } elseif (Schema::hasTable('purchases')) {
-                $headerStockIn = $this->scopedTable('purchases')
-                    ->select([
-                        DB::raw('DATE(purchases.' . $purchaseDateColumn . ') as log_date'),
-                        DB::raw('COUNT(*) as qty_in'),
-                        DB::raw('0 as qty_out'),
-                        DB::raw('SUM(COALESCE(purchases.total_amount, 0)) as val_in'),
-                        DB::raw('0 as val_out'),
-                    ])
-                    ->whereBetween('purchases.' . $purchaseDateColumn, [$fromStart, $toEnd])
-                    ->tap(fn ($q) => $applyTenantScope($q, 'purchases'))
-                    ->groupBy('log_date');
-
-                $stockIn = DB::query()->fromSub($headerStockIn, 'stk_in');
-            }
+            $productsQuery->addSelect(DB::raw("COALESCE(product_branch_stocks.quantity, {$stockExpr}, 0) as stock_on_hand"));
+        } else {
+            $productsQuery->addSelect(DB::raw("COALESCE({$stockExpr}, 0) as stock_on_hand"));
         }
 
-        $stockOut = $this->scopedTable('sale_items')
-            ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
-            ->select([
-                DB::raw('DATE(sales.' . $saleDateColumn . ') as log_date'),
-                DB::raw('0 as qty_in'),
-                DB::raw("SUM({$saleQtyExpr}) as qty_out"),
-                DB::raw('0 as val_in'),
-                DB::raw("SUM({$saleTotalExpr}) as val_out"),
-        ])
-        ->whereBetween('sales.' . $saleDateColumn, [$fromStart, $toEnd])
-        ->when(!empty($productId), fn ($q) => $q->where('sale_items.product_id', $productId))
-        ->tap(fn ($q) => $applyTenantScope($q, 'sales'))
-        ->tap(fn ($q) => $this->applySaleBranchFilter($q, 'sales'))
-        ->groupBy('log_date');
+        $stockreports = $productsQuery
+            ->orderBy('products.name')
+            ->get()
+            ->map(function ($product) {
+                $qty = max(0, (float) ($product->stock_on_hand ?? 0));
+                $purchasePrice = max(0, (float) ($product->purchase_price ?? 0));
+                $salesPrice = max(0, (float) ($product->sales_price ?? 0));
+                $reorderLevel = max(0, (float) ($product->reorder_level ?? 0));
+                $costValue = $qty * $purchasePrice;
+                $salesValue = $qty * $salesPrice;
 
-        $this->applySaleBranchFilter($stockOut, 'sales');
-
-        $stockOutExists = (clone $stockOut)->exists();
-
-        if (!$stockOutExists) {
-            if (Schema::hasTable('inventory_history') && Schema::hasTable('products')) {
-                $historyStockOut = $this->scopedTable('inventory_history')
-                    ->join('products', 'inventory_history.product_id', '=', 'products.id')
-                    ->select([
-                        DB::raw('DATE(inventory_history.created_at) as log_date'),
-                        DB::raw('0 as qty_in'),
-                        DB::raw('SUM(COALESCE(inventory_history.quantity, 0)) as qty_out'),
-                        DB::raw('0 as val_in'),
-                        DB::raw('SUM(COALESCE(inventory_history.quantity, 0) * COALESCE(products.price, products.purchase_price, 0)) as val_out'),
-                    ])
-                    ->whereRaw("LOWER(COALESCE(inventory_history.type, '')) = 'out'")
-                    ->whereBetween('inventory_history.created_at', [$fromStart, $toEnd])
-                    ->when(!empty($productId), fn ($q) => $q->where('inventory_history.product_id', $productId))
-                    ->when(
-                        $companyId > 0 && Schema::hasColumn('products', 'company_id'),
-                        fn ($q) => $q->where('products.company_id', $companyId)
-                    )
-                    ->groupBy('log_date');
-
-                $this->applyInventoryHistoryBranchFilter($historyStockOut, 'inventory_history');
-
-                $stockOut = DB::query()->fromSub($historyStockOut, 'stk_out');
-            } elseif (Schema::hasTable('sales')) {
-            $headerStockOut = $this->scopedTable('sales')
-                ->select([
-                    DB::raw('DATE(sales.' . $saleDateColumn . ') as log_date'),
-                    DB::raw('0 as qty_in'),
-                    DB::raw('COUNT(*) as qty_out'),
-                    DB::raw('0 as val_in'),
-                    DB::raw('SUM(COALESCE(sales.total, 0)) as val_out'),
-                ])
-                ->whereBetween('sales.' . $saleDateColumn, [$fromStart, $toEnd])
-                ->tap(fn ($q) => $applyTenantScope($q, 'sales'))
-                ->tap(fn ($q) => $this->applySaleBranchFilter($q, 'sales'))
-                ->groupBy('log_date');
-
-                $stockOut = DB::query()->fromSub($headerStockOut, 'stk_out');
-            }
-        }
-
-        $results = DB::table(DB::query()->fromSub($stockIn->unionAll($stockOut), 'stk'))
-            ->select([
-                'log_date',
-                DB::raw('SUM(qty_in) as total_qty_in'),
-                DB::raw('SUM(qty_out) as total_qty_out'),
-                DB::raw('SUM(val_in) as total_val_in'),
-                DB::raw('SUM(val_out) as total_val_out'),
-            ])
-            ->groupBy('log_date')
-            ->orderBy('log_date', 'desc')
-            ->get();
-
-        $stockreports = $results->map(fn($item) => [
-            'Date' => \Carbon\Carbon::parse($item->log_date)->format('d M y'),
-            'QtyIn' => (float)$item->total_qty_in,
-            'QtyOut' => (float)$item->total_qty_out,
-            'ValIn' => (float)$item->total_val_in,
-            'ValOut' => (float)$item->total_val_out,
-            'NetValue' => (float)$item->total_val_in - (float)$item->total_val_out,
-        ]);
+                return [
+                    'Product' => (string) ($product->name ?? 'Unnamed Product'),
+                    'Sku' => (string) ($product->sku ?? ''),
+                    'QtyOnHand' => $qty,
+                    'PurchasePrice' => $purchasePrice,
+                    'SalesPrice' => $salesPrice,
+                    'CostValue' => $costValue,
+                    'SalesValue' => $salesValue,
+                    'ReorderLevel' => $reorderLevel,
+                    'Status' => $qty <= 0
+                        ? 'Out of Stock'
+                        : ($reorderLevel > 0 && $qty <= $reorderLevel ? 'Low Stock' : 'In Stock'),
+                ];
+            });
 
         return view('Reports.Reports.stock-report', compact('stockreports', 'fromDate', 'toDate', 'products', 'productId', 'activeBranch'));
     }
