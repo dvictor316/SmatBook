@@ -340,6 +340,38 @@
                     .replace(/'/g, '&#39;');
             }
 
+            function updateProductAmount(rowIndex) {
+                const quantityField = document.querySelector(`input[name="products[${rowIndex}][quantity]"]`);
+                const rateField = document.querySelector(`input[name="products[${rowIndex}][rate]"]`);
+                const discountField = document.querySelector(`input[name="products[${rowIndex}][discount]"]`);
+                const amountCell = document.getElementById(`amount_${rowIndex}`);
+
+                if (!quantityField || !rateField || !discountField || !amountCell) {
+                    return;
+                }
+
+                const quantity = parseFloat(quantityField.value) || 0;
+                const rate = parseFloat(rateField.value) || 0;
+                const discount = parseFloat(discountField.value) || 0;
+                const amount = Math.max(0, (quantity * rate) - discount);
+
+                amountCell.textContent = amount.toFixed(2);
+                updateTotals();
+            }
+
+            function removeProductRow(rowId) {
+                const row = document.getElementById(rowId);
+                if (row) {
+                    row.remove();
+                }
+
+                if (tableBody.children.length === 0) {
+                    createEmptyRow();
+                }
+
+                updateTotals();
+            }
+
             function createEmptyRow(seed = {}) {
                 const rowId = `productRow_${productCounter}`;
                 const rowIndex = productCounter;
@@ -502,30 +534,9 @@
 
             updateTotals();
             
-            // Global functions for inline event handlers
-            window.updateProductAmount = function(rowIndex) {
-                const quantity = parseFloat(document.querySelector(`input[name="products[${rowIndex}][quantity]"]`).value) || 0;
-                const rate = parseFloat(document.querySelector(`input[name="products[${rowIndex}][rate]"]`).value) || 0;
-                const discount = parseFloat(document.querySelector(`input[name="products[${rowIndex}][discount]"]`).value) || 0;
-                
-                const amount = (quantity * rate) - discount;
-                document.getElementById(`amount_${rowIndex}`).textContent = amount.toFixed(2);
-                
-                updateTotals();
-            };
-            
-            window.removeProductRow = function(rowId) {
-                const row = document.getElementById(rowId);
-                if (row) {
-                    row.remove();
-                }
-
-                if (tableBody.children.length === 0) {
-                    createEmptyRow();
-                }
-                
-                updateTotals();
-            };
+            // Expose helpers for inline handlers in the dynamic row template
+            window.updateProductAmount = updateProductAmount;
+            window.removeProductRow = removeProductRow;
             
             function updateTotals() {
                 let taxableAmount = 0;
