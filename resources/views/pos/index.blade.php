@@ -1488,7 +1488,7 @@ label {
                                 <option value="Cash">Cash</option>
                                 <option value="Split">Split (Cash + Transfer + POS)</option>
                             </select>
-                            <small class="text-muted">POS accepts cash or split (cash + transfer + POS). Transfer and POS accounts below are your business receiving accounts. No credit sales.</small>
+                            <small class="text-muted">POS accepts cash or split (cash + transfer + POS). Transfer and POS transactions</small>
                         </div>
                         <div class="col-md-6">
                             <label>Cash Amount</label>
