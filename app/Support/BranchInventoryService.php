@@ -60,6 +60,30 @@ class BranchInventoryService
         return $branchStock;
     }
 
+    public function setBranchStock(Product|int $product, float $quantity, ?array $branch = null, ?int $companyId = null): ?ProductBranchStock
+    {
+        $branch = $branch ?: $this->getActiveBranchContext();
+
+        if (!Schema::hasTable('product_branch_stocks') || empty($branch['id'])) {
+            return null;
+        }
+
+        $productModel = $product instanceof Product ? $product : Product::query()->findOrFail($product);
+        $resolvedCompanyId = $companyId ?? (int) ($productModel->company_id ?? auth()->user()?->company_id ?? 0);
+
+        $branchStock = ProductBranchStock::query()->firstOrNew([
+            'product_id' => $productModel->id,
+            'branch_id' => (string) $branch['id'],
+        ]);
+
+        $branchStock->company_id = $resolvedCompanyId > 0 ? $resolvedCompanyId : null;
+        $branchStock->branch_name = $branch['name'];
+        $branchStock->quantity = round(max(0, $quantity), 2);
+        $branchStock->save();
+
+        return $branchStock;
+    }
+
     public function seedOpeningStock(Product $product, float $quantity, ?array $branch = null, ?int $companyId = null): ?ProductBranchStock
     {
         if ($quantity <= 0) {

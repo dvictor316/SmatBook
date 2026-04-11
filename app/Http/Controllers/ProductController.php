@@ -798,9 +798,11 @@ class ProductController extends Controller
     public function edit($id)
     {
         $product = Product::findOrFail($id);
+        $activeBranch = $this->getActiveBranchContext();
+        $product->setAttribute('active_branch_stock', $this->branchInventory->getAvailableStock($product, $activeBranch));
         $categories = Category::orderBy('name')->get();
         
-        return view('Inventory.Products.edit', compact('product', 'categories'));
+        return view('Inventory.Products.edit', compact('product', 'categories', 'activeBranch'));
     }
 
 public function inventory(Request $request)
@@ -1090,7 +1092,6 @@ public function inventory(Request $request)
     {
         $product = Product::findOrFail($id);
         $activeBranch = $this->getActiveBranchContext();
-        $currentBranchStock = $this->branchInventory->getAvailableStock($product, $activeBranch);
 
         $validated = $request->validate([
             'name'             => 'required|string|max:191',
@@ -1182,16 +1183,13 @@ public function inventory(Request $request)
             unset($validated['reorder_quantity']);
         }
 
-        $validated['stock_quantity'] = $validated['stock']; 
+        $validated['stock_quantity'] = $validated['stock'];
         $product->update($validated);
 
-        $newBranchStock = (float) ($validated['stock'] ?? 0);
-        $branchDelta = $newBranchStock - (float) $currentBranchStock;
-
-        if (abs($branchDelta) > 0.0001) {
-            $this->branchInventory->adjustBranchStock(
+        if (!empty($activeBranch['id'])) {
+            $this->branchInventory->setBranchStock(
                 $product->fresh(),
-                $branchDelta,
+                (float) ($validated['stock'] ?? 0),
                 $activeBranch,
                 $this->tenantCompanyId()
             );
