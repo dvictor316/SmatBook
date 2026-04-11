@@ -28,6 +28,27 @@ use App\Models\Transaction as LedgerTransaction;
 
 class PurchaseController extends Controller
 {
+    private function scopeProductsForActiveBranch($query, array $activeBranch)
+    {
+        $this->applyTenantScope($query, 'products');
+
+        $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $this->branchInventory->backfillMissingBranchStocks($activeBranch, $companyId > 0 ? $companyId : null);
+
+        if (!empty($activeBranch['id']) && Schema::hasTable('product_branch_stocks')) {
+            $branchId = (string) $activeBranch['id'];
+            $query->where(function ($productQuery) use ($branchId) {
+                $productQuery
+                    ->whereHas('branchStocks', fn ($stockQuery) => $stockQuery->where('branch_id', $branchId))
+                    ->orWhereDoesntHave('branchStocks');
+            });
+        } else {
+            $this->applyBranchScope($query, 'products');
+        }
+
+        return $query;
+    }
+
 public function applyTenantScope($query, string $table)
     {
         $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
@@ -125,12 +146,7 @@ private function applyBranchScope($query, string $table = 'purchases')
 
         // 2. Fetch Products (CRITICAL: This fixes the "Product data not loaded" error)
         $productQuery = Product::with('category')->latest();
-        $this->applyTenantScope($productQuery, 'products');
-        if (!empty($activeBranch['id']) && Schema::hasTable('product_branch_stocks')) {
-            $productQuery->whereHas('branchStocks', fn ($q) => $q->where('branch_id', $activeBranch['id']));
-        } else {
-            $this->applyBranchScope($productQuery, 'products');
-        }
+        $this->scopeProductsForActiveBranch($productQuery, $activeBranch);
         $products = $productQuery->paginate(10);
             
         // 3. Pass BOTH variables to the view
@@ -146,12 +162,7 @@ private function applyBranchScope($query, string $table = 'purchases')
         $search = $request->input('search');
 
         $productQuery = Product::with('category');
-        $this->applyTenantScope($productQuery, 'products');
-        if (!empty($activeBranch['id']) && Schema::hasTable('product_branch_stocks')) {
-            $productQuery->whereHas('branchStocks', fn ($q) => $q->where('branch_id', $activeBranch['id']));
-        } else {
-            $this->applyBranchScope($productQuery, 'products');
-        }
+        $this->scopeProductsForActiveBranch($productQuery, $activeBranch);
         $products = $productQuery
             ->when($search, function ($query) use ($search) {
                 return $query->where('name', 'like', "%{$search}%")
@@ -202,12 +213,7 @@ private function applyBranchScope($query, string $table = 'purchases')
             $suppliers = $suppliersQuery->get();
         }
         $productsQuery = Product::orderBy('name');
-        $this->applyTenantScope($productsQuery, 'products');
-        if (!empty($activeBranch['id']) && Schema::hasTable('product_branch_stocks')) {
-            $productsQuery->whereHas('branchStocks', fn ($q) => $q->where('branch_id', $activeBranch['id']));
-        } else {
-            $this->applyBranchScope($productsQuery, 'products');
-        }
+        $this->scopeProductsForActiveBranch($productsQuery, $activeBranch);
         $products = $productsQuery->get();
         $taxOptions = collect();
         if (class_exists(TaxCode::class) && Schema::hasTable('tax_codes')) {

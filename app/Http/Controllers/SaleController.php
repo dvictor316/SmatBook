@@ -229,7 +229,7 @@ class SaleController extends Controller
         // 4. Paginate
         $sales = $query->orderBy('created_at', 'desc')->paginate(10);
 
-        return view('sales.index', compact('sales', 'totalRevenue', 'totalSalesCount', 'activeBranch'));
+        return view('Sales.index', compact('sales', 'totalRevenue', 'totalSalesCount', 'activeBranch'));
     }
 
     public function report(Request $request)

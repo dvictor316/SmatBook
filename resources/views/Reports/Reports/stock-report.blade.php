@@ -60,10 +60,26 @@
         </div>
 
         @php
-            $totalUnits = $stockreports->sum('QtyOnHand');
-            $totalCostValue = $stockreports->sum('CostValue');
-            $totalSalesValue = $stockreports->sum('SalesValue');
-            $lowStockCount = $stockreports->where('Status', 'Low Stock')->count();
+            $stockrows = collect($stockreports)->map(function ($report) {
+                $row = is_array($report) ? $report : (array) $report;
+
+                return [
+                    'Product' => (string) ($row['Product'] ?? $row['product'] ?? $row['name'] ?? 'Unnamed Product'),
+                    'Sku' => (string) ($row['Sku'] ?? $row['sku'] ?? ''),
+                    'QtyOnHand' => (float) ($row['QtyOnHand'] ?? $row['qty_on_hand'] ?? $row['quantity'] ?? 0),
+                    'PurchasePrice' => (float) ($row['PurchasePrice'] ?? $row['purchase_price'] ?? 0),
+                    'SalesPrice' => (float) ($row['SalesPrice'] ?? $row['sales_price'] ?? 0),
+                    'CostValue' => (float) ($row['CostValue'] ?? $row['cost_value'] ?? 0),
+                    'SalesValue' => (float) ($row['SalesValue'] ?? $row['sales_value'] ?? 0),
+                    'ReorderLevel' => (float) ($row['ReorderLevel'] ?? $row['reorder_level'] ?? 0),
+                    'Status' => (string) ($row['Status'] ?? $row['status'] ?? 'In Stock'),
+                ];
+            });
+
+            $totalUnits = $stockrows->sum('QtyOnHand');
+            $totalCostValue = $stockrows->sum('CostValue');
+            $totalSalesValue = $stockrows->sum('SalesValue');
+            $lowStockCount = $stockrows->where('Status', 'Low Stock')->count();
         @endphp
 
         {{-- Summary Cards --}}
@@ -71,7 +87,7 @@
             <div class="col-md-4">
                 <div class="card border shadow-none mb-0 report-metric-card"><div class="card-body p-3">
                     <p class="text-muted mb-1 fw-bold uppercase report-metric-label">Products In Warehouse</p>
-                    <h4 class="text-success fw-bold mb-0 report-metric-value">{{ number_format($stockreports->count()) }}</h4>
+                    <h4 class="text-success fw-bold mb-0 report-metric-value">{{ number_format($stockrows->count()) }}</h4>
                 </div></div>
             </div>
             <div class="col-md-4">
@@ -120,7 +136,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse($stockreports as $report)
+                        @forelse($stockrows as $report)
                         <tr class="accounting-row">
                             <td class="ps-3 py-2 fw-bold text-dark">{{ $report['Product'] }}</td>
                             <td class="py-2 text-muted">{{ $report['Sku'] ?: 'N/A' }}</td>
