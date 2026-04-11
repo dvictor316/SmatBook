@@ -1032,18 +1032,32 @@ class SettingController extends Controller
 
     private function resolveReconciliationSuspenseAccount(): Account
     {
-        return Account::query()->firstOrCreate(
-            ['code' => 'EQT-RECON-SUSPENSE'],
-            [
-                'name' => 'Bank Reconciliation Suspense',
-                'type' => Account::TYPE_EQUITY,
-                'sub_type' => 'Reconciliation Reserve',
-                'description' => 'Temporary balancing account used for bank reconciliation adjustments.',
-                'opening_balance' => 0,
-                'current_balance' => 0,
-                'is_active' => true,
-            ]
-        );
+        $attributes = ['code' => 'EQT-RECON-SUSPENSE'];
+        $values = [
+            'name' => 'Bank Reconciliation Suspense',
+            'type' => Account::TYPE_EQUITY,
+            'sub_type' => 'Reconciliation Reserve',
+            'description' => 'Temporary balancing account used for bank reconciliation adjustments.',
+            'opening_balance' => 0,
+            'current_balance' => 0,
+            'is_active' => true,
+        ];
+
+        if (method_exists(Account::class, 'withTrashed')) {
+            $account = Account::withTrashed()->where($attributes)->first();
+            if ($account) {
+                if (method_exists($account, 'trashed') && $account->trashed()) {
+                    $account->restore();
+                }
+
+                $account->fill($values);
+                $account->save();
+
+                return $account;
+            }
+        }
+
+        return Account::query()->firstOrCreate($attributes, $values);
     }
 
     public function storeBankAccount(Request $request)
