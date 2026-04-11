@@ -1506,6 +1506,12 @@ label {
                                     <option value="{{ $bank->id }}">{{ $bank->name }}</option>
                                 @endforeach
                             </select>
+                            @if($bankAccounts->isEmpty())
+                                <small class="text-muted d-block mt-2">
+                                    No bank details yet.
+                                    <a href="{{ route('bank-account') }}" class="fw-bold text-primary">Create bank details</a>
+                                </small>
+                            @endif
                         </div>
                         <div class="col-md-6 d-none" id="split-card-wrap">
                             <label>POS Amount</label>
@@ -1519,6 +1525,12 @@ label {
                                     <option value="{{ $bank->id }}">{{ $bank->name }}</option>
                                 @endforeach
                             </select>
+                            @if($bankAccounts->isEmpty())
+                                <small class="text-muted d-block mt-2">
+                                    No bank details yet.
+                                    <a href="{{ route('bank-account') }}" class="fw-bold text-primary">Create bank details</a>
+                                </small>
+                            @endif
                         </div>
                     </div>
 
