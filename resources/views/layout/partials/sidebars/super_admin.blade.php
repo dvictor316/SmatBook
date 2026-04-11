@@ -68,12 +68,13 @@
                     </ul>
                 </li>
 
-                {{-- Customers --}}
-                <li class="submenu {{ Request::is('customers*', 'suppliers*') ? 'active subdrop' : '' }}">
-                    <a href="#"><i class="fe fe-users"></i><span>Customers</span><span class="menu-arrow"></span></a>
+                {{-- POS --}}
+                <li class="submenu {{ Request::is('pos*', 'sales*') ? 'active subdrop' : '' }}">
+                    <a href="#"><i class="fe fe-shopping-cart"></i><span>POS</span><span class="menu-arrow"></span></a>
                     <ul>
-                        <li><a href="{{ route('customers.index') }}">Customers</a></li>
-                        <li><a href="{{ route('suppliers.index') }}">Suppliers</a></li>
+                        <li><a href="{{ route('sales.showPos') }}">Sales Terminal</a></li>
+                        <li><a href="{{ route('pos.sales') }}">POS Sales</a></li>
+                        <li><a href="{{ route('pos.reports') }}">Items Sold</a></li>
                     </ul>
                 </li>
 
@@ -86,6 +87,16 @@
                         <li><a href="{{ route('product-list') }}">Product List</a></li>
                         <li><a href="{{ route('categories.index') }}">Categories</a></li>
                         <li><a href="{{ route('units') }}">Units</a></li>
+                    </ul>
+                </li>
+
+                {{-- POS --}}
+                <li class="submenu {{ Request::is('pos*', 'sales*') ? 'active subdrop' : '' }}">
+                    <a href="#"><i class="fe fe-shopping-cart"></i><span>POS</span><span class="menu-arrow"></span></a>
+                    <ul>
+                        <li><a href="{{ route('sales.showPos') }}">Sales Terminal</a></li>
+                        <li><a href="{{ route('pos.sales') }}">POS Sales</a></li>
+                        <li><a href="{{ route('pos.reports') }}">Items Sold</a></li>
                     </ul>
                 </li>
 
@@ -108,16 +119,6 @@
 
                 {{-- Recurring Invoices --}}
                 <li><a href="{{ route('recuring-invoices') }}"><i class="fe fe-clipboard"></i><span>Recurring Invoices</span></a></li>
-
-                {{-- POS --}}
-                <li class="submenu {{ Request::is('pos*', 'sales*') ? 'active subdrop' : '' }}">
-                    <a href="#"><i class="fe fe-shopping-cart"></i><span>POS</span><span class="menu-arrow"></span></a>
-                    <ul>
-                        <li><a href="{{ route('sales.showPos') }}">Sales Terminal</a></li>
-                        <li><a href="{{ route('pos.sales') }}">POS Sales</a></li>
-                        <li><a href="{{ route('pos.reports') }}">Items Sold</a></li>
-                    </ul>
-                </li>
 
                 <li class="menu-title"><span>Purchases</span></li>
 
@@ -402,6 +403,15 @@
                     </ul>
                 </li>
 
+                {{-- Customers --}}
+                <li class="submenu {{ Request::is('customers*', 'suppliers*') ? 'active subdrop' : '' }}">
+                    <a href="#"><i class="fe fe-users"></i><span>Customers</span><span class="menu-arrow"></span></a>
+                    <ul>
+                        <li><a href="{{ route('customers.index') }}">Customers</a></li>
+                        <li><a href="{{ route('suppliers.index') }}">Suppliers</a></li>
+                    </ul>
+                </li>
+
                 {{-- Inventory --}}
                 <li><a href="{{ route('inventory.Products') }}"><i class="fe fe-archive"></i><span>Inventory</span></a></li>
 
@@ -418,16 +428,6 @@
 
                 {{-- Recurring Invoices --}}
                 <li><a href="{{ route('recuring-invoices') }}"><i class="fe fe-clipboard"></i><span>Recurring Invoices</span></a></li>
-
-                {{-- POS --}}
-                <li class="submenu {{ Request::is('pos*', 'sales*') ? 'active subdrop' : '' }}">
-                    <a href="#"><i class="fe fe-shopping-cart"></i><span>POS</span><span class="menu-arrow"></span></a>
-                    <ul>
-                        <li><a href="{{ route('sales.showPos') }}">Sales Terminal</a></li>
-                        <li><a href="{{ route('pos.sales') }}">POS Sales</a></li>
-                        <li><a href="{{ route('pos.reports') }}">Items Sold</a></li>
-                    </ul>
-                </li>
 
                 <li class="menu-title"><span>Purchases</span></li>
 

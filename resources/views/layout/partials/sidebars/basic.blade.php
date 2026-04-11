@@ -14,32 +14,17 @@
         </a>
     </li>
 
-    {{-- Applications --}}
-    @if(Route::has('chat.index'))
-    <li class="submenu {{ Request::is('chat*', 'calendar*', 'messages*') ? 'active subdrop' : '' }}">
-        <a href="#"><i class="fe fe-grid"></i><span>Applications</span><span class="menu-arrow"></span></a>
+    {{-- POS Terminal --}}
+    @if(Route::has('sales.showPos'))
+    <li class="submenu {{ Request::is('pos*', 'sales*') ? 'active subdrop' : '' }}">
+        <a href="#"><i class="fe fe-shopping-cart"></i><span>POS Terminal</span><span class="menu-arrow"></span></a>
         <ul>
-            @if(Route::has('chat.index'))
-                <li><a href="{{ route('chat.index') }}">Chat</a></li>
+            <li><a href="{{ route('sales.showPos') }}">Sales Terminal</a></li>
+            @if(Route::has('pos.sales'))
+                <li><a href="{{ route('pos.sales') }}">POS Sales</a></li>
             @endif
-            @if(Route::has('calendar'))
-                <li><a href="{{ route('calendar') }}">Calendar</a></li>
-            @endif
-            @if(Route::has('messages.index'))
-                <li><a href="{{ route('messages.index') }}">Messages</a></li>
-            @endif
-        </ul>
-    </li>
-    @endif
-
-    {{-- Customers --}}
-    @if(Route::has('customers.index'))
-    <li class="submenu {{ Request::is('customers*') ? 'active subdrop' : '' }}">
-        <a href="#"><i class="fe fe-users"></i><span>Customers</span><span class="menu-arrow"></span></a>
-        <ul>
-            <li><a href="{{ route('customers.index') }}">All Customers</a></li>
-            @if(Route::has('customers.add'))
-                <li><a href="{{ route('customers.add') }}">Add Customer</a></li>
+            @if(Route::has('pos.reports'))
+                <li><a href="{{ route('pos.reports') }}">Items Sold</a></li>
             @endif
         </ul>
     </li>
@@ -55,6 +40,19 @@
             <li><a href="{{ route('product-list') }}">Product List</a></li>
             @if(Route::has('add-products'))
                 <li><a href="{{ route('add-products') }}">Add Product</a></li>
+            @endif
+        </ul>
+    </li>
+    @endif
+
+    {{-- Customers --}}
+    @if(Route::has('customers.index'))
+    <li class="submenu {{ Request::is('customers*') ? 'active subdrop' : '' }}">
+        <a href="#"><i class="fe fe-users"></i><span>Customers</span><span class="menu-arrow"></span></a>
+        <ul>
+            <li><a href="{{ route('customers.index') }}">All Customers</a></li>
+            @if(Route::has('customers.add'))
+                <li><a href="{{ route('customers.add') }}">Add Customer</a></li>
             @endif
         </ul>
     </li>
@@ -110,17 +108,19 @@
     </li>
     @endif
 
-    {{-- POS Terminal --}}
-    @if(Route::has('sales.showPos'))
-    <li class="submenu {{ Request::is('pos*', 'sales*') ? 'active subdrop' : '' }}">
-        <a href="#"><i class="fe fe-shopping-cart"></i><span>POS Terminal</span><span class="menu-arrow"></span></a>
+    {{-- Applications --}}
+    @if(Route::has('chat.index'))
+    <li class="submenu {{ Request::is('chat*', 'calendar*', 'messages*') ? 'active subdrop' : '' }}">
+        <a href="#"><i class="fe fe-grid"></i><span>Applications</span><span class="menu-arrow"></span></a>
         <ul>
-            <li><a href="{{ route('sales.showPos') }}">Sales Terminal</a></li>
-            @if(Route::has('pos.sales'))
-                <li><a href="{{ route('pos.sales') }}">POS Sales</a></li>
+            @if(Route::has('chat.index'))
+                <li><a href="{{ route('chat.index') }}">Chat</a></li>
             @endif
-            @if(Route::has('pos.reports'))
-                <li><a href="{{ route('pos.reports') }}">Items Sold</a></li>
+            @if(Route::has('calendar'))
+                <li><a href="{{ route('calendar') }}">Calendar</a></li>
+            @endif
+            @if(Route::has('messages.index'))
+                <li><a href="{{ route('messages.index') }}">Messages</a></li>
             @endif
         </ul>
     </li>

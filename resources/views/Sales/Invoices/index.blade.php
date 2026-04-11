@@ -630,12 +630,6 @@
         $companyAddress = $resolvedCompany?->address
             ?? \App\Models\Setting::where('key', 'company_address')->value('value')
             ?? null;
-        $companyAddressDisplay = $companyAddress
-            ?: ($resolvedCompany?->phone
-                ?? $companyOwner?->location
-                ?? $resolvedCompany?->email
-                ?? $companyOwner?->email
-                ?? $companyDisplayName);
         $companyPhone = $resolvedCompany?->phone
             ?? $companyOwner?->phone
             ?? \App\Models\Setting::where('key', 'company_phone')->value('value')
@@ -644,6 +638,9 @@
             ?? $companyOwner?->email
             ?? \App\Models\Setting::where('key', 'company_email')->value('value')
             ?? '';
+        $companyAddressDisplay = $companyAddress
+            ?: ($companyOwner?->location
+                ?? null);
     @endphp
 
     <div class="invoice-wrapper" id="invoice_content">
@@ -702,16 +699,22 @@
         <div class="invoice-header">
             <div class="company-info">
                 <h4>{{ $companyDisplayName }}</h4>
-                <p>{{ $companyAddressDisplay }}</p>
-                <p>
-                    {{ $companyPhone }}
-                    @if($companyPhone && $companyEmail)
-                        •
-                    @endif
-                    @if($companyEmail)
-                        {{ $companyEmail }}
-                    @endif
-                </p>
+                @if($companyAddressDisplay)
+                    <p>{{ $companyAddressDisplay }}</p>
+                @endif
+                @if($companyPhone || $companyEmail)
+                    <p>
+                        @if($companyPhone)
+                            {{ $companyPhone }}
+                        @endif
+                        @if($companyPhone && $companyEmail)
+                            •
+                        @endif
+                        @if($companyEmail)
+                            {{ $companyEmail }}
+                        @endif
+                    </p>
+                @endif
             </div>
             <div class="invoice-info text-end">
                 <h3>INVOICE</h3>

@@ -29,24 +29,13 @@
                     </a>
                 </li>
 
-                {{-- Applications --}}
-                <li class="submenu {{ Request::is('chat*', 'calendar*', 'messages*') ? 'active subdrop' : '' }}">
-                    <a href="#"><i class="fe fe-grid"></i><span>Applications</span><span class="menu-arrow"></span></a>
+                {{-- POS --}}
+                <li class="submenu {{ Request::is('pos*', 'sales*') ? 'active subdrop' : '' }}">
+                    <a href="#"><i class="fe fe-shopping-cart"></i><span>POS</span><span class="menu-arrow"></span></a>
                     <ul>
-                        <li><a href="{{ route('chat.index', $routeParams) }}">Chat</a></li>
-                        <li><a href="{{ route('calendar', $routeParams) }}">Calendar</a></li>
-                        <li><a href="{{ route('messages.index', $routeParams) }}">Messages</a></li>
-                    </ul>
-                </li>
-
-                {{-- Customers & Suppliers --}}
-                <li class="submenu {{ Request::is('customers*', 'suppliers*') ? 'active subdrop' : '' }}">
-                    <a href="#"><i class="fe fe-users"></i><span>Customers</span><span class="menu-arrow"></span></a>
-                    <ul>
-                        <li><a href="{{ route('customers.index') }}">All Customers</a></li>
-                        <li><a href="{{ route('active-customers') }}">Active Customers</a></li>
-                        <li><a href="{{ route('deactive-customers') }}">Inactive Customers</a></li>
-                        <li><a href="{{ route('suppliers.index') }}">Suppliers</a></li>
+                        <li><a href="{{ route('sales.showPos') }}">Sales Terminal</a></li>
+                        <li><a href="{{ route('pos.sales') }}">POS Sales</a></li>
+                        <li><a href="{{ route('pos.reports') }}">Items Sold</a></li>
                     </ul>
                 </li>
 
@@ -60,6 +49,17 @@
                         <li><a href="{{ route('add-products') }}">Add Product</a></li>
                         <li><a href="{{ route('categories.index') }}">Categories</a></li>
                         <li><a href="{{ route('units') }}">Units</a></li>
+                    </ul>
+                </li>
+
+                {{-- Customers & Suppliers --}}
+                <li class="submenu {{ Request::is('customers*', 'suppliers*') ? 'active subdrop' : '' }}">
+                    <a href="#"><i class="fe fe-users"></i><span>Customers</span><span class="menu-arrow"></span></a>
+                    <ul>
+                        <li><a href="{{ route('customers.index') }}">All Customers</a></li>
+                        <li><a href="{{ route('active-customers') }}">Active Customers</a></li>
+                        <li><a href="{{ route('deactive-customers') }}">Inactive Customers</a></li>
+                        <li><a href="{{ route('suppliers.index') }}">Suppliers</a></li>
                     </ul>
                 </li>
 
@@ -102,16 +102,6 @@
                     </ul>
                 </li>
 
-                {{-- POS --}}
-                <li class="submenu {{ Request::is('pos*', 'sales*') ? 'active subdrop' : '' }}">
-                    <a href="#"><i class="fe fe-shopping-cart"></i><span>POS</span><span class="menu-arrow"></span></a>
-                    <ul>
-                        <li><a href="{{ route('sales.showPos') }}">Sales Terminal</a></li>
-                        <li><a href="{{ route('pos.sales') }}">POS Sales</a></li>
-                        <li><a href="{{ route('pos.reports') }}">Items Sold</a></li>
-                    </ul>
-                </li>
-
                 <li class="menu-title"><span>Purchases</span></li>
 
                 {{-- Purchases --}}
@@ -129,6 +119,16 @@
                     <ul>
                         <li><a href="{{ route('purchase-orders') }}">All Orders</a></li>
                         <li><a href="{{ route('add-purchases-order') }}">New Order</a></li>
+                    </ul>
+                </li>
+
+                {{-- Applications --}}
+                <li class="submenu {{ Request::is('chat*', 'calendar*', 'messages*') ? 'active subdrop' : '' }}">
+                    <a href="#"><i class="fe fe-grid"></i><span>Applications</span><span class="menu-arrow"></span></a>
+                    <ul>
+                        <li><a href="{{ route('chat.index', $routeParams) }}">Chat</a></li>
+                        <li><a href="{{ route('calendar', $routeParams) }}">Calendar</a></li>
+                        <li><a href="{{ route('messages.index', $routeParams) }}">Messages</a></li>
                     </ul>
                 </li>
 
