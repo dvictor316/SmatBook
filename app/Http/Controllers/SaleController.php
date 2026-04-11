@@ -462,6 +462,7 @@ public function customerDetails($id = null)
                     $branchName = (string) ($activeBranch['name'] ?? '');
                     $productsQuery->where(function ($q) use ($branchId, $branchName) {
                         $q->whereHas('branchStocks', fn ($sub) => $sub->where('branch_id', $branchId));
+                        $q->orWhereDoesntHave('branchStocks');
                         if (Schema::hasColumn('products', 'branch_id')) {
                             $q->orWhere('products.branch_id', $branchId);
                         }
