@@ -106,6 +106,11 @@
             .two-col-bar,
             .settings-icon,
             .ai-agent-launcher,
+            #ai-quick-agent-offcanvas,
+            #aiAssistantIntroModal,
+            .ai-bot-figure,
+            .ai-human-avatar,
+            .ai-agent-launcher *,
             #sidebar-overlay,
             .btn,
             .footer,
@@ -132,12 +137,14 @@
                 padding: 0 !important;
                 width: 100% !important;
                 overflow: visible !important;
+                position: static !important;
             }
             .page-wrapper {
                 margin: 0 !important;
                 padding: 0 !important;
                 width: 100% !important;
                 overflow: visible !important;
+                position: static !important;
             }
             .content,
             .container-fluid,
@@ -147,6 +154,7 @@
                 width: 100% !important;
                 max-width: 100% !important;
                 overflow: visible !important;
+                position: static !important;
             }
 
             body.print-scope-active * {

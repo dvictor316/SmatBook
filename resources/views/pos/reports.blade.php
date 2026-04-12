@@ -13,7 +13,7 @@
         background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
         border: 1px solid #dbe7ff;
         border-radius: 22px;
-        padding: 28px;
+        padding: 22px;
         box-shadow: 0 14px 40px rgba(37, 99, 235, 0.08);
     }
 
@@ -21,11 +21,11 @@
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        padding: 8px 14px;
+        padding: 6px 12px;
         border-radius: 999px;
         background: #eef4ff;
         color: #3156c8;
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 700;
     }
 
@@ -43,13 +43,13 @@
     }
 
     .pos-metric-icon {
-        width: 48px;
-        height: 48px;
+        width: 42px;
+        height: 42px;
         border-radius: 14px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        font-size: 18px;
+        font-size: 16px;
     }
 
     .pos-report-table thead th {
@@ -59,12 +59,12 @@
         font-size: 12px;
         font-weight: 800;
         letter-spacing: 0.04em;
-        padding: 16px 14px;
+        padding: 12px 12px;
         text-transform: uppercase;
     }
 
     .pos-report-table tbody td {
-        padding: 16px 14px;
+        padding: 12px 12px;
         vertical-align: middle;
     }
 
@@ -79,7 +79,7 @@
         border-radius: 999px;
         background: #f8fafc;
         color: #334155;
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 700;
         border: 1px solid #e2e8f0;
     }
@@ -89,9 +89,9 @@
         align-items: center;
         justify-content: center;
         min-width: 92px;
-        padding: 7px 12px;
+        padding: 6px 10px;
         border-radius: 999px;
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 800;
     }
 
@@ -109,6 +109,23 @@
         border: 1px solid #e6edf7;
         border-radius: 20px;
         box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+    }
+
+    .pos-report-hero h2 {
+        font-size: 20px;
+        line-height: 1.3;
+    }
+
+    .pos-report-hero p {
+        font-size: 13px;
+    }
+
+    .pos-metric-card h3 {
+        font-size: 20px;
+    }
+
+    .pos-metric-card .text-muted.small {
+        font-size: 12px;
     }
 </style>
 
