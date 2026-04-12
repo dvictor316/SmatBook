@@ -2,6 +2,10 @@
 @extends('layout.mainlayout')
 
 @section('content')
+@php
+    $currencyCode = $geoCurrency ?? \App\Support\GeoCurrency::currentCurrency();
+    $currencyLocale = $geoCurrencyLocale ?? \App\Support\GeoCurrency::currentLocale();
+@endphp
 <div class="page-wrapper">
     <div class="content container-fluid">
         
@@ -100,14 +104,14 @@
                 <div class="card border-0 bg-indigo mb-0 shadow-sm report-metric-card report-metric-card--emphasis">
                     <div class="card-body p-3 text-white">
                         <p class="text-white mb-1 fw-bold uppercase report-metric-label report-metric-label--light">Warehouse Cost Value</p>
-                        <h4 class="text-white fw-bold mb-0 report-metric-value">₦{{ number_format($totalCostValue, 2) }}</h4>
+                        <h4 class="text-white fw-bold mb-0 report-metric-value">{{ \App\Support\GeoCurrency::format($totalCostValue, 'NGN', $currencyCode, $currencyLocale) }}</h4>
                     </div>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="card border shadow-none mb-0 report-metric-card"><div class="card-body p-3">
                     <p class="text-muted mb-1 fw-bold uppercase report-metric-label">Warehouse Selling Value</p>
-                    <h4 class="text-primary fw-bold mb-0 report-metric-value">₦{{ number_format($totalSalesValue, 2) }}</h4>
+                    <h4 class="text-primary fw-bold mb-0 report-metric-value">{{ \App\Support\GeoCurrency::format($totalSalesValue, 'NGN', $currencyCode, $currencyLocale) }}</h4>
                 </div></div>
             </div>
             <div class="col-md-4">
@@ -141,10 +145,10 @@
                             <td class="ps-3 py-2 fw-bold text-dark">{{ $report['Product'] }}</td>
                             <td class="py-2 text-muted">{{ $report['Sku'] ?: 'N/A' }}</td>
                             <td class="py-2 text-end fw-bold {{ $report['QtyOnHand'] <= 0 ? 'text-danger' : 'text-dark' }}">{{ number_format($report['QtyOnHand'], 2) }}</td>
-                            <td class="py-2 text-end text-success">₦{{ number_format($report['PurchasePrice'], 2) }}</td>
-                            <td class="py-2 text-end text-primary">₦{{ number_format($report['SalesPrice'], 2) }}</td>
-                            <td class="py-2 text-end text-success">₦{{ number_format($report['CostValue'], 2) }}</td>
-                            <td class="py-2 text-end text-primary">₦{{ number_format($report['SalesValue'], 2) }}</td>
+                            <td class="py-2 text-end text-success">{{ \App\Support\GeoCurrency::format($report['PurchasePrice'], 'NGN', $currencyCode, $currencyLocale) }}</td>
+                            <td class="py-2 text-end text-primary">{{ \App\Support\GeoCurrency::format($report['SalesPrice'], 'NGN', $currencyCode, $currencyLocale) }}</td>
+                            <td class="py-2 text-end text-success">{{ \App\Support\GeoCurrency::format($report['CostValue'], 'NGN', $currencyCode, $currencyLocale) }}</td>
+                            <td class="py-2 text-end text-primary">{{ \App\Support\GeoCurrency::format($report['SalesValue'], 'NGN', $currencyCode, $currencyLocale) }}</td>
                             <td class="py-2 text-end text-muted">{{ number_format($report['ReorderLevel'], 2) }}</td>
                             <td class="pe-3 py-2 text-end fw-bold {{ $report['Status'] === 'Out of Stock' ? 'text-danger' : ($report['Status'] === 'Low Stock' ? 'text-warning' : 'text-indigo') }}">
                                 {{ $report['Status'] }}

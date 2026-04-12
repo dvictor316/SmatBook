@@ -1,6 +1,10 @@
 @extends('layout.mainlayout')
 
 @section('content')
+    @php
+        $currencyCode = $geoCurrency ?? \App\Support\GeoCurrency::currentCurrency();
+        $currencyLocale = $geoCurrencyLocale ?? \App\Support\GeoCurrency::currentLocale();
+    @endphp
     <div class="page-wrapper">
         <div class="content container-fluid">
 
@@ -39,7 +43,9 @@
                                         <div class="dash-count text-end">
                                             <div class="dash-title text-muted small">{{ $card['title'] }}</div>
                                             <div class="dash-counts">
-                                                <h4 class="fw-bold mb-0">${{ number_format($card['amount'] ?? 0, 2) }}</h4>
+                                                <h4 class="fw-bold mb-0">
+                                                    {{ \App\Support\GeoCurrency::format((float) ($card['amount'] ?? 0), 'NGN', $currencyCode, $currencyLocale) }}
+                                                </h4>
                                             </div>
                                         </div>
                                     </div>
@@ -106,7 +112,9 @@
                                                     </span>
                                                 </td>
                                                 <td class="text-muted">{{ $invoice->created_at->format('d M Y') }}</td>
-                                                <td class="fw-bold text-dark">${{ number_format($invoice->effective_balance ?? $invoice->total, 2) }}</td>
+                                                <td class="fw-bold text-dark">
+                                                    {{ \App\Support\GeoCurrency::format((float) ($invoice->effective_total ?? $invoice->total ?? 0), 'NGN', $currencyCode, $currencyLocale) }}
+                                                </td>
                                                 <td>
                                                     @php
                                                         $displayStatus = strtolower($invoice->effective_payment_status ?? $invoice->payment_status ?? $invoice->status);

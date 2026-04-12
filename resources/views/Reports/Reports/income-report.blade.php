@@ -2,6 +2,10 @@
 @extends('layout.mainlayout')
 
 @section('content')
+@php
+    $currencyCode = $geoCurrency ?? \App\Support\GeoCurrency::currentCurrency();
+    $currencyLocale = $geoCurrencyLocale ?? \App\Support\GeoCurrency::currentLocale();
+@endphp
 <div class="page-wrapper">
     <div class="content container-fluid">
         
@@ -53,20 +57,20 @@
             <div class="col-md-4">
                 <div class="card border shadow-none mb-0 report-metric-card"><div class="card-body p-3">
                     <p class="text-muted mb-1 fw-bold uppercase report-metric-label">Total Inflow</p>
-                    <h4 class="text-success fw-bold mb-0 report-metric-value">₦{{ number_format($tIn, 2) }}</h4>
+                    <h4 class="text-success fw-bold mb-0 report-metric-value">{{ \App\Support\GeoCurrency::format($tIn, 'NGN', $currencyCode, $currencyLocale) }}</h4>
                 </div></div>
             </div>
             <div class="col-md-4">
                 <div class="card border shadow-none mb-0 report-metric-card"><div class="card-body p-3">
                     <p class="text-muted mb-1 fw-bold uppercase report-metric-label">Total Outflow</p>
-                    <h4 class="text-danger fw-bold mb-0 report-metric-value">₦{{ number_format($tOut, 2) }}</h4>
+                    <h4 class="text-danger fw-bold mb-0 report-metric-value">{{ \App\Support\GeoCurrency::format($tOut, 'NGN', $currencyCode, $currencyLocale) }}</h4>
                 </div></div>
             </div>
             <div class="col-md-4">
                 <div class="card border-0 {{ $tNet >= 0 ? 'bg-indigo' : 'bg-danger' }} mb-0 text-white">
                     <div class="card-body p-3">
                         <p class="text-white mb-1 fw-bold uppercase report-metric-label report-metric-label--light">Net Profit Amount</p>
-                        <h4 class="text-white fw-bold mb-0 report-metric-value">₦{{ number_format($tNet, 2) }}</h4>
+                        <h4 class="text-white fw-bold mb-0 report-metric-value">{{ \App\Support\GeoCurrency::format($tNet, 'NGN', $currencyCode, $currencyLocale) }}</h4>
                     </div>
                 </div>
             </div>
@@ -93,9 +97,9 @@
                                     <span class="badge border bg-white text-muted fw-normal report-type-badge">{{ strtoupper($label) }}</span>
                                 @endforeach
                             </td>
-                            <td class="py-2 text-end text-success fw-bold">₦{{ number_format($report['IncomeAmount'], 0) }}</td>
-                            <td class="py-2 text-end text-danger">₦{{ number_format($report['OutflowAmount'], 0) }}</td>
-                            <td class="pe-3 py-2 text-end fw-bold {{ $report['NetProfit'] >= 0 ? 'text-indigo' : 'text-danger' }}">₦{{ number_format($report['NetProfit'], 0) }}</td>
+                            <td class="py-2 text-end text-success fw-bold">{{ \App\Support\GeoCurrency::format($report['IncomeAmount'], 'NGN', $currencyCode, $currencyLocale) }}</td>
+                            <td class="py-2 text-end text-danger">{{ \App\Support\GeoCurrency::format($report['OutflowAmount'], 'NGN', $currencyCode, $currencyLocale) }}</td>
+                            <td class="pe-3 py-2 text-end fw-bold {{ $report['NetProfit'] >= 0 ? 'text-indigo' : 'text-danger' }}">{{ \App\Support\GeoCurrency::format($report['NetProfit'], 'NGN', $currencyCode, $currencyLocale) }}</td>
                         </tr>
                         @endforeach
                     </tbody>

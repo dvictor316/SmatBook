@@ -231,6 +231,14 @@ class ProductController extends Controller
             $payload['status'] = 1;
         }
 
+        if (Schema::hasColumn('categories', 'company_id')) {
+            $payload['company_id'] = auth()->user()?->company_id ?? session('current_tenant_id');
+        }
+
+        if (Schema::hasColumn('categories', 'user_id')) {
+            $payload['user_id'] = auth()->id();
+        }
+
         return Category::query()->create($payload);
     }
 
@@ -1512,6 +1520,24 @@ public function inventory(Request $request)
 
         $inventoryHistories = $inventoryHistories
             ->sortByDesc(fn ($row) => strtotime((string) ($row->created_at ?? '1970-01-01 00:00:00')))
+            ->values();
+
+        $runningBalance = 0.0;
+        $inventoryHistories = $inventoryHistories
+            ->reverse()
+            ->values()
+            ->map(function ($row) use (&$runningBalance) {
+                $quantity = (float) ($row->quantity ?? 0);
+                $isStockIn = in_array(strtolower(trim((string) ($row->type ?? ''))), ['in', 'stock in'], true);
+                $signedQuantity = $isStockIn ? $quantity : -1 * $quantity;
+
+                $runningBalance = round($runningBalance + $signedQuantity, 2);
+                $row->running_balance = $runningBalance;
+                $row->stock_value = round($runningBalance * (float) ($row->purchase_price ?? 0), 2);
+
+                return $row;
+            })
+            ->reverse()
             ->values();
 
         return view('Inventory.inventory-history', compact('inventoryHistories', 'activeBranch'));

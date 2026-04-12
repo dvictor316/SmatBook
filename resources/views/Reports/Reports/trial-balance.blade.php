@@ -2,6 +2,11 @@
 @extends('layout.mainlayout')
 
 @section('content')
+@php
+    $currencyCode = $geoCurrency ?? \App\Support\GeoCurrency::currentCurrency();
+    $currencyLocale = $geoCurrencyLocale ?? \App\Support\GeoCurrency::currentLocale();
+    $currencySymbol = $geoCurrencySymbol ?? \App\Support\GeoCurrency::currentSymbol();
+@endphp
 <style>
     :root {
         --text-dark: #1e293b;
@@ -264,16 +269,16 @@
         <div class="summary-grid">
             <div class="summary-card">
                 <span class="summary-label">Total Debits</span>
-                <div class="summary-amount text-success">₦{{ number_format($totalDebits, 2) }}</div>
+                <div class="summary-amount text-success">{{ \App\Support\GeoCurrency::format($totalDebits, 'NGN', $currencyCode, $currencyLocale) }}</div>
             </div>
             <div class="summary-card">
                 <span class="summary-label">Total Credits</span>
-                <div class="summary-amount text-danger">₦{{ number_format($totalCredits, 2) }}</div>
+                <div class="summary-amount text-danger">{{ \App\Support\GeoCurrency::format($totalCredits, 'NGN', $currencyCode, $currencyLocale) }}</div>
             </div>
             <div class="summary-card">
                 <span class="summary-label">Balance Difference</span>
                 <div class="summary-amount {{ abs($totalDebits - $totalCredits) < 0.01 ? 'text-muted' : 'text-danger' }}">
-                    ₦{{ number_format(abs($totalDebits - $totalCredits), 2) }}
+                    {{ \App\Support\GeoCurrency::format(abs($totalDebits - $totalCredits), 'NGN', $currencyCode, $currencyLocale) }}
                 </div>
             </div>
         </div>
@@ -281,7 +286,7 @@
         @if (abs(($ledgerDifference ?? 0)) >= 0.01)
             <div class="alert alert-danger mb-3">
                 <div class="fw-semibold mb-1">Ledger imbalance detected</div>
-                <div>Debits: ₦{{ number_format($ledgerDebits ?? 0, 2) }} · Credits: ₦{{ number_format($ledgerCredits ?? 0, 2) }} · Difference: ₦{{ number_format(abs($ledgerDifference ?? 0), 2) }}</div>
+                <div>Debits: {{ \App\Support\GeoCurrency::format($ledgerDebits ?? 0, 'NGN', $currencyCode, $currencyLocale) }} · Credits: {{ \App\Support\GeoCurrency::format($ledgerCredits ?? 0, 'NGN', $currencyCode, $currencyLocale) }} · Difference: {{ \App\Support\GeoCurrency::format(abs($ledgerDifference ?? 0), 'NGN', $currencyCode, $currencyLocale) }}</div>
                 @if (!empty($imbalancedEntries) && $imbalancedEntries->isNotEmpty())
                     <div class="mt-2 small">Top unbalanced entries:</div>
                     <ul class="mb-0 ps-3 small">
@@ -290,7 +295,7 @@
                                 {{ $entry->transaction_type ?? 'Entry' }}
                                 · Ref: {{ $entry->reference ?: 'N/A' }}
                                 · Related: {{ $entry->related_type ?: 'N/A' }} #{{ $entry->related_id ?: 'N/A' }}
-                                · Δ ₦{{ number_format(abs(((float) $entry->total_debit) - ((float) $entry->total_credit)), 2) }}
+                                · Δ {{ \App\Support\GeoCurrency::format(abs(((float) $entry->total_debit) - ((float) $entry->total_credit)), 'NGN', $currencyCode, $currencyLocale) }}
                             </li>
                         @endforeach
                     </ul>
@@ -307,8 +312,8 @@
                         <th class="ps-1">Code</th>
                         <th>Account Description</th>
                         <th>Type</th>
-                        <th class="text-end">Debit (₦)</th>
-                        <th class="text-end pe-1">Credit (₦)</th>
+                        <th class="text-end">Debit ({{ $currencySymbol }})</th>
+                        <th class="text-end pe-1">Credit ({{ $currencySymbol }})</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -327,8 +332,8 @@
                 <tfoot>
                     <tr class="total-row">
                         <td colspan="3" class="ps-1">TOTALS</td>
-                        <td class="text-end">₦{{ number_format($totalDebits, 2) }}</td>
-                        <td class="text-end pe-1">₦{{ number_format($totalCredits, 2) }}</td>
+                        <td class="text-end">{{ \App\Support\GeoCurrency::format($totalDebits, 'NGN', $currencyCode, $currencyLocale) }}</td>
+                        <td class="text-end pe-1">{{ \App\Support\GeoCurrency::format($totalCredits, 'NGN', $currencyCode, $currencyLocale) }}</td>
                     </tr>
                 </tfoot>
             </table>

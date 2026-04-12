@@ -2,6 +2,10 @@
 @extends('layout.mainlayout')
 
 @section('content')
+@php
+    $currencyCode = $geoCurrency ?? \App\Support\GeoCurrency::currentCurrency();
+    $currencyLocale = $geoCurrencyLocale ?? \App\Support\GeoCurrency::currentLocale();
+@endphp
 <div class="page-wrapper">
     <div class="content container-fluid">
 
@@ -70,7 +74,7 @@
                                         $totalExpense += (float) ($item->amount ?? 0);
                                     }
                                 @endphp
-                                <h3 class="mb-0 fw-bold">₦{{ number_format($totalExpense, 2) }}</h3>
+                                <h3 class="mb-0 fw-bold">{{ \App\Support\GeoCurrency::format($totalExpense, 'NGN', $currencyCode, $currencyLocale) }}</h3>
                             </div>
                         </div>
                     </div>
@@ -123,7 +127,7 @@
                                                 {{ $expense->company_name ?? 'N/A' }}
                                                 <small class="text-muted d-block">{{ $expense->email ?? '' }}</small>
                                             </td>
-                                            <td><span class="fw-bold">₦{{ number_format((float)($expense->amount ?? 0), 2) }}</span></td>
+                                            <td><span class="fw-bold">{{ \App\Support\GeoCurrency::format((float)($expense->amount ?? 0), 'NGN', $currencyCode, $currencyLocale) }}</span></td>
                                             <td><span class="badge {{ $statusClass }}">{{ ucfirst($status) }}</span></td>
                                             <td>{{ $expense->category_name ?? 'General' }}</td>
                                             <td>{{ $expense->user_name ?? 'System' }}</td>

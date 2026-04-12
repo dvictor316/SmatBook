@@ -8,6 +8,7 @@ use App\Models\Invoice;
 use App\Models\Signature;
 use App\Models\Product;
 use App\Support\BranchInventoryService;
+use App\Support\GeoCurrency;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -453,6 +454,29 @@ class InvoiceController extends Controller
                 }
 
                 $sale->items()->create($this->onlyExistingColumns('sale_items', $saleItemPayload));
+
+                $productId = (int) ($item['product_id'] ?? 0);
+                if ($productId > 0 && $qty > 0) {
+                    $productQuery = Product::query()->lockForUpdate()->whereKey($productId);
+                    if ($companyId > 0 && Schema::hasColumn('products', 'company_id')) {
+                        $productQuery->where('company_id', $companyId);
+                    }
+
+                    $product = $productQuery->first();
+                    if ($product) {
+                        $product->decrement('stock', $qty);
+                        if (Schema::hasColumn('products', 'stock_quantity')) {
+                            $product->decrement('stock_quantity', $qty);
+                        }
+
+                        $this->branchInventory->adjustBranchStock(
+                            $product,
+                            -$qty,
+                            $activeBranch,
+                            $companyId > 0 ? $companyId : (int) ($product->company_id ?? 0)
+                        );
+                    }
+                }
             }
 
             DB::commit();
@@ -597,10 +621,10 @@ class InvoiceController extends Controller
                 'InvoiceTo'   => $sale->display_customer_name,
                 'Image'       => 'avatar-01.jpg',
                 'Email'       => $sale->customer?->email ?? 'No customer email',
-                'TotalAmount' => '₦' . number_format($sale->total, 2),
-                'PaidAmount'  => '₦' . number_format($sale->paid ?? 0, 2),
+                'TotalAmount' => GeoCurrency::format((float) ($sale->total ?? 0), 'NGN'),
+                'PaidAmount'  => GeoCurrency::format((float) ($sale->paid ?? 0), 'NGN'),
                 'PaymentMode' => $sale->payment_method,
-                'Balance'     => '₦' . number_format($sale->balance ?? 0, 2),
+                'Balance'     => GeoCurrency::format((float) ($sale->balance ?? 0), 'NGN'),
                 'DueDate'     => date('d M Y', strtotime($sale->created_at . ' + 30 days')),
                 'Status'      => ucfirst($sale->payment_status),
                 'Class'       => ($sale->payment_status == 'paid') ? 'bg-success-light' : 'bg-danger-light',
@@ -609,9 +633,9 @@ class InvoiceController extends Controller
 
         $invoicescards = [
             ['title' => 'All Invoices', 'amount' => $sales->count(), 'class' => 'bg-primary-light', 'icon' => 'fe fe-file-text'],
-            ['title' => 'Total Sales', 'amount' => '₦' . number_format($sales->sum('total'), 2), 'class' => 'bg-success-light', 'icon' => 'fe fe-database'],
-            ['title' => 'Total Paid', 'amount' => '₦' . number_format($sales->sum('paid'), 2), 'class' => 'bg-info-light', 'icon' => 'fe fe-check-square'],
-            ['title' => 'Total Balance', 'amount' => '₦' . number_format($sales->sum('balance'), 2), 'class' => 'bg-warning-light', 'icon' => 'fe fe-clock']
+            ['title' => 'Total Sales', 'amount' => GeoCurrency::format((float) $sales->sum('total'), 'NGN'), 'class' => 'bg-success-light', 'icon' => 'fe fe-database'],
+            ['title' => 'Total Paid', 'amount' => GeoCurrency::format((float) $sales->sum('paid'), 'NGN'), 'class' => 'bg-info-light', 'icon' => 'fe fe-check-square'],
+            ['title' => 'Total Balance', 'amount' => GeoCurrency::format((float) $sales->sum('balance'), 'NGN'), 'class' => 'bg-warning-light', 'icon' => 'fe fe-clock']
         ];
 
         return view('Sales.recurring-invoices', compact('invoices', 'invoicescards'));

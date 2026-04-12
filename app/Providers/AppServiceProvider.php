@@ -60,27 +60,39 @@ class AppServiceProvider extends ServiceProvider
     {
         // COMPOSER 1: Global Categories (Only if table exists)
         View::composer('*', function ($view) {
-            static $categoriesLoaded = false;
-            static $categoriesCache;
+            static $categoriesLoaded = [];
+            static $categoriesCache = [];
 
-            if ($categoriesLoaded) {
-                $view->with('categories', $categoriesCache);
+            $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+            $userId = (int) (Auth::id() ?? 0);
+            $cacheKey = 'company:' . $companyId . ':user:' . $userId;
+
+            if (($categoriesLoaded[$cacheKey] ?? false) === true) {
+                $view->with('categories', $categoriesCache[$cacheKey] ?? collect());
                 return;
             }
 
             if (!Schema::hasTable('categories')) {
-                $categoriesLoaded = true;
-                $categoriesCache = collect();
-                $view->with('categories', $categoriesCache);
+                $categoriesLoaded[$cacheKey] = true;
+                $categoriesCache[$cacheKey] = collect();
+                $view->with('categories', $categoriesCache[$cacheKey]);
                 return;
             }
 
-            $categoriesCache = Cache::remember('ui:categories:minimal', now()->addMinutes(10), function () {
-                return DB::table('categories')->select('id', 'name')->get();
+            $categoriesCache[$cacheKey] = Cache::remember('ui:categories:minimal:' . $cacheKey, now()->addMinutes(10), function () use ($companyId, $userId) {
+                $query = DB::table('categories')->select('id', 'name');
+
+                if ($companyId > 0 && Schema::hasColumn('categories', 'company_id')) {
+                    $query->where('company_id', $companyId);
+                } elseif ($userId > 0 && Schema::hasColumn('categories', 'user_id')) {
+                    $query->where('user_id', $userId);
+                }
+
+                return $query->orderBy('name')->get();
             });
 
-            $categoriesLoaded = true;
-            $view->with('categories', $categoriesCache);
+            $categoriesLoaded[$cacheKey] = true;
+            $view->with('categories', $categoriesCache[$cacheKey]);
         });
 
         // COMPOSER 2: Company Dashboard Stats (Only for company-related views)

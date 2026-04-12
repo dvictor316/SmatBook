@@ -17,6 +17,11 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class SupplierController extends Controller
 {
+    private function newSupplierQuery()
+    {
+        return Supplier::withoutGlobalScope('tenant')->query();
+    }
+
     private function purchaseGrossTotal($purchase): float
     {
         return round(abs((float) ($purchase->total_amount ?? 0)), 2);
@@ -80,11 +85,28 @@ class SupplierController extends Controller
 
         if ($branchId !== '' || $branchName !== '') {
             $query->where(function ($sub) use ($table, $branchId, $branchName) {
+                $matched = false;
+
                 if ($branchId !== '' && Schema::hasColumn($table, 'branch_id')) {
                     $sub->where("{$table}.branch_id", $branchId);
+                    $matched = true;
                 }
                 if ($branchName !== '' && Schema::hasColumn($table, 'branch_name')) {
-                    $sub->orWhere("{$table}.branch_name", $branchName);
+                    $method = $matched ? 'orWhere' : 'where';
+                    $sub->{$method}("{$table}.branch_name", $branchName);
+                    $matched = true;
+                }
+
+                if ($table === 'suppliers' && (Schema::hasColumn($table, 'branch_id') || Schema::hasColumn($table, 'branch_name'))) {
+                    $method = $matched ? 'orWhere' : 'where';
+                    $sub->{$method}(function ($fallback) use ($table) {
+                        if (Schema::hasColumn($table, 'branch_id')) {
+                            $fallback->whereNull("{$table}.branch_id");
+                        }
+                        if (Schema::hasColumn($table, 'branch_name')) {
+                            $fallback->whereNull("{$table}.branch_name");
+                        }
+                    });
                 }
             });
         }
@@ -130,7 +152,7 @@ class SupplierController extends Controller
 
     public function index(Request $request)
     {
-        $query = Supplier::query()->latest();
+        $query = $this->newSupplierQuery()->latest();
         $this->applyTenantScope($query);
 
         $search = trim((string) $request->input('search', ''));
@@ -215,13 +237,13 @@ class SupplierController extends Controller
 
     public function edit($id)
     {
-        $supplier = $this->applyTenantScope(Supplier::query())->findOrFail($id);
+        $supplier = $this->applyTenantScope($this->newSupplierQuery())->findOrFail($id);
         return view('Customers.suppliers-edit', compact('supplier'));
     }
 
     public function show($id)
     {
-        $supplier = $this->applyTenantScope(Supplier::query())->findOrFail($id);
+        $supplier = $this->applyTenantScope($this->newSupplierQuery())->findOrFail($id);
 
         $hasPurchases = Schema::hasTable('purchases');
         $purchaseDateColumn = $hasPurchases && Schema::hasColumn('purchases', 'purchase_date')
@@ -347,7 +369,7 @@ class SupplierController extends Controller
 
     public function pay($id)
     {
-        $supplier = $this->applyTenantScope(Supplier::query())->findOrFail($id);
+        $supplier = $this->applyTenantScope($this->newSupplierQuery())->findOrFail($id);
         $purchaseDateColumn = Schema::hasColumn('purchases', 'purchase_date')
             ? 'purchase_date'
             : (Schema::hasColumn('purchases', 'date') ? 'date' : 'created_at');
@@ -421,7 +443,7 @@ class SupplierController extends Controller
 
     public function statement(Request $request, $id)
     {
-        $supplier = $this->applyTenantScope(Supplier::query())->findOrFail($id);
+        $supplier = $this->applyTenantScope($this->newSupplierQuery())->findOrFail($id);
         $purchaseDateColumn = Schema::hasColumn('purchases', 'purchase_date')
             ? 'purchase_date'
             : (Schema::hasColumn('purchases', 'date') ? 'date' : 'created_at');
@@ -496,7 +518,7 @@ class SupplierController extends Controller
 
     public function storePayment(Request $request, $id): RedirectResponse
     {
-        $supplier = $this->applyTenantScope(Supplier::query())->findOrFail($id);
+        $supplier = $this->applyTenantScope($this->newSupplierQuery())->findOrFail($id);
 
         $request->validate([
             'payment_date' => 'required|date',
@@ -695,7 +717,7 @@ class SupplierController extends Controller
 
     public function update(Request $request, $id): RedirectResponse
     {
-        $supplier = $this->applyTenantScope(Supplier::query())->findOrFail($id);
+        $supplier = $this->applyTenantScope($this->newSupplierQuery())->findOrFail($id);
         $request->validate([
             'name'    => 'required|string|max:191',
             'contact' => 'nullable|string|max:191',
@@ -723,7 +745,7 @@ class SupplierController extends Controller
 
     public function destroy($id): RedirectResponse
     {
-        $supplier = $this->applyTenantScope(Supplier::query())->findOrFail($id);
+        $supplier = $this->applyTenantScope($this->newSupplierQuery())->findOrFail($id);
         $supplier->delete();
         return redirect()->route('suppliers.index')->with('success', 'Supplier deleted.');
     }
@@ -815,7 +837,7 @@ class SupplierController extends Controller
                     $lookupEmail = $rowData['email'] ?? '';
                     $lookupPhone = $rowData['phone'] ?? '';
 
-                    $supplierQuery = Supplier::query();
+                    $supplierQuery = $this->newSupplierQuery();
                     if ($companyId > 0 && Schema::hasColumn('suppliers', 'company_id')) {
                         $supplierQuery->where('company_id', $companyId);
                     } elseif ($userId > 0 && Schema::hasColumn('suppliers', 'user_id')) {
@@ -984,7 +1006,7 @@ class SupplierController extends Controller
         $openingBalances = 0.0;
         $purchaseBalances = 0.0;
 
-        $supplierQuery = Supplier::query();
+        $supplierQuery = $this->newSupplierQuery();
         $this->applyTenantScope($supplierQuery);
         if (Schema::hasColumn('suppliers', 'opening_balance')) {
             $openingBalances = (float) $supplierQuery->sum('opening_balance');

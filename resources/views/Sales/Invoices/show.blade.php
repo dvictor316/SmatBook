@@ -1,6 +1,10 @@
 @extends('layout.mainlayout')
 
 @section('content')
+@php
+    $currencyCode = $geoCurrency ?? \App\Support\GeoCurrency::currentCurrency();
+    $currencyLocale = $geoCurrencyLocale ?? \App\Support\GeoCurrency::currentLocale();
+@endphp
 <div class="page-wrapper">
     <div class="content container-fluid">
         <div class="row justify-content-center">
@@ -41,7 +45,7 @@
                                 <div class="col-md-6 text-end">
                                     <h6 class="text-muted text-uppercase small fw-bold">Payment Details :</h6>
                                     <p class="invoice-details-two">
-                                        <strong>Total Amount:</strong> ${{ number_format($invoice->total, 2) }}<br>
+                                        <strong>Total Amount:</strong> {{ \App\Support\GeoCurrency::format((float) ($invoice->total ?? 0), 'NGN', $currencyCode, $currencyLocale) }}<br>
                                         <strong>Status:</strong> <span class="text-uppercase">{{ $invoice->status }}</span><br>
                                         <strong>Date:</strong> {{ $invoice->created_at->format('d M Y') }}<br>
                                         {{-- Added Sales Person --}}
@@ -62,15 +66,15 @@
                                 <tbody>
                                     <tr>
                                         <td class="py-3">Subtotal</td>
-                                        <td class="text-end py-3">${{ number_format($invoice->subtotal, 2) }}</td>
+                                        <td class="text-end py-3">{{ \App\Support\GeoCurrency::format((float) ($invoice->subtotal ?? 0), 'NGN', $currencyCode, $currencyLocale) }}</td>
                                     </tr>
                                     <tr>
                                         <td class="py-3">Tax</td>
-                                        <td class="text-end py-3">${{ number_format($invoice->tax, 2) }}</td>
+                                        <td class="text-end py-3">{{ \App\Support\GeoCurrency::format((float) ($invoice->tax ?? 0), 'NGN', $currencyCode, $currencyLocale) }}</td>
                                     </tr>
                                     <tr class="fw-bold fs-5" style="background-color: #f8f9fa;">
                                         <td class="py-3">Grand Total</td>
-                                        <td class="text-end py-3" style="color: #4b308b;">${{ number_format($invoice->total, 2) }}</td>
+                                        <td class="text-end py-3" style="color: #4b308b;">{{ \App\Support\GeoCurrency::format((float) ($invoice->total ?? 0), 'NGN', $currencyCode, $currencyLocale) }}</td>
                                     </tr>
                                 </tbody>
                             </table>

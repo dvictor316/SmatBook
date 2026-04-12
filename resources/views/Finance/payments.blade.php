@@ -11,6 +11,10 @@
         || str_contains($paymentPlan, 'pro')
         || str_contains($paymentPlan, 'enterprise');
 @endphp
+@php
+    $currencyCode = $geoCurrency ?? \App\Support\GeoCurrency::currentCurrency();
+    $currencyLocale = $geoCurrencyLocale ?? \App\Support\GeoCurrency::currentLocale();
+@endphp
 <style>
     .money-sm { font-size: 1.05rem !important; font-variant-numeric: tabular-nums; }
     .money-cell { font-size: 0.84rem; font-variant-numeric: tabular-nums; }
@@ -49,7 +53,7 @@
                         <div class="d-flex align-items-center justify-content-between">
                             <div>
                                 <h6 class="text-uppercase text-muted fw-semibold mb-2">Net Revenue</h6>
-                                <h3 class="mb-0 text-success money-sm">${{ number_format($payments->sum('amount'), 2) }}</h3>
+                                <h3 class="mb-0 text-success money-sm">{{ \App\Support\GeoCurrency::format((float) $payments->sum('amount'), 'NGN', $currencyCode, $currencyLocale) }}</h3>
                             </div>
                             <div class="avatar avatar-lg bg-success-light">
                                 <i class="fas fa-coins text-success fs-4"></i>
@@ -113,7 +117,7 @@
                                     </div>
                                 </td>
                                 <td>
-                                    <span class="fw-bold text-success money-cell">+ {{ number_format($payment->amount, 2) }}</span>
+                                    <span class="fw-bold text-success money-cell">+ {{ \App\Support\GeoCurrency::format((float) ($payment->amount ?? 0), 'NGN', $currencyCode, $currencyLocale) }}</span>
                                 </td>
                                 <td>
                                     @php($statusLabel = trim((string) ($payment->status ?? 'Pending')))

@@ -2,6 +2,10 @@
 @extends('layout.mainlayout')
 
 @section('content')
+@php
+    $currencyCode = $geoCurrency ?? \App\Support\GeoCurrency::currentCurrency();
+    $currencyLocale = $geoCurrencyLocale ?? \App\Support\GeoCurrency::currentLocale();
+@endphp
 <style>
     :root {
         --text-dark: #1e293b;
@@ -343,22 +347,22 @@
         <div class="summary-grid">
             <div class="summary-card">
                 <span class="summary-label">Total Assets</span>
-                <span class="summary-amount">₦{{ number_format($totalAssets ?? 0, 2) }}</span>
+                <span class="summary-amount">{{ \App\Support\GeoCurrency::format($totalAssets ?? 0, 'NGN', $currencyCode, $currencyLocale) }}</span>
             </div>
             <div class="summary-card">
                 <span class="summary-label">Total Liabilities</span>
-                <span class="summary-amount">₦{{ number_format($totalLiabilities ?? 0, 2) }}</span>
+                <span class="summary-amount">{{ \App\Support\GeoCurrency::format($totalLiabilities ?? 0, 'NGN', $currencyCode, $currencyLocale) }}</span>
             </div>
             <div class="summary-card">
                 <span class="summary-label">Equity</span>
-                <span class="summary-amount">₦{{ number_format($totalEquity ?? 0, 2) }}</span>
+                <span class="summary-amount">{{ \App\Support\GeoCurrency::format($totalEquity ?? 0, 'NGN', $currencyCode, $currencyLocale) }}</span>
             </div>
         </div>
 
         @if (abs(($ledgerDifference ?? 0)) >= 0.01)
             <div class="alert alert-danger mb-3">
                 <div class="fw-semibold mb-1">Ledger imbalance detected</div>
-                <div>Debits: ₦{{ number_format($ledgerDebits ?? 0, 2) }} · Credits: ₦{{ number_format($ledgerCredits ?? 0, 2) }} · Difference: ₦{{ number_format(abs($ledgerDifference ?? 0), 2) }}</div>
+                <div>Debits: {{ \App\Support\GeoCurrency::format($ledgerDebits ?? 0, 'NGN', $currencyCode, $currencyLocale) }} · Credits: {{ \App\Support\GeoCurrency::format($ledgerCredits ?? 0, 'NGN', $currencyCode, $currencyLocale) }} · Difference: {{ \App\Support\GeoCurrency::format(abs($ledgerDifference ?? 0), 'NGN', $currencyCode, $currencyLocale) }}</div>
                 @if (!empty($imbalancedEntries) && $imbalancedEntries->isNotEmpty())
                     <div class="mt-2 small">Top unbalanced entries:</div>
                     <ul class="mb-0 ps-3 small">
@@ -367,7 +371,7 @@
                                 {{ $entry->transaction_type ?? 'Entry' }}
                                 · Ref: {{ $entry->reference ?: 'N/A' }}
                                 · Related: {{ $entry->related_type ?: 'N/A' }} #{{ $entry->related_id ?: 'N/A' }}
-                                · Δ ₦{{ number_format(abs(((float) $entry->total_debit) - ((float) $entry->total_credit)), 2) }}
+                                · Δ {{ \App\Support\GeoCurrency::format(abs(((float) $entry->total_debit) - ((float) $entry->total_credit)), 'NGN', $currencyCode, $currencyLocale) }}
                             </li>
                         @endforeach
                     </ul>
@@ -447,7 +451,7 @@
 
                 <div class="grand-total-row">
                     <span>TOTAL ASSETS</span>
-                    <span>₦{{ number_format($totalAssets ?? 0, 2) }}</span>
+                    <span>{{ \App\Support\GeoCurrency::format($totalAssets ?? 0, 'NGN', $currencyCode, $currencyLocale) }}</span>
                 </div>
             </div>
 
@@ -524,7 +528,7 @@
 
                 <div class="grand-total-row">
                     <span>TOTAL LIABILITIES & EQUITY</span>
-                    <span>₦{{ number_format(($totalLiabilities ?? 0) + ($totalEquity ?? 0), 2) }}</span>
+                    <span>{{ \App\Support\GeoCurrency::format(($totalLiabilities ?? 0) + ($totalEquity ?? 0), 'NGN', $currencyCode, $currencyLocale) }}</span>
                 </div>
             </div>
 
@@ -534,7 +538,7 @@
                 $isBalanced = $diff < 0.01;
             @endphp
             <div class="status-strip {{ $isBalanced ? 'is-balanced' : 'not-balanced' }}">
-                {{ $isBalanced ? 'Verification: Statement is in Balance' : 'Discrepancy: ₦' . number_format($diff, 2) }}
+                {{ $isBalanced ? 'Verification: Statement is in Balance' : 'Discrepancy: ' . \App\Support\GeoCurrency::format($diff, 'NGN', $currencyCode, $currencyLocale) }}
             </div>
         </div>
         </div>

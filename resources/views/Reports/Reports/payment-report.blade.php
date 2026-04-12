@@ -1,6 +1,9 @@
 @php
     $page = 'payment-report';
     $reportDate = date('d-M-Y');
+    $currencyCode = $geoCurrency ?? \App\Support\GeoCurrency::currentCurrency();
+    $currencyLocale = $geoCurrencyLocale ?? \App\Support\GeoCurrency::currentLocale();
+    $currencySymbol = $geoCurrencySymbol ?? \App\Support\GeoCurrency::currentSymbol();
     
     // Safety checks
     $paymentsExists = isset($payments) && $payments->count() > 0;
@@ -87,7 +90,7 @@
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <p class="mb-1 opacity-75 small fw-bold uppercase">{{ __('Grand Total') }}</p>
-                                <h3 class="mb-0 fw-bold money-sm">₦{{ number_format($totalAmount, 2) }}</h3>
+                                <h3 class="mb-0 fw-bold money-sm">{{ \App\Support\GeoCurrency::format($totalAmount, 'NGN', $currencyCode, $currencyLocale) }}</h3>
                             </div>
                             <div class="rounded-circle bg-white bg-opacity-25 p-2">
                                 <i class="fas fa-database text-white"></i>
@@ -175,8 +178,8 @@
                                     <div class="fw-medium text-dark">{{ \Carbon\Carbon::parse($payment->created_at)->format('d M, Y') }}</div>
                                     <div class="small text-muted">{{ \Carbon\Carbon::parse($payment->created_at)->format('h:i A') }}</div>
                                 </td>
-                                <td class="fw-bold text-dark money-cell">₦{{ number_format($payment->amount, 2) }}</td>
-                                <td class="fw-bold text-primary money-cell">₦{{ number_format($runningTotal, 2) }}</td>
+                                <td class="fw-bold text-dark money-cell">{{ \App\Support\GeoCurrency::format($payment->amount, 'NGN', $currencyCode, $currencyLocale) }}</td>
+                                <td class="fw-bold text-primary money-cell">{{ \App\Support\GeoCurrency::format($runningTotal, 'NGN', $currencyCode, $currencyLocale) }}</td>
                                 <td>
                                     <span class="text-secondary small">
                                         <i class="fas fa-credit-card me-1"></i> {{ $payment->method }}
@@ -218,12 +221,12 @@
                         <tfoot class="table-light fw-bold">
                             <tr>
                                 <td colspan="5" class="text-end text-uppercase small text-muted">{{ __('Page Total') }}</td>
-                                <td class="text-primary money-cell">₦{{ number_format($pageTotal, 2) }}</td>
+                                <td class="text-primary money-cell">{{ \App\Support\GeoCurrency::format($pageTotal, 'NGN', $currencyCode, $currencyLocale) }}</td>
                                 <td colspan="3"></td>
                             </tr>
                             <tr class="table-primary border-top">
                                 <td colspan="5" class="text-end text-uppercase small">{{ __('Filtered Grand Total') }}</td>
-                                <td class="text-dark money-cell">₦{{ number_format($totalAmount, 2) }}</td>
+                                <td class="text-dark money-cell">{{ \App\Support\GeoCurrency::format($totalAmount, 'NGN', $currencyCode, $currencyLocale) }}</td>
                                 <td colspan="3"></td>
                             </tr>
                         </tfoot>
@@ -298,7 +301,7 @@
         // Email Feature
         $('#emailReport').on('click', function() {
             const subject = "Payment Report: {{ $reportDate }}";
-            const body = "Attached is the payment report. Total Received: ₦{{ number_format($totalAmount, 2) }}";
+            const body = "Attached is the payment report. Total Received: {{ $currencySymbol }}{{ number_format($totalAmount, 2) }}";
             const token = '{{ csrf_token() }}';
             const recipient = prompt('Send report to email (leave blank to use your account email):') ?? null;
             if (recipient === null) return;

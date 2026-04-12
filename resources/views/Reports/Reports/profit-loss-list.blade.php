@@ -1,6 +1,9 @@
 @php
     $page = 'profit-loss-list';
     $reportDate = date('Y-m-d');
+    $currencyCode = $geoCurrency ?? \App\Support\GeoCurrency::currentCurrency();
+    $currencyLocale = $geoCurrencyLocale ?? \App\Support\GeoCurrency::currentLocale();
+    $currencySymbol = $geoCurrencySymbol ?? \App\Support\GeoCurrency::currentSymbol();
     
     // Subdomain parameter detection for all routes
     $currentSubdomain = request()->route('subdomain') ?? 'admin';
@@ -235,7 +238,7 @@
                 <div class="card pl-summary-card">
                     <div class="card-body">
                         <h6 class="text-success text-uppercase fw-bold report-metric-title pl-summary-label">{{ __('Overall Revenue') }}</h6>
-                        <h3 class="mb-0 text-success money-sm">₦{{ number_format($grandIncome, 2) }}</h3>
+                        <h3 class="mb-0 text-success money-sm">{{ \App\Support\GeoCurrency::format($grandIncome, 'NGN', $currencyCode, $currencyLocale) }}</h3>
                     </div>
                 </div>
             </div>
@@ -243,7 +246,7 @@
                 <div class="card pl-summary-card">
                     <div class="card-body">
                         <h6 class="text-info text-uppercase fw-bold report-metric-title pl-summary-label">{{ __('Purchase Cost') }}</h6>
-                        <h3 class="mb-0 text-info money-sm">₦{{ number_format($grandPurchaseExpense, 2) }}</h3>
+                        <h3 class="mb-0 text-info money-sm">{{ \App\Support\GeoCurrency::format($grandPurchaseExpense, 'NGN', $currencyCode, $currencyLocale) }}</h3>
                     </div>
                 </div>
             </div>
@@ -251,8 +254,8 @@
                 <div class="card pl-summary-card">
                     <div class="card-body">
                         <h6 class="text-danger text-uppercase fw-bold report-metric-title pl-summary-label">{{ __('Total Expenses') }}</h6>
-                        <div class="text-muted mb-1 pl-summary-meta">OpEx: ₦{{ number_format($grandOperatingExpense, 2) }}</div>
-                        <h3 class="mb-0 text-danger money-sm">₦{{ number_format($grandExpense, 2) }}</h3>
+                        <div class="text-muted mb-1 pl-summary-meta">OpEx: {{ \App\Support\GeoCurrency::format($grandOperatingExpense, 'NGN', $currencyCode, $currencyLocale) }}</div>
+                        <h3 class="mb-0 text-danger money-sm">{{ \App\Support\GeoCurrency::format($grandExpense, 'NGN', $currencyCode, $currencyLocale) }}</h3>
                     </div>
                 </div>
             </div>
@@ -260,7 +263,7 @@
                 <div class="card pl-summary-card">
                     <div class="card-body">
                         <h6 class="{{ $grandNet >= 0 ? 'text-primary' : 'text-warning' }} text-uppercase fw-bold report-metric-title pl-summary-label">{{ __('Net Profit/Loss') }}</h6>
-                        <h3 class="mb-0 {{ $grandNet >= 0 ? 'text-primary' : 'text-warning' }} money-sm">₦{{ number_format($grandNet, 2) }}</h3>
+                        <h3 class="mb-0 {{ $grandNet >= 0 ? 'text-primary' : 'text-warning' }} money-sm">{{ \App\Support\GeoCurrency::format($grandNet, 'NGN', $currencyCode, $currencyLocale) }}</h3>
                     </div>
                 </div>
             </div>
