@@ -10,6 +10,7 @@ use App\Models\Expense;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CashFlowController extends Controller
@@ -39,28 +40,50 @@ class CashFlowController extends Controller
         // 4. Period Transactions
         $transactions = collect();
         if ($cashAccountIds->isNotEmpty()) {
-            $transactions = $this->applyTenantScope(
+            $baseQuery = $this->applyTenantScope(
                 Transaction::whereIn('account_id', $cashAccountIds),
                 'transactions'
             )
                 ->tap(fn ($query) => $this->applyBranchScope($query, 'transactions'))
                 ->whereBetween('transaction_date', [$start->toDateString(), $end->toDateString()])
-                ->with('account')
-                ->orderBy('transaction_date', 'asc')
-                ->get();
+                ->with('account');
+
+            $hasTransactions = (clone $baseQuery)->exists();
+
+            $inflowsQuery = (clone $baseQuery)
+                ->where('debit', '>', 0)
+                ->orderBy('transaction_date', 'asc');
+
+            $outflowsQuery = (clone $baseQuery)
+                ->where('credit', '>', 0)
+                ->orderBy('transaction_date', 'asc');
+
+            $inflows = $inflowsQuery->paginate(20, ['*'], 'inflow_page')->appends($request->query());
+            $outflows = $outflowsQuery->paginate(20, ['*'], 'outflow_page')->appends($request->query());
+
+            $totalInflow = (clone $baseQuery)->where('debit', '>', 0)->sum('debit');
+            $totalOutflow = (clone $baseQuery)->where('credit', '>', 0)->sum('credit');
+
+            $transactions = $hasTransactions ? (clone $baseQuery)->orderBy('transaction_date', 'asc')->get() : collect();
         }
 
         // Separate Inflows and Outflows for the loops in your Blade
-        $inflows = $transactions->where('debit', '>', 0);
-        $outflows = $transactions->where('credit', '>', 0);
+        if (!isset($inflows) || !isset($outflows)) {
+            $inflows = collect();
+            $outflows = collect();
+            $totalInflow = 0;
+            $totalOutflow = 0;
+        }
 
         if ($transactions->isEmpty()) {
-            [$inflows, $outflows] = $this->buildOperationalFlows($start, $end);
+            [$rawInflows, $rawOutflows] = $this->buildOperationalFlows($start, $end);
+            $totalInflow = $rawInflows->sum('debit');
+            $totalOutflow = $rawOutflows->sum('credit');
+            $inflows = $this->paginateCollection($rawInflows, 20, 'inflow_page', $request);
+            $outflows = $this->paginateCollection($rawOutflows, 20, 'outflow_page', $request);
         }
 
         // 5. Calculate Summary Totals
-        $totalInflow = $inflows->sum('debit');
-        $totalOutflow = $outflows->sum('credit');
         $netCashFlow = $totalInflow - $totalOutflow;
         $closingBalance = $openingBalance + $netCashFlow;
 
@@ -317,6 +340,25 @@ class CashFlowController extends Controller
             });
 
         return [$paymentRows, $expenseRows];
+    }
+
+    private function paginateCollection($items, int $perPage, string $pageName, Request $request): LengthAwarePaginator
+    {
+        $page = (int) $request->query($pageName, 1);
+        $items = collect($items);
+        $slice = $items->forPage($page, $perPage)->values();
+
+        return new LengthAwarePaginator(
+            $slice,
+            $items->count(),
+            $perPage,
+            $page,
+            [
+                'path' => $request->url(),
+                'pageName' => $pageName,
+                'query' => $request->query(),
+            ]
+        );
     }
 
     private function getMonthlyTrendFromOperations(): array

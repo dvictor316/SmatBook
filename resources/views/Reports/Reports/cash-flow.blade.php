@@ -2,7 +2,7 @@
 
 @section('content')
 <style>
-    .report-container { max-width: 1100px; margin: 0 auto; }
+    .report-container { max-width: 980px; margin: 0 auto; }
     
     .report-header { 
         border-bottom: 1px solid #dbe7f5; 
@@ -58,7 +58,7 @@
     .cash-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
     .cash-table { width: 100%; min-width: 640px; border-collapse: collapse; background: #fff; border: 1px solid #dbe7f5; border-top: 0; border-radius: 0 0 18px 18px; overflow: hidden; }
     .cash-table tr { border-bottom: 1px solid #f1f5f9; }
-    .cash-table td { padding: 0.95rem 0.85rem; font-size: 0.94rem; }
+    .cash-table td { padding: 0.75rem 0.75rem; font-size: 0.9rem; }
     .amt-col { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
 
     .total-row {
@@ -174,6 +174,9 @@
             </tr>
         </table>
         </div>
+        <div class="d-flex justify-content-end mt-3">
+            {{ $inflows->links() }}
+        </div>
 
         <div class="section-title" style="background: linear-gradient(135deg, #64748b 0%, #475569 100%);">02. Cash Outflows (Payments)</div>
         <div class="cash-table-wrap">
@@ -192,6 +195,9 @@
                 <td class="amt-col text-danger">(₦{{ number_format($totalOutflow, 2) }})</td>
             </tr>
         </table>
+        </div>
+        <div class="d-flex justify-content-end mt-3">
+            {{ $outflows->links() }}
         </div>
 
         <div class="total-row d-flex justify-content-between">
