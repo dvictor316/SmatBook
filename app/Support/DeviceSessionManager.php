@@ -65,7 +65,8 @@ class DeviceSessionManager
         if ($workspaceLimit !== null && $companyId) {
             $activeWorkspaceSessions = ActiveUserSession::query()
                 ->where('company_id', $companyId)
-                ->count();
+                ->distinct('user_id')
+                ->count('user_id');
 
             if ($activeWorkspaceSessions >= $workspaceLimit) {
                 return [
