@@ -1658,7 +1658,7 @@ public function destroy($id)
         public function sales_report(Request $request)
         {
             $activeBranch = $this->getActiveBranchContext();
-            $stockExpression = Schema::hasColumn('products', 'stock')
+            $baseStockExpression = Schema::hasColumn('products', 'stock')
                 ? 'COALESCE(products.stock, 0)'
                 : (Schema::hasColumn('products', 'stock_quantity') ? 'COALESCE(products.stock_quantity, 0)' : '0');
             $saleQtyExpression = Schema::hasColumn('sale_items', 'qty')
@@ -1669,9 +1669,28 @@ public function destroy($id)
                 : (Schema::hasColumn('sale_items', 'subtotal')
                     ? 'COALESCE(sale_items.subtotal, 0)'
                     : '(' . $saleQtyExpression . ' * COALESCE(sale_items.unit_price, 0))');
+            $branchId = trim((string) ($activeBranch['id'] ?? ''));
+            $branchName = trim((string) ($activeBranch['name'] ?? ''));
+            $hasBranchStocks = Schema::hasTable('product_branch_stocks');
+            $hasBranchId = $hasBranchStocks && Schema::hasColumn('product_branch_stocks', 'branch_id');
+            $hasBranchName = $hasBranchStocks && Schema::hasColumn('product_branch_stocks', 'branch_name');
+            $stockExpression = ($hasBranchStocks && ($branchId !== '' || $branchName !== ''))
+                ? "COALESCE(product_branch_stocks.quantity, {$baseStockExpression}, 0)"
+                : $baseStockExpression;
 
             $query = \App\Models\Product::query()
                 ->leftJoin('categories', 'products.category_id', '=', 'categories.id')
+                ->when($hasBranchStocks && ($branchId !== '' || $branchName !== ''), function ($query) use ($branchId, $branchName, $hasBranchId, $hasBranchName) {
+                    $query->leftJoin('product_branch_stocks', function ($join) use ($branchId, $branchName, $hasBranchId, $hasBranchName) {
+                        $join->on('product_branch_stocks.product_id', '=', 'products.id');
+
+                        if ($branchId !== '' && $hasBranchId) {
+                            $join->where('product_branch_stocks.branch_id', '=', $branchId);
+                        } elseif ($branchName !== '' && $hasBranchName) {
+                            $join->where('product_branch_stocks.branch_name', '=', $branchName);
+                        }
+                    });
+                })
                 ->leftJoin('sale_items', 'products.id', '=', 'sale_items.product_id')
                 ->leftJoin('sales', 'sale_items.sale_id', '=', 'sales.id')
                 ->selectRaw('
@@ -1684,13 +1703,7 @@ public function destroy($id)
                     ' . $stockExpression . ' as InstockQty,
                     MAX(sales.created_at) as DueDate
                 ')
-                ->groupBy(
-                    'products.id',
-                    'products.name',
-                    'products.sku',
-                    'categories.name',
-                    DB::raw($stockExpression)
-                );
+                ->groupBy('products.id', 'products.name', 'products.sku', 'categories.name', DB::raw($stockExpression));
             $this->applyTenantScope($query, 'products');
             $this->applySalesScope($query, 'sales');
 

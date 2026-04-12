@@ -63,8 +63,6 @@
                         <li class="{{ Request::is('superadmin/users*') ? 'active' : '' }}">
                             <a href="{{ route('super_admin.users.index', $routeParams) }}">Registered Users</a>
                         </li>
-                        <li><a href="{{ route('projects.index') }}" class="{{ Request::is('projects*') ? 'active' : '' }}">Project Management</a></li>
-                        <li><a href="{{ route('projects.index') }}#profitability" class="{{ Request::is('projects*') ? 'active' : '' }}">Project Profitability</a></li>
                     </ul>
                 </li>
 
@@ -96,16 +94,6 @@
                     <ul>
                         <li><a href="{{ route('customers.index') }}">Customers</a></li>
                         <li><a href="{{ route('suppliers.index') }}">Suppliers</a></li>
-                    </ul>
-                </li>
-
-                {{-- POS --}}
-                <li class="submenu {{ Request::is('pos*', 'sales*') ? 'active subdrop' : '' }}">
-                    <a href="#"><i class="fe fe-shopping-cart"></i><span>POS</span><span class="menu-arrow"></span></a>
-                    <ul>
-                        <li><a href="{{ route('sales.showPos') }}">Sales Terminal</a></li>
-                        <li><a href="{{ route('pos.sales') }}">POS Sales</a></li>
-                        <li><a href="{{ route('pos.reports') }}">Items Sold</a></li>
                     </ul>
                 </li>
 
@@ -240,9 +228,16 @@
                 <li class="menu-title"><span>Management</span></li>
 
                 <li><a href="{{ route('projects.index') }}"><i class="fe fe-briefcase"></i><span>Project Management</span></a></li>
+                @if(Route::has('users.index'))
+                    <li><a href="{{ route('users.index') }}"><i class="fe fe-user"></i><span>Users</span></a></li>
+                @endif
 
                 {{-- Roles & Permission --}}
                 <li><a href="{{ route('roles.index') }}"><i class="fe fe-shield"></i><span>Roles & Permission</span></a></li>
+
+                @if(Route::has('profile'))
+                    <li><a href="{{ route('profile') }}"><i class="fe fe-user-check"></i><span>Profile</span></a></li>
+                @endif
 
                 {{-- Settings --}}
                 <li><a href="{{ route('settings.index') }}"><i class="fe fe-settings"></i><span>Settings</span></a></li>
