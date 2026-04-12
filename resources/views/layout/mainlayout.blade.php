@@ -295,6 +295,54 @@
             letter-spacing: -0.02em;
         }
 
+        body:not(.login-body):not(.landing-page-body) .page-wrapper {
+            font-size: 0.95rem;
+        }
+
+        body:not(.login-body):not(.landing-page-body) .page-wrapper .page-header h3,
+        body:not(.login-body):not(.landing-page-body) .page-wrapper .page-title,
+        body:not(.login-body):not(.landing-page-body) .page-wrapper h1:first-child,
+        body:not(.login-body):not(.landing-page-body) .page-wrapper h2:first-child {
+            font-size: clamp(1.08rem, 1rem + 0.42vw, 1.5rem) !important;
+            line-height: 1.18;
+            font-weight: 800;
+        }
+
+        body:not(.login-body):not(.landing-page-body) .page-wrapper .page-header p,
+        body:not(.login-body):not(.landing-page-body) .page-wrapper .page-header .text-muted,
+        body:not(.login-body):not(.landing-page-body) .page-wrapper .page-header .small,
+        body:not(.login-body):not(.landing-page-body) .page-wrapper p.small,
+        body:not(.login-body):not(.landing-page-body) .page-wrapper small,
+        body:not(.login-body):not(.landing-page-body) .page-wrapper .small {
+            font-size: 0.78rem !important;
+        }
+
+        body:not(.login-body):not(.landing-page-body) .page-wrapper .card-title,
+        body:not(.login-body):not(.landing-page-body) .page-wrapper .card h4,
+        body:not(.login-body):not(.landing-page-body) .page-wrapper .card h5,
+        body:not(.login-body):not(.landing-page-body) .page-wrapper .content h4,
+        body:not(.login-body):not(.landing-page-body) .page-wrapper .content h5 {
+            font-size: 1rem !important;
+            line-height: 1.25;
+        }
+
+        body:not(.login-body):not(.landing-page-body) .page-wrapper .form-label,
+        body:not(.login-body):not(.landing-page-body) .page-wrapper label.small,
+        body:not(.login-body):not(.landing-page-body) .page-wrapper .small.fw-bold {
+            font-size: 0.72rem !important;
+            letter-spacing: 0.05em;
+        }
+
+        body:not(.login-body):not(.landing-page-body) .page-wrapper .form-control,
+        body:not(.login-body):not(.landing-page-body) .page-wrapper .form-select,
+        body:not(.login-body):not(.landing-page-body) .page-wrapper .input-group-text,
+        body:not(.login-body):not(.landing-page-body) .page-wrapper .btn,
+        body:not(.login-body):not(.landing-page-body) .page-wrapper select,
+        body:not(.login-body):not(.landing-page-body) .page-wrapper input,
+        body:not(.login-body):not(.landing-page-body) .page-wrapper textarea {
+            font-size: 0.88rem;
+        }
+
         body:not(.login-body):not(.landing-page-body) .page-wrapper .card,
         body:not(.login-body):not(.landing-page-body) .page-wrapper .metric-card,
         body:not(.login-body):not(.landing-page-body) .page-wrapper .chart-card,
@@ -335,6 +383,13 @@
 
         body:not(.login-body):not(.landing-page-body) .page-wrapper .table tbody td {
             color: #183153;
+            font-size: 0.9rem;
+        }
+
+        body:not(.login-body):not(.landing-page-body) .page-wrapper .badge,
+        body:not(.login-body):not(.landing-page-body) .page-wrapper .status-badge {
+            font-size: 0.74rem !important;
+            font-weight: 700;
         }
 
         @media (max-width: 991.98px) {
