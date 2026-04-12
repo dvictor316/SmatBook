@@ -1,6 +1,10 @@
 <?php $page = 'inventory-history'; ?>
 @extends('layout.mainlayout')
 @section('content')
+    @php
+        $currencyCode = $geoCurrency ?? \App\Support\GeoCurrency::currentCurrency();
+        $currencyLocale = $geoCurrencyLocale ?? \App\Support\GeoCurrency::currentLocale();
+    @endphp
     <div class="page-wrapper">
         <div class="content container-fluid">
 
@@ -48,6 +52,8 @@
                                             <th class="text-center">Type</th>
                                             <th>Reference</th>
                                             <th class="text-end">Quantity</th>
+                                            <th class="text-end">Stock Status</th>
+                                            <th class="text-end">Stock Value</th>
                                             <th class="text-end">Purchase Price</th>
                                             <th class="text-center no-print">Action</th>
                                         </tr>
@@ -73,7 +79,13 @@
                                                 <td class="text-end fw-bold {{ $isStockIn ? 'text-success' : 'text-danger' }}">
                                                     {{ $isStockIn ? '+' : '-' }}{{ number_format($history->quantity) }}
                                                 </td>
-                                                <td class="text-end">{{ number_format($history->purchase_price, 2) }}</td>
+                                                <td class="text-end fw-semibold {{ (float) ($history->running_balance ?? 0) >= 0 ? 'text-primary' : 'text-danger' }}">
+                                                    {{ number_format((float) ($history->running_balance ?? 0), 2) }}
+                                                </td>
+                                                <td class="text-end">
+                                                    {{ \App\Support\GeoCurrency::format((float) ($history->stock_value ?? 0), 'NGN', $currencyCode, $currencyLocale) }}
+                                                </td>
+                                                <td class="text-end">{{ \App\Support\GeoCurrency::format((float) ($history->purchase_price ?? 0), 'NGN', $currencyCode, $currencyLocale) }}</td>
                                                 
                                                 <td class="text-center no-print">
                                                     <div class="dropdown dropdown-action">
@@ -101,7 +113,7 @@
                                             </tr>
                                         @empty
                                             <tr>
-                                                <td colspan="9" class="text-center p-5 text-muted">
+                                                <td colspan="11" class="text-center p-5 text-muted">
                                                     No movement history found for this item.
                                                 </td>
                                             </tr>
