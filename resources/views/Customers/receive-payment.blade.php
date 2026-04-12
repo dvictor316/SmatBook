@@ -5,6 +5,9 @@
     <div class="content container-fluid">
         @php
             $autoReference = 'CRP-' . now()->format('ymdHis') . '-' . str_pad((string) $customer->id, 4, '0', STR_PAD_LEFT);
+            $currencyCode = $geoCurrency ?? \App\Support\GeoCurrency::currentCurrency();
+            $currencyLocale = $geoCurrencyLocale ?? \App\Support\GeoCurrency::currentLocale();
+            $currencySymbol = $geoCurrencySymbol ?? \App\Support\GeoCurrency::currentSymbol();
         @endphp
         <div class="page-header">
             <div class="row align-items-center">
@@ -56,7 +59,7 @@
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-body">
                         <p class="text-muted mb-1">Outstanding Invoices</p>
-                        <h4 class="mb-0">₦{{ number_format($outstandingInvoicesTotal, 2) }}</h4>
+                        <h4 class="mb-0">{{ \App\Support\GeoCurrency::format($outstandingInvoicesTotal, 'NGN', $currencyCode, $currencyLocale) }}</h4>
                         <small class="text-muted">{{ $outstandingSales->count() }} open invoice(s)</small>
                     </div>
                 </div>
@@ -65,10 +68,10 @@
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-body">
                         <p class="text-muted mb-1">Opening Balance Due</p>
-                        <h4 class="mb-0">₦{{ number_format((float) ($openingSnapshot['due'] ?? $outstandingOpeningBalance), 2) }}</h4>
+                        <h4 class="mb-0">{{ \App\Support\GeoCurrency::format((float) ($openingSnapshot['due'] ?? $outstandingOpeningBalance), 'NGN', $currencyCode, $currencyLocale) }}</h4>
                         <small class="text-muted">
-                            Original: ₦{{ number_format((float) ($openingSnapshot['original'] ?? $outstandingOpeningBalance), 2) }}
-                            · Paid: ₦{{ number_format((float) ($openingSnapshot['paid'] ?? 0), 2) }}
+                            Original: {{ \App\Support\GeoCurrency::format((float) ($openingSnapshot['original'] ?? $outstandingOpeningBalance), 'NGN', $currencyCode, $currencyLocale) }}
+                            · Paid: {{ \App\Support\GeoCurrency::format((float) ($openingSnapshot['paid'] ?? 0), 'NGN', $currencyCode, $currencyLocale) }}
                         </small>
                     </div>
                 </div>
@@ -77,10 +80,10 @@
                 <div class="card border-0 shadow-sm h-100 bg-primary text-white">
                     <div class="card-body">
                         <p class="mb-1 text-white-50">Total Amount Due</p>
-                        <h3 class="mb-0">₦{{ number_format(($outstandingInvoicesTotal + $outstandingOpeningBalance), 2) }}</h3>
+                        <h3 class="mb-0">{{ \App\Support\GeoCurrency::format(($outstandingInvoicesTotal + $outstandingOpeningBalance), 'NGN', $currencyCode, $currencyLocale) }}</h3>
                         <small class="text-white-50">
-                            Invoices: ₦{{ number_format($outstandingInvoicesTotal, 2) }}
-                            · Opening Balance Due: ₦{{ number_format($outstandingOpeningBalance, 2) }}
+                            Invoices: {{ \App\Support\GeoCurrency::format($outstandingInvoicesTotal, 'NGN', $currencyCode, $currencyLocale) }}
+                            · Opening Balance Due: {{ \App\Support\GeoCurrency::format($outstandingOpeningBalance, 'NGN', $currencyCode, $currencyLocale) }}
                         </small>
                     </div>
                 </div>
@@ -125,7 +128,7 @@
                         <div class="col-md-3">
                             <label class="form-label">Amount Received</label>
                             <div class="input-group">
-                                <span class="input-group-text">₦</span>
+                                <span class="input-group-text">{{ $currencySymbol }}</span>
                                 <input
                                     type="number"
                                     step="0.01"
@@ -197,7 +200,7 @@
                     </div>
                     <div class="overview-item">
                         <span class="overview-label"><i class="fas fa-scale-balanced"></i> Balance Due</span>
-                        <strong>₦{{ number_format(($outstandingInvoicesTotal + $outstandingOpeningBalance), 2) }}</strong>
+                        <strong>{{ \App\Support\GeoCurrency::format(($outstandingInvoicesTotal + $outstandingOpeningBalance), 'NGN', $currencyCode, $currencyLocale) }}</strong>
                     </div>
                 </div>
 
@@ -243,10 +246,10 @@
                                         <div>{{ $entry['note'] ?? '—' }}</div>
                                         <small class="text-muted">By {{ $entry['created_by'] ?? 'System' }}</small>
                                     </td>
-                                    <td class="text-end fw-semibold text-danger">₦{{ number_format((float) ($entry['invoice_amount'] ?? 0), 2) }}</td>
-                                    <td class="text-end fw-semibold text-success">₦{{ number_format((float) ($entry['payment_amount'] ?? 0), 2) }}</td>
+                                    <td class="text-end fw-semibold text-danger">{{ \App\Support\GeoCurrency::format((float) ($entry['invoice_amount'] ?? 0), 'NGN', $currencyCode, $currencyLocale) }}</td>
+                                    <td class="text-end fw-semibold text-success">{{ \App\Support\GeoCurrency::format((float) ($entry['payment_amount'] ?? 0), 'NGN', $currencyCode, $currencyLocale) }}</td>
                                     <td class="text-end fw-semibold">
-                                        {{ isset($entry['running_balance']) && $entry['running_balance'] !== null ? '₦' . number_format((float) $entry['running_balance'], 2) : '—' }}
+                                        {{ isset($entry['running_balance']) && $entry['running_balance'] !== null ? \App\Support\GeoCurrency::format((float) $entry['running_balance'], 'NGN', $currencyCode, $currencyLocale) : '—' }}
                                     </td>
                                     <td>
                                         <span class="badge rounded-pill bg-{{ $entry['status_class'] ?? 'secondary' }}-subtle text-{{ $entry['status_class'] ?? 'secondary' }}">

@@ -1,6 +1,9 @@
 @extends('layout.mainlayout')
 
 @section('content')
+@php
+    $currencySymbol = $currencySymbol ?? ($geoCurrencySymbol ?? \App\Support\GeoCurrency::currentSymbol());
+@endphp
 <style>
     .pos-content-area {
         padding: 24px;
@@ -144,31 +147,31 @@
                     <div class="col-6 col-md-3">
                         <div class="stat-box">
                             <div class="stat-label">Grand Total</div>
-                            <div class="stat-value">₦{{ number_format($sale->total, 2) }}</div>
+                            <div class="stat-value">{{ $currencySymbol }}{{ number_format($sale->total, 2) }}</div>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
                         <div class="stat-box border-success" style="background-color: #f0fdf4;">
                             <div class="stat-label text-success">Tendered</div>
-                            <div class="stat-value text-success">₦{{ number_format($tenderedAmount, 2) }}</div>
+                            <div class="stat-value text-success">{{ $currencySymbol }}{{ number_format($tenderedAmount, 2) }}</div>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
                         <div class="stat-box border-success" style="background-color: #ecfdf5;">
                             <div class="stat-label text-success">Applied</div>
-                            <div class="stat-value text-success">₦{{ number_format($appliedAmount, 2) }}</div>
+                            <div class="stat-value text-success">{{ $currencySymbol }}{{ number_format($appliedAmount, 2) }}</div>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
                         <div class="stat-box border-danger" style="background-color: #fef2f2;">
                             <div class="stat-label text-danger">Balance</div>
-                            <div class="stat-value text-danger">₦{{ number_format($displayBalance, 2) }}</div>
+                            <div class="stat-value text-danger">{{ $currencySymbol }}{{ number_format($displayBalance, 2) }}</div>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
                         <div class="stat-box border-info" style="background-color: #eff6ff;">
                             <div class="stat-label text-primary">Change</div>
-                            <div class="stat-value text-primary">₦{{ number_format($sale->change_amount ?? 0, 2) }}</div>
+                            <div class="stat-value text-primary">{{ $currencySymbol }}{{ number_format($sale->change_amount ?? 0, 2) }}</div>
                         </div>
                     </div>
                 </div>
@@ -187,7 +190,7 @@
                             <tr>
                                 <td class="ps-3 fw-bold text-dark">{{ $item->product->name }}</td>
                                 <td class="text-center">{{ $item->qty }}</td>
-                                <td class="text-end pe-3 fw-bold">₦{{ number_format($item->total_price, 2) }}</td>
+                                <td class="text-end pe-3 fw-bold">{{ $currencySymbol }}{{ number_format($item->total_price, 2) }}</td>
                             </tr>
                             @endforeach
                         </tbody>
@@ -205,7 +208,7 @@
                                     <span class="badge bg-light text-muted border" style="font-size: 9px;">{{ strtoupper($payment->method) }}</span>
                                 </div>
                                 <div class="d-flex align-items-center gap-3">
-                                    <span class="text-success fw-bold">₦{{ number_format($payment->amount, 2) }}</span>
+                                    <span class="text-success fw-bold">{{ $currencySymbol }}{{ number_format($payment->amount, 2) }}</span>
                                     <form action="{{ route('payments.destroy', $payment->id) }}" method="POST" class="no-print">
                                         @csrf @method('DELETE')
                                         <button class="btn btn-link text-danger p-0" onclick="return confirm('Delete this log?')"><i class="fas fa-trash-alt fa-xs"></i></button>
@@ -241,7 +244,7 @@
                 <input type="hidden" name="sale_id" value="{{ $sale->id }}">
                 <div class="modal-body p-4 text-center">
                     <small class="text-muted d-block fw-bold text-uppercase mb-1" style="font-size: 0.65rem;">Remaining Due</small>
-                    <h4 class="fw-bold text-danger mb-4">₦{{ number_format($displayBalance, 2) }}</h4>
+                    <h4 class="fw-bold text-danger mb-4">{{ $currencySymbol }}{{ number_format($displayBalance, 2) }}</h4>
                     
                     <div class="text-start mb-3">
                         <label class="small fw-bold">Amount</label>

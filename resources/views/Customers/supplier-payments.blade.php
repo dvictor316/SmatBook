@@ -2,6 +2,11 @@
 @extends('layout.mainlayout')
 
 @section('content')
+@php
+    $currencyCode = $geoCurrency ?? \App\Support\GeoCurrency::currentCurrency();
+    $currencyLocale = $geoCurrencyLocale ?? \App\Support\GeoCurrency::currentLocale();
+    $currencySymbol = $geoCurrencySymbol ?? \App\Support\GeoCurrency::currentSymbol();
+@endphp
 <style>
     .supplier-open-count-card .supplier-open-count-value {
         color: #facc15;
@@ -61,7 +66,7 @@
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-body">
                         <p class="text-muted mb-1">Outstanding Bills</p>
-                        <h4 class="mb-0">₦{{ number_format((float) $summary['outstanding_payables'], 2) }}</h4>
+                        <h4 class="mb-0">{{ \App\Support\GeoCurrency::format((float) $summary['outstanding_payables'], 'NGN', $currencyCode, $currencyLocale) }}</h4>
                         <small class="text-muted">{{ $summary['open_bills'] }} unpaid purchase(s)</small>
                     </div>
                 </div>
@@ -70,7 +75,7 @@
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-body">
                         <p class="text-muted mb-1">Payment History Total</p>
-                        <h4 class="mb-0">₦{{ number_format((float) $summary['total_paid'], 2) }}</h4>
+                        <h4 class="mb-0">{{ \App\Support\GeoCurrency::format((float) $summary['total_paid'], 'NGN', $currencyCode, $currencyLocale) }}</h4>
                         <small class="text-muted">Total paid through supplier history</small>
                     </div>
                 </div>
@@ -96,7 +101,7 @@
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-body">
                         <p class="text-muted mb-1">Selected Bank Available Balance</p>
-                        <h4 class="mb-0">₦<span data-selected-bank-balance>0.00</span></h4>
+                        <h4 class="mb-0">{{ $currencySymbol }}<span data-selected-bank-balance>0.00</span></h4>
                         <small class="text-muted">Choose a bank account to verify available funds before saving payment.</small>
                     </div>
                 </div>
@@ -122,7 +127,7 @@
                                 <option value="">Select bank</option>
                                 @foreach($banks as $bank)
                                     <option value="{{ $bank->id }}" data-balance="{{ number_format((float) ($bank->balance ?? 0), 2) }}" @selected((string) old('bank_id') === (string) $bank->id)>
-                                        {{ $bank->name }} — ₦{{ number_format((float) ($bank->balance ?? 0), 2) }}
+                                        {{ $bank->name }} — {{ \App\Support\GeoCurrency::format((float) ($bank->balance ?? 0), 'NGN', $currencyCode, $currencyLocale) }}
                                     </option>
                                 @endforeach
                             </select>
@@ -142,7 +147,7 @@
                         <div class="col-md-4">
                             <label class="form-label">Payment Amount</label>
                             <div class="input-group">
-                                <span class="input-group-text">₦</span>
+                                <span class="input-group-text">{{ $currencySymbol }}</span>
                                 <input type="number" step="0.01" min="0.01" name="payment_amount" class="form-control" value="{{ old('payment_amount') }}" placeholder="0.00">
                             </div>
                             <small class="text-muted">This payment will be auto-allocated across open bills and then any opening balance.</small>
@@ -163,7 +168,7 @@
                         </div>
                         <div class="text-end">
                             <div class="small text-muted">Amount being paid</div>
-                            <div class="fs-4 fw-bold text-success">₦<span data-allocation-total>0.00</span></div>
+                            <div class="fs-4 fw-bold text-success">{{ $currencySymbol }}<span data-allocation-total>0.00</span></div>
                         </div>
                     </div>
 
@@ -186,9 +191,9 @@
                                             <small class="text-muted">Supplier brought-forward balance</small>
                                         </td>
                                         <td>{{ $supplier->opening_balance_date ?? '-' }}</td>
-                                        <td class="text-end">₦{{ number_format((float) ($summary['opening_balance_original'] ?? $summary['opening_balance_due'] ?? 0), 2) }}</td>
-                                        <td class="text-end">₦{{ number_format((float) ($summary['opening_balance_paid'] ?? 0), 2) }}</td>
-                                        <td class="text-end fw-semibold">₦{{ number_format((float) ($summary['opening_balance_due'] ?? 0), 2) }}</td>
+                                        <td class="text-end">{{ \App\Support\GeoCurrency::format((float) ($summary['opening_balance_original'] ?? $summary['opening_balance_due'] ?? 0), 'NGN', $currencyCode, $currencyLocale) }}</td>
+                                        <td class="text-end">{{ \App\Support\GeoCurrency::format((float) ($summary['opening_balance_paid'] ?? 0), 'NGN', $currencyCode, $currencyLocale) }}</td>
+                                        <td class="text-end fw-semibold">{{ \App\Support\GeoCurrency::format((float) ($summary['opening_balance_due'] ?? 0), 'NGN', $currencyCode, $currencyLocale) }}</td>
                                     </tr>
                                 @endif
                                 @forelse($outstandingPurchases as $purchase)
@@ -198,9 +203,9 @@
                                             <small class="text-muted">{{ $purchase->reference_no ?? $purchase->invoice_serial_no ?? 'Outstanding purchase bill' }}</small>
                                         </td>
                                         <td>{{ optional($purchase->purchase_date ?? $purchase->created_at)->format('d M Y') ?: optional($purchase->created_at)->format('d M Y') }}</td>
-                                        <td class="text-end">₦{{ number_format((float) ($purchase->resolved_total_amount ?? $purchase->total_amount ?? 0), 2) }}</td>
-                                        <td class="text-end">₦{{ number_format((float) ($purchase->resolved_paid_amount ?? $purchase->paid_amount ?? 0), 2) }}</td>
-                                        <td class="text-end fw-semibold">₦{{ number_format((float) $purchase->outstanding_balance, 2) }}</td>
+                                        <td class="text-end">{{ \App\Support\GeoCurrency::format((float) ($purchase->resolved_total_amount ?? $purchase->total_amount ?? 0), 'NGN', $currencyCode, $currencyLocale) }}</td>
+                                        <td class="text-end">{{ \App\Support\GeoCurrency::format((float) ($purchase->resolved_paid_amount ?? $purchase->paid_amount ?? 0), 'NGN', $currencyCode, $currencyLocale) }}</td>
+                                        <td class="text-end fw-semibold">{{ \App\Support\GeoCurrency::format((float) $purchase->outstanding_balance, 'NGN', $currencyCode, $currencyLocale) }}</td>
                                     </tr>
                                 @empty
                                     <tr>
@@ -245,7 +250,7 @@
                                     <td>{{ $payment->purchase?->purchase_no ?: 'Manual supplier payment' }}</td>
                                     <td>{{ $payment->bank?->name ?: 'Not specified' }}</td>
                                     <td>{{ $payment->method ?: '-' }}</td>
-                                    <td class="text-end fw-semibold">₦{{ number_format((float) $payment->amount, 2) }}</td>
+                                    <td class="text-end fw-semibold">{{ \App\Support\GeoCurrency::format((float) $payment->amount, 'NGN', $currencyCode, $currencyLocale) }}</td>
                                     <td>{{ $payment->note ?: '-' }}</td>
                                 </tr>
                             @empty
@@ -263,6 +268,7 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    const supplierCurrencySymbol = @json($currencySymbol);
     const paymentAmountInput = document.querySelector('input[name="payment_amount"]');
     const totalEl = document.querySelector('[data-allocation-total]');
     const bankSelect = document.querySelector('select[name="bank_id"]');
@@ -295,7 +301,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const currentTotal = parseFloat((totalEl?.textContent || '0').replace(/,/g, '')) || 0;
         if (bankSelect?.value && currentTotal > balance && bankWarningEl) {
-            bankWarningEl.textContent = 'Selected bank balance is not sufficient for the current payment total of ₦' + formatCurrency(currentTotal) + '. Please choose another account or reduce the payment amount.';
+            bankWarningEl.textContent = 'Selected bank balance is not sufficient for the current payment total of ' + supplierCurrencySymbol + formatCurrency(currentTotal) + '. Please choose another account or reduce the payment amount.';
             bankWarningEl.classList.remove('d-none');
         } else if (bankWarningEl) {
             bankWarningEl.classList.add('d-none');
@@ -332,7 +338,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (bankSelect?.value && total > balance) {
                 event.preventDefault();
                 if (bankWarningEl) {
-                    bankWarningEl.textContent = 'Cannot save payment because the selected bank does not have enough funds to cover ₦' + formatCurrency(total) + '.';
+                    bankWarningEl.textContent = 'Cannot save payment because the selected bank does not have enough funds to cover ' + supplierCurrencySymbol + formatCurrency(total) + '.';
                     bankWarningEl.classList.remove('d-none');
                     bankWarningEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }

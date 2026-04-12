@@ -1,6 +1,10 @@
 <?php $page = 'suppliers'; ?>
 @extends('layout.mainlayout')
 @section('content')
+    @php
+        $currencyCode = $geoCurrency ?? \App\Support\GeoCurrency::currentCurrency();
+        $currencyLocale = $geoCurrencyLocale ?? \App\Support\GeoCurrency::currentLocale();
+    @endphp
     <div class="page-wrapper">
         <div class="content container-fluid">
             @component('components.page-header')
@@ -11,7 +15,7 @@
 
             <div class="alert alert-info border-0 shadow-sm">
                 <strong>Total Supplier Payables:</strong>
-                ₦{{ number_format($totalPayables ?? 0, 2) }}
+                {{ \App\Support\GeoCurrency::format($totalPayables ?? 0, 'NGN', $currencyCode, $currencyLocale) }}
                 <span class="text-muted">across all supplier opening balances and unpaid purchases.</span>
             </div>
 
@@ -64,8 +68,8 @@
                                                     </h2>
                                                 </td>
                                                 <td>{{ $supplier->phone ?? '-' }}</td>
-                                                <td>{{ number_format((float) ($supplier->opening_balance ?? 0), 2) }}</td>
-                                                <td class="fw-semibold">{{ number_format((float) ($supplier->outstanding_payables ?? 0), 2) }}</td>
+                                                <td>{{ \App\Support\GeoCurrency::format((float) ($supplier->opening_balance ?? 0), 'NGN', $currencyCode, $currencyLocale) }}</td>
+                                                <td class="fw-semibold">{{ \App\Support\GeoCurrency::format((float) ($supplier->outstanding_payables ?? 0), 'NGN', $currencyCode, $currencyLocale) }}</td>
                                                 <td>{{ $supplier->opening_balance_date ?? '-' }}</td>
                                                 <td>{{ optional($supplier->created_at)->format('M d, Y') ?? 'N/A' }}</td>
                                                 <td class="d-flex align-items-center">

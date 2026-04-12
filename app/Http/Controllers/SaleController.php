@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 use App\Support\BranchInventoryService;
+use App\Support\GeoCurrency;
 use App\Support\LedgerService;
 
 class SaleController extends Controller
@@ -916,7 +917,7 @@ $sale = Sale::create([
         $company = Company::find($sale->company_id)
             ?? auth()->user()?->company
             ?? new Company();
-        $currencySymbol = '₦'; 
+        $currencySymbol = GeoCurrency::currentSymbol();
         $activeBranch = $this->getActiveBranchContext();
 
         return view('Sales.Invoices.index', compact('sale', 'company', 'currencySymbol', 'activeBranch'));

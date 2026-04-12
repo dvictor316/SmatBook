@@ -102,19 +102,24 @@ class GeoCurrency
         $target = strtoupper($targetCurrency ?: self::currentCurrency());
         $displayLocale = $locale ?: self::currentLocale();
         $converted = self::convert($numericAmount, $sourceCurrency, $target);
+        $symbol = self::symbol($target);
+        $isNegative = $converted < 0;
+        $absoluteAmount = abs($converted);
 
         if (!class_exists(\NumberFormatter::class)) {
-            return $target . ' ' . number_format($converted, 2);
+            return ($isNegative ? '-' : '') . $symbol . number_format($absoluteAmount, 2);
         }
 
-        $formatter = new \NumberFormatter($displayLocale, \NumberFormatter::CURRENCY);
-        $result = $formatter->formatCurrency($converted, $target);
+        $formatter = new \NumberFormatter($displayLocale, \NumberFormatter::DECIMAL);
+        $formatter->setAttribute(\NumberFormatter::MIN_FRACTION_DIGITS, 2);
+        $formatter->setAttribute(\NumberFormatter::MAX_FRACTION_DIGITS, 2);
+        $result = $formatter->format($absoluteAmount);
 
         if ($result === false) {
-            return $target . ' ' . number_format($converted, 2);
+            $result = number_format($absoluteAmount, 2);
         }
 
-        return $result;
+        return ($isNegative ? '-' : '') . $symbol . $result;
     }
 
     public static function convert(float|int|string|null $amount, string $sourceCurrency = 'NGN', ?string $targetCurrency = null): float

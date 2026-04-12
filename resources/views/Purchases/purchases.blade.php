@@ -6,6 +6,8 @@
     $purchaseCollection = isset($purchases) && method_exists($purchases, 'getCollection')
         ? $purchases->getCollection()
         : collect($purchases ?? []);
+    $currencyCode = $geoCurrency ?? \App\Support\GeoCurrency::currentCurrency();
+    $currencyLocale = $geoCurrencyLocale ?? \App\Support\GeoCurrency::currentLocale();
     $totalPurchases = $purchaseCollection->count();
     $totalAmount = (float) $purchaseCollection->sum(fn ($purchase) => (float) ($purchase->resolved_total_amount ?? $purchase->total_amount ?? 0));
     $totalPaid = (float) $purchaseCollection->sum(fn ($purchase) => (float) ($purchase->paid_amount ?? 0));
@@ -195,15 +197,15 @@
                         </div>
                         <div class="summary-card">
                             <span class="summary-label"><i class="fas fa-coins me-2"></i>Total Amount</span>
-                            <strong>₦{{ number_format($totalAmount, 2) }}</strong>
+                            <strong>{{ \App\Support\GeoCurrency::format($totalAmount, 'NGN', $currencyCode, $currencyLocale) }}</strong>
                         </div>
                         <div class="summary-card">
                             <span class="summary-label"><i class="fas fa-check-circle me-2"></i>Total Paid</span>
-                            <strong>₦{{ number_format($totalPaid, 2) }}</strong>
+                            <strong>{{ \App\Support\GeoCurrency::format($totalPaid, 'NGN', $currencyCode, $currencyLocale) }}</strong>
                         </div>
                         <div class="summary-card">
                             <span class="summary-label"><i class="fas fa-exclamation-circle me-2"></i>Outstanding</span>
-                            <strong>₦{{ number_format($totalOutstanding, 2) }}</strong>
+                            <strong>{{ \App\Support\GeoCurrency::format($totalOutstanding, 'NGN', $currencyCode, $currencyLocale) }}</strong>
                         </div>
                         <div class="summary-card">
                             <span class="summary-label"><i class="fas fa-hourglass-half me-2"></i>Open Bills</span>
@@ -258,8 +260,8 @@
                                             <td>{{ ($purchases->currentPage() - 1) * $purchases->perPage() + $loop->iteration }}</td>
                                             <td><strong>{{ $purchase->purchase_no ?? ('PUR-' . $purchase->id) }}</strong></td>
                                             <td>{{ $purchase->supplier?->name ?? $purchase->vendor?->name ?? 'Supplier' }}</td>
-                                            <td>₦{{ number_format((float) ($purchase->resolved_total_amount ?? $purchase->total_amount ?? 0), 2) }}</td>
-                                            <td>₦{{ number_format((float) ($purchase->paid_amount ?? 0), 2) }}</td>
+                                            <td>{{ \App\Support\GeoCurrency::format((float) ($purchase->resolved_total_amount ?? $purchase->total_amount ?? 0), 'NGN', $currencyCode, $currencyLocale) }}</td>
+                                            <td>{{ \App\Support\GeoCurrency::format((float) ($purchase->paid_amount ?? 0), 'NGN', $currencyCode, $currencyLocale) }}</td>
                                             <td><span class="badge {{ $statusClass }}">{{ ucfirst($status) }}</span></td>
                                             <td class="text-end no-print">
                                                 <div class="d-flex justify-content-end gap-2 flex-wrap">
