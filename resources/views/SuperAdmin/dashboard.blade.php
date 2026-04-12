@@ -1786,6 +1786,35 @@
                                         </div>
                                     </div>
                                 </div>
+
+                                <div class="card card-rounded shadow-sm">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <div>
+                                                <h5 class="mb-0 fw-bold text-dark">Subscriber Momentum</h5>
+                                                <small class="text-muted">Companies vs users trend</small>
+                                            </div>
+                                            <span class="live-badge-soft">Live</span>
+                                        </div>
+                                        <div class="chart-container chart-container-sm mt-3">
+                                            <canvas id="subscriberMomentumChart"></canvas>
+                                        </div>
+                                        <div class="row g-2 mt-2">
+                                            <div class="col-sm-6">
+                                                <div class="summary-fill">
+                                                    <div class="label">Total Companies</div>
+                                                    <div class="value">{{ number_format($metrics['total_tenants'] ?? 0) }}</div>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-6">
+                                                <div class="summary-fill">
+                                                    <div class="label">Total Users</div>
+                                                    <div class="value">{{ number_format($metrics['total_users'] ?? 0) }}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             {{-- RIGHT COLUMN: Deployment Manager Authorization List --}}
@@ -2909,7 +2938,56 @@
             });
         }
 
-        // --- 5. REAL-TIME REGIONAL MAP (Leaflet) ---
+        // --- 5. SUBSCRIBER MOMENTUM (Mini Area) ---
+        const subscriberMomentumCtx = document.getElementById('subscriberMomentumChart');
+        if (subscriberMomentumCtx) {
+            const ctx = subscriberMomentumCtx.getContext("2d");
+            const companyGradient = ctx.createLinearGradient(0, 0, 0, 200);
+            companyGradient.addColorStop(0, 'rgba(37, 99, 235, 0.25)');
+            companyGradient.addColorStop(1, 'rgba(37, 99, 235, 0)');
+            const userGradient = ctx.createLinearGradient(0, 0, 0, 200);
+            userGradient.addColorStop(0, 'rgba(16, 185, 129, 0.25)');
+            userGradient.addColorStop(1, 'rgba(16, 185, 129, 0)');
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: chartSeries.labels,
+                    datasets: [
+                        {
+                            label: 'Companies',
+                            data: chartSeries.companies,
+                            borderColor: '#2563eb',
+                            backgroundColor: companyGradient,
+                            fill: true,
+                            tension: 0.4,
+                            borderWidth: 2,
+                            pointRadius: 0
+                        },
+                        {
+                            label: 'Users',
+                            data: chartSeries.users,
+                            borderColor: '#10b981',
+                            backgroundColor: userGradient,
+                            fill: true,
+                            tension: 0.4,
+                            borderWidth: 2,
+                            pointRadius: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#eef2f7', drawBorder: false } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
         // --- 6. REAL-TIME REGIONAL MAP (Leaflet) ---
         const mapElement = document.getElementById('regionMap');
         if (mapElement) {
