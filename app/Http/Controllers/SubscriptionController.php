@@ -242,6 +242,9 @@ class SubscriptionController extends Controller
     */
     public function store(Request $request)
     {
+        $normalizedPrefix = $this->normalizeDomainPrefix((string) $request->domain_prefix);
+        $request->merge(['domain_prefix' => $normalizedPrefix]);
+
         $request->validate([
             'customer_name'   => 'required|string|max:191',
             'domain_prefix'   => 'required|alpha_dash|unique:subscriptions,domain_prefix|unique:companies,domain_prefix',
@@ -259,7 +262,7 @@ class SubscriptionController extends Controller
 
         DB::beginTransaction();
         try {
-            $prefix = strtolower($request->domain_prefix);
+            $prefix = strtolower((string) $request->domain_prefix);
 
             $subscription->update([
                 'domain_prefix' => $prefix,
@@ -268,13 +271,15 @@ class SubscriptionController extends Controller
 
             $company = Company::updateOrCreate(
                 ['user_id' => $user->id],
-                [
+                $this->filterPayloadForTable('companies', [
                     'domain_prefix' => $prefix,
+                    'subdomain'     => $prefix,
+                    'domain'        => $prefix,
                     'company_name'  => (string) $request->customer_name,
                     'name'          => (string) $request->customer_name,
                     'status'        => 'pending',
                     'owner_id'      => $user->id,
-                ]
+                ])
             );
 
             $subscription->update(['company_id' => $company->id]);
