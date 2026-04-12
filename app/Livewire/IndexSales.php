@@ -5,6 +5,7 @@ namespace App\Livewire;
 use Livewire\Component;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon; // Make sure Carbon is available
+use App\Support\GeoCurrency;
 
 class IndexSales extends Component
 {
@@ -61,7 +62,7 @@ class IndexSales extends Component
         $chartData = $this->getMonthlySalesDataForChart();
         // ------------------------------------
 
-        $currencySymbol = config('app.currency_symbol', '₦');
+        $currencySymbol = GeoCurrency::currentSymbol();
 
         // Pass all data to the view
         return view('livewire.index-sales', compact('salesStats', 'currencySymbol', 'chartData'));

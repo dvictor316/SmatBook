@@ -27,7 +27,8 @@
         }
     </style>
     @php
-        $currencySymbol = '₦';
+        $currencyCode = $geoCurrency ?? \App\Support\GeoCurrency::currentCurrency();
+        $currencyLocale = $geoCurrencyLocale ?? \App\Support\GeoCurrency::currentLocale();
     @endphp
     <div class="page-wrapper">
         <div class="content container-fluid">
@@ -55,7 +56,7 @@
                         <div class="card-body">
                             <div class="inform-item">
                                 <h6 class="text-primary">Total Receivable</h6>
-                                <h5>{{ $currencySymbol }}{{ number_format($totalDue ?? 0, 2) }}</h5>
+                                <h5>{{ \App\Support\GeoCurrency::format($totalDue ?? 0, 'NGN', $currencyCode, $currencyLocale) }}</h5>
                             </div>
                         </div>
                     </div>
@@ -135,11 +136,11 @@
                                                     <small class="text-muted">{{ $row->phone ?: 'No phone' }}</small>
                                                 </td>
                                                 <td class="text-center">{{ number_format($row->invoice_count) }}</td>
-                                                <td class="text-end">{{ $currencySymbol }}{{ number_format($row->total_invoiced, 2) }}</td>
-                                                <td class="text-end">{{ $currencySymbol }}{{ number_format($row->total_paid, 2) }}</td>
-                                                <td class="text-end">{{ $currencySymbol }}{{ number_format($row->opening_balance, 2) }}</td>
-                                                <td class="text-end fw-bold text-danger">{{ $currencySymbol }}{{ number_format($row->total_due + $row->opening_balance, 2) }}</td>
-                                                <td class="text-end fw-bold text-primary">{{ $currencySymbol }}{{ number_format($runningTotal, 2) }}</td>
+                                                <td class="text-end">{{ \App\Support\GeoCurrency::format($row->total_invoiced, 'NGN', $currencyCode, $currencyLocale) }}</td>
+                                                <td class="text-end">{{ \App\Support\GeoCurrency::format($row->total_paid, 'NGN', $currencyCode, $currencyLocale) }}</td>
+                                                <td class="text-end">{{ \App\Support\GeoCurrency::format($row->opening_balance, 'NGN', $currencyCode, $currencyLocale) }}</td>
+                                                <td class="text-end fw-bold text-danger">{{ \App\Support\GeoCurrency::format($row->total_due + $row->opening_balance, 'NGN', $currencyCode, $currencyLocale) }}</td>
+                                                <td class="text-end fw-bold text-primary">{{ \App\Support\GeoCurrency::format($runningTotal, 'NGN', $currencyCode, $currencyLocale) }}</td>
                                                 <td class="text-end">
                                                     <div class="d-inline-flex gap-2">
                                                         <a href="{{ route('customers.receive-payment', $row->customer_id) }}" class="btn btn-sm btn-primary">Receive Payment</a>

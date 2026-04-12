@@ -31,6 +31,12 @@ class AppServiceProvider extends ServiceProvider
         // Prevents "index too long" errors on older MySQL versions
         Schema::defaultStringLength(191);
 
+        config([
+            'app.currency' => GeoCurrency::currentCurrency(),
+            'app.currency_symbol' => GeoCurrency::currentSymbol(),
+            'app.currency_locale' => GeoCurrency::currentLocale(),
+        ]);
+
         // 2. UI & Pagination
         Paginator::useBootstrapFive();
 
@@ -111,6 +117,8 @@ class AppServiceProvider extends ServiceProvider
 
             $view->with('geoCountry', GeoCurrency::currentCountry('NG'));
             $view->with('geoCurrency', GeoCurrency::currentCurrency());
+            $view->with('geoCurrencySymbol', GeoCurrency::currentSymbol());
+            $view->with('geoCurrencyLocale', GeoCurrency::currentLocale());
         });
     }
 }

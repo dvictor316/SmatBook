@@ -82,7 +82,8 @@
 <div class="page-wrapper report-page bg-gray-50 min-h-screen relative">
     <div class="p-4 sm:p-5 lg:p-6 w-full max-w-[1200px] mx-auto">
         @php
-            $currencySymbol = '₦';
+            $currencyCode = $geoCurrency ?? \App\Support\GeoCurrency::currentCurrency();
+            $currencyLocale = $geoCurrencyLocale ?? \App\Support\GeoCurrency::currentLocale();
             $showingFrom = $payments->firstItem() ?? 0;
             $showingTo = $payments->lastItem() ?? 0;
         @endphp
@@ -92,7 +93,7 @@
                 <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">Payment Summary Report</h1>
                 <p class="text-sm text-gray-500 mt-1">
                     System Date: <span class="font-bold">{{ now()->format('M d, Y') }}</span> | Total Revenue:
-                    <span class="text-green-600 font-bold text-base">{{ $currencySymbol }}{{ number_format($totalRevenue ?? 0, 2) }}</span>
+                    <span class="text-green-600 font-bold text-base">{{ \App\Support\GeoCurrency::format($totalRevenue ?? 0, 'NGN', $currencyCode, $currencyLocale) }}</span>
                 </p>
             </div>
             
@@ -121,18 +122,18 @@
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 mb-5">
             <div class="summary-metric-card bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
                 <p class="summary-metric-label text-[11px] uppercase tracking-[0.2em] text-gray-400 font-black">Collected Revenue</p>
-                <h2 class="summary-metric-value mt-3 font-black text-gray-900">{{ $currencySymbol }}{{ number_format($totalRevenue ?? 0, 2) }}</h2>
+                <h2 class="summary-metric-value mt-3 font-black text-gray-900">{{ \App\Support\GeoCurrency::format($totalRevenue ?? 0, 'NGN', $currencyCode, $currencyLocale) }}</h2>
                 <p class="summary-metric-note mt-2 text-sm text-gray-500">{{ number_format($summary['total_transactions'] ?? 0) }} payment records in current result</p>
             </div>
             <div class="summary-metric-card bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
                 <p class="summary-metric-label text-[11px] uppercase tracking-[0.2em] text-gray-400 font-black">Completed Payments</p>
                 <h2 class="summary-metric-value mt-3 font-black text-emerald-600">{{ number_format($summary['completed_count'] ?? 0) }}</h2>
-                <p class="summary-metric-note mt-2 text-sm text-gray-500">{{ $currencySymbol }}{{ number_format($summary['completed_amount'] ?? 0, 2) }} confirmed</p>
+                <p class="summary-metric-note mt-2 text-sm text-gray-500">{{ \App\Support\GeoCurrency::format($summary['completed_amount'] ?? 0, 'NGN', $currencyCode, $currencyLocale) }} confirmed</p>
             </div>
             <div class="summary-metric-card bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
                 <p class="summary-metric-label text-[11px] uppercase tracking-[0.2em] text-gray-400 font-black">Average Payment</p>
-                <h2 class="summary-metric-value mt-3 font-black text-indigo-600">{{ $currencySymbol }}{{ number_format($summary['average_payment'] ?? 0, 2) }}</h2>
-                <p class="summary-metric-note mt-2 text-sm text-gray-500">Largest payment {{ $currencySymbol }}{{ number_format($summary['largest_payment'] ?? 0, 2) }}</p>
+                <h2 class="summary-metric-value mt-3 font-black text-indigo-600">{{ \App\Support\GeoCurrency::format($summary['average_payment'] ?? 0, 'NGN', $currencyCode, $currencyLocale) }}</h2>
+                <p class="summary-metric-note mt-2 text-sm text-gray-500">Largest payment {{ \App\Support\GeoCurrency::format($summary['largest_payment'] ?? 0, 'NGN', $currencyCode, $currencyLocale) }}</p>
             </div>
             <div class="summary-metric-card bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
                 <p class="summary-metric-label text-[11px] uppercase tracking-[0.2em] text-gray-400 font-black">Payment Mix</p>
@@ -238,7 +239,7 @@
                             <td class="px-6 py-4 min-w-[220px] text-sm text-gray-600">
                                 {{ $payment->resolved_channel ?? 'Not specified' }}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-black text-gray-900">{{ $currencySymbol }}{{ number_format($payment->amount, 2) }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-black text-gray-900">{{ \App\Support\GeoCurrency::format($payment->amount, 'NGN', $currencyCode, $currencyLocale) }}</td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 @php
                                     $rowStatus = $payment->resolved_status ?? $payment->status ?? 'Pending';

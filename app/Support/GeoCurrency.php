@@ -4,6 +4,20 @@ namespace App\Support;
 
 class GeoCurrency
 {
+    private const CURRENCY_SYMBOLS = [
+        'NGN' => '₦',
+        'USD' => '$',
+        'CNY' => '¥',
+        'GBP' => '£',
+        'EUR' => '€',
+        'CAD' => 'C$',
+        'INR' => '₹',
+        'AED' => 'AED',
+        'ZAR' => 'R',
+        'KES' => 'KSh',
+        'GHS' => 'GH₵',
+    ];
+
     /**
      * Static NGN base rates fallback for safe, deterministic rendering.
      * These are display rates only and do not alter stored transaction values.
@@ -68,6 +82,18 @@ class GeoCurrency
     {
         $country = self::currentCountry('NG');
         return self::COUNTRY_TO_CURRENCY[$country]['locale'] ?? 'en-NG';
+    }
+
+    public static function currentSymbol(): string
+    {
+        return self::symbol(self::currentCurrency());
+    }
+
+    public static function symbol(?string $currency): string
+    {
+        $normalized = self::normalizeCurrency((string) $currency);
+
+        return self::CURRENCY_SYMBOLS[$normalized] ?? $normalized;
     }
 
     public static function format(float|int|string|null $amount, string $sourceCurrency = 'NGN', ?string $targetCurrency = null, ?string $locale = null): string

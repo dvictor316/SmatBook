@@ -7,6 +7,7 @@ use App\Models\Invoice;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
+use App\Support\GeoCurrency;
 
 class IndexInvoices extends Component
 {
@@ -71,7 +72,7 @@ class IndexInvoices extends Component
         }
 
         // Fetch currency symbol from config, fallback to default
-        $currencySymbol = config('app.currency_symbol', '₦');
+        $currencySymbol = GeoCurrency::currentSymbol();
 
         // Pass data to the view, including the new percentages
         return view('livewire.index-invoices', compact('invoices', 'invoiceStats', 'currencySymbol', 'percentages'));

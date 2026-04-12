@@ -1,6 +1,10 @@
 @extends('layout.mainlayout')
 
 @section('content')
+    @php
+        $currencyCode = $geoCurrency ?? \App\Support\GeoCurrency::currentCurrency();
+        $currencyLocale = $geoCurrencyLocale ?? \App\Support\GeoCurrency::currentLocale();
+    @endphp
     <style>
         .sales-summary-card {
             border: 0;
@@ -87,7 +91,7 @@
                         <div class="card-body">
                             <div class="inform-item">
                                 <h6 class="text-success">Total Sales Revenue</h6>
-                                <h5>${{ number_format($salesreports->sum('SoldAmount'), 2) }}</h5>
+                                <h5>{{ \App\Support\GeoCurrency::format($salesreports->sum('SoldAmount'), 'NGN', $currencyCode, $currencyLocale) }}</h5>
                             </div>
                         </div>
                     </div>
@@ -107,7 +111,7 @@
                         <div class="card-body">
                             <div class="inform-item">
                                 <h6 class="text-info">Avg Sale Value</h6>
-                                <h5>${{ $salesreports->count() > 0 ? number_format($salesreports->sum('SoldAmount') / $salesreports->count(), 2) : '0.00' }}</h5>
+                                <h5>{{ \App\Support\GeoCurrency::format($salesreports->count() > 0 ? ($salesreports->sum('SoldAmount') / $salesreports->count()) : 0, 'NGN', $currencyCode, $currencyLocale) }}</h5>
                             </div>
                         </div>
                     </div>
@@ -151,15 +155,15 @@
                                                 <td class="fw-bold">{{ $report->Product }}</td>
                                                 <td><span class="badge badge-soft-secondary">{{ $report->SKU }}</span></td>
                                                 <td>{{ $report->Category }}</td>
-                                                <td>${{ number_format($report->SoldAmount, 2) }}</td>
-                                                <td class="fw-bold text-primary">${{ number_format($runningTotal, 2) }}</td>
+                                                <td>{{ \App\Support\GeoCurrency::format($report->SoldAmount, 'NGN', $currencyCode, $currencyLocale) }}</td>
+                                                <td class="fw-bold text-primary">{{ \App\Support\GeoCurrency::format($runningTotal, 'NGN', $currencyCode, $currencyLocale) }}</td>
                                                 <td class="text-center">{{ $report->SoldQty }}</td>
                                                 <td class="text-center">
                                                     <span class="badge {{ ($report->InstockQty <= 10) ? 'bg-danger-light text-danger' : 'bg-success-light text-success' }}">
                                                         {{ $report->InstockQty }}
                                                     </span>
                                                 </td>
-                                                <td>{{ \Carbon\Carbon::parse($report->DueDate)->format('d M Y') }}</td>
+                                                <td>{{ $report->DueDate ? \Carbon\Carbon::parse($report->DueDate)->format('d M Y') : 'No sales yet' }}</td>
                                             </tr>
                                         @endforeach
                                     </tbody>
