@@ -96,6 +96,90 @@
     .mobile-add-product-trigger {
         display: none;
     }
+
+    .product-form-sheet {
+        border: 1px solid #edf2f7;
+        border-radius: 14px;
+        background: #fbfdff;
+        padding: 1rem;
+    }
+
+    .product-form-sheet h6 {
+        margin-bottom: 0.25rem;
+        font-weight: 800;
+        color: #1f2937;
+    }
+
+    .product-form-muted {
+        color: #6b7280;
+        font-size: 0.9rem;
+        margin-bottom: 0.9rem;
+    }
+
+    .product-flow-banner {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        padding: 0.9rem 1rem;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #f4f7ff 0%, #f8fbff 100%);
+        border: 1px solid #dbe7ff;
+    }
+
+    .product-flow-step {
+        flex: 1 1 180px;
+        min-width: 0;
+    }
+
+    .product-flow-step strong {
+        display: block;
+        color: #1d4ed8;
+        font-size: 0.86rem;
+        margin-bottom: 0.15rem;
+    }
+
+    .product-flow-step span {
+        color: #475569;
+        font-size: 0.82rem;
+        line-height: 1.45;
+    }
+
+    .quick-summary-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .quick-summary-pill {
+        flex: 1 1 180px;
+        min-width: 0;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        background: #fff;
+        padding: 0.75rem 0.9rem;
+    }
+
+    .quick-summary-pill span {
+        display: block;
+        font-size: 0.78rem;
+        color: #64748b;
+        margin-bottom: 0.2rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .quick-summary-pill strong {
+        font-size: 1rem;
+        color: #0f172a;
+        font-weight: 800;
+    }
+
+    .product-collapse-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        font-weight: 700;
+    }
     
     @media print {
         .no-print, .dt-buttons, .main-header, .sidebar { display: none !important; }
@@ -393,112 +477,169 @@
                 </div>
                 <div class="modal-body">
                     <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Product Name</label>
-                            <input type="text" name="name" class="form-control" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">SKU</label>
-                            <input type="text" name="sku" class="form-control" placeholder="Leave blank to auto-generate">
-                            <small class="text-muted">If the product does not come with a code, the system will generate a unique SKU.</small>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Barcode</label>
-                            <input type="text" name="barcode" class="form-control" placeholder="Scan or type barcode">
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Category</label>
-                            <div class="input-group">
-                                <select name="category_id" id="product_category_select" class="form-select" required>
-                                    <?php foreach ($categories as $cat): ?>
-                                        <option value="{{ $cat->id }}">{{ $cat->name }}</option>
-                                    <?php endforeach; ?>
-                                </select>
-                                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addCategoryModal">+</button>
+                        <div class="col-12">
+                            <div class="product-flow-banner">
+                                <div class="product-flow-step">
+                                    <strong>1. Essentials</strong>
+                                    <span>Name, category, branch, and the main selling price.</span>
+                                </div>
+                                <div class="product-flow-step">
+                                    <strong>2. Opening Stock</strong>
+                                    <span>Enter what is already on hand. The system calculates the total for you.</span>
+                                </div>
+                                <div class="product-flow-step">
+                                    <strong>3. Optional Details</strong>
+                                    <span>Codes, wholesale pricing, and packaging rules only when you need them.</span>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Base Unit (e.g. pcs)</label>
-                            <input type="text" name="base_unit_name" class="form-control" value="pcs" required>
+
+                        <div class="col-12">
+                            <div class="product-form-sheet">
+                                <h6>Essentials</h6>
+                                <p class="product-form-muted">This is the quickest path for most products.</p>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Product Name</label>
+                                        <input type="text" name="name" class="form-control" placeholder="e.g. Big Bull Rice 50kg" required>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Category</label>
+                                        <div class="input-group">
+                                            <select name="category_id" id="product_category_select" class="form-select" required>
+                                                <?php foreach ($categories as $cat): ?>
+                                                    <option value="{{ $cat->id }}">{{ $cat->name }}</option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addCategoryModal" title="Quick add category">+</button>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">Base Unit</label>
+                                        <input type="text" name="base_unit_name" class="form-control" value="pcs" required>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Retail / Default Price</label>
+                                        <input type="number" step="0.01" name="price" class="form-control" placeholder="0.00" required>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Purchase Price</label>
+                                        <input type="number" step="0.01" name="purchase_price" class="form-control" placeholder="0.00" required>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Stock Branch</label>
+                                        <select name="branch_id" class="form-select">
+                                            <option value="">Use Active Branch</option>
+                                            <?php foreach ($branchOptions as $branch): ?>
+                                                <option value="{{ $branch['id'] }}">{{ $branch['name'] }}</option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Default Unit Type</label>
-                            <select name="unit_type" class="form-select">
-                                <option value="unit">Unit</option>
-                                <option value="sachet">Sachet</option>
-                                <option value="roll">Roll</option>
-                                <option value="carton">Carton</option>
-                            </select>
+
+                        <div class="col-12">
+                            <div class="product-form-sheet">
+                                <h6>Opening Stock</h6>
+                                <p class="product-form-muted">Fill only what you have physically available right now.</p>
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label">Opening Carton Quantity</label>
+                                        <input type="number" step="0.01" name="stock_cartons" class="form-control" value="0">
+                                        <small class="text-muted">Use cartons only if this product is packed in cartons.</small>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Opening Roll Quantity</label>
+                                        <input type="number" step="0.01" name="stock_rolls" class="form-control" value="0">
+                                        <small class="text-muted">Use this only when a carton contains rolls.</small>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label" id="quick_opening_unit_label">Opening Loose Unit Quantity</label>
+                                        <input type="number" step="0.01" name="stock_units" class="form-control" value="0">
+                                        <small class="text-muted">Loose pieces already on hand.</small>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="quick-summary-pills">
+                                            <div class="quick-summary-pill">
+                                                <span id="quick_units_per_carton_label">Units Per Carton</span>
+                                                <strong id="quick_units_per_carton_preview_text">0 Units</strong>
+                                            </div>
+                                            <div class="quick-summary-pill">
+                                                <span>Total Opening Stock</span>
+                                                <strong id="quick_stock_preview_text">0 Units</strong>
+                                            </div>
+                                            <div class="quick-summary-pill">
+                                                <span>Estimated Opening Value</span>
+                                                <strong id="quick_stock_value_preview">0.00</strong>
+                                            </div>
+                                        </div>
+                                        <input type="hidden" name="stock" id="quick_final_stock_input" value="">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Stock Branch</label>
-                            <select name="branch_id" class="form-select">
-                                <option value="">Use Active Branch</option>
-                                <?php foreach ($branchOptions as $branch): ?>
-                                    <option value="{{ $branch['id'] }}">{{ $branch['name'] }}</option>
-                                <?php endforeach; ?>
-                            </select>
+
+                        <div class="col-12">
+                            <button class="btn btn-light border product-collapse-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#advancedProductFields" aria-expanded="false" aria-controls="advancedProductFields">
+                                <i class="fas fa-sliders-h"></i>
+                                <span>Advanced Packaging, Codes, and Extra Pricing</span>
+                            </button>
                         </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Unit Total <span class="text-muted d-block small" id="quick_unit_total_hint">Total units inside one carton</span></label>
-                            <input type="number" id="quick_unit_total_per_carton" class="form-control" value="0" min="0" step="0.01">
-                            <small class="text-muted" id="quick_unit_total_help">Type the full number of sellable units inside one carton first.</small>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Roll Content <span class="text-muted d-block small" id="quick_roll_content_hint">Units per roll</span></label>
-                            <input type="number" name="units_per_roll" min="0" class="form-control" value="0">
-                            <small class="text-muted" id="quick_roll_content_help">Leave `0` if the product is sold in cartons and units only.</small>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Carton Content <span class="text-muted d-block small" id="quick_carton_content_hint">Auto-calculated rolls per carton</span></label>
-                            <input type="number" name="units_per_carton" min="0" step="0.01" class="form-control" value="0">
-                            <small class="text-muted" id="quick_carton_content_help">This is calculated from unit total and roll content. If rolls are not used, it matches the unit total.</small>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Retail / Default Price</label>
-                            <input type="number" step="0.01" name="price" class="form-control" required>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Purchase Price</label>
-                            <input type="number" step="0.01" name="purchase_price" class="form-control" required>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Wholesale Price</label>
-                            <input type="number" step="0.01" name="wholesale_price" class="form-control">
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Special Discount Price</label>
-                            <input type="number" step="0.01" name="special_price" class="form-control">
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label" id="quick_units_per_carton_label">Units Per Carton</label>
-                            <input type="text" class="form-control bg-light" id="quick_units_per_carton_preview" value="0 Units" readonly>
-                            <small class="text-muted">Packaging preview only. This does not increase stock until you enter opening cartons, rolls, or loose units below.</small>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Opening Roll Quantity</label>
-                            <input type="number" step="0.01" name="stock_rolls" class="form-control" value="0">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Opening Carton Quantity</label>
-                            <input type="number" step="0.01" name="stock_cartons" class="form-control" value="0">
-                            <small class="text-muted">Cartons convert through rolls when present, or directly to pieces when rolls are not used.</small>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label" id="quick_opening_unit_label">Opening Loose Unit Quantity</label>
-                            <input type="number" step="0.01" name="stock_units" class="form-control" value="0">
-                            <small class="text-muted">Enter only the loose units/pieces already on hand, not the carton definition above.</small>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Calculated Total Opening Stock</label>
-                            <input type="text" class="form-control bg-light" id="quick_stock_preview" value="0 Units" readonly>
-                            <input type="hidden" name="stock" id="quick_final_stock_input" value="">
-                            <small class="text-muted">Calculated from opening cartons + opening rolls + opening loose units only.</small>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Product Image</label>
-                            <input type="file" name="image" id="quick_add_product_image" class="form-control">
-                            <small class="text-muted">Any file extension can be uploaded if the browser sends it as a valid file.</small>
+
+                        <div class="col-12 collapse" id="advancedProductFields">
+                            <div class="product-form-sheet">
+                                <h6>Advanced Options</h6>
+                                <p class="product-form-muted">Open this only when the item needs packaging math, codes, or extra price levels.</p>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">SKU</label>
+                                        <input type="text" name="sku" class="form-control" placeholder="Leave blank to auto-generate">
+                                        <small class="text-muted">If there is no product code yet, the system creates one automatically.</small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Barcode</label>
+                                        <input type="text" name="barcode" class="form-control" placeholder="Scan or type barcode">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Default Unit Type</label>
+                                        <select name="unit_type" class="form-select">
+                                            <option value="unit">Unit</option>
+                                            <option value="sachet">Sachet</option>
+                                            <option value="roll">Roll</option>
+                                            <option value="carton">Carton</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Unit Total <span class="text-muted d-block small" id="quick_unit_total_hint">Total units inside one carton</span></label>
+                                        <input type="number" id="quick_unit_total_per_carton" class="form-control" value="0" min="0" step="0.01">
+                                        <small class="text-muted" id="quick_unit_total_help">Type the full number of sellable units inside one carton first.</small>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Roll Content <span class="text-muted d-block small" id="quick_roll_content_hint">Units per roll</span></label>
+                                        <input type="number" name="units_per_roll" min="0" class="form-control" value="0">
+                                        <small class="text-muted" id="quick_roll_content_help">Leave `0` if this item has no roll layer.</small>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Carton Content <span class="text-muted d-block small" id="quick_carton_content_hint">Auto-calculated rolls per carton</span></label>
+                                        <input type="number" name="units_per_carton" min="0" step="0.01" class="form-control" value="0">
+                                        <small class="text-muted" id="quick_carton_content_help">Auto-calculated from total units and units per roll.</small>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Wholesale Price</label>
+                                        <input type="number" step="0.01" name="wholesale_price" class="form-control" placeholder="Optional">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Special Discount Price</label>
+                                        <input type="number" step="0.01" name="special_price" class="form-control" placeholder="Optional">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Product Image</label>
+                                        <input type="file" name="image" id="quick_add_product_image" class="form-control">
+                                        <small class="text-muted">Upload an image only if you want the product card to show a photo.</small>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -637,7 +778,7 @@
             const cartonContent = unitsPerRoll > 0 ? (unitTotal / unitsPerRoll) : unitTotal;
 
             $('#quick_add_product_form').find('input[name="units_per_carton"]').val(Number.isFinite(cartonContent) ? cartonContent : 0);
-            $('#quick_units_per_carton_preview').val(unitTotal.toLocaleString() + ' Units');
+            $('#quick_units_per_carton_preview_text').text(unitTotal.toLocaleString() + ' Units');
         }
 
         function calculateQuickStock() {
@@ -646,15 +787,19 @@
             const sachets = parseFloat($('input[name="stock_units"]').val()) || 0;
             const rollsPerCarton = parseFloat($('input[name="units_per_carton"]').val()) || 0;
             const sachetsPerRoll = parseFloat($('input[name="units_per_roll"]').val()) || 0;
+            const purchasePrice = parseFloat($('input[name="purchase_price"]').val()) || 0;
 
             const fromCartons = sachetsPerRoll > 0 ? cartons * rollsPerCarton * sachetsPerRoll : cartons * rollsPerCarton;
             const fromRolls = sachetsPerRoll > 0 ? rolls * sachetsPerRoll : rolls;
             const total = fromCartons + fromRolls + sachets;
-            $('#quick_stock_preview').val(total.toLocaleString() + ' Units');
+            const stockValue = total * purchasePrice;
+
+            $('#quick_stock_preview_text').text(total.toLocaleString() + ' Units');
+            $('#quick_stock_value_preview').text(stockValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
             $('#quick_final_stock_input').val(Math.round(total));
         }
 
-        $('#quick_add_product_form').find('input[name="stock_cartons"], input[name="stock_rolls"], input[name="stock_units"], input[name="units_per_carton"], input[name="units_per_roll"], #quick_unit_total_per_carton').on('input', function() {
+        $('#quick_add_product_form').find('input[name="stock_cartons"], input[name="stock_rolls"], input[name="stock_units"], input[name="units_per_carton"], input[name="units_per_roll"], input[name="purchase_price"], #quick_unit_total_per_carton').on('input', function() {
             if ($(this).attr('name') === 'units_per_roll' || this.id === 'quick_unit_total_per_carton') {
                 calculateQuickCartonContent();
             }
