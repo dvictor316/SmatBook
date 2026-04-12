@@ -52,9 +52,19 @@ class BranchInventoryService
             'branch_id' => (string) $branch['id'],
         ]);
 
+        if (!$branchStock->exists) {
+            $seedQuantity = (float) ($productModel->stock ?? $productModel->stock_quantity ?? 0);
+            $branchStock->quantity = $seedQuantity;
+        } elseif (((float) ($branchStock->quantity ?? 0)) === 0.0) {
+            $productStock = (float) ($productModel->stock ?? $productModel->stock_quantity ?? 0);
+            if ($productStock < 0) {
+                $branchStock->quantity = $productStock;
+            }
+        }
+
         $branchStock->company_id = $resolvedCompanyId > 0 ? $resolvedCompanyId : null;
         $branchStock->branch_name = $branch['name'];
-        $branchStock->quantity = round(max(0, ((float) ($branchStock->quantity ?? 0)) + $delta), 2);
+        $branchStock->quantity = round(((float) ($branchStock->quantity ?? 0)) + $delta, 2);
         $branchStock->save();
 
         return $branchStock;
@@ -78,7 +88,7 @@ class BranchInventoryService
 
         $branchStock->company_id = $resolvedCompanyId > 0 ? $resolvedCompanyId : null;
         $branchStock->branch_name = $branch['name'];
-        $branchStock->quantity = round(max(0, $quantity), 2);
+        $branchStock->quantity = round($quantity, 2);
         $branchStock->save();
 
         return $branchStock;
@@ -133,7 +143,7 @@ class BranchInventoryService
                 $companyId && Schema::hasColumn('products', 'company_id'),
                 fn (Builder $query) => $query->where('company_id', $companyId)
             )
-            ->where($stockColumn, '>', 0)
+            ->where($stockColumn, '!=', 0)
             ->whereDoesntHave('branchStocks', fn (Builder $query) => $query->where('branch_id', $branchId))
             ->where(function (Builder $query) use ($branchId, $branchName) {
                 $query->doesntHave('branchStocks');

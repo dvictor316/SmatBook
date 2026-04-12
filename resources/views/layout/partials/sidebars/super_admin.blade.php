@@ -90,6 +90,15 @@
                     </ul>
                 </li>
 
+                {{-- Customers --}}
+                <li class="submenu {{ Request::is('customers*', 'suppliers*') ? 'active subdrop' : '' }}">
+                    <a href="#"><i class="fe fe-users"></i><span>Customers</span><span class="menu-arrow"></span></a>
+                    <ul>
+                        <li><a href="{{ route('customers.index') }}">Customers</a></li>
+                        <li><a href="{{ route('suppliers.index') }}">Suppliers</a></li>
+                    </ul>
+                </li>
+
                 {{-- POS --}}
                 <li class="submenu {{ Request::is('pos*', 'sales*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-shopping-cart"></i><span>POS</span><span class="menu-arrow"></span></a>
