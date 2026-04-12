@@ -2,123 +2,239 @@
 @extends('layout.mainlayout')
 
 @section('content')
+@php
+    $purchaseCollection = isset($purchases) && method_exists($purchases, 'getCollection')
+        ? $purchases->getCollection()
+        : collect($purchases ?? []);
+    $totalPurchases = $purchaseCollection->count();
+    $totalAmount = (float) $purchaseCollection->sum(fn ($purchase) => (float) ($purchase->resolved_total_amount ?? $purchase->total_amount ?? 0));
+    $totalPaid = (float) $purchaseCollection->sum(fn ($purchase) => (float) ($purchase->paid_amount ?? 0));
+    $totalOutstanding = max(0, $totalAmount - $totalPaid);
+    $openPurchases = $purchaseCollection->filter(function ($purchase) {
+        $status = strtolower((string) ($purchase->status ?? 'pending'));
+        return !in_array($status, ['paid', 'completed'], true);
+    })->count();
+@endphp
 
-{{-- 
-    CUSTOM STYLES
---}}
 <style>
-    /* Base wrapper transition */
-    #main-content-wrapper {
-        transition: margin-left 0.3s ease, width 0.3s ease;
-        width: 100%;
-        overflow-x: hidden;
-        /* Padding to clear navbar */
-        padding-top: 100px; 
+    .purchase-report-shell .report-stamp {
+        font-size: 0.78rem;
+        color: #64748b;
+        background: linear-gradient(135deg, #eff6ff, #f8fafc);
+        border: 1px solid #dbeafe;
+        border-radius: 18px;
+        padding: 0.95rem 1rem;
+        min-width: 280px;
     }
 
-    /* DESKTOP Sidebar Offset */
-    @media (min-width: 992px) {
-        #main-content-wrapper {
-            margin-left: 250px;
-            width: calc(100% - 250px);
+    .purchase-report-shell .report-stamp span,
+    .purchase-report-shell .summary-label,
+    .purchase-report-shell .filter-label {
+        color: #334155;
+        font-weight: 700;
+    }
+
+    .purchase-report-shell .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 0.85rem;
+    }
+
+    .purchase-report-shell .summary-card {
+        border: 1px solid #e2e8f0;
+        border-radius: 18px;
+        background: #fff;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+        padding: 1rem 1.05rem;
+    }
+
+    .purchase-report-shell .summary-card strong {
+        display: block;
+        margin-top: 0.3rem;
+        color: #0f172a;
+        font-size: 1rem;
+    }
+
+    .purchase-report-shell .purchase-filter-card,
+    .purchase-report-shell .purchase-table-card {
+        border: 0;
+        border-radius: 22px;
+        box-shadow: 0 16px 34px rgba(15, 23, 42, 0.06);
+    }
+
+    .purchase-report-shell .purchase-filter-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 0.7fr));
+        gap: 0.85rem;
+        align-items: end;
+    }
+
+    .purchase-report-shell .purchase-filter-grid .form-control,
+    .purchase-report-shell .purchase-filter-grid .btn {
+        min-height: 46px;
+        border-radius: 14px;
+    }
+
+    .purchase-report-shell .table thead th {
+        background: #f8fafc;
+        font-size: 0.73rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #334155;
+        white-space: nowrap;
+    }
+
+    .purchase-report-shell .table tbody td {
+        vertical-align: top;
+        font-size: 0.9rem;
+    }
+
+    .purchase-report-shell .purchase-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.4rem 0.7rem;
+        border-radius: 999px;
+        background: #eef2ff;
+        color: #3730a3;
+        font-size: 0.74rem;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    @media (max-width: 767.98px) {
+        .purchase-page-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: flex-start;
         }
-        body.sidebar-collapsed #main-content-wrapper {
-            margin-left: 70px;
-            width: calc(100% - 70px);
+
+        .purchase-page-actions > * {
+            flex: 1 1 calc(50% - 0.5rem);
+            min-width: 0;
+        }
+
+        .purchase-mobile-full {
+            flex-basis: 100%;
+        }
+
+        .purchase-report-shell .purchase-filter-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .purchase-report-shell .report-stamp {
+            min-width: auto;
         }
     }
 
-    /* MOBILE */
-    @media (max-width: 991.98px) {
-        #main-content-wrapper {
-            margin-left: 0;
-            width: 100%;
-            padding-top: 100px;
-        }
-    }
-    
-    /* Print overrides */
-    @media print {
-        #main-content-wrapper { margin: 0 !important; padding: 0 !important; }
-        .no-print, .card-header, .card.shadow-sm { display: none !important; }
-    }
-    
-    /* Hide native DataTables buttons since we use custom triggers */
     .dt-buttons { display: none !important; }
 </style>
 
-{{-- WRAPPER START --}}
-<div id="main-content-wrapper" class="container-fluid px-4 pb-4">
-
-    <div class="mb-3">
-        <span class="badge bg-light border text-primary px-3 py-2">
-            <i class="fas fa-code-branch me-2"></i>
-            Active Branch: {{ $activeBranch['name'] ?? 'All Recorded Purchases' }}
-        </span>
-    </div>
-
-    {{-- 
-        1. TOP RIGHT ACTION BUTTONS 
-        Moved here as requested
-    --}}
-    <div class="d-flex justify-content-end mb-3 gap-2">
-        <a href="{{ route('purchases.create') }}" class="btn btn-success">
-            <i class="fas fa-plus-circle me-2"></i> New Purchase
-        </a>
-        <div class="dropdown">
-            <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="fas fa-download me-2"></i> Export / Print
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end">
-                <li>
-                    <a class="dropdown-item" href="#" id="custom_btn_print">
-                        <i class="fas fa-print me-2 text-secondary"></i> Print Report
+<div class="page-wrapper">
+    <div class="content container-fluid">
+        <div class="page-header">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h3 class="page-title">Purchases</h3>
+                    <ul class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{{ url('/') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item active">Purchases</li>
+                    </ul>
+                </div>
+                <div class="col-auto purchase-page-actions">
+                    <a href="{{ route('purchases.create') }}" class="btn btn-success me-1">
+                        <i class="fas fa-plus-circle"></i> New Purchase
                     </a>
-                </li>
-                <li><hr class="dropdown-divider"></li>
-                <li>
-                    <a class="dropdown-item" href="#" id="custom_btn_excel">
-                        <i class="far fa-file-excel me-2 text-success"></i> Excel
-                    </a>
-                </li>
-                <li>
-                    <a class="dropdown-item" href="#" id="custom_btn_pdf">
-                        <i class="far fa-file-pdf me-2 text-danger"></i> PDF
-                    </a>
-                </li>
-            </ul>
+                    <div class="dropdown purchase-mobile-full">
+                        <button class="btn btn-primary dropdown-toggle w-100" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-download me-2"></i> Export / Print
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <a class="dropdown-item" href="#" id="custom_btn_print">
+                                    <i class="fas fa-print me-2 text-secondary"></i> Print Report
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="#" id="custom_btn_excel">
+                                    <i class="far fa-file-excel me-2 text-success"></i> Excel
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="#" id="custom_btn_pdf">
+                                    <i class="far fa-file-pdf me-2 text-danger"></i> PDF
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
         </div>
-    </div>
 
-    {{-- 2. SEARCH FILTER --}}
-    <div class="card shadow-sm mb-4">
-        <div class="card-body">
-            <form action="{{ route('purchase-report') }}" method="GET" class="row align-items-center">
-                <div class="col-sm-8">
-                    <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="Search by name, SKU, or Purchase No...">
-                </div>
-                <div class="col-sm-2">
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="fas fa-filter me-1"></i> Filter
-                    </button>
-                </div>
-                <div class="col-sm-2">
-                    <a href="{{ route('purchase-report') }}" class="btn btn-secondary w-100">
-                        <i class="fas fa-undo me-1"></i> Reset
-                    </a>
-                </div>
-            </form>
-        </div>
-    </div>
+        <div class="purchase-report-shell">
+            <div class="card purchase-filter-card mb-4">
+                <div class="card-body">
+                    <div class="d-flex flex-column flex-xl-row justify-content-between gap-3 mb-4">
+                        <div>
+                            <h4 class="mb-1">Supplier Purchases Overview</h4>
+                            <p class="text-muted mb-0">Track supplier bills, outstanding balances, and payment status in the same clean layout as customers.</p>
+                        </div>
+                        <div class="report-stamp">
+                            <div><span>Branch:</span> {{ $activeBranch['name'] ?? 'All Recorded Purchases' }}</div>
+                            <div><span>Coverage:</span> {{ $purchases->total() ?? $totalPurchases }} purchases</div>
+                            <div><span>Generated:</span> {{ now()->format('d M Y, h:i A') }}</div>
+                        </div>
+                    </div>
 
-    {{-- 3. DATA TABLE --}}
-    <div class="row">
-        <div class="col-sm-12">
-            <div class="card-table">
+                    <div class="summary-grid mb-4">
+                        <div class="summary-card">
+                            <span class="summary-label"><i class="fas fa-file-invoice-dollar me-2"></i>Total Purchases</span>
+                            <strong>{{ number_format($totalPurchases) }}</strong>
+                        </div>
+                        <div class="summary-card">
+                            <span class="summary-label"><i class="fas fa-coins me-2"></i>Total Amount</span>
+                            <strong>₦{{ number_format($totalAmount, 2) }}</strong>
+                        </div>
+                        <div class="summary-card">
+                            <span class="summary-label"><i class="fas fa-check-circle me-2"></i>Total Paid</span>
+                            <strong>₦{{ number_format($totalPaid, 2) }}</strong>
+                        </div>
+                        <div class="summary-card">
+                            <span class="summary-label"><i class="fas fa-exclamation-circle me-2"></i>Outstanding</span>
+                            <strong>₦{{ number_format($totalOutstanding, 2) }}</strong>
+                        </div>
+                        <div class="summary-card">
+                            <span class="summary-label"><i class="fas fa-hourglass-half me-2"></i>Open Bills</span>
+                            <strong>{{ number_format($openPurchases) }}</strong>
+                        </div>
+                    </div>
+
+                    <form action="{{ route('purchase-report') }}" method="GET" class="purchase-filter-grid">
+                        <div>
+                            <label class="filter-label mb-2">Search Purchases</label>
+                            <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="Search by name, SKU, or Purchase No...">
+                        </div>
+                        <div>
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-filter me-1"></i> Filter
+                            </button>
+                        </div>
+                        <div>
+                            <a href="{{ route('purchase-report') }}" class="btn btn-secondary w-100">
+                                <i class="fas fa-undo me-1"></i> Reset
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card purchase-table-card">
                 <div class="card-body">
                     <div class="table-responsive" id="printSection">
-                        <table class="table table-striped table-hover" id="inventoryTable">
-                            <thead class="thead-light">
+                        <table class="table table-hover align-middle" id="purchasesTable">
+                            <thead>
                                 <tr>
                                     <th>#</th>
                                     <th>Purchase No</th>
@@ -132,49 +248,49 @@
                             <tbody>
                                 @isset($purchases)
                                     @forelse ($purchases as $purchase)
+                                        @php
+                                            $status = strtolower((string) ($purchase->status ?? 'pending'));
+                                            $statusClass = $status === 'paid' || $status === 'completed'
+                                                ? 'bg-success'
+                                                : ($status === 'pending' ? 'bg-warning text-dark' : 'bg-secondary');
+                                        @endphp
                                         <tr>
                                             <td>{{ ($purchases->currentPage() - 1) * $purchases->perPage() + $loop->iteration }}</td>
                                             <td><strong>{{ $purchase->purchase_no ?? ('PUR-' . $purchase->id) }}</strong></td>
                                             <td>{{ $purchase->supplier?->name ?? $purchase->vendor?->name ?? 'Supplier' }}</td>
-                                            <td>{{ number_format((float) ($purchase->resolved_total_amount ?? $purchase->total_amount ?? 0), 2) }}</td>
-                                            <td>{{ number_format((float) ($purchase->paid_amount ?? 0), 2) }}</td>
-                                            <td>
-                                                @php
-                                                    $status = strtolower((string) ($purchase->status ?? 'pending'));
-                                                    $statusClass = $status === 'paid' || $status === 'completed'
-                                                        ? 'bg-success'
-                                                        : ($status === 'pending' ? 'bg-warning text-dark' : 'bg-secondary');
-                                                @endphp
-                                                <span class="badge {{ $statusClass }}">{{ ucfirst($status) }}</span>
-                                            </td>
-                                            <td class="text-end no-print d-flex justify-content-end gap-2">
-                                                <a href="{{ route('purchases.show', $purchase->id) }}" class="btn btn-sm btn-info text-white d-inline-flex align-items-center gap-1">
-                                                    <i class="far fa-eye"></i>
-                                                    <span class="d-none d-md-inline">View</span>
-                                                </a>
-                                                <form action="{{ route('finance.recurring.from-purchase', $purchase->id) }}" method="POST">
-                                                    @csrf
-                                                    <button type="submit" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1">
-                                                        <i class="far fa-clock"></i>
-                                                        <span class="d-none d-md-inline">Template</span>
-                                                    </button>
-                                                </form>
-                                                <form action="{{ route('finance.approvals.from-purchase', $purchase->id) }}" method="POST">
-                                                    @csrf
-                                                    <button type="submit" class="btn btn-sm btn-outline-warning d-inline-flex align-items-center gap-1">
-                                                        <i class="far fa-paper-plane"></i>
-                                                        <span class="d-none d-md-inline">Approval</span>
-                                                    </button>
-                                                </form>
-                                                @if (!in_array($status, ['paid', 'completed'], true))
-                                                    <form action="{{ route('purchases.mark-paid', $purchase->id) }}" method="POST">
+                                            <td>₦{{ number_format((float) ($purchase->resolved_total_amount ?? $purchase->total_amount ?? 0), 2) }}</td>
+                                            <td>₦{{ number_format((float) ($purchase->paid_amount ?? 0), 2) }}</td>
+                                            <td><span class="badge {{ $statusClass }}">{{ ucfirst($status) }}</span></td>
+                                            <td class="text-end no-print">
+                                                <div class="d-flex justify-content-end gap-2 flex-wrap">
+                                                    <a href="{{ route('purchases.show', $purchase->id) }}" class="btn btn-sm btn-info text-white d-inline-flex align-items-center gap-1">
+                                                        <i class="far fa-eye"></i>
+                                                        <span class="d-none d-md-inline">View</span>
+                                                    </a>
+                                                    <form action="{{ route('finance.recurring.from-purchase', $purchase->id) }}" method="POST">
                                                         @csrf
-                                                        <button type="submit" class="btn btn-sm btn-success d-inline-flex align-items-center gap-1">
-                                                            <i class="fas fa-check-circle"></i>
-                                                            <span class="d-none d-md-inline">Mark Paid</span>
+                                                        <button type="submit" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1">
+                                                            <i class="far fa-clock"></i>
+                                                            <span class="d-none d-md-inline">Template</span>
                                                         </button>
                                                     </form>
-                                                @endif
+                                                    <form action="{{ route('finance.approvals.from-purchase', $purchase->id) }}" method="POST">
+                                                        @csrf
+                                                        <button type="submit" class="btn btn-sm btn-outline-warning d-inline-flex align-items-center gap-1">
+                                                            <i class="far fa-paper-plane"></i>
+                                                            <span class="d-none d-md-inline">Approval</span>
+                                                        </button>
+                                                    </form>
+                                                    @if (!in_array($status, ['paid', 'completed'], true))
+                                                        <form action="{{ route('purchases.mark-paid', $purchase->id) }}" method="POST">
+                                                            @csrf
+                                                            <button type="submit" class="btn btn-sm btn-success d-inline-flex align-items-center gap-1">
+                                                                <i class="fas fa-check-circle"></i>
+                                                                <span class="d-none d-md-inline">Mark Paid</span>
+                                                            </button>
+                                                        </form>
+                                                    @endif
+                                                </div>
                                             </td>
                                         </tr>
                                     @empty
@@ -192,7 +308,6 @@
                             </tbody>
                         </table>
 
-                        {{-- Pagination Links (Hidden on Print) --}}
                         @if(isset($purchases) && method_exists($purchases, 'links'))
                             <div class="d-flex justify-content-center mt-4 no-print">
                                 {{ $purchases->appends(request()->query())->links() }}
@@ -204,7 +319,6 @@
         </div>
     </div>
 </div>
-{{-- WRAPPER END --}}
 
 @endsection
 
@@ -223,12 +337,12 @@
 <script>
     $(document).ready(function() {
         // Destroy existing if re-initializing
-        if ($.fn.DataTable.isDataTable('#inventoryTable')) {
-            $('#inventoryTable').DataTable().destroy();
+        if ($.fn.DataTable.isDataTable('#purchasesTable')) {
+            $('#purchasesTable').DataTable().destroy();
         }
 
         // Initialize DataTable with Export Capabilities
-        var table = $('#inventoryTable').DataTable({
+        var table = $('#purchasesTable').DataTable({
             dom: 'Bfrtip', // Defines where buttons are placed (B = buttons)
             paging: false, // We use Laravel pagination
             searching: false, // We use custom search
@@ -237,7 +351,7 @@
                 {
                     extend: 'excelHtml5',
                     className: 'dt-btn-excel', // Hidden hook class
-                    title: 'Product Inventory Report',
+                    title: 'Purchases Report',
                     exportOptions: {
                         columns: ':not(.no-print)' // Exclude Action column
                     }
@@ -245,7 +359,7 @@
                 {
                     extend: 'pdfHtml5',
                     className: 'dt-btn-pdf', // Hidden hook class
-                    title: 'Product Inventory Report',
+                    title: 'Purchases Report',
                     exportOptions: {
                         columns: ':not(.no-print)'
                     }
@@ -253,7 +367,7 @@
                 {
                     extend: 'print',
                     className: 'dt-btn-print', // Hidden hook class
-                    title: 'Product Inventory Report',
+                    title: 'Purchases Report',
                     customize: function (win) {
                         $(win.document.body).css('font-size', '10pt');
                         $(win.document.body).find('table')
