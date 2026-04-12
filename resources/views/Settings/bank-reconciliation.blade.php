@@ -16,7 +16,7 @@
     }
 
     .recon-card .card-body {
-        padding: 22px;
+        padding: 18px;
     }
 
     .recon-summary-grid {
@@ -26,7 +26,7 @@
     }
 
     .recon-summary-tile {
-        padding: 18px;
+        padding: 14px;
         border-radius: 16px;
         border: 1px solid #dbe7ff;
         background: #fff;
@@ -35,7 +35,7 @@
     .recon-summary-tile small {
         display: block;
         margin-bottom: 8px;
-        font-size: 0.72rem;
+        font-size: 0.62rem;
         font-weight: 800;
         letter-spacing: 0.08em;
         text-transform: uppercase;
@@ -43,7 +43,7 @@
     }
 
     .recon-summary-tile strong {
-        font-size: 1.8rem;
+        font-size: 1.25rem;
         line-height: 1;
         color: #0f172a;
     }
@@ -52,7 +52,7 @@
         border: 1px solid #e6eefc;
         border-radius: 16px;
         background: #fff;
-        padding: 18px;
+        padding: 14px;
         margin-bottom: 16px;
     }
 
@@ -65,7 +65,7 @@
     }
 
     .recon-bank-name {
-        font-size: 1.05rem;
+        font-size: 0.92rem;
         font-weight: 800;
         color: #0f172a;
     }
@@ -78,7 +78,7 @@
     }
 
     .recon-balance-chip {
-        padding: 14px;
+        padding: 12px;
         border-radius: 14px;
         background: #f8fbff;
         border: 1px solid #dbe7ff;
@@ -87,15 +87,24 @@
     .recon-balance-chip small {
         display: block;
         margin-bottom: 6px;
-        font-size: 0.7rem;
+        font-size: 0.62rem;
         font-weight: 700;
         text-transform: uppercase;
         color: #64748b;
     }
 
     .recon-balance-chip strong {
-        font-size: 1rem;
+        font-size: 0.88rem;
         color: #0f172a;
+    }
+
+    .content-page-header h4,
+    .content-page-header h5 {
+        font-size: 1.05rem;
+    }
+
+    .content-page-header p {
+        font-size: 0.85rem;
     }
 
     .recon-good { color: #166534 !important; }
