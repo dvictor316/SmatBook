@@ -17,34 +17,96 @@
     }
 </script>
 
+<style>
+    .report-page {
+        font-size: 0.92rem;
+    }
+    .report-page h1 {
+        font-size: 1.35rem !important;
+    }
+    .report-page .summary-metric-label {
+        font-size: 0.62rem !important;
+        letter-spacing: 0.16em !important;
+    }
+    .report-page .summary-metric-value {
+        font-size: 1.05rem !important;
+    }
+    .report-page .summary-metric-note {
+        font-size: 0.78rem !important;
+    }
+    .report-page .report-btn {
+        padding: 0.5rem 0.75rem !important;
+        font-size: 0.8rem !important;
+    }
+    .report-page .filter-label {
+        font-size: 0.62rem !important;
+        letter-spacing: 0.18em !important;
+    }
+    .report-page .filter-input {
+        padding: 0.55rem 0.75rem !important;
+        font-size: 0.85rem !important;
+    }
+    .report-page table th,
+    .report-page table td {
+        padding-top: 0.65rem !important;
+        padding-bottom: 0.65rem !important;
+        font-size: 0.85rem !important;
+    }
+    .report-page .receipt-sheet .text-\[2rem\] {
+        font-size: 1.4rem !important;
+    }
+    .report-page .receipt-amount {
+        font-size: 1.4rem !important;
+    }
+    @media print {
+        .report-page,
+        .page-wrapper {
+            background: #fff !important;
+        }
+        .report-page .shadow-sm,
+        .report-page .shadow-lg,
+        .report-page .shadow-2xl {
+            box-shadow: none !important;
+        }
+        .report-page .rounded-2xl,
+        .report-page .rounded-xl,
+        .report-page .rounded-lg {
+            border-radius: 0 !important;
+        }
+        .report-page .no-print {
+            display: none !important;
+        }
+    }
+</style>
+
 <div class="page-wrapper report-page bg-gray-50 min-h-screen relative">
-    <div class="p-4 sm:p-6 lg:p-8 w-full">
+    <div class="p-4 sm:p-5 lg:p-6 w-full max-w-[1200px] mx-auto">
         @php
             $currencySymbol = '₦';
             $showingFrom = $payments->firstItem() ?? 0;
             $showingTo = $payments->lastItem() ?? 0;
         @endphp
         
-        <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+        <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
             <div>
                 <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">Payment Summary Report</h1>
                 <p class="text-sm text-gray-500 mt-1">
                     System Date: <span class="font-bold">{{ now()->format('M d, Y') }}</span> | Total Revenue:
-                    <span class="text-green-600 font-bold text-lg">{{ $currencySymbol }}{{ number_format($totalRevenue ?? 0, 2) }}</span>
+                    <span class="text-green-600 font-bold text-base">{{ $currencySymbol }}{{ number_format($totalRevenue ?? 0, 2) }}</span>
                 </p>
             </div>
             
             <div class="flex items-center space-x-2 no-print">
-                <button onclick="generatePDF()" class="inline-flex items-center px-3 py-2 bg-white border border-gray-200 rounded-xl font-semibold text-red-500 hover:bg-gray-50 transition text-sm">
+                <button onclick="generatePDF()" class="report-btn inline-flex items-center bg-white border border-gray-200 rounded-xl font-semibold text-red-500 hover:bg-gray-50 transition">
                     <i class="fas fa-file-pdf mr-2"></i> PDF
                 </button>
-                <button onclick="generateExcel()" class="inline-flex items-center px-3 py-2 bg-white border border-gray-200 rounded-xl font-semibold text-green-600 hover:bg-gray-50 transition text-sm">
+                <button onclick="generateExcel()" class="report-btn inline-flex items-center bg-white border border-gray-200 rounded-xl font-semibold text-green-600 hover:bg-gray-50 transition">
                     <i class="fas fa-file-excel mr-2"></i> Excel
                 </button>
-                <button onclick="generateCSV()" class="inline-flex items-center px-3 py-2 bg-white border border-gray-200 rounded-xl font-semibold text-blue-600 hover:bg-gray-50 transition text-sm">
+                <button onclick="generateCSV()" class="report-btn inline-flex items-center bg-white border border-gray-200 rounded-xl font-semibold text-blue-600 hover:bg-gray-50 transition">
                     <i class="fas fa-list mr-2"></i> CSV
                 </button>
-                <button onclick="window.print()" class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-xl font-bold shadow-lg shadow-primary/20 hover:bg-indigo-700 transition text-sm">
+                <button onclick="window.print()" class="report-btn inline-flex items-center bg-primary text-white rounded-xl font-bold shadow-lg shadow-primary/20 hover:bg-indigo-700 transition">
                     <i class="fas fa-print mr-2"></i> Print All
                 </button>
             </div>
@@ -56,7 +118,7 @@
                 : 'All Recorded Payments',
         ])
 
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 mb-5">
             <div class="summary-metric-card bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
                 <p class="summary-metric-label text-[11px] uppercase tracking-[0.2em] text-gray-400 font-black">Collected Revenue</p>
                 <h2 class="summary-metric-value mt-3 font-black text-gray-900">{{ $currencySymbol }}{{ number_format($totalRevenue ?? 0, 2) }}</h2>
@@ -81,16 +143,16 @@
             </div>
         </div>
 
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 mb-6 no-print">
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-200 mb-5 no-print">
             <form action="{{ route('reports.payment-summary') }}" method="GET" class="grid grid-cols-1 md:grid-cols-12 gap-4">
                 <div class="md:col-span-4">
-                    <label class="text-[10px] font-bold text-gray-400 uppercase ml-1">Search Keywords</label>
+                    <label class="filter-label text-[10px] font-bold text-gray-400 uppercase ml-1">Search Keywords</label>
                     <input type="text" name="search" value="{{ request('search') }}" placeholder="ID, Reference, or Note..." 
-                           class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none transition">
+                           class="filter-input w-full border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none transition">
                 </div>
                 <div class="md:col-span-2">
-                    <label class="text-[10px] font-bold text-gray-400 uppercase ml-1">Status</label>
-                    <select name="status" class="w-full px-4 py-2.5 border border-gray-300 rounded-xl outline-none">
+                    <label class="filter-label text-[10px] font-bold text-gray-400 uppercase ml-1">Status</label>
+                    <select name="status" class="filter-input w-full border border-gray-300 rounded-xl outline-none">
                         <option value="">All Statuses</option>
                         @foreach ($statusOptions as $statusOption)
                             <option value="{{ $statusOption }}" @selected(request('status') === $statusOption)>{{ $statusOption }}</option>
@@ -98,8 +160,8 @@
                     </select>
                 </div>
                 <div class="md:col-span-2">
-                    <label class="text-[10px] font-bold text-gray-400 uppercase ml-1">Method</label>
-                    <select name="method" class="w-full px-4 py-2.5 border border-gray-300 rounded-xl outline-none">
+                    <label class="filter-label text-[10px] font-bold text-gray-400 uppercase ml-1">Method</label>
+                    <select name="method" class="filter-input w-full border border-gray-300 rounded-xl outline-none">
                         <option value="">All Methods</option>
                         @foreach ($methodOptions as $methodOption)
                             <option value="{{ $methodOption }}" @selected(request('method') === $methodOption)>{{ $methodOption }}</option>
@@ -107,18 +169,18 @@
                     </select>
                 </div>
                 <div class="md:col-span-2">
-                    <label class="text-[10px] font-bold text-gray-400 uppercase ml-1">From</label>
-                    <input type="date" name="from" value="{{ request('from') }}" class="w-full px-4 py-2.5 border border-gray-300 rounded-xl outline-none">
+                    <label class="filter-label text-[10px] font-bold text-gray-400 uppercase ml-1">From</label>
+                    <input type="date" name="from" value="{{ request('from') }}" class="filter-input w-full border border-gray-300 rounded-xl outline-none">
                 </div>
                 <div class="md:col-span-2">
-                    <label class="text-[10px] font-bold text-gray-400 uppercase ml-1">To</label>
-                    <input type="date" name="to" value="{{ request('to') }}" class="w-full px-4 py-2.5 border border-gray-300 rounded-xl outline-none">
+                    <label class="filter-label text-[10px] font-bold text-gray-400 uppercase ml-1">To</label>
+                    <input type="date" name="to" value="{{ request('to') }}" class="filter-input w-full border border-gray-300 rounded-xl outline-none">
                 </div>
                 <div class="md:col-span-12 flex flex-col sm:flex-row gap-3 md:justify-end">
-                    <a href="{{ route('reports.payment-summary') }}" class="inline-flex items-center justify-center px-5 py-3 border border-gray-200 rounded-xl font-bold text-gray-600 hover:bg-gray-50 transition">
+                    <a href="{{ route('reports.payment-summary') }}" class="report-btn inline-flex items-center justify-center border border-gray-200 rounded-xl font-bold text-gray-600 hover:bg-gray-50 transition">
                         Reset
                     </a>
-                    <button type="submit" class="inline-flex items-center justify-center px-5 py-3 bg-gray-900 text-white rounded-xl font-bold hover:bg-black transition shadow-sm">
+                    <button type="submit" class="report-btn inline-flex items-center justify-center bg-gray-900 text-white rounded-xl font-bold hover:bg-black transition shadow-sm">
                         <i class="fas fa-search mr-2"></i> Apply Filters
                     </button>
                 </div>
@@ -143,7 +205,7 @@
 
         <div id="report-container" data-print-scope class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
             <div class="overflow-x-auto">
-                <table class="w-full divide-y divide-gray-200" id="main-payment-table">
+                <table class="w-full divide-y divide-gray-200 table-compact" id="main-payment-table">
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-6 py-4 no-print w-10">

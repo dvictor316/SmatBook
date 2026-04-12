@@ -172,6 +172,21 @@
                 overflow: visible !important;
             }
 
+            body.print-scope-active .print-scope-target .card,
+            body.print-scope-active .print-scope-target .shadow,
+            body.print-scope-active .print-scope-target .shadow-sm,
+            body.print-scope-active .print-scope-target .shadow-lg,
+            body.print-scope-active .print-scope-target .shadow-2xl {
+                box-shadow: none !important;
+            }
+
+            body.print-scope-active .print-scope-target .rounded,
+            body.print-scope-active .print-scope-target .rounded-lg,
+            body.print-scope-active .print-scope-target .rounded-xl,
+            body.print-scope-active .print-scope-target .rounded-2xl {
+                border-radius: 0 !important;
+            }
+
             body.print-scope-active .print-scope-target .no-print,
             body.print-scope-active .print-scope-target .btn,
             body.print-scope-active .print-scope-target button,
