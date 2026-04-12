@@ -194,7 +194,10 @@ body.mini-sidebar .report-page-wrapper { margin-left: 80px; }
                                     </div>
                                     <div>
                                         <div class="fw-bold text-dark">{{ $sub->subscriber_name }}</div>
-                                        <div class="small text-primary fw-bold" style="font-family: monospace;">{{ $sub->domain_prefix }}.{{ config('session.domain', env('SESSION_DOMAIN', 'smartprobook.com')) }}</div>
+                                        @php
+                                            $domainSuffix = ltrim(config('session.domain', env('SESSION_DOMAIN', 'smartprobook.com')), '.');
+                                        @endphp
+                                        <div class="small text-primary fw-bold" style="font-family: monospace;">{{ $sub->domain_prefix }}.{{ $domainSuffix }}</div>
                                     </div>
                                 </div>
                             </td>

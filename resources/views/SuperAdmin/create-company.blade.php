@@ -51,7 +51,10 @@
                                         <label>Subdomain (Tenant Prefix)</label>
                                         <div class="input-group">
                                             <input type="text" name="subdomain" class="form-control" value="{{ old('subdomain') }}" placeholder="companyname">
-                                            <span class="input-group-text">.{{ config('session.domain', env('SESSION_DOMAIN', 'smartprobook.com')) }}</span>
+                                            @php
+                                                $domainSuffix = ltrim(config('session.domain', env('SESSION_DOMAIN', 'smartprobook.com')), '.');
+                                            @endphp
+                                            <span class="input-group-text">.{{ $domainSuffix }}</span>
                                         </div>
                                     </div>
                                     <div class="form-group mb-3">

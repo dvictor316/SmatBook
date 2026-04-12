@@ -41,7 +41,10 @@
                 <td>
                     <h4 style="margin-bottom: 5px;">Billed To:</h4>
                     <strong>{{ $subscription->tenant->name ?? 'Valued Subscriber' }}</strong><br>
-                    Workspace: {{ $subscription->domain_prefix }}.{{ config('session.domain', env('SESSION_DOMAIN', 'smartprobook.com')) }}<br>
+                    @php
+                        $domainSuffix = ltrim(config('session.domain', env('SESSION_DOMAIN', 'smartprobook.com')), '.');
+                    @endphp
+                    Workspace: {{ $subscription->domain_prefix }}.{{ $domainSuffix }}<br>
                     Payment: {{ strtoupper($subscription->payment_gateway ?? 'Paystack') }}
                 </td>
                 <td class="text-right">

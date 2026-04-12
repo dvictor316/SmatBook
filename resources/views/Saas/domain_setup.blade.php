@@ -6,6 +6,7 @@
     $displayPrice = (float) ($subscription->amount ?? session('selected_amount', 0));
     $activeTier = $subscription->plan_name ?? 'Pro';
     $cycle = $subscription->billing_cycle ?? 'Monthly';
+    $domainSuffix = ltrim(config('session.domain', env('SESSION_DOMAIN', 'smartprobook.com')), '.');
 @endphp
 
 <style>
@@ -295,7 +296,7 @@
                         <input type="text" name="domain_prefix" id="subdomain_input" 
                                class="form-control input-smat" placeholder="my-business" 
                                value="{{ old('domain_prefix') }}" required>
-                        <span class="input-group-text domain-suffix">.smatbook.com</span>
+                        <span class="input-group-text domain-suffix">.{{ $domainSuffix }}</span>
                     </div>
                     <small class="text-muted" style="font-size: 10px;">Lowercase, numbers, and dashes only.</small>
                 </div>
@@ -321,7 +322,15 @@
 <script>
     // Real-time input cleaning for subdomains
     document.getElementById('subdomain_input').addEventListener('input', function(e) {
-        this.value = this.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
+        const rootDomain = '{{ $domainSuffix }}';
+        let value = String(this.value || '').toLowerCase();
+        value = value.replace(/^https?:\/\//, '');
+        if (rootDomain && value.endsWith('.' + rootDomain)) {
+            value = value.slice(0, -1 * (rootDomain.length + 1));
+        }
+        value = value.replace(/^\.+/, '');
+        value = value.replace(/[^a-z0-9-]/g, '');
+        this.value = value;
     });
 </script>
 

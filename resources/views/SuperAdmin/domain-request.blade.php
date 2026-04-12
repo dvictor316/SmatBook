@@ -232,6 +232,9 @@
             <form action="{{ route('saas.store') }}" method="POST">
                 @csrf
                 <input type="hidden" name="subscription_id" value="{{ $subscription->id ?? '' }}">
+                @php
+                    $domainSuffix = ltrim(config('session.domain', env('SESSION_DOMAIN', 'smartprobook.com')), '.');
+                @endphp
 
                 <div class="mb-4">
                     <label class="label-caps">Preferred Subdomain</label>
@@ -240,7 +243,7 @@
                                class="form-control input-smat @error('domain_prefix') is-invalid @enderror" 
                                placeholder="yourcompany" required
                                value="{{ old('domain_prefix', $subscription->domain_prefix ?? '') }}">
-                        <span class="input-group-text subdomain-tag">.{{ config('session.domain', env('SESSION_DOMAIN', 'smartprobook.com')) }}</span>
+                        <span class="input-group-text subdomain-tag">.{{ $domainSuffix }}</span>
                     </div>
                     @error('domain_prefix')
                         <div class="text-danger small mt-2 fw-bold"><i class="fas fa-info-circle me-1"></i> {{ $message }}</div>

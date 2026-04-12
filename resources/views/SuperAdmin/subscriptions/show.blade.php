@@ -67,7 +67,10 @@
                                     </div>
                                     <div class="col-md-4">
                                         <p class="text-muted mb-0">Workspace Slug</p>
-                                        <p class="h6 text-primary">{{ $subscription->domain_prefix }}.{{ config('session.domain', env('SESSION_DOMAIN', 'smartprobook.com')) }}</p>
+                                        @php
+                                            $domainSuffix = ltrim(config('session.domain', env('SESSION_DOMAIN', 'smartprobook.com')), '.');
+                                        @endphp
+                                        <p class="h6 text-primary">{{ $subscription->domain_prefix }}.{{ $domainSuffix }}</p>
                                     </div>
                                     <div class="col-md-4">
                                         <p class="text-muted mb-0">Payment Method</p>

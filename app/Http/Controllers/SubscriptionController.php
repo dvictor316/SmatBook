@@ -234,6 +234,28 @@ class SubscriptionController extends Controller
             ->all();
     }
 
+    private function normalizeDomainPrefix(string $value): string
+    {
+        $clean = strtolower(trim($value));
+        if ($clean === '') {
+            return '';
+        }
+
+        $clean = preg_replace('#^https?://#', '', $clean);
+        $clean = trim((string) $clean, ". \t\n\r\0\x0B");
+
+        $rootDomain = trim((string) config('session.domain', env('SESSION_DOMAIN', 'smartprobook.com')), ". \t\n\r\0\x0B");
+        if ($rootDomain !== '' && str_ends_with($clean, '.' . $rootDomain)) {
+            $clean = substr($clean, 0, -1 * (strlen($rootDomain) + 1));
+        }
+
+        $clean = trim((string) $clean, ". \t\n\r\0\x0B");
+        $clean = preg_replace('/[^a-z0-9-]/', '', $clean);
+        $clean = preg_replace('/-+/', '-', (string) $clean);
+
+        return trim((string) $clean, '-');
+    }
+
     /*
     |--------------------------------------------------------------------------
     | SETUP STORE — process domain setup
