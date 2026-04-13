@@ -105,6 +105,26 @@ class SaleController extends Controller
         ]);
     }
 
+    private function decrementSellableStock(Product $product, float $quantity): void
+    {
+        if ($quantity <= 0) {
+            return;
+        }
+
+        $updates = [
+            'stock' => DB::raw('stock - ' . $quantity),
+            'updated_at' => now(),
+        ];
+
+        if (Schema::hasColumn('products', 'stock_quantity')) {
+            $updates['stock_quantity'] = DB::raw('stock_quantity - ' . $quantity);
+        }
+
+        DB::table('products')
+            ->where('id', $product->id)
+            ->update($updates);
+    }
+
     private function tenantCompanyId(): int
     {
         return (int) (auth()->user()?->company_id
@@ -819,10 +839,7 @@ $sale = Sale::create([
             $runningDiscount += $itemDiscAmount;
             $runningTax      += $itemTaxAmount;
 
-            $product->decrement('stock', $requestedStockUnits);
-            if (Schema::hasColumn('products', 'stock_quantity')) {
-                $product->decrement('stock_quantity', $requestedStockUnits);
-            }
+            $this->decrementSellableStock($product, $requestedStockUnits);
             $this->branchInventory->adjustBranchStock(
                 $product,
                 -$requestedStockUnits,
