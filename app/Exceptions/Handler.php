@@ -236,7 +236,7 @@ class Handler extends ExceptionHandler
         return route('saas-login');
     }
 
-    private function shouldReturnJson($request): bool
+    protected function shouldReturnJson($request, Throwable $e = null): bool
     {
         if ($request->expectsJson()
             || $request->wantsJson()

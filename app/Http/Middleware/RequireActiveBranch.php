@@ -38,12 +38,20 @@ class RequireActiveBranch
 
         $message = 'Please select an active branch to continue.';
 
-        if ($request->expectsJson()) {
+        if ($this->shouldReturnJson($request)) {
             return response()->json(['message' => $message], 422);
         }
 
         return redirect()
             ->to(\App\Support\SafeRoute::to('branches.index', '/settings/branches'))
             ->with('error', $message);
+    }
+
+    private function shouldReturnJson(Request $request): bool
+    {
+        return $request->expectsJson()
+            || $request->wantsJson()
+            || $request->ajax()
+            || strtolower((string) $request->header('X-Requested-With')) === 'xmlhttprequest';
     }
 }

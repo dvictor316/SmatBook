@@ -12,6 +12,10 @@ class SubscriptionActive
     public function handle(Request $request, Closure $next)
     {
         if (!Auth::check()) {
+            if ($this->shouldReturnJson($request)) {
+                return response()->json(['message' => 'Your session expired. Please login again to continue.'], 401);
+            }
+
             return redirect()->route('login');
         }
 
@@ -47,24 +51,53 @@ class SubscriptionActive
         $subscription = Subscription::resolveCurrentForUser($user);
 
         if (!$subscription) {
+            if ($this->shouldReturnJson($request)) {
+                return response()->json(['message' => 'An active subscription is required.'], 402);
+            }
+
             return redirect()->route('membership-plans');
         }
 
         if (strtolower((string) $subscription->plan_name) === 'custom' && !$subscription->isValid()) {
+            if ($this->shouldReturnJson($request)) {
+                return response()->json(['message' => 'Your custom subscription is awaiting review.'], 402);
+            }
+
             return redirect()->route('management.review');
         }
 
         if ($subscription->isExpired()) {
+            if ($this->shouldReturnJson($request)) {
+                return response()->json(['message' => 'Your subscription has expired.'], 402);
+            }
+
             return redirect()->route('subscription.expired');
         }
 
         if (!$subscription->isValid()) {
             if (strtolower((string) $subscription->plan_name) === 'custom') {
+                if ($this->shouldReturnJson($request)) {
+                    return response()->json(['message' => 'Your custom subscription is awaiting review.'], 402);
+                }
+
                 return redirect()->route('management.review');
             }
+
+            if ($this->shouldReturnJson($request)) {
+                return response()->json(['message' => 'An active subscription is required.'], 402);
+            }
+
             return redirect()->route('membership-plans');
         }
 
         return $next($request);
+    }
+
+    private function shouldReturnJson(Request $request): bool
+    {
+        return $request->expectsJson()
+            || $request->wantsJson()
+            || $request->ajax()
+            || strtolower((string) $request->header('X-Requested-With')) === 'xmlhttprequest';
     }
 }
