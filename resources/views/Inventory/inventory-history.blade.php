@@ -75,16 +75,19 @@
                             </button>
                         </div>
                     </div>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-sm-12">
-                    <div class="card border shadow-none mb-4">
-                        <div class="card-body p-4">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <h6 class="fw-bold text-dark mb-4">Quantities In</h6>
+                    <div class="col-auto">
+                        <div class="btn-group shadow-sm bg-white">
+                            <button onclick="window.print()" class="btn btn-white border btn-sm">
+                                <i class="feather-printer me-1"></i> Print
+                            </button>
+                            <button id="export_pdf_btn" class="btn btn-white border text-danger btn-sm">
+                                <i class="feather-file-text me-1"></i> PDF
+                            </button>
+                            <button id="export_excel_btn" class="btn btn-white border text-success btn-sm">
+                                <i class="feather-file me-1"></i> Excel
+                            </button>
+                        </div>
+                    </div>
                                     <div class="row">
                                         <div class="col-6 mb-3">
                                             <p class="text-muted small mb-1">Total Purchase</p>
@@ -128,15 +131,6 @@
                             </div>
                             <hr class="my-4">
                             <div class="row">
-                                <div class="col-md-3">
-                                    <div class="card border bg-light">
-                                        <div class="card-body py-3 px-4">
-                                            <p class="text-muted small mb-1">Totals</p>
-                                            <h6 class="fw-bold mb-2">Current Stock</h6>
-                                            <h4 class="mb-0 text-primary">{{ number_format($currentStock, 2) }} <span style="font-size: 14px;">{{ $product->unit_type ?? 'pc' }}(s)</span></h4>
-                                        </div>
-                                    </div>
-                                </div>
                                 <div class="col-md-3">
                                     <div class="card border bg-light">
                                         <div class="card-body py-3 px-4">
