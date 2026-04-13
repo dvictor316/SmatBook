@@ -388,6 +388,8 @@
 @push('scripts')
 <script>
     $(document).ready(function () {
+        const editCategoryStoreUrl = @json(route('inventory.categories.store'));
+
         function upsertCategoryOption(selectSelector, category) {
             if (!category || !category.id || !category.name) {
                 return;
@@ -444,12 +446,14 @@
             const btn = $(this).find('button[type="submit"]');
             btn.prop('disabled', true);
 
-            fetch("{{ route('categories.store') }}", {
+            fetch(editCategoryStoreUrl, {
                 method: "POST",
+                credentials: 'same-origin',
                 headers: {
                     'X-CSRF-TOKEN': '{{ csrf_token() }}',
                     'Content-Type': 'application/json',
-                    'Accept': 'application/json'
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
                 body: JSON.stringify({ name: $('#edit_new_category_name').val() })
             })

@@ -392,8 +392,8 @@
 @push('scripts')
 <script>
     $(document).ready(function() {
-        const categoryIndexUrl = '/inventory/products/category';
-        const categoryStoreUrl = '/inventory/products/category';
+        const categoryIndexUrl = @json(route('inventory.categories'));
+        const categoryStoreUrl = @json(route('inventory.categories.store'));
         const categoryError = $('#category_error_message');
         const categoryPageSuccess = $('#category_page_success_message');
         const categoryPageSuccessText = $('#category_page_success_text');
@@ -433,6 +433,9 @@
             }
 
             const response = await fetch(categoryIndexUrl, {
+                method: 'GET',
+                credentials: 'same-origin',
+                cache: 'no-store',
                 headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
             });
             const payload = await parseJsonResponse(response, 'Category list returned HTML instead of JSON.');
@@ -559,6 +562,7 @@
 
             fetch(categoryStoreUrl, {
                 method: "POST",
+                credentials: 'same-origin',
                 headers: {
                     'X-CSRF-TOKEN': '{{ csrf_token() }}',
                     'Content-Type': 'application/json',

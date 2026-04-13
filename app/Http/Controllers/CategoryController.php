@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Database\QueryException;
 
 class CategoryController extends Controller
@@ -19,6 +20,10 @@ private function expectsJsonResponse(Request $request): bool
         || $request->wantsJson()
         || $request->ajax()
         || strtolower((string) $request->header('X-Requested-With')) === 'xmlhttprequest'
+        || $request->routeIs('inventory.categories')
+        || $request->routeIs('inventory.categories.store')
+        || $request->routeIs('categories.index')
+        || $request->routeIs('categories.store')
         || in_array($path, ['inventory/products/category', 'categories', 'categories/store'], true);
 }
 
@@ -126,13 +131,24 @@ public function store(Request $request)
         return redirect()->back()->with('error', 'Categories table is not available yet.');
     }
 
-    // 1. Validation
-    $request->validate([
+    $validator = Validator::make($request->all(), [
         'name' => 'required|string|max:255',
         'description' => 'nullable|string',
         'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', 
-        'status' => 'nullable', // HTML select/checkbox can be tricky with 'boolean' validation
+        'status' => 'nullable',
     ]);
+
+    if ($validator->fails()) {
+        if ($this->expectsJsonResponse($request)) {
+            return response()->json([
+                'ok' => false,
+                'message' => $validator->errors()->first(),
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        return redirect()->back()->withErrors($validator)->withInput();
+    }
 
     $normalizedName = mb_strtolower(trim((string) $request->name));
 

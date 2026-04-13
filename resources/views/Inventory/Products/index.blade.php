@@ -807,8 +807,8 @@
 
 <script>
     $(document).ready(function() {
-        const categoryIndexUrl = '/inventory/products/category';
-        const categoryStoreUrl = '/inventory/products/category';
+        const categoryIndexUrl = @json(route('inventory.categories'));
+        const categoryStoreUrl = @json(route('inventory.categories.store'));
         const quickCategoryError = $('#quick_category_error_message');
         const quickCategorySuccess = $('#quick_category_success_message');
 
@@ -849,6 +849,9 @@
 
             try {
                 const response = await fetch(categoryIndexUrl, {
+                    method: 'GET',
+                    credentials: 'same-origin',
+                    cache: 'no-store',
                     headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
                 });
                 const payload = await parseJsonResponse(response, 'Category list returned HTML instead of JSON.');
@@ -1097,6 +1100,7 @@
             
             fetch(categoryStoreUrl, {
                 method: "POST",
+                credentials: 'same-origin',
                 headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
                 body: JSON.stringify({ name: $('#new_category_name').val() })
             })
