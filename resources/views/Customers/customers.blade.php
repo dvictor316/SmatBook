@@ -100,6 +100,15 @@
                 white-space: nowrap;
             }
 
+            .customer-report-shell .customer-actions {
+                min-width: 270px;
+            }
+
+            .customer-report-shell .customer-action-btn {
+                border-radius: 8px;
+                white-space: nowrap;
+            }
+
             @media (max-width: 767.98px) {
                 .customer-page-actions {
                     display: flex;
@@ -123,6 +132,10 @@
 
                 .customer-report-shell .report-stamp {
                     min-width: auto;
+                }
+
+                .customer-report-shell .customer-actions {
+                    min-width: 0;
                 }
             }
         </style>
@@ -328,32 +341,26 @@
                                                     </span>
                                                 </td>
                                                 <td class="text-end">
-                                                    <div class="dropdown dropdown-action">
-                                                        <a href="#" class="btn-action-icon" data-bs-toggle="dropdown" aria-expanded="false">
-                                                            <i class="fas fa-ellipsis-v"></i>
+                                                    <div class="d-inline-flex align-items-center gap-2 flex-wrap justify-content-end customer-actions">
+                                                        <a class="btn btn-sm btn-outline-primary customer-action-btn" href="{{ route('customers.edit', $customer->id) }}">
+                                                            <i class="far fa-edit me-1"></i>Edit
                                                         </a>
-                                                        <div class="dropdown-menu dropdown-menu-end">
-                                                            <a class="dropdown-item" href="{{ route('customers.edit', $customer->id) }}">
-                                                                <i class="far fa-edit me-2"></i>Edit
-                                                            </a>
-                                                            <a class="dropdown-item" href="{{ route('customers.show', $customer->id) }}">
-                                                                <i class="far fa-eye me-2"></i>View Details
-                                                            </a>
-                                                            <a class="dropdown-item" href="{{ route('reports.customer-statement', $customer->id) }}">
-                                                                <i class="far fa-file-alt me-2"></i>Customer Statement
-                                                            </a>
-                                                            <a class="dropdown-item" href="{{ route('customers.receive-payment', $customer->id) }}">
-                                                                <i class="far fa-credit-card me-2"></i>Receive Payment
-                                                            </a>
-                                                            <div class="dropdown-divider"></div>
-                                                            <form action="{{ route('customers.destroy', $customer->id) }}" method="POST" onsubmit="return confirm('Delete this customer?');">
-                                                                @csrf
-                                                                @method('DELETE')
-                                                                <button type="submit" class="dropdown-item text-danger">
-                                                                    <i class="far fa-trash-alt me-2"></i>Delete
-                                                                </button>
-                                                            </form>
-                                                        </div>
+                                                        <a class="btn btn-sm btn-outline-info customer-action-btn" href="{{ route('customers.show', $customer->id) }}">
+                                                            <i class="far fa-eye me-1"></i>View
+                                                        </a>
+                                                        <a class="btn btn-sm btn-outline-secondary customer-action-btn" href="{{ route('reports.customer-statement', $customer->id) }}">
+                                                            <i class="far fa-file-alt me-1"></i>Statement
+                                                        </a>
+                                                        <a class="btn btn-sm btn-outline-success customer-action-btn" href="{{ route('customers.receive-payment', $customer->id) }}">
+                                                            <i class="far fa-credit-card me-1"></i>Receive
+                                                        </a>
+                                                        <form action="{{ route('customers.destroy', $customer->id) }}" method="POST" onsubmit="return confirm('Delete this customer?');" class="d-inline-block">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="btn btn-sm btn-outline-danger customer-action-btn">
+                                                                <i class="far fa-trash-alt me-1"></i>Delete
+                                                            </button>
+                                                        </form>
                                                     </div>
                                                 </td>
                                             </tr>
