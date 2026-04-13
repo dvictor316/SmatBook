@@ -838,9 +838,12 @@
             const pieces = parseFloat($('input[name="stock_units"]').val()) || 0;
             const rollsPerCarton = parseFloat($('#quick_units_per_carton_input').val()) || 0;
             const piecesPerRoll = parseFloat($('#quick_units_per_roll_input').val()) || 0;
+            const piecesPerCarton = packagingValue('#quick_pcs_per_carton_helper');
             const purchasePrice = parseFloat($('input[name="purchase_price"]').val()) || 0;
 
-            const fromCartons = piecesPerRoll > 0 ? cartons * rollsPerCarton * piecesPerRoll : cartons * rollsPerCarton;
+            const fromCartons = piecesPerCarton > 0
+                ? cartons * piecesPerCarton
+                : (piecesPerRoll > 0 ? cartons * rollsPerCarton * piecesPerRoll : cartons * rollsPerCarton);
             const fromRolls = piecesPerRoll > 0 ? rolls * piecesPerRoll : rolls;
             const total = fromCartons + fromRolls + pieces;
             const stockValue = total * purchasePrice;
