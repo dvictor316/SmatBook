@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Database\QueryException;
 
 class CategoryController extends Controller
 {
@@ -60,11 +61,43 @@ public function store(Request $request)
         'status' => 'nullable', // HTML select/checkbox can be tricky with 'boolean' validation
     ]);
 
+    $normalizedName = mb_strtolower(trim((string) $request->name));
+
     $existingCategory = $this->applyTenantScope(Category::query())
         ->whereRaw('LOWER(name) = ?', [mb_strtolower((string) $request->name)])
-        ->exists();
+        ->first();
 
     if ($existingCategory) {
+        if ($request->expectsJson()) {
+            return response()->json([
+                'ok' => true,
+                'message' => 'Category already exists and has been selected.',
+                'data' => [
+                    'id' => $existingCategory->id,
+                    'name' => $existingCategory->name,
+                ],
+            ]);
+        }
+
+        return redirect()->back()->withErrors(['name' => 'A category with this name already exists.'])->withInput();
+    }
+
+    $globalExistingCategory = Category::withoutGlobalScopes()
+        ->whereRaw('LOWER(name) = ?', [$normalizedName])
+        ->first();
+
+    if ($globalExistingCategory) {
+        if ($request->expectsJson()) {
+            return response()->json([
+                'ok' => true,
+                'message' => 'Category already exists and has been selected.',
+                'data' => [
+                    'id' => $globalExistingCategory->id,
+                    'name' => $globalExistingCategory->name,
+                ],
+            ]);
+        }
+
         return redirect()->back()->withErrors(['name' => 'A category with this name already exists.'])->withInput();
     }
 
@@ -100,7 +133,32 @@ public function store(Request $request)
         $payload['user_id'] = Auth::id();
     }
 
-    $category = \App\Models\Category::create($payload);
+    try {
+        $category = \App\Models\Category::create($payload);
+    } catch (QueryException $exception) {
+        if ((int) $exception->getCode() === 23000 || (int) ($exception->errorInfo[1] ?? 0) === 1062) {
+            $duplicateCategory = Category::withoutGlobalScopes()
+                ->whereRaw('LOWER(name) = ?', [$normalizedName])
+                ->first();
+
+            if ($duplicateCategory && $request->expectsJson()) {
+                return response()->json([
+                    'ok' => true,
+                    'message' => 'Category already exists and has been selected.',
+                    'data' => [
+                        'id' => $duplicateCategory->id,
+                        'name' => $duplicateCategory->name,
+                    ],
+                ]);
+            }
+
+            return redirect()->back()->withErrors([
+                'name' => 'A category with this name already exists.',
+            ])->withInput();
+        }
+
+        throw $exception;
+    }
 
     if ($request->expectsJson()) {
         return response()->json([
