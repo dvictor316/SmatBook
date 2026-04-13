@@ -182,6 +182,11 @@
             </div>
         @endif
 
+        <div id="category_page_success_message" class="alert alert-success alert-dismissible fade shadow-sm border-0 d-none" role="alert">
+            <span id="category_page_success_text"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
         {{-- Main Form --}}
         <div class="card product-form-card border-0 mb-4">
             <div class="card-body">
@@ -390,6 +395,8 @@
         const categoryIndexUrl = @json(url('/inventory/products/category'));
         const categoryStoreUrl = @json(url('/inventory/products/category'));
         const categoryError = $('#category_error_message');
+        const categoryPageSuccess = $('#category_page_success_message');
+        const categoryPageSuccessText = $('#category_page_success_text');
 
         function showCategoryError(message) {
             categoryError.removeClass('d-none').text(message || 'Unable to complete category request.');
@@ -397,6 +404,15 @@
 
         function clearCategoryError() {
             categoryError.addClass('d-none').text('');
+        }
+
+        function showCategorySuccess(message) {
+            categoryPageSuccessText.text(message || 'Category added successfully.');
+            categoryPageSuccess.removeClass('d-none').addClass('show');
+
+            window.setTimeout(() => {
+                categoryPageSuccess.removeClass('show').addClass('d-none');
+            }, 3500);
         }
 
         async function parseJsonResponse(response, fallbackMessage) {
@@ -566,7 +582,8 @@
                     reloadCategoryOptions(String(data.data.id))
                         .then(() => {
                             clearCategoryError();
-                            bootstrap.Modal.getInstance(document.getElementById('addCategoryModal'))?.hide();
+                            showCategorySuccess(data?.message || 'Category added successfully.');
+                            bootstrap.Modal.getOrCreateInstance(document.getElementById('addCategoryModal')).hide();
                             form.reset();
                         });
                 }

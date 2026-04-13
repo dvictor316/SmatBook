@@ -784,6 +784,7 @@
                     <h5 class="modal-title">Quick Category</h5>
                 </div>
                 <div class="modal-body">
+                    <div id="quick_category_success_message" class="alert alert-success d-none" role="alert"></div>
                     <div id="quick_category_error_message" class="alert alert-danger d-none" role="alert"></div>
                     <input type="text" name="name" id="new_category_name" class="form-control" placeholder="Category Name" required>
                 </div>
@@ -809,13 +810,24 @@
         const categoryIndexUrl = @json(url('/inventory/products/category'));
         const categoryStoreUrl = @json(url('/inventory/products/category'));
         const quickCategoryError = $('#quick_category_error_message');
+        const quickCategorySuccess = $('#quick_category_success_message');
 
         function showQuickCategoryError(message) {
+            quickCategorySuccess.addClass('d-none').text('');
             quickCategoryError.removeClass('d-none').text(message || 'Unable to complete category request.');
         }
 
         function clearQuickCategoryError() {
             quickCategoryError.addClass('d-none').text('');
+        }
+
+        function showQuickCategorySuccess(message) {
+            clearQuickCategoryError();
+            quickCategorySuccess.removeClass('d-none').text(message || 'Category added successfully.');
+        }
+
+        function clearQuickCategorySuccess() {
+            quickCategorySuccess.addClass('d-none').text('');
         }
 
         async function parseJsonResponse(response, fallbackMessage) {
@@ -937,6 +949,8 @@
         });
 
         $('#addProductModal').on('shown.bs.modal', function() {
+            clearQuickCategorySuccess();
+            clearQuickCategoryError();
             reloadQuickCategoryOptions($('#product_category_select').val() || '').finally(() => {
                 initializeQuickCategorySelect();
             });
@@ -1078,6 +1092,7 @@
             const form = this;
             const btn = $(this).find('button[type="submit"]');
             btn.prop('disabled', true);
+            clearQuickCategorySuccess();
             clearQuickCategoryError();
             
             fetch(categoryStoreUrl, {
@@ -1098,8 +1113,9 @@
                     upsertCategoryOption('#product_category_select', data.data);
                     reloadQuickCategoryOptions(String(data.data.id)).finally(() => {
                         clearQuickCategoryError();
+                        showQuickCategorySuccess(data?.message || 'Category added successfully.');
                         initializeQuickCategorySelect();
-                        bootstrap.Modal.getInstance(document.getElementById('addCategoryModal')).hide();
+                        bootstrap.Modal.getOrCreateInstance(document.getElementById('addCategoryModal')).hide();
                         form.reset();
                     });
                 }
