@@ -314,6 +314,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             const products = @json($products);
             const initialRows = @json(old('products', $initialProducts ?? []));
+            const currencySymbol = @json(\App\Support\GeoCurrency::currentSymbol());
             let productCounter = 0;
 
             const tableBody = document.getElementById('productsTableBody');
@@ -325,7 +326,7 @@
                     const unit = product.unit ?? 'pcs';
                     const price = product.price ?? 0;
                     options.push(
-                        `<option value="${product.id}" data-name="${escapeHtml(product.name)}" data-unit="${escapeHtml(unit)}" data-price="${price}">${escapeHtml(product.name)} - $${Number(price).toFixed(2)}</option>`
+                        `<option value="${product.id}" data-name="${escapeHtml(product.name)}" data-unit="${escapeHtml(unit)}" data-price="${price}">${escapeHtml(product.name)} - ${currencySymbol}${Number(price).toFixed(2)}</option>`
                     );
                 });
                 return options.join('');
