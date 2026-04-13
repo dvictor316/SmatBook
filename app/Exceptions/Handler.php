@@ -8,6 +8,7 @@ use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\QueryException;
 use Illuminate\Session\TokenMismatchException;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -40,7 +41,7 @@ class Handler extends ExceptionHandler
         $this->renderable(function (TokenMismatchException $e, $request) {
             $message = 'Your session expired. Please login again to continue.';
 
-            if ($request->expectsJson()) {
+            if ($this->shouldReturnJson($request)) {
                 return response()->json(['message' => $message], 419);
             }
 
@@ -56,7 +57,7 @@ class Handler extends ExceptionHandler
         $this->renderable(function (AuthenticationException $e, $request) {
             $message = 'Your session expired. Please login again to continue.';
 
-            if ($request->expectsJson()) {
+            if ($this->shouldReturnJson($request)) {
                 return response()->json(['message' => $message], 401);
             }
 
@@ -70,6 +71,20 @@ class Handler extends ExceptionHandler
             return redirect()
                 ->guest($loginUrl)
                 ->withErrors(['login' => $message]);
+        });
+
+        $this->renderable(function (ValidationException $e, $request) {
+            if (!$this->shouldReturnJson($request)) {
+                return null;
+            }
+
+            $errors = $e->errors();
+            $message = collect($errors)->flatten()->first() ?: 'The submitted data is invalid.';
+
+            return response()->json([
+                'message' => $message,
+                'errors' => $errors,
+            ], $e->status);
         });
 
         $this->renderable(function (NotFoundHttpException $e, $request) {
@@ -97,7 +112,7 @@ class Handler extends ExceptionHandler
 
             $message = 'Dashboard loaded without branch selection. You can choose a branch anytime from Settings.';
 
-            if ($request->expectsJson()) {
+            if ($this->shouldReturnJson($request)) {
                 return response()->json(['message' => $message], 404);
             }
 
@@ -114,7 +129,7 @@ class Handler extends ExceptionHandler
             $path = ltrim($request->path(), '/');
 
             if (str_starts_with($path, 'expenses/')) {
-                if ($request->expectsJson()) {
+                if ($this->shouldReturnJson($request)) {
                     return response()->json([
                         'message' => 'Open the Expenses page and use the Edit action from the list.',
                     ], 404);
@@ -134,7 +149,7 @@ class Handler extends ExceptionHandler
             $idText = $ids ? implode(',', $ids) : 'unknown';
             $message = "Record not found: {$model} ({$idText}).";
 
-            if ($request->expectsJson()) {
+            if ($this->shouldReturnJson($request)) {
                 return response()->json(['message' => $message], 404);
             }
 
@@ -148,7 +163,7 @@ class Handler extends ExceptionHandler
                 'code' => $e->getCode(),
             ]);
 
-            if ($request->expectsJson()) {
+            if ($this->shouldReturnJson($request)) {
                 return response()->json(['message' => $message], 500);
             }
 
@@ -178,7 +193,7 @@ class Handler extends ExceptionHandler
                 'exception' => $base,
             ]);
 
-            if ($request->expectsJson()) {
+            if ($this->shouldReturnJson($request)) {
                 return response()->json(['message' => $message], 500);
             }
 
@@ -219,5 +234,19 @@ class Handler extends ExceptionHandler
         }
 
         return route('saas-login');
+    }
+
+    private function shouldReturnJson($request): bool
+    {
+        if ($request->expectsJson()
+            || $request->wantsJson()
+            || $request->ajax()
+            || strtolower((string) $request->header('X-Requested-With')) === 'xmlhttprequest') {
+            return true;
+        }
+
+        $path = trim((string) $request->path(), '/');
+
+        return $path === 'inventory/products/category' || $path === 'categories' || $path === 'categories/store';
     }
 }
