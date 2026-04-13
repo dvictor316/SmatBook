@@ -9,6 +9,20 @@ use Illuminate\Support\Facades\Schema;
 
 class EstimateController extends Controller
 {
+    private function normalizeEstimatePayload(array $validated): array
+    {
+        $subtotal = Estimate::normalizeMoney($validated['subtotal'] ?? 0);
+        $tax = Estimate::normalizeMoney($validated['tax'] ?? 0);
+        $discount = Estimate::normalizeMoney($validated['discount'] ?? 0);
+
+        $validated['subtotal'] = $subtotal;
+        $validated['tax'] = $tax;
+        $validated['discount'] = $discount;
+        $validated['total_amount'] = Estimate::calculateTotal($subtotal, $tax, $discount);
+
+        return $validated;
+    }
+
     private function applyTenantScope($query)
     {
         $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
@@ -66,7 +80,7 @@ class EstimateController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        $payload = $validated;
+        $payload = $this->normalizeEstimatePayload($validated);
         if (Schema::hasColumn('estimates', 'company_id')) {
             $payload['company_id'] = auth()->user()?->company_id ?? session('current_tenant_id');
         }
@@ -120,7 +134,7 @@ class EstimateController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        $estimate->update($validated);
+        $estimate->update($this->normalizeEstimatePayload($validated));
 
         return redirect()->route('estimates.index')->with('success', 'Estimate updated successfully.');
     }

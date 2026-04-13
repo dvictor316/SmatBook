@@ -18,7 +18,11 @@
     $subtotal = (float) ($estimate->subtotal ?? 0);
     $tax = (float) ($estimate->tax ?? 0);
     $discount = (float) ($estimate->discount ?? 0);
-    $totalAmount = (float) ($estimate->amount ?? $estimate->total_amount ?? 0);
+    $storedTotalAmount = (float) ($estimate->amount ?? $estimate->total_amount ?? 0);
+    $calculatedTotalAmount = round(max(0, $subtotal + $tax - $discount), 2);
+    $totalAmount = abs($storedTotalAmount - $calculatedTotalAmount) > 0.009
+        ? $calculatedTotalAmount
+        : $storedTotalAmount;
 @endphp
 
 <div class="page-wrapper">
@@ -56,7 +60,7 @@
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <div class="text-muted small">Customer</div>
-                                <div class="fw-semibold">{{ $estimate->customer?->name ?? 'N/A' }}</div>
+                                <div class="fw-semibold">{{ $estimate->customer?->customer_name ?? $estimate->customer?->name ?? 'N/A' }}</div>
                                 <div class="text-muted small">{{ $estimate->customer?->email ?? $estimate->customer?->phone ?? 'No contact info' }}</div>
                             </div>
                             <div class="col-md-6">

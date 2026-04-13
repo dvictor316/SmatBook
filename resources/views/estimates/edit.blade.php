@@ -9,7 +9,7 @@
     $subtotal = (float) old('subtotal', $estimate->subtotal ?? 0);
     $tax = (float) old('tax', $estimate->tax ?? 0);
     $discount = (float) old('discount', $estimate->discount ?? 0);
-    $totalAmount = (float) old('total_amount', $estimate->total_amount ?? 0);
+    $totalAmount = round(max(0, $subtotal + $tax - $discount), 2);
     $issueDate = old('issue_date', optional($estimate->issue_date)->format('Y-m-d'));
     $expiryDate = old('expiry_date', optional($estimate->expiry_date)->format('Y-m-d'));
     $statusValue = old('status', $estimate->status ?? 'Draft');
@@ -79,22 +79,23 @@
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label">Subtotal ({{ $currencySymbol }})</label>
-                                    <input type="number" step="0.01" name="subtotal" class="form-control" value="{{ old('subtotal', $estimate->subtotal ?? 0) }}" required>
+                                    <input type="number" step="0.01" min="0" name="subtotal" class="form-control js-estimate-subtotal" value="{{ old('subtotal', $estimate->subtotal ?? 0) }}" required>
                                     @error('subtotal') <div class="text-danger small">{{ $message }}</div> @enderror
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label">Tax ({{ $currencySymbol }})</label>
-                                    <input type="number" step="0.01" name="tax" class="form-control" value="{{ old('tax', $estimate->tax ?? 0) }}" required>
+                                    <input type="number" step="0.01" min="0" name="tax" class="form-control js-estimate-tax" value="{{ old('tax', $estimate->tax ?? 0) }}" required>
                                     @error('tax') <div class="text-danger small">{{ $message }}</div> @enderror
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label">Discount ({{ $currencySymbol }})</label>
-                                    <input type="number" step="0.01" name="discount" class="form-control" value="{{ old('discount', $estimate->discount ?? 0) }}">
+                                    <input type="number" step="0.01" min="0" name="discount" class="form-control js-estimate-discount" value="{{ old('discount', $estimate->discount ?? 0) }}">
                                     @error('discount') <div class="text-danger small">{{ $message }}</div> @enderror
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Total Amount ({{ $currencySymbol }})</label>
-                                    <input type="number" step="0.01" name="total_amount" class="form-control" value="{{ old('total_amount', $estimate->total_amount ?? 0) }}" required>
+                                    <input type="number" step="0.01" min="0" name="total_amount" class="form-control js-estimate-total" value="{{ $totalAmount }}" readonly required>
+                                    <div class="text-muted small mt-2">Calculated automatically from subtotal + tax - discount.</div>
                                     @error('total_amount') <div class="text-danger small">{{ $message }}</div> @enderror
                                 </div>
                                 <div class="col-md-6">
@@ -179,3 +180,38 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const subtotalInput = document.querySelector('.js-estimate-subtotal');
+    const taxInput = document.querySelector('.js-estimate-tax');
+    const discountInput = document.querySelector('.js-estimate-discount');
+    const totalInput = document.querySelector('.js-estimate-total');
+
+    if (!subtotalInput || !taxInput || !discountInput || !totalInput) {
+        return;
+    }
+
+    const toNumber = (value) => {
+        const parsed = parseFloat(value);
+        return Number.isFinite(parsed) ? parsed : 0;
+    };
+
+    const updateTotal = () => {
+        const subtotal = toNumber(subtotalInput.value);
+        const tax = toNumber(taxInput.value);
+        const discount = toNumber(discountInput.value);
+        const total = Math.max(0, subtotal + tax - discount);
+        totalInput.value = total.toFixed(2);
+    };
+
+    [subtotalInput, taxInput, discountInput].forEach((input) => {
+        input.addEventListener('input', updateTotal);
+        input.addEventListener('change', updateTotal);
+    });
+
+    updateTotal();
+});
+</script>
+@endpush
