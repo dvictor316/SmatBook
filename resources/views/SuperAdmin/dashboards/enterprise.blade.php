@@ -204,7 +204,7 @@
         $expenseRunRate = $expenseTotals->count() ? ($expenseTotals->sum() / max($expenseTotals->count(), 1)) : 0;
         $profitRunRate = $profitTotals->count() ? ($profitTotals->sum() / max($profitTotals->count(), 1)) : 0;
         $inventoryValue = (float) ($metrics['inventoryValue'] ?? 0);
-        $branchLabel = $activeBranch['name'] ?? 'Workspace Default';
+        $branchLabel = $dashboardBranchLabel ?? ($activeBranch['name'] ?? 'All Branches');
     @endphp
 
     {{-- 1. Master Header --}} 

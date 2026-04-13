@@ -133,8 +133,20 @@ class DashboardController extends Controller
                 ->toArray();
         });
 
+        $plan = Plan::normalizeTier(
+            $currentSubscription?->plan_name
+            ?? $currentSubscription?->plan
+            ?? ($company->plan ?? (($userRole === 'superadmin' || $user->email === 'donvictorlive@gmail.com') ? 'enterprise' : 'basic'))
+        );
+        $dashboardBranchLabel = $activeBranch['name'] ?? null;
+
+        if ($isBusinessWorkspace && $plan === 'enterprise' && (!empty($activeBranch['id']) || !empty($activeBranch['name']))) {
+            $activeBranch = ['id' => null, 'name' => null];
+            $dashboardBranchLabel = 'All Branches';
+        }
+
         // 3. CACHED ANALYTICS (Scoped to Company)
-        $resolvedCompanyScopeId = (int) ($company->id ?? $currentSubscription?->company_id ?? $user->company_id ?? session('current_tenant_id') ?? 0);
+        $resolvedCompanyScopeId = (int) (($company?->id ?? null) ?? $currentSubscription?->company_id ?? $user->company_id ?? session('current_tenant_id') ?? 0);
         $branchCacheKey = $isBusinessWorkspace ? ('_branch_' . ($activeBranch['id'] ?? 'all')) : '_global';
         $cacheKey = 'metrics_co_' . ($resolvedCompanyScopeId > 0 ? $resolvedCompanyScopeId : ('user_' . $user->id)) . $branchCacheKey;
         $metrics = Cache::remember($cacheKey, 300, function() use ($company, $activeBranch) {
@@ -189,6 +201,67 @@ class DashboardController extends Controller
             ];
         });
 
+        $shouldFallbackToTenantWide = $isBusinessWorkspace
+            && !empty($activeBranch['id'])
+            && $this->shouldUseTenantWideDashboardFallback($metrics);
+
+        if ($shouldFallbackToTenantWide) {
+            $activeBranch = ['id' => null, 'name' => null];
+            $dashboardBranchLabel = 'All Branches';
+            $fallbackCacheKey = 'metrics_co_' . ($resolvedCompanyScopeId > 0 ? $resolvedCompanyScopeId : ('user_' . $user->id)) . '_branch_all';
+            $metrics = Cache::remember($fallbackCacheKey, 300, function() use ($company) {
+                $todayRevenue = $this->getTodayRevenue($company, null);
+                $totalSales = $this->getTotalSales($company, null);
+                $totalProfit = $this->getTotalProfit($company, null);
+                $totalExpenses = $this->getTotalExpenses($company, null);
+                $activeStock = $this->getTotalStock($company, null);
+                $inventoryValue = $this->getInventoryValue($company, null);
+                $totalInvoices = $this->getTotalInvoices($company, null);
+                $activeCustomers = $this->getActiveCustomers($company);
+                $lowStockCount = $this->getLowStockCount($company, null);
+                $pendingBalance = $this->getPendingBalance($company, null);
+                $itemsSold = $this->getItemsSold($company, null);
+                $todayOrders = $this->getTodayOrders($company, null);
+                $paymentStatus = $this->getPaymentStatusCounts($company, null);
+                $currentMonthSales = $this->getCurrentMonthSales($company, null);
+                $previousMonthSales = $this->getPreviousMonthSales($company, null);
+                $avgOrderValue = $totalInvoices > 0 ? ($totalSales / $totalInvoices) : 0;
+                $profitMargin = $totalSales > 0 ? (($totalProfit / $totalSales) * 100) : 0;
+                $expenseRatio = $totalSales > 0 ? (($totalExpenses / $totalSales) * 100) : 0;
+                $revenueProgress = $this->getRevenueProgress($todayRevenue, $totalSales);
+                $salesGrowthRate = $previousMonthSales > 0
+                    ? (($currentMonthSales - $previousMonthSales) / $previousMonthSales) * 100
+                    : ($currentMonthSales > 0 ? 100 : 0);
+
+                return [
+                    'todayRevenue'    => $todayRevenue,
+                    'totalSales'      => $totalSales,
+                    'totalProfit'     => $totalProfit,
+                    'netProfit'       => $totalProfit,
+                    'totalExpenses'   => $totalExpenses,
+                    'activeStock'     => $activeStock,
+                    'inventoryValue'  => $inventoryValue,
+                    'totalInvoices'   => $totalInvoices,
+                    'activeCustomers' => $activeCustomers,
+                    'lowStockCount'   => $lowStockCount,
+                    'pendingBalance'  => $pendingBalance,
+                    'itemsSoldToday'  => $itemsSold,
+                    'totalOrders'     => $todayOrders,
+                    'avgOrderValue'   => $avgOrderValue,
+                    'profitMargin'    => $profitMargin,
+                    'expenseRatio'    => $expenseRatio,
+                    'currentMonthSales' => $currentMonthSales,
+                    'previousMonthSales' => $previousMonthSales,
+                    'salesGrowthRate' => $salesGrowthRate,
+                    'paidInvoices'    => $paymentStatus['paid'],
+                    'partialInvoices' => $paymentStatus['partial'],
+                    'unpaidInvoices'  => $paymentStatus['unpaid'],
+                    'revenueProgress' => $revenueProgress,
+                    'countryHeatMap'  => $this->getHeatMapData($company),
+                ];
+            });
+        }
+
      // 4. PACKAGING DATA FOR DEEP SAPPHIRE VIEW
         $monthlySalesData = $this->getMonthlySalesData($company, $activeBranch);
         $monthlyExpenseData = $this->getMonthlyExpensesData($company, $activeBranch);
@@ -217,6 +290,7 @@ class DashboardController extends Controller
             'currentSubscription' => $currentSubscription,
             'subscriptionStatus' => $this->subscriptionStatusPayload($currentSubscription, $seatCount, $seatLimit),
             'activeBranch'     => $activeBranch,
+            'dashboardBranchLabel' => $dashboardBranchLabel,
             // FIX: Added '?? []' to handle missing keys in old cache
             'countryHeatMap'   => $metrics['countryHeatMap'] ?? [], 
         ];
@@ -225,12 +299,6 @@ class DashboardController extends Controller
         if (($userRole === 'superadmin' || $user->email === 'donvictorlive@gmail.com') && !$isBusinessWorkspace) {
             return view('SuperAdmin.dashboards.enterprise', $data);
         }
-
-        $plan = Plan::normalizeTier(
-            $currentSubscription?->plan_name
-            ?? $currentSubscription?->plan
-            ?? ($company->plan ?? (($userRole === 'superadmin' || $user->email === 'donvictorlive@gmail.com') ? 'enterprise' : 'basic'))
-        );
 
         return match($plan) {
             'professional' => view('SuperAdmin.dashboards.pro', $data),
@@ -391,12 +459,16 @@ class DashboardController extends Controller
 
     private function getTopProducts($company, ?array $activeBranch = null) {
         if (!Schema::hasTable('products') || !Schema::hasTable('sale_items')) return collect();
+        $qtyColumn = Schema::hasColumn('sale_items', 'qty') ? 'sale_items.qty' : (Schema::hasColumn('sale_items', 'quantity') ? 'sale_items.quantity' : null);
+        if (!$qtyColumn) {
+            return collect();
+        }
         $query = DB::table('sale_items')
             ->join('products', 'products.id', '=', 'sale_items.product_id')
             ->join('sales', 'sales.id', '=', 'sale_items.sale_id');
 
         return $this->scopeSalesByContext($query, $company, $activeBranch, 'sales')
-            ->select('products.id', 'products.name', DB::raw('SUM(COALESCE(sale_items.qty, 0)) as total_qty'))
+            ->select('products.id', 'products.name', DB::raw("SUM(COALESCE({$qtyColumn}, 0)) as total_qty"))
             ->groupBy('products.id', 'products.name')
             ->orderByDesc('total_qty')
             ->limit(5)
@@ -588,6 +660,10 @@ class DashboardController extends Controller
     private function getItemsSold($company, ?array $activeBranch = null): int
     {
         if (!Schema::hasTable('sale_items') || !Schema::hasTable('sales')) return 0;
+        $qtyColumn = Schema::hasColumn('sale_items', 'qty') ? 'sale_items.qty' : (Schema::hasColumn('sale_items', 'quantity') ? 'sale_items.quantity' : null);
+        if (!$qtyColumn) {
+            return 0;
+        }
 
         $query = DB::table('sale_items')
             ->join('sales', 'sales.id', '=', 'sale_items.sale_id')
@@ -595,7 +671,7 @@ class DashboardController extends Controller
 
         $query = $this->scopeSalesByContext($query, $company, $activeBranch, 'sales');
 
-        return (int) ($query->sum('sale_items.qty') ?? 0);
+        return (int) ($query->sum(DB::raw("COALESCE({$qtyColumn}, 0)")) ?? 0);
     }
 
     private function getTodayOrders($company, ?array $activeBranch = null): int
@@ -726,8 +802,16 @@ class DashboardController extends Controller
             return $query;
         }
 
+        $user = Auth::user();
+        $isSuperAdmin = $user && (in_array(strtolower((string)$user->role), ['superadmin', 'super_admin'], true) || strtolower((string)$user->email) === 'donvictorlive@gmail.com');
+
+        // Global Platform Dashboard for Super Admins bypasses all company scoping to show total metrics across all tenants
+        if ($isSuperAdmin && session('workspace_context') === 'platform') {
+            return $query;
+        }
+
         $fallbackCompanyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
-        $resolvedCompanyId = (int) ($company->id ?? $fallbackCompanyId);
+        $resolvedCompanyId = (int) (($company?->id ?? null) ?? $fallbackCompanyId);
         $targetColumn = $column ?? 'company_id';
         $qualifiedTargetColumn = str_contains($targetColumn, '.') ? $targetColumn : ($table . '.' . $targetColumn);
         $hasCompanyColumn = Schema::hasColumn($table, 'company_id');
@@ -770,16 +854,16 @@ class DashboardController extends Controller
     private function companyUserIds($company): array
     {
         $ids = [];
-
-        if (!empty($company->user_id)) {
+        
+        if (!empty($company?->user_id)) {
             $ids[] = (int) $company->user_id;
         }
 
-        if (!empty($company->owner_id)) {
+        if (!empty($company?->owner_id)) {
             $ids[] = (int) $company->owner_id;
         }
 
-        if (Schema::hasColumn('users', 'company_id')) {
+        if ($company?->id && Schema::hasColumn('users', 'company_id')) {
             $memberIds = User::where('company_id', $company->id)->pluck('id')->map(fn ($id) => (int) $id)->toArray();
             $ids = array_merge($ids, $memberIds);
         }
@@ -843,5 +927,17 @@ class DashboardController extends Controller
                 $sub->orWhere($table . '.branch_name', $branchName);
             }
         });
+    }
+
+    private function shouldUseTenantWideDashboardFallback(array $metrics): bool
+    {
+        $signals = [
+            (float) ($metrics['totalSales'] ?? 0),
+            (float) ($metrics['totalInvoices'] ?? 0),
+            (float) ($metrics['activeStock'] ?? 0),
+            (float) ($metrics['activeCustomers'] ?? 0),
+        ];
+
+        return collect($signals)->every(fn ($value) => $value <= 0);
     }
 }
