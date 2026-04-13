@@ -15,6 +15,16 @@ use Carbon\Carbon;
 
 class HomeController extends Controller
 {
+    private function replaceUserMedia(User $user, string $field, \Illuminate\Http\UploadedFile $file, string $directory): void
+    {
+        $existingPath = trim((string) ($user->{$field} ?? ''));
+        if ($existingPath !== '' && Storage::disk('public')->exists($existingPath)) {
+            Storage::disk('public')->delete($existingPath);
+        }
+
+        $user->{$field} = $file->store($directory, 'public');
+    }
+
     private function onlyExistingQuotationColumns(array $payload): array
     {
         if (!Schema::hasTable('quotations')) {
@@ -877,24 +887,29 @@ class HomeController extends Controller
         $user = Auth::user();
 
         if ($request->hasFile('profile_photo')) {
-            if ($user->profile_photo && Storage::disk('public')->exists($user->profile_photo)) {
-                Storage::disk('public')->delete($user->profile_photo);
-            }
-            $user->profile_photo = $request->file('profile_photo')
-                ->store('users/profiles', 'public');
+            $this->replaceUserMedia($user, 'profile_photo', $request->file('profile_photo'), 'users/profiles');
         }
 
         if ($request->hasFile('cover_photo')) {
-            if ($user->cover_photo && Storage::disk('public')->exists($user->cover_photo)) {
-                Storage::disk('public')->delete($user->cover_photo);
-            }
-            $user->cover_photo = $request->file('cover_photo')
-                ->store('users/covers', 'public');
+            $this->replaceUserMedia($user, 'cover_photo', $request->file('cover_photo'), 'users/covers');
         }
 
         $user->save();
 
         return back()->with('success', 'Profile imagery updated successfully.');
+    }
+
+    public function uploadAvatar(Request $request)
+    {
+        $request->validate([
+            'profile_photo' => 'required|image|mimes:jpeg,png,jpg,webp|max:2048',
+        ]);
+
+        $user = Auth::user();
+        $this->replaceUserMedia($user, 'profile_photo', $request->file('profile_photo'), 'users/profiles');
+        $user->save();
+
+        return back()->with('success', 'Avatar updated successfully.');
     }
 
     /*
