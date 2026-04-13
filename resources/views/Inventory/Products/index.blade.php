@@ -573,7 +573,7 @@
                         <div class="col-12">
                             <div class="product-form-sheet">
                                 <h6>Opening Stock</h6>
-                                <p class="product-form-muted">Type the quantity you currently have. Total stock appears automatically.</p>
+                                <p class="product-form-muted">Type the quantity you currently have. Total stock appears automatically. If you do not have stock yet, leave all three fields at `0` and save the product first.</p>
                                 <div class="row g-3">
                                     <div class="col-md-4">
                                         <label class="form-label">Opening Ctn</label>
@@ -845,7 +845,14 @@
                 ? cartons * piecesPerCarton
                 : (piecesPerRoll > 0 ? cartons * rollsPerCarton * piecesPerRoll : cartons * rollsPerCarton);
             const fromRolls = piecesPerRoll > 0 ? rolls * piecesPerRoll : rolls;
-            const total = fromCartons + fromRolls + pieces;
+            let total = fromCartons + fromRolls + pieces;
+
+            // If the user defined pack size but left opening stock empty,
+            // treat the entered carton piece count as the starting quantity.
+            if (total <= 0 && piecesPerCarton > 0) {
+                total = piecesPerCarton;
+            }
+
             const stockValue = total * purchasePrice;
 
             $('#quick_stock_preview_text').text(total.toLocaleString() + ' pcs');
