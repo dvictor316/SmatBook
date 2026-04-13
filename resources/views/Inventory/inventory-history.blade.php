@@ -132,7 +132,11 @@
                                                     <div class="dropdown dropdown-action">
                                                         <a href="#" class="btn-action-icon" data-bs-toggle="dropdown"><i class="fas fa-ellipsis-v"></i></a>
                                                         <div class="dropdown-menu dropdown-menu-right">
+                                                            <a class="dropdown-item" href="{{ route('inventory.history', $product->id) }}" title="View full stock history">
+                                                                <i class="fas fa-chart-line me-2 text-info"></i>View History
+                                                            </a>
                                                             @if($isEditableHistoryRow)
+                                                            <div class="dropdown-divider"></div>
                                                             <a class="dropdown-item edit-btn" href="javascript:void(0);"
                                                                 data-id="{{ $history->id }}"
                                                                 data-qty="{{ $history->quantity }}"
