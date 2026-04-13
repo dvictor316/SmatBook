@@ -21,10 +21,9 @@ class BranchInventoryService
     public function getAvailableStock(Product $product, ?array $branch = null): float
     {
         $branch = $branch ?: $this->getActiveBranchContext();
+        $savedStock = (float) ($product->stock ?? $product->stock_quantity ?? 0);
 
         if (!Schema::hasTable('product_branch_stocks') || empty($branch['id'])) {
-            $savedStock = (float) ($product->stock ?? $product->stock_quantity ?? 0);
-
             if ($savedStock !== 0.0) {
                 return $savedStock;
             }
@@ -37,10 +36,14 @@ class BranchInventoryService
             : $product->branchStocks()->where('branch_id', (string) $branch['id'])->first();
 
         if ($branchStock) {
-            return (float) $branchStock->quantity;
-        }
+            $branchQuantity = (float) ($branchStock->quantity ?? 0);
 
-        $savedStock = (float) ($product->stock ?? $product->stock_quantity ?? 0);
+            if ($branchQuantity === 0.0 && $savedStock > 0.0) {
+                return $savedStock;
+            }
+
+            return $branchQuantity;
+        }
 
         if ($savedStock !== 0.0) {
             return $savedStock;
@@ -273,7 +276,7 @@ class BranchInventoryService
             $branchStock->quantity = $seedQuantity;
         } elseif (((float) ($branchStock->quantity ?? 0)) === 0.0) {
             $productStock = (float) ($productModel->stock ?? $productModel->stock_quantity ?? 0);
-            if ($productStock < 0) {
+            if ($productStock !== 0.0) {
                 $branchStock->quantity = $productStock;
             }
         }
