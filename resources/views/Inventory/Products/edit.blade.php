@@ -178,13 +178,27 @@
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label class="field-label">Category *</label>
-                                    <select name="category_id" class="form-control" required>
-                                        @foreach($categories as $category)
-                                            <option value="{{ $category->id }}" {{ $product->category_id == $category->id ? 'selected' : '' }}>
-                                                {{ $category->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
+                                    @if($categories->isNotEmpty())
+                                        <div class="input-group">
+                                            <select name="category_id" id="edit_product_category_select" class="form-control" required>
+                                                @foreach($categories as $category)
+                                                    <option value="{{ $category->id }}" {{ (string) old('category_id', $product->category_id) === (string) $category->id ? 'selected' : '' }}>
+                                                        {{ $category->name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editAddCategoryModal" title="Quick add category">+</button>
+                                        </div>
+                                    @else
+                                        <div class="d-flex flex-column gap-2">
+                                            <input type="hidden" name="category_id" id="edit_product_category_select" value="{{ old('category_id', $product->category_id) }}">
+                                            <div class="form-control bg-light d-flex align-items-center text-muted">No category added yet.</div>
+                                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editAddCategoryModal">
+                                                Add Category
+                                            </button>
+                                            <small class="field-note">Create the first category here and it will be selected automatically.</small>
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -350,6 +364,25 @@
             </div>
         </div>
     </div>
+
+    <div class="modal fade" id="editAddCategoryModal" tabindex="-1" style="z-index: 1060;">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form id="editAjaxAddCategoryForm">
+                    @csrf
+                    <div class="modal-header">
+                        <h5 class="modal-title">Quick Category</h5>
+                    </div>
+                    <div class="modal-body">
+                        <input type="text" name="name" id="edit_new_category_name" class="form-control" placeholder="Category Name" required>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">Add</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @push('scripts')
@@ -378,6 +411,59 @@
         refreshEditPackagingLabels();
         $('input[name="base_unit_name"], #edit_unit_total_per_carton, input[name="units_per_roll"]').on('input', function () {
             refreshEditPackagingLabels();
+        });
+
+        $('#editAjaxAddCategoryForm').on('submit', function(e) {
+            e.preventDefault();
+            const form = this;
+            const btn = $(this).find('button[type="submit"]');
+            btn.prop('disabled', true);
+
+            fetch("{{ route('categories.store') }}", {
+                method: "POST",
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ name: $('#edit_new_category_name').val() })
+            })
+            .then(async (res) => {
+                const data = await res.json();
+                if (!res.ok) {
+                    const msg = data?.message || Object.values(data?.errors || {})?.[0]?.[0] || 'Failed to add category.';
+                    throw new Error(msg);
+                }
+                return data;
+            })
+            .then(data => {
+                if (data.data) {
+                    const currentSelect = $('#edit_product_category_select');
+
+                    if (currentSelect.is('select')) {
+                        currentSelect.append(new Option(data.data.name, data.data.id, true, true));
+                    } else {
+                        currentSelect.val(data.data.id);
+                        const categoryShell = currentSelect.closest('.d-flex.flex-column.gap-2');
+                        const replacement = `
+                            <div class="input-group">
+                                <select name="category_id" id="edit_product_category_select" class="form-control" required>
+                                    <option value="${data.data.id}" selected>${data.data.name}</option>
+                                </select>
+                                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editAddCategoryModal" title="Quick add category">+</button>
+                            </div>
+                        `;
+                        categoryShell.html(replacement);
+                    }
+
+                    bootstrap.Modal.getInstance(document.getElementById('editAddCategoryModal')).hide();
+                    form.reset();
+                }
+            })
+            .catch((err) => {
+                alert(err.message || 'Unable to add category.');
+            })
+            .finally(() => btn.prop('disabled', false));
         });
     });
 </script>
