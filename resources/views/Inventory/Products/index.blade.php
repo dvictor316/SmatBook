@@ -316,6 +316,31 @@
 <div class="page-wrapper" id="main-content-wrapper">
     <div class="content container-fluid">
 
+        @if (session('success'))
+            <div class="alert alert-success alert-dismissible fade show shadow-sm border-0 no-print" role="alert">
+                <i class="feather-check-circle me-2"></i>{{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
+
+        @if (session('error'))
+            <div class="alert alert-danger alert-dismissible fade show shadow-sm border-0 no-print" role="alert">
+                <i class="feather-alert-triangle me-2"></i>{{ session('error') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
+
+        @if ($errors->any())
+            <div class="alert alert-danger shadow-sm border-0 no-print" role="alert">
+                <div class="fw-semibold mb-2">Please fix these issues before saving:</div>
+                <ul class="mb-0 ps-3">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
         {{-- INLINE HEADER & CONTROLS --}}
         <div class="card shadow-sm mb-3 no-print">
             <div class="card-body">
@@ -551,6 +576,8 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
+                    <div id="quick_product_success_message" class="alert alert-success d-none" role="alert"></div>
+                    <div id="quick_product_error_message" class="alert alert-danger d-none" role="alert"></div>
                     <div class="row g-3">
                         <div class="col-12">
                             <div class="product-flow-banner">
@@ -811,6 +838,8 @@
         const categoryStoreUrl = @json(route('ajax.inventory.categories.store', [], false));
         const quickCategoryError = $('#quick_category_error_message');
         const quickCategorySuccess = $('#quick_category_success_message');
+        const quickProductSuccess = $('#quick_product_success_message');
+        const quickProductError = $('#quick_product_error_message');
 
         function showQuickCategoryError(message) {
             quickCategorySuccess.addClass('d-none').text('');
@@ -828,6 +857,17 @@
 
         function clearQuickCategorySuccess() {
             quickCategorySuccess.addClass('d-none').text('');
+        }
+
+        function showQuickProductMessage(type, message) {
+            const isSuccess = type === 'success';
+            quickProductSuccess.toggleClass('d-none', !isSuccess).text(isSuccess ? (message || 'Product saved successfully.') : '');
+            quickProductError.toggleClass('d-none', isSuccess).text(!isSuccess ? (message || 'Unable to save product.') : '');
+        }
+
+        function clearQuickProductMessages() {
+            quickProductSuccess.addClass('d-none').text('');
+            quickProductError.addClass('d-none').text('');
         }
 
         async function parseJsonResponse(response, fallbackMessage) {
@@ -927,6 +967,31 @@
             $(select).trigger('change.select2');
         }
 
+        function findExistingCategory(selectSelector, rawName) {
+            const normalizedName = String(rawName || '').trim().toLowerCase();
+            if (!normalizedName) {
+                return null;
+            }
+
+            const select = document.querySelector(selectSelector);
+            if (!select) {
+                return null;
+            }
+
+            const existingOption = Array.from(select.options).find((option) => {
+                return option.value && String(option.textContent || '').trim().toLowerCase() === normalizedName;
+            });
+
+            if (!existingOption) {
+                return null;
+            }
+
+            return {
+                id: existingOption.value,
+                name: String(existingOption.textContent || '').trim(),
+            };
+        }
+
         // PREVENT RE-INITIALIZATION ERROR
         if ($.fn.DataTable.isDataTable('#products-table')) {
             $('#products-table').DataTable().destroy();
@@ -954,6 +1019,7 @@
         $('#addProductModal').on('shown.bs.modal', function() {
             clearQuickCategorySuccess();
             clearQuickCategoryError();
+            clearQuickProductMessages();
             reloadQuickCategoryOptions($('#product_category_select').val() || '').finally(() => {
                 initializeQuickCategorySelect();
             });
@@ -964,6 +1030,7 @@
             if (imageInput && (!imageInput.files || imageInput.files.length === 0)) {
                 imageInput.disabled = true;
             }
+            showQuickProductMessage('success', 'Saving product...');
         });
 
         function refreshQuickPackagingLabels() {
@@ -1094,9 +1161,21 @@
             e.preventDefault();
             const form = this;
             const btn = $(this).find('button[type="submit"]');
+            const typedName = $('#new_category_name').val();
             btn.prop('disabled', true);
             clearQuickCategorySuccess();
             clearQuickCategoryError();
+
+            const existingCategory = findExistingCategory('#product_category_select', typedName);
+            if (existingCategory) {
+                upsertCategoryOption('#product_category_select', existingCategory);
+                clearQuickCategoryError();
+                showQuickCategorySuccess('Existing category selected.');
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('addCategoryModal')).hide();
+                form.reset();
+                btn.prop('disabled', false);
+                return;
+            }
             
             fetch(categoryStoreUrl, {
                 method: "POST",

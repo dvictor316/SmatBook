@@ -186,6 +186,10 @@
             <span id="category_page_success_text"></span>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
+        <div id="product_page_info_message" class="alert alert-info alert-dismissible fade shadow-sm border-0 d-none" role="alert">
+            <span id="product_page_info_text"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
 
         {{-- Main Form --}}
         <div class="card product-form-card border-0 mb-4">
@@ -415,6 +419,15 @@
             }, 3500);
         }
 
+        function showProductInfo(message) {
+            $('#product_page_info_text').text(message || '');
+            $('#product_page_info_message').removeClass('d-none').addClass('show');
+
+            window.setTimeout(() => {
+                $('#product_page_info_message').removeClass('show').addClass('d-none');
+            }, 3500);
+        }
+
         async function parseJsonResponse(response, fallbackMessage) {
             const raw = await response.text();
             try {
@@ -481,6 +494,31 @@
 
             select.value = optionValue;
             $(select).trigger('change');
+        }
+
+        function findExistingCategory(selectSelector, rawName) {
+            const normalizedName = String(rawName || '').trim().toLowerCase();
+            if (!normalizedName) {
+                return null;
+            }
+
+            const select = document.querySelector(selectSelector);
+            if (!select) {
+                return null;
+            }
+
+            const existingOption = Array.from(select.options).find((option) => {
+                return option.value && String(option.textContent || '').trim().toLowerCase() === normalizedName;
+            });
+
+            if (!existingOption) {
+                return null;
+            }
+
+            return {
+                id: existingOption.value,
+                name: String(existingOption.textContent || '').trim(),
+            };
         }
 
         function refreshPackagingLabels() {
@@ -557,8 +595,21 @@
 
             const form = this;
             const btn = $(this).find('button[type="submit"]');
+            const typedName = $('#new_category_name').val();
             btn.prop('disabled', true);
             clearCategoryError();
+
+            const existingCategory = findExistingCategory('#product_category_select', typedName);
+            if (existingCategory) {
+                upsertCategoryOption('#product_category_select', existingCategory);
+                clearCategoryError();
+                showCategorySuccess('Existing category selected.');
+                showProductInfo('That category was already available for this workspace, so it was selected directly.');
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('addCategoryModal')).hide();
+                form.reset();
+                btn.prop('disabled', false);
+                return;
+            }
 
             fetch(categoryStoreUrl, {
                 method: "POST",
