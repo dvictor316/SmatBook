@@ -69,16 +69,12 @@ class ActiveBranchResolver
         }
 
         $company = Company::find($companyId);
-        $branchName = trim((string) ($preferredName
-            ?: $company?->company_name
-            ?: $company?->name
-            ?: data_get($user, 'name')
-            ?: 'Main Branch'));
+        $branchName = trim((string) ($preferredName ?: 'Headquarters'));
 
         $branch = [
             'id' => (string) Str::uuid(),
-            'name' => $branchName !== '' ? $branchName : 'Main Branch',
-            'code' => $this->makeBranchCode($branchName !== '' ? $branchName : 'Main Branch'),
+            'name' => $branchName !== '' ? $branchName : 'Headquarters',
+            'code' => $this->makeBranchCode($branchName !== '' ? $branchName : 'Headquarters'),
             'manager' => '',
             'phone' => '',
             'address' => '',

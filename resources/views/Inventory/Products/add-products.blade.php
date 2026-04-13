@@ -392,8 +392,8 @@
 @push('scripts')
 <script>
     $(document).ready(function() {
-        const categoryIndexUrl = @json(url('/inventory/products/category'));
-        const categoryStoreUrl = @json(url('/inventory/products/category'));
+        const categoryIndexUrl = '/inventory/products/category';
+        const categoryStoreUrl = '/inventory/products/category';
         const categoryError = $('#category_error_message');
         const categoryPageSuccess = $('#category_page_success_message');
         const categoryPageSuccessText = $('#category_page_success_text');
