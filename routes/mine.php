@@ -650,9 +650,10 @@ Route::get('/purchases/{id}/excel', [PurchaseController::class, 'exportExcel'])-
         Route::get('/inventory', 'inventory')->name('inventory');
     });
 
-        // Manual definition to ensure the exact URL you want works
+       // Manual definition to ensure the exact URL you want works
        // Route::get('/inventory/products/category', [CategoryController::class, 'index'])->name('Inventory.Products.categories');
        Route::get('/inventory/products/category', [CategoryController::class, 'index'])->name('categories.index'); 
+       Route::post('/inventory/products/category', [CategoryController::class, 'store'])->name('inventory.categories.store');
        Route::post('/categories/store', [CategoryController::class, 'store'])->name('categories.store');
         // Keep your existing resource-style routes if you need them for edit/delete
         Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
