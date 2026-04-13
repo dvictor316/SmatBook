@@ -387,8 +387,8 @@
 @push('scripts')
 <script>
     $(document).ready(function() {
-        const categoryIndexUrl = @json(url('/categories'));
-        const categoryStoreUrl = @json(url('/categories'));
+        const categoryIndexUrl = @json(url('/inventory/products/category'));
+        const categoryStoreUrl = @json(url('/inventory/products/category'));
         const categoryError = $('#category_error_message');
 
         function showCategoryError(message) {

@@ -660,6 +660,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
     Route::resource('categories', CategoryController::class);
     Route::post('/categories/{category}/clear-products', [CategoryController::class, 'clearProducts'])->name('categories.clear-products');
     Route::get('/inventory/products/category', [CategoryController::class, 'index'])->name('inventory.categories');
+    Route::post('/inventory/products/category', [CategoryController::class, 'store'])->name('inventory.categories.store');
     
     // Product Sales
     Route::post('/products/{product}/sales', [ProductSaleController::class, 'store'])->name('product_sales.store');
