@@ -4,6 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     @php
+        $currentPlanTier = $currentPlanTier ?? null;
+        $suggestedUpgradePlan = $suggestedUpgradePlan ?? null;
+        $tierBenefits = [
+            'basic' => \App\Models\Plan::marketingBenefitsForTier('basic', 3),
+            'pro' => \App\Models\Plan::marketingBenefitsForTier('professional', 5),
+            'enterprise' => \App\Models\Plan::marketingBenefitsForTier('enterprise', 8),
+        ];
+        $planActions = [
+            'basic' => $currentPlanTier === 'basic'
+                ? ['secondary' => 'Current Plan', 'primary' => 'Upgrade to Pro']
+                : ['secondary' => 'Start 1 User', 'primary' => 'Start 3 Users'],
+            'pro' => $currentPlanTier === 'professional'
+                ? ['secondary' => 'Current Plan', 'primary' => 'Upgrade to Enterprise']
+                : ['secondary' => 'Start 2 Users', 'primary' => 'Start 5 Users'],
+            'enterprise' => $currentPlanTier === 'enterprise'
+                ? ['secondary' => 'Current Plan', 'primary' => 'Start 8 Users']
+                : ['secondary' => 'Start 3 Users', 'primary' => 'Start 8 Users'],
+        ];
         $seoNoIndex = $seoNoIndex ?? false;
         $seoType = 'website';
         $seoTitle = 'Membership Plans and Pricing';
@@ -159,6 +177,12 @@
             background: linear-gradient(135deg, #1d3557 0%, #2563eb 100%);
             transform: translateY(-1px) scale(1.01);
             box-shadow: 0 18px 28px -18px rgba(37, 99, 235, 0.5);
+        }
+        .btn-uplink:disabled {
+            opacity: 0.65;
+            cursor: default;
+            transform: none;
+            box-shadow: none;
         }
         
         .btn-outline {
@@ -379,17 +403,15 @@
                     <div class="price-display">
                         <span id="price-basic-solo">₦3,000</span><small id="period-basic-solo">/mo</small>
                     </div>
-                    <p class="price-secondary">2 users: <strong id="price-basic">₦5,500</strong><span id="period-basic">/mo</span></p>
+                    <p class="price-secondary">3 users: <strong id="price-basic">₦5,500</strong><span id="period-basic">/mo</span></p>
                     <ul class="feature-list">
-                        <li><i class="fas fa-check-circle"></i> 2 User Seats</li>
-                        <li><i class="fas fa-check-circle"></i> Cloud Ledger Core</li>
-                        <li><i class="fas fa-check-circle"></i> Basic Reporting</li>
-                        <li><i class="fas fa-check-circle"></i> Sales Tracking</li>
-                        <li class="unavailable"><i class="fas fa-times-circle"></i> Custom Subdomains</li>
+                        @foreach($tierBenefits['basic'] as $benefit)
+                            <li><i class="fas fa-check-circle"></i> {{ $benefit }}</li>
+                        @endforeach
                     </ul>
                     <div style="display:grid; gap:10px;">
-                        <button onclick="handleSubscription('basic-solo')" class="btn-uplink btn-outline">Start 1 User</button>
-                        <button onclick="handleSubscription('basic')" class="btn-uplink btn-gold">Start 2 Users</button>
+                        <button onclick="{{ $currentPlanTier === 'basic' ? '' : "handleSubscription('basic-solo')" }}" class="btn-uplink btn-outline" {{ $currentPlanTier === 'basic' ? 'disabled' : '' }}>{{ $planActions['basic']['secondary'] }}</button>
+                        <button onclick="handleSubscription('{{ $currentPlanTier === 'basic' ? 'pro' : 'basic' }}')" class="btn-uplink btn-gold">{{ $planActions['basic']['primary'] }}</button>
                     </div>
                 </div>
 
@@ -401,17 +423,15 @@
                     <div class="price-display">
                         <span id="price-pro-solo">₦7,000</span><small id="period-pro-solo">/mo</small>
                     </div>
-                    <p class="price-secondary">3 users: <strong id="price-pro">₦19,500</strong><span id="period-pro">/mo</span></p>
+                    <p class="price-secondary">5 users: <strong id="price-pro">₦19,500</strong><span id="period-pro">/mo</span></p>
                     <ul class="feature-list">
-                        <li><i class="fas fa-check-circle"></i> 3 User Seats</li>
-                        <li><i class="fas fa-check-circle"></i> Neural Forecasting</li>
-                        <li><i class="fas fa-check-circle"></i> Multi-Currency Support</li>
-                        <li><i class="fas fa-check-circle"></i> Advanced Inventory</li>
-                        <li><i class="fas fa-check-circle"></i> Priority API Access</li>
+                        @foreach($tierBenefits['pro'] as $benefit)
+                            <li><i class="fas fa-check-circle"></i> {{ $benefit }}</li>
+                        @endforeach
                     </ul>
                     <div style="display:grid; gap:10px;">
-                        <button onclick="handleSubscription('pro-solo')" class="btn-uplink btn-outline">Start 1 User</button>
-                        <button onclick="handleSubscription('pro')" class="btn-uplink btn-gold">Start 3 Users</button>
+                        <button onclick="{{ $currentPlanTier === 'professional' ? '' : "handleSubscription('pro-solo')" }}" class="btn-uplink btn-outline" {{ $currentPlanTier === 'professional' ? 'disabled' : '' }}>{{ $planActions['pro']['secondary'] }}</button>
+                        <button onclick="handleSubscription('{{ $currentPlanTier === 'professional' ? 'enterprise' : 'pro' }}')" class="btn-uplink btn-gold">{{ $planActions['pro']['primary'] }}</button>
                     </div>
                 </div>
 
@@ -422,17 +442,15 @@
                     <div class="price-display">
                         <span id="price-enterprise-solo">₦15,000</span><small id="period-enterprise-solo">/mo</small>
                     </div>
-                    <p class="price-secondary">Unlimited users: <strong id="price-enterprise">₦28,500</strong><span id="period-enterprise">/mo</span></p>
+                    <p class="price-secondary">8 users: <strong id="price-enterprise">₦28,500</strong><span id="period-enterprise">/mo</span></p>
                     <ul class="feature-list">
-                        <li><i class="fas fa-check-circle"></i> Unlimited User Seats</li>
-                        <li><i class="fas fa-check-circle"></i> Private Instance</li>
-                        <li><i class="fas fa-check-circle"></i> Dedicated Subdomain</li>
-                        <li><i class="fas fa-check-circle"></i> Advanced Audit Logs</li>
-                        <li><i class="fas fa-check-circle"></i> 24/7 Success Manager</li>
+                        @foreach($tierBenefits['enterprise'] as $benefit)
+                            <li><i class="fas fa-check-circle"></i> {{ $benefit }}</li>
+                        @endforeach
                     </ul>
                     <div style="display:grid; gap:10px;">
-                        <button onclick="handleSubscription('enterprise-solo')" class="btn-uplink btn-outline">Start 1 User</button>
-                        <button onclick="handleSubscription('enterprise')" class="btn-uplink btn-gold">Deploy Unlimited</button>
+                        <button onclick="{{ $currentPlanTier === 'enterprise' ? '' : "handleSubscription('enterprise-solo')" }}" class="btn-uplink btn-outline" {{ $currentPlanTier === 'enterprise' ? 'disabled' : '' }}>{{ $planActions['enterprise']['secondary'] }}</button>
+                        <button onclick="handleSubscription('enterprise')" class="btn-uplink btn-gold">{{ $planActions['enterprise']['primary'] }}</button>
                     </div>
                 </div>
 
@@ -531,6 +549,7 @@
     const registerUrl = "{{ route('saas-register-initial') }}";
     const upgradeUrl = "{{ route('subscription.upgrade.redirect') }}";
     const userIsAuthenticated = @json(auth()->check());
+    const suggestedUpgradePlan = @json($suggestedUpgradePlan);
     
     const prices = {
         monthly: {
@@ -582,6 +601,10 @@
         if (plan === 'custom') {
             openCustomPlanModal();
             return;
+        }
+
+        if (userIsAuthenticated && suggestedUpgradePlan && ['basic', 'pro'].includes(plan) && plan !== suggestedUpgradePlan) {
+            plan = suggestedUpgradePlan;
         }
 
         if (isNavigatingToPlan) {

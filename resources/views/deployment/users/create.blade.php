@@ -36,10 +36,12 @@
 
     $seatLabel = function (string $key): string {
         return match ($key) {
-            'basic-solo-monthly', 'basic-solo-yearly', 'professional-solo-monthly', 'professional-solo-yearly', 'enterprise-solo-monthly', 'enterprise-solo-yearly' => '1 User',
-            'basic-monthly', 'basic-yearly' => '2 Users',
-            'professional-monthly', 'professional-yearly' => '3 Users',
-            'enterprise-monthly', 'enterprise-yearly' => 'Unlimited',
+            'basic-solo-monthly', 'basic-solo-yearly' => '1 User',
+            'professional-solo-monthly', 'professional-solo-yearly' => '2 Users',
+            'enterprise-solo-monthly', 'enterprise-solo-yearly' => '3 Users',
+            'basic-monthly', 'basic-yearly' => '3 Users',
+            'professional-monthly', 'professional-yearly' => '5 Users',
+            'enterprise-monthly', 'enterprise-yearly' => '8 Users',
             default => 'Plan',
         };
     };
@@ -585,7 +587,7 @@
                                             <div class="plan-amount">₦{{ $basicMonthly['price_label'] }} <small>/mo</small></div>
                                             <div class="plan-cycle">Billed monthly · Earn ₦{{ $basicMonthly['commission_label'] }}</div>
                                             <ul class="plan-features">
-                                                <li><i class="fas fa-check-circle"></i> Up to 2 users</li>
+                                                <li><i class="fas fa-check-circle"></i> Up to 3 users</li>
                                                 <li><i class="fas fa-check-circle"></i> 5 GB storage</li>
                                                 <li><i class="fas fa-check-circle"></i> Invoicing & POS</li>
                                                 <li><i class="fas fa-check-circle"></i> Basic reports</li>
@@ -602,7 +604,7 @@
                                             <div class="plan-amount">₦{{ $proSoloMonthly['price_label'] }} <small>/mo</small></div>
                                             <div class="plan-cycle">Billed monthly · Earn ₦{{ $proSoloMonthly['commission_label'] }}</div>
                                             <ul class="plan-features">
-                                                <li><i class="fas fa-check-circle"></i> 1 user</li>
+                                                <li><i class="fas fa-check-circle"></i> 2 users</li>
                                                 <li><i class="fas fa-check-circle"></i> 50 GB storage</li>
                                                 <li><i class="fas fa-check-circle"></i> Full inventory</li>
                                                 <li><i class="fas fa-check-circle"></i> Purchases & orders</li>
@@ -620,7 +622,7 @@
                                             <div class="plan-amount">₦{{ $proMonthly['price_label'] }} <small>/mo</small></div>
                                             <div class="plan-cycle">Billed monthly · Earn ₦{{ $proMonthly['commission_label'] }}</div>
                                             <ul class="plan-features">
-                                                <li><i class="fas fa-check-circle"></i> Up to 3 users</li>
+                                                <li><i class="fas fa-check-circle"></i> Up to 5 users</li>
                                                 <li><i class="fas fa-check-circle"></i> 50 GB storage</li>
                                                 <li><i class="fas fa-check-circle"></i> Full inventory</li>
                                                 <li><i class="fas fa-check-circle"></i> Purchases & orders</li>
@@ -637,7 +639,7 @@
                                             <div class="plan-amount">₦{{ $enterpriseSoloMonthly['price_label'] }} <small>/mo</small></div>
                                             <div class="plan-cycle">Billed monthly · Earn ₦{{ $enterpriseSoloMonthly['commission_label'] }}</div>
                                             <ul class="plan-features">
-                                                <li><i class="fas fa-check-circle"></i> 1 user</li>
+                                                <li><i class="fas fa-check-circle"></i> 3 users</li>
                                                 <li><i class="fas fa-check-circle"></i> 500 GB storage</li>
                                                 <li><i class="fas fa-check-circle"></i> Full ERP suite</li>
                                                 <li><i class="fas fa-check-circle"></i> P&L & balance sheet</li>
@@ -655,7 +657,7 @@
                                             <div class="plan-amount">₦{{ $enterpriseMonthly['price_label'] }} <small>/mo</small></div>
                                             <div class="plan-cycle">Billed monthly · Earn ₦{{ $enterpriseMonthly['commission_label'] }}</div>
                                             <ul class="plan-features">
-                                                <li><i class="fas fa-check-circle"></i> Unlimited users</li>
+                                                <li><i class="fas fa-check-circle"></i> Up to 8 users</li>
                                                 <li><i class="fas fa-check-circle"></i> 500 GB storage</li>
                                                 <li><i class="fas fa-check-circle"></i> Full ERP suite</li>
                                                 <li><i class="fas fa-check-circle"></i> P&L & balance sheet</li>
@@ -695,7 +697,7 @@
                                             <div class="plan-amount">₦{{ $basicYearly['price_label'] }} <small>/yr</small></div>
                                             <div class="plan-cycle">Save ₦{{ $basicYearly['save_label'] }} · Earn ₦{{ $basicYearly['commission_label'] }}</div>
                                             <ul class="plan-features">
-                                                <li><i class="fas fa-check-circle"></i> Up to 2 users</li>
+                                                <li><i class="fas fa-check-circle"></i> Up to 3 users</li>
                                                 <li><i class="fas fa-check-circle"></i> 5 GB storage</li>
                                                 <li><i class="fas fa-check-circle"></i> Invoicing & POS</li>
                                                 <li><i class="fas fa-check-circle"></i> Basic reports</li>
@@ -712,7 +714,7 @@
                                             <div class="plan-amount">₦{{ $proSoloYearly['price_label'] }} <small>/yr</small></div>
                                             <div class="plan-cycle">Save ₦{{ $proSoloYearly['save_label'] }} · Earn ₦{{ $proSoloYearly['commission_label'] }}</div>
                                             <ul class="plan-features">
-                                                <li><i class="fas fa-check-circle"></i> 1 user</li>
+                                                <li><i class="fas fa-check-circle"></i> 2 users</li>
                                                 <li><i class="fas fa-check-circle"></i> 50 GB storage</li>
                                                 <li><i class="fas fa-check-circle"></i> Full inventory</li>
                                                 <li><i class="fas fa-check-circle"></i> Purchases & orders</li>
@@ -730,7 +732,7 @@
                                             <div class="plan-amount">₦{{ $proYearly['price_label'] }} <small>/yr</small></div>
                                             <div class="plan-cycle">Save ₦{{ $proYearly['save_label'] }} · Earn ₦{{ $proYearly['commission_label'] }}</div>
                                             <ul class="plan-features">
-                                                <li><i class="fas fa-check-circle"></i> Up to 3 users</li>
+                                                <li><i class="fas fa-check-circle"></i> Up to 5 users</li>
                                                 <li><i class="fas fa-check-circle"></i> 50 GB storage</li>
                                                 <li><i class="fas fa-check-circle"></i> Full inventory</li>
                                                 <li><i class="fas fa-check-circle"></i> Purchases & orders</li>
@@ -747,7 +749,7 @@
                                             <div class="plan-amount">₦{{ $enterpriseSoloYearly['price_label'] }} <small>/yr</small></div>
                                             <div class="plan-cycle">Save ₦{{ $enterpriseSoloYearly['save_label'] }} · Earn ₦{{ $enterpriseSoloYearly['commission_label'] }}</div>
                                             <ul class="plan-features">
-                                                <li><i class="fas fa-check-circle"></i> 1 user</li>
+                                                <li><i class="fas fa-check-circle"></i> 3 users</li>
                                                 <li><i class="fas fa-check-circle"></i> 500 GB storage</li>
                                                 <li><i class="fas fa-check-circle"></i> Full ERP suite</li>
                                                 <li><i class="fas fa-check-circle"></i> P&L & balance sheet</li>
@@ -765,7 +767,7 @@
                                             <div class="plan-amount">₦{{ $enterpriseYearly['price_label'] }} <small>/yr</small></div>
                                             <div class="plan-cycle">Save ₦{{ $enterpriseYearly['save_label'] }} · Earn ₦{{ $enterpriseYearly['commission_label'] }}</div>
                                             <ul class="plan-features">
-                                                <li><i class="fas fa-check-circle"></i> Unlimited users</li>
+                                                <li><i class="fas fa-check-circle"></i> Up to 8 users</li>
                                                 <li><i class="fas fa-check-circle"></i> 500 GB storage</li>
                                                 <li><i class="fas fa-check-circle"></i> Full ERP suite</li>
                                                 <li><i class="fas fa-check-circle"></i> P&L & balance sheet</li>

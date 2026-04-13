@@ -533,7 +533,7 @@ public function store(Request $request)
                 'amount'          => $validated['plan_price'],
                 'billing_cycle'   => $validated['billing_cycle'],
                 'status'          => 'Pending',
-                'payment_status'  => 'pending',
+                'payment_status'  => 'unpaid',
                 'deployed_by'     => $manager->id,  // KEY: stored in DB for fallback
             ]));
 
@@ -595,11 +595,13 @@ public function store(Request $request)
         'deployment_customer_id'     => $result['customer_id'],
         'deployment_company_id'      => $result['company_id'],
         'deployment_manager_id'      => $manager->id,
+        'deployment_return_manager_id' => $manager->id,
         'deployment_manager_email'   => $manager->email,
         'deployment_commission_rate' => 35,
         'deployment_plan_name'       => $validated['plan_name'],
         'deployment_subscription_id' => $result['subscription_id'],
     ]);
+    session()->save();
 
     Log::info('Deployment session set', [
         'manager_id'      => $manager->id,
@@ -617,7 +619,7 @@ public function store(Request $request)
     ]);
 
     // ── Redirect directly to checkout — clean URL, no extra params ──
-    return redirect()->route('saas.checkout', $result['subscription_id'])
+    return redirect()->route('saas.checkout', ['id' => $result['subscription_id']])
         ->with('success', 'Customer account created. Continue checkout to activate workspace.');
 }
 

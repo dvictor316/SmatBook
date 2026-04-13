@@ -10,9 +10,15 @@ class Plan extends Model
     use HasFactory;
 
     public const DEFAULT_USER_LIMITS = [
-        'basic' => 2,
-        'professional' => 3,
-        'enterprise' => null,
+        'basic' => 3,
+        'professional' => 5,
+        'enterprise' => 8,
+    ];
+
+    public const SOLO_USER_LIMITS = [
+        'basic' => 1,
+        'professional' => 2,
+        'enterprise' => 3,
     ];
 
     protected $table = 'plans';
@@ -63,10 +69,57 @@ class Plan extends Model
         $value = strtolower(trim((string) $planName));
 
         if (str_contains($value, 'solo') || str_contains($value, '1 user')) {
-            return 1;
+            return static::SOLO_USER_LIMITS[static::normalizeTier($planName)] ?? 1;
         }
 
         return static::DEFAULT_USER_LIMITS[static::normalizeTier($planName)] ?? null;
+    }
+
+    public static function userSeatLabel(?int $limit): string
+    {
+        if ($limit === null) {
+            return 'Custom seats';
+        }
+
+        return $limit === 1 ? '1 User' : $limit . ' Users';
+    }
+
+    public static function marketingBenefitsForTier(string $tier, ?int $userLimit = null): array
+    {
+        $seatLabel = static::userSeatLabel($userLimit ?? (static::DEFAULT_USER_LIMITS[$tier] ?? null));
+
+        return match (strtolower($tier)) {
+            'enterprise' => [
+                $seatLabel,
+                'Advanced financial statements',
+                'Budgets, assets, and audit trail',
+                'Priority implementation support',
+                'Multi-team operational controls',
+            ],
+            'professional' => [
+                $seatLabel,
+                'Inventory and purchase workflows',
+                'Multi-user approvals and controls',
+                'Advanced reports and analytics',
+                'Priority business support',
+            ],
+            default => [
+                $seatLabel,
+                'Core accounting and invoicing',
+                'Sales tracking and daily reporting',
+                'Clean workspace setup',
+                'Standard support',
+            ],
+        };
+    }
+
+    public static function suggestedUpgradeForTier(?string $tier): ?string
+    {
+        return match (strtolower((string) $tier)) {
+            'basic' => 'pro',
+            'professional' => 'enterprise',
+            default => null,
+        };
     }
 
     public function resolvedUserLimit(): ?int

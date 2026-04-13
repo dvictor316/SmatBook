@@ -46,6 +46,9 @@ class SubscriptionController extends Controller
         }
 
         $plans = Schema::hasTable('plans') ? $plansQuery->get() : collect();
+        $currentSubscription = Auth::check() ? Subscription::resolveCurrentForUser(Auth::user()) : null;
+        $currentPlanTier = $currentSubscription ? Plan::normalizeTier($currentSubscription->planLabel()) : null;
+        $suggestedUpgradePlan = Plan::suggestedUpgradeForTier($currentPlanTier);
 
         $isLegacyPricingRoute = $request->routeIs('pricing');
 
@@ -53,6 +56,8 @@ class SubscriptionController extends Controller
             'plans' => $plans,
             'seoCanonical' => route('membership-plans'),
             'seoNoIndex' => $isLegacyPricingRoute,
+            'currentPlanTier' => $currentPlanTier,
+            'suggestedUpgradePlan' => $suggestedUpgradePlan,
         ]);
     }
 
@@ -383,7 +388,12 @@ class SubscriptionController extends Controller
 
             $currentUser          = auth()->user();
             $isDeploymentCheckout = $this->isDeploymentCheckout($subscription);
-            $isManager            = DeploymentManager::where('user_id', $currentUser->id)->exists();
+            $resolvedManagerId    = $this->resolveDeploymentManagerId($subscription);
+            $isManagerRecord      = DeploymentManager::where('user_id', $currentUser->id)->exists();
+            $isResolvedManager    = $resolvedManagerId > 0 && (int) $currentUser->id === (int) $resolvedManagerId;
+            $isSessionManager     = $isDeploymentCheckout
+                && (int) session('deployment_manager_id', 0) === (int) $currentUser->id;
+            $isManager            = $isManagerRecord || $isResolvedManager || $isSessionManager;
             $deploymentManager    = null;
 
             // Keep manager identity intact for deployment-assisted checkout.
@@ -392,14 +402,16 @@ class SubscriptionController extends Controller
                 session([
                     'checkout_from_deployment'   => true,
                     'deployment_manager_id'      => $currentUser->id,
+                    'deployment_return_manager_id' => $currentUser->id,
                     'deployment_customer_id'     => $subscription->user_id,
                     'deployment_company_id'      => $subscription->company_id,
                     'deployment_subscription_id' => $subscription->id,
                 ]);
+                session()->save();
             }
 
             if ($isDeploymentCheckout) {
-                $deploymentManagerId = $this->resolveDeploymentManagerId($subscription);
+                $deploymentManagerId = $resolvedManagerId;
                 if ($deploymentManagerId) {
                     $deploymentManager = DeploymentManager::with('user')->find($deploymentManagerId);
                 }
@@ -420,6 +432,9 @@ class SubscriptionController extends Controller
                 'subscription_id'       => $subscription->id,
                 'by'                    => $currentUser->id,
                 'is_manager'            => $isManager,
+                'is_manager_record'     => $isManagerRecord,
+                'is_resolved_manager'   => $isResolvedManager,
+                'is_session_manager'    => $isSessionManager,
                 'is_deployment_checkout'=> $isDeploymentCheckout,
             ]);
 
@@ -568,6 +583,7 @@ class SubscriptionController extends Controller
 
         $amountKobo = max(1, (int) round(((float) $subscription->amount) * 100));
         $planName = (string) ($subscription->plan_name ?? $subscription->plan ?? 'Subscription');
+        $customerEmail = $this->checkoutCustomerEmail($subscription);
         $returnUrl = route('saas.payment.callback', [
             'sub_id' => $subscription->id,
             'gateway' => 'stripe',
@@ -577,7 +593,7 @@ class SubscriptionController extends Controller
         try {
             $payload = [
                 'mode' => 'payment',
-                'customer_email' => (string) optional(auth()->user())->email,
+                'customer_email' => $customerEmail,
                 'line_items[0][price_data][currency]' => 'ngn',
                 'line_items[0][price_data][unit_amount]' => $amountKobo,
                 'line_items[0][price_data][product_data][name]' => 'SmartProbook ' . $planName,
@@ -683,7 +699,7 @@ class SubscriptionController extends Controller
             $response = Http::withToken($secret)
                 ->acceptJson()
                 ->post('https://api.paystack.co/transaction/initialize', [
-                    'email' => (string) optional(auth()->user())->email,
+                    'email' => $this->checkoutCustomerEmail($subscription),
                     'amount' => $amountKobo,
                     'callback_url' => $callbackUrl,
                     'metadata' => [
@@ -756,8 +772,8 @@ class SubscriptionController extends Controller
                     'currency' => 'NGN',
                     'redirect_url' => $callbackUrl,
                     'customer' => [
-                        'email' => (string) optional(auth()->user())->email,
-                        'name' => (string) optional(auth()->user())->name,
+                        'email' => $this->checkoutCustomerEmail($subscription),
+                        'name' => $this->checkoutCustomerName($subscription),
                     ],
                     'meta' => [
                         'subscription_id' => (string) $subscription->id,
@@ -1436,6 +1452,27 @@ class SubscriptionController extends Controller
         }
 
         return null;
+    }
+
+    private function checkoutCustomerEmail(Subscription $subscription): string
+    {
+        return (string) (
+            $subscription->user?->email
+            ?: $subscription->company?->email
+            ?: optional(auth()->user())->email
+            ?: 'billing@smartprobook.com'
+        );
+    }
+
+    private function checkoutCustomerName(Subscription $subscription): string
+    {
+        return (string) (
+            $subscription->user?->name
+            ?: $subscription->subscriber_name
+            ?: $subscription->company?->name
+            ?: optional(auth()->user())->name
+            ?: 'SmartProbook Customer'
+        );
     }
 
     private function resolveCommissionRate(?int $managerId): float
