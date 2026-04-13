@@ -40,8 +40,18 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
         $currentSubscription = Subscription::resolveCurrentForUser($user);
-        $defaultWorkspaceContext = in_array((string) ($user->role ?? ''), ['superadmin', 'admin'], true) ? 'platform' : 'business';
+        $hasBusinessWorkspace = (int) ($user->company_id ?? 0) > 0
+            || (int) ($currentSubscription?->company_id ?? 0) > 0
+            || (int) session('current_tenant_id', 0) > 0;
+        $canUsePlatformWorkspace = in_array((string) ($user->role ?? ''), ['superadmin'], true);
+        $defaultWorkspaceContext = $hasBusinessWorkspace ? 'business' : 'platform';
         $workspaceContext = (string) $request->session()->get('workspace_context', $defaultWorkspaceContext);
+
+        if (!$canUsePlatformWorkspace) {
+            $workspaceContext = 'business';
+            $request->session()->put('workspace_context', 'business');
+        }
+
         $isBusinessWorkspace = $workspaceContext === 'business';
         $activeBranch = $isBusinessWorkspace ? $this->activeBranchContext() : ['id' => null, 'name' => null];
         $currentHost = $request->getHost();
@@ -353,9 +363,15 @@ class DashboardController extends Controller
     private function getTotalStock($company, ?array $activeBranch = null) {
         if (!Schema::hasTable('products')) return 0;
         if (!empty($activeBranch['id']) && Schema::hasTable('product_branch_stocks')) {
-            return (float) ($this->scopeByCompany(ProductBranchStock::query(), 'product_branch_stocks', $company)
-                ->where('branch_id', (string) $activeBranch['id'])
-                ->sum('quantity') ?? 0);
+            $stockColumn = Schema::hasColumn('products', 'stock') ? 'products.stock' : (Schema::hasColumn('products', 'stock_quantity') ? 'products.stock_quantity' : '0');
+
+            return (float) ($this->scopeByCompany(Product::query(), 'products', $company)
+                ->leftJoin('product_branch_stocks', function ($join) use ($activeBranch) {
+                    $join->on('product_branch_stocks.product_id', '=', 'products.id')
+                        ->where('product_branch_stocks.branch_id', (string) $activeBranch['id']);
+                })
+                ->selectRaw("SUM(COALESCE(product_branch_stocks.quantity, {$stockColumn}, 0)) as total_stock")
+                ->value('total_stock') ?? 0);
         }
 
         $stockColumn = Schema::hasColumn('products', 'stock') ? 'stock' : (Schema::hasColumn('products', 'stock_quantity') ? 'stock_quantity' : null);
@@ -390,11 +406,17 @@ class DashboardController extends Controller
     private function getLowStockProducts($company, ?array $activeBranch = null) {
         if (!Schema::hasTable('products')) return collect();
         if (!empty($activeBranch['id']) && Schema::hasTable('product_branch_stocks')) {
-            return $this->scopeByCompany(ProductBranchStock::query(), 'product_branch_stocks', $company)
-                ->join('products', 'products.id', '=', 'product_branch_stocks.product_id')
-                ->where('product_branch_stocks.branch_id', (string) $activeBranch['id'])
-                ->select('products.id', 'products.name', DB::raw('product_branch_stocks.quantity as stock'))
-                ->where('product_branch_stocks.quantity', '<=', 15)
+            $stockColumn = Schema::hasColumn('products', 'stock') ? 'products.stock' : (Schema::hasColumn('products', 'stock_quantity') ? 'products.stock_quantity' : '0');
+            $reorderColumn = Schema::hasColumn('products', 'reorder_level') ? 'products.reorder_level' : '0';
+
+            return $this->scopeByCompany(Product::query(), 'products', $company)
+                ->leftJoin('product_branch_stocks', function ($join) use ($activeBranch) {
+                    $join->on('product_branch_stocks.product_id', '=', 'products.id')
+                        ->where('product_branch_stocks.branch_id', (string) $activeBranch['id']);
+                })
+                ->select('products.id', 'products.name')
+                ->selectRaw("COALESCE(product_branch_stocks.quantity, {$stockColumn}, 0) as stock")
+                ->whereRaw("COALESCE(product_branch_stocks.quantity, {$stockColumn}, 0) <= COALESCE(NULLIF({$reorderColumn}, 0), 15)")
                 ->orderBy('product_branch_stocks.quantity', 'asc')
                 ->limit(10)
                 ->get();
@@ -415,10 +437,16 @@ class DashboardController extends Controller
     private function getLowStockCount($company, ?array $activeBranch = null) {
         if (!Schema::hasTable('products')) return 0;
         if (!empty($activeBranch['id']) && Schema::hasTable('product_branch_stocks')) {
-            return $this->scopeByCompany(ProductBranchStock::query(), 'product_branch_stocks', $company)
-                ->where('branch_id', (string) $activeBranch['id'])
-                ->where('quantity', '<=', 15)
-                ->count();
+            $stockColumn = Schema::hasColumn('products', 'stock') ? 'products.stock' : (Schema::hasColumn('products', 'stock_quantity') ? 'products.stock_quantity' : '0');
+            $reorderColumn = Schema::hasColumn('products', 'reorder_level') ? 'products.reorder_level' : '0';
+
+            return (int) ($this->scopeByCompany(Product::query(), 'products', $company)
+                ->leftJoin('product_branch_stocks', function ($join) use ($activeBranch) {
+                    $join->on('product_branch_stocks.product_id', '=', 'products.id')
+                        ->where('product_branch_stocks.branch_id', (string) $activeBranch['id']);
+                })
+                ->whereRaw("COALESCE(product_branch_stocks.quantity, {$stockColumn}, 0) <= COALESCE(NULLIF({$reorderColumn}, 0), 15)")
+                ->count() ?? 0);
         }
 
         $stockColumn = Schema::hasColumn('products', 'stock') ? 'stock' : (Schema::hasColumn('products', 'stock_quantity') ? 'stock_quantity' : null);
@@ -627,14 +655,17 @@ class DashboardController extends Controller
 
         if (!empty($activeBranch['id']) && Schema::hasTable('product_branch_stocks')) {
             $priceColumn = Schema::hasColumn('products', 'price') ? 'products.price' : (Schema::hasColumn('products', 'product_price') ? 'products.product_price' : null);
+            $stockColumn = Schema::hasColumn('products', 'stock') ? 'products.stock' : (Schema::hasColumn('products', 'stock_quantity') ? 'products.stock_quantity' : '0');
             if (!$priceColumn) {
                 return 0;
             }
 
-            return (float) ($this->scopeByCompany(ProductBranchStock::query(), 'product_branch_stocks', $company)
-                ->join('products', 'products.id', '=', 'product_branch_stocks.product_id')
-                ->where('product_branch_stocks.branch_id', (string) $activeBranch['id'])
-                ->selectRaw("SUM(COALESCE(product_branch_stocks.quantity, 0) * COALESCE({$priceColumn}, 0)) as inventory_value")
+            return (float) ($this->scopeByCompany(Product::query(), 'products', $company)
+                ->leftJoin('product_branch_stocks', function ($join) use ($activeBranch) {
+                    $join->on('product_branch_stocks.product_id', '=', 'products.id')
+                        ->where('product_branch_stocks.branch_id', (string) $activeBranch['id']);
+                })
+                ->selectRaw("SUM(COALESCE(product_branch_stocks.quantity, {$stockColumn}, 0) * COALESCE({$priceColumn}, 0)) as inventory_value")
                 ->value('inventory_value') ?? 0);
         }
 
