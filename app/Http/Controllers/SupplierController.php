@@ -19,7 +19,7 @@ class SupplierController extends Controller
 {
     private function newSupplierQuery()
     {
-        return Supplier::withoutGlobalScope('tenant')->query();
+        return Supplier::withoutGlobalScope('tenant');
     }
 
     private function purchaseGrossTotal($purchase): float
