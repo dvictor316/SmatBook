@@ -83,6 +83,7 @@
                     <a href="#"><i class="fe fe-package"></i><span>Products</span><span class="menu-arrow"></span></a>
                     <ul>
                         <li><a href="{{ route('product-list') }}">Product List</a></li>
+                        <li><a href="{{ route('add-products') }}">Add Product</a></li>
                         <li><a href="{{ route('categories.index') }}">Categories</a></li>
                         <li><a href="{{ route('units') }}">Units</a></li>
                     </ul>
@@ -402,6 +403,7 @@
                     <a href="#"><i class="fe fe-package"></i><span>Products</span><span class="menu-arrow"></span></a>
                     <ul>
                         <li><a href="{{ route('product-list') }}">Product List</a></li>
+                        <li><a href="{{ route('add-products') }}">Add Product</a></li>
                         <li><a href="{{ route('categories.index') }}">Categories</a></li>
                         <li><a href="{{ route('units') }}">Units</a></li>
                     </ul>
@@ -553,6 +555,7 @@
                     <a href="#"><i class="fe fe-package"></i><span>Products</span><span class="menu-arrow"></span></a>
                     <ul>
                         <li><a href="{{ route('product-list') }}">Product List</a></li>
+                        <li><a href="{{ route('add-products') }}">Add Product</a></li>
                         <li><a href="{{ route('categories.index') }}">Categories</a></li>
                         <li><a href="{{ route('units') }}">Units</a></li>
                     </ul>
