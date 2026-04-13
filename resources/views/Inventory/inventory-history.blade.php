@@ -86,7 +86,6 @@
                                 <table class="table table-center table-hover mb-0" id="inventoryHistoryTable">
                                     <thead style="background: #f9fafb;">
                                         <tr class="text-uppercase" style="font-size: 10px; letter-spacing: 0.5px;">
-                                            <th class="text-center no-print" style="width: 60px;">Action</th>
                                             <th class="ps-4">#</th>
                                             <th>Date</th>
                                             <th>Item</th>
@@ -94,6 +93,7 @@
                                             <th class="text-center">Type</th>
                                             <th>Reference</th>
                                             <th class="text-end">Quantity</th>
+                                            <th class="text-center no-print">Action</th>
                                             <th class="text-end">Stock Status</th>
                                             <th class="text-end">Stock Value</th>
                                             <th class="text-end">Purchase Price</th>
@@ -103,10 +103,27 @@
                                         @forelse ($inventoryHistories as $history)
                                             @php $isEditableHistoryRow = is_numeric($history->id); @endphp
                                             <tr>
-                                                <td class="text-center no-print" style="position: relative; z-index: 100;">
+                                                <td class="ps-4 text-muted">{{ $history->id }}</td>
+                                                <td>{{ \Carbon\Carbon::parse($history->created_at)->format('d M Y, H:i') }}</td>
+                                                
+                                                {{-- FIXED: Removed ->product because of the JOIN --}}
+                                                <td class="fw-bold text-dark">{{ $history->name }}</td>
+                                                <td class="text-muted">{{ $history->sku }}</td>
+                                                
+                                                <td class="text-center">
+                                                    @php $isStockIn = in_array(strtolower($history->type), ['in', 'stock in']); @endphp
+                                                    <span class="badge {{ $isStockIn ? 'bg-light-success text-success' : 'bg-light-danger text-danger' }} px-2">
+                                                        {{ $isStockIn ? 'Stock In' : 'Stock Out' }}
+                                                    </span>
+                                                </td>
+                                                <td>{{ $history->reference ?? 'System Movement' }}</td>
+                                                <td class="text-end fw-bold {{ $isStockIn ? 'text-success' : 'text-danger' }}">
+                                                    {{ $isStockIn ? '+' : '-' }}{{ number_format($history->quantity) }}
+                                                </td>
+                                                <td class="text-center no-print" style="position: relative; z-index: 100; min-width: 80px;">
                                                     <div class="dropdown dropdown-action">
-                                                        <a href="#" class="btn-action-icon" data-bs-toggle="dropdown"><i class="fas fa-ellipsis-v"></i></a>
-                                                        <div class="dropdown-menu dropdown-menu-left" style="position: absolute; left: 0; z-index: 1050; min-width: 180px;">
+                                                        <a href="#" class="btn-action-icon" data-bs-toggle="dropdown" style="z-index: 101; position: relative;"><i class="fas fa-ellipsis-v"></i></a>
+                                                        <div class="dropdown-menu" style="position: absolute; z-index: 1050; min-width: 180px; right: 0; top: 100%;">
                                                             <a class="dropdown-item" href="{{ route('inventory.history', $product->id) }}" title="View full stock history">
                                                                 <i class="fas fa-chart-line me-2 text-info"></i>View History
                                                             </a>
@@ -129,23 +146,6 @@
                                                             @endif
                                                         </div>
                                                     </div>
-                                                </td>
-                                                <td class="ps-4 text-muted">{{ $history->id }}</td>
-                                                <td>{{ \Carbon\Carbon::parse($history->created_at)->format('d M Y, H:i') }}</td>
-                                                
-                                                {{-- FIXED: Removed ->product because of the JOIN --}}
-                                                <td class="fw-bold text-dark">{{ $history->name }}</td>
-                                                <td class="text-muted">{{ $history->sku }}</td>
-                                                
-                                                <td class="text-center">
-                                                    @php $isStockIn = in_array(strtolower($history->type), ['in', 'stock in']); @endphp
-                                                    <span class="badge {{ $isStockIn ? 'bg-light-success text-success' : 'bg-light-danger text-danger' }} px-2">
-                                                        {{ $isStockIn ? 'Stock In' : 'Stock Out' }}
-                                                    </span>
-                                                </td>
-                                                <td>{{ $history->reference ?? 'System Movement' }}</td>
-                                                <td class="text-end fw-bold {{ $isStockIn ? 'text-success' : 'text-danger' }}">
-                                                    {{ $isStockIn ? '+' : '-' }}{{ number_format($history->quantity) }}
                                                 </td>
                                                 <td class="text-end fw-semibold {{ (float) ($history->running_balance ?? 0) >= 0 ? 'text-primary' : 'text-danger' }}">
                                                     {{ number_format((float) ($history->running_balance ?? 0), 2) }}
@@ -231,9 +231,11 @@
         .bg-light-success { background-color: #f0fdf4 !important; color: #166534 !important; border: 1px solid #dcfce7; }
         .bg-light-danger { background-color: #fef2f2 !important; color: #991b1b !important; border: 1px solid #fee2e2; }
         .btn-white { background: #fff; color: #666; }
-        .table-responsive { overflow: visible; }
-        .dropdown-action { position: relative; }
-        .dropdown-menu { z-index: 1050 !important; }
+        .table-responsive { overflow-x: auto; overflow-y: visible; }
+        .table { position: relative; }
+        tr { position: relative; } 
+        .dropdown-action { position: relative; z-index: 100; }
+        .dropdown-menu { position: absolute !important; z-index: 1050 !important; min-width: 180px; }
         @media print { .no-print { display: none !important; } .card { border: none !important; } }
     </style>
 @endsection
