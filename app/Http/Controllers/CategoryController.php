@@ -11,6 +11,48 @@ use Illuminate\Database\QueryException;
 
 class CategoryController extends Controller
 {
+private function scopedCategoryQuery()
+{
+    $query = $this->applyTenantScope(Category::withoutGlobalScopes()->newQuery());
+    $branchId = trim((string) session('active_branch_id', ''));
+    $branchName = trim((string) session('active_branch_name', ''));
+    $hasBranchId = Schema::hasColumn('categories', 'branch_id');
+    $hasBranchName = Schema::hasColumn('categories', 'branch_name');
+
+    if (($branchId !== '' || $branchName !== '') && ($hasBranchId || $hasBranchName)) {
+        $query->where(function ($scoped) use ($branchId, $branchName, $hasBranchId, $hasBranchName) {
+            $matched = false;
+
+            if ($hasBranchId && $branchId !== '') {
+                $scoped->where('categories.branch_id', $branchId);
+                $matched = true;
+            }
+
+            if ($hasBranchName && $branchName !== '') {
+                $method = $matched ? 'orWhere' : 'where';
+                $scoped->{$method}('categories.branch_name', $branchName);
+                $matched = true;
+            }
+
+            if ($hasBranchId || $hasBranchName) {
+                $method = $matched ? 'orWhere' : 'where';
+                $scoped->{$method}(function ($fallback) use ($hasBranchId, $hasBranchName) {
+                    if ($hasBranchId) {
+                        $fallback->whereNull('categories.branch_id');
+                    }
+
+                    if ($hasBranchName) {
+                        $method = $hasBranchId ? 'whereNull' : 'whereNull';
+                        $fallback->{$method}('categories.branch_name');
+                    }
+                });
+            }
+        });
+    }
+
+    return $query;
+}
+
 private function applyTenantScope($query)
 {
     $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
@@ -35,7 +77,7 @@ public function index()
         return view('Inventory.Products.categories', compact('categories'));
     }
 
-    $query = $this->applyTenantScope(Category::query());
+    $query = $this->scopedCategoryQuery();
 
     if (Schema::hasTable('products')) {
         $query->withCount('products');
@@ -76,7 +118,7 @@ public function store(Request $request)
 
     $normalizedName = mb_strtolower(trim((string) $request->name));
 
-    $existingCategory = $this->applyTenantScope(Category::query())
+    $existingCategory = $this->scopedCategoryQuery()
         ->whereRaw('LOWER(name) = ?', [mb_strtolower((string) $request->name)])
         ->first();
 
@@ -139,7 +181,7 @@ public function store(Request $request)
         $category = \App\Models\Category::create($payload);
     } catch (QueryException $exception) {
         if ((int) $exception->getCode() === 23000 || (int) ($exception->errorInfo[1] ?? 0) === 1062) {
-            $duplicateCategory = $this->applyTenantScope(Category::query())
+            $duplicateCategory = $this->scopedCategoryQuery()
                 ->whereRaw('LOWER(name) = ?', [$normalizedName])
                 ->first();
 

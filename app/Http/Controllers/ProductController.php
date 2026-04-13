@@ -270,6 +270,54 @@ class ProductController extends Controller
         return $this->getActiveBranchContext();
     }
 
+    private function availableCategories()
+    {
+        if (!Schema::hasTable('categories')) {
+            return collect();
+        }
+
+        $query = Category::withoutGlobalScopes()->newQuery();
+        $this->applyTenantScope($query, 'categories');
+
+        $activeBranch = $this->getActiveBranchContext();
+        $branchId = trim((string) ($activeBranch['id'] ?? ''));
+        $branchName = trim((string) ($activeBranch['name'] ?? ''));
+        $hasBranchId = Schema::hasColumn('categories', 'branch_id');
+        $hasBranchName = Schema::hasColumn('categories', 'branch_name');
+
+        if (($branchId !== '' || $branchName !== '') && ($hasBranchId || $hasBranchName)) {
+            $query->where(function ($scoped) use ($branchId, $branchName, $hasBranchId, $hasBranchName) {
+                $matched = false;
+
+                if ($hasBranchId && $branchId !== '') {
+                    $scoped->where('categories.branch_id', $branchId);
+                    $matched = true;
+                }
+
+                if ($hasBranchName && $branchName !== '') {
+                    $method = $matched ? 'orWhere' : 'where';
+                    $scoped->{$method}('categories.branch_name', $branchName);
+                    $matched = true;
+                }
+
+                $method = $matched ? 'orWhere' : 'where';
+                $scoped->{$method}(function ($fallback) use ($hasBranchId, $hasBranchName) {
+                    if ($hasBranchId) {
+                        $fallback->whereNull('categories.branch_id');
+                    }
+
+                    if ($hasBranchName) {
+                        $fallback->whereNull('categories.branch_name');
+                    }
+                });
+            });
+        }
+
+        $orderColumn = Schema::hasColumn('categories', 'name') ? 'name' : 'id';
+
+        return $query->orderBy($orderColumn)->get();
+    }
+
     private function currentPlanName(): string
     {
         $currentPlan = strtolower((string) session('user_plan'));
@@ -584,9 +632,7 @@ class ProductController extends Controller
             $productRows = $products instanceof \Illuminate\Pagination\AbstractPaginator
                 ? $products->getCollection()
                 : $products;
-            $categories = Schema::hasTable('categories')
-                ? Category::orderBy(Schema::hasColumn('categories', 'name') ? 'name' : 'id')->get()
-                : collect();
+            $categories = $this->availableCategories();
 
             return view('Inventory.Products.index', [
                 'products' => $products,
@@ -652,9 +698,7 @@ class ProductController extends Controller
      */
     public function create()
     {
-        $categories = Schema::hasTable('categories')
-            ? Category::orderBy('name')->get()
-            : collect();
+        $categories = $this->availableCategories();
         $availableBranches = $this->getAvailableBranches();
         return view('Inventory.Products.add-products', compact('categories', 'availableBranches'));
     }
@@ -838,7 +882,7 @@ class ProductController extends Controller
         $product = Product::findOrFail($id);
         $activeBranch = $this->getActiveBranchContext();
         $product->setAttribute('active_branch_stock', $this->branchInventory->getAvailableStock($product, $activeBranch));
-        $categories = Category::orderBy('name')->get();
+        $categories = $this->availableCategories();
         
         return view('Inventory.Products.edit', compact('product', 'categories', 'activeBranch'));
     }
