@@ -63,9 +63,15 @@ class AppServiceProvider extends ServiceProvider
             static $categoriesLoaded = [];
             static $categoriesCache = [];
 
+            if (array_key_exists('categories', $view->getData())) {
+                return;
+            }
+
             $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
             $userId = (int) (Auth::id() ?? 0);
-            $cacheKey = 'company:' . $companyId . ':user:' . $userId;
+            $branchId = trim((string) session('active_branch_id', ''));
+            $branchName = trim((string) session('active_branch_name', ''));
+            $cacheKey = 'company:' . $companyId . ':user:' . $userId . ':branch:' . ($branchId !== '' ? $branchId : 'default') . ':branch_name:' . ($branchName !== '' ? md5($branchName) : 'default');
 
             if (($categoriesLoaded[$cacheKey] ?? false) === true) {
                 $view->with('categories', $categoriesCache[$cacheKey] ?? collect());
@@ -79,13 +85,53 @@ class AppServiceProvider extends ServiceProvider
                 return;
             }
 
-            $categoriesCache[$cacheKey] = Cache::remember('ui:categories:minimal:' . $cacheKey, now()->addMinutes(10), function () use ($companyId, $userId) {
+            $categoriesCache[$cacheKey] = Cache::remember('ui:categories:minimal:' . $cacheKey, now()->addMinutes(10), function () use ($companyId, $userId, $branchId, $branchName) {
                 $query = DB::table('categories')->select('id', 'name');
 
                 if ($companyId > 0 && Schema::hasColumn('categories', 'company_id')) {
-                    $query->where('company_id', $companyId);
+                    $query->where(function ($scoped) use ($companyId, $userId) {
+                        $scoped->where('company_id', $companyId);
+
+                        if ($userId > 0 && Schema::hasColumn('categories', 'user_id')) {
+                            $scoped->orWhere(function ($fallback) use ($userId) {
+                                $fallback->whereNull('company_id')
+                                    ->where('user_id', $userId);
+                            });
+                        }
+                    });
                 } elseif ($userId > 0 && Schema::hasColumn('categories', 'user_id')) {
                     $query->where('user_id', $userId);
+                }
+
+                $hasBranchId = Schema::hasColumn('categories', 'branch_id');
+                $hasBranchName = Schema::hasColumn('categories', 'branch_name');
+
+                if (($branchId !== '' || $branchName !== '') && ($hasBranchId || $hasBranchName)) {
+                    $query->where(function ($scoped) use ($branchId, $branchName, $hasBranchId, $hasBranchName) {
+                        $matched = false;
+
+                        if ($hasBranchId && $branchId !== '') {
+                            $scoped->where('branch_id', $branchId);
+                            $matched = true;
+                        }
+
+                        if ($hasBranchName && $branchName !== '') {
+                            $method = $matched ? 'orWhere' : 'where';
+                            $scoped->{$method}('branch_name', $branchName);
+                            $matched = true;
+                        }
+
+                        $method = $matched ? 'orWhere' : 'where';
+                        $scoped->{$method}(function ($fallback) use ($hasBranchId, $hasBranchName) {
+                            if ($hasBranchId) {
+                                $fallback->whereNull('branch_id');
+                            }
+
+                            if ($hasBranchName) {
+                                $fallback->whereNull('branch_name');
+                            }
+                        });
+                    });
                 }
 
                 return $query->orderBy('name')->get();

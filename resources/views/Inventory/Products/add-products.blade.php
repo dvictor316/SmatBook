@@ -133,6 +133,7 @@
             align-items: stretch;
         }
     }
+</style>
     <div class="page-wrapper">
     <div class="content container-fluid product-form-shell">
         
