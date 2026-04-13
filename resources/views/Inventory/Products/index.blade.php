@@ -110,6 +110,33 @@
         color: #1f2937;
     }
 
+    #addProductModal .modal-content,
+    #addProductModal .modal-body,
+    #addProductModal .product-form-sheet,
+    #addProductModal .form-control,
+    #addProductModal .form-select,
+    #addProductModal .input-group .btn {
+        color: #1f2937;
+    }
+
+    #addProductModal .form-control,
+    #addProductModal .form-select {
+        background-color: #ffffff;
+        border-color: #dbe3f0;
+    }
+
+    #addProductModal .form-select option,
+    #addProductModal .form-control option {
+        background-color: #ffffff;
+        color: #111827;
+    }
+
+    #addProductModal .form-select:focus,
+    #addProductModal .form-control:focus {
+        border-color: #60a5fa;
+        box-shadow: 0 0 0 0.2rem rgba(96, 165, 250, 0.18);
+    }
+
     .product-form-muted {
         color: #6b7280;
         font-size: 0.9rem;
