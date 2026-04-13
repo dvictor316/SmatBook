@@ -718,16 +718,35 @@ public function purchase_report(Request $request)
         /** 3. Low Stock Report **/
     public function low_stock_report(Request $request)
         {
-            // 1. Setup safety defaults
             $threshold = $request->get('min_qty', 15);
             $target = $request->get('target_qty', 100);
+            $activeBranch = $this->getActiveBranchContext();
+            $stockColumn = Schema::hasColumn('products', 'stock')
+                ? 'products.stock'
+                : (Schema::hasColumn('products', 'stock_quantity') ? 'products.stock_quantity' : '0');
+            $reorderColumn = Schema::hasColumn('products', 'reorder_level')
+                ? 'products.reorder_level'
+                : '0';
 
-            // 2. Query actual DB columns confirmed via MySQL: 'name' and 'stock'
-            $products = $this->scopedTable('products')
-                ->select(['id', 'name', 'sku', 'stock', 'purchase_price', 'unit_type', 'reorder_level', 'reorder_quantity'])
-                ->whereRaw('stock <= COALESCE(NULLIF(reorder_level, 0), ?)', [$threshold])
-                ->orderBy('stock', 'asc')
-                ->get();
+            $productsQuery = $this->scopedTable('products')
+                ->select(['products.id', 'products.name', 'products.sku', 'products.purchase_price', 'products.unit_type', 'products.reorder_level', 'products.reorder_quantity']);
+
+            if (!empty($activeBranch['id']) && Schema::hasTable('product_branch_stocks')) {
+                $productsQuery->leftJoin('product_branch_stocks', function ($join) use ($activeBranch) {
+                    $join->on('product_branch_stocks.product_id', '=', 'products.id')
+                        ->where('product_branch_stocks.branch_id', (string) $activeBranch['id']);
+                });
+
+                $productsQuery->addSelect(DB::raw("COALESCE(product_branch_stocks.quantity, {$stockColumn}, 0) as stock"));
+                $productsQuery->whereRaw("COALESCE(product_branch_stocks.quantity, {$stockColumn}, 0) <= COALESCE(NULLIF({$reorderColumn}, 0), ?)", [$threshold]);
+                $productsQuery->orderByRaw("COALESCE(product_branch_stocks.quantity, {$stockColumn}, 0) asc");
+            } else {
+                $productsQuery->addSelect(DB::raw("COALESCE({$stockColumn}, 0) as stock"));
+                $productsQuery->whereRaw("COALESCE({$stockColumn}, 0) <= COALESCE(NULLIF({$reorderColumn}, 0), ?)", [$threshold]);
+                $productsQuery->orderByRaw("COALESCE({$stockColumn}, 0) asc");
+            }
+
+            $products = $productsQuery->get();
 
             return view('Reports.Reports.low-stock-report', compact('products', 'threshold', 'target'));
         }

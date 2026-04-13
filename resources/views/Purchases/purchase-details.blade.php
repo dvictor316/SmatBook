@@ -8,6 +8,8 @@
         $balanceAmount = max(0, $totalAmount - $paidAmount);
         $taxAmount = abs((float) ($purchase->tax_amount ?? 0));
         $subTotalAmount = max(0, $totalAmount - $taxAmount);
+        $currencyCode = \App\Support\GeoCurrency::currentCurrency();
+        $currencyLocale = \App\Support\GeoCurrency::currentLocale();
     @endphp
     <div class="page-wrapper">
         <div class="content container-fluid">
@@ -123,9 +125,9 @@
                                                             <p class="small text-muted mb-0">{{ $item->product->sku ?? '' }}</p>
                                                         </td>
                                                         <td class="text-center">{{ $item->qty }}</td>
-                                                        <td>{{ number_format($item->unit_price, 2) }}</td>
-                                                        <td>{{ number_format($item->tax_amount ?? 0, 2) }}</td>
-                                                        <td class="text-end font-weight-bold">{{ number_format($item->total_amount, 2) }}</td>
+                                                        <td>{{ \App\Support\GeoCurrency::format((float) ($item->unit_price ?? 0), 'NGN', $currencyCode, $currencyLocale) }}</td>
+                                                        <td>{{ \App\Support\GeoCurrency::format((float) ($item->tax_amount ?? 0), 'NGN', $currencyCode, $currencyLocale) }}</td>
+                                                        <td class="text-end font-weight-bold">{{ \App\Support\GeoCurrency::format((float) ($item->total_amount ?? 0), 'NGN', $currencyCode, $currencyLocale) }}</td>
                                                     </tr>
                                                     @empty
                                                     <tr><td colspan="5" class="text-center p-4">No items recorded.</td></tr>
@@ -146,16 +148,16 @@
                                             <div class="invoice-total-card">
                                                 <div class="invoice-total-box">
                                                     <div class="invoice-total-inner">
-                                                        <p>Subtotal <span>{{ number_format($subTotalAmount, 2) }}</span></p>
-                                                        <p>Tax <span>{{ number_format($taxAmount, 2) }}</span></p>
-                                                        <p>Amount Paid <span>{{ number_format($paidAmount, 2) }}</span></p>
-                                                        <p>Balance Due <span>{{ number_format($balanceAmount, 2) }}</span></p>
+                                                        <p>Subtotal <span>{{ \App\Support\GeoCurrency::format($subTotalAmount, 'NGN', $currencyCode, $currencyLocale) }}</span></p>
+                                                        <p>Tax <span>{{ \App\Support\GeoCurrency::format($taxAmount, 'NGN', $currencyCode, $currencyLocale) }}</span></p>
+                                                        <p>Amount Paid <span>{{ \App\Support\GeoCurrency::format($paidAmount, 'NGN', $currencyCode, $currencyLocale) }}</span></p>
+                                                        <p>Balance Due <span>{{ \App\Support\GeoCurrency::format($balanceAmount, 'NGN', $currencyCode, $currencyLocale) }}</span></p>
                                                     </div>
                                                     <div class="invoice-total-footer bg-light p-2">
                                                         @if($balanceAmount > 0)
-                                                            <h4 class="mb-0">Purchase Value <span>{{ number_format($totalAmount, 2) }}</span></h4>
+                                                            <h4 class="mb-0">Purchase Value <span>{{ \App\Support\GeoCurrency::format($totalAmount, 'NGN', $currencyCode, $currencyLocale) }}</span></h4>
                                                         @else
-                                                            <h4 class="mb-0 text-success">Settled in Full <span>₦0.00 Due</span></h4>
+                                                            <h4 class="mb-0 text-success">Settled in Full <span>{{ \App\Support\GeoCurrency::format(0, 'NGN', $currencyCode, $currencyLocale) }} Due</span></h4>
                                                         @endif
                                                     </div>
                                                 </div>
@@ -196,9 +198,9 @@
                                                         <div class="d-flex flex-wrap gap-3">
                                                             <div class="me-auto">
                                                                 <span class="text-muted">Paid:</span>
-                                                                <strong>{{ number_format($paidAmount, 2) }}</strong>
+                                                                <strong>{{ \App\Support\GeoCurrency::format($paidAmount, 'NGN', $currencyCode, $currencyLocale) }}</strong>
                                                                 <span class="text-muted ms-3">Balance:</span>
-                                                                <strong>{{ number_format($balanceAmount, 2) }}</strong>
+                                                                <strong>{{ \App\Support\GeoCurrency::format($balanceAmount, 'NGN', $currencyCode, $currencyLocale) }}</strong>
                                                             </div>
                                                             <button type="submit" class="btn btn-primary">Record Payment</button>
                                                         </div>
@@ -222,7 +224,7 @@
                                                                 </small>
                                                             </div>
                                                             <div class="text-end">
-                                                                <div class="fw-bold text-success">{{ number_format((float) ($payment->amount ?? 0), 2) }}</div>
+                                                                <div class="fw-bold text-success">{{ \App\Support\GeoCurrency::format((float) ($payment->amount ?? 0), 'NGN', $currencyCode, $currencyLocale) }}</div>
                                                                 <form method="POST" action="{{ route('purchases.destroy-payment', [$purchase->id, $payment->id]) }}" onsubmit="return confirm('Delete this payment and reverse its purchase payment entry?')">
                                                                     @csrf
                                                                     @method('DELETE')
