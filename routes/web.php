@@ -69,6 +69,9 @@ Route::post('/contact-us', [LandingController::class, 'storeContact'])->name('co
 Route::get('/media/product-image/{path}', [ProductController::class, 'serveImage'])
     ->where('path', '.*')
     ->name('products.image');
+Route::get('/media/public/{path}', [ProductController::class, 'serveImage'])
+    ->where('path', '.*')
+    ->name('media.public');
 Route::get('/our-team', [LandingController::class, 'team'])->name('landing.team');
 Route::get('/company-policy', [LandingController::class, 'policy'])->name('landing.policy');
 Route::get('/projects/lahome-properties', [LandingController::class, 'projectLahome'])->name('landing.projects.lahome');

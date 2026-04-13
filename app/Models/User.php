@@ -327,7 +327,7 @@ class User extends Authenticatable
         $normalizedPath = preg_replace('#^storage/#', '', ltrim($path, '/'));
 
         if ($normalizedPath && Storage::disk('public')->exists($normalizedPath)) {
-            return Storage::url($normalizedPath);
+            return route('media.public', ['path' => $normalizedPath]);
         }
 
         if (file_exists(public_path(ltrim($path, '/')))) {
