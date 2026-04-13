@@ -392,8 +392,8 @@
 @push('scripts')
 <script>
     $(document).ready(function() {
-        const categoryIndexUrl = @json(route('ajax.inventory.categories.index'));
-        const categoryStoreUrl = @json(route('ajax.inventory.categories.store'));
+        const categoryIndexUrl = @json(route('ajax.inventory.categories.index', [], false));
+        const categoryStoreUrl = @json(route('ajax.inventory.categories.store', [], false));
         const categoryError = $('#category_error_message');
         const categoryPageSuccess = $('#category_page_success_message');
         const categoryPageSuccessText = $('#category_page_success_text');
