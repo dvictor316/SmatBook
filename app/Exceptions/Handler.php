@@ -227,7 +227,7 @@ class Handler extends ExceptionHandler
     private function resolveLoginRedirect($request): string
     {
         $host = (string) $request->getHost();
-        $mainDomain = 'smatbook.com';
+        $mainDomain = ltrim((string) (config('app.domain') ?: parse_url((string) config('app.url'), PHP_URL_HOST) ?: 'smartprobook.com'), '.');
 
         if ($host !== $mainDomain && str_contains($host, $mainDomain)) {
             return route('login');

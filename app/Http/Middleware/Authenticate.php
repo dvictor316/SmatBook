@@ -12,22 +12,30 @@ class Authenticate extends Middleware
      */
     protected function redirectTo(Request $request): ?string
     {
-        if ($request->expectsJson()) {
+        if ($this->shouldReturnJson($request)) {
             return null;
         }
 
-        // 1. Detect Host for Subdomain-specific Login
         $host = $request->getHost();
-        $mainDomain = 'smatbook.com';
+        $mainDomain = $this->mainDomain();
 
-        // 2. Subdomain Logic
-        // If the user is on {tenant}.smatbook.com, redirect to tenant login
         if ($host !== $mainDomain && str_contains($host, $mainDomain)) {
             return route('login');
         }
 
-        // 3. Central Logic
-        // For smatbook.com/any-route, send to your custom saas-login
         return route('saas-login');
+    }
+
+    private function shouldReturnJson(Request $request): bool
+    {
+        return $request->expectsJson()
+            || $request->wantsJson()
+            || $request->ajax()
+            || strtolower((string) $request->header('X-Requested-With')) === 'xmlhttprequest';
+    }
+
+    private function mainDomain(): string
+    {
+        return ltrim((string) (config('app.domain') ?: parse_url((string) config('app.url'), PHP_URL_HOST) ?: 'smartprobook.com'), '.');
     }
 }

@@ -23,10 +23,17 @@ class IdentifyTenant
             return $next($request);
         }
         
-        $subdomain = $parts[0];
+        $subdomain = strtolower((string) ($parts[0] ?? ''));
+        $mainDomain = strtolower((string) (config('app.domain') ?: parse_url((string) config('app.url'), PHP_URL_HOST) ?: 'smartprobook.com'));
+        $mainDomainHost = ltrim($mainDomain, '.');
+        $mainDomainLabel = strtolower((string) explode('.', $mainDomainHost)[0]);
+
+        if ($host === $mainDomainHost || $host === 'www.' . $mainDomainHost) {
+            return $next($request);
+        }
 
         // 1. Skip system-level domains
-        $systemDomains = ['smatbook', 'www', 'localhost', '127', '0'];
+        $systemDomains = array_unique([$mainDomainLabel, 'www', 'localhost', '127', '0']);
         if (in_array($subdomain, $systemDomains)) {
             return $next($request);
         }
@@ -66,6 +73,13 @@ class IdentifyTenant
                 'subdomain' => $subdomain,
                 'error' => $e->getMessage(),
             ]);
+
+            if ($this->shouldReturnJson($request)) {
+                return response()->json([
+                    'message' => 'Workspace lookup failed. Please try again.',
+                ], 500);
+            }
+
             return redirect()->to(config('app.url') ?: 'https://smartprobook.com')
                 ->with('error', 'Workspace lookup failed. Please try again.');
         }
@@ -74,6 +88,12 @@ class IdentifyTenant
             // Check if this is a manager route; if so, don't redirect to "not found"
             if ($request->is('manager/*') || $request->is('deployment/*')) {
                 return $next($request);
+            }
+
+            if ($this->shouldReturnJson($request)) {
+                return response()->json([
+                    'message' => 'Workspace not found for this request.',
+                ], 404);
             }
             
             return redirect((config('app.url') ?: 'https://smartprobook.com') . '/workspace-not-found');
@@ -95,5 +115,13 @@ class IdentifyTenant
         }
 
         return $next($request);
+    }
+
+    private function shouldReturnJson(Request $request): bool
+    {
+        return $request->expectsJson()
+            || $request->wantsJson()
+            || $request->ajax()
+            || strtolower((string) $request->header('X-Requested-With')) === 'xmlhttprequest';
     }
 }

@@ -27,6 +27,12 @@ class EnforceDeviceSessionLimit
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
+            if ($this->shouldReturnJson($request)) {
+                return response()->json([
+                    'message' => (string) ($result['message'] ?? 'This account cannot be used on another device right now.'),
+                ], 401);
+            }
+
             return redirect()
                 ->guest($this->resolveLoginRedirect($request))
                 ->with('error', (string) ($result['message'] ?? 'This account cannot be used on another device right now.'));
@@ -38,12 +44,20 @@ class EnforceDeviceSessionLimit
     private function resolveLoginRedirect(Request $request): string
     {
         $host = (string) $request->getHost();
-        $mainDomain = 'smatbook.com';
+        $mainDomain = ltrim((string) (config('app.domain') ?: parse_url((string) config('app.url'), PHP_URL_HOST) ?: 'smartprobook.com'), '.');
 
         if ($host !== $mainDomain && str_contains($host, $mainDomain)) {
             return route('login');
         }
 
         return route('saas-login');
+    }
+
+    private function shouldReturnJson(Request $request): bool
+    {
+        return $request->expectsJson()
+            || $request->wantsJson()
+            || $request->ajax()
+            || strtolower((string) $request->header('X-Requested-With')) === 'xmlhttprequest';
     }
 }
