@@ -709,11 +709,6 @@ class ProductController extends Controller
                     'units_per_roll' => 'Enter the number of sachets or loose pieces inside one roll before saving this roll product.'
                 ])->withInput();
             }
-            if ($validated['unit_type'] === 'sachet' && $validated['stock_units'] < 1 && $validated['stock_rolls'] < 1 && $validated['stock_cartons'] < 1) {
-                return back()->withErrors([
-                    'stock_units' => 'Enter opening stock for sachets, rolls, or cartons before saving this sachet product.'
-                ])->withInput();
-            }
 
             if ($uploadedImage instanceof UploadedFile && $uploadedImage->isValid()) {
                 $validated['image'] = $uploadedImage->store('products', 'public');
