@@ -310,6 +310,46 @@ class ProductController extends Controller
         return (int) round($cartonUnits + $rollUnits + $stockUnits);
     }
 
+    private function resolveInitialStock(array $validated): int
+    {
+        $calculatedStock = $validated['stock'] ?? null;
+
+        if ($calculatedStock === null) {
+            $calculatedStock = $this->calculateStockFromPackaging($validated);
+        }
+
+        $calculatedStock = (int) round((float) ($calculatedStock ?? 0));
+
+        if ($calculatedStock > 0) {
+            return $calculatedStock;
+        }
+
+        $stockCartons = (float) ($validated['stock_cartons'] ?? 0);
+        $stockRolls = (float) ($validated['stock_rolls'] ?? 0);
+        $stockUnits = (float) ($validated['stock_units'] ?? 0);
+
+        if ($stockCartons > 0 || $stockRolls > 0 || $stockUnits > 0) {
+            return $calculatedStock;
+        }
+
+        $unitsPerCarton = max((int) ($validated['units_per_carton'] ?? 0), 0);
+        $unitsPerRoll = max((int) ($validated['units_per_roll'] ?? 0), 0);
+
+        if ($unitsPerRoll > 0 && $unitsPerCarton > 0) {
+            return (int) round($unitsPerCarton * $unitsPerRoll);
+        }
+
+        if ($unitsPerCarton > 0) {
+            return $unitsPerCarton;
+        }
+
+        if ($unitsPerRoll > 0) {
+            return $unitsPerRoll;
+        }
+
+        return 0;
+    }
+
     private function spreadsheetRowIterator(UploadedFile $file): \Generator
     {
         $extension = strtolower((string) $file->getClientOriginalExtension());
@@ -692,12 +732,7 @@ class ProductController extends Controller
             }
             $validated['sku'] = $this->generateUniqueSku($validated['sku'] ?? null, $validated['name']);
 
-            $calculatedStock = $validated['stock'] ?? null;
-
-            if ($calculatedStock === null) {
-                $calculatedStock = $this->calculateStockFromPackaging($validated);
-            }
-            $validated['stock'] = (int) ($calculatedStock ?? 0);
+            $validated['stock'] = $this->resolveInitialStock($validated);
 
             if ($validated['unit_type'] === 'carton' && $validated['units_per_carton'] < 1) {
                 return back()->withErrors([
@@ -939,11 +974,7 @@ public function inventory(Request $request)
         }
         $validated['sku'] = $this->generateUniqueSku($validated['sku'] ?? null, $validated['name'], $product->id);
 
-        $calculatedStock = $validated['stock'] ?? null;
-        if ($calculatedStock === null) {
-            $calculatedStock = $this->calculateStockFromPackaging($validated);
-        }
-        $validated['stock'] = (int) ($calculatedStock ?? (int) $product->stock);
+        $validated['stock'] = $this->resolveInitialStock($validated);
 
         if ($validated['unit_type'] === 'carton' && $validated['units_per_carton'] < 1) {
             return back()->withErrors([
