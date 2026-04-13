@@ -21,23 +21,15 @@ class BranchInventoryService
     public function getAvailableStock(Product $product, ?array $branch = null): float
     {
         $branch = $branch ?: $this->getActiveBranchContext();
-        $transactionalStock = $this->calculateTransactionalStock($product, $branch);
-
-        if ($transactionalStock !== null) {
-            if (Schema::hasTable('product_branch_stocks') && !empty($branch['id'])) {
-                $this->setBranchStock(
-                    $product,
-                    $transactionalStock,
-                    $branch,
-                    (int) ($product->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id') ?? 0)
-                );
-            }
-
-            return $transactionalStock;
-        }
 
         if (!Schema::hasTable('product_branch_stocks') || empty($branch['id'])) {
-            return (float) ($product->stock ?? $product->stock_quantity ?? 0);
+            $savedStock = (float) ($product->stock ?? $product->stock_quantity ?? 0);
+
+            if ($savedStock !== 0.0) {
+                return $savedStock;
+            }
+
+            return (float) ($this->calculateTransactionalStock($product, $branch) ?? 0);
         }
 
         $branchStock = $product->relationLoaded('branchStocks')
@@ -48,7 +40,19 @@ class BranchInventoryService
             return (float) $branchStock->quantity;
         }
 
-        return (float) ($product->stock ?? $product->stock_quantity ?? 0);
+        $savedStock = (float) ($product->stock ?? $product->stock_quantity ?? 0);
+
+        if ($savedStock !== 0.0) {
+            return $savedStock;
+        }
+
+        $transactionalStock = $this->calculateTransactionalStock($product, $branch);
+
+        if ($transactionalStock !== null) {
+            return $transactionalStock;
+        }
+
+        return $savedStock;
     }
 
     private function calculateTransactionalStock(Product $product, ?array $branch = null): ?float
