@@ -388,7 +388,7 @@
 @push('scripts')
 <script>
     $(document).ready(function () {
-        const editCategoryStoreUrl = @json(route('inventory.categories.store'));
+        const editCategoryStoreUrl = @json(route('ajax.inventory.categories.store'));
 
         function upsertCategoryOption(selectSelector, category) {
             if (!category || !category.id || !category.name) {

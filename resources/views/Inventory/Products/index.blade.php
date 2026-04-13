@@ -807,8 +807,8 @@
 
 <script>
     $(document).ready(function() {
-        const categoryIndexUrl = @json(route('inventory.categories'));
-        const categoryStoreUrl = @json(route('inventory.categories.store'));
+        const categoryIndexUrl = @json(route('ajax.inventory.categories.index'));
+        const categoryStoreUrl = @json(route('ajax.inventory.categories.store'));
         const quickCategoryError = $('#quick_category_error_message');
         const quickCategorySuccess = $('#quick_category_success_message');
 

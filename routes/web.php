@@ -523,6 +523,12 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('superadmin')->name('sup
 Route::middleware('auth')->get('/impersonation/leave', [AuthController::class, 'leaveImpersonation'])
     ->name('impersonation.leave');
 
+// Shared authenticated JSON endpoints for quick category actions across tenant pages.
+Route::middleware(['auth'])->prefix('ajax/inventory')->name('ajax.inventory.')->group(function () {
+    Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
+    Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
+});
+
 /*
 |--------------------------------------------------------------------------
 | TENANT APP ROUTES (ALL COMPLETE ROUTES)

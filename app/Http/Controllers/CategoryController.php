@@ -22,9 +22,11 @@ private function expectsJsonResponse(Request $request): bool
         || strtolower((string) $request->header('X-Requested-With')) === 'xmlhttprequest'
         || $request->routeIs('inventory.categories')
         || $request->routeIs('inventory.categories.store')
+        || $request->routeIs('ajax.inventory.categories.index')
+        || $request->routeIs('ajax.inventory.categories.store')
         || $request->routeIs('categories.index')
         || $request->routeIs('categories.store')
-        || in_array($path, ['inventory/products/category', 'categories', 'categories/store'], true);
+        || in_array($path, ['inventory/products/category', 'ajax/inventory/categories', 'categories', 'categories/store'], true);
 }
 
 private function scopedCategoryQuery()
