@@ -39,7 +39,9 @@ class DashboardController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        $workspaceContext = (string) $request->session()->get('workspace_context', 'platform');
+        $currentSubscription = Subscription::resolveCurrentForUser($user);
+        $defaultWorkspaceContext = in_array((string) ($user->role ?? ''), ['superadmin', 'admin'], true) ? 'platform' : 'business';
+        $workspaceContext = (string) $request->session()->get('workspace_context', $defaultWorkspaceContext);
         $isBusinessWorkspace = $workspaceContext === 'business';
         $activeBranch = $isBusinessWorkspace ? $this->activeBranchContext() : ['id' => null, 'name' => null];
         $currentHost = $request->getHost();
@@ -90,6 +92,10 @@ class DashboardController extends Controller
                 ->first();
         }
 
+        if (!$company && !empty($currentSubscription?->company_id)) {
+            $company = Company::query()->find((int) $currentSubscription->company_id);
+        }
+
         if ($subdomain && $company) {
             $allowedUserIds = $this->companyUserIds($company);
             if (!in_array((int) $user->id, $allowedUserIds, true) && !in_array($user->role, ['superadmin', 'admin'])) {
@@ -118,8 +124,9 @@ class DashboardController extends Controller
         });
 
         // 3. CACHED ANALYTICS (Scoped to Company)
+        $resolvedCompanyScopeId = (int) ($company->id ?? $currentSubscription?->company_id ?? $user->company_id ?? session('current_tenant_id') ?? 0);
         $branchCacheKey = $isBusinessWorkspace ? ('_branch_' . ($activeBranch['id'] ?? 'all')) : '_global';
-        $cacheKey = "metrics_co_" . ($company->id ?? 'global') . $branchCacheKey;
+        $cacheKey = 'metrics_co_' . ($resolvedCompanyScopeId > 0 ? $resolvedCompanyScopeId : ('user_' . $user->id)) . $branchCacheKey;
         $metrics = Cache::remember($cacheKey, 300, function() use ($company, $activeBranch) {
             $todayRevenue = $this->getTodayRevenue($company, $activeBranch);
             $totalSales = $this->getTotalSales($company, $activeBranch);
@@ -179,7 +186,6 @@ class DashboardController extends Controller
         $salesCountByMonth = $this->getSalesCountByMonth($company, $activeBranch);
         $topCustomers = $this->getTopCustomers($company, $activeBranch);
 
-        $currentSubscription = Subscription::resolveCurrentForUser($user);
         $seatLimit = $currentSubscription?->resolvedUserLimit();
         $seatCount = $company?->users()->count() ?? ($user->company_id ? User::where('company_id', $user->company_id)->count() : 1);
 
@@ -685,26 +691,32 @@ class DashboardController extends Controller
 
     private function scopeByCompany($query, string $table, $company, ?string $column = null)
     {
-        if (!$company?->id) {
-            return $query;
-        }
-
         if (!Schema::hasTable($table)) {
             return $query;
         }
 
+        $fallbackCompanyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $resolvedCompanyId = (int) ($company->id ?? $fallbackCompanyId);
         $targetColumn = $column ?? 'company_id';
         $qualifiedTargetColumn = str_contains($targetColumn, '.') ? $targetColumn : ($table . '.' . $targetColumn);
         $hasCompanyColumn = Schema::hasColumn($table, 'company_id');
         $hasUserColumn = Schema::hasColumn($table, 'user_id');
 
+        if ($resolvedCompanyId <= 0) {
+            if ($hasUserColumn && Auth::id()) {
+                return $query->where($table . '.user_id', (int) Auth::id());
+            }
+
+            return $query;
+        }
+
         // Primary scope: direct company link.
         if ($hasCompanyColumn) {
             // Legacy fallback: include records created by company users where company_id is null.
             if ($hasUserColumn) {
-                $userIds = $this->companyUserIds($company);
-                return $query->where(function ($q) use ($qualifiedTargetColumn, $company, $table, $userIds) {
-                    $q->where($qualifiedTargetColumn, $company->id)
+                $userIds = $this->companyUserIds($company) ?: (Auth::id() ? [(int) Auth::id()] : []);
+                return $query->where(function ($q) use ($qualifiedTargetColumn, $resolvedCompanyId, $table, $userIds) {
+                    $q->where($qualifiedTargetColumn, $resolvedCompanyId)
                       ->orWhere(function ($legacy) use ($table, $userIds) {
                           $legacy->whereNull($table . '.company_id')
                                  ->whereIn($table . '.user_id', $userIds);
@@ -712,12 +724,13 @@ class DashboardController extends Controller
                 });
             }
 
-            return $query->where($qualifiedTargetColumn, $company->id);
+            return $query->where($qualifiedTargetColumn, $resolvedCompanyId);
         }
 
         // Fallback for legacy tables with no company_id.
         if ($hasUserColumn) {
-            return $query->whereIn($table . '.user_id', $this->companyUserIds($company));
+            $userIds = $this->companyUserIds($company) ?: (Auth::id() ? [(int) Auth::id()] : []);
+            return $query->whereIn($table . '.user_id', $userIds);
         }
 
         return $query;
