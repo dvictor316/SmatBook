@@ -137,6 +137,49 @@
         box-shadow: 0 0 0 0.2rem rgba(96, 165, 250, 0.18);
     }
 
+    #addProductModal .select2-container {
+        width: 100% !important;
+    }
+
+    #addProductModal .select2-container--default .select2-selection--single {
+        height: 49px;
+        border-radius: 12px;
+        border: 1px solid #dbe3f0;
+        background: #ffffff;
+        display: flex;
+        align-items: center;
+    }
+
+    #addProductModal .select2-container--default .select2-selection--single .select2-selection__rendered {
+        color: #111827;
+        line-height: 47px;
+        padding-left: 14px;
+        padding-right: 36px;
+    }
+
+    #addProductModal .select2-container--default .select2-selection--single .select2-selection__placeholder {
+        color: #6b7280;
+    }
+
+    .select2-container--open .select2-dropdown.quick-category-dropdown {
+        z-index: 2000;
+        border-color: #dbe3f0;
+        border-radius: 12px;
+        overflow: hidden;
+        background: #ffffff;
+    }
+
+    .select2-container--open .select2-dropdown.quick-category-dropdown .select2-results__option {
+        color: #111827;
+        background: #ffffff;
+        padding: 10px 14px;
+    }
+
+    .select2-container--open .select2-dropdown.quick-category-dropdown .select2-results__option--highlighted[aria-selected] {
+        background: #eef4ff;
+        color: #1d4ed8;
+    }
+
     .product-form-muted {
         color: #6b7280;
         font-size: 0.9rem;
@@ -538,7 +581,8 @@
                                     <div class="col-md-4">
                                         <label class="form-label">Category</label>
                                         <div class="input-group">
-                                            <select name="category_id" id="product_category_select" class="form-select" required>
+                                            <select name="category_id" id="product_category_select" class="form-select quick-category-select" required>
+                                                <option value="">Select Category</option>
                                                 <?php foreach ($categories as $cat): ?>
                                                     <option value="{{ $cat->id }}">{{ $cat->name }}</option>
                                                 <?php endforeach; ?>
@@ -761,6 +805,29 @@
 
 <script>
     $(document).ready(function() {
+        function initializeQuickCategorySelect() {
+            const categorySelect = $('#product_category_select');
+            if (!categorySelect.length || !$.fn.select2) {
+                return;
+            }
+
+            if (!categorySelect.find('option[value=""]').length) {
+                categorySelect.prepend(new Option('Select Category', '', false, false));
+            }
+
+            if (categorySelect.hasClass('select2-hidden-accessible')) {
+                categorySelect.select2('destroy');
+            }
+
+            categorySelect.select2({
+                dropdownParent: $('#addProductModal'),
+                width: '100%',
+                placeholder: 'Select Category',
+                dropdownCssClass: 'quick-category-dropdown',
+                minimumResultsForSearch: Infinity
+            });
+        }
+
         function upsertCategoryOption(selectSelector, category) {
             if (!category || !category.id || !category.name) {
                 return;
@@ -784,6 +851,7 @@
 
             select.value = optionValue;
             $(select).trigger('change');
+            $(select).trigger('change.select2');
         }
 
         // PREVENT RE-INITIALIZATION ERROR
@@ -806,6 +874,11 @@
         $('#export_excel').on('click', function(e) { e.preventDefault(); table.button('.dt-excel').trigger(); });
         $('#export_pdf').on('click', function(e) { e.preventDefault(); table.button('.dt-pdf').trigger(); });
         $('#export_print').on('click', function(e) { e.preventDefault(); table.button('.dt-print').trigger(); });
+        initializeQuickCategorySelect();
+
+        $('#addProductModal').on('shown.bs.modal', function() {
+            initializeQuickCategorySelect();
+        });
 
         $('#quick_add_product_form').on('submit', function() {
             const imageInput = document.getElementById('quick_add_product_image');
@@ -960,6 +1033,7 @@
             .then(data => {
                 if(data.data) {
                     upsertCategoryOption('#product_category_select', data.data);
+                    initializeQuickCategorySelect();
                     bootstrap.Modal.getInstance(document.getElementById('addCategoryModal')).hide();
                     form.reset();
                 }
