@@ -1340,6 +1340,12 @@ public function inventory(Request $request)
     public function inventory_history($id)
     {
         $activeBranch = $this->getActiveBranchContext();
+        $product = Product::find($id);
+
+        if (!$product) {
+            return redirect()->back()->with('error', 'Product not found.');
+        }
+
         $inventoryHistories = collect();
         $branchId = trim((string) ($activeBranch['id'] ?? ''));
         $branchName = trim((string) ($activeBranch['name'] ?? ''));
@@ -1610,7 +1616,11 @@ public function inventory(Request $request)
             ->reverse()
             ->values();
 
-        return view('Inventory.inventory-history', compact('inventoryHistories', 'activeBranch'));
+        $totalIn = $inventoryHistories->filter(fn ($row) => in_array(strtolower(trim((string) ($row->type ?? ''))), ['in', 'stock in'], true))->sum('quantity');
+        $totalOut = $inventoryHistories->filter(fn ($row) => !in_array(strtolower(trim((string) ($row->type ?? ''))), ['in', 'stock in'], true))->sum('quantity');
+        $currentStock = $product->stock ?? ($inventoryHistories->first()->running_balance ?? 0);
+
+        return view('Inventory.inventory-history', compact('inventoryHistories', 'activeBranch', 'product', 'currentStock', 'totalIn', 'totalOut'));
     }
 
     public function update_history(Request $request)

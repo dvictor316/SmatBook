@@ -15,10 +15,51 @@
                         <h4 class="fw-bold mb-1" style="color: #4e5d78;">Inventory History</h4>
                         <p class="text-muted mb-0" style="font-size: 12px;">Detailed log of stock movements</p>
                         <div class="mt-2">
-                            <span class="badge bg-light border text-primary px-3 py-2">
+                            <span class="badge bg-light border text-primary px-3 py-2 me-2">
                                 <i class="fas fa-code-branch me-2"></i>
                                 Active Branch: {{ $activeBranch['name'] ?? 'Workspace Default' }}
                             </span>
+                            <span class="badge bg-light border text-dark px-3 py-2">
+                                <i class="fas fa-boxes me-2"></i>
+                                {{ $product->name ?? 'Product' }} ({{ $product->sku ?? 'No SKU' }})
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-12 mt-3">
+                        <div class="row gx-3">
+                            <div class="col-sm-4 mb-2">
+                                <div class="card border shadow-sm">
+                                    <div class="card-body py-3 px-4 d-flex align-items-center justify-content-between">
+                                        <div>
+                                            <p class="mb-1 text-muted small">Current Stock</p>
+                                            <h5 class="mb-0">{{ number_format($currentStock, 2) }} {{ $product->unit_type ?? '' }}</h5>
+                                        </div>
+                                        <span class="badge bg-primary px-3 py-2">Live</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-4 mb-2">
+                                <div class="card border shadow-sm">
+                                    <div class="card-body py-3 px-4 d-flex align-items-center justify-content-between">
+                                        <div>
+                                            <p class="mb-1 text-muted small">Total Received</p>
+                                            <h5 class="mb-0">{{ number_format($totalIn, 2) }}</h5>
+                                        </div>
+                                        <span class="badge bg-success px-3 py-2">In</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-4 mb-2">
+                                <div class="card border shadow-sm">
+                                    <div class="card-body py-3 px-4 d-flex align-items-center justify-content-between">
+                                        <div>
+                                            <p class="mb-1 text-muted small">Total Issued</p>
+                                            <h5 class="mb-0">{{ number_format($totalOut, 2) }}</h5>
+                                        </div>
+                                        <span class="badge bg-danger px-3 py-2">Out</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="col-auto">
