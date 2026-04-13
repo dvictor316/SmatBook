@@ -388,6 +388,31 @@
 @push('scripts')
 <script>
     $(document).ready(function () {
+        function upsertCategoryOption(selectSelector, category) {
+            if (!category || !category.id || !category.name) {
+                return;
+            }
+
+            const select = document.querySelector(selectSelector);
+            if (!select) {
+                return;
+            }
+
+            const optionValue = String(category.id);
+            let existingOption = Array.from(select.options).find((option) => option.value === optionValue);
+
+            if (!existingOption) {
+                existingOption = new Option(category.name, category.id, true, true);
+                select.add(existingOption);
+            } else {
+                existingOption.text = category.name;
+                existingOption.selected = true;
+            }
+
+            select.value = optionValue;
+            $(select).trigger('change');
+        }
+
         function refreshEditPackagingLabels() {
             const baseUnitName = ($('input[name="base_unit_name"]').val() || 'unit').trim();
             const unitLabel = baseUnitName.length ? baseUnitName : 'unit';
@@ -441,7 +466,7 @@
                     const currentSelect = $('#edit_product_category_select');
 
                     if (currentSelect.is('select')) {
-                        currentSelect.append(new Option(data.data.name, data.data.id, true, true));
+                        upsertCategoryOption('#edit_product_category_select', data.data);
                     } else {
                         currentSelect.val(data.data.id);
                         const categoryShell = currentSelect.closest('.d-flex.flex-column.gap-2');

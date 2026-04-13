@@ -82,25 +82,6 @@ public function store(Request $request)
         return redirect()->back()->withErrors(['name' => 'A category with this name already exists.'])->withInput();
     }
 
-    $globalExistingCategory = Category::withoutGlobalScopes()
-        ->whereRaw('LOWER(name) = ?', [$normalizedName])
-        ->first();
-
-    if ($globalExistingCategory) {
-        if ($request->expectsJson()) {
-            return response()->json([
-                'ok' => true,
-                'message' => 'Category already exists and has been selected.',
-                'data' => [
-                    'id' => $globalExistingCategory->id,
-                    'name' => $globalExistingCategory->name,
-                ],
-            ]);
-        }
-
-        return redirect()->back()->withErrors(['name' => 'A category with this name already exists.'])->withInput();
-    }
-
     // 2. Handle Image Upload
     $imageName = null;
     if ($request->hasFile('image')) {
@@ -110,7 +91,7 @@ public function store(Request $request)
 
     // 3. Create Record
     $payload = [
-        'name' => $request->name,
+        'name' => trim((string) $request->name),
     ];
 
     if (Schema::hasColumn('categories', 'description')) {
@@ -137,7 +118,7 @@ public function store(Request $request)
         $category = \App\Models\Category::create($payload);
     } catch (QueryException $exception) {
         if ((int) $exception->getCode() === 23000 || (int) ($exception->errorInfo[1] ?? 0) === 1062) {
-            $duplicateCategory = Category::withoutGlobalScopes()
+            $duplicateCategory = $this->applyTenantScope(Category::query())
                 ->whereRaw('LOWER(name) = ?', [$normalizedName])
                 ->first();
 
