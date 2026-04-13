@@ -357,10 +357,15 @@
                                         </td>
                                         <td>
                                             <?php $displayStock = (float) ($product->active_branch_stock ?? $product->stock); ?>
+                                            <?php
+                                                $stockStatusLabel = $displayStock <= 0 ? 'Out of stock' : ($displayStock <= 5 ? 'Low stock' : 'In stock');
+                                                $stockStatusClass = $displayStock <= 0 ? 'text-danger' : ($displayStock <= 5 ? 'text-warning' : 'text-success');
+                                            ?>
                                             <?php $hasActiveBranch = !empty($activeBranch['name'] ?? null); ?>
                                             <span class="badge {{ $displayStock <= 5 ? 'bg-danger' : 'bg-success' }}">
                                                 {{ rtrim(rtrim(number_format((float) $displayStock, 2), '0'), '.') }}
                                             </span>
+                                            <div class="small fw-semibold {{ $stockStatusClass }} mt-1">{{ $stockStatusLabel }}</div>
                                             @if($hasActiveBranch)
                                                 <div class="small text-muted mt-1">{{ $activeBranch['name'] }}</div>
                                             @endif
