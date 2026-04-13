@@ -29,6 +29,9 @@ public function index()
 {
     if (!Schema::hasTable('categories')) {
         $categories = collect();
+        if (request()->expectsJson()) {
+            return response()->json(['ok' => true, 'data' => []]);
+        }
         return view('Inventory.Products.categories', compact('categories'));
     }
 
@@ -40,6 +43,16 @@ public function index()
 
     $orderColumn = Schema::hasColumn('categories', 'created_at') ? 'created_at' : 'id';
     $categories = $query->orderByDesc($orderColumn)->get();
+
+    if (request()->expectsJson()) {
+        return response()->json([
+            'ok' => true,
+            'data' => $categories->map(fn (Category $category) => [
+                'id' => $category->id,
+                'name' => $category->name,
+            ])->values(),
+        ]);
+    }
 
     return view('Inventory.Products.categories', compact('categories'));
 }
@@ -112,6 +125,14 @@ public function store(Request $request)
 
     if (Schema::hasColumn('categories', 'user_id')) {
         $payload['user_id'] = Auth::id();
+    }
+
+    if (Schema::hasColumn('categories', 'branch_id')) {
+        $payload['branch_id'] = session('active_branch_id');
+    }
+
+    if (Schema::hasColumn('categories', 'branch_name')) {
+        $payload['branch_name'] = session('active_branch_name');
     }
 
     try {

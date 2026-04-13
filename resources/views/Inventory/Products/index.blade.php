@@ -805,6 +805,39 @@
 
 <script>
     $(document).ready(function() {
+        async function reloadQuickCategoryOptions(selectedValue = '') {
+            const categorySelect = document.getElementById('product_category_select');
+            if (!categorySelect) {
+                return;
+            }
+
+            try {
+                const response = await fetch("{{ route('categories.index') }}", {
+                    headers: { 'Accept': 'application/json' }
+                });
+                const payload = await response.json();
+                const categories = Array.isArray(payload?.data) ? payload.data : [];
+
+                categorySelect.innerHTML = '';
+                categorySelect.add(new Option('Select Category', '', false, false));
+
+                categories.forEach((category) => {
+                    if (!category?.id || !category?.name) {
+                        return;
+                    }
+
+                    const isSelected = selectedValue !== '' && String(category.id) === String(selectedValue);
+                    categorySelect.add(new Option(category.name, category.id, isSelected, isSelected));
+                });
+
+                if (selectedValue !== '') {
+                    categorySelect.value = String(selectedValue);
+                }
+            } catch (error) {
+                console.error('Unable to reload categories', error);
+            }
+        }
+
         function initializeQuickCategorySelect() {
             const categorySelect = $('#product_category_select');
             if (!categorySelect.length || !$.fn.select2) {
@@ -874,10 +907,14 @@
         $('#export_excel').on('click', function(e) { e.preventDefault(); table.button('.dt-excel').trigger(); });
         $('#export_pdf').on('click', function(e) { e.preventDefault(); table.button('.dt-pdf').trigger(); });
         $('#export_print').on('click', function(e) { e.preventDefault(); table.button('.dt-print').trigger(); });
-        initializeQuickCategorySelect();
+        reloadQuickCategoryOptions().finally(() => {
+            initializeQuickCategorySelect();
+        });
 
         $('#addProductModal').on('shown.bs.modal', function() {
-            initializeQuickCategorySelect();
+            reloadQuickCategoryOptions($('#product_category_select').val() || '').finally(() => {
+                initializeQuickCategorySelect();
+            });
         });
 
         $('#quick_add_product_form').on('submit', function() {
@@ -1033,9 +1070,11 @@
             .then(data => {
                 if(data.data) {
                     upsertCategoryOption('#product_category_select', data.data);
-                    initializeQuickCategorySelect();
-                    bootstrap.Modal.getInstance(document.getElementById('addCategoryModal')).hide();
-                    form.reset();
+                    reloadQuickCategoryOptions(String(data.data.id)).finally(() => {
+                        initializeQuickCategorySelect();
+                        bootstrap.Modal.getInstance(document.getElementById('addCategoryModal')).hide();
+                        form.reset();
+                    });
                 }
             })
             .catch((err) => {
