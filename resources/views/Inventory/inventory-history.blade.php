@@ -86,6 +86,7 @@
                                 <table class="table table-center table-hover mb-0" id="inventoryHistoryTable">
                                     <thead style="background: #f9fafb;">
                                         <tr class="text-uppercase" style="font-size: 10px; letter-spacing: 0.5px;">
+                                            <th class="text-center no-print" style="width: 60px;">Action</th>
                                             <th class="ps-4">#</th>
                                             <th>Date</th>
                                             <th>Item</th>
@@ -96,13 +97,39 @@
                                             <th class="text-end">Stock Status</th>
                                             <th class="text-end">Stock Value</th>
                                             <th class="text-end">Purchase Price</th>
-                                            <th class="text-center no-print">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody style="font-size: 12px;">
                                         @forelse ($inventoryHistories as $history)
                                             @php $isEditableHistoryRow = is_numeric($history->id); @endphp
                                             <tr>
+                                                <td class="text-center no-print" style="position: relative; z-index: 100;">
+                                                    <div class="dropdown dropdown-action">
+                                                        <a href="#" class="btn-action-icon" data-bs-toggle="dropdown"><i class="fas fa-ellipsis-v"></i></a>
+                                                        <div class="dropdown-menu dropdown-menu-left" style="position: absolute; left: 0; z-index: 1050; min-width: 180px;">
+                                                            <a class="dropdown-item" href="{{ route('inventory.history', $product->id) }}" title="View full stock history">
+                                                                <i class="fas fa-chart-line me-2 text-info"></i>View History
+                                                            </a>
+                                                            @if($isEditableHistoryRow)
+                                                            <div class="dropdown-divider"></div>
+                                                            <a class="dropdown-item edit-btn" href="javascript:void(0);"
+                                                                data-id="{{ $history->id }}"
+                                                                data-qty="{{ $history->quantity }}"
+                                                                data-type="{{ $history->type }}"
+                                                                data-bs-toggle="modal" data-bs-target="#edit_history_modal">
+                                                                <i class="far fa-edit me-2 text-primary"></i>Edit
+                                                            </a>
+                                                            <a class="dropdown-item delete-btn" href="javascript:void(0);" 
+                                                                data-id="{{ $history->id }}"
+                                                                data-bs-toggle="modal" data-bs-target="#delete_history_modal">
+                                                                <i class="far fa-trash-alt me-2 text-danger"></i>Delete
+                                                            </a>
+                                                            @else
+                                                            <span class="dropdown-item-text text-muted small">System-generated entry</span>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                </td>
                                                 <td class="ps-4 text-muted">{{ $history->id }}</td>
                                                 <td>{{ \Carbon\Carbon::parse($history->created_at)->format('d M Y, H:i') }}</td>
                                                 
@@ -127,34 +154,6 @@
                                                     {{ \App\Support\GeoCurrency::format((float) ($history->stock_value ?? 0), 'NGN', $currencyCode, $currencyLocale) }}
                                                 </td>
                                                 <td class="text-end">{{ \App\Support\GeoCurrency::format((float) ($history->purchase_price ?? 0), 'NGN', $currencyCode, $currencyLocale) }}</td>
-                                                
-                                                <td class="text-center no-print">
-                                                    <div class="dropdown dropdown-action">
-                                                        <a href="#" class="btn-action-icon" data-bs-toggle="dropdown"><i class="fas fa-ellipsis-v"></i></a>
-                                                        <div class="dropdown-menu dropdown-menu-right">
-                                                            <a class="dropdown-item" href="{{ route('inventory.history', $product->id) }}" title="View full stock history">
-                                                                <i class="fas fa-chart-line me-2 text-info"></i>View History
-                                                            </a>
-                                                            @if($isEditableHistoryRow)
-                                                            <div class="dropdown-divider"></div>
-                                                            <a class="dropdown-item edit-btn" href="javascript:void(0);"
-                                                                data-id="{{ $history->id }}"
-                                                                data-qty="{{ $history->quantity }}"
-                                                                data-type="{{ $history->type }}"
-                                                                data-bs-toggle="modal" data-bs-target="#edit_history_modal">
-                                                                <i class="far fa-edit me-2 text-primary"></i>Edit
-                                                            </a>
-                                                            <a class="dropdown-item delete-btn" href="javascript:void(0);" 
-                                                                data-id="{{ $history->id }}"
-                                                                data-bs-toggle="modal" data-bs-target="#delete_history_modal">
-                                                                <i class="far fa-trash-alt me-2 text-danger"></i>Delete
-                                                            </a>
-                                                            @else
-                                                            <span class="dropdown-item-text text-muted small">System-generated entry</span>
-                                                            @endif
-                                                        </div>
-                                                    </div>
-                                                </td>
                                             </tr>
                                         @empty
                                             <tr>
@@ -232,6 +231,9 @@
         .bg-light-success { background-color: #f0fdf4 !important; color: #166534 !important; border: 1px solid #dcfce7; }
         .bg-light-danger { background-color: #fef2f2 !important; color: #991b1b !important; border: 1px solid #fee2e2; }
         .btn-white { background: #fff; color: #666; }
+        .table-responsive { overflow: visible; }
+        .dropdown-action { position: relative; }
+        .dropdown-menu { z-index: 1050 !important; }
         @media print { .no-print { display: none !important; } .card { border: none !important; } }
     </style>
 @endsection
