@@ -220,32 +220,29 @@
                                         <td class="text-end fw-bold {{ $isStockIn ? 'text-success' : 'text-danger' }}">
                                             {{ $isStockIn ? '+' : '-' }}{{ number_format($history->quantity) }}
                                         </td>
-                                        <td class="text-center no-print" style="position: relative; z-index: 100; min-width: 80px;">
-                                            <div class="dropdown dropdown-action">
-                                                <a href="#" class="btn-action-icon" data-bs-toggle="dropdown" style="z-index: 101; position: relative;"><i class="fas fa-ellipsis-v"></i></a>
-                                                <div class="dropdown-menu" style="position: absolute; z-index: 1050; min-width: 180px; right: 0; top: 100%;">
-                                                    <a class="dropdown-item" href="{{ route('inventory.history', $product->id) }}" title="View full stock history">
-                                                        <i class="fas fa-chart-line me-2 text-info"></i>View History
-                                                    </a>
-                                                    @if($isEditableHistoryRow)
-                                                    <div class="dropdown-divider"></div>
-                                                    <a class="dropdown-item edit-btn" href="javascript:void(0);"
+                                        <td class="text-center no-print inventory-action-cell">
+                                            @if($isEditableHistoryRow)
+                                                <div class="d-inline-flex align-items-center gap-2 flex-wrap justify-content-center">
+                                                    <button type="button"
+                                                        class="btn btn-sm btn-outline-primary edit-btn inventory-action-btn"
                                                         data-id="{{ $history->id }}"
                                                         data-qty="{{ $history->quantity }}"
                                                         data-type="{{ $history->type }}"
-                                                        data-bs-toggle="modal" data-bs-target="#edit_history_modal">
-                                                        <i class="far fa-edit me-2 text-primary"></i>Edit
-                                                    </a>
-                                                    <a class="dropdown-item delete-btn" href="javascript:void(0);"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#edit_history_modal">
+                                                        <i class="far fa-edit me-1"></i>Edit
+                                                    </button>
+                                                    <button type="button"
+                                                        class="btn btn-sm btn-outline-danger delete-btn inventory-action-btn"
                                                         data-id="{{ $history->id }}"
-                                                        data-bs-toggle="modal" data-bs-target="#delete_history_modal">
-                                                        <i class="far fa-trash-alt me-2 text-danger"></i>Delete
-                                                    </a>
-                                                    @else
-                                                    <span class="dropdown-item-text text-muted small">System-generated entry</span>
-                                                    @endif
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#delete_history_modal">
+                                                        <i class="far fa-trash-alt me-1"></i>Delete
+                                                    </button>
                                                 </div>
-                                            </div>
+                                            @else
+                                                <span class="text-muted small">System-generated entry</span>
+                                            @endif
                                         </td>
                                         <td class="text-end fw-semibold {{ (float) ($history->running_balance ?? 0) >= 0 ? 'text-primary' : 'text-danger' }}">
                                             {{ number_format((float) ($history->running_balance ?? 0), 2) }}
@@ -348,6 +345,13 @@
             background: #f8fafc;
         }
         .metric-unit { font-size: 12px; }
+        .inventory-action-cell {
+            min-width: 180px;
+        }
+        .inventory-action-btn {
+            min-width: 78px;
+            border-radius: 8px;
+        }
         .table-responsive { overflow-x: auto; overflow-y: visible; }
         .table { position: relative; }
         tr { position: relative; } 
