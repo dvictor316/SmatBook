@@ -51,12 +51,17 @@
                                     @error('estimate_number') <div class="text-danger small">{{ $message }}</div> @enderror
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label">Customer</label>
+                                    <label class="form-label d-flex align-items-center justify-content-between gap-2">
+                                        <span>Customer</span>
+                                        <a href="{{ route('customers.add') }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fa-solid fa-plus me-1"></i>Add Customer
+                                        </a>
+                                    </label>
                                     <select name="customer_id" class="form-select" required>
                                         <option value="">Select customer</option>
                                         @foreach($customers ?? [] as $customer)
                                             <option value="{{ $customer->id }}" @selected(old('customer_id', $estimate->customer_id) == $customer->id)>
-                                                {{ $customer->name ?? ('Customer #' . $customer->id) }}
+                                                {{ $customer->customer_name ?? $customer->name ?? ('Customer #' . $customer->id) }}
                                             </option>
                                         @endforeach
                                     </select>
