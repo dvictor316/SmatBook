@@ -13317,6 +13317,35 @@ body.filter-opened {
   overflow: hidden;
 }
 
+/* Keep table action menus above scrollable wrappers when opened. */
+.table-responsive,
+.card-table,
+.dataTables_wrapper {
+  position: relative;
+}
+
+.table .dropdown,
+.table .dropdown-action,
+.table td .dropdown {
+  position: relative;
+}
+
+.table .dropdown-menu,
+.table .invoice-link .dropdown-menu,
+.dropdown-menu.dropdown-menu-right,
+.dropdown-menu.dropdown-menu-end {
+  z-index: 1085;
+}
+
+.table-responsive:has(.dropdown.show),
+.table-responsive:has(.dropdown-menu.show),
+.card-table:has(.dropdown.show),
+.card-table:has(.dropdown-menu.show),
+.dataTables_wrapper:has(.dropdown.show),
+.dataTables_wrapper:has(.dropdown-menu.show) {
+  overflow: visible !important;
+}
+
 .flag-nav .dropdown-menu.notifications {
   transform: translateY(49px) !important;
 }
