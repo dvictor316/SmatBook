@@ -364,6 +364,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
+                    <div id="category_error_message" class="alert alert-danger d-none" role="alert"></div>
                     <input type="text" name="name" id="new_category_name" class="form-control" placeholder="Category Name" required>
                 </div>
                 <div class="modal-footer">
@@ -386,8 +387,17 @@
 @push('scripts')
 <script>
     $(document).ready(function() {
-        const categoryIndexUrl = @json(url('/inventory/products/category'));
-        const categoryStoreUrl = @json(url('/categories/store'));
+        const categoryIndexUrl = @json(url('/categories'));
+        const categoryStoreUrl = @json(url('/categories'));
+        const categoryError = $('#category_error_message');
+
+        function showCategoryError(message) {
+            categoryError.removeClass('d-none').text(message || 'Unable to complete category request.');
+        }
+
+        function clearCategoryError() {
+            categoryError.addClass('d-none').text('');
+        }
 
         async function parseJsonResponse(response, fallbackMessage) {
             const raw = await response.text();
@@ -513,6 +523,7 @@
         calculateCartonContent();
         reloadCategoryOptions($('#product_category_select').val() || '').catch((error) => {
             console.error('Unable to load categories', error);
+            showCategoryError(error.message || 'Unable to load categories.');
         });
 
         $('#add_product_form').on('submit', function() {
@@ -528,6 +539,7 @@
             const form = this;
             const btn = $(this).find('button[type="submit"]');
             btn.prop('disabled', true);
+            clearCategoryError();
 
             fetch(categoryStoreUrl, {
                 method: "POST",
@@ -553,13 +565,14 @@
                     upsertCategoryOption('#product_category_select', data.data);
                     reloadCategoryOptions(String(data.data.id))
                         .then(() => {
+                            clearCategoryError();
                             bootstrap.Modal.getInstance(document.getElementById('addCategoryModal'))?.hide();
                             form.reset();
                         });
                 }
             })
             .catch((err) => {
-                alert(err.message || 'Unable to add category.');
+                showCategoryError(err.message || 'Unable to add category.');
             })
             .finally(() => btn.prop('disabled', false));
         });

@@ -784,6 +784,7 @@
                     <h5 class="modal-title">Quick Category</h5>
                 </div>
                 <div class="modal-body">
+                    <div id="quick_category_error_message" class="alert alert-danger d-none" role="alert"></div>
                     <input type="text" name="name" id="new_category_name" class="form-control" placeholder="Category Name" required>
                 </div>
                 <div class="modal-footer">
@@ -805,8 +806,17 @@
 
 <script>
     $(document).ready(function() {
-        const categoryIndexUrl = @json(url('/inventory/products/category'));
-        const categoryStoreUrl = @json(url('/categories/store'));
+        const categoryIndexUrl = @json(url('/categories'));
+        const categoryStoreUrl = @json(url('/categories'));
+        const quickCategoryError = $('#quick_category_error_message');
+
+        function showQuickCategoryError(message) {
+            quickCategoryError.removeClass('d-none').text(message || 'Unable to complete category request.');
+        }
+
+        function clearQuickCategoryError() {
+            quickCategoryError.addClass('d-none').text('');
+        }
 
         async function parseJsonResponse(response, fallbackMessage) {
             const raw = await response.text();
@@ -849,6 +859,7 @@
                 }
             } catch (error) {
                 console.error('Unable to reload categories', error);
+                showQuickCategoryError(error.message || 'Unable to load categories.');
             }
         }
 
@@ -1067,6 +1078,7 @@
             const form = this;
             const btn = $(this).find('button[type="submit"]');
             btn.prop('disabled', true);
+            clearQuickCategoryError();
             
             fetch(categoryStoreUrl, {
                 method: "POST",
@@ -1085,6 +1097,7 @@
                 if(data.data) {
                     upsertCategoryOption('#product_category_select', data.data);
                     reloadQuickCategoryOptions(String(data.data.id)).finally(() => {
+                        clearQuickCategoryError();
                         initializeQuickCategorySelect();
                         bootstrap.Modal.getInstance(document.getElementById('addCategoryModal')).hide();
                         form.reset();
@@ -1092,7 +1105,7 @@
                 }
             })
             .catch((err) => {
-                alert(err.message || 'Unable to add category.');
+                showQuickCategoryError(err.message || 'Unable to add category.');
             })
             .finally(() => btn.prop('disabled', false));
         });
