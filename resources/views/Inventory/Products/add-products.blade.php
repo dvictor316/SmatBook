@@ -386,6 +386,49 @@
 @push('scripts')
 <script>
     $(document).ready(function() {
+        const categoryIndexUrl = @json(url('/inventory/products/category'));
+        const categoryStoreUrl = @json(url('/categories/store'));
+
+        async function parseJsonResponse(response, fallbackMessage) {
+            const raw = await response.text();
+            try {
+                return JSON.parse(raw);
+            } catch (error) {
+                throw new Error(raw && raw.trim().startsWith('<')
+                    ? fallbackMessage
+                    : (raw || fallbackMessage));
+            }
+        }
+
+        async function reloadCategoryOptions(selectedValue = '') {
+            const select = document.getElementById('product_category_select');
+            if (!select) {
+                return;
+            }
+
+            const response = await fetch(categoryIndexUrl, {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const payload = await parseJsonResponse(response, 'Category list returned HTML instead of JSON.');
+            const categories = Array.isArray(payload?.data) ? payload.data : [];
+
+            select.innerHTML = '';
+            select.add(new Option('Select Category', '', false, false));
+
+            categories.forEach((category) => {
+                if (!category?.id || !category?.name) {
+                    return;
+                }
+
+                const isSelected = selectedValue !== '' && String(category.id) === String(selectedValue);
+                select.add(new Option(category.name, category.id, isSelected, isSelected));
+            });
+
+            if (selectedValue !== '') {
+                select.value = String(selectedValue);
+            }
+        }
+
         function upsertCategoryOption(selectSelector, category) {
             if (!category || !category.id || !category.name) {
                 return;
@@ -468,6 +511,9 @@
         });
 
         calculateCartonContent();
+        reloadCategoryOptions($('#product_category_select').val() || '').catch((error) => {
+            console.error('Unable to load categories', error);
+        });
 
         $('#add_product_form').on('submit', function() {
             const imageInput = document.getElementById('product_image_input');
@@ -483,17 +529,18 @@
             const btn = $(this).find('button[type="submit"]');
             btn.prop('disabled', true);
 
-            fetch("{{ route('categories.store') }}", {
+            fetch(categoryStoreUrl, {
                 method: "POST",
                 headers: {
                     'X-CSRF-TOKEN': '{{ csrf_token() }}',
                     'Content-Type': 'application/json',
-                    'Accept': 'application/json'
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
                 body: JSON.stringify({ name: $('#new_category_name').val() })
             })
             .then(async (res) => {
-                const data = await res.json();
+                const data = await parseJsonResponse(res, 'Category save returned HTML instead of JSON.');
                 if (!res.ok) {
                     const msg = data?.message || Object.values(data?.errors || {})?.[0]?.[0] || 'Failed to add category.';
                     throw new Error(msg);
@@ -504,8 +551,11 @@
             .then((data) => {
                 if (data?.data) {
                     upsertCategoryOption('#product_category_select', data.data);
-                    bootstrap.Modal.getInstance(document.getElementById('addCategoryModal'))?.hide();
-                    form.reset();
+                    reloadCategoryOptions(String(data.data.id))
+                        .then(() => {
+                            bootstrap.Modal.getInstance(document.getElementById('addCategoryModal'))?.hide();
+                            form.reset();
+                        });
                 }
             })
             .catch((err) => {

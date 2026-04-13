@@ -11,6 +11,14 @@ use Illuminate\Database\QueryException;
 
 class CategoryController extends Controller
 {
+private function expectsJsonResponse(Request $request): bool
+{
+    return $request->expectsJson()
+        || $request->wantsJson()
+        || $request->ajax()
+        || strtolower((string) $request->header('X-Requested-With')) === 'xmlhttprequest';
+}
+
 private function scopedCategoryQuery()
 {
     $query = $this->applyTenantScope(Category::withoutGlobalScopes()->newQuery());
@@ -67,11 +75,11 @@ private function applyTenantScope($query)
     return $query;
 }
 
-public function index()
+public function index(Request $request)
 {
     if (!Schema::hasTable('categories')) {
         $categories = collect();
-        if (request()->expectsJson()) {
+        if ($this->expectsJsonResponse($request)) {
             return response()->json(['ok' => true, 'data' => []]);
         }
         return view('Inventory.Products.categories', compact('categories'));
@@ -86,7 +94,7 @@ public function index()
     $orderColumn = Schema::hasColumn('categories', 'created_at') ? 'created_at' : 'id';
     $categories = $query->orderByDesc($orderColumn)->get();
 
-    if (request()->expectsJson()) {
+    if ($this->expectsJsonResponse($request)) {
         return response()->json([
             'ok' => true,
             'data' => $categories->map(fn (Category $category) => [
@@ -105,6 +113,13 @@ public function index()
 public function store(Request $request)
 {
     if (!Schema::hasTable('categories')) {
+        if ($this->expectsJsonResponse($request)) {
+            return response()->json([
+                'ok' => false,
+                'message' => 'Categories table is not available yet.',
+                'data' => [],
+            ], 500);
+        }
         return redirect()->back()->with('error', 'Categories table is not available yet.');
     }
 
@@ -123,7 +138,7 @@ public function store(Request $request)
         ->first();
 
     if ($existingCategory) {
-        if ($request->expectsJson()) {
+        if ($this->expectsJsonResponse($request)) {
             return response()->json([
                 'ok' => true,
                 'message' => 'Category already exists and has been selected.',
@@ -185,7 +200,7 @@ public function store(Request $request)
                 ->whereRaw('LOWER(name) = ?', [$normalizedName])
                 ->first();
 
-            if ($duplicateCategory && $request->expectsJson()) {
+            if ($duplicateCategory && $this->expectsJsonResponse($request)) {
                 return response()->json([
                     'ok' => true,
                     'message' => 'Category already exists and has been selected.',
@@ -204,7 +219,7 @@ public function store(Request $request)
         throw $exception;
     }
 
-    if ($request->expectsJson()) {
+    if ($this->expectsJsonResponse($request)) {
         return response()->json([
             'ok' => true,
             'message' => 'Category created successfully!',

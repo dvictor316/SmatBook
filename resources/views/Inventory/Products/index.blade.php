@@ -805,6 +805,20 @@
 
 <script>
     $(document).ready(function() {
+        const categoryIndexUrl = @json(url('/inventory/products/category'));
+        const categoryStoreUrl = @json(url('/categories/store'));
+
+        async function parseJsonResponse(response, fallbackMessage) {
+            const raw = await response.text();
+            try {
+                return JSON.parse(raw);
+            } catch (error) {
+                throw new Error(raw && raw.trim().startsWith('<')
+                    ? fallbackMessage
+                    : (raw || fallbackMessage));
+            }
+        }
+
         async function reloadQuickCategoryOptions(selectedValue = '') {
             const categorySelect = document.getElementById('product_category_select');
             if (!categorySelect) {
@@ -812,10 +826,10 @@
             }
 
             try {
-                const response = await fetch("{{ route('categories.index') }}", {
-                    headers: { 'Accept': 'application/json' }
+                const response = await fetch(categoryIndexUrl, {
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
                 });
-                const payload = await response.json();
+                const payload = await parseJsonResponse(response, 'Category list returned HTML instead of JSON.');
                 const categories = Array.isArray(payload?.data) ? payload.data : [];
 
                 categorySelect.innerHTML = '';
@@ -1054,13 +1068,13 @@
             const btn = $(this).find('button[type="submit"]');
             btn.prop('disabled', true);
             
-            fetch("{{ route('categories.store') }}", {
+            fetch(categoryStoreUrl, {
                 method: "POST",
-                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
                 body: JSON.stringify({ name: $('#new_category_name').val() })
             })
             .then(async (res) => {
-                const data = await res.json();
+                const data = await parseJsonResponse(res, 'Category save returned HTML instead of JSON.');
                 if (!res.ok) {
                     const msg = data?.message || Object.values(data?.errors || {})?.[0]?.[0] || 'Failed to add category.';
                     throw new Error(msg);
