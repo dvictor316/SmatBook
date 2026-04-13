@@ -80,8 +80,95 @@
 
             <div class="row">
                 <div class="col-sm-12">
-                    <div class="card border shadow-none">
-                        <div class="card-body p-0">
+                    <div class="card border shadow-none mb-4">
+                        <div class="card-body p-4">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="fw-bold text-dark mb-4">Quantities In</h6>
+                                    <div class="row">
+                                        <div class="col-6 mb-3">
+                                            <p class="text-muted small mb-1">Total Purchase</p>
+                                            <h5 class="mb-0">{{ number_format($totalIn, 2) }} <span class="text-muted" style="font-size: 12px;">{{ $product->unit_type ?? 'pc' }}(s)</span></h5>
+                                        </div>
+                                        <div class="col-6 mb-3">
+                                            <p class="text-muted small mb-1">Total Stock Adjustment (In)</p>
+                                            <h5 class="mb-0">0.00 <span class="text-muted" style="font-size: 12px;">{{ $product->unit_type ?? 'pc' }}(s)</span></h5>
+                                        </div>
+                                        <div class="col-6 mb-3">
+                                            <p class="text-muted small mb-1">Total Reconciliation (In)</p>
+                                            <h5 class="mb-0">0.00 <span class="text-muted" style="font-size: 12px;">{{ $product->unit_type ?? 'pc' }}(s)</span></h5>
+                                        </div>
+                                        <div class="col-6 mb-3">
+                                            <p class="text-muted small mb-1">Opening Stock</p>
+                                            <h5 class="mb-0">0.00 <span class="text-muted" style="font-size: 12px;">{{ $product->unit_type ?? 'pc' }}(s)</span></h5>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="fw-bold text-dark mb-4">Quantities Out</h6>
+                                    <div class="row">
+                                        <div class="col-6 mb-3">
+                                            <p class="text-muted small mb-1">Total Sold</p>
+                                            <h5 class="mb-0">{{ number_format($totalOut, 2) }} <span class="text-muted" style="font-size: 12px;">{{ $product->unit_type ?? 'pc' }}(s)</span></h5>
+                                        </div>
+                                        <div class="col-6 mb-3">
+                                            <p class="text-muted small mb-1">Total Stock Adjustment (Out)</p>
+                                            <h5 class="mb-0">0.00 <span class="text-muted" style="font-size: 12px;">{{ $product->unit_type ?? 'pc' }}(s)</span></h5>
+                                        </div>
+                                        <div class="col-6 mb-3">
+                                            <p class="text-muted small mb-1">Total Reconciliation (Out)</p>
+                                            <h5 class="mb-0">0.00 <span class="text-muted" style="font-size: 12px;">{{ $product->unit_type ?? 'pc' }}(s)</span></h5>
+                                        </div>
+                                        <div class="col-6 mb-3">
+                                            <p class="text-muted small mb-1">Sell Returns</p>
+                                            <h5 class="mb-0">0.00 <span class="text-muted" style="font-size: 12px;">{{ $product->unit_type ?? 'pc' }}(s)</span></h5>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <hr class="my-4">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="card border bg-light">
+                                        <div class="card-body py-3 px-4">
+                                            <p class="text-muted small mb-1">Totals</p>
+                                            <h6 class="fw-bold mb-2">Current Stock</h6>
+                                            <h4 class="mb-0 text-primary">{{ number_format($currentStock, 2) }} <span style="font-size: 14px;">{{ $product->unit_type ?? 'pc' }}(s)</span></h4>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card border bg-light">
+                                        <div class="card-body py-3 px-4">
+                                            <p class="text-muted small mb-1">Stock Value</p>
+                                            <h6 class="fw-bold mb-2">Current Value</h6>
+                                            <h4 class="mb-0 text-success">{{ \App\Support\GeoCurrency::format((float)($currentStock * ($product->purchase_price ?? 0)), 'NGN') }}</h4>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card border bg-light">
+                                        <div class="card-body py-3 px-4">
+                                            <p class="text-muted small mb-1">Valuation</p>
+                                            <h6 class="fw-bold mb-2">Unit Value</h6>
+                                            <h4 class="mb-0 text-info">{{ \App\Support\GeoCurrency::format((float)$product->purchase_price, 'NGN') }}</h4>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card border bg-light">
+                                        <div class="card-body py-3 px-4">
+                                            <p class="text-muted small mb-1">Movement</p>
+                                            <h6 class="fw-bold mb-2">Net Change</h6>
+                                            <h4 class="mb-0 {{ $currentStock >= 0 ? 'text-success' : 'text-danger' }}">{{ $currentStock >= 0 ? '+' : '' }}{{ number_format($currentStock, 2) }}</h4>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
                             <div class="table-responsive">
                                 <table class="table table-center table-hover mb-0" id="inventoryHistoryTable">
                                     <thead style="background: #f9fafb;">
