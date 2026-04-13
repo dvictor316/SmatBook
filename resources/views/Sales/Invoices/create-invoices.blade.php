@@ -405,11 +405,41 @@
     // Delete Row Logic
     document.addEventListener('click', function(e) {
         if (e.target.closest('.delete-row')) {
+            const row = e.target.closest('.invoice-row');
             const rows = document.querySelectorAll('.invoice-row');
-            if (rows.length > 1) {
-                e.target.closest('.invoice-row').remove();
-                calculateGrandTotal();
+            if (!row) {
+                return;
             }
+
+            if (rows.length > 1) {
+                row.remove();
+                calculateGrandTotal();
+                return;
+            }
+
+            const productSelect = row.querySelector('.product-select');
+            const nameInput = row.querySelector('input[name$="[name]"]');
+            const priceLevelSelect = row.querySelector('.price-level-select');
+            const qtyInput = row.querySelector('.qty-input');
+            const rateInput = row.querySelector('.rate-input');
+            const discountInput = row.querySelector('.discount-input');
+            const taxInput = row.querySelector('.tax-input');
+
+            if (productSelect) {
+                productSelect.value = '';
+                if (typeof window.jQuery !== 'undefined' && typeof jQuery.fn.select2 !== 'undefined') {
+                    jQuery(productSelect).trigger('change.select2');
+                }
+            }
+
+            if (nameInput) nameInput.value = '';
+            if (priceLevelSelect) priceLevelSelect.value = 'retail';
+            if (qtyInput) qtyInput.value = 1;
+            if (rateInput) rateInput.value = '0.00';
+            if (discountInput) discountInput.value = 0;
+            if (taxInput) taxInput.value = 0;
+
+            calculateRow(rateInput || row);
         }
     });
 
