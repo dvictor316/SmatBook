@@ -78,6 +78,9 @@ class BranchInventoryService
             return 0.0;
         }
 
+        $branchId = trim((string) ($branch['id'] ?? ''));
+        $branchName = trim((string) ($branch['name'] ?? ''));
+
         $query = DB::table('inventory_history')
             ->where('product_id', $product->id);
 
@@ -85,7 +88,34 @@ class BranchInventoryService
             $query->where('company_id', $product->company_id);
         }
 
-        $this->applySingleTableBranchScope($query, 'inventory_history', $branch);
+        if ($branchId !== '' || $branchName !== '') {
+            $query->where(function ($sub) use ($branchId, $branchName) {
+                $matched = false;
+
+                if ($branchId !== '' && Schema::hasColumn('inventory_history', 'branch_id')) {
+                    $sub->where('inventory_history.branch_id', $branchId);
+                    $matched = true;
+                }
+
+                if ($branchName !== '' && Schema::hasColumn('inventory_history', 'branch_name')) {
+                    $method = $matched ? 'orWhere' : 'where';
+                    $sub->{$method}('inventory_history.branch_name', $branchName);
+                    $matched = true;
+                }
+
+                if (Schema::hasColumn('inventory_history', 'branch_id') || Schema::hasColumn('inventory_history', 'branch_name')) {
+                    $method = $matched ? 'orWhere' : 'where';
+                    $sub->{$method}(function ($fallback) {
+                        if (Schema::hasColumn('inventory_history', 'branch_id')) {
+                            $fallback->whereNull('inventory_history.branch_id');
+                        }
+                        if (Schema::hasColumn('inventory_history', 'branch_name')) {
+                            $fallback->whereNull('inventory_history.branch_name');
+                        }
+                    });
+                }
+            });
+        }
 
         return (float) $query->sum(DB::raw("
             CASE
