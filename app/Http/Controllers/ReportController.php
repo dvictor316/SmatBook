@@ -26,6 +26,7 @@ use App\Models\Sale;
 use App\Models\Setting;
 use App\Support\LedgerService;
 use App\Support\AppMailer;
+use App\Support\InventoryQuantity;
 
 
 
@@ -1680,14 +1681,13 @@ public function destroy($id)
             $baseStockExpression = Schema::hasColumn('products', 'stock')
                 ? 'COALESCE(products.stock, 0)'
                 : (Schema::hasColumn('products', 'stock_quantity') ? 'COALESCE(products.stock_quantity, 0)' : '0');
-            $saleQtyExpression = Schema::hasColumn('sale_items', 'qty')
-                ? 'COALESCE(sale_items.qty, 0)'
-                : (Schema::hasColumn('sale_items', 'quantity') ? 'COALESCE(sale_items.quantity, 0)' : '0');
+            $saleQtyExpression = InventoryQuantity::saleStockUnitsExpression('sale_items', 'products');
+            $saleRawQtyExpression = InventoryQuantity::saleItemQuantityColumn('sale_items');
             $saleLineTotalExpression = Schema::hasColumn('sale_items', 'total_price')
                 ? 'COALESCE(sale_items.total_price, 0)'
                 : (Schema::hasColumn('sale_items', 'subtotal')
                     ? 'COALESCE(sale_items.subtotal, 0)'
-                    : '(' . $saleQtyExpression . ' * COALESCE(sale_items.unit_price, 0))');
+                    : '(' . $saleRawQtyExpression . ' * COALESCE(sale_items.unit_price, 0))');
             $branchId = trim((string) ($activeBranch['id'] ?? ''));
             $branchName = trim((string) ($activeBranch['name'] ?? ''));
             $hasBranchStocks = Schema::hasTable('product_branch_stocks');
@@ -1777,7 +1777,7 @@ public function destroy($id)
                 'products.image as Image',
                 'categories.name as Category',
                 'sales.total as SoldAmount',
-                'sale_items.qty as SoldQty',
+                DB::raw(InventoryQuantity::saleStockUnitsExpression('sale_items', 'products') . ' as SoldQty'),
                 'products.stock as InstockQty',
                 'sales.created_at as DueDate'
             ]);

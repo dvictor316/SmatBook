@@ -23,6 +23,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 use App\Support\BranchInventoryService;
 use App\Support\GeoCurrency;
+use App\Support\InventoryQuantity;
 use App\Support\LedgerService;
 
 class SaleController extends Controller
@@ -305,22 +306,22 @@ class SaleController extends Controller
             ->leftJoin('categories', 'products.category_id', '=', 'categories.id')
             ->leftJoin('sale_items', 'products.id', '=', 'sale_items.product_id')
             ->leftJoin('sales', 'sale_items.sale_id', '=', 'sales.id')
-            ->selectRaw('
+            ->selectRaw("
                 products.id,
                 products.name as product_name,
                 products.sku,
                 categories.name as category_name,
-                ' . $priceExpression . ' as product_price,
-                ' . $stockExpression . ' as instock_qty,
-                COALESCE(SUM(sale_items.qty), 0) as total_sold_qty,
+                {$priceExpression} as product_price,
+                {$stockExpression} as instock_qty,
+                COALESCE(SUM(" . InventoryQuantity::saleStockUnitsExpression('sale_items', 'products') . "), 0) as total_sold_qty,
                 COALESCE(SUM(
                     CASE
                         WHEN sale_items.total_price IS NOT NULL THEN sale_items.total_price
                         WHEN sale_items.subtotal IS NOT NULL THEN sale_items.subtotal
-                        ELSE COALESCE(sale_items.qty, 0) * COALESCE(sale_items.unit_price, 0)
+                        ELSE " . InventoryQuantity::saleItemQuantityColumn('sale_items') . " * COALESCE(sale_items.unit_price, 0)
                     END
                 ), 0) as total_sold_amount
-            ')
+            ")
             ->groupBy(
                 'products.id',
                 'products.name',
@@ -817,6 +818,12 @@ $sale = Sale::create([
                 'subtotal'    => $itemSubtotal,
                 'total_price' => $itemTotal, 
             ];
+            if (Schema::hasColumn('sale_items', 'unit_type')) {
+                $itemPayload['unit_type'] = strtolower((string) ($itemData['unitType'] ?? $product->unit_type ?? 'unit'));
+            }
+            if (Schema::hasColumn('sale_items', 'stock_units')) {
+                $itemPayload['stock_units'] = $requestedStockUnits;
+            }
             if (Schema::hasColumn('sale_items', 'discount_type')) {
                 $itemPayload['discount_type'] = $discountType === 'fixed' ? 'fixed' : 'percent';
             }
@@ -942,22 +949,12 @@ $sale = Sale::create([
 
     private function resolveStockUnitsForSale(Product $product, array $itemData, float $qty): float
     {
-        $type = strtolower((string) ($itemData['unitType'] ?? 'unit'));
-        $rollsPerCarton = max((int) ($product->units_per_carton ?? 0), 0);
-        $unitsPerRoll = max((int) ($product->units_per_roll ?? 0), 0);
-
-        $multiplier = match ($type) {
-            'carton' => ($rollsPerCarton > 0 && $unitsPerRoll > 0) ? ($rollsPerCarton * $unitsPerRoll) : 1,
-            'roll' => $unitsPerRoll > 0 ? $unitsPerRoll : 1,
-            default => 1,
-        };
-
-        $stockUnits = (float) ($itemData['stockUnits'] ?? 0);
-        if ($stockUnits > 0) {
-            return $stockUnits;
-        }
-
-        return max($qty * $multiplier, $qty);
+        return InventoryQuantity::resolveSaleStockUnits(
+            $product,
+            $qty,
+            $itemData['unitType'] ?? null,
+            isset($itemData['stockUnits']) ? (float) $itemData['stockUnits'] : null
+        );
     }
 
     private function generateInvoiceNo() {

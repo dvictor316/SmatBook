@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Validator;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\Support\Str;
 use App\Support\BranchInventoryService;
+use App\Support\InventoryQuantity;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class ProductController extends Controller
@@ -1579,6 +1580,7 @@ public function inventory(Request $request)
                         'out' as type,
                         COALESCE(" . ($saleReferenceColumn ? "sales.{$saleReferenceColumn}" : 'NULL') . ", CONCAT('SALE-', sales.id)) as reference,
                         COALESCE(sale_items.{$saleQtyColumn}, 0) as quantity,
+                        " . InventoryQuantity::saleStockUnitsExpression('sale_items', 'products') . " as stock_quantity,
                         products.name as name,
                         products.sku as sku,
                         products.purchase_price as purchase_price
@@ -1663,8 +1665,9 @@ public function inventory(Request $request)
             ->values()
             ->map(function ($row) use (&$runningBalance) {
                 $quantity = (float) ($row->quantity ?? 0);
+                $stockQuantity = (float) ($row->stock_quantity ?? $quantity);
                 $isStockIn = in_array(strtolower(trim((string) ($row->type ?? ''))), ['in', 'stock in'], true);
-                $signedQuantity = $isStockIn ? $quantity : -1 * $quantity;
+                $signedQuantity = $isStockIn ? $stockQuantity : -1 * $stockQuantity;
 
                 $runningBalance = round($runningBalance + $signedQuantity, 2);
                 $row->running_balance = $runningBalance;
@@ -1676,7 +1679,7 @@ public function inventory(Request $request)
             ->values();
 
         $totalIn = $inventoryHistories->filter(fn ($row) => in_array(strtolower(trim((string) ($row->type ?? ''))), ['in', 'stock in'], true))->sum('quantity');
-        $totalOut = $inventoryHistories->filter(fn ($row) => !in_array(strtolower(trim((string) ($row->type ?? ''))), ['in', 'stock in'], true))->sum('quantity');
+        $totalOut = $inventoryHistories->filter(fn ($row) => !in_array(strtolower(trim((string) ($row->type ?? ''))), ['in', 'stock in'], true))->sum(fn ($row) => (float) ($row->stock_quantity ?? $row->quantity ?? 0));
         $currentStock = $product->stock ?? ($inventoryHistories->first()->running_balance ?? 0);
 
         return view('Inventory.inventory-history', compact('inventoryHistories', 'activeBranch', 'product', 'currentStock', 'totalIn', 'totalOut'));

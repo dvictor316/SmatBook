@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\{Product, Expense, Sale, Company, Subscription, User, Plan, ProductBranchStock};
+use App\Support\InventoryQuantity;
 use Illuminate\Support\Facades\{DB, Auth, Schema, Cache, Log};
 use Illuminate\Database\QueryException;
 use Carbon\Carbon;
@@ -404,7 +405,6 @@ class DashboardController extends Controller
             $salesTableHasCompany = Schema::hasColumn('sales', 'company_id');
             $salesTableHasUser = Schema::hasColumn('sales', 'user_id');
             $companyUserIds = $this->companyUserIds($company);
-            $qtyColumn = Schema::hasColumn('sale_items', 'qty') ? 'sale_items.qty' : 'sale_items.quantity';
             $costColumn = Schema::hasColumn('products', 'purchase_price') ? 'products.purchase_price' : '0';
 
             $costQuery = DB::table('sale_items')
@@ -413,7 +413,7 @@ class DashboardController extends Controller
 
             $costQuery = $this->scopeSalesByContext($costQuery, $company, $activeBranch, 'sales');
 
-            $totalCost = (float) ($costQuery->selectRaw("SUM(COALESCE({$qtyColumn}, 0) * COALESCE({$costColumn}, 0)) as total_cost")->value('total_cost') ?? 0);
+            $totalCost = (float) ($costQuery->selectRaw("SUM(" . InventoryQuantity::saleStockUnitsExpression('sale_items', 'products') . " * COALESCE({$costColumn}, 0)) as total_cost")->value('total_cost') ?? 0);
         }
 
         return $totalRevenue - $totalCost;
@@ -459,16 +459,12 @@ class DashboardController extends Controller
 
     private function getTopProducts($company, ?array $activeBranch = null) {
         if (!Schema::hasTable('products') || !Schema::hasTable('sale_items')) return collect();
-        $qtyColumn = Schema::hasColumn('sale_items', 'qty') ? 'sale_items.qty' : (Schema::hasColumn('sale_items', 'quantity') ? 'sale_items.quantity' : null);
-        if (!$qtyColumn) {
-            return collect();
-        }
         $query = DB::table('sale_items')
             ->join('products', 'products.id', '=', 'sale_items.product_id')
             ->join('sales', 'sales.id', '=', 'sale_items.sale_id');
 
         return $this->scopeSalesByContext($query, $company, $activeBranch, 'sales')
-            ->select('products.id', 'products.name', DB::raw("SUM(COALESCE({$qtyColumn}, 0)) as total_qty"))
+            ->select('products.id', 'products.name', DB::raw("SUM(" . InventoryQuantity::saleStockUnitsExpression('sale_items', 'products') . ") as total_qty"))
             ->groupBy('products.id', 'products.name')
             ->orderByDesc('total_qty')
             ->limit(5)
@@ -660,18 +656,14 @@ class DashboardController extends Controller
     private function getItemsSold($company, ?array $activeBranch = null): int
     {
         if (!Schema::hasTable('sale_items') || !Schema::hasTable('sales')) return 0;
-        $qtyColumn = Schema::hasColumn('sale_items', 'qty') ? 'sale_items.qty' : (Schema::hasColumn('sale_items', 'quantity') ? 'sale_items.quantity' : null);
-        if (!$qtyColumn) {
-            return 0;
-        }
-
         $query = DB::table('sale_items')
             ->join('sales', 'sales.id', '=', 'sale_items.sale_id')
+            ->join('products', 'products.id', '=', 'sale_items.product_id')
             ->whereDate('sales.created_at', Carbon::today());
 
         $query = $this->scopeSalesByContext($query, $company, $activeBranch, 'sales');
 
-        return (int) ($query->sum(DB::raw("COALESCE({$qtyColumn}, 0)")) ?? 0);
+        return (int) ($query->sum(DB::raw(InventoryQuantity::saleStockUnitsExpression('sale_items', 'products'))) ?? 0);
     }
 
     private function getTodayOrders($company, ?array $activeBranch = null): int

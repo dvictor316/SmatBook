@@ -17,6 +17,8 @@ class SaleItem extends Model
     'sale_id',
     'product_id',
     'qty',
+    'unit_type',
+    'stock_units',
     'unit_price',
     'discount',
     'tax',
@@ -25,6 +27,7 @@ class SaleItem extends Model
 ];
     protected $casts = [
         'qty'        => 'integer',
+        'stock_units'=> 'float',
         'unit_price' => 'float',
         'discount'   => 'float',
         'tax'        => 'float',

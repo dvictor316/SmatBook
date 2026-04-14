@@ -9,6 +9,7 @@ use App\Models\Signature;
 use App\Models\Product;
 use App\Support\BranchInventoryService;
 use App\Support\GeoCurrency;
+use App\Support\InventoryQuantity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -452,9 +453,30 @@ class InvoiceController extends Controller
                     ? round(min(100, ($discount / $lineBase) * 100), 2)
                     : 0;
 
+                $productId = (int) ($item['product_id'] ?? 0);
+                $product = null;
+                $stockUnits = $qty;
+
+                if ($productId > 0) {
+                    $productQuery = Product::query()->lockForUpdate()->whereKey($productId);
+                    if ($companyId > 0 && Schema::hasColumn('products', 'company_id')) {
+                        $productQuery->where('company_id', $companyId);
+                    }
+
+                    $product = $productQuery->first();
+                    if ($product) {
+                        $stockUnits = InventoryQuantity::resolveSaleStockUnits(
+                            $product,
+                            $qty,
+                            $item['unit_type'] ?? $item['unitType'] ?? null,
+                            isset($item['stock_units']) ? (float) $item['stock_units'] : (isset($item['stockUnits']) ? (float) $item['stockUnits'] : null)
+                        );
+                    }
+                }
+
                 $saleItemPayload = [
                     'sale_id' => $sale->id,
-                    'product_id' => $item['product_id'] ?? null,
+                    'product_id' => $productId ?: null,
                     'qty' => $qty,
                     'unit_price' => $rate,
                     'discount' => $lineDiscountPercent,
@@ -462,6 +484,12 @@ class InvoiceController extends Controller
                     'subtotal' => $lineBase,
                     'total_price' => $lineAmount,
                 ];
+                if (Schema::hasColumn('sale_items', 'unit_type')) {
+                    $saleItemPayload['unit_type'] = strtolower((string) ($item['unit_type'] ?? $item['unitType'] ?? $product?->unit_type ?? 'unit'));
+                }
+                if (Schema::hasColumn('sale_items', 'stock_units')) {
+                    $saleItemPayload['stock_units'] = $stockUnits;
+                }
 
                 if ($companyId > 0 && Schema::hasColumn('sale_items', 'company_id')) {
                     $saleItemPayload['company_id'] = $companyId;
@@ -475,24 +503,15 @@ class InvoiceController extends Controller
 
                 $sale->items()->create($this->onlyExistingColumns('sale_items', $saleItemPayload));
 
-                $productId = (int) ($item['product_id'] ?? 0);
-                if ($productId > 0 && $qty > 0) {
-                    $productQuery = Product::query()->lockForUpdate()->whereKey($productId);
-                    if ($companyId > 0 && Schema::hasColumn('products', 'company_id')) {
-                        $productQuery->where('company_id', $companyId);
-                    }
+                if ($product && $stockUnits > 0) {
+                    $this->decrementSellableStock($product, $stockUnits);
 
-                    $product = $productQuery->first();
-                    if ($product) {
-                        $this->decrementSellableStock($product, $qty);
-
-                        $this->branchInventory->adjustBranchStock(
-                            $product,
-                            -$qty,
-                            $activeBranch,
-                            $companyId > 0 ? $companyId : (int) ($product->company_id ?? 0)
-                        );
-                    }
+                    $this->branchInventory->adjustBranchStock(
+                        $product,
+                        -$stockUnits,
+                        $activeBranch,
+                        $companyId > 0 ? $companyId : (int) ($product->company_id ?? 0)
+                    );
                 }
             }
 

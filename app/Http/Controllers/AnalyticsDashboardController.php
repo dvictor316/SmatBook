@@ -9,6 +9,7 @@ use App\Models\Receipt;
 use App\Models\Sale;
 use App\Models\Product;
 use App\Models\Subscription;
+use App\Support\InventoryQuantity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -326,7 +327,7 @@ class AnalyticsDashboardController extends Controller
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
             ->select(
                 'products.name',
-                DB::raw('SUM(COALESCE(sale_items.qty, sale_items.quantity, 0)) as qty'),
+                DB::raw('SUM(' . InventoryQuantity::saleStockUnitsExpression('sale_items', 'products') . ') as qty'),
                 DB::raw('SUM(CASE WHEN sale_items.total_price IS NOT NULL THEN sale_items.total_price WHEN sale_items.subtotal IS NOT NULL THEN sale_items.subtotal ELSE COALESCE(sale_items.qty, sale_items.quantity, 0) * COALESCE(sale_items.unit_price, 0) END) as amount')
             )
             ->groupBy('products.name')

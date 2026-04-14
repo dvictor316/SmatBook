@@ -182,6 +182,7 @@ class BranchInventoryService
 
         $query = DB::table('sale_items')
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+            ->join('products', 'sale_items.product_id', '=', 'products.id')
             ->where('sale_items.product_id', $product->id);
 
         if (Schema::hasColumn('sales', 'company_id') && !empty($product->company_id)) {
@@ -190,7 +191,7 @@ class BranchInventoryService
 
         $this->applyDualTableBranchScope($query, 'sale_items', 'sales', $branch);
 
-        return (float) $query->sum("sale_items.{$qtyColumn}");
+        return (float) $query->sum(DB::raw(InventoryQuantity::saleStockUnitsExpression('sale_items', 'products')));
     }
 
     private function applySingleTableBranchScope($query, string $table, array $branch): void
