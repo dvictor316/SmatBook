@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\{Auth, DB, Hash, Mail, Log, Storage, Schema};
 use Illuminate\Support\{Str, Carbon};
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use App\Models\{Company, User, Subscription, ActivityLog, DeploymentManager, DeploymentCompany, Plan, Setting};
 use App\Models\DeploymentManagerPayout;
 use App\Models\Role;
@@ -147,38 +148,121 @@ class DeploymentManagerController extends Controller
 
     public function submitVerification(Request $request)
     {
-        $request->validate([
-            'business_name' => 'required|string|max:255',
-            'phone'         => 'required|string|max:20',
-            'address'       => 'required|string',
+        $validated = $request->validate([
+            'business_name' => 'required|string|min:3|max:255',
+            'phone'         => ['required', 'string', 'max:25', 'regex:/^\+?[0-9]{7,20}$/'],
+            'address'       => 'required|string|min:8|max:1000',
             'id_type'       => 'required|in:CAC,BVN,NIN,Passport',
-            'id_number'     => 'required|string|max:50',
+            'id_number'     => 'required|string|min:5|max:50',
+        ], [
+            'phone.regex' => 'Phone format is invalid. Use digits with optional leading +.',
         ]);
 
         $manager = DeploymentManager::where('user_id', Auth::id())->firstOrFail();
-        $manager->update($request->only(['business_name', 'phone', 'address', 'id_type', 'id_number']));
 
-        // Auto-approve if all required fields are present and valid
-        if ($manager->business_name && $manager->phone && $manager->address && $manager->id_type && $manager->id_number) {
-            $manager->update([
-                'status' => 'active',
-                'approved_at' => now(),
-                'commission_rate' => self::COMMISSION_RATE,
-            ]);
-            $user = User::findOrFail($manager->user_id);
-            $user->update([
-                'is_verified' => 1,
-                'role' => 'deployment_manager',
-                'email_verified_at' => $user->email_verified_at ?? now(),
-            ]);
-            $this->ensureManagerHasWorkspace($user);
-            // Notify manager
-            SystemEventMailer::notifyManagerApproved($user, Auth::user());
-            return redirect()->route('deployment.dashboard')->with('success', 'Profile auto-approved and workspace activated.');
+        $normalizedPayload = [
+            'business_name' => trim((string) $validated['business_name']),
+            'phone' => $this->normalizePhoneForStorage((string) $validated['phone']),
+            'address' => trim((string) $validated['address']),
+            'id_type' => trim((string) $validated['id_type']),
+            'id_number' => $this->normalizeManagerIdentityNumber(
+                (string) $validated['id_type'],
+                (string) $validated['id_number']
+            ),
+        ];
+
+        $forensicIssues = $this->buildManagerForensicFindings($manager, $normalizedPayload);
+        if ($forensicIssues !== []) {
+            throw ValidationException::withMessages($forensicIssues);
         }
 
-        return redirect()->route('manager.pending.notice')
-            ->with('info', 'Profile submitted. Awaiting SuperAdmin approval.');
+        $updatePayload = [
+            'business_name' => $normalizedPayload['business_name'],
+            'phone' => $normalizedPayload['phone'],
+            'address' => $normalizedPayload['address'],
+            'id_type' => $normalizedPayload['id_type'],
+            'id_number' => $normalizedPayload['id_number'],
+            'status' => 'active',
+            'commission_rate' => self::COMMISSION_RATE,
+        ];
+
+        if (Schema::hasColumn('deployment_managers', 'approved_at')) {
+            $updatePayload['approved_at'] = now();
+        }
+
+        $manager->update($updatePayload);
+
+        $user = User::findOrFail($manager->user_id);
+        $user->update([
+            'is_verified' => 1,
+            'role' => 'deployment_manager',
+            'email_verified_at' => $user->email_verified_at ?? now(),
+        ]);
+
+        $this->ensureManagerHasWorkspace($user);
+        SystemEventMailer::notifyManagerApproved($user, Auth::user());
+
+        return redirect()->route('deployment.dashboard')
+            ->with('success', 'Profile verified automatically. Deployment workspace is now active.');
+    }
+
+    private function normalizeManagerIdentityNumber(string $idType, string $idNumber): string
+    {
+        $trimmed = strtoupper(trim($idNumber));
+        if (in_array($idType, ['BVN', 'NIN'], true)) {
+            return preg_replace('/\D+/', '', $trimmed) ?? '';
+        }
+
+        return preg_replace('/\s+/', '', $trimmed) ?? $trimmed;
+    }
+
+    private function buildManagerForensicFindings(DeploymentManager $manager, array $payload): array
+    {
+        $issues = [];
+        $phone = (string) ($payload['phone'] ?? '');
+        $idType = (string) ($payload['id_type'] ?? '');
+        $idNumber = (string) ($payload['id_number'] ?? '');
+
+        if ($phone !== '') {
+            $duplicatePhone = DeploymentManager::query()
+                ->where('id', '!=', $manager->id)
+                ->where('phone', $phone)
+                ->exists();
+
+            if ($duplicatePhone) {
+                $issues['phone'] = 'This phone number is already used by another deployment manager.';
+            }
+        }
+
+        if ($idType !== '' && $idNumber !== '') {
+            $duplicateIdentity = DeploymentManager::query()
+                ->where('id', '!=', $manager->id)
+                ->where('id_type', $idType)
+                ->where('id_number', $idNumber)
+                ->exists();
+
+            if ($duplicateIdentity) {
+                $issues['id_number'] = 'This identity number already exists for another deployment manager.';
+            }
+        }
+
+        if ($idType === 'BVN' || $idType === 'NIN') {
+            if (!preg_match('/^[0-9]{11}$/', $idNumber)) {
+                $issues['id_number'] = $idType . ' must be exactly 11 digits.';
+            } elseif (preg_match('/^(\d)\1{10}$/', $idNumber)) {
+                $issues['id_number'] = $idType . ' appears invalid. Please provide a valid number.';
+            }
+        }
+
+        if ($idType === 'CAC' && !preg_match('/^[A-Z0-9-]{5,30}$/', $idNumber)) {
+            $issues['id_number'] = 'CAC number must be 5-30 characters and contain only letters, numbers, or hyphen.';
+        }
+
+        if ($idType === 'Passport' && !preg_match('/^[A-Z0-9]{6,12}$/', $idNumber)) {
+            $issues['id_number'] = 'Passport number format is invalid.';
+        }
+
+        return $issues;
     }
 
     public function approveManager($id)
@@ -607,14 +691,25 @@ public function store(Request $request)
     } catch (\Illuminate\Validation\ValidationException $e) {
         return back()->withErrors($e->errors())->withInput();
     } catch (\Illuminate\Database\QueryException $e) {
-        Log::error('DB error creating deployment customer', ['error' => $e->getMessage()]);
-        return back()->with('error', 'Database error: ' . $e->getMessage())->withInput();
+        $message = strtolower($e->getMessage());
+        $friendly = (str_contains($message, 'duplicate') || str_contains($message, 'unique'))
+            ? 'Customer email or company subdomain already exists. Please use a different value.'
+            : 'Unable to save this registration right now. Please try again.';
+
+        Log::error('DB error creating deployment customer', [
+            'manager_id' => $manager->id ?? null,
+            'error' => $e->getMessage(),
+        ]);
+
+        return back()->withErrors(['registration' => $friendly])->withInput();
     } catch (\Exception $e) {
         Log::error('Failed to create deployment customer', [
             'error' => $e->getMessage(),
             'line'  => $e->getLine(),
         ]);
-        return back()->with('error', 'Registration failed: ' . $e->getMessage())->withInput();
+        return back()->withErrors([
+            'registration' => 'Registration failed unexpectedly. Please retry, and contact support if it continues.',
+        ])->withInput();
     }
 
     // ── FIX: Set session AFTER transaction completes successfully ──
@@ -649,6 +744,7 @@ public function store(Request $request)
     ]);
 
     // ── Redirect directly to checkout — clean URL, no extra params ──
+    // Ensured checkout redirect for deployment manager registration (GitHub Copilot marker)
     return redirect()->route('saas.checkout', ['id' => $result['subscription_id']])
         ->with('success', 'Customer account created. Continue checkout to activate workspace.');
 }

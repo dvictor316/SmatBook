@@ -6,6 +6,13 @@
 @php
     $checkoutProfileName = old('customer_name', $subscription->user->name ?? auth()->user()->name);
     $checkoutProfileEmail = old('customer_email', $subscription->user->email ?? auth()->user()->email);
+    $gatewayAvailability = $gatewayAvailability ?? [
+        'stripe' => true,
+        'paystack' => true,
+        'flutterwave' => true,
+    ];
+    $defaultGateway = $defaultGateway ?? 'paystack';
+    $hasGatewayIssue = (bool) ($gatewayConfigurationIssue ?? false);
 @endphp
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
@@ -368,9 +375,15 @@
             <h1>Payment Details</h1>
             <p>Choose your preferred payment gateway. Paystack, Stripe, and Flutterwave remain available for test mode.</p>
 
+            @if($hasGatewayIssue)
+                <div class="alert alert-warning py-2">
+                    No payment gateway is configured yet. Please contact support/admin to enable checkout.
+                </div>
+            @endif
+
             <form id="checkoutPaymentForm" method="POST" action="{{ route('saas.payment.process.checkout', $subscription->id) }}">
                 @csrf
-                <input type="hidden" name="gateway" id="selectedGatewayInput" value="paystack">
+                <input type="hidden" name="gateway" id="selectedGatewayInput" value="{{ $defaultGateway }}">
 
                 <div class="row g-3">
                     <div class="col-md-6">
@@ -385,15 +398,15 @@
                         <label class="field-label">Payment Gateway</label>
                         <div class="gateway-grid">
                             <label class="gateway-option">
-                                <input type="radio" name="gateway_option" value="stripe">
+                                <input type="radio" name="gateway_option" value="stripe" {{ ($defaultGateway === 'stripe' && $gatewayAvailability['stripe']) ? 'checked' : '' }} {{ $gatewayAvailability['stripe'] ? '' : 'disabled' }}>
                                 <span class="gateway-pill gateway-stripe">Stripe</span>
                             </label>
                             <label class="gateway-option">
-                                <input type="radio" name="gateway_option" value="paystack" checked>
+                                <input type="radio" name="gateway_option" value="paystack" {{ ($defaultGateway === 'paystack' && $gatewayAvailability['paystack']) ? 'checked' : '' }} {{ $gatewayAvailability['paystack'] ? '' : 'disabled' }}>
                                 <span class="gateway-pill gateway-paystack">Paystack</span>
                             </label>
                             <label class="gateway-option">
-                                <input type="radio" name="gateway_option" value="flutterwave">
+                                <input type="radio" name="gateway_option" value="flutterwave" {{ ($defaultGateway === 'flutterwave' && $gatewayAvailability['flutterwave']) ? 'checked' : '' }} {{ $gatewayAvailability['flutterwave'] ? '' : 'disabled' }}>
                                 <span class="gateway-pill gateway-flutterwave">Flutterwave</span>
                             </label>
                         </div>
@@ -404,7 +417,7 @@
                     You will be redirected to Paystack secure checkout and returned automatically.
                 </div>
 
-                <button class="pay-btn" type="submit" id="payNowBtn">
+                <button class="pay-btn" type="submit" id="payNowBtn" {{ $hasGatewayIssue ? 'disabled' : '' }}>
                     Continue to Paystack (₦{{ number_format((float) ($subscription->amount ?? 0), 2) }})
                 </button>
             </form>
@@ -424,6 +437,7 @@
         const payNowBtn = document.getElementById('payNowBtn');
         const gatewayInput = document.getElementById('selectedGatewayInput');
         const gatewayRadios = Array.from(document.querySelectorAll('input[name="gateway_option"]'));
+        const enabledGatewayRadios = gatewayRadios.filter((radio) => !radio.disabled);
         const gatewayHelpText = document.getElementById('gatewayHelpText');
         if (!form || !payNowBtn) return;
 
@@ -458,7 +472,20 @@
             });
         });
 
-        setGatewayUI(gatewayInput ? gatewayInput.value : 'paystack');
+        if (enabledGatewayRadios.length === 0) {
+            payNowBtn.disabled = true;
+            payNowBtn.textContent = 'Payment unavailable';
+            gatewayHelpText.textContent = 'No payment gateway is configured yet. Please contact support/admin.';
+            return;
+        }
+
+        const initialGateway = (gatewayInput && gatewayInput.value)
+            ? gatewayInput.value
+            : enabledGatewayRadios[0].value;
+
+        const selectedRadio = enabledGatewayRadios.find((radio) => radio.value === initialGateway) ?? enabledGatewayRadios[0];
+        selectedRadio.checked = true;
+        setGatewayUI(selectedRadio.value);
 
         form.addEventListener('submit', function () {
             payNowBtn.disabled = true;

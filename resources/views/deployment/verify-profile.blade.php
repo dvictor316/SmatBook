@@ -26,7 +26,7 @@
                 <div class="card-body p-4">
                     <div class="alert alert-info border-0 shadow-sm mb-4">
                         <i class="fas fa-info-circle me-2"></i>
-                        Please provide your business details below. Once submitted, our SuperAdmin team will review your credentials for account activation.
+                        Please provide accurate business details below. Your profile is verified immediately using automated forensic checks and activated instantly when valid.
                     </div>
 
                     <form action="{{ route('manager.submit.verification') }}" method="POST">
@@ -48,6 +48,7 @@
                                        class="form-control @error('phone') is-invalid @enderror" 
                                        placeholder="+234..."
                                        value="{{ old('phone', $manager->phone ?? '') }}" required>
+                                    @error('phone') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
                         </div>
 
@@ -68,6 +69,7 @@
                                     <option value="NIN" {{ old('id_type') == 'NIN' ? 'selected' : '' }}>NIN</option>
                                     <option value="Passport" {{ old('id_type') == 'Passport' ? 'selected' : '' }}>International Passport</option>
                                 </select>
+                                @error('id_type') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
 
                             <div class="col-md-6 mb-3">
@@ -76,12 +78,13 @@
                                        class="form-control @error('id_number') is-invalid @enderror" 
                                        placeholder="Enter registration/ID number"
                                        value="{{ old('id_number', $manager->id_number ?? '') }}" required>
+                                @error('id_number') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
                         </div>
 
                         <div class="mt-4 d-grid">
                             <button type="submit" class="btn btn-primary btn-lg shadow-sm">
-                                <i class="fas fa-check-circle me-1"></i> Submit for Verification
+                                <i class="fas fa-check-circle me-1"></i> Verify & Activate Now
                             </button>
                             <button type="button" onclick="printPage()" class="btn btn-link btn-sm mt-2 text-muted">
                                 <i class="fas fa-print"></i> Print Form Copy

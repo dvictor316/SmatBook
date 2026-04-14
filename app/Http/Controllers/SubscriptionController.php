@@ -454,6 +454,14 @@ class SubscriptionController extends Controller
                     ->get();
             }
 
+            $availableGateways = $this->availableCheckoutGateways();
+            $gatewayAvailability = [
+                'stripe' => in_array('stripe', $availableGateways, true),
+                'paystack' => in_array('paystack', $availableGateways, true),
+                'flutterwave' => in_array('flutterwave', $availableGateways, true),
+            ];
+            $defaultGateway = $availableGateways[0] ?? 'paystack';
+
             return view('Saas.checkout', [
                 'subscription'          => $subscription,
                 'isDeploymentCheckout'  => $isDeploymentCheckout,
@@ -461,6 +469,9 @@ class SubscriptionController extends Controller
                 'deploymentManager'     => $deploymentManager,
                 'bankAccounts'          => $bankAccounts,
                 'stripePublishableKey'  => $this->resolveStripePublishableKey(),
+                'gatewayAvailability'   => $gatewayAvailability,
+                'defaultGateway'        => $defaultGateway,
+                'gatewayConfigurationIssue' => $availableGateways === [],
             ]);
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
@@ -511,8 +522,14 @@ class SubscriptionController extends Controller
                 ->with('info', 'Your subscription is already active.');
         }
 
+        $availableGateways = $this->availableCheckoutGateways();
+        if ($availableGateways === []) {
+            return redirect()->route('saas.checkout', $subscription->id)
+                ->with('error', 'No payment gateway is configured yet. Please contact support to enable checkout.');
+        }
+
         $request->validate([
-            'gateway' => 'required|in:stripe,paystack,flutterwave',
+            'gateway' => 'required|string|in:' . implode(',', $availableGateways),
         ]);
 
         return match ((string) $request->input('gateway')) {
@@ -1099,8 +1116,11 @@ class SubscriptionController extends Controller
                 ]);
             }
 
-            if ($customer) {
-                Auth::loginUsingId((int) $customer->id);
+            // Keep the deployment manager signed in after customer payment to preserve
+            // dashboard continuity and avoid losing manager-specific metrics context.
+            $currentActorId = (int) optional(auth()->user())->id;
+            if ($managerId && $currentActorId !== $managerId) {
+                Auth::loginUsingId($managerId);
                 session()->regenerate();
             }
 
@@ -1110,6 +1130,7 @@ class SubscriptionController extends Controller
                 'deployment_return_manager_id' => $managerId,
                 'current_tenant_id'            => $company?->id,
                 'current_tenant_name'          => $company?->name,
+                'last_deployment_customer_id'  => $customer?->id,
             ]);
 
             // Clear all deployment session data
@@ -1755,6 +1776,46 @@ class SubscriptionController extends Controller
         }
 
         return '';
+    }
+
+    private function availableCheckoutGateways(): array
+    {
+        if ($this->shouldSimulateGatewayInLocal()) {
+            return ['paystack', 'stripe', 'flutterwave'];
+        }
+
+        $available = [];
+
+        if ($this->isGatewayEnabledBySetting('paystack') && $this->resolvePaystackSecret() !== '') {
+            $available[] = 'paystack';
+        }
+
+        if ($this->isGatewayEnabledBySetting('stripe')
+            && $this->resolveStripeSecret() !== ''
+            && $this->resolveStripePublishableKey() !== ''
+        ) {
+            $available[] = 'stripe';
+        }
+
+        if ($this->isGatewayEnabledBySetting('flutterwave') && $this->resolveFlutterwaveSecret() !== '') {
+            $available[] = 'flutterwave';
+        }
+
+        return $available;
+    }
+
+    private function isGatewayEnabledBySetting(string $gateway): bool
+    {
+        $raw = Setting::get('payment_' . $gateway . '_enabled', null);
+        if ($raw === null || $raw === '') {
+            return true;
+        }
+
+        if (is_bool($raw)) {
+            return $raw;
+        }
+
+        return in_array(strtolower(trim((string) $raw)), ['1', 'true', 'yes', 'on'], true);
     }
 
     private function isUsableStripeSecret(string $secret): bool

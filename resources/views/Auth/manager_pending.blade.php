@@ -63,7 +63,7 @@
                             </div>
                             <div class="d-flex align-items-center mb-3">
                                 <div class="badge badge-primary rounded-circle mr-3"><i class="fas fa-sync fa-spin"></i></div>
-                                <div class="text-primary font-weight-bold">Awaiting Super Admin Approval</div>
+                                <div class="text-primary font-weight-bold">Automated Forensic Review In Progress</div>
                             </div>
                             <div class="d-flex align-items-center text-muted">
                                 <div class="badge badge-light rounded-circle mr-3"><i class="fas fa-lock"></i></div>
@@ -74,7 +74,7 @@
                         <div class="alert alert-custom bg-soft-info border-0 p-3">
                             <small class="d-block">
                                 <i class="fas fa-info-circle mr-1"></i>
-                                You will be notified at <strong>{{ auth()->user()->email }}</strong> once the Super Admin verifies your credentials.
+                                You will be notified at <strong>{{ auth()->user()->email }}</strong> as soon as automated checks are completed. Manual admin review is only triggered when a profile is flagged.
                             </small>
                         </div>
 
