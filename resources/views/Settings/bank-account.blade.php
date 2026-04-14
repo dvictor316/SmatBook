@@ -101,15 +101,16 @@
                                                                 <td class="fw-bold">{{ $account->account_number }}</td>
                                                                 <td><code>{{ $account->swift_code ?? ($account->ifsc_code ?? 'N/A') }}</code></td>
                                                                 <td class="text-end">
-                                                                    <div class="dropdown dropdown-action">
-                                                                        <a href="#" class="btn-action-icon" data-bs-toggle="dropdown" aria-expanded="false">
-                                                                            <i class="fas fa-ellipsis-v"></i>
-                                                                        </a>
-                                                                        <div class="dropdown-menu dropdown-menu-end shadow-sm border-0">
-                                                                            <a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#view_bank_{{ $account->id }}"><i class="far fa-eye me-2 text-info"></i>View</a>
-                                                                            <a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#edit_bank_{{ $account->id }}"><i class="far fa-edit me-2 text-primary"></i>Edit</a>
-                                                                            <a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#delete_bank_{{ $account->id }}"><i class="far fa-trash-alt me-2 text-danger"></i>Delete</a>
-                                                                        </div>
+                                                                    <div class="bank-action-group">
+                                                                        <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#view_bank_{{ $account->id }}">
+                                                                            <i class="far fa-eye me-1"></i>View
+                                                                        </button>
+                                                                        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#edit_bank_{{ $account->id }}">
+                                                                            <i class="far fa-edit me-1"></i>Edit
+                                                                        </button>
+                                                                        <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#delete_bank_{{ $account->id }}">
+                                                                            <i class="far fa-trash-alt me-1"></i>Delete
+                                                                        </button>
                                                                     </div>
                                                                 </td>
                                                             </tr>
@@ -135,6 +136,18 @@
         .bg-soft-info { background-color: rgba(13, 202, 240, 0.1); }
         .btn-action-icon { color: #6c757d; padding: 5px 10px; }
         .btn-action-icon:hover { background: #eee; border-radius: 5px; }
+        .bank-action-group {
+            display: inline-flex;
+            gap: 0.45rem;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+        .bank-action-group .btn {
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 0.35rem 0.75rem;
+        }
     </style>
 
     @foreach (($bankAccounts ?? collect()) as $account)
