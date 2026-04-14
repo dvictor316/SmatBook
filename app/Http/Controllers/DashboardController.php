@@ -38,28 +38,28 @@ class DashboardController extends Controller
      * Main Dashboard View (Multi-Tenant & Subdomain Optimized)
      */
     public function index(Request $request)
-            // --- SUBDOMAIN ENFORCEMENT: Redirect to correct subdomain if user is on the wrong one ---
-            $userCompany = null;
-            if (!empty($user->company_id)) {
-                $userCompany = Company::find($user->company_id);
-            }
-            if ($userCompany && !empty($userCompany->domain_prefix)) {
-                $expectedSubdomain = Str::lower($userCompany->domain_prefix);
-                $currentSubdomain = null;
-                if (!in_array(Str::lower($currentHost), $centralHosts, true)) {
-                    $currentSubdomain = explode('.', $currentHost)[0];
-                }
-                if ($currentSubdomain && $currentSubdomain !== $expectedSubdomain) {
-                    // Build correct URL and redirect
-                    $hostParts = explode('.', $currentHost);
-                    $hostParts[0] = $expectedSubdomain;
-                    $correctHost = implode('.', $hostParts);
-                    $scheme = $request->getScheme();
-                    $uri = $scheme . '://' . $correctHost . $request->getRequestUri();
-                    return redirect()->to($uri);
-                }
-            }
     {
+        // --- SUBDOMAIN ENFORCEMENT: Redirect to correct subdomain if user is on the wrong one ---
+        $userCompany = null;
+        if (!empty($user->company_id)) {
+            $userCompany = Company::find($user->company_id);
+        }
+        if ($userCompany && !empty($userCompany->domain_prefix)) {
+            $expectedSubdomain = Str::lower($userCompany->domain_prefix);
+            $currentSubdomain = null;
+            if (!in_array(Str::lower($currentHost), $centralHosts, true)) {
+                $currentSubdomain = explode('.', $currentHost)[0];
+            }
+            if ($currentSubdomain && $currentSubdomain !== $expectedSubdomain) {
+                // Build correct URL and redirect
+                $hostParts = explode('.', $currentHost);
+                $hostParts[0] = $expectedSubdomain;
+                $correctHost = implode('.', $hostParts);
+                $scheme = $request->getScheme();
+                $uri = $scheme . '://' . $correctHost . $request->getRequestUri();
+                return redirect()->to($uri);
+            }
+        }
         $user = Auth::user();
         $currentSubscription = Subscription::resolveCurrentForUser($user);
         $hasBusinessWorkspace = (int) ($user->company_id ?? 0) > 0
