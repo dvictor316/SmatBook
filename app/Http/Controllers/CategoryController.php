@@ -12,6 +12,16 @@ use Illuminate\Database\QueryException;
 
 class CategoryController extends Controller
 {
+private function activeTenantScope(): array
+{
+    return [
+        'company_id' => (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0),
+        'user_id' => (int) (Auth::id() ?? 0),
+        'branch_id' => trim((string) session('active_branch_id', '')),
+        'branch_name' => trim((string) session('active_branch_name', '')),
+    ];
+}
+
 private function expectsJsonResponse(Request $request): bool
 {
     return $request->expectsJson()
@@ -23,9 +33,10 @@ private function expectsJsonResponse(Request $request): bool
 
 private function scopedCategoryQuery()
 {
+    $scope = $this->activeTenantScope();
     $query = $this->applyTenantScope(Category::withoutGlobalScopes()->newQuery());
-    $branchId = trim((string) session('active_branch_id', ''));
-    $branchName = trim((string) session('active_branch_name', ''));
+    $branchId = $scope['branch_id'];
+    $branchName = $scope['branch_name'];
     $hasBranchId = Schema::hasColumn('categories', 'branch_id');
     $hasBranchName = Schema::hasColumn('categories', 'branch_name');
 
@@ -42,20 +53,6 @@ private function scopedCategoryQuery()
                 $method = $matched ? 'orWhere' : 'where';
                 $scoped->{$method}('categories.branch_name', $branchName);
                 $matched = true;
-            }
-
-            if ($hasBranchId || $hasBranchName) {
-                $method = $matched ? 'orWhere' : 'where';
-                $scoped->{$method}(function ($fallback) use ($hasBranchId, $hasBranchName) {
-                    if ($hasBranchId) {
-                        $fallback->whereNull('categories.branch_id');
-                    }
-
-                    if ($hasBranchName) {
-                        $method = $hasBranchId ? 'whereNull' : 'whereNull';
-                        $fallback->{$method}('categories.branch_name');
-                    }
-                });
             }
         });
     }
@@ -147,7 +144,7 @@ public function store(Request $request)
     $normalizedName = mb_strtolower(trim((string) $request->name));
 
     $existingCategory = $this->scopedCategoryQuery()
-        ->whereRaw('LOWER(name) = ?', [mb_strtolower((string) $request->name)])
+        ->whereRaw('LOWER(TRIM(name)) = ?', [$normalizedName])
         ->first();
 
     if ($existingCategory) {
@@ -210,7 +207,7 @@ public function store(Request $request)
     } catch (QueryException $exception) {
         if ((int) $exception->getCode() === 23000 || (int) ($exception->errorInfo[1] ?? 0) === 1062) {
             $duplicateCategory = $this->scopedCategoryQuery()
-                ->whereRaw('LOWER(name) = ?', [$normalizedName])
+                ->whereRaw('LOWER(TRIM(name)) = ?', [$normalizedName])
                 ->first();
 
             if ($duplicateCategory && $this->expectsJsonResponse($request)) {
