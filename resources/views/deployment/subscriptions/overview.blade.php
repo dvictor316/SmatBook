@@ -259,7 +259,7 @@
                                 @endif
                             </td>
                             <td class="text-end pe-4">
-                                <a href="#" class="btn btn-sm btn-white border shadow-sm hover-primary no-print">
+                                <a href="{{ route('deployment.subscription.history', $sub->id) }}" class="btn btn-sm btn-white border shadow-sm hover-primary no-print" title="View history &amp; manage">
                                     <i class="fas fa-cog text-muted"></i>
                                 </a>
                             </td>
