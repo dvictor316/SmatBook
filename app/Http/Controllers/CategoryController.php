@@ -14,19 +14,11 @@ class CategoryController extends Controller
 {
 private function expectsJsonResponse(Request $request): bool
 {
-    $path = trim((string) $request->path(), '/');
-
     return $request->expectsJson()
         || $request->wantsJson()
         || $request->ajax()
         || strtolower((string) $request->header('X-Requested-With')) === 'xmlhttprequest'
-        || $request->routeIs('inventory.categories')
-        || $request->routeIs('inventory.categories.store')
-        || $request->routeIs('ajax.inventory.categories.index')
-        || $request->routeIs('ajax.inventory.categories.store')
-        || $request->routeIs('categories.index')
-        || $request->routeIs('categories.store')
-        || in_array($path, ['inventory/products/category', 'ajax/inventory/categories', 'categories', 'categories/store'], true);
+        || str_contains(strtolower((string) $request->header('Accept')), 'application/json');
 }
 
 private function scopedCategoryQuery()
