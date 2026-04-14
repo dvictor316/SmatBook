@@ -83,18 +83,36 @@ class DashboardController extends Controller
 
         if ($subdomain) {
             $subscription = Subscription::where('domain_prefix', $subdomain)->first();
-            if (!$subscription) abort(404, 'Node not found.');
 
-            $company = Company::query()
-                ->when($subscription->company_id, fn ($q) => $q->where('id', $subscription->company_id))
-                ->orWhere(function ($q) use ($subdomain, $subscription) {
+            $companyQuery = Company::query()
+                ->when(
+                    $subscription?->company_id,
+                    fn ($q) => $q->where('id', $subscription->company_id),
+                    fn ($q) => $q->where(function ($fallback) use ($subdomain, $user) {
+                        $tenantId = (int) ($user->company_id ?? session('current_tenant_id') ?? 0);
+
+                        if ($tenantId > 0) {
+                            $fallback->where('id', $tenantId);
+                        }
+
+                        $fallback->orWhere('user_id', $user->id)
+                            ->orWhere('owner_id', $user->id)
+                            ->orWhere('subdomain', $subdomain)
+                            ->orWhere('domain_prefix', $subdomain);
+                    })
+                );
+
+            if ($subscription) {
+                $companyQuery->orWhere(function ($q) use ($subdomain, $subscription) {
                     $q->where('user_id', $subscription->user_id)
                       ->where(function ($match) use ($subdomain) {
                           $match->where('subdomain', $subdomain)
                                 ->orWhere('domain_prefix', $subdomain);
                       });
-                })
-                ->first();
+                });
+            }
+
+            $company = $companyQuery->first();
         } else {
             $tenantId = (int) ($user->company_id ?? session('current_tenant_id') ?? 0);
             $company = Company::where('id', $tenantId)
