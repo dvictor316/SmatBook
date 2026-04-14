@@ -608,8 +608,8 @@
                                     <div class="col-md-4">
                                         <label class="form-label">Category</label>
                                         <div class="input-group">
-                                            <select name="category_id" id="product_category_select" class="form-select quick-category-select" required>
-                                                <option value="">Select Category</option>
+                                            <select name="category_id" id="product_category_select" class="form-select quick-category-select">
+                                                <option value="">No category</option>
                                                 <?php foreach ($categories as $cat): ?>
                                                     <option value="{{ $cat->id }}">{{ $cat->name }}</option>
                                                 <?php endforeach; ?>
@@ -898,7 +898,7 @@
                 const categories = Array.isArray(payload?.data) ? payload.data : [];
 
                 categorySelect.innerHTML = '';
-                categorySelect.add(new Option('Select Category', '', false, false));
+                categorySelect.add(new Option('No category', '', false, false));
 
                 categories.forEach((category) => {
                     if (!category?.id || !category?.name) {
@@ -925,7 +925,7 @@
             }
 
             if (!categorySelect.find('option[value=""]').length) {
-                categorySelect.prepend(new Option('Select Category', '', false, false));
+                categorySelect.prepend(new Option('No category', '', false, false));
             }
 
             if (categorySelect.hasClass('select2-hidden-accessible')) {
@@ -935,7 +935,7 @@
             categorySelect.select2({
                 dropdownParent: $('#addProductModal'),
                 width: '100%',
-                placeholder: 'Select Category',
+                placeholder: 'No category',
                 dropdownCssClass: 'quick-category-dropdown',
                 minimumResultsForSearch: Infinity
             });

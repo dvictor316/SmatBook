@@ -222,8 +222,8 @@
                                 Category
                                 <a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#addCategoryModal" class="text-primary small">+ New</a>
                             </label>
-                            <select name="category_id" id="product_category_select" class="form-control select2 @error('category_id') is-invalid @enderror" required>
-                                <option value="">Select Category</option>
+                            <select name="category_id" id="product_category_select" class="form-control select2 @error('category_id') is-invalid @enderror">
+                                <option value="">No category</option>
                                 @foreach($categories as $category)
                                     <option value="{{ $category->id }}" @selected((string) old('category_id') === (string) $category->id)>{{ $category->name }}</option>
                                 @endforeach
@@ -455,7 +455,7 @@
             const categories = Array.isArray(payload?.data) ? payload.data : [];
 
             select.innerHTML = '';
-            select.add(new Option('Select Category', '', false, false));
+            select.add(new Option('No category', '', false, false));
 
             categories.forEach((category) => {
                 if (!category?.id || !category?.name) {

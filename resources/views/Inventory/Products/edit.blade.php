@@ -171,16 +171,17 @@
                             </div>
                             <div class="col-md-4">
                                 <div class="form-group">
-                                    <label class="field-label">Product Code (SKU) *</label>
-                                    <input type="text" name="sku" class="form-control" value="{{ old('sku', $product->sku) }}" required>
+                                    <label class="field-label">Product Code (SKU)</label>
+                                    <input type="text" name="sku" class="form-control" value="{{ old('sku', $product->sku) }}" placeholder="Leave blank to auto-generate">
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="form-group">
-                                    <label class="field-label">Category *</label>
+                                    <label class="field-label">Category</label>
                                     @if($categories->isNotEmpty())
                                         <div class="input-group">
-                                            <select name="category_id" id="edit_product_category_select" class="form-control" required>
+                                            <select name="category_id" id="edit_product_category_select" class="form-control">
+                                                <option value="">No category</option>
                                                 @foreach($categories as $category)
                                                     <option value="{{ $category->id }}" {{ (string) old('category_id', $product->category_id) === (string) $category->id ? 'selected' : '' }}>
                                                         {{ $category->name }}
@@ -192,11 +193,11 @@
                                     @else
                                         <div class="d-flex flex-column gap-2">
                                             <input type="hidden" name="category_id" id="edit_product_category_select" value="{{ old('category_id', $product->category_id) }}">
-                                            <div class="form-control bg-light d-flex align-items-center text-muted">No category added yet.</div>
+                                            <div class="form-control bg-light d-flex align-items-center text-muted">No category selected.</div>
                                             <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editAddCategoryModal">
                                                 Add Category
                                             </button>
-                                            <small class="field-note">Create the first category here and it will be selected automatically.</small>
+                                            <small class="field-note">You can save without a category or add one here.</small>
                                         </div>
                                     @endif
                                 </div>
@@ -476,7 +477,8 @@
                         const categoryShell = currentSelect.closest('.d-flex.flex-column.gap-2');
                         const replacement = `
                             <div class="input-group">
-                                <select name="category_id" id="edit_product_category_select" class="form-control" required>
+                                <select name="category_id" id="edit_product_category_select" class="form-control">
+                                    <option value="">No category</option>
                                     <option value="${data.data.id}" selected>${data.data.name}</option>
                                 </select>
                                 <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editAddCategoryModal" title="Quick add category">+</button>

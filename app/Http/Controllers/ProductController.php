@@ -724,7 +724,7 @@ class ProductController extends Controller
                 'units_per_carton' => 'nullable|integer|min:0',
                 'units_per_roll'   => 'nullable|integer|min:0',
                 'base_unit_name'   => 'required|string|max:100',
-                'category_id'      => 'required|exists:categories,id',
+                'category_id'      => 'nullable|exists:categories,id',
                 'unit_type'        => 'required|in:unit,sachet,roll,carton',
                 'branch_id'        => 'nullable|string',
                 'reorder_level'    => 'nullable|integer|min:0',
@@ -753,6 +753,7 @@ class ProductController extends Controller
             $validated['stock_units'] = (float) ($validated['stock_units'] ?? 0);
             $validated['reorder_level'] = max(0, (int) ($validated['reorder_level'] ?? 0));
             $validated['reorder_quantity'] = max(0, (int) ($validated['reorder_quantity'] ?? 0));
+            $validated['category_id'] = !empty($validated['category_id']) ? $validated['category_id'] : null;
             $retailPrice = (float) ($validated['retail_price'] ?? $validated['price']);
             $validated['price'] = $retailPrice;
             if (Schema::hasColumn('products', 'retail_price')) {
@@ -979,7 +980,7 @@ public function inventory(Request $request)
             'units_per_carton' => 'nullable|integer|min:0',
             'units_per_roll'   => 'nullable|integer|min:0',
             'base_unit_name'   => 'required|string|max:100',
-            'category_id'      => 'required|exists:categories,id',
+            'category_id'      => 'nullable|exists:categories,id',
             'unit_type'        => 'required|in:unit,sachet,roll,carton',
             'status'           => 'required|in:active,inactive',
             'description'      => 'nullable|string',
@@ -995,6 +996,7 @@ public function inventory(Request $request)
         $validated['stock_units'] = (float) ($validated['stock_units'] ?? 0);
         $validated['reorder_level'] = max(0, (int) ($validated['reorder_level'] ?? 0));
         $validated['reorder_quantity'] = max(0, (int) ($validated['reorder_quantity'] ?? 0));
+        $validated['category_id'] = !empty($validated['category_id']) ? $validated['category_id'] : null;
         $retailPrice = (float) ($validated['retail_price'] ?? $validated['price']);
         $validated['price'] = $retailPrice;
         if (Schema::hasColumn('products', 'retail_price')) {
