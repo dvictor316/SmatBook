@@ -419,16 +419,7 @@ class DeploymentManagerController extends Controller
         return view('deployment.users.create', compact('limit', 'currentCount', 'deploymentPlans'));
     }
 
-    // After registration, redirect to checkout
-    public function store(Request $request)
-    {
-        // ...existing validation and registration logic...
-        // After successful registration, redirect to checkout
-        // (Assume $company and $user are created)
-        //
-        // Trigger subdomain creation after payment in the checkout controller
-        return redirect()->route('deployment.checkout', ['company' => $company->id]);
-    }
+
 
     /**
      * Display a listing of Deployment Managers.
