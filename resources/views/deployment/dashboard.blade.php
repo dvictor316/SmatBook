@@ -279,6 +279,63 @@
         </div>
     </div>
 
+    {{-- ACTION SIGNAL METRICS --}}
+    @php
+        $pendingPaymentsValue = $metrics['pendingPaymentsValue']  ?? 0;
+        $pendingPaymentsCount = $metrics['pendingPayments']        ?? 0;
+        $expiringSoon         = $metrics['expiringSoonSubscriptions'] ?? 0;
+        $activeSubsCount      = $metrics['activeSubscriptions']    ?? 0;
+        $pendingValueRatio    = $totalRevenue > 0 ? min(($pendingPaymentsValue / max($totalRevenue,1)) * 100, 100) : 0;
+        $expiryRatio          = $activeSubsCount > 0 ? min(($expiringSoon / max($activeSubsCount,1)) * 100, 100) : 0;
+    @endphp
+    <div class="row g-3 mb-4">
+        {{-- Uncollected Revenue --}}
+        <div class="col-lg-6">
+            <div class="glass-card p-3" style="background:linear-gradient(135deg,#fff1f2,#ffe4e6);border-left:4px solid #f43f5e;">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <p style="font-size:10px;font-weight:700;letter-spacing:.6px;color:#9f1239;margin-bottom:2px;">UNCOLLECTED REVENUE</p>
+                        <div class="fw-bold" style="font-size:1.55rem;line-height:1;color:#be123c;">₦{{ number_format($pendingPaymentsValue, 0) }}</div>
+                    </div>
+                    <div class="metric-icon" style="background:#ffe4e6;color:#f43f5e;"><i class="fas fa-exclamation-circle"></i></div>
+                </div>
+                <div class="mb-2">
+                    <div class="progress" style="height:4px;background:#fecdd3;border-radius:99px;">
+                        <div class="progress-bar bg-danger" style="width:{{ $pendingValueRatio }}%;border-radius:99px;"></div>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <span style="font-size:11px;color:#9f1239;">{{ $pendingPaymentsCount }} unpaid transaction{{ $pendingPaymentsCount != 1 ? 's' : '' }}</span>
+                    <a href="{{ route('deployment.payments.pending') }}" style="font-size:11px;font-weight:700;color:#f43f5e;text-decoration:none;">Collect Now <i class="fas fa-arrow-right ms-1"></i></a>
+                </div>
+            </div>
+        </div>
+
+        {{-- Expiring Soon --}}
+        <div class="col-lg-6">
+            <div class="glass-card p-3" style="background:linear-gradient(135deg,#fffbeb,#fef3c7);border-left:4px solid #f59e0b;">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <p style="font-size:10px;font-weight:700;letter-spacing:.6px;color:#92400e;margin-bottom:2px;">EXPIRING IN 7 DAYS</p>
+                        <div class="fw-bold" style="font-size:1.55rem;line-height:1;color:#b45309;">
+                            {{ number_format($expiringSoon) }} <span style="font-size:.85rem;font-weight:400;">subscriptions</span>
+                        </div>
+                    </div>
+                    <div class="metric-icon" style="background:#fef3c7;color:#f59e0b;"><i class="fas fa-clock"></i></div>
+                </div>
+                <div class="mb-2">
+                    <div class="progress" style="height:4px;background:#fde68a;border-radius:99px;">
+                        <div class="progress-bar bg-warning" style="width:{{ $expiryRatio }}%;border-radius:99px;"></div>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <span style="font-size:11px;color:#92400e;">{{ $activeSubsCount > 0 ? number_format($expiryRatio, 1).'% of active' : 'No active subs' }}</span>
+                    <a href="{{ route('deployment.subscription.overview') }}" style="font-size:11px;font-weight:700;color:#d97706;text-decoration:none;">Renew <i class="fas fa-arrow-right ms-1"></i></a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="alert alert-light border shadow-sm mb-4 d-flex justify-content-between align-items-start flex-wrap gap-3">
         <div>
             <strong class="d-block text-dark mb-1">Commission Payout Center</strong>
@@ -408,6 +465,31 @@
                 <div class="fw-bold mb-1" style="font-size:.85rem;">Plans Breakdown</div>
                 <div class="text-muted mb-3" style="font-size:11px;">Subscriptions by plan</div>
                 <div class="chart-box"><canvas id="planBreakdownChart"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+    {{-- WAVE CHART: 30-Day Activity --}}
+    <div class="row g-3 mb-4">
+        <div class="col-12">
+            <div class="glass-card p-3" style="background:linear-gradient(135deg,#0f172a 0%,#1e1b4b 55%,#0c4a6e 100%);border:none;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <div class="fw-bold text-white" style="font-size:.9rem;">
+                            <i class="fas fa-water me-2" style="color:#818cf8;"></i>Subscription Activity Wave
+                        </div>
+                        <div style="font-size:11px;color:rgba(255,255,255,.45);">Daily registrations &amp; revenue — last 30 days</div>
+                    </div>
+                    <div class="d-flex gap-3">
+                        <span style="font-size:11px;color:rgba(255,255,255,.6);">
+                            <span style="display:inline-block;width:14px;height:3px;background:#818cf8;border-radius:3px;vertical-align:middle;margin-right:4px;"></span>Subs
+                        </span>
+                        <span style="font-size:11px;color:rgba(255,255,255,.6);">
+                            <span style="display:inline-block;width:14px;height:3px;background:#22d3ee;border-radius:3px;vertical-align:middle;margin-right:4px;"></span>Revenue
+                        </span>
+                    </div>
+                </div>
+                <div style="position:relative;height:160px;"><canvas id="waveActivityChart"></canvas></div>
             </div>
         </div>
     </div>
@@ -760,6 +842,99 @@ document.addEventListener('DOMContentLoaded', function() {
                 scales: {
                     x: { grid: { display: false }, ticks: { font: { size: 10 } } },
                     y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,.05)' }, ticks: { font: { size: 10 }, precision: 0 } }
+                }
+            }
+        });
+    }
+
+    // 30-Day Wave Activity Chart
+    const waveCtx = document.getElementById('waveActivityChart');
+    if (waveCtx) {
+        const today = new Date();
+        const waveLabels  = [];
+        const waveSubData = [];
+        const waveRevData = [];
+
+        for (let i = 29; i >= 0; i--) {
+            const d = new Date(today);
+            d.setDate(d.getDate() - i);
+            const dayStr = d.toISOString().slice(0, 10);
+            waveLabels.push(i % 5 === 0 ? d.toLocaleDateString('en-NG', { month: 'short', day: 'numeric' }) : '');
+            let cnt = 0, rev = 0;
+            subscriptions.forEach(s => {
+                if (s.created_at && s.created_at.slice(0, 10) === dayStr) { cnt++; rev += parseFloat(s.amount || 0); }
+            });
+            waveSubData.push(cnt);
+            waveRevData.push(rev);
+        }
+
+        const wc = waveCtx.getContext('2d');
+        const subGrad = wc.createLinearGradient(0, 0, 0, 160);
+        subGrad.addColorStop(0, 'rgba(129,140,248,0.55)');
+        subGrad.addColorStop(1, 'rgba(129,140,248,0.0)');
+        const revGrad = wc.createLinearGradient(0, 0, 0, 160);
+        revGrad.addColorStop(0, 'rgba(34,211,238,0.45)');
+        revGrad.addColorStop(1, 'rgba(34,211,238,0.0)');
+
+        new Chart(waveCtx, {
+            type: 'line',
+            data: {
+                labels: waveLabels,
+                datasets: [
+                    {
+                        label: 'Subscriptions', data: waveSubData,
+                        borderColor: '#818cf8', backgroundColor: subGrad,
+                        fill: 'origin', tension: 0.45, pointRadius: 0, pointHoverRadius: 5,
+                        borderWidth: 2, yAxisID: 'ySubs'
+                    },
+                    {
+                        label: 'Revenue (₦)', data: waveRevData,
+                        borderColor: '#22d3ee', backgroundColor: revGrad,
+                        fill: 'origin', tension: 0.45, pointRadius: 0, pointHoverRadius: 5,
+                        borderWidth: 2, yAxisID: 'yRev'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(15,23,42,0.95)',
+                        padding: 10,
+                        borderColor: 'rgba(129,140,248,0.3)',
+                        borderWidth: 1,
+                        titleColor: 'rgba(255,255,255,0.7)',
+                        bodyColor: '#fff',
+                        callbacks: {
+                            label: ctx => ctx.datasetIndex === 0
+                                ? ` ${ctx.parsed.y} sub${ctx.parsed.y !== 1 ? 's' : ''}`
+                                : ` ₦${ctx.parsed.y.toLocaleString()}`
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(255,255,255,0.06)' },
+                        ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 9 } },
+                        border: { color: 'rgba(255,255,255,0.1)' }
+                    },
+                    ySubs: {
+                        type: 'linear', position: 'left',
+                        grid: { color: 'rgba(255,255,255,0.06)' },
+                        ticks: { color: 'rgba(255,255,255,0.45)', font: { size: 9 }, precision: 0, maxTicksLimit: 4 },
+                        border: { color: 'rgba(255,255,255,0.1)' }
+                    },
+                    yRev: {
+                        type: 'linear', position: 'right',
+                        grid: { display: false },
+                        ticks: {
+                            color: 'rgba(34,211,238,0.6)', font: { size: 9 }, maxTicksLimit: 4,
+                            callback: v => '₦' + (v >= 1000 ? (v/1000).toFixed(1)+'k' : v)
+                        },
+                        border: { color: 'rgba(34,211,238,0.2)' }
+                    }
                 }
             }
         });
