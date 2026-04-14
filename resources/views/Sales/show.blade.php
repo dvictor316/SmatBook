@@ -105,13 +105,32 @@
                     </span>
                 </div>
             </div>
-            
+            @php
+                $appliedAmount = (float) ($sale->amount_paid ?? $sale->paid ?? $sale->payments->sum('amount'));
+                $tenderedAmount = $appliedAmount + max(0, (float) ($sale->change_amount ?? 0));
+                $displayBalance = max(0, (float) $sale->total - $appliedAmount);
+                $isFullyPaid = $displayBalance <= 0.00001;
+                $paymentFormHasErrors = $errors->has('amount')
+                    || $errors->has('method')
+                    || $errors->has('payment_account_id')
+                    || $errors->has('sale_id')
+                    || $errors->has('reference')
+                    || $errors->has('note')
+                    || $errors->has('attachment');
+            @endphp
             <div class="d-flex gap-2">
                 <button onclick="window.print()" class="btn btn-sm btn-outline-primary px-3 shadow-sm">
                     <i class="fas fa-print me-1"></i> Print
                 </button>
-                <button class="btn btn-primary btn-sm px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#addPaymentModal">
-                    <i class="fas fa-money-bill-wave me-1"></i> Record Pay
+                <button
+                    class="btn btn-sm px-3 shadow-sm {{ $isFullyPaid ? 'btn-outline-success' : 'btn-primary' }}"
+                    @if($isFullyPaid)
+                        type="button" disabled title="This sale is already fully paid"
+                    @else
+                        type="button" data-bs-toggle="modal" data-bs-target="#addPaymentModal"
+                    @endif
+                >
+                    <i class="fas fa-money-bill-wave me-1"></i> {{ $isFullyPaid ? 'Paid in Full' : 'Record Pay' }}
                 </button>
                 <a href="{{ route('sales.index') }}" class="btn btn-sm btn-outline-secondary px-3 shadow-sm">Back</a>
             </div>
@@ -125,12 +144,6 @@
             </div>
 
             <div class="card-body p-4">
-                @php 
-                    $appliedAmount = (float) ($sale->amount_paid ?? $sale->paid ?? $sale->payments->sum('amount'));
-                    $tenderedAmount = $appliedAmount + max(0, (float) ($sale->change_amount ?? 0));
-                    $displayBalance = max(0, (float) $sale->total - $appliedAmount);
-                @endphp
-
                 <div class="row g-3 mb-4">
                     <div class="col-6 col-md-3">
                         <div class="stat-box">
@@ -256,34 +269,86 @@
                 <input type="hidden" name="sale_id" value="{{ $sale->id }}">
                 <div class="modal-body p-4 text-center">
                     <small class="text-muted d-block fw-bold text-uppercase mb-1" style="font-size: 0.65rem;">Remaining Due</small>
-                    <h4 class="fw-bold text-danger mb-4">{{ $currencySymbol }}{{ number_format($displayBalance, 2) }}</h4>
-                    
-                    <div class="text-start mb-3">
-                        <label class="small fw-bold">Amount</label>
-                        <input type="number" name="amount" step="0.01" max="{{ $displayBalance }}" class="form-control" required>
-                    </div>
-                    <div class="text-start mb-4">
-                        <label class="small fw-bold">Method</label>
-                        <select name="method" class="form-select" required>
-                            <option value="cash">Cash</option>
-                            <option value="transfer">Transfer</option>
-                            <option value="pos">POS</option>
-                        </select>
-                    </div>
-                    <div class="text-start mb-4">
-                        <label class="small fw-bold">Payment Channel</label>
-                        <select name="payment_account_id" class="form-select">
-                            <option value="">Auto / Not specified</option>
-                            @foreach(($bankAccounts ?? []) as $account)
-                                <option value="{{ $account->id }}">{{ $account->name }}{{ $account->account_number ? ' - ' . $account->account_number : '' }}</option>
+                    <h4 class="fw-bold {{ $isFullyPaid ? 'text-success' : 'text-danger' }} mb-4">{{ $currencySymbol }}{{ number_format($displayBalance, 2) }}</h4>
+
+                    @if($paymentFormHasErrors)
+                        <div class="alert alert-danger text-start py-2 px-3 small mb-3">
+                            @foreach ($errors->all() as $error)
+                                <div>{{ $error }}</div>
                             @endforeach
-                        </select>
-                        <small class="text-muted">Choose the bank, POS terminal, wallet, or other collection channel that received this payment.</small>
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100 fw-bold">Save Payment</button>
+                        </div>
+                    @endif
+
+                    @if($isFullyPaid)
+                        <div class="alert alert-success text-start mb-0">
+                            This sale has already been paid in full. There is no remaining balance to record.
+                        </div>
+                    @else
+                        <div class="text-start mb-3">
+                            <label class="small fw-bold">Amount</label>
+                            <input
+                                type="number"
+                                name="amount"
+                                step="0.01"
+                                min="0.01"
+                                max="{{ number_format($displayBalance, 2, '.', '') }}"
+                                value="{{ old('amount', number_format($displayBalance, 2, '.', '')) }}"
+                                class="form-control @error('amount') is-invalid @enderror"
+                                required
+                            >
+                            @if($errors->has('amount'))
+                                <div class="invalid-feedback">{{ $errors->first('amount') }}</div>
+                            @else
+                                <small class="text-muted">Enter up to {{ $currencySymbol }}{{ number_format($displayBalance, 2) }}.</small>
+                            @endif
+                        </div>
+                        <div class="text-start mb-4">
+                            <label class="small fw-bold">Method</label>
+                            <select name="method" class="form-select @error('method') is-invalid @enderror" required>
+                                <option value="cash" {{ old('method', 'cash') === 'cash' ? 'selected' : '' }}>Cash</option>
+                                <option value="transfer" {{ old('method') === 'transfer' ? 'selected' : '' }}>Transfer</option>
+                                <option value="pos" {{ old('method') === 'pos' ? 'selected' : '' }}>POS</option>
+                            </select>
+                            @error('method')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="text-start mb-4">
+                            <label class="small fw-bold">Payment Channel</label>
+                            <select name="payment_account_id" class="form-select @error('payment_account_id') is-invalid @enderror">
+                                <option value="">Auto / Not specified</option>
+                                @foreach(($bankAccounts ?? []) as $account)
+                                    <option value="{{ $account->id }}" {{ (string) old('payment_account_id') === (string) $account->id ? 'selected' : '' }}>
+                                        {{ $account->name }}{{ $account->account_number ? ' - ' . $account->account_number : '' }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @if($errors->has('payment_account_id'))
+                                <div class="invalid-feedback">{{ $errors->first('payment_account_id') }}</div>
+                            @else
+                                <small class="text-muted">Choose the bank, POS terminal, wallet, or other collection channel that received this payment.</small>
+                            @endif
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 fw-bold">Save Payment</button>
+                    @endif
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+@if($paymentFormHasErrors && !$isFullyPaid)
+    @push('scripts')
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const paymentModalElement = document.getElementById('addPaymentModal');
+                if (!paymentModalElement || typeof bootstrap === 'undefined') {
+                    return;
+                }
+
+                bootstrap.Modal.getOrCreateInstance(paymentModalElement).show();
+            });
+        </script>
+    @endpush
+@endif
 @endsection

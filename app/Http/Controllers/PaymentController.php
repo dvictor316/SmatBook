@@ -138,6 +138,27 @@ class PaymentController extends Controller
                     ? $this->applyTenantScope(Customer::query(), 'customers')->find($request->customer_id)
                     : null;
                 $activeBranch = $this->getActiveBranchContext();
+                $enteredAmount = round((float) $request->amount, 2);
+
+                if ($sale) {
+                    $saleTotal = round((float) ($sale->total ?? 0), 2);
+                    $currentPaid = round(max(0, (float) ($sale->amount_paid ?? $sale->paid ?? 0)), 2);
+                    $remainingBalance = round(max(0, $saleTotal - $currentPaid), 2);
+
+                    if ($remainingBalance <= 0) {
+                        return back()
+                            ->withInput()
+                            ->with('info', 'This sale is already fully paid. No additional payment is needed.');
+                    }
+
+                    if ($enteredAmount > $remainingBalance) {
+                        return back()
+                            ->withInput()
+                            ->withErrors([
+                                'amount' => 'Amount cannot be more than the remaining balance of ' . number_format($remainingBalance, 2) . '.',
+                            ]);
+                    }
+                }
 
                 $attachmentName = null;
                 if ($request->hasFile('attachment')) {
@@ -197,7 +218,7 @@ class PaymentController extends Controller
                     'branch_name' => $sale?->branch_name ?? $sale?->branch_label ?? $activeBranch['name'],
                     'reference' => $request->reference,
                     'receipt_no' => $this->generatePaymentReceiptNo(),
-                    'amount' => (float) $request->amount,
+                    'amount' => $enteredAmount,
                     'method' => $request->method ?: 'cash',
                     'status' => $requiresApproval ? 'Pending Approval' : ($request->status ?: 'Pending'),
                     'note' => $request->note,
