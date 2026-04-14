@@ -1,3 +1,5 @@
+@php if (!isset($errors)) { $errors = session('errors') ?: new \Illuminate\Support\ViewErrorBag; } @endphp
+
 @php
     $suppressGlobalFlash = request()->routeIs([
         'login',
