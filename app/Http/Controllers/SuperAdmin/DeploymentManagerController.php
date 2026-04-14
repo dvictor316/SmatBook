@@ -39,21 +39,30 @@ class DeploymentManagerController extends Controller
             ->pluck('company_id')
             ->toArray();
 
-        $legacyIds = Company::where('deployed_by', Auth::id())
-            ->pluck('id')
-            ->toArray();
+        // Use DB::table to bypass TenantScoped — Company model scopes to current user's company,
+        // which would exclude all client companies owned by different users.
+        $legacyIds = [];
+        if (Schema::hasColumn('companies', 'deployed_by')) {
+            $legacyIds = DB::table('companies')
+                ->where('deployed_by', Auth::id())
+                ->pluck('id')
+                ->toArray();
+        }
 
         return array_values(array_unique(array_merge($mappedIds, $legacyIds)));
     }
 
     private function managedCompanies(): \Illuminate\Database\Eloquent\Builder
     {
-        return Company::whereIn('id', $this->managedCompanyIds());
+        // withoutGlobalScope('tenant'): deployment manager reads client companies, which have
+        // different user_id/company_id than the manager's own workspace.
+        return Company::withoutGlobalScope('tenant')->whereIn('id', $this->managedCompanyIds());
     }
 
     private function managedSubscriptions(): \Illuminate\Database\Eloquent\Builder
     {
-        return Subscription::whereIn('company_id', $this->managedCompanyIds());
+        // withoutGlobalScope('tenant'): client subscriptions have company_id != manager's own company.
+        return Subscription::withoutGlobalScope('tenant')->whereIn('company_id', $this->managedCompanyIds());
     }
 
     private function deploymentRoleOptions(): array
@@ -403,7 +412,7 @@ class DeploymentManagerController extends Controller
         $companies = $this->managedCompanies()->withCount('users')->latest()->get();
         
         $recentSubscriptions = $this->managedSubscriptions()
-            ->with('company')
+            ->with(['company' => fn ($q) => $q->withoutGlobalScope('tenant')])
             ->latest()
             ->limit(10)
             ->get();
@@ -415,7 +424,10 @@ class DeploymentManagerController extends Controller
             ->get();
 
         $expiringSubscriptions = $this->expiringManagedSubscriptionsQuery(7)
-            ->with(['company', 'user'])
+            ->with([
+                'company' => fn ($q) => $q->withoutGlobalScope('tenant'),
+                'user',
+            ])
             ->orderBy('end_date', 'asc')
             ->limit(8)
             ->get();
@@ -436,7 +448,8 @@ class DeploymentManagerController extends Controller
         }
 
         // Backward-compatible fallback when an older Subscription model is loaded.
-        Subscription::query()
+        // withoutGlobalScope('tenant'): client subscriptions must be expired cross-tenant.
+        Subscription::withoutGlobalScope('tenant')
             ->whereIn('company_id', $companyIds)
             ->whereRaw("LOWER(COALESCE(status, '')) IN ('active','trial')")
             ->whereNotNull('end_date')
@@ -659,19 +672,25 @@ public function store(Request $request)
                 ]);
             });
 
-            DeploymentCompany::updateOrCreate(
+            // Use DB::table to bypass TenantScoped on DeploymentCompany model—
+            // that scope would restrict lookup to manager's own company, causing duplicates.
+            DB::table('deployment_companies')->updateOrInsert(
                 [
                     'manager_id' => $manager->id,
                     'company_id' => $company->id,
                 ],
                 [
+                    'manager_id'         => $manager->id,
+                    'company_id'         => $company->id,
                     'deployment_status'  => 'pending',
                     'manager_commission' => round(((float) $validated['plan_price']) * (self::COMMISSION_RATE / 100), 2),
-                    'setup_config'       => [
+                    'setup_config'       => json_encode([
                         'plan_id' => $validated['plan_id'],
                         'plan' => $validated['plan_name'],
                         'billing_cycle' => $validated['billing_cycle'],
-                    ],
+                    ]),
+                    'created_at'         => now(),
+                    'updated_at'         => now(),
                 ]
             );
 
@@ -948,7 +967,10 @@ private function formatDeploymentAmount(float $amount): string
     public function companiesIndex(Request $request)
     {
         $companies = $this->managedCompanies()
-            ->with(['user', 'subscription'])
+            ->with([
+                'user',
+                'subscription' => fn ($q) => $q->withoutGlobalScope('tenant'),
+            ])
             ->when($request->search, function($query, $search) {
                 return $query->where(function ($subQuery) use ($search) {
                     $subQuery->where('name', 'LIKE', "%{$search}%")
@@ -968,7 +990,7 @@ private function formatDeploymentAmount(float $amount): string
     {
         $companies = $this->managedCompanies()
             ->whereRaw('LOWER(status) = ?', ['active'])
-            ->with(['subscription', 'user'])
+            ->with(['subscription' => fn ($q) => $q->withoutGlobalScope('tenant'), 'user'])
             ->latest()
             ->paginate(10);
 
@@ -983,7 +1005,7 @@ private function formatDeploymentAmount(float $amount): string
     {
         $companies = $this->managedCompanies()
             ->whereRaw('LOWER(status) = ?', ['pending'])
-            ->with(['subscription', 'user'])
+            ->with(['subscription' => fn ($q) => $q->withoutGlobalScope('tenant'), 'user'])
             ->latest()
             ->paginate(10);
 
@@ -991,7 +1013,12 @@ private function formatDeploymentAmount(float $amount): string
     }
 
     public function viewCompany($id) {
-        $company = $this->managedCompanies()->with('subscription', 'users')->findOrFail($id);
+        $company = $this->managedCompanies()
+            ->with([
+                'subscription' => fn ($q) => $q->withoutGlobalScope('tenant'),
+                'users',
+            ])
+            ->findOrFail($id);
         return view('deployment.companies.view', compact('company'));
     }
 
@@ -1033,7 +1060,7 @@ private function formatDeploymentAmount(float $amount): string
 
     public function subscriptionOverview() {
         $subscriptions = $this->managedSubscriptions()
-            ->with(['company', 'user'])
+            ->with(['company' => fn ($q) => $q->withoutGlobalScope('tenant'), 'user'])
             ->latest('end_date')
             ->paginate(15);
 
@@ -1063,7 +1090,7 @@ private function formatDeploymentAmount(float $amount): string
     public function subscriptionRenewals()
     {
         $renewals = $this->managedSubscriptions()
-            ->with(['company', 'user'])
+            ->with(['company' => fn ($q) => $q->withoutGlobalScope('tenant'), 'user'])
             ->whereRaw('LOWER(status) IN (?, ?)', ['active', 'expiring'])
             ->orderBy('end_date', 'asc')
             ->paginate(15);
@@ -1075,14 +1102,14 @@ private function formatDeploymentAmount(float $amount): string
         $subscription = $this->managedSubscriptions()->findOrFail($id);
         $newEnd = Carbon::parse($subscription->end_date)->addMonths(1);
         $subscription->update(['end_date' => $newEnd, 'status' => 'active']);
-        Company::find($subscription->company_id)?->update(['subscription_end' => $newEnd]);
+        Company::withoutGlobalScope('tenant')->find($subscription->company_id)?->update(['subscription_end' => $newEnd]);
         return back()->with('success', 'Renewed by 1 month.');
     }
 
     public function expiringSubscriptions() 
     {
         $renewals = $this->managedSubscriptions()
-            ->with(['company', 'user'])
+            ->with(['company' => fn ($q) => $q->withoutGlobalScope('tenant'), 'user'])
             ->whereRaw('LOWER(status) = ?', ['active'])
             ->where('end_date', '<=', now()->addDays(30))
             ->paginate(15);
@@ -1091,8 +1118,12 @@ private function formatDeploymentAmount(float $amount): string
     }
 
     public function subscriptionHistory($id) {
-        $subscription = $this->managedSubscriptions()->with('company')->findOrFail($id);
-        $history = ActivityLog::where('module', 'deployment')->where('description', 'like', "%{$subscription->company->name}%")->latest()->get();
+        $subscription = $this->managedSubscriptions()
+            ->with(['company' => fn ($q) => $q->withoutGlobalScope('tenant')])
+            ->findOrFail($id);
+        $history = ActivityLog::where('module', 'deployment')
+            ->where('description', 'like', "%{$subscription->company?->name}%")
+            ->latest()->get();
         return view('deployment.subscriptions.history', compact('subscription', 'history'));
     }
 
@@ -1107,7 +1138,7 @@ private function formatDeploymentAmount(float $amount): string
             $users = DeploymentManager::with('user')->latest()->paginate(10);
         } else {
             $users = User::whereIn('company_id', $this->managedCompanyIds())
-                ->with('company')->latest()->paginate(10);
+                ->with(['company' => fn ($q) => $q->withoutGlobalScope('tenant')])->latest()->paginate(10);
         }
         return view('deployment.users.index', compact('users'));
     }
@@ -1142,7 +1173,7 @@ private function formatDeploymentAmount(float $amount): string
             'password' => Hash::make($tempPassword),
         ]);
 
-        $company = Company::find($validated['company_id']);
+        $company = Company::withoutGlobalScope('tenant')->find($validated['company_id']);
         $loginUrl = route('saas-login');
 
         try {
@@ -1163,7 +1194,9 @@ private function formatDeploymentAmount(float $amount): string
     }
 
     public function viewUser($id) {
-        $user = User::whereIn('company_id', $this->managedCompanyIds())->with('company')->findOrFail($id);
+        $user = User::whereIn('company_id', $this->managedCompanyIds())
+            ->with(['company' => fn ($q) => $q->withoutGlobalScope('tenant')])
+            ->findOrFail($id);
         return view('deployment.users.view', compact('user'));
     }
 

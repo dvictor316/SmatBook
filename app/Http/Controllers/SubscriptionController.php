@@ -378,7 +378,11 @@ class SubscriptionController extends Controller
         }
 
         try {
-            $subscription = Subscription::with(['user', 'company'])->findOrFail($id);
+            // withoutGlobalScope('tenant'): deployment managers are cross-tenant — TenantScoped
+            // would scope to manager's own company, blocking client subscriptions from being found.
+            $subscription = Subscription::withoutGlobalScope('tenant')
+                ->with(['user', 'company' => fn ($q) => $q->withoutGlobalScope('tenant')])
+                ->findOrFail($id);
 
             // Already paid / active -> keep users out of checkout/payment pages
             if ($subscription->payment_status === 'paid' || strtolower((string) $subscription->status) === 'active') {
@@ -515,7 +519,8 @@ class SubscriptionController extends Controller
             'has_reference' => (bool) $request->input('transfer_reference'),
         ]);
 
-        $subscription = Subscription::findOrFail($id);
+        // withoutGlobalScope('tenant'): allows deployment manager to process payment for client subscriptions.
+        $subscription = Subscription::withoutGlobalScope('tenant')->findOrFail($id);
 
         if ($subscription->payment_status === 'paid' || strtolower((string) $subscription->status) === 'active') {
             return redirect()->route('home')
@@ -882,7 +887,10 @@ class SubscriptionController extends Controller
                 ->with('error', 'Missing payment verification data.');
         }
 
-        $subscription = Subscription::with(['user', 'company'])->findOrFail($subId);
+        // withoutGlobalScope('tenant'): deployment manager callbacks must resolve client subscriptions.
+        $subscription = Subscription::withoutGlobalScope('tenant')
+            ->with(['user', 'company' => fn ($q) => $q->withoutGlobalScope('tenant')])
+            ->findOrFail($subId);
 
         $verification = $this->verifyPayment($reference, $gateway, $request);
         if (!(bool) ($verification['ok'] ?? false)) {
@@ -1054,8 +1062,9 @@ class SubscriptionController extends Controller
 
             $subscription->update($subscriptionUpdateData);
 
-            // 2. Activate company
-            $company = $subscription->company;
+            // 2. Activate company — load without TenantScoped so client company is resolved correctly.
+            $company = $subscription->company
+                ?? Company::withoutGlobalScope('tenant')->find($subscription->company_id);
             if ($company) {
                 $companyUpdateData = [
                     'status'      => 'active',
@@ -1066,10 +1075,11 @@ class SubscriptionController extends Controller
                 }
 
                 $company->update($companyUpdateData);
+                $subscription->setRelation('company', $company);
             }
 
-            // 3. Activate customer
-            $customer = $subscription->user;
+            // 3. Activate customer — User model has no TenantScoped, but load directly for reliability.
+            $customer = $subscription->user ?? User::find($subscription->user_id);
             if ($customer) {
                 $customerUpdateData = [
                     'is_verified'       => 1,
@@ -1185,7 +1195,10 @@ class SubscriptionController extends Controller
     */
     public function success(Request $request, $id)
     {
-        $subscription = Subscription::with(['user', 'company'])->findOrFail($id);
+        // withoutGlobalScope('tenant'): deployment manager views success page for client subscriptions.
+        $subscription = Subscription::withoutGlobalScope('tenant')
+            ->with(['user', 'company' => fn ($q) => $q->withoutGlobalScope('tenant')])
+            ->findOrFail($id);
         $domain       = $this->resolveSessionDomain();
         $protocol     = $this->resolveWorkspaceProtocol();
         $prefix       = $subscription->domain_prefix ?? $subscription->company?->domain_prefix;
@@ -2136,7 +2149,16 @@ class SubscriptionController extends Controller
      */
     private function deployWorkspace(Subscription $subscription): void
     {
-        $subscription->loadMissing(['company', 'user']);
+        // Load user normally (no TenantScoped on User).
+        $subscription->loadMissing(['user']);
+
+        // Load company bypassing TenantScoped so client company is visible to the deployment manager.
+        if (!$subscription->relationLoaded('company') || $subscription->company === null) {
+            $freshCompany = Company::withoutGlobalScope('tenant')->find($subscription->company_id);
+            if ($freshCompany) {
+                $subscription->setRelation('company', $freshCompany);
+            }
+        }
 
         $prefix = strtolower(
             (string) (
