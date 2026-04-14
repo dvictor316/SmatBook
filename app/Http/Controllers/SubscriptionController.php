@@ -1134,12 +1134,12 @@ class SubscriptionController extends Controller
                 session()->regenerate();
             }
 
-            // Store for success page / optional manager return
+            // Store manager reference — DO NOT set current_tenant_id (that belongs to regular customers).
+            // Setting current_tenant_id to the client's company here causes route() to resolve under
+            // the client's subdomain, sending the manager to e.g. ojo.smartprobook.com/deployment/dashboard.
             session([
-                'last_paid_subscription_id'    => $subscription->id,
+                'last_paid_subscription_id'   => $subscription->id,
                 'deployment_return_manager_id' => $managerId,
-                'current_tenant_id'            => $company?->id,
-                'current_tenant_name'          => $company?->name,
                 'last_deployment_customer_id'  => $customer?->id,
             ]);
 
@@ -1153,6 +1153,8 @@ class SubscriptionController extends Controller
                 'deployment_commission_rate',
                 'deployment_plan_name',
                 'deployment_subscription_id',
+                'current_tenant_id',
+                'current_tenant_name',
             ]);
 
             Log::info('Deployment payment activated', [
@@ -1163,18 +1165,21 @@ class SubscriptionController extends Controller
                 'authenticated_as'=> auth()->id(),
             ]);
 
-            // Go directly to unified success page
-            $successRedirect = redirect()->route('saas.success', ['id' => $subscription->id])
-                ->with('success', 'Payment confirmed! Customer workspace is now live.');
+            // Redirect manager back to deployment dashboard on the main app domain,
+            // not to saas.success (which generates URLs in the client's tenant context).
+            $prefix = $company?->domain_prefix ?? $subscription->domain_prefix;
+            $mainDomain = trim((string) config('session.domain', env('SESSION_DOMAIN', 'smartprobook.com')), ". \t\n\r\0\x0B");
+            $workspaceUrl = $prefix ? 'https://' . $prefix . '.' . $mainDomain : null;
 
+            $successMsg = 'Payment confirmed! Customer workspace is now live.';
+            if ($workspaceUrl) {
+                $successMsg .= ' Workspace: ' . $workspaceUrl;
+            }
             if ($provisioningWarning || $notificationWarning) {
-                return $successRedirect->with(
-                    'warning',
-                    'Payment was confirmed. Workspace finishing steps are being completed in the background.'
-                );
+                $successMsg = 'Payment confirmed. Workspace finishing steps are running in the background.';
             }
 
-            return $successRedirect;
+            return redirect()->route('deployment.dashboard')->with('success', $successMsg);
 
         } catch (\Exception $e) {
             DB::rollBack();

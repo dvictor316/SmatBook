@@ -154,9 +154,10 @@ class AuthController extends Controller
 
                 if ($role === 'deployment_manager') {
                     DeploymentManager::create([
-                        'user_id' => $user->id,
-                        'status' => 'pending_info',
-                        'commission_rate' => 35.00,
+                        'user_id'             => $user->id,
+                        'status'              => 'pending_info',
+                        'commission_rate'     => 35.00,
+                        'auto_payout_enabled' => true,
                     ]);
                     DB::afterCommit(function () use ($user) {
                         SystemEventMailer::notifyRegistration($user, 'deployment_manager');

@@ -208,8 +208,8 @@ class HomeController extends Controller
             'is_verified' => $user->is_verified,
         ]);
 
-        // No record or needs verification
-        if (!$manager || $manager->status === 'pending_info' || !$user->is_verified) {
+        // No record, needs verification, or still pending initial info / pending review
+        if (!$manager || in_array($manager->status, ['pending_info', 'pending']) || !$user->is_verified) {
             Log::info('→ Redirecting to verification form');
             return redirect()->route('manager.verification.form');
         }
@@ -234,8 +234,8 @@ class HomeController extends Controller
             return redirect()->route('deployment.dashboard');
         }
 
-        // Fallback
-        return redirect()->route('manager.pending.notice');
+        // Fallback — send back to verification to complete profile
+        return redirect()->route('manager.verification.form');
     }
 
     /*
