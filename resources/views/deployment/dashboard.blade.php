@@ -75,12 +75,12 @@
         cursor: pointer;
     }
 
-    .metric-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; }
-    .status-pill { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .chart-box { position: relative; height: 260px; width: 100%; }
-    .feed-item { border-left: 2px solid #e2e8f0; padding-left: 20px; position: relative; padding-bottom: 20px; }
+    .metric-icon { width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: .95rem; flex-shrink:0; }
+    .status-pill { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .chart-box { position: relative; height: 210px; width: 100%; }
+    .feed-item { border-left: 2px solid #e2e8f0; padding-left: 14px; position: relative; padding-bottom: 14px; }
     .feed-item:last-child { border-left: 2px solid transparent; }
-    .feed-item::before { content: ""; position: absolute; left: -6px; top: 0; width: 10px; height: 10px; border-radius: 50%; background: var(--primary-color); box-shadow: 0 0 0 4px #f1f5f9; }
+    .feed-item::before { content: ""; position: absolute; left: -5px; top: 2px; width: 8px; height: 8px; border-radius: 50%; background: var(--primary-color); box-shadow: 0 0 0 3px #f1f5f9; }
 
     .commission-card {
         background: linear-gradient(135deg, #10b981 0%, #059669 100%);
@@ -164,65 +164,65 @@
 
         {{-- Total Companies --}}
         <div class="col-xl-3 col-md-6">
-            <div class="glass-card p-4 border-start border-4" style="border-start-color: #7c3aed !important;">
-                <div class="d-flex justify-content-between align-items-start">
+            <div class="glass-card p-3 border-start border-3" style="border-start-color: #7c3aed !important;">
+                <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <p class="text-muted fw-bold mb-1 small text-uppercase">Total Companies</p>
-                        <h3 class="fw-bold mb-0 text-dark">{{ number_format($metrics['totalCompanies'] ?? 0) }}</h3>
+                        <p class="text-muted fw-semibold mb-1" style="font-size:10px;letter-spacing:.6px;">TOTAL COMPANIES</p>
+                        <div class="fw-bold text-dark" style="font-size:1.5rem;line-height:1;">{{ number_format($metrics['totalCompanies'] ?? 0) }}</div>
+                        <div class="mt-1" style="font-size:11px;color:#7c3aed;font-weight:600;">
+                            <i class="fas fa-arrow-up"></i> {{ ($metrics['totalCompanies'] ?? 0) > 0 ? '+12%' : '0%' }} <span class="text-muted fw-normal">vs last month</span>
+                        </div>
                     </div>
-                    <div class="metric-icon" style="background: #f5f3ff; color: #7c3aed;"><i class="fas fa-building"></i></div>
-                </div>
-                <div class="mt-3 small fw-bold" style="color: #7c3aed">
-                    <i class="fas fa-arrow-up"></i> {{ ($metrics['totalCompanies'] ?? 0) > 0 ? '+12%' : '0%' }} <span class="text-muted fw-normal ms-1">vs last month</span>
+                    <div class="metric-icon" style="background:#f5f3ff;color:#7c3aed;"><i class="fas fa-building"></i></div>
                 </div>
             </div>
         </div>
 
-        {{-- Total Revenue Generated --}}
+        {{-- Total Revenue --}}
         <div class="col-xl-3 col-md-6">
-            <div class="glass-card revenue-card p-4">
-                <div class="d-flex justify-content-between align-items-start">
+            <div class="glass-card revenue-card p-3">
+                <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <p class="text-white-50 fw-bold mb-1 small text-uppercase">Total Revenue</p>
-                        <h3 class="fw-bold mb-0 text-white">₦{{ number_format($totalRevenue, 2) }}</h3>
+                        <p class="text-white-50 fw-semibold mb-1" style="font-size:10px;letter-spacing:.6px;">TOTAL REVENUE</p>
+                        <div class="fw-bold text-white" style="font-size:1.5rem;line-height:1;">₦{{ number_format($totalRevenue, 0) }}</div>
+                        <div class="mt-1 text-white" style="font-size:11px;font-weight:600;">
+                            <i class="fas fa-chart-line"></i> This Month <span class="text-white-50 fw-normal">all subs</span>
+                        </div>
                     </div>
-                    <div class="metric-icon" style="background: rgba(255,255,255,0.2); color: white;"><i class="fas fa-wallet"></i></div>
-                </div>
-                <div class="mt-3 small fw-bold text-white">
-                    <i class="fas fa-chart-line"></i> This Month <span class="text-white-50 fw-normal ms-1">All subscriptions</span>
+                    <div class="metric-icon" style="background:rgba(255,255,255,.2);color:#fff;"><i class="fas fa-wallet"></i></div>
                 </div>
             </div>
         </div>
 
         {{-- Commission Earned --}}
         <div class="col-xl-3 col-md-6">
-            <div class="glass-card commission-card p-4">
-                <div class="d-flex justify-content-between align-items-start">
+            <div class="glass-card commission-card p-3">
+                <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <p class="text-white-50 fw-bold mb-1 small text-uppercase">Commission Earned</p>
-                        <h3 class="fw-bold mb-0 text-white">₦{{ number_format($commissionEarned, 2) }}</h3>
+                        <p class="text-white-50 fw-semibold mb-1" style="font-size:10px;letter-spacing:.6px;">COMMISSION EARNED</p>
+                        <div class="fw-bold text-white" style="font-size:1.5rem;line-height:1;">₦{{ number_format($commissionEarned, 0) }}</div>
+                        <div class="mt-1 text-white" style="font-size:11px;font-weight:600;">
+                            <i class="fas fa-check-circle"></i> {{ number_format($commissionRate, 1) }}% rate
+                            <span class="text-white-50 fw-normal">· Paid ₦{{ number_format($commissionPaid, 0) }}</span>
+                        </div>
                     </div>
-                    <div class="metric-icon" style="background: rgba(255,255,255,0.2); color: white;"><i class="fas fa-percentage"></i></div>
-                </div>
-                <div class="mt-3 small fw-bold text-white">
-                    <i class="fas fa-check-circle"></i> {{ number_format($commissionRate, 1) }}% Rate
-                    <span class="text-white-50 fw-normal ms-1">Paid: ₦{{ number_format($commissionPaid, 2) }}</span>
+                    <div class="metric-icon" style="background:rgba(255,255,255,.2);color:#fff;"><i class="fas fa-percentage"></i></div>
                 </div>
             </div>
         </div>
 
         {{-- Active Subscriptions --}}
         <div class="col-xl-3 col-md-6">
-            <div class="glass-card p-4 border-start border-4" style="border-start-color: #10b981 !important;">
-                <div class="d-flex justify-content-between align-items-start">
+            <div class="glass-card p-3 border-start border-3" style="border-start-color: #10b981 !important;">
+                <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <p class="text-muted fw-bold mb-1 small text-uppercase">Active Subscriptions</p>
-                        <h3 class="fw-bold mb-0 text-dark">{{ number_format($metrics['activeSubscriptions'] ?? 0) }}</h3>
+                        <p class="text-muted fw-semibold mb-1" style="font-size:10px;letter-spacing:.6px;">ACTIVE SUBSCRIPTIONS</p>
+                        <div class="fw-bold text-dark" style="font-size:1.5rem;line-height:1;">{{ number_format($metrics['activeSubscriptions'] ?? 0) }}</div>
+                        <div class="mt-1" style="font-size:11px;color:#10b981;font-weight:600;">
+                            <i class="fas fa-sync-alt"></i> Recurring <span class="text-muted fw-normal">monthly income</span>
+                        </div>
                     </div>
-                    <div class="metric-icon" style="background: #ecfdf5; color: #10b981;"><i class="fas fa-user-check"></i></div>
-                </div>
-                <div class="mt-3 small fw-bold" style="color: #10b981">
-                    <i class="fas fa-sync-alt"></i> Recurring <span class="text-muted fw-normal ms-1">monthly income</span>
+                    <div class="metric-icon" style="background:#ecfdf5;color:#10b981;"><i class="fas fa-user-check"></i></div>
                 </div>
             </div>
         </div>
@@ -232,49 +232,49 @@
     <div class="row g-3 mb-4">
         {{-- Available Commission --}}
         <div class="col-lg-3 col-md-6">
-            <div class="glass-card p-4" style="background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h6 class="fw-bold mb-0 small text-uppercase text-muted">Available Commission</h6>
-                    <span class="badge bg-warning">{{ $commissionPending > 0 ? 'YES' : 'NO' }}</span>
+            <div class="glass-card p-3" style="background:linear-gradient(135deg,#fff7ed,#ffedd5);">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span style="font-size:10px;font-weight:700;letter-spacing:.6px;color:#92400e;">AVAILABLE COMMISSION</span>
+                    <span class="badge bg-warning text-dark" style="font-size:9px;">{{ $commissionPending > 0 ? 'YES' : 'NO' }}</span>
                 </div>
-                <h4 class="fw-bold text-warning mb-0">₦{{ number_format($commissionPending, 2) }}</h4>
-                <small class="text-muted">Ready for next payout cycle</small>
+                <div class="fw-bold text-warning" style="font-size:1.2rem;line-height:1.2;">₦{{ number_format($commissionPending, 0) }}</div>
+                <div class="text-muted" style="font-size:11px;">Ready for payout cycle</div>
             </div>
         </div>
 
         {{-- Trial Accounts --}}
         <div class="col-lg-3 col-md-6">
-            <div class="glass-card p-4" style="background: linear-gradient(135deg, #ecfeff 0%, #cffafe 100%);">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h6 class="fw-bold mb-0 small text-uppercase text-muted">Trial Accounts</h6>
-                    <span class="badge bg-info">{{ $metrics['trialCount'] ?? 0 }}</span>
+            <div class="glass-card p-3" style="background:linear-gradient(135deg,#ecfeff,#cffafe);">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span style="font-size:10px;font-weight:700;letter-spacing:.6px;color:#155e75;">TRIAL ACCOUNTS</span>
+                    <span class="badge bg-info" style="font-size:9px;">{{ $metrics['trialCount'] ?? 0 }}</span>
                 </div>
-                <h4 class="fw-bold text-info mb-0">{{ $metrics['trialCount'] ?? 0 }}</h4>
-                <small class="text-muted">Convert to paid</small>
+                <div class="fw-bold text-info" style="font-size:1.2rem;line-height:1.2;">{{ $metrics['trialCount'] ?? 0 }}</div>
+                <div class="text-muted" style="font-size:11px;">Convert to paid</div>
             </div>
         </div>
 
         {{-- Processing Payouts --}}
         <div class="col-lg-3 col-md-6">
-            <div class="glass-card p-4" style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h6 class="fw-bold mb-0 small text-uppercase text-muted">Processing Payouts</h6>
-                    <i class="fas fa-spinner text-primary"></i>
+            <div class="glass-card p-3" style="background:linear-gradient(135deg,#eff6ff,#dbeafe);">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span style="font-size:10px;font-weight:700;letter-spacing:.6px;color:#1e40af;">PROCESSING PAYOUTS</span>
+                    <i class="fas fa-spinner text-primary" style="font-size:12px;"></i>
                 </div>
-                <h4 class="fw-bold text-primary mb-0">₦{{ number_format($commissionProcessing, 2) }}</h4>
-                <small class="text-muted">Awaiting gateway settlement</small>
+                <div class="fw-bold text-primary" style="font-size:1.2rem;line-height:1.2;">₦{{ number_format($commissionProcessing, 0) }}</div>
+                <div class="text-muted" style="font-size:11px;">Awaiting settlement</div>
             </div>
         </div>
 
         {{-- Payout Readiness --}}
         <div class="col-lg-3 col-md-6">
-            <div class="glass-card p-4" style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h6 class="fw-bold mb-0 small text-uppercase text-muted">Payout Readiness</h6>
-                    <i class="fas fa-university text-success"></i>
+            <div class="glass-card p-3" style="background:linear-gradient(135deg,#ecfdf5,#d1fae5);">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span style="font-size:10px;font-weight:700;letter-spacing:.6px;color:#065f46;">PAYOUT READINESS</span>
+                    <i class="fas fa-university text-success" style="font-size:12px;"></i>
                 </div>
-                <h4 class="fw-bold text-success mb-0 text-uppercase">{{ str_replace('_', ' ', $payoutStatus) }}</h4>
-                <small class="text-muted">{{ $autoPayoutEnabled ? 'Auto payout enabled' : 'Manual payout mode' }} • Min ₦{{ number_format($minimumPayoutAmount, 0) }}</small>
+                <div class="fw-bold text-success text-uppercase" style="font-size:1rem;line-height:1.2;">{{ str_replace('_', ' ', $payoutStatus) }}</div>
+                <div class="text-muted" style="font-size:11px;">{{ $autoPayoutEnabled ? 'Auto payout on' : 'Manual mode' }} · Min ₦{{ number_format($minimumPayoutAmount, 0) }}</div>
             </div>
         </div>
     </div>
@@ -380,14 +380,14 @@
 
     {{-- CHARTS --}}
     <div class="row g-3 mb-4">
-        <div class="col-lg-8">
-            <div class="glass-card chart-panel p-4">
-                <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="col-lg-6">
+            <div class="glass-card chart-panel p-3">
+                <div class="d-flex justify-content-between align-items-center mb-3">
                     <div>
-                        <h6 class="fw-bold mb-0">Revenue & Commission Trend</h6>
-                        <small class="text-muted">Monthly performance tracking</small>
+                        <div class="fw-bold" style="font-size:.85rem;">Revenue & Commission Trend</div>
+                        <div style="font-size:11px;opacity:.7;">Monthly performance</div>
                     </div>
-                    <select class="form-select form-select-sm w-auto">
+                    <select class="form-select form-select-sm w-auto" style="font-size:11px;">
                         <option>This Month</option>
                         <option>Last 3 Months</option>
                         <option>Yearly</option>
@@ -396,11 +396,18 @@
                 <div class="chart-box"><canvas id="revenueChart"></canvas></div>
             </div>
         </div>
-        <div class="col-lg-4">
-            <div class="glass-card p-4">
-                <h6 class="fw-bold mb-1">Payment Status</h6>
-                <small class="text-muted d-block mb-4">Distribution by status</small>
+        <div class="col-lg-3">
+            <div class="glass-card p-3">
+                <div class="fw-bold mb-1" style="font-size:.85rem;">Payment Status</div>
+                <div class="text-muted mb-3" style="font-size:11px;">Distribution by status</div>
                 <div class="chart-box"><canvas id="paymentStatusChart"></canvas></div>
+            </div>
+        </div>
+        <div class="col-lg-3">
+            <div class="glass-card p-3">
+                <div class="fw-bold mb-1" style="font-size:.85rem;">Plans Breakdown</div>
+                <div class="text-muted mb-3" style="font-size:11px;">Subscriptions by plan</div>
+                <div class="chart-box"><canvas id="planBreakdownChart"></canvas></div>
             </div>
         </div>
     </div>
@@ -709,6 +716,50 @@ document.addEventListener('DOMContentLoaded', function() {
                             }
                         }
                     }
+                }
+            }
+        });
+    }
+
+    // Plans Breakdown Chart
+    const planBreakdownCtx = document.getElementById('planBreakdownChart');
+    if (planBreakdownCtx) {
+        const planCounts = {};
+        subscriptions.forEach(s => {
+            const plan = s.plan_name || 'Unknown';
+            planCounts[plan] = (planCounts[plan] || 0) + 1;
+        });
+        const planLabels = Object.keys(planCounts);
+        const planData   = Object.values(planCounts);
+        const palette    = ['#2563eb','#7c3aed','#059669','#d97706','#dc2626','#0891b2'];
+
+        new Chart(planBreakdownCtx, {
+            type: 'bar',
+            data: {
+                labels: planLabels,
+                datasets: [{
+                    label: 'Subscriptions',
+                    data: planData,
+                    backgroundColor: planLabels.map((_, i) => palette[i % palette.length]),
+                    borderRadius: 6,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        padding: 10,
+                        callbacks: {
+                            label: ctx => ` ${ctx.parsed.y} subscription${ctx.parsed.y !== 1 ? 's' : ''}`
+                        }
+                    }
+                },
+                scales: {
+                    x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+                    y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,.05)' }, ticks: { font: { size: 10 }, precision: 0 } }
                 }
             }
         });
