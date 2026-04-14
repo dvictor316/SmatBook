@@ -405,7 +405,7 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('superadmin')->name('sup
     
     // User Management
     Route::controller(UserController::class)->group(function () {
-        Route::get('/users-list', 'userIndex')->name('users.index');
+        Route::get('/users-list', 'userIndex')->name('super_admin.users.index');
         Route::get('/users-list/export', 'exportUsers')->name('users.export');
         Route::get('/users/create', 'create')->name('users.create');
         Route::post('/users', 'store')->name('users.store');

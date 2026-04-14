@@ -234,6 +234,7 @@ class DeploymentManagerController extends Controller
         $this->ensureManagerHasWorkspace($user);
         $this->expireDueManagedSubscriptions();
 
+
         $managerProfile = DeploymentManager::where('user_id', Auth::id())->first();
         $commissionRate = (float) ($managerProfile->commission_rate ?? self::COMMISSION_RATE);
 
@@ -274,6 +275,14 @@ class DeploymentManagerController extends Controller
             $totalCommissions = ($totalRevenue * $commissionRate) / 100;
         }
 
+        // Payout readiness logic
+        $hasBankDetails = !empty($managerProfile->payout_bank_name)
+            && !empty($managerProfile->payout_account_number)
+            && !empty($managerProfile->payout_account_name);
+        $payoutStatus = $hasBankDetails
+            ? ($managerProfile->payout_status ?? 'configured')
+            : 'not_configured';
+
         $metrics = [
             'totalCompanies'         => $this->managedCompanies()->count(),
             'activeSubscriptions'    => $this->managedSubscriptions()
@@ -304,7 +313,7 @@ class DeploymentManagerController extends Controller
                 ->count(),
             'autoPayoutEnabled'      => (bool) ($managerProfile->auto_payout_enabled ?? false),
             'minimumPayoutAmount'    => (float) ($managerProfile->minimum_payout_amount ?? 0),
-            'payoutStatus'           => (string) ($managerProfile->payout_status ?? 'not_configured'),
+            'payoutStatus'           => $payoutStatus,
         ];
 
         $companies = $this->managedCompanies()->withCount('users')->latest()->get();
