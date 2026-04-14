@@ -898,7 +898,8 @@ class DashboardController extends Controller
         $query = $this->scopeByCompany($query, $table, $company);
 
         if (empty($activeBranch['id']) && empty($activeBranch['name'])) {
-            return $query;
+            // Always include POS sales in all metrics
+            return $this->addPosSalesScope($query, $table);
         }
 
         $branchId = (string) ($activeBranch['id'] ?? '');
@@ -915,7 +916,8 @@ class DashboardController extends Controller
             });
         }
 
-        return $query;
+        // Always include POS sales in all metrics
+        return $this->addPosSalesScope($query, $table);
     }
 
     private function scopeExpensesByContext($query, $company, ?array $activeBranch = null, string $table = 'expenses')
@@ -937,6 +939,25 @@ class DashboardController extends Controller
                 $sub->orWhere($table . '.branch_name', $branchName);
             }
         });
+    }
+
+    /**
+     * Ensures POS sales are always included in dashboard metrics.
+     * Applies to all sales queries for metrics.
+     */
+    private function addPosSalesScope($query, string $table = 'sales')
+    {
+        // If payment_method or payment_details->source is present, include POS
+        if (Schema::hasColumn($table, 'payment_method')) {
+            $query->orWhere($table . '.payment_method', 'pos');
+        }
+        // For JSON payment_details->source
+        if (Schema::hasColumn($table, 'payment_details')) {
+            $query->orWhere(function ($q) use ($table) {
+                $q->where($table . '.payment_details', 'like', '%"source":"pos"%');
+            });
+        }
+        return $query;
     }
 
     private function shouldUseTenantWideDashboardFallback(array $metrics): bool
