@@ -35,7 +35,7 @@
     }
 </style>
 
-<div class="page-wrapper">
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f4f7f6;">
     <div class="content container-fluid">
         <div class="row justify-content-center">
             <div class="col-md-8 col-lg-5">
@@ -107,6 +107,7 @@
                 </div>
             </div>
         </div>
+    </div>
     </div>
 </div>
 
