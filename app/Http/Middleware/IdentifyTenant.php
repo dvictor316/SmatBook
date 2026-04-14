@@ -38,14 +38,21 @@ class IdentifyTenant
             return $next($request);
         }
 
-        // 2. MANAGER BYPASS: If the user is an active manager on the main domain, let them pass
+        // 2. MANAGER BYPASS: Active deployment managers must always use the main domain.
+        // If they land on a tenant subdomain (e.g. ojo.smartprobook.com/deployment/dashboard),
+        // redirect them to the canonical main-domain URL instead of letting the request through
+        // on the wrong host — which would poison sessions and show the wrong subdomain in URLs.
         if (Auth::check()) {
             $user = Auth::user();
             if (in_array(strtolower($user->role), ['deployment_manager', 'manager'])) {
                 $manager = DeploymentManager::where('user_id', $user->id)->first();
                 if ($manager && strtolower($manager->status) === 'active') {
-                    // Managers don't always need a 'domain' record to see their management dashboard
-                    return $next($request);
+                    // Clear any stale tenant context so dashboard URLs use the main domain
+                    session()->forget(['current_tenant_id', 'current_tenant_name']);
+                    // Redirect to the same path on the main domain
+                    $mainUrl = rtrim((string) (config('app.url') ?: 'https://smartprobook.com'), '/');
+                    $path = '/' . ltrim($request->getRequestUri(), '/');
+                    return redirect($mainUrl . $path);
                 }
             }
         }

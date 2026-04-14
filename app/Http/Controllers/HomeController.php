@@ -231,6 +231,8 @@ class HomeController extends Controller
         // Active
         if ($manager->status === 'active') {
             Log::info('→ Redirecting to DEPLOYMENT DASHBOARD');
+            // Clear any tenant context that may have leaked from a previous client checkout
+            session()->forget(['current_tenant_id', 'current_tenant_name']);
             return redirect()->route('deployment.dashboard');
         }
 
