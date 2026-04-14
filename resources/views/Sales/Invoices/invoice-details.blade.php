@@ -166,13 +166,26 @@
                                                 </thead>
                                                 <tbody>
                                                     @forelse($sale->items as $item)
+                                                        @php
+                                                            $soldUnitType = strtolower(trim((string) ($item->unit_type ?? 'unit')));
+                                                            $soldUnitLabel = match ($soldUnitType) {
+                                                                'carton' => 'ctn',
+                                                                'roll' => 'roll',
+                                                                'unit', 'pcs', 'piece', 'pieces', 'sachet' => 'pcs',
+                                                                default => $soldUnitType !== '' ? $soldUnitType : 'pcs',
+                                                            };
+                                                            $soldQuantity = rtrim(rtrim(number_format((float) ($item->qty ?? $item->quantity ?? 0), 2), '0'), '.');
+                                                        @endphp
                                                         <tr style="background-color: #fcfcfc;">
                                                             <td class="text-dark fw-bold">
                                                                 {{ $item->product->name ?? 'Product/Service' }}
                                                             </td>
                                                             {{-- Fixed: Using unit_price and quantity --}}
                                                             <td>{{ number_format($item->unit_price, 2) }}</td>
-                                                            <td>{{ $item->qty ?? $item->quantity ?? 0 }}</td>
+                                                            <td>
+                                                                <span class="fw-bold">{{ $soldQuantity }}</span>
+                                                                <span class="text-muted text-uppercase ms-1">{{ $soldUnitLabel }}</span>
+                                                            </td>
                                                             <td>{{ number_format($item->discount, 2) }}%</td>
                                                             <td class="text-end fw-bold text-dark">
                                                                 {{-- Fixed: DB column is 'subtotal' --}}

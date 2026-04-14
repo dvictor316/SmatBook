@@ -1569,6 +1569,9 @@ public function inventory(Request $request)
             $saleReferenceColumn = Schema::hasColumn('sales', 'invoice_no')
                 ? 'invoice_no'
                 : (Schema::hasColumn('sales', 'order_number') ? 'order_number' : null);
+            $saleUnitTypeColumn = Schema::hasColumn('sale_items', 'unit_type')
+                ? 'sale_items.unit_type'
+                : 'NULL';
 
             if ($saleQtyColumn) {
                 $saleHistoryQuery = DB::table('sale_items')
@@ -1580,6 +1583,7 @@ public function inventory(Request $request)
                         'out' as type,
                         COALESCE(" . ($saleReferenceColumn ? "sales.{$saleReferenceColumn}" : 'NULL') . ", CONCAT('SALE-', sales.id)) as reference,
                         COALESCE(sale_items.{$saleQtyColumn}, 0) as quantity,
+                        {$saleUnitTypeColumn} as unit_type,
                         " . InventoryQuantity::saleStockUnitsExpression('sale_items', 'products') . " as stock_quantity,
                         products.name as name,
                         products.sku as sku,

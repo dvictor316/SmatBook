@@ -218,7 +218,18 @@
                                         </td>
                                         <td>{{ $history->reference ?? 'System Movement' }}</td>
                                         <td class="text-end fw-bold {{ $isStockIn ? 'text-success' : 'text-danger' }}">
-                                            {{ $isStockIn ? '+' : '-' }}{{ number_format($history->quantity) }}
+                                            @php
+                                                $movementUnitType = strtolower(trim((string) ($history->unit_type ?? 'unit')));
+                                                $movementUnitLabel = match ($movementUnitType) {
+                                                    'carton' => 'ctn',
+                                                    'roll' => 'roll',
+                                                    'unit', 'pcs', 'piece', 'pieces', 'sachet' => 'pcs',
+                                                    default => $movementUnitType !== '' ? $movementUnitType : 'pcs',
+                                                };
+                                                $movementQuantity = rtrim(rtrim(number_format((float) ($history->quantity ?? 0), 2), '0'), '.');
+                                            @endphp
+                                            {{ $isStockIn ? '+' : '-' }}{{ $movementQuantity }}
+                                            <span class="text-muted text-uppercase ms-1">{{ $movementUnitLabel }}</span>
                                         </td>
                                         <td class="text-center no-print inventory-action-cell">
                                             @if($isEditableHistoryRow)

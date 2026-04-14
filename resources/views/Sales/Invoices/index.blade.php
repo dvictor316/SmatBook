@@ -821,6 +821,14 @@
                         $unitPrice = (float)($item->unit_price ?? 0);
                         $discountPercent = (float)($item->discount ?? 0);
                         $taxPercent = (float)($item->tax ?? 0);
+                        $soldUnitType = strtolower(trim((string) ($item->unit_type ?? 'unit')));
+                        $soldUnitLabel = match ($soldUnitType) {
+                            'carton' => 'ctn',
+                            'roll' => 'roll',
+                            'unit', 'pcs', 'piece', 'pieces', 'sachet' => 'pcs',
+                            default => $soldUnitType !== '' ? $soldUnitType : 'pcs',
+                        };
+                        $soldQuantity = rtrim(rtrim(number_format($qty, 2), '0'), '.');
                         
                         // Calculate line total before discount
                         $lineSubtotal = $qty * $unitPrice;
@@ -839,7 +847,10 @@
                     @endphp
                     <tr>
                         <td class="item-name">{{ $item->product->name ?? 'Unknown Product' }}</td>
-                        <td style="text-align: center;">{{ number_format($qty, 0) }}</td>
+                        <td style="text-align: center;">
+                            <span style="font-weight: 700;">{{ $soldQuantity }}</span>
+                            <span style="font-size: 11px; color: var(--gray-500); text-transform: uppercase; margin-left: 4px;">{{ $soldUnitLabel }}</span>
+                        </td>
                         <td style="text-align: right;">₦{{ number_format($unitPrice, 2) }}</td>
                         <td style="text-align: center; color: var(--sweet-red);">
                             {{ $discountPercent > 0 ? number_format($discountPercent, 1) . '%' : '-' }}
