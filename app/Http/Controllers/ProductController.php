@@ -253,7 +253,7 @@ class ProductController extends Controller
             return (int) $categoryId;
         }
 
-        return (int) $this->firstOrCreateImportCategory('Uncategorized')->id;
+        return null;
     }
 
     private function getAvailableBranches(): array
