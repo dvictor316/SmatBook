@@ -216,7 +216,7 @@ class ProductController extends Controller
 
     private function firstOrCreateImportCategory(string $categoryName): Category
     {
-        $existing = Category::query()->where('name', $categoryName)->first();
+        $existing = Category::withoutGlobalScopes()->where('name', $categoryName)->first();
         if ($existing) {
             return $existing;
         }
@@ -240,6 +240,19 @@ class ProductController extends Controller
         }
 
         return Category::query()->create($payload);
+    }
+
+    private function resolveProductCategoryId($categoryId): ?int
+    {
+        if (!Schema::hasColumn('products', 'category_id') || !Schema::hasTable('categories')) {
+            return null;
+        }
+
+        if (!empty($categoryId)) {
+            return (int) $categoryId;
+        }
+
+        return (int) $this->firstOrCreateImportCategory('Uncategorized')->id;
     }
 
     private function getAvailableBranches(): array
@@ -763,8 +776,13 @@ class ProductController extends Controller
             $validated['stock_units'] = (float) ($validated['stock_units'] ?? 0);
             $validated['reorder_level'] = max(0, (int) ($validated['reorder_level'] ?? 0));
             $validated['reorder_quantity'] = max(0, (int) ($validated['reorder_quantity'] ?? 0));
-            $validated['category_id'] = !empty($validated['category_id']) ? $validated['category_id'] : null;
-            $retailPrice = (float) ($validated['retail_price'] ?? $validated['price'] ?? 0);
+            $validated['category_id'] = $this->resolveProductCategoryId($validated['category_id'] ?? null);
+
+            $retailPriceSource = $validated['retail_price'] ?? null;
+            if ($retailPriceSource === null || $retailPriceSource === '') {
+                $retailPriceSource = $validated['price'] ?? 0;
+            }
+            $retailPrice = (float) ($retailPriceSource ?: 0);
             $validated['price'] = $retailPrice;
             $validated['purchase_price'] = isset($validated['purchase_price']) && $validated['purchase_price'] !== null && $validated['purchase_price'] !== ''
                 ? (float) $validated['purchase_price']
@@ -878,9 +896,7 @@ class ProductController extends Controller
             $fieldErrors = [];
 
             if (str_contains($errorText, 'category_id')) {
-                $fieldErrors['category_id'] = str_contains($errorText, 'cannot be null') || str_contains($errorText, "doesn't have a default value")
-                    ? 'Category is optional, but the server database still needs the product category migration. Run php artisan migrate, then save again.'
-                    : 'The selected category could not be used. Choose another category or leave it as No category.';
+                $fieldErrors['category_id'] = 'The selected category could not be used. Choose another category or leave it as No category.';
             }
 
             if (str_contains($errorText, 'products_sku_unique') || (str_contains($errorText, 'duplicate') && str_contains($errorText, 'sku'))) {
@@ -1037,7 +1053,7 @@ public function inventory(Request $request)
         $validated['stock_units'] = (float) ($validated['stock_units'] ?? 0);
         $validated['reorder_level'] = max(0, (int) ($validated['reorder_level'] ?? 0));
         $validated['reorder_quantity'] = max(0, (int) ($validated['reorder_quantity'] ?? 0));
-        $validated['category_id'] = !empty($validated['category_id']) ? $validated['category_id'] : null;
+        $validated['category_id'] = $this->resolveProductCategoryId($validated['category_id'] ?? null);
         $retailPrice = (float) ($validated['retail_price'] ?? $validated['price']);
         $validated['price'] = $retailPrice;
         if (Schema::hasColumn('products', 'retail_price')) {
@@ -1857,7 +1873,7 @@ public function inventory(Request $request)
                 'user_id' => auth()->id(),
                 'header' => $header,
             ]);
-            $required = ['name', 'category', 'base_unit_name', 'unit_type', 'purchase_price'];
+            $required = ['name', 'base_unit_name', 'unit_type', 'purchase_price'];
             foreach ($required as $column) {
                 if (!in_array($column, $header, true)) {
                     Log::warning('Product import missing required column.', [
@@ -1900,7 +1916,7 @@ public function inventory(Request $request)
                         $rowData[$column] = trim((string) ($row[$index] ?? ''));
                     }
 
-                    $requiredFields = ['name', 'category', 'base_unit_name', 'unit_type', 'purchase_price'];
+                    $requiredFields = ['name', 'base_unit_name', 'unit_type', 'purchase_price'];
                     $missing = [];
                     foreach ($requiredFields as $field) {
                         if (($rowData[$field] ?? '') === '') {
@@ -1920,7 +1936,7 @@ public function inventory(Request $request)
                     }
 
                     try {
-                        $categoryName = $rowData['category'];
+                        $categoryName = ($rowData['category'] ?? '') !== '' ? $rowData['category'] : 'Uncategorized';
                         $category = $this->firstOrCreateImportCategory($categoryName);
 
                         $unitType = strtolower($rowData['unit_type'] ?: 'unit');

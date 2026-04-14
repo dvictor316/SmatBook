@@ -583,7 +583,7 @@
                             <div class="product-flow-banner">
                                 <div class="product-flow-step">
                                     <strong>1. Product Details</strong>
-                                    <span>Name, category, branch, prices, and image.</span>
+                                    <span>Name, optional category, branch, prices, and image.</span>
                                 </div>
                                 <div class="product-flow-step">
                                     <strong>2. Packaging Setup</strong>
