@@ -187,9 +187,21 @@
                         </thead>
                         <tbody>
                             @foreach($sale->items as $item)
+                            @php
+                                $soldUnitType = strtolower(trim((string) ($item->unit_type ?? 'unit')));
+                                $soldUnitLabel = match ($soldUnitType) {
+                                    'carton' => 'ctn',
+                                    'roll' => 'roll',
+                                    'unit', 'pcs', 'piece', 'pieces', 'sachet' => 'pcs',
+                                    default => $soldUnitType !== '' ? $soldUnitType : 'pcs',
+                                };
+                            @endphp
                             <tr>
                                 <td class="ps-3 fw-bold text-dark">{{ $item->product->name }}</td>
-                                <td class="text-center">{{ $item->qty }}</td>
+                                <td class="text-center">
+                                    <span class="fw-bold">{{ rtrim(rtrim(number_format((float) $item->qty, 2), '0'), '.') }}</span>
+                                    <span class="text-muted text-uppercase ms-1">{{ $soldUnitLabel }}</span>
+                                </td>
                                 <td class="text-end pe-3 fw-bold">{{ $currencySymbol }}{{ number_format($item->total_price, 2) }}</td>
                             </tr>
                             @endforeach
