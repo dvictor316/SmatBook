@@ -1799,7 +1799,8 @@ class SubscriptionController extends Controller
 
         $available = [];
 
-        if ($this->isGatewayEnabledBySetting('paystack') && $this->resolvePaystackSecret() !== '') {
+        // Paystack is always active when a key is present — no DB-setting gate.
+        if ($this->resolvePaystackSecret() !== '') {
             $available[] = 'paystack';
         }
 
