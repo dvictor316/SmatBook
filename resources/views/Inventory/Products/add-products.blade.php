@@ -207,15 +207,18 @@
                         <div class="col-md-4 mb-3">
                             <label class="field-label">Product Name</label>
                             <input type="text" name="name" id="p_name" class="form-control @error('name') is-invalid @enderror" placeholder="e.g. Indomie Onion" value="{{ old('name') }}" required>
+                            @error('name')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="field-label">SKU / Code</label>
                             <input type="text" name="sku" id="p_sku" class="form-control @error('sku') is-invalid @enderror" value="{{ old('sku') }}" placeholder="Leave blank to auto-generate">
+                            @error('sku')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                             <small class="field-note">A unique SKU will be generated if the product does not already have one.</small>
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="field-label">Barcode</label>
                             <input type="text" name="barcode" id="p_barcode" class="form-control @error('barcode') is-invalid @enderror" value="{{ old('barcode') }}" placeholder="Optional barcode">
+                            @error('barcode')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="field-label d-flex justify-content-between">
@@ -228,15 +231,17 @@
                                     <option value="{{ $category->id }}" @selected((string) old('category_id') === (string) $category->id)>{{ $category->name }}</option>
                                 @endforeach
                             </select>
+                            @error('category_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="field-label">Stock Branch</label>
-                            <select name="branch_id" class="form-control">
+                            <select name="branch_id" class="form-control @error('branch_id') is-invalid @enderror">
                                 <option value="">Use Active Branch</option>
                                 @foreach(($availableBranches ?? []) as $branch)
                                     <option value="{{ $branch['id'] }}" @selected((string) old('branch_id') === (string) ($branch['id'] ?? ''))>{{ $branch['name'] }}</option>
                                 @endforeach
                             </select>
+                            @error('branch_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                             <small class="field-note">Choose the branch that should receive the opening stock for this product. Basic plan stays on a single branch.</small>
                         </div>
                     </div>
@@ -258,16 +263,19 @@
                         <div class="col-md-3 mb-3">
                             <label class="field-label text-warning">Roll Content <span class="text-muted fw-normal d-block small" id="roll_content_hint">Units per roll</span></label>
                             <input type="number" name="units_per_roll" id="upr" class="form-control bg-light-warning @error('units_per_roll') is-invalid @enderror" value="{{ old('units_per_roll', 0) }}" min="0" step="0.01">
+                            @error('units_per_roll')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                             <small class="field-note" id="roll_content_help">Enter how many sellable units are inside one roll. Leave this at 0 if the product does not use rolls.</small>
                         </div>
                         <div class="col-md-3 mb-3">
                             <label class="field-label text-danger">Carton Content <span class="text-muted fw-normal d-block small" id="carton_content_hint">Auto-calculated rolls per carton</span></label>
                             <input type="number" name="units_per_carton" id="upc" class="form-control bg-light-danger @error('units_per_carton') is-invalid @enderror" value="{{ old('units_per_carton', 0) }}" min="0" step="0.01">
+                            @error('units_per_carton')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                             <small class="field-note" id="carton_content_help">This is calculated from unit total and roll content. If rolls are not used, it matches the unit total.</small>
                         </div>
                         <div class="col-md-3 mb-3">
                             <label class="field-label">Base Unit Name</label>
                             <input type="text" name="base_unit_name" class="form-control @error('base_unit_name') is-invalid @enderror" value="{{ old('base_unit_name', 'Unit') }}" placeholder="e.g. Unit, Tablet, Bottle">
+                            @error('base_unit_name')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-md-3 mb-3">
                             <label class="field-label">Default Sale Unit</label>
@@ -277,6 +285,7 @@
                                 <option value="roll" @selected(old('unit_type') === 'roll')>Roll</option>
                                 <option value="carton" @selected(old('unit_type') === 'carton')>Carton</option>
                             </select>
+                            @error('unit_type')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                             <small class="field-note">Choose how this product is normally sold.</small>
                         </div>
                         <div class="col-md-3 mb-3"></div>
@@ -293,27 +302,33 @@
                     <div class="row">
                         <div class="col-md-3 mb-3">
                             <label class="field-label">Opening Carton Quantity</label>
-                            <input type="number" name="stock_cartons" id="stock_cartons" class="form-control" value="{{ old('stock_cartons', 0) }}">
+                            <input type="number" name="stock_cartons" id="stock_cartons" class="form-control @error('stock_cartons') is-invalid @enderror" value="{{ old('stock_cartons', 0) }}">
+                            @error('stock_cartons')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-md-3 mb-3">
                             <label class="field-label">Opening Roll Quantity</label>
-                            <input type="number" name="stock_rolls" id="stock_rolls" class="form-control" value="{{ old('stock_rolls', 0) }}">
+                            <input type="number" name="stock_rolls" id="stock_rolls" class="form-control @error('stock_rolls') is-invalid @enderror" value="{{ old('stock_rolls', 0) }}">
+                            @error('stock_rolls')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-md-3 mb-3">
                             <label class="field-label">Purchase Price (Per Unit)</label>
-                            <input type="number" step="0.01" name="purchase_price" class="form-control @error('purchase_price') is-invalid @enderror" value="{{ old('purchase_price') }}" required>
+                            <input type="number" step="0.01" name="purchase_price" class="form-control @error('purchase_price') is-invalid @enderror" value="{{ old('purchase_price') }}">
+                            @error('purchase_price')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-md-3 mb-3">
                             <label class="field-label">Retail / Default Price</label>
-                            <input type="number" step="0.01" name="price" class="form-control @error('price') is-invalid @enderror" value="{{ old('price') }}" required>
+                            <input type="number" step="0.01" name="price" class="form-control @error('price') is-invalid @enderror" value="{{ old('price') }}">
+                            @error('price')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-md-3 mb-3">
                             <label class="field-label">Wholesale Price</label>
                             <input type="number" step="0.01" name="wholesale_price" class="form-control @error('wholesale_price') is-invalid @enderror" value="{{ old('wholesale_price') }}">
+                            @error('wholesale_price')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-md-3 mb-3">
                             <label class="field-label">Special Discount Price</label>
                             <input type="number" step="0.01" name="special_price" class="form-control @error('special_price') is-invalid @enderror" value="{{ old('special_price') }}">
+                            @error('special_price')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-md-3 mb-3">
                             <label class="field-label text-info" id="units_per_carton_label">Units Per Carton</label>
@@ -323,7 +338,8 @@
                         
                         <div class="col-md-3 mb-3">
                             <label class="field-label" id="opening_unit_label">Opening Loose Unit Quantity</label>
-                            <input type="number" name="stock_units" id="stock_units" class="form-control" value="{{ old('stock_units', 0) }}">
+                            <input type="number" name="stock_units" id="stock_units" class="form-control @error('stock_units') is-invalid @enderror" value="{{ old('stock_units', 0) }}">
+                            @error('stock_units')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                             <small class="field-note">Enter only the loose units/pieces already on hand, not the carton definition above.</small>
                         </div>
                         <div class="col-md-3 mb-3">
@@ -335,16 +351,19 @@
                         <div class="col-md-3 mb-3">
                             <label class="field-label">Product Image</label>
                             <input type="file" name="image" id="product_image_input" class="form-control @error('image') is-invalid @enderror">
+                            @error('image')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                             <small class="field-note">Leave this empty if the product has no image.</small>
                         </div>
                         <div class="col-md-3 mb-3">
                             <label class="field-label">Reorder Level</label>
-                            <input type="number" name="reorder_level" min="0" class="form-control" value="{{ old('reorder_level', 0) }}">
+                            <input type="number" name="reorder_level" min="0" class="form-control @error('reorder_level') is-invalid @enderror" value="{{ old('reorder_level', 0) }}">
+                            @error('reorder_level')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                             <small class="field-note">Stock threshold that should trigger a low-stock alert for this item.</small>
                         </div>
                         <div class="col-md-3 mb-3">
                             <label class="field-label">Suggested Reorder Qty</label>
-                            <input type="number" name="reorder_quantity" min="0" class="form-control" value="{{ old('reorder_quantity', 0) }}">
+                            <input type="number" name="reorder_quantity" min="0" class="form-control @error('reorder_quantity') is-invalid @enderror" value="{{ old('reorder_quantity', 0) }}">
+                            @error('reorder_quantity')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                             <small class="field-note">Recommended replenishment quantity when the item drops below its threshold.</small>
                         </div>
                     </div>
@@ -426,6 +445,13 @@
             window.setTimeout(() => {
                 $('#product_page_info_message').removeClass('show').addClass('d-none');
             }, 3500);
+        }
+
+        function highlightInvalidSelect2Fields() {
+            $('#product_category_select.is-invalid')
+                .next('.select2-container')
+                .find('.select2-selection')
+                .addClass('is-invalid border-danger');
         }
 
         async function parseJsonResponse(response, fallbackMessage) {
@@ -582,6 +608,7 @@
             console.error('Unable to load categories', error);
             showCategoryError(error.message || 'Unable to load categories.');
         });
+        window.setTimeout(highlightInvalidSelect2Fields, 100);
 
         $('#add_product_form').on('submit', function() {
             const imageInput = document.getElementById('product_image_input');

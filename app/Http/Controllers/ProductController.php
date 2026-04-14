@@ -733,7 +733,17 @@ class ProductController extends Controller
                 'barcode'          => 'nullable|string|max:191',
             ];
 
-            $validator = Validator::make($request->except('image'), $rules);
+            $validator = Validator::make($request->except('image'), $rules, [], [
+                'name' => 'product name',
+                'sku' => 'SKU / code',
+                'price' => 'retail / default price',
+                'purchase_price' => 'purchase price',
+                'category_id' => 'category',
+                'unit_type' => 'default sale unit',
+                'units_per_carton' => 'carton content',
+                'units_per_roll' => 'roll content',
+                'base_unit_name' => 'base unit name',
+            ]);
             $validator->after(function ($v) use ($request) {
                 $price = trim((string) $request->input('price', ''));
                 $purchase = trim((string) $request->input('purchase_price', ''));
@@ -754,8 +764,11 @@ class ProductController extends Controller
             $validated['reorder_level'] = max(0, (int) ($validated['reorder_level'] ?? 0));
             $validated['reorder_quantity'] = max(0, (int) ($validated['reorder_quantity'] ?? 0));
             $validated['category_id'] = !empty($validated['category_id']) ? $validated['category_id'] : null;
-            $retailPrice = (float) ($validated['retail_price'] ?? $validated['price']);
+            $retailPrice = (float) ($validated['retail_price'] ?? $validated['price'] ?? 0);
             $validated['price'] = $retailPrice;
+            $validated['purchase_price'] = isset($validated['purchase_price']) && $validated['purchase_price'] !== null && $validated['purchase_price'] !== ''
+                ? (float) $validated['purchase_price']
+                : 0;
             if (Schema::hasColumn('products', 'retail_price')) {
                 $validated['retail_price'] = $retailPrice;
             } else {
@@ -860,6 +873,34 @@ class ProductController extends Controller
                 'user_id' => auth()->id(),
                 'payload' => $request->except(['image']),
             ]);
+
+            $errorText = strtolower($e->getMessage());
+            $fieldErrors = [];
+
+            if (str_contains($errorText, 'category_id')) {
+                $fieldErrors['category_id'] = str_contains($errorText, 'cannot be null') || str_contains($errorText, "doesn't have a default value")
+                    ? 'Category is optional, but the server database still needs the product category migration. Run php artisan migrate, then save again.'
+                    : 'The selected category could not be used. Choose another category or leave it as No category.';
+            }
+
+            if (str_contains($errorText, 'products_sku_unique') || (str_contains($errorText, 'duplicate') && str_contains($errorText, 'sku'))) {
+                $fieldErrors['sku'] = 'This SKU / code is already in use. Leave it blank so the system can generate a new one.';
+            }
+
+            if (str_contains($errorText, 'purchase_price') && (str_contains($errorText, 'cannot be null') || str_contains($errorText, "doesn't have a default value"))) {
+                $fieldErrors['purchase_price'] = 'Enter a purchase price, or enter a retail price if you do not know the cost price yet.';
+            }
+
+            if (!str_contains($errorText, 'purchase_price') && str_contains($errorText, 'price') && (str_contains($errorText, 'cannot be null') || str_contains($errorText, "doesn't have a default value"))) {
+                $fieldErrors['price'] = 'Enter a retail price, or enter a purchase price if you do not know the selling price yet.';
+            }
+
+            if ($fieldErrors) {
+                return back()
+                    ->withInput()
+                    ->withErrors($fieldErrors)
+                    ->with('error', 'Product could not be added. Please fix the highlighted field and try again.');
+            }
 
             $message = 'Product could not be added.';
             $showDetail = config('app.debug') || (auth()->user()?->role === 'super_admin');
