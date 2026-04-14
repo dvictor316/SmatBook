@@ -158,6 +158,25 @@ class DeploymentManagerController extends Controller
         $manager = DeploymentManager::where('user_id', Auth::id())->firstOrFail();
         $manager->update($request->only(['business_name', 'phone', 'address', 'id_type', 'id_number']));
 
+        // Auto-approve if all required fields are present and valid
+        if ($manager->business_name && $manager->phone && $manager->address && $manager->id_type && $manager->id_number) {
+            $manager->update([
+                'status' => 'active',
+                'approved_at' => now(),
+                'commission_rate' => self::COMMISSION_RATE,
+            ]);
+            $user = User::findOrFail($manager->user_id);
+            $user->update([
+                'is_verified' => 1,
+                'role' => 'deployment_manager',
+                'email_verified_at' => $user->email_verified_at ?? now(),
+            ]);
+            $this->ensureManagerHasWorkspace($user);
+            // Notify manager
+            SystemEventMailer::notifyManagerApproved($user, Auth::user());
+            return redirect()->route('deployment.dashboard')->with('success', 'Profile auto-approved and workspace activated.');
+        }
+
         return redirect()->route('manager.pending.notice')
             ->with('info', 'Profile submitted. Awaiting SuperAdmin approval.');
     }
@@ -398,6 +417,17 @@ class DeploymentManagerController extends Controller
         $deploymentPlans = $this->deploymentPlanOptions();
 
         return view('deployment.users.create', compact('limit', 'currentCount', 'deploymentPlans'));
+    }
+
+    // After registration, redirect to checkout
+    public function store(Request $request)
+    {
+        // ...existing validation and registration logic...
+        // After successful registration, redirect to checkout
+        // (Assume $company and $user are created)
+        //
+        // Trigger subdomain creation after payment in the checkout controller
+        return redirect()->route('deployment.checkout', ['company' => $company->id]);
     }
 
     /**
