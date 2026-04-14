@@ -291,46 +291,46 @@
     <div class="row g-3 mb-4">
         {{-- Uncollected Revenue --}}
         <div class="col-lg-6">
-            <div class="glass-card p-3" style="background:linear-gradient(135deg,#f43f5e 0%,#fda4af 100%);border-left:5px solid #be185d;box-shadow:0 2px 16px 0 rgba(244,63,94,0.08);">
+            <div class="glass-card p-3" style="background:linear-gradient(135deg,#f43f5e 0%,#fda4af 100%);border-left:5px solid #be185d;box-shadow:0 2px 16px 0 rgba(244,63,94,0.08);color:#fff;">
                 <div class="d-flex justify-content-between align-items-start mb-2">
                     <div>
-                        <p style="font-size:10px;font-weight:700;letter-spacing:.6px;color:#be185d;margin-bottom:2px;">UNCOLLECTED REVENUE</p>
-                        <div class="fw-bold" style="font-size:1.55rem;line-height:1;color:#be185d;">₦{{ number_format($pendingPaymentsValue, 0) }}</div>
+                        <p style="font-size:10px;font-weight:700;letter-spacing:.6px;color:#fff;margin-bottom:2px;">UNCOLLECTED REVENUE</p>
+                        <div class="fw-bold" style="font-size:1.55rem;line-height:1;color:#fff;">₦{{ number_format($pendingPaymentsValue, 0) }}</div>
                     </div>
-                    <div class="metric-icon" style="background:#fda4af;color:#be185d;"><i class="fas fa-exclamation-triangle"></i></div>
+                    <div class="metric-icon" style="background:#fda4af;color:#fff;"><i class="fas fa-exclamation-triangle"></i></div>
                 </div>
                 <div class="mb-2">
                     <div class="progress" style="height:4px;background:#fbcfe8;border-radius:99px;">
-                        <div class="progress-bar" style="background:#be185d;width:{{ $pendingValueRatio }}%;border-radius:99px;"></div>
+                        <div class="progress-bar" style="background:#fff;width:{{ $pendingValueRatio }}%;border-radius:99px;"></div>
                     </div>
                 </div>
                 <div class="d-flex justify-content-between align-items-center">
-                    <span style="font-size:11px;color:#be185d;">{{ $pendingPaymentsCount }} unpaid transaction{{ $pendingPaymentsCount != 1 ? 's' : '' }}</span>
-                    <a href="{{ route('deployment.payments.pending') }}" style="font-size:11px;font-weight:700;color:#be185d;text-decoration:none;">Collect Now <i class="fas fa-arrow-right ms-1"></i></a>
+                    <span style="font-size:11px;color:#fff;">{{ $pendingPaymentsCount }} unpaid transaction{{ $pendingPaymentsCount != 1 ? 's' : '' }}</span>
+                    <a href="{{ route('deployment.payments.pending') }}" style="font-size:11px;font-weight:700;color:#fff;text-decoration:none;">Collect Now <i class="fas fa-arrow-right ms-1"></i></a>
                 </div>
             </div>
         </div>
 
         {{-- Expiring Soon --}}
         <div class="col-lg-6">
-            <div class="glass-card p-3" style="background:linear-gradient(135deg,#f59e0b 0%,#fef08a 100%);border-left:5px solid #b45309;box-shadow:0 2px 16px 0 rgba(245,158,11,0.08);">
+            <div class="glass-card p-3" style="background:linear-gradient(135deg,#f59e0b 0%,#fef08a 100%);border-left:5px solid #b45309;box-shadow:0 2px 16px 0 rgba(245,158,11,0.08);color:#fff;">
                 <div class="d-flex justify-content-between align-items-start mb-2">
                     <div>
-                        <p style="font-size:10px;font-weight:700;letter-spacing:.6px;color:#b45309;margin-bottom:2px;">EXPIRING IN 7 DAYS</p>
-                        <div class="fw-bold" style="font-size:1.55rem;line-height:1;color:#b45309;">
+                        <p style="font-size:10px;font-weight:700;letter-spacing:.6px;color:#fff;margin-bottom:2px;">EXPIRING IN 7 DAYS</p>
+                        <div class="fw-bold" style="font-size:1.55rem;line-height:1;color:#fff;">
                             {{ number_format($expiringSoon) }} <span style="font-size:.85rem;font-weight:400;">subscriptions</span>
                         </div>
                     </div>
-                    <div class="metric-icon" style="background:#fef08a;color:#b45309;"><i class="fas fa-hourglass-half"></i></div>
+                    <div class="metric-icon" style="background:#fef08a;color:#fff;"><i class="fas fa-hourglass-half"></i></div>
                 </div>
                 <div class="mb-2">
                     <div class="progress" style="height:4px;background:#fde68a;border-radius:99px;">
-                        <div class="progress-bar" style="background:#b45309;width:{{ $expiryRatio }}%;border-radius:99px;"></div>
+                        <div class="progress-bar" style="background:#fff;width:{{ $expiryRatio }}%;border-radius:99px;"></div>
                     </div>
                 </div>
                 <div class="d-flex justify-content-between align-items-center">
-                    <span style="font-size:11px;color:#b45309;">{{ $activeSubsCount > 0 ? number_format($expiryRatio, 1).'% of active' : 'No active subs' }}</span>
-                    <a href="{{ route('deployment.subscription.overview') }}" style="font-size:11px;font-weight:700;color:#b45309;text-decoration:none;">Renew <i class="fas fa-arrow-right ms-1"></i></a>
+                    <span style="font-size:11px;color:#fff;">{{ $activeSubsCount > 0 ? number_format($expiryRatio, 1).'% of active' : 'No active subs' }}</span>
+                    <a href="{{ route('deployment.subscription.overview') }}" style="font-size:11px;font-weight:700;color:#fff;text-decoration:none;">Renew <i class="fas fa-arrow-right ms-1"></i></a>
                 </div>
             </div>
         </div>
