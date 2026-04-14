@@ -805,7 +805,7 @@
 <div class="modal fade" id="addCategoryModal" tabindex="-1" style="z-index: 1060;">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <form id="ajaxAddCategoryForm">
+            <form id="ajaxAddCategoryForm" method="POST" action="{{ route('ajax.inventory.categories.store') }}">
                 @csrf
                 <div class="modal-header">
                     <h5 class="modal-title">Quick Category</h5>
@@ -836,6 +836,8 @@
     $(document).ready(function() {
         const categoryIndexUrl = @json(route('ajax.inventory.categories.index', [], false));
         const categoryStoreUrl = @json(route('ajax.inventory.categories.store', [], false));
+        const shouldReopenProductModal = @json($errors->any() || session()->has('error'));
+        const serverProductError = @json(session('error') ?: ($errors->any() ? $errors->first() : ''));
         const quickCategoryError = $('#quick_category_error_message');
         const quickCategorySuccess = $('#quick_category_success_message');
         const quickProductSuccess = $('#quick_product_success_message');
@@ -1024,6 +1026,18 @@
                 initializeQuickCategorySelect();
             });
         });
+
+        if (shouldReopenProductModal) {
+            const productModalElement = document.getElementById('addProductModal');
+            if (productModalElement) {
+                const productModal = bootstrap.Modal.getOrCreateInstance(productModalElement);
+                productModal.show();
+
+                if (serverProductError) {
+                    showQuickProductMessage('error', serverProductError);
+                }
+            }
+        }
 
         $('#quick_add_product_form').on('submit', function() {
             const imageInput = document.getElementById('quick_add_product_image');
