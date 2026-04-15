@@ -271,7 +271,7 @@
                             </div>
                         @else
                             <div class="table-responsive">
-                                <table class="table table-center table-hover datatable">
+                                <table class="table table-center table-hover">
                                     <thead class="thead-light">
                                         <tr>
                                             <th>#</th>
@@ -433,6 +433,9 @@
     // Fix Bootstrap dropdowns clipped by table-responsive overflow
     document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('[data-bs-toggle="dropdown"]').forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+            });
             new bootstrap.Dropdown(btn, {
                 popperConfig: { strategy: 'fixed' }
             });
