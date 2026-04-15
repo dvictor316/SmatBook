@@ -263,12 +263,21 @@
                                             <td>{{ \App\Support\GeoCurrency::format((float) ($purchase->resolved_total_amount ?? $purchase->total_amount ?? 0), 'NGN', $currencyCode, $currencyLocale) }}</td>
                                             <td>{{ \App\Support\GeoCurrency::format((float) ($purchase->paid_amount ?? 0), 'NGN', $currencyCode, $currencyLocale) }}</td>
                                             <td><span class="badge {{ $statusClass }}">{{ ucfirst($status) }}</span></td>
-                                            <td class="text-end no-print">
+                                            <td class="text-end no-print" style="position: relative;">
                                                 <div class="dropdown">
                                                     <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" id="actionDropdown{{ $purchase->id }}" data-bs-toggle="dropdown" aria-expanded="false">
                                                         Actions
                                                     </button>
-                                                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="actionDropdown{{ $purchase->id }}" style="z-index: 1055;">
+                                                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="actionDropdown{{ $purchase->id }}" style="z-index: 1055; position: absolute; right: 0; min-width: 180px; box-shadow: 0 8px 24px rgba(0,0,0,0.12);">
+                                                                                                                <li>
+                                                                                                                    <form action="{{ route('purchases.destroy', $purchase->id) }}" method="POST" class="m-0" onsubmit="return confirm('Are you sure you want to delete this purchase?');">
+                                                                                                                        @csrf
+                                                                                                                        @method('DELETE')
+                                                                                                                        <button type="submit" class="dropdown-item d-flex align-items-center gap-1 text-danger">
+                                                                                                                            <i class="far fa-trash-alt"></i> <span>Delete</span>
+                                                                                                                        </button>
+                                                                                                                    </form>
+                                                                                                                </li>
                                                         <li>
                                                             <a href="{{ route('purchases.show', $purchase->id) }}" class="dropdown-item d-flex align-items-center gap-1">
                                                                 <i class="far fa-eye"></i> <span>View</span>
