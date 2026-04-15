@@ -70,10 +70,11 @@ class UserController extends Controller
         $companySuffix = $actor?->company_id ?? '';
 
         // Branches for access locations checkboxes
+        // Keys are scoped as "branches_json_company_{id}" (same pattern as SettingController)
+        $companyId = (int) ($actor?->company_id ?? 0);
+        $settingKey = $companyId > 0 ? "branches_json_company_{$companyId}" : 'branches_json';
         $branches = collect(json_decode(
-            \App\Models\Setting::where('company_id', $actor?->company_id)
-                ->where('key', 'branches_json')
-                ->value('value') ?? '[]',
+            \App\Models\Setting::where('key', $settingKey)->value('value') ?? '[]',
             true
         ) ?: [])->filter(fn($b) => !empty($b['id']) && !empty($b['name']))->values();
 
