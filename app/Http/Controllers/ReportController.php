@@ -88,11 +88,25 @@ use App\Support\InventoryQuantity;
         private function normalizeInvoiceFinancials(Sale $sale): array
         {
             $total = max(0, (float) ($sale->total ?? 0));
-            $appliedPaymentAmount = $this->resolveAppliedPaymentAmount($sale);
+
             $storedPaid = max(0, (float) ($sale->amount_paid ?? $sale->paid ?? 0));
             $storedBalanceRaw = $sale->balance;
             $hasStoredBalance = $storedBalanceRaw !== null && $storedBalanceRaw !== '';
             $storedBalance = $hasStoredBalance ? max(0, (float) $storedBalanceRaw) : null;
+            $storedStatus = strtolower(trim((string) ($sale->payment_status ?? '')));
+
+            // If stored record explicitly shows fully paid, trust it — don't let a
+            // stale partial sum from the payments table override it.
+            if ($storedStatus === 'paid' || ($hasStoredBalance && $storedBalance <= 0.0001)) {
+                return [
+                    'total'   => $total,
+                    'paid'    => $total,
+                    'balance' => 0.0,
+                    'status'  => 'paid',
+                ];
+            }
+
+            $appliedPaymentAmount = $this->resolveAppliedPaymentAmount($sale);
             $computedBalance = max(0, $total - $storedPaid);
 
             if ($appliedPaymentAmount !== null) {
@@ -113,10 +127,10 @@ use App\Support\InventoryQuantity;
                 : ($effectivePaid > 0.0001 ? 'partial' : 'unpaid');
 
             return [
-                'total' => $total,
-                'paid' => $effectivePaid,
+                'total'   => $total,
+                'paid'    => $effectivePaid,
                 'balance' => $effectiveBalance,
-                'status' => $effectiveStatus,
+                'status'  => $effectiveStatus,
             ];
         }
 
