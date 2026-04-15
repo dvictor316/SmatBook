@@ -580,20 +580,24 @@
 
 @push('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    document.querySelectorAll('.expense-row-actions [data-bs-toggle="dropdown"]').forEach(function (toggle) {
-        toggle.addEventListener('show.bs.dropdown', function () {
-            var menu = this.closest('.dropdown').querySelector('.dropdown-menu');
-            var rect = this.getBoundingClientRect();
-            menu.style.setProperty('position', 'fixed', 'important');
-            menu.style.setProperty('top', (rect.bottom + 2) + 'px', 'important');
-            menu.style.setProperty('right', (window.innerWidth - rect.right) + 'px', 'important');
-            menu.style.setProperty('left', 'auto', 'important');
-            menu.style.setProperty('z-index', '9999', 'important');
+$(document).ready(function(){
+    $(document).on('show.bs.dropdown', '.expense-row-actions', function(){
+        var $menu = $(this).find('.dropdown-menu');
+        var $btn  = $(this).find('[data-bs-toggle="dropdown"]');
+        var rect  = $btn[0].getBoundingClientRect();
+        $menu.css({
+            position:  'fixed',
+            top:       rect.bottom + 2 + 'px',
+            left:      'auto',
+            right:     (window.innerWidth - rect.right) + 'px',
+            zIndex:    9999,
+            minWidth:  '220px',
+            boxShadow: '0 6px 24px rgba(0,0,0,.18)'
         });
-        toggle.addEventListener('hidden.bs.dropdown', function () {
-            var menu = this.closest('.dropdown').querySelector('.dropdown-menu');
-            ['position','top','right','left','z-index'].forEach(function(p){ menu.style.removeProperty(p); });
+    });
+    $(document).on('hidden.bs.dropdown', '.expense-row-actions', function(){
+        $(this).find('.dropdown-menu').css({
+            position:'', top:'', left:'', right:'', zIndex:'', minWidth:'', boxShadow:''
         });
     });
 });
