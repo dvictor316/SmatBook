@@ -269,6 +269,10 @@
                                                         <i class="far fa-eye"></i>
                                                         <span class="d-none d-md-inline">View</span>
                                                     </a>
+                                                    <a href="{{ route('purchases.edit', $purchase->id) }}" class="btn btn-sm btn-primary d-inline-flex align-items-center gap-1">
+                                                        <i class="far fa-edit"></i>
+                                                        <span class="d-none d-md-inline">Edit</span>
+                                                    </a>
                                                     <form action="{{ route('finance.recurring.from-purchase', $purchase->id) }}" method="POST">
                                                         @csrf
                                                         <button type="submit" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1">
