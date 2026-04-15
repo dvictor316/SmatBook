@@ -89,6 +89,10 @@
                         <div class="card-body">
                             <form method="GET" action="{{ route('reports.accounts-receivable') }}" class="row g-3 mb-3">
                                 <div class="col-md-3">
+                                    <label class="form-label">Search Customer</label>
+                                    <input type="text" name="customer_name" class="form-control" placeholder="Customer name..." value="{{ $filters['customer_name'] ?? '' }}">
+                                </div>
+                                <div class="col-md-2">
                                     <label class="form-label">Filter Type</label>
                                     <select name="type" class="form-select">
                                         <option value="all" {{ ($filters['type'] ?? 'all') === 'all' ? 'selected' : '' }}>All Receivables</option>
@@ -96,16 +100,19 @@
                                         <option value="opening" {{ ($filters['type'] ?? '') === 'opening' ? 'selected' : '' }}>Opening Balance Only</option>
                                     </select>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-2">
                                     <label class="form-label">Start Date</label>
                                     <input type="date" name="start_date" class="form-control" value="{{ $filters['start_date'] ?? '' }}">
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-2">
                                     <label class="form-label">End Date</label>
                                     <input type="date" name="end_date" class="form-control" value="{{ $filters['end_date'] ?? '' }}">
                                 </div>
                                 <div class="col-md-3 d-flex align-items-end gap-2">
                                     <button type="submit" class="btn btn-primary w-100">Apply</button>
+                                    @if(($filters['customer_name'] ?? '') !== '' || ($filters['type'] ?? 'all') !== 'all' || ($filters['start_date'] ?? '') !== '' || ($filters['end_date'] ?? '') !== '')
+                                        <a href="{{ route('reports.accounts-receivable') }}" class="btn btn-outline-secondary">Clear</a>
+                                    @endif
                                 </div>
                             </form>
                             <div class="table-responsive">

@@ -1250,7 +1250,7 @@ private function paymentReportRelations(): array
                 'total_paid' => (float) $row->total_paid,
                 'total_due' => (float) $row->total_due,
                 'invoice_count' => (int) $row->invoice_count,
-                'opening_balance' => $openingSale ? 0.0 : (float) ($customer?->balance ?? 0),
+                'opening_balance' => $openingSale ? (float) ($openingSale->balance ?? 0) : (float) ($customer?->balance ?? 0),
                 'sort_at' => $row->first_activity_at ?: $customer?->created_at,
                 'sort_id' => (int) ($customer?->id ?? $row->customer_id ?? 0),
             ];
@@ -1258,6 +1258,10 @@ private function paymentReportRelations(): array
 
         foreach ($openingCustomers as $customer) {
             if (!isset($receivableMap[$customer->id])) {
+                $openingSaleForThis = $openingSales->get($customer->id);
+                $openingBal = $openingSaleForThis
+                    ? (float) ($openingSaleForThis->balance ?? 0)
+                    : (float) ($customer->balance ?? 0);
                 $receivableMap[$customer->id] = [
                     'customer_id' => $customer->id,
                     'customer_name' => $customer->customer_name ?? $customer->name ?? 'Walk-in Customer',
@@ -1267,7 +1271,7 @@ private function paymentReportRelations(): array
                     'total_paid' => 0.0,
                     'total_due' => 0.0,
                     'invoice_count' => 0,
-                    'opening_balance' => (float) $customer->balance,
+                    'opening_balance' => $openingBal,
                     'sort_at' => $customer->created_at,
                     'sort_id' => (int) $customer->id,
                 ];
@@ -1295,6 +1299,13 @@ private function paymentReportRelations(): array
             $receivables = $receivables->filter(fn ($row) => $row->invoice_count === 0)->values();
         }
 
+        $customerSearch = trim((string) $request->input('customer_name', ''));
+        if ($customerSearch !== '') {
+            $receivables = $receivables->filter(
+                fn ($row) => str_contains(strtolower($row->customer_name ?? ''), strtolower($customerSearch))
+            )->values();
+        }
+
         $totalDue = (float) $receivables->sum('total_due') + (float) $receivables->sum('opening_balance');
 
         return view('Reports.Reports.accounts-receivable', [
@@ -1305,6 +1316,7 @@ private function paymentReportRelations(): array
                 'start_date' => $request->input('start_date'),
                 'end_date' => $request->input('end_date'),
                 'type' => $typeFilter ?: 'all',
+                'customer_name' => $customerSearch,
             ],
         ]);
     }
