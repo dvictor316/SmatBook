@@ -64,8 +64,8 @@
             <div class="col-sm-12">
                 <div class="card shadow-sm border-0">
                     <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-striped table-hover">
+                        <div class="table-responsive" style="overflow: visible;">
+                            <table class="table table-striped table-hover" style="overflow: visible;">
                                 <thead class="thead-light">
                                     <tr>
                                         <th>Date</th>
@@ -112,16 +112,21 @@
                                                     {{ $expense->status }}
                                                 </span>
                                             </td>
-                                            <td class="text-end">
+                                            <td class="text-end" style="position: relative;">
                                                 <div class="dropdown dropdown-action">
                                                     <a href="#" class="action-icon dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-ellipsis-v"></i></a>
-                                                    <div class="dropdown-menu dropdown-menu-end">
+                                                    <div class="dropdown-menu dropdown-menu-end" style="position: absolute; right: 0; z-index: 1055; min-width: 210px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
                                                         <a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#view_expense_{{ $expense->id }}">
                                                             <i class="far fa-eye me-2 text-info"></i>View
                                                         </a>
                                                         <a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#edit_expense_{{ $expense->id }}">
                                                             <i class="far fa-edit me-2 text-primary"></i>Edit
                                                         </a>
+                                                        @if (strtolower((string) $expense->status) !== 'paid')
+                                                            <a class="dropdown-item text-success fw-semibold" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#pay_expense_{{ $expense->id }}">
+                                                                <i class="fas fa-money-bill-wave me-2"></i>Pay Now
+                                                            </a>
+                                                        @endif
                                                         <form action="{{ route('finance.recurring.from-expense', $expense->id) }}" method="POST" class="d-inline">
                                                             @csrf
                                                             <button type="submit" class="dropdown-item text-primary">
@@ -134,11 +139,6 @@
                                                                 <i class="far fa-paper-plane me-2"></i>Submit For Approval
                                                             </button>
                                                         </form>
-                                                        @if (strtolower((string) $expense->status) !== 'paid')
-                                                            <a class="dropdown-item text-success fw-semibold" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#pay_expense_{{ $expense->id }}">
-                                                                <i class="fas fa-money-bill-wave me-2"></i>Pay Now
-                                                            </a>
-                                                        @endif
                                                         <span class="dropdown-item text-muted"><i class="far fa-user me-2"></i>{{ $expense->creator?->name ?? 'System' }}</span>
                                                         <div class="dropdown-divider"></div>
                                                         <form action="{{ route('expenses.destroy', $expense->id) }}" method="POST" class="d-inline">
