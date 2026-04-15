@@ -1,6 +1,48 @@
 <?php $page = 'roles-permission'; ?>
 @extends('layout.mainlayout')
 
+@section('page-title', 'Roles & Permission')
+
+@push('styles')
+<style>
+    .btn-permissions {
+        background-color: #2d2a6e;
+        border-color: #2d2a6e;
+        color: #fff;
+        font-size: 85%;
+        padding: 5px 12px;
+        border-radius: 6px;
+        font-weight: 600;
+    }
+    .btn-permissions:hover,
+    .btn-permissions:focus {
+        background-color: #211e57;
+        border-color: #211e57;
+        color: #fff;
+    }
+    .btn-permissions i { color: #fff; }
+
+    .roles-table thead th {
+        background-color: #eef2ff;
+        color: #4b4b8f;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        border-bottom: 2px solid #dddff5;
+    }
+    .roles-table tbody tr:hover { background-color: #f8faff; }
+    .roles-table .role-name-main { font-weight: 600; color: #1e2a4a; }
+    .roles-table .role-group-badge {
+        font-size: 0.72rem;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-top: 2px;
+    }
+</style>
+@endpush
+
 @section('content')
 <div class="page-wrapper">
     <div class="content container-fluid">
@@ -26,8 +68,8 @@
                 <div class="card-table">
                     <div class="card-body">
                         <div class="table-responsive">
-                            <table class="table table-center table-hover datatable">
-                                <thead class="thead-light">
+                            <table class="table table-center table-hover datatable roles-table">
+                                <thead>
                                     <tr>
                                         <th>ID</th>
                                         <th>Role Name</th>
@@ -40,30 +82,32 @@
                                         <tr>
                                             <td>{{ $role->id }}</td>
                                             <td>
-                                                <div class="fw-semibold">{{ $role->name }}</div>
-                                                <small class="text-muted">{{ $role->role_group ?? 'Staff' }}</small>
+                                                <div class="role-name-main">{{ $role->name }}</div>
+                                                <div class="role-group-badge">{{ $role->role_group ?? 'Staff' }}</div>
                                             </td>
                                             <td>
                                                 <div>{{ $role->created_at ? $role->created_at->format('d M Y') : 'N/A' }}</div>
                                                 <small class="text-muted">{{ number_format($role->permissions_count ?? 0) }} permission(s)</small>
                                             </td>
-                                            <td class="d-flex align-items-center justify-content-end">
-                                                <a href="javascript:void(0);" class="btn btn-greys me-2"
+                                            <td>
+                                                <div class="d-flex align-items-center justify-content-end gap-1">
+                                                <a href="javascript:void(0);" class="btn btn-greys me-1"
                                                    data-bs-toggle="modal" data-bs-target="#edit_role{{ $role->id }}">
                                                     <i class="fa fa-edit me-1"></i> Edit
                                                 </a>
 
-                                                <a href="{{ route('roles.permissions', $role->id) }}" class="btn btn-greys me-2">
+                                                <a href="{{ route('roles.permissions', $role->id) }}" class="btn btn-permissions me-2">
                                                     <i class="fa fa-shield me-1"></i> Permissions
                                                 </a>
 
                                                 <form action="{{ route('roles.destroy', $role->id) }}" method="POST" onsubmit="return confirm('Delete this role? This cannot be undone.')">
                                                     @csrf
                                                     @method('DELETE')
-                                                    <button type="submit" class="btn btn-danger btn-sm" {{ ($role->name == 'Administrator' || !empty($role->is_system_role)) ? 'disabled' : '' }}>
+                                                    <button type="submit" class="btn btn-danger btn-sm rounded-circle d-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0;" {{ ($role->name == 'Administrator' || !empty($role->is_system_role)) ? 'disabled' : '' }}>
                                                         <i class="fa fa-trash"></i>
                                                     </button>
                                                 </form>
+                                                </div>
                                             </td>
                                         </tr>
 
