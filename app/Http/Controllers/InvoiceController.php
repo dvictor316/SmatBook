@@ -725,7 +725,15 @@ class InvoiceController extends Controller
     public function cashreceipt_4() { return view('Sales.Invoices.cashreceipt-4'); }
     public function signature_preview_invoice() { return view('Sales.Invoices.signature-preview-invoice'); }
     public function mail_pay_invoice() { return view('Sales.Invoices.mail-pay-invoice'); }
-    public function pay_online() { return view('Sales.Invoices.pay-online'); }
+    public function pay_online(Request $request)
+    {
+        $id = $request->query('id');
+        $invoice = null;
+        if ($id) {
+            $invoice = $this->applyTenantScope(Sale::with(['items.product', 'customer']), 'sales')->find($id);
+        }
+        return view('Sales.Invoices.pay-online', compact('invoice'));
+    }
 
     public function updateStatus(Request $request, $id)
     {
