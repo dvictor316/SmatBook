@@ -135,12 +135,9 @@
                                                             </button>
                                                         </form>
                                                         @if (strtolower((string) $expense->status) !== 'paid')
-                                                            <form action="{{ route('expenses.mark-paid', $expense->id) }}" method="POST" class="d-inline">
-                                                                @csrf
-                                                                <button type="submit" class="dropdown-item text-success">
-                                                                    <i class="far fa-circle-check me-2"></i>Mark as Paid
-                                                                </button>
-                                                            </form>
+                                                            <a class="dropdown-item text-success fw-semibold" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#pay_expense_{{ $expense->id }}">
+                                                                <i class="fas fa-money-bill-wave me-2"></i>Pay Now
+                                                            </a>
                                                         @endif
                                                         <span class="dropdown-item text-muted"><i class="far fa-user me-2"></i>{{ $expense->creator?->name ?? 'System' }}</span>
                                                         <div class="dropdown-divider"></div>
@@ -186,7 +183,12 @@
                 <div class="modal-body p-4">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label fw-bold">Supplier / Company *</label>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label fw-bold mb-0">Supplier / Company *</label>
+                                <a href="javascript:void(0);" class="small fw-semibold" data-bs-toggle="modal" data-bs-target="#quick_add_supplier_modal">
+                                    <i class="fas fa-plus-circle me-1"></i>Add Supplier
+                                </a>
+                            </div>
                             <input type="text" class="form-control" name="company_name" list="expense-party-list" placeholder="Who are you paying?" required>
                             <datalist id="expense-party-list">
                                 @foreach(($partyOptions ?? []) as $party)
@@ -246,7 +248,7 @@
                             <select class="form-select border-success" name="payment_account_id" required>
                                 <option value="">-- Choose Bank/Cash --</option>
                                 @foreach($assetAccounts as $acc)
-                                    <option value="{{ $acc->id }}">{{ $acc->name }} ({{ $acc->code }})</option>
+                                    <option value="{{ $acc->id }}">{{ $acc->name }} ({{ $acc->code }}) — Bal: ₦{{ number_format((float) ($acc->current_balance ?? 0), 2) }}</option>
                                 @endforeach
                             </select>
                             <small class="text-muted">This defines where the money is coming from.</small>
@@ -280,6 +282,43 @@
                 <div class="modal-footer bg-light">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-primary px-5 shadow-sm">Post Expense</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{-- Quick Add Supplier Modal --}}
+<div class="modal fade" id="quick_add_supplier_modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-user-plus me-2"></i>Add New Supplier</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('expenses.quick-add-supplier') }}" method="POST">
+                @csrf
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Supplier Name *</label>
+                        <input type="text" name="name" class="form-control" placeholder="e.g. ABC Supplies Ltd" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Email *</label>
+                        <input type="email" name="email" class="form-control" placeholder="supplier@example.com" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Phone</label>
+                        <input type="text" name="phone" class="form-control" placeholder="Optional">
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label fw-bold">Address</label>
+                        <input type="text" name="address" class="form-control" placeholder="Optional">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Supplier</button>
                 </div>
             </form>
         </div>
@@ -451,7 +490,7 @@
                                 <option value="">-- Choose Bank/Cash --</option>
                                 @foreach($assetAccounts as $acc)
                                     <option value="{{ $acc->id }}" {{ strtolower((string) $expense->payment_mode) === strtolower((string) $acc->name) ? 'selected' : '' }}>
-                                        {{ $acc->name }} ({{ $acc->code }})
+                                        {{ $acc->name }} ({{ $acc->code }}) — Bal: ₦{{ number_format((float) ($acc->current_balance ?? 0), 2) }}
                                     </option>
                                 @endforeach
                             </select>
@@ -486,6 +525,57 @@
         </div>
     </div>
 </div>
+
+{{-- Pay Now Modal --}}
+@if (strtolower((string) $expense->status) !== 'paid')
+<div class="modal fade" id="pay_expense_{{ $expense->id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="fas fa-money-bill-wave me-2"></i>Pay Expense</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ route('expenses.mark-paid', $expense->id) }}" method="POST">
+                @csrf
+                <div class="modal-body p-4">
+                    <div class="alert alert-light border mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Expense ID</span>
+                            <strong>{{ $expense->expense_id }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mt-1">
+                            <span class="text-muted">Supplier</span>
+                            <strong>{{ $expense->company_name }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mt-1">
+                            <span class="text-muted">Amount</span>
+                            <strong class="text-danger">&#8358;{{ number_format((float) $expense->amount, 2) }}</strong>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Pay From (Credit Account) *</label>
+                        <select class="form-select" name="payment_account_id" required>
+                            <option value="">-- Choose Bank / Cash Account --</option>
+                            @foreach($assetAccounts as $acc)
+                                <option value="{{ $acc->id }}" {{ strtolower((string) $expense->payment_mode) === strtolower((string) $acc->name) ? 'selected' : '' }}>
+                                    {{ $acc->name }} ({{ $acc->code }}) &mdash; Bal: &#8358;{{ number_format((float) ($acc->current_balance ?? 0), 2) }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <small class="text-muted">The selected account will be credited for this expense.</small>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success px-4 shadow-sm">
+                        <i class="fas fa-check me-1"></i>Confirm Payment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
 @endforeach
 
 @endsection

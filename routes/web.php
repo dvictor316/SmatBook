@@ -828,6 +828,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
     Route::get('/expenses/download/{filename}', [ExpenseController::class, 'download'])->name('expenses.download');
     Route::post('/expenses/quick-add-bank', [ExpenseController::class, 'quickAddBank'])->name('expenses.quick-add-bank');
     Route::post('/expenses/quick-add-category', [ExpenseController::class, 'quickAddCategory'])->name('expenses.quick-add-category');
+    Route::post('/expenses/quick-add-supplier', [ExpenseController::class, 'quickAddSupplier'])->name('expenses.quick-add-supplier');
     
     // Payments
     Route::resource('payments', PaymentController::class);

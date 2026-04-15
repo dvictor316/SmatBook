@@ -719,6 +719,44 @@ class ExpenseController extends Controller
         }
     }
 
+    public function quickAddSupplier(Request $request)
+    {
+        $validated = $request->validate([
+            'name'    => 'required|string|max:191',
+            'email'   => 'required|email|max:191',
+            'phone'   => 'nullable|string|max:50',
+            'address' => 'nullable|string|max:255',
+        ]);
+
+        try {
+            if (Schema::hasTable('vendors')) {
+                $attributes = ['email' => $validated['email']];
+                $values = [
+                    'name'    => $validated['name'],
+                    'phone'   => $validated['phone'] ?? null,
+                    'address' => $validated['address'] ?? null,
+                    'balance' => 0,
+                ];
+                if (Schema::hasColumn('vendors', 'company_id')) {
+                    $attributes['company_id'] = Auth::user()?->company_id ?? session('current_tenant_id');
+                }
+                if (Schema::hasColumn('vendors', 'user_id')) {
+                    $values['user_id'] = Auth::id();
+                }
+                Vendor::firstOrCreate($attributes, $values);
+            }
+
+            return redirect()->route('expenses.index')->with('success', 'Supplier "' . $validated['name'] . '" added successfully.');
+        } catch (\Throwable $e) {
+            Log::error('Expense quick-add supplier failed', [
+                'error'   => $e->getMessage(),
+                'user_id' => Auth::id(),
+            ]);
+            return redirect()->route('expenses.index')->with('error', 'Supplier could not be added. ' . $e->getMessage());
+        }
+    }
+
+
     private function resolveExpenseAccountFromSelector(string $selector): array
     {
         $selector = trim($selector);
