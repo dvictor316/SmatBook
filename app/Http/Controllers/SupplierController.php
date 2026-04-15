@@ -669,6 +669,12 @@ class SupplierController extends Controller
                         ]);
                     }
 
+                    // Deduct from bank balance if applicable
+                    if ($bank && Schema::hasColumn('banks', 'balance')) {
+                        $bank->balance = max(0, (float)$bank->balance - $amount);
+                        $bank->save();
+                    }
+
                     LedgerService::postPurchasePayment(
                         $purchase->fresh(),
                         $amount,
@@ -702,6 +708,12 @@ class SupplierController extends Controller
                                 'payment_date' => $paymentDate,
                                 'created_by' => auth()->id(),
                             ]);
+                        }
+
+                        // Deduct from bank balance if applicable
+                        if ($bank && Schema::hasColumn('banks', 'balance')) {
+                            $bank->balance = max(0, (float)$bank->balance - $amount);
+                            $bank->save();
                         }
                     }
                 }
