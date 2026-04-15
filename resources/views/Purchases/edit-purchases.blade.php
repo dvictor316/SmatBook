@@ -108,24 +108,25 @@
                                                     </tr>
                                                 </thead>
                                                 <tbody>
+                                                    @forelse($purchase->items as $item)
                                                     <tr>
-                                                        <td>Lorem ipsum dolor sit amet</td>
-                                                        <td>0</td>
-                                                        <td>Pcs</td>
-                                                        <td>$120.00</td>
-                                                        <td>0</td>
-                                                        <td>0</td>
-                                                        <td>$120.00</td>
+                                                        <td>
+                                                            <strong>{{ $item->product->name ?? ($item->product_name ?? 'N/A') }}</strong>
+                                                        </td>
+                                                        <td>{{ $item->qty }}</td>
+                                                        <td>{{ $item->unit ?? 'pcs' }}</td>
+                                                        <td>{{ number_format($item->unit_price, 2) }}</td>
+                                                        <td>{{ number_format($item->discount ?? 0, 2) }}</td>
+                                                        <td>{{ number_format($item->tax_amount ?? 0, 2) }}</td>
+                                                        <td>{{ number_format($item->total_amount ?? ($item->qty * $item->unit_price), 2) }}</td>
                                                         <td class="d-flex align-items-center">
-                                                            <a href="#" class="btn-action-icon me-2"
-                                                                data-bs-toggle="modal"
-                                                                data-bs-target="#add_discount"><span><i
-                                                                        class="fe fe-edit"></i></span></a>
-                                                            <a href="#" class="btn-action-icon" data-bs-toggle="modal"
-                                                                data-bs-target="#delete_discount"><span><i
-                                                                        class="fe fe-trash-2"></i></span></a>
+                                                            <a href="#" class="btn-action-icon me-2" data-bs-toggle="modal" data-bs-target="#add_discount"><span><i class="fe fe-edit"></i></span></a>
+                                                            <a href="#" class="btn-action-icon" data-bs-toggle="modal" data-bs-target="#delete_discount"><span><i class="fe fe-trash-2"></i></span></a>
                                                         </td>
                                                     </tr>
+                                                    @empty
+                                                    <tr><td colspan="8" class="text-center p-4">No items recorded.</td></tr>
+                                                    @endforelse
                                                 </tbody>
                                             </table>
                                         </div>
