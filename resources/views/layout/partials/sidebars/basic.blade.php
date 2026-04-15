@@ -98,12 +98,6 @@
                 <li><a href="{{ route('add-invoice') }}">Create Invoice</a></li>
             @endif
             <li><a href="{{ route('invoices.index') }}">View Invoices</a></li>
-            @if(Route::has('invoices-paid'))
-                <li><a href="{{ route('invoices-paid') }}">Paid Invoices</a></li>
-            @endif
-            @if(Route::has('invoices-unpaid'))
-                <li><a href="{{ route('invoices-unpaid') }}">Unpaid Invoices</a></li>
-            @endif
         </ul>
     </li>
     @endif
