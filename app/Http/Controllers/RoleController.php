@@ -163,22 +163,33 @@ class RoleController extends Controller
     public function updatePermissions(Request $request)
     {
         $validated = $request->validate([
-            'role_id' => 'required|exists:roles,id',
+            'role_id'     => 'required|exists:roles,id',
             'permissions' => 'nullable|array',
+            'perm_radio'  => 'nullable|array',
         ]);
 
         $this->ensurePermissionCatalog();
 
         $role = Role::findOrFail($validated['role_id']);
+
+        // Flatten checkbox permissions
         $selectedNames = $this->flattenPermissionPayload((array) ($validated['permissions'] ?? []));
 
+        // Merge radio selections (each value is the chosen permission name string)
+        $radioSelected = array_values(array_filter(
+            array_map('strval', (array) ($validated['perm_radio'] ?? [])),
+            fn ($v) => $v !== ''
+        ));
+        $selectedNames = array_unique(array_merge($selectedNames, $radioSelected));
+
+        // Only sync permissions that actually exist in the catalog (security guard)
         $permissionIds = Permission::query()
             ->whereIn('name', $selectedNames)
             ->pluck('id')
             ->all();
 
         $role->permissions()->sync($permissionIds);
-        
+
         return redirect()->back()->with('success', 'Permissions updated for this role!');
     }
 
@@ -253,35 +264,52 @@ class RoleController extends Controller
     private function permissionMatrix(): array
     {
         return [
-            'dashboard' => ['overview' => ['view']],
-            'user_management' => ['users' => ['view', 'create', 'edit', 'delete']],
-            'roles' => ['permissions' => ['view', 'create', 'edit', 'delete']],
-            'customers' => ['customers' => ['view', 'create', 'edit', 'delete']],
-            'vendors' => ['vendors' => ['view', 'create', 'edit', 'delete']],
+            'dashboard'      => ['overview'  => ['view']],
+            'user_management'=> ['users'     => ['view', 'create', 'edit', 'delete']],
+            'roles'          => ['roles'     => ['view', 'create', 'edit', 'delete']],
+            'customers' => [
+                'customers' => [
+                    // legacy generic
+                    'view',
+                    // granular view scope
+                    'view_all', 'view_own',
+                    // no-sell filters
+                    'view_no_sell_1month', 'view_no_sell_3months',
+                    'view_no_sell_6months', 'view_no_sell_1year',
+                    'view_irrespective',
+                    'create', 'edit', 'delete',
+                ],
+            ],
+            'vendors' => [
+                'vendors' => ['view', 'view_all', 'view_own', 'create', 'edit', 'delete'],
+            ],
             'inventory' => [
-                'products' => ['view', 'create', 'edit', 'delete'],
+                'products'   => ['view', 'create', 'edit', 'delete', 'add_opening_stock', 'view_purchase_price'],
                 'categories' => ['view', 'create', 'edit', 'delete'],
-                'stock' => ['view', 'edit'],
+                'stock'      => ['view', 'edit'],
             ],
             'sales' => [
-                'invoices' => ['view', 'create', 'edit', 'delete'],
-                'pos' => ['view', 'create'],
-                'quotations' => ['view', 'create', 'edit', 'delete'],
+                'invoices'   => ['view', 'view_all', 'view_own', 'create', 'edit', 'delete'],
+                'pos'        => ['view', 'create'],
+                'quotations' => ['view', 'view_all', 'view_own', 'create', 'edit', 'delete'],
             ],
             'purchases' => [
-                'purchases' => ['view', 'create', 'edit', 'delete'],
-                'vendors' => ['view'],
+                'purchases' => [
+                    'view', 'view_all', 'view_own',
+                    'create', 'edit', 'delete',
+                    'add_payment', 'edit_payment', 'delete_payment',
+                ],
             ],
             'finance' => [
                 'expenses' => ['view', 'create', 'edit', 'delete'],
                 'payments' => ['view', 'create', 'edit'],
                 'accounts' => ['view', 'create', 'edit'],
             ],
-            'reports' => ['reports' => ['view']],
-            'payroll' => ['payroll' => ['view', 'create', 'edit']],
-            'tax' => ['filings' => ['view', 'create', 'edit']],
-            'settings' => ['settings' => ['view', 'edit']],
-            'projects' => ['projects' => ['view', 'create', 'edit', 'delete']],
+            'reports'    => ['reports'  => ['view']],
+            'payroll'    => ['payroll'  => ['view', 'create', 'edit']],
+            'tax'        => ['filings'  => ['view', 'create', 'edit']],
+            'settings'   => ['settings' => ['view', 'edit']],
+            'projects'   => ['projects' => ['view', 'create', 'edit', 'delete']],
             'deployment' => ['managers' => ['view', 'create', 'edit']],
         ];
     }
