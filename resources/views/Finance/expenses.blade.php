@@ -64,8 +64,8 @@
             <div class="col-sm-12">
                 <div class="card shadow-sm border-0">
                     <div class="card-body">
-                        <div class="table-responsive" style="overflow: visible;">
-                            <table class="table table-striped table-hover" style="overflow: visible;">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
                                 <thead class="thead-light">
                                     <tr>
                                         <th>Date</th>
@@ -112,10 +112,10 @@
                                                     {{ $expense->status }}
                                                 </span>
                                             </td>
-                                            <td class="text-end" style="position: relative;">
-                                                <div class="dropdown dropdown-action">
+                                            <td class="text-end">
+                                                <div class="dropdown dropdown-action expense-row-actions">
                                                     <a href="#" class="action-icon dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-ellipsis-v"></i></a>
-                                                    <div class="dropdown-menu dropdown-menu-end" style="position: absolute; right: 0; z-index: 1055; min-width: 210px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+                                                    <div class="dropdown-menu dropdown-menu-end" style="min-width: 210px;">
                                                         <a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#view_expense_{{ $expense->id }}">
                                                             <i class="far fa-eye me-2 text-info"></i>View
                                                         </a>
@@ -577,5 +577,27 @@
 </div>
 @endif
 @endforeach
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.expense-row-actions [data-bs-toggle="dropdown"]').forEach(function (toggle) {
+        toggle.addEventListener('show.bs.dropdown', function () {
+            var menu = this.closest('.dropdown').querySelector('.dropdown-menu');
+            var rect = this.getBoundingClientRect();
+            menu.style.setProperty('position', 'fixed', 'important');
+            menu.style.setProperty('top', (rect.bottom + 2) + 'px', 'important');
+            menu.style.setProperty('right', (window.innerWidth - rect.right) + 'px', 'important');
+            menu.style.setProperty('left', 'auto', 'important');
+            menu.style.setProperty('z-index', '9999', 'important');
+        });
+        toggle.addEventListener('hidden.bs.dropdown', function () {
+            var menu = this.closest('.dropdown').querySelector('.dropdown-menu');
+            ['position','top','right','left','z-index'].forEach(function(p){ menu.style.removeProperty(p); });
+        });
+    });
+});
+</script>
+@endpush
 
 @endsection
