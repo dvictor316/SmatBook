@@ -264,38 +264,48 @@
                                             <td>{{ \App\Support\GeoCurrency::format((float) ($purchase->paid_amount ?? 0), 'NGN', $currencyCode, $currencyLocale) }}</td>
                                             <td><span class="badge {{ $statusClass }}">{{ ucfirst($status) }}</span></td>
                                             <td class="text-end no-print">
-                                                <div class="d-flex justify-content-end gap-2 flex-wrap">
-                                                    <a href="{{ route('purchases.show', $purchase->id) }}" class="btn btn-sm btn-info text-white d-inline-flex align-items-center gap-1">
-                                                        <i class="far fa-eye"></i>
-                                                        <span class="d-none d-md-inline">View</span>
-                                                    </a>
-                                                    <a href="{{ route('purchases.edit', $purchase->id) }}" class="btn btn-sm btn-primary d-inline-flex align-items-center gap-1">
-                                                        <i class="far fa-edit"></i>
-                                                        <span class="d-none d-md-inline">Edit</span>
-                                                    </a>
-                                                    <form action="{{ route('finance.recurring.from-purchase', $purchase->id) }}" method="POST">
-                                                        @csrf
-                                                        <button type="submit" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1">
-                                                            <i class="far fa-clock"></i>
-                                                            <span class="d-none d-md-inline">Template</span>
-                                                        </button>
-                                                    </form>
-                                                    <form action="{{ route('finance.approvals.from-purchase', $purchase->id) }}" method="POST">
-                                                        @csrf
-                                                        <button type="submit" class="btn btn-sm btn-outline-warning d-inline-flex align-items-center gap-1">
-                                                            <i class="far fa-paper-plane"></i>
-                                                            <span class="d-none d-md-inline">Approval</span>
-                                                        </button>
-                                                    </form>
-                                                    @if (!in_array($status, ['paid', 'completed'], true))
-                                                        <form action="{{ route('purchases.mark-paid', $purchase->id) }}" method="POST">
-                                                            @csrf
-                                                            <button type="submit" class="btn btn-sm btn-success d-inline-flex align-items-center gap-1">
-                                                                <i class="fas fa-check-circle"></i>
-                                                                <span class="d-none d-md-inline">Mark Paid</span>
-                                                            </button>
-                                                        </form>
-                                                    @endif
+                                                <div class="dropdown">
+                                                    <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" id="actionDropdown{{ $purchase->id }}" data-bs-toggle="dropdown" aria-expanded="false">
+                                                        Actions
+                                                    </button>
+                                                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="actionDropdown{{ $purchase->id }}">
+                                                        <li>
+                                                            <a href="{{ route('purchases.show', $purchase->id) }}" class="dropdown-item d-flex align-items-center gap-1">
+                                                                <i class="far fa-eye"></i> <span>View</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="{{ route('purchases.edit', $purchase->id) }}" class="dropdown-item d-flex align-items-center gap-1" style="background-color: #0d6efd; color: #fff;">
+                                                                <i class="far fa-edit"></i> <span>Edit</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <form action="{{ route('finance.recurring.from-purchase', $purchase->id) }}" method="POST" class="m-0">
+                                                                @csrf
+                                                                <button type="submit" class="dropdown-item d-flex align-items-center gap-1">
+                                                                    <i class="far fa-clock"></i> <span>Template</span>
+                                                                </button>
+                                                            </form>
+                                                        </li>
+                                                        <li>
+                                                            <form action="{{ route('finance.approvals.from-purchase', $purchase->id) }}" method="POST" class="m-0">
+                                                                @csrf
+                                                                <button type="submit" class="dropdown-item d-flex align-items-center gap-1">
+                                                                    <i class="far fa-paper-plane"></i> <span>Approval</span>
+                                                                </button>
+                                                            </form>
+                                                        </li>
+                                                        @if (!in_array($status, ['paid', 'completed'], true))
+                                                        <li>
+                                                            <form action="{{ route('purchases.mark-paid', $purchase->id) }}" method="POST" class="m-0">
+                                                                @csrf
+                                                                <button type="submit" class="dropdown-item d-flex align-items-center gap-1">
+                                                                    <i class="fas fa-check-circle"></i> <span>Mark Paid</span>
+                                                                </button>
+                                                            </form>
+                                                        </li>
+                                                        @endif
+                                                    </ul>
                                                 </div>
                                             </td>
                                         </tr>
