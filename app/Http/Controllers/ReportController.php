@@ -1251,22 +1251,75 @@ private function paymentReportRelations(): array
         $this->applySaleBranchFilter($openingSales, 'sales');
         $openingSales = $openingSales->get()->keyBy('customer_id');
 
+        // ── Compute actual balance from payments table (so AR matches the statement) ──
+        $arCustomerIds = $salesSummary->pluck('customer_id')->filter()->unique()->all();
+        $actualPaidPerCustomer = [];
+        if (Schema::hasTable('payments') && !empty($arCustomerIds)) {
+            $arSaleIdMap = Sale::query()
+                ->whereIn('customer_id', $arCustomerIds)
+                ->where(function ($q) {
+                    $q->whereNull('invoice_no')
+                      ->orWhere('invoice_no', 'not like', 'OPENING-BAL-%');
+                })
+                ->tap(fn ($q) => $this->applyTenantScope($q, 'sales'))
+                ->tap(fn ($q) => $this->applySaleBranchFilter($q, 'sales'))
+                ->select('id', 'customer_id')
+                ->get()
+                ->pluck('customer_id', 'id') // [sale_id => customer_id]
+                ->all();
+
+            if (!empty($arSaleIdMap)) {
+                $ignoredStatuses = $this->ignoredAppliedPaymentStatuses();
+                $pQuery = DB::table('payments')
+                    ->whereIn('sale_id', array_keys($arSaleIdMap))
+                    ->select('sale_id', DB::raw('SUM(amount) as paid_sum'))
+                    ->groupBy('sale_id');
+                if (Schema::hasColumn('payments', 'status')) {
+                    foreach ($ignoredStatuses as $s) {
+                        $pQuery->whereRaw('LOWER(COALESCE(status, \'\')) <> ?', [$s]);
+                    }
+                }
+                $this->applyTenantScope($pQuery, 'payments');
+                foreach ($pQuery->get() as $p) {
+                    $cId = $arSaleIdMap[$p->sale_id] ?? null;
+                    if ($cId) {
+                        $actualPaidPerCustomer[$cId] = ($actualPaidPerCustomer[$cId] ?? 0.0) + (float) $p->paid_sum;
+                    }
+                }
+            }
+        }
+
         $receivableMap = [];
         foreach ($salesSummary as $row) {
-            $customer = $customerMap->get($row->customer_id);
+            $customer  = $customerMap->get($row->customer_id);
             $openingSale = $openingSales->get($row->customer_id);
+            $openingBal  = $openingSale ? (float) ($openingSale->balance ?? 0) : (float) ($customer?->balance ?? 0);
+
+            // Use max(stored amount_paid, actual payments-table total) so untracked payments
+            // are never under-counted and the balance matches the customer statement.
+            $storedPaid = (float) $row->total_paid;
+            $actualPaid = isset($actualPaidPerCustomer[$row->customer_id])
+                ? max($storedPaid, (float) $actualPaidPerCustomer[$row->customer_id])
+                : $storedPaid;
+            $totalDue = max(0.0, round((float) $row->total_invoiced - $actualPaid, 2));
+
+            // Skip customers fully settled (balance+opening both zero)
+            if ($totalDue < 0.01 && $openingBal < 0.01) {
+                continue;
+            }
+
             $receivableMap[$row->customer_id] = [
-                'customer_id' => $row->customer_id,
-                'customer_name' => $customer?->customer_name ?? $customer?->name ?? 'Walk-in Customer',
-                'email' => $customer?->email,
-                'phone' => $customer?->phone,
+                'customer_id'    => $row->customer_id,
+                'customer_name'  => $customer?->customer_name ?? $customer?->name ?? 'Walk-in Customer',
+                'email'          => $customer?->email,
+                'phone'          => $customer?->phone,
                 'total_invoiced' => (float) $row->total_invoiced,
-                'total_paid' => (float) $row->total_paid,
-                'total_due' => (float) $row->total_due,
-                'invoice_count' => (int) $row->invoice_count,
-                'opening_balance' => $openingSale ? (float) ($openingSale->balance ?? 0) : (float) ($customer?->balance ?? 0),
-                'sort_at' => $row->first_activity_at ?: $customer?->created_at,
-                'sort_id' => (int) ($customer?->id ?? $row->customer_id ?? 0),
+                'total_paid'     => $actualPaid,
+                'total_due'      => $totalDue,
+                'invoice_count'  => (int) $row->invoice_count,
+                'opening_balance'=> $openingBal,
+                'sort_at'        => $row->first_activity_at ?: $customer?->created_at,
+                'sort_id'        => (int) ($customer?->id ?? $row->customer_id ?? 0),
             ];
         }
 
@@ -1394,6 +1447,7 @@ private function paymentReportRelations(): array
                     ?: ($openingSale?->order_date ?: ($openingSale?->created_at ?: ($customer->created_at ? $customer->created_at->copy()->startOfDay()->subSecond() : now()->copy()->startOfDay()->subSecond()))),
                 'sort_at' => $openingEventAt,
                 'sort_id' => 0,
+                'sort_type' => 0,
                 'visible' => true,
                 'reference' => 'OPENING',
                 'type' => 'Opening Balance',
@@ -1412,6 +1466,7 @@ private function paymentReportRelations(): array
                     'date' => $payment->created_at,
                     'sort_at' => $paymentEventAt,
                     'sort_id' => (int) ($payment->id ?? 0),
+                    'sort_type' => 2,
                     'visible' => true,
                     'reference' => $payment->payment_id ?: ('PAY-' . $payment->id),
                     'type' => 'Payment',
@@ -1437,6 +1492,7 @@ private function paymentReportRelations(): array
                 'date' => $sale->created_at ?: $sale->order_date,
                 'sort_at' => $saleEventAt,
                 'sort_id' => (int) ($sale->id ?? 0),
+                'sort_type' => 1,
                 'visible' => true,
                 'reference' => $sale->invoice_no ?: ('SALE-' . $sale->id),
                 'type' => 'Invoice',
@@ -1454,6 +1510,7 @@ private function paymentReportRelations(): array
                         'date' => $payment->created_at,
                         'sort_at' => $paymentEventAt,
                         'sort_id' => (int) ($payment->id ?? 0),
+                        'sort_type' => 2,
                         'visible' => true,
                         'reference' => $payment->payment_id ?: ('PAY-' . $payment->id),
                         'type' => 'Payment',
@@ -1469,6 +1526,7 @@ private function paymentReportRelations(): array
                     'date' => $sale->created_at ?: $sale->order_date,
                     'sort_at' => $this->statementSyntheticEntryTime($sale),
                     'sort_id' => (int) ($sale->id ?? 0),
+                    'sort_type' => 2,
                     'visible' => true,
                     'reference' => ($sale->invoice_no ?: ('SALE-' . $sale->id)) . '-APPLIED',
                     'type' => 'Payment',
@@ -1483,9 +1541,14 @@ private function paymentReportRelations(): array
         $entries = $entries
             ->sortBy(function ($entry) {
                 $sortAt = $entry['sort_at'] ?? $entry['date'];
+                $sortType = $entry['sort_type'] ?? 1; // 0=opening, 1=invoice, 2=payment
                 $sortId = (int) ($entry['sort_id'] ?? 0);
 
+                // Primary: chronological date; Secondary: type (invoice before payment same day);
+                // Tertiary: ID; Quaternary: reference
                 return Carbon::parse($sortAt)->format('Y-m-d H:i:s.u')
+                    . '|'
+                    . $sortType
                     . '|'
                     . str_pad((string) $sortId, 12, '0', STR_PAD_LEFT)
                     . '|'
