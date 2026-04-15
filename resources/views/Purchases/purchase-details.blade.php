@@ -121,7 +121,7 @@
                                                     @forelse($purchase->items as $item)
                                                     <tr>
                                                         <td>
-                                                            <strong>{{ $item->product->name ?? 'N/A' }}</strong>
+                                                            <strong>{{ $item->product->name ?? ($item->product_name ?? 'N/A') }}</strong>
                                                             <p class="small text-muted mb-0">{{ $item->product->sku ?? '' }}</p>
                                                         </td>
                                                         <td class="text-center">{{ $item->qty }}</td>
