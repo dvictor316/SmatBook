@@ -431,13 +431,15 @@
 @push('scripts')
 <script>
     // Fix Bootstrap dropdowns clipped by table-responsive overflow
+    // Dispose the auto-created instance, then recreate with strategy:'fixed' to escape overflow:auto clipping
     document.addEventListener('DOMContentLoaded', function () {
-        document.querySelectorAll('[data-bs-toggle="dropdown"]').forEach(function (btn) {
-            btn.addEventListener('click', function (e) {
-                e.stopPropagation();
-            });
+        document.querySelectorAll('.table-responsive [data-bs-toggle="dropdown"]').forEach(function (btn) {
+            var existing = bootstrap.Dropdown.getInstance(btn);
+            if (existing) { existing.dispose(); }
             new bootstrap.Dropdown(btn, {
-                popperConfig: { strategy: 'fixed' }
+                popperConfig: function (defaultConfig) {
+                    return Object.assign({}, defaultConfig, { strategy: 'fixed' });
+                }
             });
         });
     });
