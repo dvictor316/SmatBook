@@ -268,7 +268,7 @@
                                                     <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" id="actionDropdown{{ $purchase->id }}" data-bs-toggle="dropdown" aria-expanded="false">
                                                         Actions
                                                     </button>
-                                                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="actionDropdown{{ $purchase->id }}">
+                                                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="actionDropdown{{ $purchase->id }}" style="z-index: 1055;">
                                                         <li>
                                                             <a href="{{ route('purchases.show', $purchase->id) }}" class="dropdown-item d-flex align-items-center gap-1">
                                                                 <i class="far fa-eye"></i> <span>View</span>
