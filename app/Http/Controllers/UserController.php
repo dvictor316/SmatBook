@@ -65,7 +65,19 @@ class UserController extends Controller
 
         $roles = $this->getRoles();
 
-        return view('UserManagement.users', compact('users', 'roles'));
+        // Tenant-based username suffix = company_id of the logged-in user
+        $actor = Auth::user();
+        $companySuffix = $actor?->company_id ?? '';
+
+        // Branches for access locations checkboxes
+        $branches = collect(json_decode(
+            \App\Models\Setting::where('company_id', $actor?->company_id)
+                ->where('key', 'branches_json')
+                ->value('value') ?? '[]',
+            true
+        ) ?: [])->filter(fn($b) => !empty($b['id']) && !empty($b['name']))->values();
+
+        return view('UserManagement.users', compact('users', 'roles', 'companySuffix', 'branches'));
     }
 
     /**
@@ -91,11 +103,14 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|email|unique:users,email',
-            'role'     => 'required',
-            'password' => 'required|min:6',
-            'profile_photo' => 'nullable|file|mimetypes:image/*|max:2048'
+            'first_name'     => 'required|string|max:255',
+            'last_name'      => 'nullable|string|max:255',
+            'email'          => 'required|email|unique:users,email',
+            'role'           => 'required',
+            'password'       => 'required|min:6|same:confirm_password',
+            'confirm_password' => 'required',
+            'username_base'  => 'nullable|string|max:100|alpha_dash',
+            'profile_photo'  => 'nullable|file|mimetypes:image/*|max:2048',
         ]);
 
         $actor = Auth::user();
@@ -118,16 +133,33 @@ class UserController extends Controller
         }
 
         $user = new User();
-        $user->name = $request->name;
+        $user->name = trim($request->first_name . ' ' . $request->last_name);
         $user->email = $request->email;
         $selectedRole = $this->resolveSelectedRole($request->role);
 
         $user->role = $selectedRole['legacy'];
         $user->role_id = $selectedRole['id'];
         $user->password = Hash::make($request->password);
-        $user->status = 'active';
+        $user->status = $request->boolean('is_active', true) ? 'active' : 'inactive';
         $user->is_verified = 1;
+        $user->allow_login = $request->boolean('allow_login', true) ? 1 : 0;
         $user->company_id = $this->isCentralAdmin($actor) ? null : $companyId;
+
+        // Tenant-based username: base-companyId (e.g. "bestserve-13213")
+        if ($request->filled('username_base')) {
+            $baseUsername = Str::slug($request->username_base, '');
+        } else {
+            $baseUsername = Str::slug($request->first_name, '');
+        }
+        $suffix = $companyId ? '-' . $companyId : '';
+        $candidate = $baseUsername . $suffix;
+        // Ensure uniqueness
+        $counter = 1;
+        while (User::where('username', $candidate)->exists()) {
+            $candidate = $baseUsername . $counter . $suffix;
+            $counter++;
+        }
+        $user->username = $candidate;
 
         if ($request->hasFile('profile_photo')) {
             $user->profile_photo = $request->file('profile_photo')->store('profiles', 'public');

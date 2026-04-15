@@ -26,10 +26,12 @@ class User extends Authenticatable
     protected $fillable = [
         // Auth & Identity
         'name',
+        'username',
         'email',
         'password',
         'role_id',
         'role', // Consider deprecating this if 'role_id' exists to normalize data
+        'allow_login',
         
         // Profile & Media
         'profile_photo',  
