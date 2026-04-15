@@ -134,26 +134,36 @@
                                                         <a href="#" class="action-icon dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
                                                             <i class="fas fa-ellipsis-v"></i>
                                                         </a>
-                                                        <div class="dropdown-menu dropdown-menu-end">
-                                                            {{-- Corrected Edit Route --}}
-                                                            <a class="dropdown-item" href="{{ route('invoices.edit', $invoice->id) }}">
-                                                                <i class="far fa-edit me-2"></i>Edit
-                                                            </a>
-                                                            
-                                                            {{-- Corrected View Route --}}
-                                                            <a class="dropdown-item" href="{{ route('invoice-details-admin', $invoice->id) }}">
-                                                                <i class="far fa-eye me-2"></i>View
-                                                            </a>
+                                                            <div class="dropdown-menu dropdown-menu-end">
+                                                                {{-- Edit Route --}}
+                                                                <a class="dropdown-item" href="{{ route('invoices.edit', $invoice->id) }}">
+                                                                    <i class="far fa-edit me-2"></i>Edit
+                                                                </a>
 
-                                                            <div class="dropdown-divider"></div>
-                                                            <form action="{{ route('invoices.destroy', $invoice->id) }}" method="POST">
-                                                                @csrf 
-                                                                @method('DELETE')
-                                                                <button type="submit" class="dropdown-item text-danger" onclick="return confirm('Delete this invoice?')">
-                                                                    <i class="far fa-trash-alt me-2"></i>Delete
-                                                                </button>
-                                                            </form>
-                                                        </div>
+                                                                {{-- View Route --}}
+                                                                <a class="dropdown-item" href="{{ route('invoice-details-admin', $invoice->id) }}">
+                                                                    <i class="far fa-eye me-2"></i>View
+                                                                </a>
+
+                                                                {{-- Pay Route (only show if not fully paid) --}}
+                                                                @php
+                                                                    $payStatus = strtolower($invoice->effective_payment_status ?? $invoice->payment_status ?? $invoice->status);
+                                                                @endphp
+                                                                @if($payStatus !== 'paid')
+                                                                    <a class="dropdown-item text-success" href="{{ route('pay-online', ['id' => $invoice->id]) }}">
+                                                                        <i class="fas fa-money-bill-wave me-2"></i>Pay
+                                                                    </a>
+                                                                @endif
+
+                                                                <div class="dropdown-divider"></div>
+                                                                <form action="{{ route('invoices.destroy', $invoice->id) }}" method="POST">
+                                                                    @csrf 
+                                                                    @method('DELETE')
+                                                                    <button type="submit" class="dropdown-item text-danger" onclick="return confirm('Delete this invoice?')">
+                                                                        <i class="far fa-trash-alt me-2"></i>Delete
+                                                                    </button>
+                                                                </form>
+                                                            </div>
                                                     </div>
                                                 </td>
                                             </tr>
