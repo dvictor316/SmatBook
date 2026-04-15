@@ -717,6 +717,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::get('/cashreceipt-4', 'cashreceipt_4')->name('cashreceipt-4');
         Route::get('/mail-pay-invoice', 'mail_pay_invoice')->name('mail-pay-invoice');
         Route::get('/pay-online', 'pay_online')->name('pay-online');
+        Route::post('/invoices/{id}/pay', 'processPayment')->name('invoices.pay');
         Route::post('/invoices/{id}/status', 'updateStatus')->name('invoices.update-status');
     });
     

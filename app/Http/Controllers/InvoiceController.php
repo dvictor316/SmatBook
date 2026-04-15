@@ -735,6 +735,34 @@ class InvoiceController extends Controller
         return view('Sales.Invoices.pay-online', compact('invoice'));
     }
 
+    public function processPayment(Request $request, $id)
+    {
+        $invoice = $this->applyTenantScope(Sale::query(), 'sales')->findOrFail($id);
+
+        $request->validate([
+            'amount'         => 'required|numeric|min:0.01',
+            'payment_method' => 'required|in:cash,transfer,pos',
+            'notes'          => 'nullable|string|max:500',
+        ]);
+
+        $amount = (float) $request->amount;
+        $newPaid = (float) ($invoice->amount_paid ?? 0) + $amount;
+        $total   = (float) ($invoice->total ?? 0);
+        $balance = max(0, $total - $newPaid);
+        $status  = $balance <= 0 ? 'paid' : 'partial';
+
+        $invoice->update([
+            'amount_paid'    => $newPaid,
+            'balance'        => $balance,
+            'payment_status' => $status,
+            'payment_method' => $request->payment_method,
+        ]);
+
+        return redirect()
+            ->route('pay-online', ['id' => $id])
+            ->with('success', 'Payment of ₦' . number_format($amount, 2) . ' recorded successfully.');
+    }
+
     public function updateStatus(Request $request, $id)
     {
         $request->validate([
