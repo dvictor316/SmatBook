@@ -1684,7 +1684,7 @@ public function inventory(Request $request)
 
         $totalIn = $inventoryHistories->filter(fn ($row) => in_array(strtolower(trim((string) ($row->type ?? ''))), ['in', 'stock in'], true))->sum('quantity');
         $totalOut = $inventoryHistories->filter(fn ($row) => !in_array(strtolower(trim((string) ($row->type ?? ''))), ['in', 'stock in'], true))->sum(fn ($row) => (float) ($row->stock_quantity ?? $row->quantity ?? 0));
-        $currentStock = $product->stock ?? ($inventoryHistories->first()->running_balance ?? 0);
+        $currentStock = max(0, (float) $totalIn - (float) $totalOut);
 
         return view('Inventory.inventory-history', compact('inventoryHistories', 'activeBranch', 'product', 'currentStock', 'totalIn', 'totalOut'));
     }

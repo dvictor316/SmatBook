@@ -428,4 +428,17 @@
         </div>
     </div>
 </div>
+@push('scripts')
+<script>
+    // Fix Bootstrap dropdowns clipped by table-responsive overflow
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('[data-bs-toggle="dropdown"]').forEach(function (btn) {
+            new bootstrap.Dropdown(btn, {
+                popperConfig: { strategy: 'fixed' }
+            });
+        });
+    });
+</script>
+@endpush
+
 @endsection
