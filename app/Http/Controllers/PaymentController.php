@@ -526,7 +526,7 @@ class PaymentController extends Controller
      */
     public function index(Request $request)
     {
-        $paymentsBase = Payment::with(['sale', 'creator'])->latest();
+        $paymentsBase = Payment::with(['sale', 'sale.customer', 'customer', 'creator'])->latest();
         $this->applyTenantScope($paymentsBase, 'payments');
         $paymentsQuery = clone $paymentsBase;
         $this->applyBranchScope($paymentsQuery, 'payments');

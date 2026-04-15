@@ -77,7 +77,25 @@
         {{-- Payments Table --}}
         <div class="card shadow-sm border-0">
             <div class="card-header bg-white py-3">
-                <h5 class="card-title mb-0 text-dark">Recent Ledger Postings</h5>
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                    <h5 class="card-title mb-0 text-dark">Recent Ledger Postings</h5>
+                    <form method="GET" action="{{ route('payments.index') }}" class="d-flex gap-2 flex-wrap">
+                        <input type="text" name="q" class="form-control form-control-sm" style="min-width:220px;"
+                            placeholder="Search by customer, reference…"
+                            value="{{ request('q') }}">
+                        <select name="status" class="form-select form-select-sm" style="min-width:140px;">
+                            <option value="">All Statuses</option>
+                            <option value="Completed" @selected(request('status') === 'Completed')>Completed</option>
+                            <option value="Pending" @selected(request('status') === 'Pending')>Pending</option>
+                            <option value="pending approval" @selected(strtolower(request('status')) === 'pending approval')>Pending Approval</option>
+                            <option value="Rejected" @selected(request('status') === 'Rejected')>Rejected</option>
+                        </select>
+                        <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-search me-1"></i>Filter</button>
+                        @if(request()->hasAny(['q','status','month','from_date','to_date']))
+                            <a href="{{ route('payments.index') }}" class="btn btn-sm btn-outline-secondary">Clear</a>
+                        @endif
+                    </form>
+                </div>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
@@ -85,6 +103,7 @@
                         <thead class="bg-light">
                             <tr>
                                 <th class="ps-4">Reference</th>
+                                <th>Customer</th>
                                 <th>Sale Ref</th>
                                 <th>Destination Account</th>
                                 <th>Amount</th>
@@ -98,6 +117,20 @@
                             <tr>
                                 <td class="ps-4">
                                     <span class="fw-bold text-dark">{{ $payment->payment_id }}</span>
+                                </td>
+                                <td>
+                                    @php
+                                        $customerName = $payment->customer->customer_name
+                                            ?? $payment->customer->name
+                                            ?? $payment->sale?->customer?->customer_name
+                                            ?? $payment->sale?->customer?->name
+                                            ?? null;
+                                    @endphp
+                                    @if($customerName)
+                                        <span class="fw-semibold">{{ $customerName }}</span>
+                                    @else
+                                        <span class="text-muted fst-italic small">—</span>
+                                    @endif
                                 </td>
                                 <td>
                                     @if($payment->sale)
