@@ -542,7 +542,7 @@ public function show($id)
         $productsQuery = Product::orderBy('name');
         $this->applyTenantScope($productsQuery, 'products');
         $products = $productsQuery->get();
-        $taxOptions = Tax::orderBy('name')->get();
+        $taxOptions = TaxCode::orderBy('name')->get();
         $banksQuery = Bank::orderBy('name');
         $this->applyTenantScope($banksQuery, 'banks');
         $banks = $banksQuery->get();
