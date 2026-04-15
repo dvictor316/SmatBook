@@ -1,6 +1,6 @@
 <div class="card border-0 shadow-sm mt-4 monthly-sales-card">
     <div class="card-header border-0 py-3 monthly-sales-card__header">
-        <h6 class="fw-bold mb-0 text-white">Monthly Sales Analytics</h6>
+        <h6 class="fw-bold mb-0" style="color:#1e293b;">Monthly Sales Analytics</h6>
     </div>
     <div class="card-body monthly-sales-card__body">
         <canvas id="monthlySalesChart" style="min-height: 300px;"></canvas>
@@ -11,19 +11,17 @@
     .monthly-sales-card {
         overflow: hidden;
         border-radius: 24px;
-        background:
-            radial-gradient(circle at top right, rgba(255,255,255,0.22), transparent 28%),
-            linear-gradient(135deg, #0f172a 0%, #1d4ed8 52%, #06b6d4 100%);
-        box-shadow: 0 24px 48px rgba(15, 23, 42, 0.18);
+        background: #ffffff;
+        box-shadow: 0 4px 24px rgba(15, 23, 42, 0.08);
     }
 
     .monthly-sales-card__header {
         background: transparent;
+        border-bottom: 1px solid #e2e8f0;
     }
 
     .monthly-sales-card__body {
-        background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%);
-        border-top: 1px solid rgba(255,255,255,0.08);
+        background: #ffffff;
     }
 </style>
 
@@ -39,9 +37,9 @@
         const totals = salesData.map(data => data.total_sales);
 
         const monthlyGradient = ctx.createLinearGradient(0, 0, 0, 320);
-        monthlyGradient.addColorStop(0, 'rgba(255,255,255,0.48)');
-        monthlyGradient.addColorStop(0.45, 'rgba(125,211,252,0.24)');
-        monthlyGradient.addColorStop(1, 'rgba(14,165,233,0.04)');
+        monthlyGradient.addColorStop(0, 'rgba(29,78,216,0.18)');
+        monthlyGradient.addColorStop(0.55, 'rgba(56,189,248,0.08)');
+        monthlyGradient.addColorStop(1, 'rgba(14,165,233,0.01)');
 
         new Chart(ctx, {
             type: 'line',
@@ -50,7 +48,7 @@
                 datasets: [{
                     label: 'Revenue (₦)',
                     data: totals,
-                    borderColor: '#f8fafc',
+                    borderColor: '#1d4ed8',
                     backgroundColor: monthlyGradient,
                     fill: true,
                     tension: 0.4,
@@ -59,7 +57,7 @@
                     pointHoverRadius: 6,
                     pointBorderWidth: 2,
                     pointBackgroundColor: '#ffffff',
-                    pointBorderColor: '#38bdf8'
+                    pointBorderColor: '#1d4ed8'
                 }]
             },
             options: {
@@ -83,21 +81,21 @@
                 scales: {
                     x: {
                         grid: {
-                            color: 'rgba(255,255,255,0.08)',
+                            color: 'rgba(0,0,0,0.06)',
                             drawBorder: false
                         },
                         ticks: {
-                            color: 'rgba(255,255,255,0.8)'
+                            color: '#475569'
                         }
                     },
                     y: {
                         beginAtZero: true,
                         grid: {
-                            color: 'rgba(255,255,255,0.08)',
+                            color: 'rgba(0,0,0,0.06)',
                             drawBorder: false
                         },
                         ticks: {
-                            color: 'rgba(255,255,255,0.8)',
+                            color: '#475569',
                             callback: function(value) {
                                 return '₦' + value.toLocaleString();
                             }
