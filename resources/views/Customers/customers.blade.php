@@ -430,21 +430,30 @@
 </div>
 @push('scripts')
 <script>
-    // Fix Bootstrap dropdowns clipped by .table-responsive overflow:auto
-    // Temporarily set overflow to visible when a dropdown opens, restore on close
-    document.addEventListener('DOMContentLoaded', function () {
-        var tableResponsive = document.querySelector('.table-responsive');
-        if (!tableResponsive) return;
+document.addEventListener('DOMContentLoaded', function () {
+    // Each time a dropdown is about to show, move its menu to <body>
+    // so it is never clipped by overflow:auto on .table-responsive
+    document.querySelectorAll('.dropdown [data-bs-toggle="dropdown"]').forEach(function (toggle) {
+        var menu = toggle.closest('.dropdown').querySelector('.dropdown-menu');
+        if (!menu) return;
 
-        document.querySelectorAll('[data-bs-toggle="dropdown"]').forEach(function (btn) {
-            btn.addEventListener('show.bs.dropdown', function () {
-                tableResponsive.style.overflow = 'visible';
-            });
-            btn.addEventListener('hide.bs.dropdown', function () {
-                tableResponsive.style.overflow = '';
-            });
+        toggle.addEventListener('show.bs.dropdown', function () {
+            var rect = toggle.getBoundingClientRect();
+            menu.style.position   = 'fixed';
+            menu.style.zIndex     = '9999';
+            menu.style.top        = (rect.bottom + window.scrollY) + 'px';
+            menu.style.left       = 'auto';
+            menu.style.right      = (window.innerWidth - rect.right) + 'px';
+            menu.style.minWidth   = '160px';
+            document.body.appendChild(menu);
+        });
+
+        toggle.addEventListener('hide.bs.dropdown', function () {
+            toggle.closest('.dropdown').appendChild(menu);
+            menu.removeAttribute('style');
         });
     });
+});
 </script>
 @endpush
 
