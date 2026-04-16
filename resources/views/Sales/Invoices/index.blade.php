@@ -429,13 +429,17 @@
         /* Print Styles */
         @media print {
             @page {
-                size: auto;
-                margin: 8mm;
+                size: A4 portrait;
+                margin: 12mm 15mm;
             }
 
             html, body {
                 width: 100%;
                 height: auto;
+                /* Force browsers to print all background colours and images */
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color-adjust: exact !important;
             }
 
             .no-print-controls { 
@@ -454,11 +458,11 @@
                 max-width: 100% !important;
                 margin: 0 !important; 
                 border: none !important; 
-                padding: 10px 12px !important;
+                padding: 8px 10px !important;
                 box-shadow: none !important;
                 border-radius: 0 !important;
-                break-inside: avoid;
-                page-break-inside: avoid;
+                /* Do NOT use break-inside:avoid on the whole wrapper – it forces
+                   the browser to squash a long invoice onto one page. */
             }
 
             .table-custom thead {
@@ -475,8 +479,17 @@
 
             .summary-box {
                 background: var(--light-gold) !important;
+                border: 2px solid var(--border-gold) !important;
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
+            }
+
+            /* Keep these sections together on the same page */
+            .customer-section,
+            .invoice-footer,
+            .thank-you {
+                break-inside: avoid;
+                page-break-inside: avoid;
             }
 
             .invoice-header {
@@ -510,8 +523,9 @@
             .customer-section {
                 margin-bottom: 14px;
                 padding: 12px 14px;
-                break-inside: avoid;
-                page-break-inside: avoid;
+                background: #f9fafb !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
             }
 
             .customer-name {
@@ -522,6 +536,10 @@
             .payment-badge {
                 padding: 3px 10px;
                 font-size: 11px;
+                background: #e0f2fe !important;
+                color: var(--deep-blue) !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
             }
 
             .table-custom {
@@ -540,20 +558,22 @@
                 line-height: 1.25;
             }
 
-            .invoice-footer,
-            .summary-box,
-            .thank-you {
-                break-inside: avoid;
-                page-break-inside: avoid;
-            }
-
+            /* Keep the footer on one page if possible and preserve flex layout */
             .invoice-footer {
+                display: flex !important;
+                flex-wrap: nowrap !important;
+                align-items: flex-start !important;
                 margin-top: 16px;
                 gap: 18px;
             }
 
             .footer-left {
+                flex: 1 1 42%;
                 max-width: 42%;
+            }
+
+            .summary-section {
+                flex: 0 0 auto;
             }
 
             .cashier-info {
@@ -562,7 +582,7 @@
             }
 
             .summary-box {
-                min-width: 280px;
+                min-width: 260px;
                 padding: 16px 18px;
             }
 
@@ -970,21 +990,27 @@
             originalInvoiceZoom = wrapper.style.zoom || '';
         }
 
+        // Reset first so we measure the natural height
         wrapper.style.zoom = '1';
         wrapper.classList.remove('compact-mode');
 
+        // Apply compact-mode for shorter spacing on invoices with many items
         if (invoiceItemCount > 4 || wrapper.scrollHeight > 980) {
             wrapper.classList.add('compact-mode');
         }
 
-        // Fit for the smaller of A4 portrait/landscape printable heights in Chrome.
-        const targetHeight = wrapper.classList.contains('compact-mode') ? 790 : 760;
+        // Only apply zoom if everything comfortably fits on one page.
+        // For longer invoices let the browser paginate naturally — never
+        // scale below 0.90 so text stays readable.
+        const targetHeight = wrapper.classList.contains('compact-mode') ? 820 : 780;
         const currentHeight = wrapper.scrollHeight;
         const scale = Math.min(1, targetHeight / Math.max(currentHeight, 1));
 
-        if (scale < 1) {
-            wrapper.style.zoom = String(Math.max(scale, 0.78));
+        if (scale < 1 && scale >= 0.90) {
+            wrapper.style.zoom = String(scale);
         }
+        // If content won't fit at ≥90% zoom, leave it at 100% and let
+        // the browser print it across multiple pages cleanly.
     }
 
     function resetInvoicePrintFit() {
