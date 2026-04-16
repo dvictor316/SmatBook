@@ -429,178 +429,131 @@
         /* Print Styles */
         @media print {
             @page {
-                size: A4 portrait;
-                margin: 12mm 15mm;
+                /* No fixed size — browser uses whatever paper the user picks */
+                margin: 8mm 10mm;
             }
 
             html, body {
                 width: 100%;
-                height: auto;
-                /* Force browsers to print all background colours and images */
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
                 color-adjust: exact !important;
             }
 
-            .no-print-controls { 
-                display: none !important; 
+            .no-print-controls {
+                display: none !important;
             }
 
-            body { 
+            body {
                 background: white;
                 padding: 0;
                 margin: 0;
-                font-size: 11px;
+                font-size: 10px;
             }
 
-            .invoice-wrapper { 
-                width: 100% !important; 
+            .invoice-wrapper {
+                width: 100% !important;
                 max-width: 100% !important;
-                margin: 0 !important; 
-                border: none !important; 
-                padding: 8px 10px !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                border: none !important;
                 box-shadow: none !important;
                 border-radius: 0 !important;
-                /* Do NOT use break-inside:avoid on the whole wrapper – it forces
-                   the browser to squash a long invoice onto one page. */
             }
 
-            .table-custom thead {
-                background: var(--soft-blue) !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
-
-            .table-custom th { 
-                color: var(--deep-blue) !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
-
-            .summary-box {
-                background: var(--light-gold) !important;
-                border: 2px solid var(--border-gold) !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
-
-            /* Keep these sections together on the same page */
-            .customer-section,
-            .invoice-footer,
-            .thank-you {
-                break-inside: avoid;
-                page-break-inside: avoid;
-            }
-
+            /* ── Header ── */
             .invoice-header {
-                margin-bottom: 14px;
-                padding-bottom: 10px;
+                margin-bottom: 8px;
+                padding-bottom: 6px;
             }
-
-            .company-info h4 {
-                font-size: 20px;
-                margin-bottom: 2px;
-            }
-
+            .company-info h4 { font-size: 16px !important; margin-bottom: 1px; }
             .company-info p,
             .invoice-date,
             .cashier-info p,
             .amount-words,
             .thank-you p {
-                font-size: 11px !important;
-                line-height: 1.35;
+                font-size: 10px !important;
+                line-height: 1.3;
             }
+            .invoice-info h3  { font-size: 20px; letter-spacing: 1px; }
+            .invoice-number   { font-size: 11px; }
 
-            .invoice-info h3 {
-                font-size: 24px;
-                letter-spacing: 2px;
-            }
-
-            .invoice-number {
-                font-size: 12px;
-            }
-
+            /* ── Customer block ── */
             .customer-section {
-                margin-bottom: 14px;
-                padding: 12px 14px;
+                margin-bottom: 8px;
+                padding: 8px 10px;
                 background: #f9fafb !important;
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
             }
-
-            .customer-name {
-                font-size: 16px;
-                margin: 2px 0;
-            }
-
+            .customer-name { font-size: 13px !important; margin: 1px 0; }
             .payment-badge {
-                padding: 3px 10px;
-                font-size: 11px;
+                padding: 2px 8px;
+                font-size: 10px;
                 background: #e0f2fe !important;
                 color: var(--deep-blue) !important;
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
             }
 
-            .table-custom {
-                margin: 12px 0;
-                font-size: 11px;
+            /* ── Items table ── */
+            .table-custom thead {
+                background: var(--soft-blue) !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
             }
-
             .table-custom th {
-                padding: 8px 8px;
+                color: var(--deep-blue) !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                padding: 5px 6px;
+                font-size: 9px;
+            }
+            .table-custom {
+                margin: 8px 0;
                 font-size: 10px;
             }
-
             .table-custom td {
-                padding: 8px 8px;
-                font-size: 11px;
-                line-height: 1.25;
+                padding: 5px 6px;
+                font-size: 10px;
+                line-height: 1.2;
             }
 
-            /* Keep the footer on one page if possible and preserve flex layout */
+            /* ── Footer (amount-words + summary) ── */
             .invoice-footer {
                 display: flex !important;
                 flex-wrap: nowrap !important;
                 align-items: flex-start !important;
-                margin-top: 16px;
-                gap: 18px;
+                margin-top: 10px;
+                gap: 12px;
+                break-inside: avoid;
+                page-break-inside: avoid;
             }
-
-            .footer-left {
-                flex: 1 1 42%;
-                max-width: 42%;
-            }
-
-            .summary-section {
-                flex: 0 0 auto;
-            }
-
-            .cashier-info {
-                margin-top: 14px;
-                padding-top: 12px;
-            }
+            .footer-left   { flex: 1 1 42%; max-width: 42%; }
+            .summary-section { flex: 0 0 auto; }
+            .cashier-info  { margin-top: 8px; padding-top: 6px; }
 
             .summary-box {
-                min-width: 260px;
-                padding: 16px 18px;
+                min-width: 210px;
+                padding: 10px 12px;
+                background: var(--light-gold) !important;
+                border: 2px solid var(--border-gold) !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
             }
+            .summary-table     { font-size: 10px; }
+            .summary-table td  { padding: 4px 0; }
+            .total-row         { font-size: 13px; }
+            .total-row td      { padding: 8px 0 !important; }
 
-            .summary-table {
-                font-size: 12px;
-            }
+            .thank-you { margin-top: 10px; padding-top: 8px; }
 
-            .summary-table td {
-                padding: 7px 0;
-            }
-
-            .total-row {
-                font-size: 17px;
-            }
-
+            /* Keep key blocks together across pages */
+            .customer-section,
+            .invoice-footer,
             .thank-you {
-                margin-top: 18px;
-                padding-top: 12px;
+                break-inside: avoid;
+                page-break-inside: avoid;
             }
         }
 
@@ -866,7 +819,7 @@
                         $lineTotal = $afterDiscount + $taxAmount;
                     @endphp
                     <tr>
-                        <td class="item-name">{{ $item->product->name ?? 'Unknown Product' }}</td>
+                        <td class="item-name">{{ $item->product->name ?? $item->product_name ?? 'Unknown Product' }}</td>
                         <td style="text-align: center;">
                             <span style="font-weight: 700;">{{ $soldQuantity }}</span>
                             <span style="font-size: 11px; color: var(--gray-500); text-transform: uppercase; margin-left: 4px;">{{ $soldUnitLabel }}</span>
@@ -977,55 +930,9 @@
 
 <script>
     const autoPrintReceipt = {{ request()->boolean('autoprint') ? 'true' : 'false' }};
-    const invoiceItemCount = {{ count($sale->items ?? []) }};
-    let originalInvoiceZoom = '';
 
-    function fitInvoiceToSinglePrintPage() {
-        const wrapper = document.getElementById('invoice_content');
-        if (!wrapper) {
-            return;
-        }
-
-        if (originalInvoiceZoom === '') {
-            originalInvoiceZoom = wrapper.style.zoom || '';
-        }
-
-        // Reset first so we measure the natural height
-        wrapper.style.zoom = '1';
-        wrapper.classList.remove('compact-mode');
-
-        // Apply compact-mode for shorter spacing on invoices with many items
-        if (invoiceItemCount > 4 || wrapper.scrollHeight > 980) {
-            wrapper.classList.add('compact-mode');
-        }
-
-        // Only apply zoom if everything comfortably fits on one page.
-        // For longer invoices let the browser paginate naturally — never
-        // scale below 0.90 so text stays readable.
-        const targetHeight = wrapper.classList.contains('compact-mode') ? 820 : 780;
-        const currentHeight = wrapper.scrollHeight;
-        const scale = Math.min(1, targetHeight / Math.max(currentHeight, 1));
-
-        if (scale < 1 && scale >= 0.90) {
-            wrapper.style.zoom = String(scale);
-        }
-        // If content won't fit at ≥90% zoom, leave it at 100% and let
-        // the browser print it across multiple pages cleanly.
-    }
-
-    function resetInvoicePrintFit() {
-        const wrapper = document.getElementById('invoice_content');
-        if (!wrapper) {
-            return;
-        }
-
-        wrapper.style.zoom = originalInvoiceZoom || '';
-        wrapper.classList.remove('compact-mode');
-    }
-
-    // Print Function
+    // Print Function — no JS zoom (it causes a blank first page in Chromium)
     function printInvoice() {
-        fitInvoiceToSinglePrintPage();
         window.print();
     }
 
@@ -1121,16 +1028,9 @@
 
     if (autoPrintReceipt) {
         window.addEventListener('load', () => {
-            setTimeout(() => {
-                window.focus();
-                fitInvoiceToSinglePrintPage();
-                window.print();
-            }, 300);
+            setTimeout(() => { window.focus(); window.print(); }, 300);
         });
     }
-
-    window.addEventListener('beforeprint', fitInvoiceToSinglePrintPage);
-    window.addEventListener('afterprint', resetInvoicePrintFit);
 </script>
 </body>
 </html>
