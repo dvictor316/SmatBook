@@ -534,6 +534,9 @@ class InvoiceController extends Controller
                 if ($branchName && Schema::hasColumn('sale_items', 'branch_name')) {
                     $saleItemPayload['branch_name'] = $branchName;
                 }
+                if (Schema::hasColumn('sale_items', 'product_name')) {
+                    $saleItemPayload['product_name'] = $item['name'] ?? $product?->name ?? null;
+                }
 
                 $sale->items()->create($this->onlyExistingColumns('sale_items', $saleItemPayload));
 
@@ -585,7 +588,9 @@ class InvoiceController extends Controller
         $invoiceFormDefaults = [
             'customer_id' => $invoice->customer_id,
             'invoice_date' => optional($invoice->order_date)->format('d-m-Y') ?: now()->format('d-m-Y'),
-            'due_date' => optional($invoice->delivery_date)->format('d-m-Y') ?: '',
+            'due_date' => optional($invoice->delivery_date)->format('d-m-Y')
+                ?: optional($invoice->order_date)?->copy()->addDays(30)->format('d-m-Y')
+                ?: now()->addDays(30)->format('d-m-Y'),
             'status' => match (strtolower((string) ($invoice->payment_status ?? 'unpaid'))) {
                 'paid' => 'Paid',
                 'partial' => 'Partially paid',
@@ -606,7 +611,7 @@ class InvoiceController extends Controller
 
                 return [
                     'product_id' => $item->product_id,
-                    'name' => $product?->name ?? '',
+                    'name' => $item->product_name ?? $product?->name ?? ($item->product_id ? 'Product #'.$item->product_id : 'Custom Item'),
                     'price_level' => 'retail',
                     'qty' => $qty,
                     'rate' => number_format($rate, 2, '.', ''),
@@ -906,6 +911,9 @@ class InvoiceController extends Controller
                 }
                 if ($branchName && Schema::hasColumn('sale_items', 'branch_name')) {
                     $saleItemPayload['branch_name'] = $branchName;
+                }
+                if (Schema::hasColumn('sale_items', 'product_name')) {
+                    $saleItemPayload['product_name'] = $item['name'] ?? $product?->name ?? null;
                 }
 
                 $sale->items()->create($this->onlyExistingColumns('sale_items', $saleItemPayload));

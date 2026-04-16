@@ -16,6 +16,7 @@ class SaleItem extends Model
     'branch_name',
     'sale_id',
     'product_id',
+    'product_name',
     'qty',
     'unit_type',
     'stock_units',

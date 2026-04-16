@@ -44,7 +44,7 @@
             <div class="card-body">
                 <div class="page-header">
                     <div class="content-page-header">
-                        <h5>{{ $isEditMode ? 'Edit Invoice' : 'Add Invoice' }}</h5>
+                        <h5>{{ $isEditMode ? 'Edit Invoice' : 'Add Invoice' }}{{ $isEditMode && isset($invoice) && $invoice->invoice_no ? ' — ' . $invoice->invoice_no : '' }}</h5>
                     </div>
                 </div>
 
@@ -111,9 +111,9 @@
 
                                     <div class="col-lg-4 col-md-6 col-sm-12">
                                         <div class="input-block mb-3">
-                                            <label>Due Date <span class="text-danger">*</span></label>
+                                            <label>Due Date</label>
                                             <div class="cal-icon cal-icon-info">
-                                                <input type="text" name="due_date" class="datetimepicker form-control" value="{{ $dueDate }}" required>
+                                                <input type="text" name="due_date" class="datetimepicker form-control" value="{{ $dueDate }}">
                                             </div>
                                         </div>
                                     </div>
