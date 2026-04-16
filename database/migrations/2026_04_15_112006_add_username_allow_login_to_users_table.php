@@ -16,7 +16,7 @@ return new class extends Migration
                 $table->string('username', 150)->nullable()->unique()->after('name');
             }
             if (!Schema::hasColumn('users', 'allow_login')) {
-                $table->tinyInteger('allow_login')->default(1)->after('status');
+                $table->tinyInteger('allow_login')->default(1);
             }
         });
     }
