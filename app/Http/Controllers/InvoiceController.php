@@ -42,6 +42,26 @@ class InvoiceController extends Controller
             ->update($updates);
     }
 
+    private function incrementSellableStock(Product $product, float $quantity): void
+    {
+        if ($quantity <= 0) {
+            return;
+        }
+
+        $updates = [
+            'stock' => DB::raw('stock + ' . $quantity),
+            'updated_at' => now(),
+        ];
+
+        if (Schema::hasColumn('products', 'stock_quantity')) {
+            $updates['stock_quantity'] = DB::raw('stock_quantity + ' . $quantity);
+        }
+
+        DB::table('products')
+            ->where('id', $product->id)
+            ->update($updates);
+    }
+
     private function ignoredAppliedPaymentStatuses(): array
     {
         return ['failed', 'cancelled', 'pending approval'];
@@ -550,14 +570,74 @@ class InvoiceController extends Controller
     public function edit($id)
     {
         $invoice = $this->applyTenantScope(
-            Sale::with(['payments' => function ($paymentQuery) {
-                $paymentQuery->select('id', 'sale_id', 'amount', 'status');
-            }]),
+            Sale::with([
+                'items.product',
+                'payments' => function ($paymentQuery) {
+                    $paymentQuery->select('id', 'sale_id', 'amount', 'status');
+                },
+            ]),
             'sales'
         )->findOrFail($id);
         $invoice = $this->applyComputedInvoiceState($invoice);
         $customers = $this->applyTenantScope(Customer::query(), 'customers')->get();
-        return view('Sales.Invoices.edit', compact('invoice', 'customers'));
+        $products = $this->applyTenantScope(Product::query(), 'products')->get();
+
+        $invoiceFormDefaults = [
+            'customer_id' => $invoice->customer_id,
+            'invoice_date' => optional($invoice->order_date)->format('d-m-Y') ?: now()->format('d-m-Y'),
+            'due_date' => optional($invoice->delivery_date)->format('d-m-Y') ?: '',
+            'status' => match (strtolower((string) ($invoice->payment_status ?? 'unpaid'))) {
+                'paid' => 'Paid',
+                'partial' => 'Partially paid',
+                'draft' => 'Draft',
+                'overdue' => 'Overdue',
+                default => 'Unpaid',
+            },
+            'description' => data_get($invoice->payment_details, 'description', ''),
+            'expenses' => (float) ($invoice->shipping_cost ?? 0),
+            'items' => $invoice->items->map(function ($item) {
+                $product = $item->product;
+                $qty = (float) ($item->qty ?? $item->quantity ?? 1);
+                $rate = (float) ($item->unit_price ?? 0);
+                $discountPercent = (float) ($item->discount ?? 0);
+                $lineBase = $qty * $rate;
+                $discountAmount = $lineBase > 0 ? round(($discountPercent / 100) * $lineBase, 2) : 0;
+                $taxAmount = (float) ($item->tax ?? 0);
+
+                return [
+                    'product_id' => $item->product_id,
+                    'name' => $product?->name ?? '',
+                    'price_level' => 'retail',
+                    'qty' => $qty,
+                    'rate' => number_format($rate, 2, '.', ''),
+                    'discount' => $discountAmount,
+                    'tax' => $taxAmount,
+                    'amount' => (float) ($item->total_price ?? max(0, $lineBase - $discountAmount + $taxAmount)),
+                ];
+            })->values()->all(),
+        ];
+
+        if (empty($invoiceFormDefaults['items'])) {
+            $invoiceFormDefaults['items'] = [[
+                'product_id' => '',
+                'name' => '',
+                'price_level' => 'retail',
+                'qty' => 1,
+                'rate' => '0.00',
+                'discount' => 0,
+                'tax' => 0,
+                'amount' => 0,
+            ]];
+        }
+
+        return view('Sales.Invoices.create-invoices', [
+            'customers' => $customers,
+            'products' => $products,
+            'invoice' => $invoice,
+            'formMode' => 'edit',
+            'invoiceFormDefaults' => $invoiceFormDefaults,
+            'quotationPrefill' => [],
+        ]);
     }
 
     public function edit_invoice($id)
@@ -568,40 +648,286 @@ class InvoiceController extends Controller
     public function update(Request $request, $id)
     {
         $sale = $this->applyTenantScope(Sale::query(), 'sales')->findOrFail($id);
-        
-        $request->validate([
-            'customer_name'  => 'required',
-            'total'          => 'required|numeric|min:0',
-            'amount_paid'    => 'nullable|numeric|min:0',
-            'payment_status' => 'required'
-        ]);
 
-        $total = max(0, (float) $request->total);
-        $requestedStatus = strtolower(trim((string) $request->payment_status));
-        $inputPaid = max(0, (float) ($request->amount_paid ?? 0));
+        if (!$request->has('items')) {
+            $request->validate([
+                'customer_name'  => 'required',
+                'total'          => 'required|numeric|min:0',
+                'amount_paid'    => 'nullable|numeric|min:0',
+                'payment_status' => 'required'
+            ]);
 
-        if ($requestedStatus === 'paid') {
-            $amountPaid = $total;
-        } elseif ($requestedStatus === 'unpaid') {
-            $amountPaid = 0;
-        } else {
-            $amountPaid = min($inputPaid, $total);
+            $total = max(0, (float) $request->total);
+            $requestedStatus = strtolower(trim((string) $request->payment_status));
+            $inputPaid = max(0, (float) ($request->amount_paid ?? 0));
+
+            if ($requestedStatus === 'paid') {
+                $amountPaid = $total;
+            } elseif ($requestedStatus === 'unpaid') {
+                $amountPaid = 0;
+            } else {
+                $amountPaid = min($inputPaid, $total);
+            }
+
+            $balance = max(0, $total - $amountPaid);
+            $computedStatus = $balance <= 0.0001 ? 'paid' : ($amountPaid > 0.0001 ? 'partial' : 'unpaid');
+
+            $sale->update([
+                'customer_name'  => $request->customer_name,
+                'total'          => $total,
+                'tax'            => $request->tax ?? 0,
+                'payment_status' => $computedStatus,
+                'paid'           => $amountPaid,
+                'amount_paid'    => $amountPaid,
+                'balance'        => $balance,
+            ]);
+
+            return redirect()->route('invoices.index')->with('success', 'Invoice updated successfully');
         }
 
-        $balance = max(0, $total - $amountPaid);
-        $computedStatus = $balance <= 0.0001 ? 'paid' : ($amountPaid > 0.0001 ? 'partial' : 'unpaid');
-
-        $sale->update([
-            'customer_name'  => $request->customer_name,
-            'total'          => $total,
-            'tax'            => $request->tax ?? 0,
-            'payment_status' => $computedStatus,
-            'paid'           => $amountPaid,
-            'amount_paid'    => $amountPaid,
-            'balance'        => $balance,
+        $request->validate([
+            'customer_id' => 'required|exists:customers,id',
+            'invoice_date' => 'required',
+            'due_date' => 'required',
+            'items' => 'required|array|min:1',
+            'items.*.qty' => 'required|numeric|min:1',
+            'items.*.rate' => 'required|numeric|min:0',
+            'total_amount' => 'required|numeric|min:0',
         ]);
 
-        return redirect()->route('invoices.index')->with('success', 'Invoice updated successfully');
+        try {
+            DB::beginTransaction();
+
+            $invoiceDate = $request->invoice_date ? Carbon::parse($request->invoice_date)->toDateString() : now()->toDateString();
+            $dueDate = Carbon::parse($request->due_date)->toDateString();
+
+            $items = collect($request->input('items', []))
+                ->filter(fn ($item) => filled($item['name'] ?? null) || filled($item['product_id'] ?? null))
+                ->values();
+
+            if ($items->isEmpty()) {
+                return back()->withInput()->with('error', 'Add at least one invoice item before saving.');
+            }
+
+            $customer = $this->applyTenantScope(Customer::query(), 'customers')->findOrFail((int) $request->customer_id);
+            $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+            $activeBranch = $this->getActiveBranchContext();
+            $branchId = $activeBranch['id'];
+            $branchName = $activeBranch['name'];
+            $action = trim((string) $request->input('action', 'update'));
+            $requestedStatus = strtolower(trim((string) $request->input('status', 'unpaid')));
+            $isDraft = $action === 'save' || $requestedStatus === 'draft';
+            $isPaid = $requestedStatus === 'paid' && !$isDraft;
+
+            $existingItems = $sale->items()->get();
+            foreach ($existingItems as $existingItem) {
+                $productId = (int) ($existingItem->product_id ?? 0);
+                if ($productId <= 0) {
+                    continue;
+                }
+
+                $productQuery = Product::query()->lockForUpdate()->whereKey($productId);
+                if ($companyId > 0 && Schema::hasColumn('products', 'company_id')) {
+                    $productQuery->where('company_id', $companyId);
+                }
+
+                $product = $productQuery->first();
+                if (!$product) {
+                    continue;
+                }
+
+                $existingStockUnits = (float) ($existingItem->stock_units ?? 0);
+                if ($existingStockUnits <= 0) {
+                    $existingStockUnits = InventoryQuantity::resolveSaleStockUnits(
+                        $product,
+                        (float) ($existingItem->qty ?? $existingItem->quantity ?? 0),
+                        $existingItem->unit_type ?? null,
+                        null
+                    );
+                }
+
+                if ($existingStockUnits > 0) {
+                    $this->incrementSellableStock($product, $existingStockUnits);
+                    $this->branchInventory->adjustBranchStock(
+                        $product,
+                        $existingStockUnits,
+                        $activeBranch,
+                        $companyId > 0 ? $companyId : (int) ($product->company_id ?? 0)
+                    );
+                }
+            }
+
+            $subtotal = 0;
+            $taxTotal = 0;
+            $discountTotal = 0;
+
+            foreach ($items as $item) {
+                $qty = (float) ($item['qty'] ?? 0);
+                $rate = (float) ($item['rate'] ?? 0);
+                $discount = (float) ($item['discount'] ?? 0);
+                $tax = (float) ($item['tax'] ?? 0);
+                $lineBase = $qty * $rate;
+                $subtotal += $lineBase;
+                $discountTotal += $discount;
+                $taxTotal += $tax;
+            }
+
+            foreach ($items as $item) {
+                $productId = (int) ($item['product_id'] ?? 0);
+                if ($productId <= 0) {
+                    continue;
+                }
+
+                $productQuery = Product::query()->lockForUpdate()->whereKey($productId);
+                if ($companyId > 0 && Schema::hasColumn('products', 'company_id')) {
+                    $productQuery->where('company_id', $companyId);
+                }
+
+                $product = $productQuery->first();
+                if (!$product) {
+                    throw new \Exception('One of the selected products could not be found for this workspace.');
+                }
+
+                $requestedQty = max(0, (float) ($item['qty'] ?? 0));
+                $availableStock = (float) $this->branchInventory->getAvailableStock($product, $activeBranch);
+
+                if ($availableStock <= 0) {
+                    throw new \Exception("{$product->name} is out of stock and cannot be invoiced.");
+                }
+
+                if ($requestedQty > $availableStock) {
+                    throw new \Exception("Insufficient stock for {$product->name}. Available: {$availableStock}, requested: {$requestedQty}.");
+                }
+            }
+
+            $totalAmount = (float) $request->total_amount;
+            $paidAmount = $isPaid ? $totalAmount : 0;
+            $balanceAmount = max(0, $totalAmount - $paidAmount);
+            $paymentStatus = $isPaid
+                ? 'paid'
+                : ($requestedStatus === 'partially paid' ? 'partial' : 'unpaid');
+            $orderStatus = $isDraft ? 'draft' : ($action === 'send' ? 'sent' : 'pending');
+
+            $salePayload = [
+                'customer_id' => $customer->id,
+                'customer_name' => $customer->customer_name ?? $customer->name,
+                'subtotal' => $subtotal,
+                'discount' => $discountTotal,
+                'tax' => $taxTotal,
+                'total' => $totalAmount,
+                'paid' => $paidAmount,
+                'amount_paid' => $paidAmount,
+                'balance' => $balanceAmount,
+                'currency' => 'NGN',
+                'payment_method' => $action === 'send' ? 'send' : 'manual',
+                'payment_status' => $paymentStatus,
+                'payment_details' => [
+                    'description' => $request->description,
+                    'action' => $action,
+                    'source' => 'invoice-update',
+                ],
+            ];
+
+            if (Schema::hasColumn('sales', 'order_date')) {
+                $salePayload['order_date'] = $invoiceDate;
+            }
+            if (Schema::hasColumn('sales', 'delivery_date')) {
+                $salePayload['delivery_date'] = $dueDate;
+            }
+            if (Schema::hasColumn('sales', 'shipping_cost')) {
+                $salePayload['shipping_cost'] = (float) ($request->expenses ?? 0);
+            }
+            if ($branchId && Schema::hasColumn('sales', 'branch_id')) {
+                $salePayload['branch_id'] = $branchId;
+            }
+            if ($branchName && Schema::hasColumn('sales', 'branch_name')) {
+                $salePayload['branch_name'] = $branchName;
+            }
+            if (Schema::hasColumn('sales', 'order_status')) {
+                $salePayload['order_status'] = $orderStatus;
+            }
+
+            $sale->update($this->onlyExistingColumns('sales', $salePayload));
+            $sale->items()->delete();
+
+            foreach ($items as $item) {
+                $qty = (float) ($item['qty'] ?? 0);
+                $rate = (float) ($item['rate'] ?? 0);
+                $discount = (float) ($item['discount'] ?? 0);
+                $tax = (float) ($item['tax'] ?? 0);
+                $lineBase = $qty * $rate;
+                $lineAmount = max(0, $lineBase - $discount + $tax);
+                $lineDiscountPercent = $lineBase > 0
+                    ? round(min(100, ($discount / $lineBase) * 100), 2)
+                    : 0;
+
+                $productId = (int) ($item['product_id'] ?? 0);
+                $product = null;
+                $stockUnits = $qty;
+
+                if ($productId > 0) {
+                    $productQuery = Product::query()->lockForUpdate()->whereKey($productId);
+                    if ($companyId > 0 && Schema::hasColumn('products', 'company_id')) {
+                        $productQuery->where('company_id', $companyId);
+                    }
+
+                    $product = $productQuery->first();
+                    if ($product) {
+                        $stockUnits = InventoryQuantity::resolveSaleStockUnits(
+                            $product,
+                            $qty,
+                            $item['unit_type'] ?? $item['unitType'] ?? null,
+                            isset($item['stock_units']) ? (float) $item['stock_units'] : (isset($item['stockUnits']) ? (float) $item['stockUnits'] : null)
+                        );
+                    }
+                }
+
+                $saleItemPayload = [
+                    'sale_id' => $sale->id,
+                    'product_id' => $productId ?: null,
+                    'qty' => $qty,
+                    'unit_price' => $rate,
+                    'discount' => $lineDiscountPercent,
+                    'tax' => $tax,
+                    'subtotal' => $lineBase,
+                    'total_price' => $lineAmount,
+                ];
+                if (Schema::hasColumn('sale_items', 'unit_type')) {
+                    $saleItemPayload['unit_type'] = strtolower((string) ($item['unit_type'] ?? $item['unitType'] ?? $product?->unit_type ?? 'unit'));
+                }
+                if (Schema::hasColumn('sale_items', 'stock_units')) {
+                    $saleItemPayload['stock_units'] = $stockUnits;
+                }
+                if ($companyId > 0 && Schema::hasColumn('sale_items', 'company_id')) {
+                    $saleItemPayload['company_id'] = $companyId;
+                }
+                if ($branchId && Schema::hasColumn('sale_items', 'branch_id')) {
+                    $saleItemPayload['branch_id'] = $branchId;
+                }
+                if ($branchName && Schema::hasColumn('sale_items', 'branch_name')) {
+                    $saleItemPayload['branch_name'] = $branchName;
+                }
+
+                $sale->items()->create($this->onlyExistingColumns('sale_items', $saleItemPayload));
+
+                if ($product && $stockUnits > 0) {
+                    $this->decrementSellableStock($product, $stockUnits);
+                    $this->branchInventory->adjustBranchStock(
+                        $product,
+                        -$stockUnits,
+                        $activeBranch,
+                        $companyId > 0 ? $companyId : (int) ($product->company_id ?? 0)
+                    );
+                }
+            }
+
+            DB::commit();
+
+            return redirect()->route('invoices.index')->with('success', 'Invoice updated successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withInput()->with('error', 'Something went wrong: ' . $e->getMessage());
+        }
     }
 
     /**

@@ -2,10 +2,12 @@
 @extends('layout.mainlayout')
 @section('content')
 @php
+    $isEditMode = ($formMode ?? 'create') === 'edit';
     $quotationPrefill = $quotationPrefill ?? session('quotation_prefill') ?? [];
+    $invoiceFormDefaults = $invoiceFormDefaults ?? [];
     $invoiceItems = old('items');
     if (!is_array($invoiceItems)) {
-        $invoiceItems = $quotationPrefill['items'] ?? [[
+        $invoiceItems = $invoiceFormDefaults['items'] ?? $quotationPrefill['items'] ?? [[
             'product_id' => '',
             'name' => '',
             'price_level' => 'retail',
@@ -28,10 +30,13 @@
             'amount' => 0,
         ]];
     }
-    $selectedCustomer = old('customer_id', $quotationPrefill['customer_id'] ?? ($selected_customer ?? ''));
-    $invoiceDate = old('invoice_date', $quotationPrefill['invoice_date'] ?? date('d-m-Y'));
-    $dueDate = old('due_date', $quotationPrefill['due_date'] ?? '');
-    $invoiceDescription = old('description', $quotationPrefill['description'] ?? '');
+    $selectedCustomer = old('customer_id', $invoiceFormDefaults['customer_id'] ?? $quotationPrefill['customer_id'] ?? ($selected_customer ?? ''));
+    $invoiceDate = old('invoice_date', $invoiceFormDefaults['invoice_date'] ?? $quotationPrefill['invoice_date'] ?? date('d-m-Y'));
+    $dueDate = old('due_date', $invoiceFormDefaults['due_date'] ?? $quotationPrefill['due_date'] ?? '');
+    $selectedStatus = old('status', $invoiceFormDefaults['status'] ?? 'Unpaid');
+    $invoiceDescription = old('description', $invoiceFormDefaults['description'] ?? $quotationPrefill['description'] ?? '');
+    $invoiceExpenses = old('expenses', $invoiceFormDefaults['expenses'] ?? '0.00');
+    $formAction = $isEditMode && isset($invoice) ? route('invoices.update', $invoice->id) : route('invoices.store');
 @endphp
 <div class="page-wrapper">
     <div class="content container-fluid">
@@ -39,16 +44,33 @@
             <div class="card-body">
                 <div class="page-header">
                     <div class="content-page-header">
-                        <h5>Add Invoice</h5>
+                        <h5>{{ $isEditMode ? 'Edit Invoice' : 'Add Invoice' }}</h5>
                     </div>
                 </div>
 
                 @if(session('info'))
                     <div class="alert alert-info border-0 shadow-sm">{{ session('info') }}</div>
                 @endif
+
+                @if(session('error'))
+                    <div class="alert alert-danger border-0 shadow-sm">{{ session('error') }}</div>
+                @endif
+
+                @if ($errors->any())
+                    <div class="alert alert-danger border-0 shadow-sm">
+                        <ul class="mb-0 ps-3">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
                 
-                <form action="{{ route('invoices.store') }}" method="POST" enctype="multipart/form-data" id="invoice-form">
+                <form action="{{ $formAction }}" method="POST" enctype="multipart/form-data" id="invoice-form">
                     @csrf
+                    @if($isEditMode)
+                        @method('PUT')
+                    @endif
                     <div class="row">
                         <div class="col-md-12">
                             <div class="form-group-item border-0 mb-0">
@@ -100,11 +122,11 @@
                                         <div class="input-block mb-3">
                                             <label>Status</label>
                                             <select class="select" name="status">
-                                                <option value="Unpaid">Unpaid</option>
-                                                <option value="Partially paid">Partially paid</option>
-                                                <option value="Paid">Paid</option>
-                                                <option value="Overdue">Overdue</option>
-                                                <option value="Draft">Draft</option>
+                                                <option value="Unpaid" {{ $selectedStatus === 'Unpaid' ? 'selected' : '' }}>Unpaid</option>
+                                                <option value="Partially paid" {{ $selectedStatus === 'Partially paid' ? 'selected' : '' }}>Partially paid</option>
+                                                <option value="Paid" {{ $selectedStatus === 'Paid' ? 'selected' : '' }}>Paid</option>
+                                                <option value="Overdue" {{ $selectedStatus === 'Overdue' ? 'selected' : '' }}>Overdue</option>
+                                                <option value="Draft" {{ $selectedStatus === 'Draft' ? 'selected' : '' }}>Draft</option>
                                             </select>
                                         </div>
                                     </div>
@@ -188,7 +210,7 @@
                                             <p>Sub Total <span id="display-subtotal">₦0.00</span></p>
                                             <div class="input-block mb-2 d-flex justify-content-between align-items-center">
                                                 <label class="mb-0">Additional Expenses</label>
-                                                <input type="number" step="0.01" name="expenses" id="input-expenses" class="form-control w-50 text-end" value="0.00" oninput="calculateGrandTotal()">
+                                                <input type="number" step="0.01" name="expenses" id="input-expenses" class="form-control w-50 text-end" value="{{ $invoiceExpenses }}" oninput="calculateGrandTotal()">
                                             </div>
                                         </div>
                                         <div class="invoice-total-footer">
@@ -200,9 +222,9 @@
                             </div>
 
                             <div class="add-customer-btns text-end mt-4">
-                                <button type="reset" class="btn btn-secondary me-2">Cancel</button>
-                                <button type="submit" name="action" value="save" class="btn btn-info me-2">Save Draft</button>
-                                <button type="submit" name="action" value="send" class="btn btn-primary">Save & Send</button>
+                                <a href="{{ route('invoices.index') }}" class="btn btn-secondary me-2">Cancel</a>
+                                <button type="submit" name="action" value="save" class="btn btn-info me-2">{{ $isEditMode ? 'Save Changes' : 'Save Draft' }}</button>
+                                <button type="submit" name="action" value="send" class="btn btn-primary">{{ $isEditMode ? 'Update & Send' : 'Save & Send' }}</button>
                             </div>
                         </div>
                     </div>
