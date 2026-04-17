@@ -515,6 +515,30 @@
             text-transform: none;
         }
 
+        /* ── QB-style reports group headers inside submenu ─────────── */
+        .sidebar .sidebar-menu ul li.reports-group-header,
+        .deployment-sidebar .sidebar-menu ul li.reports-group-header {
+            font-size: 0.68rem !important;
+            font-weight: 900 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.09em !important;
+            color: #94a3b8 !important;
+            padding: 10px 16px 3px !important;
+            margin: 0 !important;
+            pointer-events: none !important;
+            cursor: default !important;
+            border-top: 1px solid rgba(148,163,184,.15);
+        }
+        .sidebar .sidebar-menu ul li.reports-group-header:first-child,
+        .deployment-sidebar .sidebar-menu ul li.reports-group-header:first-child {
+            border-top: none;
+        }
+        /* Hub shortcut link inside reports dropdown */
+        .sidebar .sidebar-menu ul a.reports-hub-link {
+            font-weight: 800 !important;
+            color: var(--spb-sidebar-accent, #3b82f6) !important;
+        }
+
         .sidebar .sidebar-menu ul li > a,
         .deployment-sidebar .sidebar-menu ul li > a,
         .deployment-sidebar .dm-menu-link {

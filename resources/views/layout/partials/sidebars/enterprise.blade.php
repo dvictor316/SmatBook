@@ -228,30 +228,8 @@
 
                 <li class="menu-title"><span>Reports</span></li>
 
-                {{-- Payment Summary --}}
-                <li><a href="{{ route('reports.payment-summary') }}"><i class="fe fe-dollar-sign"></i><span>Payment Summary</span></a></li>
-
-                {{-- Reports (FULL ACCESS) --}}
-                <li class="submenu {{ Request::is('*-report*', 'profit-loss*', 'trial-balance*', 'general-ledger*', 'balance-sheet*', 'cash-flow*') ? 'active subdrop' : '' }}">
-                    <a href="#"><i class="fe fe-bar-chart"></i><span>Reports</span><span class="menu-arrow"></span></a>
-                    <ul>
-                        <li><a href="{{ route('reports.sales') }}">Sales Report</a></li>
-                        <li><a href="{{ route('reports.purchase') }}">Purchase Report</a></li>
-                        <li><a href="{{ route('reports.expense') }}">Expense Report</a></li>
-                        <li><a href="{{ route('reports.income') }}">Income Report</a></li>
-                        <li><a href="{{ route('reports.payment') }}">Payment Report</a></li>
-                        <li><a href="{{ route('reports.sales-return') }}">Sales Return Report</a></li>
-                        <li><a href="{{ route('reports.quotation') }}">Quotation Report</a></li>
-                        <li><a href="{{ route('reports.accounts-receivable') }}">Accounts Receivable</a></li>
-                        <li><a href="{{ route('reports.stock') }}">Stock Report</a></li>
-                        <li><a href="{{ route('reports.low-stock') }}">Low Stock Report</a></li>
-                        <li><a href="{{ route('reports.profit-loss') }}">Profit & Loss</a></li>
-                        <li><a href="{{ route('general-ledger') }}">General Ledger</a></li>
-                        <li><a href="{{ route('trial-balance') }}">Trial Balance</a></li>
-                        <li><a href="{{ route('balance-sheet') }}">Balance Sheet</a></li>
-                        <li><a href="{{ route('reports.cash-flow') }}">Cash Flow</a></li>
-                    </ul>
-                </li>
+                {{-- QB-Style Reports Dropdown --}}
+                @include('layout.partials.sidebars.reports-menu', ['reportAccess' => 'enterprise'])
 
                 <li class="menu-title"><span>Management</span></li>
 
