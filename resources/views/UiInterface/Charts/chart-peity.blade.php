@@ -1,21 +1,21 @@
 <?php $page = 'chart-peity'; ?>
 @extends('layout.mainlayout')
 @section('content')
-			<!-- Page Wrapper -->
+			
             <div class="page-wrapper">
                 <div class="content container-fluid">
 
-					<!-- Page Header -->
+					
 					<div class="page-header">
 						<div class="content-page-header">
 							<h5>Peity Chart</h5>
 						</div>	
 					</div>
-					<!-- /Page Header -->
+					
 
 					<div class="row">
 
-						<!-- Chart -->
+						
 						<div class="col-md-12">	
 							<div class="card">
 								<div class="card-header">
@@ -57,9 +57,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Chart -->
+						
 
-						<!-- Chart -->
+						
 						<div class="col-md-12">	
 							<div class="card">
 								<div class="card-header">
@@ -101,9 +101,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Chart -->
+						
 
-						<!-- Chart -->
+						
 						<div class="col-md-12">
 							<div class="card">
 								<div class="card-header">
@@ -157,7 +157,7 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Chart -->
+						
 
 						<div class="col-lg-12 col-md-12">
 							<div class="card">
@@ -249,5 +249,5 @@
 
 				</div>			
 			</div>
-			<!-- /Page Wrapper -->
+			
 @endsection

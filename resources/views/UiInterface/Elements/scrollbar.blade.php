@@ -1,21 +1,21 @@
 <?php $page = 'scrollbar'; ?>
 @extends('layout.mainlayout')
 @section('content')
-			<!-- Page Wrapper -->
+			
             <div class="page-wrapper">
                 <div class="content container-fluid">
 
-					<!-- Page Header -->
+					
 					<div class="page-header">
 						<div class="content-page-header">
 							<h5>Scroll Bar</h5>
 						</div>	
 					</div>
-					<!-- /Page Header -->
+					
 
 					<div class="row">
 
-						<!-- Scroll -->
+						
 						<div class="col-md-6">	
 							<div class="card">
 								<div class="card-header">
@@ -45,9 +45,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Scroll -->
+						
 
-						<!-- Scroll -->
+						
 						<div class="col-md-6">	
 							<div class="card">
 								<div class="card-header">
@@ -64,9 +64,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Scroll -->
+						
 
-						<!-- Scroll -->
+						
 						<div class="col-md-6">	
 							<div class="card">
 								<div class="card-header">
@@ -83,9 +83,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Scroll -->
+						
 
-						<!-- Scroll -->
+						
 						<div class="col-md-6">	
 							<div class="card">
 								<div class="card-header">
@@ -123,10 +123,10 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Scroll -->
+						
 
 					</div>				
 				</div>			
 			</div>
-			<!-- /Page Wrapper -->
+			
 @endsection

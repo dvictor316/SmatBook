@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Transactions</title>
-    <!-- Load Tailwind CSS -->
+    
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Configure Tailwind to use Inter font and define custom colors -->
+    
     <script>
         tailwind.config = {
             theme: {
@@ -24,17 +24,17 @@
 </head>
 <body class="bg-gray-50 font-sans antialiased">
 
-    <!-- Page Wrapper -->
+    
     <div class="min-h-screen pt-4 pb-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-            <!-- Page Header (Simulated Component) -->
+            
             <div class="pb-6 border-b border-gray-200 mb-6">
                 <h1 class="text-3xl font-bold leading-tight text-gray-900">Transactions</h1>
             </div>
-            <!-- /Page Header -->
+            
 
-            <!-- Search Filter (Simulated Component) -->
+            
             <div class="mb-6 p-4 bg-white shadow-md rounded-lg flex flex-col md:flex-row items-center space-y-3 md:space-y-0 md:space-x-4">
                 <input type="text" placeholder="Search by ID or Type..." class="w-full md:w-1/3 p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary">
                 <select class="w-full md:w-1/6 p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary">
@@ -53,9 +53,9 @@
                     Filter
                 </button>
             </div>
-            <!-- /Search Filter -->
+            
 
-            <!-- Table Card -->
+            
             <div class="shadow-lg rounded-xl bg-white overflow-hidden">
                 <div class="p-4 sm:p-6 lg:p-8">
                     <div class="overflow-x-auto">
@@ -71,17 +71,17 @@
                                 </tr>
                             </thead>
                             <tbody id="table-body" class="bg-white divide-y divide-gray-200">
-                                <!-- Table rows will be inserted here by JavaScript -->
+                                
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
-            <!-- /Table Card -->
+            
 
         </div>
     </div>
-    <!-- /Page Wrapper -->
+    
 
     <script>
         // Mock data structure simulating the PHP file_get_contents and json_decode process

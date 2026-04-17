@@ -1,17 +1,17 @@
 <?php $page = 'spinners'; ?>
 @extends('layout.mainlayout')
 @section('content')
-			<!-- Page Wrapper -->
+			
             <div class="page-wrapper">
                 <div class="content container-fluid">
 
-					<!-- Page Header -->
+					
 					<div class="page-header">
 						<div class="content-page-header">
 							<h5>Spinner</h5>
 						</div>	
 					</div>
-					<!-- /Page Header -->	
+						
 
                     <div class="row">
                         <div class="col-lg-6">
@@ -22,9 +22,9 @@
                                     <div class="spinner-border m-2" role="status">
                                         <span class="visually-hidden">Loading...</span>
                                     </div>
-                                </div><!--end card-body-->
-                            </div><!--end card-->
-                        </div> <!-- end col -->
+                                </div>
+                            </div>
+                        </div> 
 
                         <div class="col-lg-6">
                             <div class="card">
@@ -34,10 +34,10 @@
                                     <div class="spinner-grow" role="status">
                                         <span class="visually-hidden">Loading...</span>
                                     </div>                                              
-                                </div><!--end card-body-->
-                            </div><!--end card-->
-                        </div> <!-- end col -->
-                    </div> <!-- end row -->
+                                </div>
+                            </div>
+                        </div> 
+                    </div> 
 
                     <div class="row">
                         <div class="col-lg-6">
@@ -57,9 +57,9 @@
                                     <div class="spinner-border text-dark m-2" role="status"></div>
                                     <div class="spinner-border text-blue m-2" role="status"></div>
                                     <div class="spinner-border text-pink m-2" role="status"></div>                                        
-                                </div><!--end card-body-->
-                            </div><!--end card-->
-                        </div> <!-- end col -->
+                                </div>
+                            </div>
+                        </div> 
 
                         <div class="col-lg-6">
                             <div class="card">
@@ -77,10 +77,10 @@
                                     <div class="spinner-grow text-dark m-2" role="status"></div>
                                     <div class="spinner-grow text-blue m-2" role="status"></div>
                                     <div class="spinner-grow text-pink m-2" role="status"></div>
-                                </div><!--end card-body-->
-                            </div><!--end card-->
-                        </div> <!-- end col -->  
-                    </div> <!-- end row -->
+                                </div>
+                            </div>
+                        </div>   
+                    </div> 
 
                     <div class="row">
                         <div class="col-lg-6">
@@ -93,9 +93,9 @@
                                     <div class="d-flex justify-content-center">
                                         <div class="spinner-border" role="status"></div>
                                     </div>
-                                </div><!--end card-body-->
-                            </div><!--end card-->
-                        </div> <!-- end col -->
+                                </div>
+                            </div>
+                        </div> 
 
                         <div class="col-lg-6">
                             <div class="card">
@@ -106,10 +106,10 @@
                                         <strong>Loading...</strong>
                                         <div class="spinner-border ms-auto" role="status" aria-hidden="true"></div>
                                     </div>                                                                                           
-                                </div><!--end card-body-->
-                            </div><!--end card-->
-                        </div> <!-- end col -->
-                    </div> <!-- end row -->
+                                </div>
+                            </div>
+                        </div> 
+                    </div> 
 
                     <div class="row">
                         <div class="col-lg-6">
@@ -124,26 +124,26 @@
                                         <div class="col-lg-6">
                                             <div class="spinner-border avatar-lg text-primary m-2" role="status"></div>
                                             <div class="spinner-grow avatar-lg text-secondary m-2" role="status"></div>
-                                        </div><!-- end col -->
+                                        </div>
 
                                         <div class="col-lg-6">
                                             <div class="spinner-border avatar-md text-primary m-2" role="status"></div>
                                             <div class="spinner-grow avatar-md text-secondary m-2" role="status"></div>
-                                        </div><!-- end col -->
+                                        </div>
 
                                         <div class="col-lg-6">
                                             <div class="spinner-border avatar-sm text-primary m-2" role="status"></div>
                                             <div class="spinner-grow avatar-sm text-secondary m-2" role="status"></div>
-                                        </div><!-- end col -->
+                                        </div>
 
                                         <div class="col-lg-6">
                                             <div class="spinner-border spinner-border-sm m-2" role="status"></div>
                                             <div class="spinner-grow spinner-grow-sm m-2" role="status"></div>
-                                        </div><!-- end col -->                                            
-                                    </div><!--end row-->
-                                </div><!--end card-body-->
-                            </div><!--end card-->
-                        </div> <!-- end col -->
+                                        </div>                                            
+                                    </div>
+                                </div>
+                            </div>
+                        </div> 
 
                         <div class="col-lg-6">
                             <div class="card">
@@ -163,7 +163,7 @@
                                                     Loading...
                                                 </button>    
                                             </div>                                                     
-                                        </div><!-- end col -->
+                                        </div>
                                         <div class="col-md-6">
                                             <div class="button-list">
                                                 <button class="btn btn-primary mb-0" type="button" disabled>
@@ -175,19 +175,19 @@
                                                 </button>
                                             </div>
                                         </div>
-                                        <!-- end col -->
+                                        
                                     </div> 
-                                    <!-- end row -->                                                                                        
+                                                                                                                            
                                 </div>
-                                <!--end card-body-->
+                                
                             </div>
-                            <!--end card-->
+                            
                         </div> 
-                        <!-- end col -->
+                        
                     </div> 
-                    <!-- end row -->		
+                    		
 
 				</div>			
 			</div>
-			<!-- /Page Wrapper -->
+			
 @endsection

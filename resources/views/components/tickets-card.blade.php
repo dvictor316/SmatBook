@@ -1,4 +1,4 @@
-<!-- Inovices card -->
+
 <div class="row">
     @php
         $json = file_get_contents(public_path('../public/assets/json/tickets-card.json'));
@@ -24,4 +24,4 @@
         </div>
     @endforeach
 </div>
-<!-- /Inovices card -->
+

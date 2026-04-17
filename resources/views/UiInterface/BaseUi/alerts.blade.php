@@ -1,18 +1,18 @@
 <?php $page = 'alerts'; ?>
 @extends('layout.mainlayout')
 @section('content')
-			<!-- Page Wrapper -->
+			
             <div class="page-wrapper">
                 <div class="content container-fluid">
-					<!-- Page Header -->
+					
 					<div class="page-header">
 						<div class="content-page-header">
 							<h5>Alert</h5>
 						</div>	
 					</div>
-					<!-- /Page Header -->					
+										
 
-					<!-- Alerts -->
+					
 					<div class="card bg-white">
 						<div class="card-body">
 							<div class="alert alert-primary alert-dismissible fade show" role="alert">
@@ -49,8 +49,8 @@
 							</div>
 						</div>
 					</div>
-					<!-- /Alerts -->				
+									
 				</div>			
 			</div>
-			<!-- /Page Wrapper -->
+			
 @endsection

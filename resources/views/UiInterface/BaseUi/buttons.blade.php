@@ -1,19 +1,19 @@
 <?php $page = 'buttons'; ?>
 @extends('layout.mainlayout')
 @section('content')
-			<!-- Page Wrapper -->
+			
             <div class="page-wrapper">
                 <div class="content container-fluid">
 
-					<!-- Page Header -->
+					
                     <div class="page-header">
 						<div class="content-page-header">
 							<h5>Buttons</h5>
 						</div>	
 					</div>	
-                    <!-- /Page Header -->
+                    
 
-					<!-- Buttons -->
+					
 					<div class="card card-buttons">
 						<div class="card-body">
 							<h5 class="card-title">Default Button</h5>
@@ -60,7 +60,7 @@
 							</p>									
 						</div>
 					</div>							
-					<!-- Rounded Button -->
+					
 					<div class="card card-buttons">
 						<div class="card-header">
 							<h5 class="card-title">Rounded Button</h5>
@@ -87,9 +87,9 @@
 							<button type="button" class="btn btn-rounded btn-outline-dark">Dark</button>
 						</div>
 					</div>
-					<!-- /Rounded Button -->
+					
 
-					<!-- Outline Buttons -->
+					
 					<div class="card card-buttons">
 						<div class="card-header">
 							<h5 class="card-title">Outline Buttons</h5>
@@ -179,9 +179,9 @@
 							</div>
 						</div>
 					</div>
-					<!-- /Outline Buttons -->
+					
 
-					<!-- Progress Button -->
+					
 					<div class="card card-buttons">
 						<div class="card-header">
 							<h5 class="card-title mb-0">Progress Button</h5>
@@ -196,8 +196,8 @@
 							<button type="button" class="btn btn-dark"><span class="spinner-border spinner-border-sm me-2" role="status"></span>Dark</button>
 						</div>
 					</div>
-					<!-- /Progress Button -->
+					
 				</div>			
 			</div>
-			<!-- /Page Wrapper -->
+			
 @endsection

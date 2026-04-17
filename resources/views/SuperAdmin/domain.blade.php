@@ -341,30 +341,30 @@
 </style>
 
 <div class="setup-container">
-    <!-- Left Panel -->
+    
     <div class="setup-left-panel">
         <div>
-            <!-- Logo -->
+            
             <div>
                 <img src="{{ URL::asset('/assets/img/logo.svg') }}" alt="Logo" class="setup-logo">
             </div>
 
-            <!-- Stage & Title -->
+            
             <div class="mt-4">
                 <div class="setup-stage">Setup Stage 02</div>
                 <h1 class="setup-title">Business Identity</h1>
                 <p class="setup-subtitle">Establishing your dedicated workspace on the SmartBook platform.</p>
             </div>
 
-            <!-- Progress -->
+            
             <div class="progress-bar-custom">
                 <div class="progress-fill"></div>
             </div>
         </div>
 
-        <!-- Summary at Bottom -->
+        
         <div>
-            <!-- Selected Tier -->
+            
             <div class="summary-section">
                 <div class="summary-label">Selected Tier</div>
                 <div class="summary-value">{{ $subscription->plan->package_name ?? 'Standard' }}</div>
@@ -422,7 +422,7 @@
         </div>
     </div>
 
-    <!-- Right Panel -->
+    
     <div class="setup-right-panel">
         <div>
             <h2 class="setup-form-title">Workspace Setup</h2>
@@ -431,7 +431,7 @@
             <form action="{{ route('super_admin.domain.store-setup', $subscription->id ?? '#') }}" method="POST">
                 @csrf
 
-                <!-- Institutional URL -->
+                
                 <div class="form-group">
                     <label class="form-label">Institutional URL</label>
                     <div class="form-input-wrapper">
@@ -453,7 +453,7 @@
                     @enderror
                 </div>
 
-                <!-- Organization Scale -->
+                
                 <div class="form-group">
                     <label class="form-label">Organization Scale</label>
                     <select class="form-select" name="organization_scale" id="orgScale" required>
@@ -469,7 +469,7 @@
                     @enderror
                 </div>
 
-                <!-- Billing Node -->
+                
                 <div class="form-group">
                     <label class="form-label">Billing Node</label>
                     <div class="form-text-plain">
@@ -477,7 +477,7 @@
                     </div>
                 </div>
 
-                <!-- Action Buttons -->
+                
                 <div class="button-group">
                     <a href="{{ route('super_admin.domains.index') }}" class="btn-cancel">
                         Cancel

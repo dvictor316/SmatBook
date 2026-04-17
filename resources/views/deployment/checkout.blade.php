@@ -397,7 +397,7 @@
 
     <div class="smat-card">
 
-        <!-- Payment panel (left) -->
+        
         <div class="smat-main">
             <h1 class="form-title">Payment Method</h1>
             <p class="form-subtitle">Choose your preferred payment gateway</p>
@@ -407,7 +407,7 @@
                 <input type="hidden" name="subscription_id" value="{{ $subscription->id }}">
                 <input type="hidden" name="gateway" id="selectedGateway" value="paystack">
 
-                <!-- Paystack -->
+                
                 <div class="payment-tile selected" data-gateway="paystack" onclick="selectGateway('paystack')">
                     <div class="tile-radio"></div>
                     <div class="tile-icon paystack">
@@ -420,7 +420,7 @@
                     <span class="tile-badge recommended">Recommended</span>
                 </div>
 
-                <!-- Flutterwave -->
+                
                 <div class="payment-tile" data-gateway="flutterwave" onclick="selectGateway('flutterwave')">
                     <div class="tile-radio"></div>
                     <div class="tile-icon flutterwave">
@@ -433,7 +433,7 @@
                     <span class="tile-badge alternative">Alternative</span>
                 </div>
 
-                <!-- Stripe -->
+                
                 <div class="payment-tile" data-gateway="stripe" onclick="selectGateway('stripe')">
                     <div class="tile-radio"></div>
                     <div class="tile-icon stripe">
@@ -465,7 +465,7 @@
             </form>
         </div>
 
-        <!-- Summary sidebar (right) -->
+        
         <div class="smat-aside">
             <div>
                 <h3 class="summary-title">Order Summary</h3>

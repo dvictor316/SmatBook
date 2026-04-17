@@ -1,36 +1,36 @@
 <?php $page = 'tickets-list-open'; ?>
 @extends('layout.mainlayout')
 @section('content')
-    <!-- Page Wrapper -->
+    
     <div class="page-wrapper">
         <div class="content container-fluid">
 
-            <!-- Page Header -->
+            
             @component('components.page-header')
                 @slot('title')
                     Tickets
                 @endslot
             @endcomponent
-            <!-- /Page Header -->
+            
 
-            <!-- Search Filter -->
+            
             @component('components.search-filter')
             @endcomponent
-            <!-- /Search Filter -->
+            
 
-            <!-- Inovices card -->
+            
             @component('components.tickets-card')
             @endcomponent
-            <!-- /Inovices card -->
+            
 
-            <!-- All Invoice -->
+            
             @component('components.tickets-kanban-tab')
             @endcomponent
-            <!-- /All Invoice -->
+            
 
-            <!-- Ticket list -->
+            
             <div class="comments">
-                <!-- card -->
+                
                 @php
                     $json = file_get_contents(public_path('../public/assets/json/tickets-list-open.json'));
                     $tickets = json_decode($json, true);
@@ -59,10 +59,10 @@
                         </div>
                     </div>
                 @endforeach
-                <!-- /card -->
+                
             </div>
-            <!-- /Ticket list -->
+            
         </div>
     </div>
-    <!-- /Page Wrapper -->
+    
 @endsection

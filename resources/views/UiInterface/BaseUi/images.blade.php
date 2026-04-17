@@ -1,17 +1,17 @@
 <?php $page = 'images'; ?>
 @extends('layout.mainlayout')
 @section('content')
-    <!-- Page Wrapper -->
+    
     <div class="page-wrapper">
         <div class="content container-fluid">
 
-            <!-- Page Header -->
+            
             <div class="page-header">
                 <div class="content-page-header">
                     <h5>Images</h5>
                 </div>
             </div>
-            <!-- /Page Header -->
+            
 
             <div class="row">
                 <div class="col-sm-12">
@@ -50,7 +50,7 @@
                                             </p>
                                         </div>
                                     </div>
-                                </div> <!-- end col-->
+                                </div> 
                             </div>
                         </div>
                     </div>
@@ -108,18 +108,18 @@
                                         </div>
                                     </div>
                                 </div>
-                                <!-- end col -->
+                                
                             </div>
-                            <!-- end row -->
+                            
                         </div>
                     </div>
-                    <!-- end card -->
+                    
                 </div>
-                <!-- end col -->
+                
             </div>
-            <!-- end row-->
+            
 
         </div>
     </div>
-    <!-- /Page Wrapper -->
+    
 @endsection

@@ -1,19 +1,19 @@
 <?php $page = 'cards'; ?>
 @extends('layout.mainlayout')
 @section('content')
-    <!-- Page Wrapper -->
+    
     <div class="page-wrapper">
         <div class="content container-fluid">
 
-            <!-- Page Header -->
+            
             <div class="page-header">
                 <div class="content-page-header">
                     <h5>Cards</h5>
                 </div>
             </div>
-            <!-- /Page Header -->
+            
 
-            <!-- Cards -->
+            
             <div class="row">
                 <div class="col-12 col-md-6 col-lg-4 d-flex">
                     <div class="card flex-fill bg-white">
@@ -196,9 +196,9 @@
                     </div>
                 </div>
             </div>
-            <!-- /Cards -->
+            
 
         </div>
     </div>
-    <!-- /Page Wrapper -->
+    
 @endsection

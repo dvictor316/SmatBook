@@ -1,5 +1,5 @@
 @if (Route::is(['companies']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -8,7 +8,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -49,7 +49,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> John Blair
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -72,7 +72,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -80,9 +80,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
+                    
 
-                    <!-- Select Date -->
+                    
                     <div class="accordion" id="accordionMain2">
                         <div class="card-header-new" id="headingTwo">
                             <h6 class="filter-title">
@@ -114,9 +114,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Select Date -->
+                    
 
-                    <!-- By Status -->
+                    
                     <div class="accordion" id="accordionMain3">
                         <div class="card-header-new" id="headingThree">
                             <h6 class="filter-title">
@@ -169,9 +169,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /By Status -->
+                    
 
-                    <!-- Category -->
+                    
                     <div class="accordion accordion-last" id="accordionMain4">
                         <div class="card-header-new" id="headingFour">
                             <h6 class="filter-title">
@@ -204,7 +204,7 @@
                                             <input type="checkbox" name="category">
                                             <span class="checkmark"></span> Software
                                         </label>
-                                        <!-- View All -->
+                                        
                                         <div class="view-content">
                                             <div class="viewall-Two">
                                                 <label class="custom_check w-100">
@@ -226,13 +226,13 @@
                                                             class="fa fa-circle-chevron-down"></i></span></a>
                                             </div>
                                         </div>
-                                        <!-- /View All -->
+                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- /Category -->
+                    
 
                     <button type="submit"
                         class="d-inline-flex align-items-center justify-content-center btn w-100 btn-primary">
@@ -244,8 +244,8 @@
             </div>
         </div>
     </div>
-    <!--/Add Asset -->
-     <!-- Add Package Modal -->
+    
+     
      <div class="modal custom-modal fade p-20" id="add_package" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -409,10 +409,10 @@
             </div>
         </div>
     </div>
-    <!-- /Add Package Modal -->
+    
 @endif
 @if (Route::is(['subscription']))
-    <!-- Filter -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -421,7 +421,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -462,7 +462,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> John Blair
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -484,7 +484,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -492,9 +492,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
+                    
 
-                    <!-- Select Date -->
+                    
                     <div class="accordion" id="accordionMain2">
                         <div class="card-header-new" id="headingTwo">
                             <h6 class="filter-title">
@@ -526,9 +526,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Select Date -->
+                    
 
-                    <!-- By Status -->
+                    
                     <div class="accordion" id="accordionMain3">
                         <div class="card-header-new" id="headingFour">
                             <h6 class="filter-title">
@@ -581,9 +581,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /By Status -->
+                    
 
-                    <!-- Category -->
+                    
                     <div class="accordion accordion-last" id="accordionMain4">
                         <div class="card-header-new" id="headingThree1">
                             <h6 class="filter-title">
@@ -616,7 +616,7 @@
                                             <input type="checkbox" name="category">
                                             <span class="checkmark"></span> Software
                                         </label>
-                                        <!-- View All -->
+                                        
                                         <div class="view-content">
                                             <div class="viewall-Two">
                                                 <label class="custom_check w-100">
@@ -638,13 +638,13 @@
                                                             class="fa fa-circle-chevron-down"></i></span></a>
                                             </div>
                                         </div>
-                                        <!-- /View All -->
+                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- /Category -->
+                    
                     <button type="submit"
                         class="d-inline-flex align-items-center justify-content-center btn w-100 btn-primary">
                         <span><img src="{{ URL::asset('/assets/img/icons/chart.svg') }}" class="me-2"
@@ -655,10 +655,10 @@
             </div>
         </div>
     </div>
-    <!-- /Filter -->
+    
 @endif
 @if (Route::is(['packages']))
-<!-- Add New Package Modal -->
+
 <div class="modal custom-modal fade p-20" id="add_newpackage" role="dialog">
     <div class="modal-dialog modal-dialog-centered modal-md">
         <div class="modal-content">
@@ -954,10 +954,10 @@
         </div>
     </div>
 </div>
-<!-- /Add New Package Modal -->
+
 @endif
 @if (Route::is(['domain-request']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -966,7 +966,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -1007,7 +1007,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> Lexicon Technologies
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -1026,7 +1026,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -1034,9 +1034,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
+                    
 
-                    <!-- By Package -->
+                    
                     <div class="accordion" id="accordionMain4">
                         <div class="card-header-new" id="headingFive">
                             <h6 class="filter-title">
@@ -1070,9 +1070,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /By Package -->
+                    
 
-                    <!-- Select Date -->
+                    
                     <div class="accordion" id="accordionMain2">
                         <div class="card-header-new" id="headingTwo">
                             <h6 class="filter-title">
@@ -1104,9 +1104,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Select Date -->
+                    
 
-                    <!-- By Status -->
+                    
                     <div class="accordion accordion-last" id="accordionMain3">
                         <div class="card-header-new" id="headingThree">
                             <h6 class="filter-title">
@@ -1137,7 +1137,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /By Status -->
+                    
 
                     <div class="filter-buttons">
                         <button type="submit"
@@ -1154,10 +1154,10 @@
             </div>
         </div>
     </div>
-    <!-- /Add Asset -->
+    
 @endif
 @if (Route::is(['domain']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -1166,7 +1166,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -1235,9 +1235,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
+                    
 
-                    <!-- By Package -->
+                    
                     <div class="accordion" id="accordionMain4">
                         <div class="card-header-new" id="headingFive">
                             <h6 class="filter-title">
@@ -1272,9 +1272,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /By Package -->
+                    
 
-                    <!-- Select Date -->
+                    
                     <div class="accordion" id="accordionMain2">
                         <div class="card-header-new" id="headingTwo">
                             <h6 class="filter-title">
@@ -1307,9 +1307,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Select Date -->
+                    
 
-                    <!-- By Status -->
+                    
                     <div class="accordion accordion-last" id="accordionMain3">
                         <div class="card-header-new" id="headingThree">
                             <h6 class="filter-title">
@@ -1340,7 +1340,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /By Status -->
+                    
 
                     <div class="filter-buttons">
                         <button type="submit"
@@ -1357,10 +1357,10 @@
             </div>
         </div>
     </div>
-    <!-- /Add Asset -->
+    
 @endif
 @if (Route::is(['purchase-transcation']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -1369,7 +1369,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Product -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -1405,7 +1405,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> Sumo Soft Limited
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -1424,7 +1424,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -1432,9 +1432,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Product -->
+                    
 
-                    <!-- Product Code -->
+                    
                     <div class="accordion" id="accordionMain4">
                         <div class="card-header-new" id="headingFour">
                             <h6 class="filter-title">
@@ -1469,9 +1469,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Product Code -->
+                    
 
-                    <!-- Unts -->
+                    
                     <div class="accordion accordion-last" id="accordionMain3">
                         <div class="card-header-new" id="headingThree">
                             <h6 class="filter-title">
@@ -1502,7 +1502,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Units -->
+                    
 
                     <div class="filter-buttons">
                         <button type="submit"
@@ -1519,8 +1519,8 @@
             </div>
         </div>
     </div>
-    <!-- /Add Asset -->
-     <!-- Add Stock in Modal -->
+    
+     
      <div class="modal custom-modal fade" id="stock_in" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -1575,10 +1575,10 @@
             </div>
         </div>
     </div>
-    <!-- /Add Stock in Modal -->
+    
 @endif
 @if (Route::is(['customers']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar ledge">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header ledge">
@@ -1591,7 +1591,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion accordion-last" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -1632,7 +1632,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> Sharonda Letha
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -1651,7 +1651,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -1659,7 +1659,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
+                    
                     <div class="accordion" id="accordionMain2">
                         <div class="col-lg-12 col-sm-12">
                             <div class="input-block mb-3">
@@ -1691,10 +1691,10 @@
             </div>
         </div>
     </div>
-    <!--/Add Asset -->
+    
 @endif
 @if (Route::is(['ledger']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -1703,7 +1703,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -1744,7 +1744,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> Randall Hollis
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -1763,7 +1763,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -1771,9 +1771,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
+                    
 
-                    <!-- Reference -->
+                    
                     <div class="accordion" id="accordionMain4">
                         <div class="card-header-new" id="headingFour">
                             <h6 class="filter-title">
@@ -1820,9 +1820,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Reference-->
+                    
 
-                    <!-- By Status -->
+                    
                     <div class="accordion accordion-last" id="accordionMain3">
                         <div class="card-header-new" id="headingThree">
                             <h6 class="filter-title">
@@ -1853,7 +1853,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /By Status -->
+                    
 
                     <div class="filter-buttons">
                         <button type="submit"
@@ -1869,8 +1869,8 @@
             </div>
         </div>
     </div>
-    <!--/Add Asset -->
-    <!-- Add Ledger Modal -->
+    
+    
 	<div class="modal custom-modal fade" id="add_ledger" role="dialog">
 				<div class="modal-dialog modal-dialog-centered modal-md">
 					<div class="modal-content">
@@ -1928,10 +1928,10 @@
 					</div>
 				</div>
 	</div>
-	<!-- /Add Ledger Modal -->
+	
 @endif
 @if (Route::is(['vendors']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -1940,7 +1940,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion accordion-last" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -1981,7 +1981,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> Sharonda Letha
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -2000,7 +2000,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -2008,7 +2008,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
+                    
 
                     <div class="filter-buttons">
                         <button type="submit"
@@ -2025,8 +2025,8 @@
             </div>
         </div>
     </div>
-    <!--/Add Asset -->
-     <!-- Add Supplier Modal -->
+    
+     
      <div class="modal custom-modal fade" id="add_vendor" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -2078,10 +2078,10 @@
             </div>
         </div>
     </div>
-    <!-- /Add Supplier Modal -->
+    
 @endif
 @if (Route::is(['product-list']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -2090,7 +2090,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Product -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -2131,7 +2131,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> Amazon Echo Dot
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -2166,7 +2166,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -2174,9 +2174,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Product -->
+                    
 
-                    <!-- Product Code -->
+                    
                     <div class="accordion" id="accordionMain2">
                         <div class="card-header-new" id="headingTwo">
                             <h6 class="filter-title">
@@ -2215,7 +2215,7 @@
                                             <input type="checkbox" name="product-code">
                                             <span class="checkmark"></span> P125392
                                         </label>
-                                        <!-- View All -->
+                                        
                                         <div class="view-content">
                                             <div class="viewall-Two">
                                                 <label class="custom_check w-100">
@@ -2237,15 +2237,15 @@
                                                             class="fa fa-circle-chevron-down"></i></span></a>
                                             </div>
                                         </div>
-                                        <!-- /View All -->
+                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- /Product Code -->
+                    
 
-                    <!-- Unts -->
+                    
                     <div class="accordion" id="accordionMain3">
                         <div class="card-header-new" id="headingThree">
                             <h6 class="filter-title">
@@ -2292,9 +2292,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Units -->
+                    
 
-                    <!-- Category -->
+                    
                     <div class="accordion accordion-last" id="accordionMain4">
                         <div class="card-header-new" id="headingFour">
                             <h6 class="filter-title">
@@ -2328,7 +2328,7 @@
                                             <input type="checkbox" name="category">
                                             <span class="checkmark"></span> Electronics
                                         </label>
-                                        <!-- View All -->
+                                        
                                         <div class="view-content">
                                             <div class="viewall-Two">
                                                 <label class="custom_check w-100">
@@ -2350,13 +2350,13 @@
                                                             class="fa fa-circle-chevron-down"></i></span></a>
                                             </div>
                                         </div>
-                                        <!-- /View All -->
+                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- /Category -->
+                    
 
                     <div class="filter-buttons">
                         <button type="submit"
@@ -2373,10 +2373,10 @@
             </div>
         </div>
     </div>
-    <!-- /Add Asset -->
+    
 @endif
 @if (Route::is(['category']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -2385,7 +2385,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Product -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -2426,7 +2426,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> Repairs
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -2461,7 +2461,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -2469,7 +2469,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Product -->
+                    
 
                     <div class="filter-buttons">
                         <button type="submit"
@@ -2486,9 +2486,9 @@
             </div>
         </div>
     </div>
-    <!-- /Add Asset -->
+    
 
-    <!-- Add Category Modal -->
+    
     <div class="modal custom-modal fade" id="add_category" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -2564,9 +2564,9 @@
             </div>
         </div>
     </div>
-    <!-- /Add Category Modal -->
+    
 
-    <!-- Add Category Modal -->
+    
     <div class="modal custom-modal fade" id="edit_category" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -2642,10 +2642,10 @@
             </div>
         </div>
     </div>
-    <!-- /Add Supplier Modal -->
+    
 @endif
 @if (Route::is(['units']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -2654,7 +2654,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Product -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -2695,7 +2695,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> Lorem ipsum dolor sit
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -2718,7 +2718,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -2726,9 +2726,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Product -->
+                    
 
-                    <!-- Product Code -->
+                    
                     <div class="accordion" id="accordionMain2">
                         <div class="card-header-new" id="headingTwo">
                             <h6 class="filter-title">
@@ -2767,7 +2767,7 @@
                                             <input type="checkbox" name="category">
                                             <span class="checkmark"></span> P125392
                                         </label>
-                                        <!-- View All -->
+                                        
                                         <div class="view-content">
                                             <div class="viewall-Two">
                                                 <label class="custom_check w-100">
@@ -2789,15 +2789,15 @@
                                                             class="fa fa-circle-chevron-down"></i></span></a>
                                             </div>
                                         </div>
-                                        <!-- /View All -->
+                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- /Product Code -->
+                    
 
-                    <!-- Unts -->
+                    
                     <div class="accordion" id="accordionMain3">
                         <div class="card-header-new" id="headingThree">
                             <h6 class="filter-title">
@@ -2844,9 +2844,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Units -->
+                    
 
-                    <!-- Category -->
+                    
                     <div class="accordion accordion-last" id="accordionMain4">
                         <div class="card-header-new" id="headingFour">
                             <h6 class="filter-title">
@@ -2880,7 +2880,7 @@
                                             <input type="checkbox" name="category">
                                             <span class="checkmark"></span> Software
                                         </label>
-                                        <!-- View All -->
+                                        
                                         <div class="view-content">
                                             <div class="viewall-Two">
                                                 <label class="custom_check w-100">
@@ -2902,13 +2902,13 @@
                                                             class="fa fa-circle-chevron-down"></i></span></a>
                                             </div>
                                         </div>
-                                        <!-- /View All -->
+                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- /Category -->
+                    
 
                     <div class="filter-buttons">
                         <button type="submit"
@@ -2925,9 +2925,9 @@
             </div>
         </div>
     </div>
-    <!--/Add Asset -->
+    
 
-    <!-- Add Units Modal -->
+    
     <div class="modal custom-modal fade" id="add_unit" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -2972,9 +2972,9 @@
             </div>
         </div>
     </div>
-    <!-- /Add Units Modal -->
+    
 
-    <!-- Add Units Modal -->
+    
     <div class="modal custom-modal fade" id="edit_unit" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -3022,10 +3022,10 @@
             </div>
         </div>
     </div>
-    <!-- /Add Units Modal -->
+    
 @endif
 @if (Route::is(['inventory']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -3034,7 +3034,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Product -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -3075,7 +3075,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> Amazon Echo Dot
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -3094,7 +3094,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -3102,9 +3102,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Product -->
+                    
 
-                    <!-- Product Code -->
+                    
                     <div class="accordion" id="accordionMain4">
                         <div class="card-header-new" id="headingFour">
                             <h6 class="filter-title">
@@ -3143,7 +3143,7 @@
                                             <input type="checkbox" name="category">
                                             <span class="checkmark"></span> P125392
                                         </label>
-                                        <!-- View All -->
+                                        
                                         <div class="view-content">
                                             <div class="viewall-Two">
                                                 <label class="custom_check w-100">
@@ -3165,15 +3165,15 @@
                                                             class="fa fa-circle-chevron-down"></i></span></a>
                                             </div>
                                         </div>
-                                        <!-- /View All -->
+                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- /Product Code -->
+                    
 
-                    <!-- Unts -->
+                    
                     <div class="accordion accordion-last" id="accordionMain3">
                         <div class="card-header-new" id="headingThree">
                             <h6 class="filter-title">
@@ -3220,7 +3220,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Units -->
+                    
 
                     <div class="filter-buttons">
                         <button type="submit"
@@ -3237,9 +3237,9 @@
             </div>
         </div>
     </div>
-    <!-- /Add Asset -->
+    
 
-    <!-- Add Stock in Modal -->
+    
     <div class="modal custom-modal fade" id="stock_in" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -3297,10 +3297,10 @@
             </div>
         </div>
     </div>
-    <!-- /Add Stock in Modal -->
+    
 @endif
 @if (Route::is(['inventory-history']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -3309,7 +3309,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Product -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -3350,7 +3350,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> Black Slim 200
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -3369,7 +3369,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -3377,9 +3377,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Product -->
+                    
 
-                    <!-- Product Code -->
+                    
                     <div class="accordion" id="accordionMain4">
                         <div class="card-header-new" id="headingFour">
                             <h6 class="filter-title">
@@ -3418,7 +3418,7 @@
                                             <input type="checkbox" name="category">
                                             <span class="checkmark"></span> P125395
                                         </label>
-                                        <!-- View All -->
+                                        
                                         <div class="view-content">
                                             <div class="viewall-Two">
                                                 <label class="custom_check w-100">
@@ -3436,15 +3436,15 @@
                                                             class="fa fa-circle-chevron-down"></i></span></a>
                                             </div>
                                         </div>
-                                        <!-- /View All -->
+                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- /Product Code -->
+                    
 
-                    <!-- Unts -->
+                    
                     <div class="accordion accordion-last" id="accordionMain3">
                         <div class="card-header-new" id="headingThree">
                             <h6 class="filter-title">
@@ -3491,7 +3491,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Units -->
+                    
 
                     <div class="filter-buttons">
                         <button type="submit"
@@ -3508,9 +3508,9 @@
             </div>
         </div>
     </div>
-    <!-- /Add Asset -->
+    
 
-    <!-- Add Stock in Modal -->
+    
     <div class="modal custom-modal fade" id="stock_in" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -3568,10 +3568,10 @@
             </div>
         </div>
     </div>
-    <!-- /Add Stock in Modal -->
+    
 @endif
 @if (Route::is(['states']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -3580,7 +3580,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -3621,7 +3621,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> John Blair
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -3644,7 +3644,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -3652,9 +3652,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
+                    
 
-                    <!-- Select Date -->
+                    
                     <div class="accordion" id="accordionMain2">
                         <div class="card-header-new" id="headingTwo">
                             <h6 class="filter-title">
@@ -3687,9 +3687,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Select Date -->
+                    
 
-                    <!-- By Status -->
+                    
                     <div class="accordion" id="accordionMain3">
                         <div class="card-header-new" id="headingThree">
                             <h6 class="filter-title">
@@ -3741,9 +3741,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /By Status -->
+                    
 
-                    <!-- Category -->
+                    
                     <div class="accordion accordion-last" id="accordionMain4">
                         <div class="card-header-new" id="headingFour">
                             <h6 class="filter-title">
@@ -3777,7 +3777,7 @@
                                             <input type="checkbox" name="category">
                                             <span class="checkmark"></span> Software
                                         </label>
-                                        <!-- View All -->
+                                        
                                         <div class="view-content">
                                             <div class="viewall-Two">
                                                 <label class="custom_check w-100">
@@ -3799,13 +3799,13 @@
                                                             class="fa fa-circle-chevron-down"></i></span></a>
                                             </div>
                                         </div>
-                                        <!-- /View All -->
+                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- /Category -->
+                    
 
                     <button type="submit"
                         class="d-inline-flex align-items-center justify-content-center btn w-100 btn-primary">
@@ -3817,9 +3817,9 @@
             </div>
         </div>
     </div>
-    <!-- /Add Asset -->
+    
 
-    <!-- Add Items Modal -->
+    
     <div class="modal custom-modal fade" id="add_state" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -3884,10 +3884,10 @@
             </div>
         </div>
     </div>
-    <!-- /Add Items Modal -->
+    
 @endif
 @if (Route::is(['signature-list']))
-    <!-- Add Modal -->
+    
     <div class="modal custom-modal signature-add-modal fade" id="add_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -3937,10 +3937,10 @@
             </div>
         </div>
     </div>
-    <!-- / Add Modal -->
+    
 @endif
 @if (Route::is(['signature-invoice']))
-    <!-- Add Tax & Discount Modal -->
+    
     <div class="modal custom-modal fade" id="add_discount" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -3986,10 +3986,10 @@
             </div>
         </div>
     </div>
-    <!-- /Add Tax & Discount Modal -->
+    
 @endif
 @if (Route::is(['active-customers']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -3998,7 +3998,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -4039,7 +4039,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> John Blair
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -4062,7 +4062,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -4070,9 +4070,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
+                    
 
-                    <!-- Select Date -->
+                    
                     <div class="accordion" id="accordionMain2">
                         <div class="card-header-new" id="headingTwo">
                             <h6 class="filter-title">
@@ -4105,9 +4105,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Select Date -->
+                    
 
-                    <!-- By Status -->
+                    
                     <div class="accordion" id="accordionMain3">
                         <div class="card-header-new" id="headingThree">
                             <h6 class="filter-title">
@@ -4159,9 +4159,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /By Status -->
+                    
 
-                    <!-- Category -->
+                    
                     <div class="accordion accordion-last" id="accordionMain4">
                         <div class="card-header-new" id="headingFour">
                             <h6 class="filter-title">
@@ -4195,7 +4195,7 @@
                                             <input type="checkbox" name="category">
                                             <span class="checkmark"></span> Software
                                         </label>
-                                        <!-- View All -->
+                                        
                                         <div class="view-content">
                                             <div class="viewall-Two">
                                                 <label class="custom_check w-100">
@@ -4217,13 +4217,13 @@
                                                             class="fa fa-circle-chevron-down"></i></span></a>
                                             </div>
                                         </div>
-                                        <!-- /View All -->
+                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- /Category -->
+                    
 
                     <button type="submit"
                         class="d-inline-flex align-items-center justify-content-center btn w-100 btn-primary">
@@ -4235,10 +4235,10 @@
             </div>
         </div>
     </div>
-    <!--/Add Asset -->
+    
 @endif
 @if (Route::is(['deactive-customers']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -4247,7 +4247,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -4288,7 +4288,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> John Blair
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -4311,7 +4311,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -4319,9 +4319,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
+                    
 
-                    <!-- Select Date -->
+                    
                     <div class="accordion" id="accordionMain2">
                         <div class="card-header-new" id="headingTwo">
                             <h6 class="filter-title">
@@ -4354,9 +4354,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Select Date -->
+                    
 
-                    <!-- By Status -->
+                    
                     <div class="accordion" id="accordionMain3">
                         <div class="card-header-new" id="headingThree">
                             <h6 class="filter-title">
@@ -4408,9 +4408,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /By Status -->
+                    
 
-                    <!-- Category -->
+                    
                     <div class="accordion accordion-last" id="accordionMain4">
                         <div class="card-header-new" id="headingFour">
                             <h6 class="filter-title">
@@ -4444,7 +4444,7 @@
                                             <input type="checkbox" name="category">
                                             <span class="checkmark"></span> Software
                                         </label>
-                                        <!-- View All -->
+                                        
                                         <div class="view-content">
                                             <div class="viewall-Two">
                                                 <label class="custom_check w-100">
@@ -4466,13 +4466,13 @@
                                                             class="fa fa-circle-chevron-down"></i></span></a>
                                             </div>
                                         </div>
-                                        <!-- /View All -->
+                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- /Category -->
+                    
 
                     <button type="submit"
                         class="d-inline-flex align-items-center justify-content-center btn w-100 btn-primary">
@@ -4484,10 +4484,10 @@
             </div>
         </div>
     </div>
-    <!--/Add Asset -->
+    
 @endif
 @if (Route::is(['add-credit-notes']))
-    <!-- Add Tax & Discount Modal -->
+    
     <div class="modal custom-modal fade" id="add_discount" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -4533,8 +4533,8 @@
             </div>
         </div>
     </div>
-    <!-- /Add Tax & Discount Modal -->
-      <!-- Add Bank Details Modal -->
+    
+      
       <div class="modal custom-modal fade" id="bank_details" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -4582,10 +4582,10 @@
             </div>
         </div>
     </div>
-    <!-- /Add Bank Details Modal -->
+    
 @endif
 @if (Route::is(['delivery-challans']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -4594,7 +4594,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -4629,9 +4629,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
+                    
 
-                    <!-- Select Date -->
+                    
                     <div class="accordion" id="accordionMain2">
                         <div class="card-header-new" id="headingTwo">
                             <h6 class="filter-title">
@@ -4664,9 +4664,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Select Date -->
+                    
 
-                    <!-- By Status -->
+                    
                     <div class="accordion" id="accordionMain3">
                         <div class="card-header-new" id="headingThree">
                             <h6 class="filter-title">
@@ -4718,9 +4718,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /By Status -->
+                    
 
-                    <!-- Category -->
+                    
                     <div class="accordion accordion-last" id="accordionMain4">
                         <div class="card-header-new" id="headingFour">
                             <h6 class="filter-title">
@@ -4754,7 +4754,7 @@
                                             <input type="checkbox" name="category">
                                             <span class="checkmark"></span> Software
                                         </label>
-                                        <!-- View All -->
+                                        
                                         <div class="view-content">
                                             <div class="viewall-Two">
                                                 <label class="custom_check w-100">
@@ -4776,13 +4776,13 @@
                                                             class="fa fa-circle-chevron-down"></i></span></a>
                                             </div>
                                         </div>
-                                        <!-- /View All -->
+                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- /Category -->
+                    
 
                     <button type="submit"
                         class="d-inline-flex align-items-center justify-content-center btn w-100 btn-primary">
@@ -4794,10 +4794,10 @@
             </div>
         </div>
     </div>
-    <!--/Add Asset -->
+    
 @endif
 @if (Route::is(['add-delivery-challans']))
-    <!-- Add Tax & Discount Modal -->
+    
     <div class="modal custom-modal fade" id="add_discount" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -4843,8 +4843,8 @@
             </div>
         </div>
     </div>
-    <!-- /Add Tax & Discount Modal -->
- <!-- Add Bank Details Modal -->
+    
+ 
  <div class="modal custom-modal fade" id="bank_details" role="dialog">
     <div class="modal-dialog modal-dialog-centered modal-md">
         <div class="modal-content">
@@ -4895,10 +4895,10 @@
         </div>
     </div>
 </div>
-<!-- /Add Bank Details Modal -->
+
 @endif
 @if (Route::is(['add-invoice']))
-    <!-- Add Tax & Discount Modal -->
+    
     <div class="modal custom-modal fade" id="add_discount" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -4946,8 +4946,8 @@
             </div>
         </div>
     </div>
-    <!-- /Add Tax & Discount Modal -->
-    <!-- Add Bank Details Modal -->
+    
+    
     <div class="modal custom-modal fade" id="bank_details" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -5001,10 +5001,10 @@
             </div>
         </div>
     </div>
-    <!-- /Add Bank Details Modal -->
+    
 @endif
 @if (Route::is(['purchase-return']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -5013,7 +5013,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -5054,7 +5054,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> Amazon Echo Dot
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -5089,7 +5089,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -5097,9 +5097,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
+                    
 
-                    <!-- Product Code -->
+                    
                     <div class="accordion" id="accordionMain2">
                         <div class="card-header-new" id="headingTwo">
                             <h6 class="filter-title">
@@ -5133,7 +5133,7 @@
                                             <input type="checkbox" name="sku">
                                             <span class="checkmark"></span> PPT004
                                         </label>
-                                        <!-- View All -->
+                                        
                                         <div class="view-content">
                                             <div class="viewall-Two">
                                                 <label class="custom_check w-100">
@@ -5147,15 +5147,15 @@
                                                             class="fa fa-circle-chevron-down"></i></span></a>
                                             </div>
                                         </div>
-                                        <!-- /View All -->
+                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- /Product Code -->
+                    
 
-                    <!-- Category -->
+                    
                     <div class="accordion accordion-last" id="accordionMain4">
                         <div class="card-header-new" id="headingFour">
                             <h6 class="filter-title">
@@ -5189,7 +5189,7 @@
                                             <input type="checkbox" name="category">
                                             <span class="checkmark"></span> Repairs
                                         </label>
-                                        <!-- View All -->
+                                        
                                         <div class="view-content">
                                             <div class="viewall-Two">
                                                 <label class="custom_check w-100">
@@ -5207,13 +5207,13 @@
                                                             class="fa fa-circle-chevron-down"></i></span></a>
                                             </div>
                                         </div>
-                                        <!-- /View All -->
+                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- /Category -->
+                    
 
                     <div class="filter-buttons">
                         <button type="submit"
@@ -5230,9 +5230,9 @@
             </div>
         </div>
     </div>
-    <!--/Add Asset -->
+    
 
-    <!-- Add Supplier Modal -->
+    
     <div class="modal custom-modal fade" id="add_vendor" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -5281,10 +5281,10 @@
             </div>
         </div>
     </div>
-    <!-- /Add Supplier Modal -->
+    
 @endif
 @if (Route::is(['add-purchase-return']))
-    <!-- Add Tax & Discount Modal -->
+    
     <div class="modal custom-modal fade" id="add_discount" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -5331,8 +5331,8 @@
             </div>
         </div>
     </div>
-    <!-- /Add Tax & Discount Modal -->
-     <!-- Add Bank Details Modal -->
+    
+     
      <div class="modal custom-modal fade" id="bank_details" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -5380,10 +5380,10 @@
             </div>
         </div>
     </div>
-    <!-- /Add Bank Details Modal -->
+    
 @endif
 @if (Route::is(['purchase-orders']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -5392,7 +5392,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -5461,9 +5461,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
+                    
 
-                    <!-- By Status -->
+                    
                     <div class="accordion" id="accordionMain3">
                         <div class="card-header-new" id="headingThree">
                             <h6 class="filter-title">
@@ -5510,9 +5510,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /By Status -->
+                    
 
-                    <!-- By Status -->
+                    
                     <div class="accordion" id="accordionMain5">
                         <div class="card-header-new" id="headingFive">
                             <h6 class="filter-title">
@@ -5547,9 +5547,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /By Status -->
+                    
 
-                    <!-- Category -->
+                    
                     <div class="accordion accordion-last" id="accordionMain4">
                         <div class="card-header-new" id="headingFour">
                             <h6 class="filter-title">
@@ -5580,7 +5580,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Category -->
+                    
 
                     <div class="filter-buttons">
                         <button type="submit"
@@ -5597,10 +5597,10 @@
             </div>
         </div>
     </div>
-    <!--/Add Asset -->
+    
 @endif
 @if (Route::is(['add-purchase-order']))
-    <!-- Add Tax & Discount Modal -->
+    
     <div class="modal custom-modal fade" id="add_discount" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -5647,8 +5647,8 @@
             </div>
         </div>
     </div>
-    <!-- /Add Tax & Discount Modal -->
- <!-- Add Bank Details Modal -->
+    
+ 
  <div class="modal custom-modal fade" id="bank_details" role="dialog">
     <div class="modal-dialog modal-dialog-centered modal-md">
         <div class="modal-content">
@@ -5696,10 +5696,10 @@
         </div>
     </div>
 </div>
-<!-- /Add Bank Details Modal -->
+
 @endif
 @if (Route::is(['add-purchases']))
-    <!-- Add Tax & Discount Modal -->
+    
     <div class="modal custom-modal fade" id="add_discount" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -5746,8 +5746,8 @@
             </div>
         </div>
     </div>
-    <!-- /Add Tax & Discount Modal -->
- <!-- Add Bank Details Modal -->
+    
+ 
  <div class="modal custom-modal fade" id="bank_details" role="dialog">
     <div class="modal-dialog modal-dialog-centered modal-md">
         <div class="modal-content">
@@ -5795,10 +5795,10 @@
         </div>
     </div>
 </div>
-<!-- /Add Bank Details Modal -->
+
 @endif
 @if (Route::is(['quotations']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -5807,7 +5807,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -5848,7 +5848,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> Sharonda
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -5867,7 +5867,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -5875,9 +5875,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
+                    
 
-                    <!-- Select Date -->
+                    
                     <div class="accordion" id="accordionMain2">
                         <div class="card-header-new" id="headingTwo">
                             <h6 class="filter-title">
@@ -5910,9 +5910,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Select Date -->
+                    
 
-                    <!-- Quotation Id -->
+                    
                     <div class="accordion" id="accordionMain4">
                         <div class="card-header-new" id="headingFour">
                             <h6 class="filter-title">
@@ -5965,9 +5965,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Quotation Id -->
+                    
 
-                    <!-- By Status -->
+                    
                     <div class="accordion accordion-last" id="accordionMain3">
                         <div class="card-header-new" id="headingThree">
                             <h6 class="filter-title">
@@ -6019,7 +6019,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /By Status -->
+                    
 
                     <div class="filter-buttons">
                         <button type="submit"
@@ -6036,10 +6036,10 @@
             </div>
         </div>
     </div>
-    <!--/Add Asset -->
+    
 @endif
 @if (Route::is(['add-quotations']))
-    <!-- Add Tax & Discount Modal -->
+    
     <div class="modal custom-modal fade" id="add_discount" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -6086,8 +6086,8 @@
             </div>
         </div>
     </div>
-    <!-- /Add Tax & Discount Modal -->
-  <!-- Add Bank Details Modal -->
+    
+  
   <div class="modal custom-modal fade" id="bank_details" role="dialog">
     <div class="modal-dialog modal-dialog-centered modal-md">
         <div class="modal-content">
@@ -6134,10 +6134,10 @@
         </div>
     </div>
 </div>
-<!-- /Add Bank Details Modal -->
+
 @endif
 @if (Route::is(['all-blogs']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -6146,7 +6146,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -6187,7 +6187,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> John Blair
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -6210,7 +6210,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -6218,9 +6218,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
+                    
 
-                    <!-- Select Date -->
+                    
                     <div class="accordion" id="accordionMain2">
                         <div class="card-header-new" id="headingTwo">
                             <h6 class="filter-title">
@@ -6253,9 +6253,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Select Date -->
+                    
 
-                    <!-- By Status -->
+                    
                     <div class="accordion" id="accordionMain3">
                         <div class="card-header-new" id="headingThree">
                             <h6 class="filter-title">
@@ -6307,9 +6307,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /By Status -->
+                    
 
-                    <!-- Category -->
+                    
                     <div class="accordion accordion-last" id="accordionMain4">
                         <div class="card-header-new" id="headingFour">
                             <h6 class="filter-title">
@@ -6343,7 +6343,7 @@
                                             <input type="checkbox" name="category">
                                             <span class="checkmark"></span> Software
                                         </label>
-                                        <!-- View All -->
+                                        
                                         <div class="view-content">
                                             <div class="viewall-Two">
                                                 <label class="custom_check w-100">
@@ -6365,13 +6365,13 @@
                                                             class="fa fa-circle-chevron-down"></i></span></a>
                                             </div>
                                         </div>
-                                        <!-- /View All -->
+                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- /Category -->
+                    
 
                     <button type="submit"
                         class="d-inline-flex align-items-center justify-content-center btn w-100 btn-primary">
@@ -6383,9 +6383,9 @@
             </div>
         </div>
     </div>
-    <!-- /Add Asset -->
+    
 
-    <!-- Add Blog -->
+    
     <div class="modal custom-modal modal-lg fade" id="add_blog" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -6466,10 +6466,10 @@
             </div>
         </div>
     </div>
-    <!-- /Add Blog -->
+    
 @endif
 @if (Route::is(['bank-account']))
-      <!-- Add Bank Details Modal -->
+      
       <div class="modal custom-modal fade" id="bank_details" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -6533,10 +6533,10 @@
             </div>
         </div>
     </div>
-    <!-- /Add Bank Details Modal -->
+    
 @endif
 @if (Route::is(['calendar']))
-    <!-- Add Event Modal -->
+    
     <div id="add_event" class="modal custom-modal fade" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md" role="document">
             <div class="modal-content">
@@ -6568,9 +6568,9 @@
             </div>
         </div>
     </div>
-    <!-- /Add Event Modal -->
+    
 
-    <!-- Add Event Modal -->
+    
     <div class="modal custom-modal fade none-border" id="my_event">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -6588,9 +6588,9 @@
             </div>
         </div>
     </div>
-    <!-- /Add Event Modal -->
+    
 
-    <!-- Add Category Modal -->
+    
     <div class="modal custom-modal fade" id="add_new_event">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -6630,10 +6630,10 @@
             </div>
         </div>
     </div>
-    <!-- /Add Category Modal -->
+    
 @endif
 @if (Route::is(['categories']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -6642,7 +6642,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -6683,7 +6683,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> John Blair
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -6706,7 +6706,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -6714,9 +6714,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
+                    
 
-                    <!-- Select Date -->
+                    
                     <div class="accordion" id="accordionMain2">
                         <div class="card-header-new" id="headingTwo">
                             <h6 class="filter-title">
@@ -6749,9 +6749,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Select Date -->
+                    
 
-                    <!-- By Status -->
+                    
                     <div class="accordion" id="accordionMain3">
                         <div class="card-header-new" id="headingThree">
                             <h6 class="filter-title">
@@ -6803,9 +6803,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /By Status -->
+                    
 
-                    <!-- Category -->
+                    
                     <div class="accordion accordion-last" id="accordionMain4">
                         <div class="card-header-new" id="headingFour">
                             <h6 class="filter-title">
@@ -6839,7 +6839,7 @@
                                             <input type="checkbox" name="category">
                                             <span class="checkmark"></span> Software
                                         </label>
-                                        <!-- View All -->
+                                        
                                         <div class="view-content">
                                             <div class="viewall-Two">
                                                 <label class="custom_check w-100">
@@ -6861,13 +6861,13 @@
                                                             class="fa fa-circle-chevron-down"></i></span></a>
                                             </div>
                                         </div>
-                                        <!-- /View All -->
+                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- /Category -->
+                    
 
                     <button type="submit"
                         class="d-inline-flex align-items-center justify-content-center btn w-100 btn-primary">
@@ -6879,10 +6879,10 @@
             </div>
         </div>
     </div>
-    <!-- /Add Asset -->
+    
 @endif
 @if (Route::is(['cities']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -6891,7 +6891,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -6932,7 +6932,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> John Blair
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -6955,7 +6955,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -6963,9 +6963,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
+                    
 
-                    <!-- Select Date -->
+                    
                     <div class="accordion" id="accordionMain2">
                         <div class="card-header-new" id="headingTwo">
                             <h6 class="filter-title">
@@ -6998,9 +6998,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Select Date -->
+                    
 
-                    <!-- By Status -->
+                    
                     <div class="accordion" id="accordionMain3">
                         <div class="card-header-new" id="headingThree">
                             <h6 class="filter-title">
@@ -7052,9 +7052,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /By Status -->
+                    
 
-                    <!-- Category -->
+                    
                     <div class="accordion accordion-last" id="accordionMain4">
                         <div class="card-header-new" id="headingFour">
                             <h6 class="filter-title">
@@ -7088,7 +7088,7 @@
                                             <input type="checkbox" name="category">
                                             <span class="checkmark"></span> Software
                                         </label>
-                                        <!-- View All -->
+                                        
                                         <div class="view-content">
                                             <div class="viewall-Two">
                                                 <label class="custom_check w-100">
@@ -7110,13 +7110,13 @@
                                                             class="fa fa-circle-chevron-down"></i></span></a>
                                             </div>
                                         </div>
-                                        <!-- /View All -->
+                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- /Category -->
+                    
 
                     <div class="filter-buttons">
                         <button type="submit"
@@ -7133,9 +7133,9 @@
             </div>
         </div>
     </div>
-    <!-- /Add Asset -->
+    
 
-    <!-- Add Items Modal -->
+    
     <div class="modal custom-modal fade" id="add_city" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -7199,10 +7199,10 @@
             </div>
         </div>
     </div>
-    <!-- /Add Items Modal -->
+    
 @endif
 @if (Route::is(['contact-messages']))
-    <!-- Filter -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -7211,7 +7211,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -7252,7 +7252,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> John Blair
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -7275,7 +7275,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -7283,9 +7283,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
+                    
 
-                    <!-- Select Date -->
+                    
                     <div class="accordion" id="accordionMain2">
                         <div class="card-header-new" id="headingTwo">
                             <h6 class="filter-title">
@@ -7318,9 +7318,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Select Date -->
+                    
 
-                    <!-- By Status -->
+                    
                     <div class="accordion" id="accordionMain3">
                         <div class="card-header-new" id="headingFour">
                             <h6 class="filter-title">
@@ -7372,9 +7372,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /By Status -->
+                    
 
-                    <!-- Category -->
+                    
                     <div class="accordion accordion-last" id="accordionMain4">
                         <div class="card-header-new" id="headingThree1">
                             <h6 class="filter-title">
@@ -7408,7 +7408,7 @@
                                             <input type="checkbox" name="category">
                                             <span class="checkmark"></span> Software
                                         </label>
-                                        <!-- View All -->
+                                        
                                         <div class="view-content">
                                             <div class="viewall-Two">
                                                 <label class="custom_check w-100">
@@ -7430,13 +7430,13 @@
                                                             class="fa fa-circle-chevron-down"></i></span></a>
                                             </div>
                                         </div>
-                                        <!-- /View All -->
+                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- /Category -->
+                    
                     <button type="submit"
                         class="d-inline-flex align-items-center justify-content-center btn w-100 btn-primary">
                         <span><img src="{{ URL::asset('/assets/img/icons/chart.svg')}}" class="me-2"
@@ -7447,10 +7447,10 @@
             </div>
         </div>
     </div>
-    <!-- /Filter -->
+    
 @endif
 @if (Route::is(['countries']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -7459,7 +7459,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -7500,7 +7500,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> John Blair
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -7523,7 +7523,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -7531,9 +7531,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
+                    
 
-                    <!-- Select Date -->
+                    
                     <div class="accordion" id="accordionMain2">
                         <div class="card-header-new" id="headingTwo">
                             <h6 class="filter-title">
@@ -7566,9 +7566,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Select Date -->
+                    
 
-                    <!-- By Status -->
+                    
                     <div class="accordion" id="accordionMain3">
                         <div class="card-header-new" id="headingThree">
                             <h6 class="filter-title">
@@ -7620,9 +7620,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /By Status -->
+                    
 
-                    <!-- Category -->
+                    
                     <div class="accordion accordion-last" id="accordionMain4">
                         <div class="card-header-new" id="headingFour">
                             <h6 class="filter-title">
@@ -7656,7 +7656,7 @@
                                             <input type="checkbox" name="category">
                                             <span class="checkmark"></span> Software
                                         </label>
-                                        <!-- View All -->
+                                        
                                         <div class="view-content">
                                             <div class="viewall-Two">
                                                 <label class="custom_check w-100">
@@ -7678,13 +7678,13 @@
                                                             class="fa fa-circle-chevron-down"></i></span></a>
                                             </div>
                                         </div>
-                                        <!-- /View All -->
+                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- /Category -->
+                    
 
                     <div class="filter-buttons">
                         <button type="submit"
@@ -7701,8 +7701,8 @@
             </div>
         </div>
     </div>
-    <!-- /Add Asset -->
-    <!-- Add Items Modal -->
+    
+    
     <div class="modal custom-modal fade" id="add_country" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -7758,10 +7758,10 @@
             </div>
         </div>
     </div>
-    <!-- /Add Items Modal -->
+    
 @endif
 @if (Route::is(['credit-notes']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -7770,7 +7770,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -7811,7 +7811,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> Sharonda
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -7830,7 +7830,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -7838,9 +7838,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
+                    
 
-                    <!-- Product Code -->
+                    
                     <div class="accordion" id="accordionMain2">
                         <div class="card-header-new" id="headingTwo">
                             <h6 class="filter-title">
@@ -7874,7 +7874,7 @@
                                             <input type="checkbox" name="ref-no">
                                             <span class="checkmark"></span> 4905684
                                         </label>
-                                        <!-- View All -->
+                                        
                                         <div class="view-content">
                                             <div class="viewall-Two">
                                                 <label class="custom_check w-100">
@@ -7892,15 +7892,15 @@
                                                             class="fa fa-circle-chevron-down"></i></span></a>
                                             </div>
                                         </div>
-                                        <!-- /View All -->
+                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- /Product Code -->
+                    
 
-                    <!-- By Status -->
+                    
                     <div class="accordion" id="accordionMain3">
                         <div class="card-header-new" id="headingThree">
                             <h6 class="filter-title">
@@ -7935,9 +7935,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /By Status -->
+                    
 
-                    <!-- By Status -->
+                    
                     <div class="accordion accordion-last" id="accordionMain4">
                         <div class="card-header-new" id="headingFour">
                             <h6 class="filter-title">
@@ -7968,7 +7968,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /By Status -->
+                    
 
                     <div class="filter-buttons">
                         <button type="submit"
@@ -7985,10 +7985,10 @@
             </div>
         </div>
     </div>
-    <!-- /Add Asset -->
+    
 @endif
 @if (Route::is(['custom-filed']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -7997,7 +7997,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -8038,7 +8038,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> John Blair
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -8061,7 +8061,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -8069,9 +8069,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
+                    
 
-                    <!-- Select Date -->
+                    
                     <div class="accordion" id="accordionMain2">
                         <div class="card-header-new" id="headingTwo">
                             <h6 class="filter-title">
@@ -8104,9 +8104,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Select Date -->
+                    
 
-                    <!-- By Status -->
+                    
                     <div class="accordion accordion-last" id="accordionMain3">
                         <div class="card-header-new" id="headingThree">
                             <h6 class="filter-title">
@@ -8153,7 +8153,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /By Status -->
+                    
 
                     <button type="submit"
                         class="d-inline-flex align-items-center justify-content-center btn w-100 btn-primary">
@@ -8165,9 +8165,9 @@
             </div>
         </div>
     </div>
-    <!--/Add Asset -->
+    
 
-    <!-- Add New Modal -->
+    
     <div class="modal custom-modal fade" id="add_custom" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -8266,10 +8266,10 @@
             </div>
         </div>
     </div>
-    <!-- /Add Supplier Modal -->
+    
 @endif
 @if (Route::is(['customers-ledger']))
-<!-- Add Asset -->
+
 <div class="toggle-sidebar">
     <div class="sidebar-layout-filter">
         <div class="sidebar-header">
@@ -8278,7 +8278,7 @@
         </div>
         <div class="sidebar-body">						
             <form action="#" autocomplete="off">
-                <!-- Customer -->
+                
                 <div class="accordion" id="accordionMain1">
                     <div class="card-header-new" id="headingOne">
                         <h6 class="filter-title">
@@ -8315,7 +8315,7 @@
                                                 <input type="checkbox" name="username">
                                                 <span class="checkmark"></span> Randall Hollis 
                                             </label>
-                                            <!-- View All -->
+                                            
                                             <div class="view-content">
                                                 <div class="viewall-One">	
                                                     <label class="custom_check w-100">
@@ -8331,7 +8331,7 @@
                                                     <a href="javascript:void(0);" class="viewall-button-One"><span class="me-2">View All</span><span><i class="fa fa-circle-chevron-down"></i></span></a>
                                                 </div>
                                             </div>
-                                            <!-- /View All -->
+                                            
                                         </div>
                                     </div>
                                 </div>
@@ -8339,9 +8339,9 @@
                         </div>
                     </div>
                 </div>
-                <!-- /Customer -->
+                
 
-                <!-- By Status -->
+                
                 <div class="accordion accordion-last" id="accordionMain3">
                     <div class="card-header-new" id="headingThree">
                         <h6 class="filter-title">
@@ -8372,7 +8372,7 @@
                         </div>
                     </div>
                 </div>
-                <!-- /By Status -->
+                
 
                 <div class="filter-buttons">
                     <button type="submit" class="d-inline-flex align-items-center justify-content-center btn w-100 btn-primary">
@@ -8386,9 +8386,9 @@
         </div>
     </div>
 </div>	
-<!--/Add Asset -->
 
-<!-- Add Ledger Modal -->
+
+
 <div class="modal custom-modal fade" id="add_ledger" role="dialog">
     <div class="modal-dialog modal-dialog-centered modal-md">
         <div class="modal-content">
@@ -8440,10 +8440,10 @@
         </div>
     </div>
 </div>
-<!-- /Add Ledger Modal -->
+
 @endif
 @if (Route::is(['debit-notes']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -8452,7 +8452,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -8493,7 +8493,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> Sharonda
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -8512,7 +8512,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -8520,9 +8520,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
+                    
 
-                    <!-- Product Code -->
+                    
                     <div class="accordion" id="accordionMain2">
                         <div class="card-header-new" id="headingTwo">
                             <h6 class="filter-title">
@@ -8556,7 +8556,7 @@
                                             <input type="checkbox" name="ref-no">
                                             <span class="checkmark"></span> 4905684
                                         </label>
-                                        <!-- View All -->
+                                        
                                         <div class="view-content">
                                             <div class="viewall-Two">
                                                 <label class="custom_check w-100">
@@ -8574,15 +8574,15 @@
                                                             class="fa fa-circle-chevron-down"></i></span></a>
                                             </div>
                                         </div>
-                                        <!-- /View All -->
+                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- /Product Code -->
+                    
 
-                    <!-- By Status -->
+                    
                     <div class="accordion" id="accordionMain3">
                         <div class="card-header-new" id="headingThree">
                             <h6 class="filter-title">
@@ -8617,9 +8617,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /By Status -->
+                    
 
-                    <!-- By Status -->
+                    
                     <div class="accordion accordion-last" id="accordionMain4">
                         <div class="card-header-new" id="headingFour">
                             <h6 class="filter-title">
@@ -8650,7 +8650,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /By Status -->
+                    
 
                     <div class="filter-buttons">
                         <button type="submit"
@@ -8667,10 +8667,10 @@
             </div>
         </div>
     </div>
-    <!--/Add Asset -->
+    
 @endif
 @if (Route::is(['delete-account-request']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -8679,7 +8679,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -8720,7 +8720,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> Sharonda
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -8739,7 +8739,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -8747,9 +8747,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
+                    
 
-                    <!-- Select Date -->
+                    
                     <div class="accordion" id="accordionMain2">
                         <div class="card-header-new" id="headingTwo">
                             <h6 class="filter-title">
@@ -8782,7 +8782,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Select Date -->
+                    
 
                     <button type="submit"
                         class="d-inline-flex align-items-center justify-content-center btn w-100 btn-primary">
@@ -8794,10 +8794,10 @@
             </div>
         </div>
     </div>
-    <!--/Add Asset -->
+    
 @endif
 @if (Route::is(['edit-credit-notes']))
-    <!-- Add Tax & Discount Modal -->
+    
     <div class="modal custom-modal fade" id="add_discount" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -8843,10 +8843,10 @@
             </div>
         </div>
     </div>
-    <!-- /Add Tax & Discount Modal -->
+    
 @endif
 @if (Route::is(['edit-delivery-challans']))
-    <!-- Add Tax & Discount Modal -->
+    
     <div class="modal custom-modal fade" id="add_discount" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -8892,10 +8892,10 @@
             </div>
         </div>
     </div>
-    <!-- /Add Tax & Discount Modal -->
+    
 @endif
 @if (Route::is(['edit-invoice']))
-    <!-- Add Tax & Discount Modal -->
+    
     <div class="modal custom-modal fade" id="add_discount" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -8941,10 +8941,10 @@
             </div>
         </div>
     </div>
-    <!-- /Add Tax & Discount Modal -->
+    
 @endif
 @if (Route::is(['purchase-report']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -8953,7 +8953,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -8994,7 +8994,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> Amazon Echo Dot
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -9029,7 +9029,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -9037,9 +9037,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
+                    
 
-                    <!-- Category -->
+                    
                     <div class="accordion" id="accordionMain4">
                         <div class="card-header-new" id="headingFour">
                             <h6 class="filter-title">
@@ -9073,7 +9073,7 @@
                                             <input type="checkbox" name="category">
                                             <span class="checkmark"></span> Repairs
                                         </label>
-                                        <!-- View All -->
+                                        
                                         <div class="view-content">
                                             <div class="viewall-Two">
                                                 <label class="custom_check w-100">
@@ -9091,15 +9091,15 @@
                                                             class="fa fa-circle-chevron-down"></i></span></a>
                                             </div>
                                         </div>
-                                        <!-- /View All -->
+                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- /Category -->
+                    
 
-                    <!-- By Status -->
+                    
                     <div class="accordion accordion-last" id="accordionMain3">
                         <div class="card-header-new" id="headingThree">
                             <h6 class="filter-title">
@@ -9130,7 +9130,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /By Status -->
+                    
 
                     <div class="filter-buttons">
                         <button type="submit"
@@ -9147,9 +9147,9 @@
             </div>
         </div>
     </div>
-    <!--/Add Asset -->
+    
 
-    <!-- Add Supplier Modal -->
+    
     <div class="modal custom-modal fade" id="add_vendor" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -9198,10 +9198,10 @@
             </div>
         </div>
     </div>
-    <!-- /Add Supplier Modal -->
+    
 @endif
 @if (Route::is(['edit-purchase-return']))
-    <!-- Add Tax & Discount Modal -->
+    
     <div class="modal custom-modal fade" id="add_discount" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -9248,8 +9248,8 @@
             </div>
         </div>
     </div>
-    <!-- /Add Tax & Discount Modal -->
-   <!-- Add Bank Details Modal -->
+    
+   
    <div class="modal custom-modal fade" id="bank_details" role="dialog">
     <div class="modal-dialog modal-dialog-centered modal-md">
         <div class="modal-content">
@@ -9297,10 +9297,10 @@
         </div>
     </div>
 </div>
-<!-- /Add Bank Details Modal -->
+
 @endif
 @if (Route::is(['edit-purchases-order']))
-    <!-- Add Tax & Discount Modal -->
+    
     <div class="modal custom-modal fade" id="add_discount" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -9346,10 +9346,10 @@
             </div>
         </div>
     </div>
-    <!-- /Add Tax & Discount Modal -->
+    
 @endif
 @if (Route::is(['purchases']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -9358,7 +9358,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -9399,7 +9399,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> Sharonda
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -9418,7 +9418,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -9426,9 +9426,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
+                    
 
-                    <!-- Purchase ID -->
+                    
                     <div class="accordion" id="accordionMain3">
                         <div class="card-header-new" id="headingThree">
                             <h6 class="filter-title">
@@ -9475,9 +9475,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Purchase ID -->
+                    
 
-                    <!-- By Status -->
+                    
                     <div class="accordion" id="accordionMain5">
                         <div class="card-header-new" id="headingFive">
                             <h6 class="filter-title">
@@ -9512,9 +9512,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /By Status -->
+                    
 
-                    <!-- Category -->
+                    
                     <div class="accordion accordion-last" id="accordionMain5">
                         <div class="card-header-new" id="headingFive">
                             <h6 class="filter-title">
@@ -9545,7 +9545,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Category -->
+                    
 
                     <div class="filter-buttons">
                         <button type="submit"
@@ -9562,10 +9562,10 @@
             </div>
         </div>
     </div>
-    <!--/Add Asset -->
+    
 @endif
 @if (Route::is(['edit-purchases']))
-    <!-- Add Tax & Discount Modal -->
+    
     <div class="modal custom-modal fade" id="add_discount" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -9611,10 +9611,10 @@
             </div>
         </div>
     </div>
-    <!-- /Add Tax & Discount Modal -->
+    
 @endif
 @if (Route::is(['quotation-report']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -9623,7 +9623,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -9659,8 +9659,8 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
-                    <!-- Product Code -->
+                    
+                    
                     <div class="accordion accordion-last" id="accordionMain2">
                         <div class="card-header-new" id="headingTwo">
                             <h6 class="filter-title">
@@ -9713,7 +9713,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Quotation Id -->
+                    
                     <div class="filter-buttons">
                         <button type="submit"
                             class="d-inline-flex align-items-center justify-content-center btn w-100 btn-primary">
@@ -9730,10 +9730,10 @@
             </div>
         </div>
     </div>
-    <!--/Add Asset -->
+    
 @endif
 @if (Route::is(['edit-quotations']))
-    <!-- Add Tax & Discount Modal -->
+    
     <div class="modal custom-modal fade" id="add_discount" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -9779,10 +9779,10 @@
             </div>
         </div>
     </div>
-    <!-- /Add Tax & Discount Modal -->
+    
 @endif
 @if (Route::is(['rexpense-report']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -9791,7 +9791,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -9833,7 +9833,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> Lexicon Technologies
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -9852,7 +9852,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -9860,9 +9860,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
+                    
 
-                    <!-- Category -->
+                    
                     <div class="accordion" id="accordionMain4">
                         <div class="card-header-new" id="headingFour">
                             <h6 class="filter-title">
@@ -9896,7 +9896,7 @@
                                             <input type="checkbox" name="category">
                                             <span class="checkmark"></span> Repairs
                                         </label>
-                                        <!-- View All -->
+                                        
                                         <div class="view-content">
                                             <div class="viewall-Two">
                                                 <label class="custom_check w-100">
@@ -9914,15 +9914,15 @@
                                                             class="fa fa-circle-chevron-down"></i></span></a>
                                             </div>
                                         </div>
-                                        <!-- /View All -->
+                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- /Category -->
+                    
 
-                    <!-- By Status -->
+                    
                     <div class="accordion accordion-last" id="accordionMain3">
                         <div class="card-header-new" id="headingThree">
                             <h6 class="filter-title">
@@ -9953,7 +9953,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /By Status -->
+                    
 
                     <div class="filter-buttons">
                         <button type="submit"
@@ -9970,9 +9970,9 @@
             </div>
         </div>
     </div>
-    <!--/Add Asset -->
+    
 
-    <!-- Add Supplier Modal -->
+    
     <div class="modal custom-modal fade" id="add_vendor" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -10021,10 +10021,10 @@
             </div>
         </div>
     </div>
-    <!-- /Add Supplier Modal -->
+    
 @endif
 @if (Route::is(['expenses']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -10033,7 +10033,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Expense Id -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -10075,7 +10075,7 @@
                                                     <input type="checkbox" name="exp-id">
                                                     <span class="checkmark"></span> 148064
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -10094,7 +10094,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -10102,9 +10102,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Expense Id -->
+                    
 
-                    <!-- Reference -->
+                    
                     <div class="accordion" id="accordionMain2">
                         <div class="card-header-new" id="headingTwo">
                             <h6 class="filter-title">
@@ -10138,7 +10138,7 @@
                                             <input type="checkbox" name="ref-no">
                                             <span class="checkmark"></span> 25689828
                                         </label>
-                                        <!-- View All -->
+                                        
                                         <div class="view-content">
                                             <div class="viewall-Two">
                                                 <label class="custom_check w-100">
@@ -10156,15 +10156,15 @@
                                                             class="fa fa-circle-chevron-down"></i></span></a>
                                             </div>
                                         </div>
-                                        <!-- /View All -->
+                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- /Reference -->
+                    
 
-                    <!-- By Status -->
+                    
                     <div class="accordion" id="accordionMain3">
                         <div class="card-header-new" id="headingThree">
                             <h6 class="filter-title">
@@ -10199,9 +10199,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /By Status -->
+                    
 
-                    <!-- By Status -->
+                    
                     <div class="accordion accordion-last" id="accordionMain4">
                         <div class="card-header-new" id="headingFour">
                             <h6 class="filter-title">
@@ -10232,7 +10232,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /By Status -->
+                    
 
                     <div class="filter-buttons">
                         <button type="submit"
@@ -10249,9 +10249,9 @@
             </div>
         </div>
     </div>
-    <!--/Add Asset -->
+    
 
-    <!-- Add Expenses Modal -->
+    
     <div class="modal custom-modal modal-lg fade" id="add_expenses" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -10356,10 +10356,10 @@
             </div>
         </div>
     </div>
-    <!-- /Add Expenses Modal -->
+    
 @endif
 @if (Route::is(['faq']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -10368,7 +10368,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -10410,7 +10410,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> John Blair
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -10433,7 +10433,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -10441,9 +10441,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
+                    
 
-                    <!-- Select Date -->
+                    
                     <div class="accordion" id="accordionMain2">
                         <div class="card-header-new" id="headingTwo">
                             <h6 class="filter-title">
@@ -10476,9 +10476,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Select Date -->
+                    
 
-                    <!-- By Status -->
+                    
                     <div class="accordion" id="accordionMain3">
                         <div class="card-header-new" id="headingThree">
                             <h6 class="filter-title">
@@ -10530,9 +10530,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /By Status -->
+                    
 
-                    <!-- Category -->
+                    
                     <div class="accordion accordion-last" id="accordionMain4">
                         <div class="card-header-new" id="headingFour">
                             <h6 class="filter-title">
@@ -10566,7 +10566,7 @@
                                             <input type="checkbox" name="category">
                                             <span class="checkmark"></span> Software
                                         </label>
-                                        <!-- View All -->
+                                        
                                         <div class="view-content">
                                             <div class="viewall-Two">
                                                 <label class="custom_check w-100">
@@ -10588,13 +10588,13 @@
                                                             class="fa fa-circle-chevron-down"></i></span></a>
                                             </div>
                                         </div>
-                                        <!-- /View All -->
+                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- /Category -->
+                    
                     <button type="submit"
                         class="d-inline-flex align-items-center justify-content-center btn w-100 btn-primary">
                         <span><img src="{{ URL::asset('/assets/img/icons/chart.svg')}}" class="me-2"
@@ -10605,9 +10605,9 @@
             </div>
         </div>
     </div>
-    <!-- /Add Asset -->
+    
 
-    <!-- Add FAQ Modal -->
+    
     <div class="modal custom-modal fade" id="add_faq" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -10664,10 +10664,10 @@
             </div>
         </div>
     </div>
-    <!-- /Add FAQ Modal -->
+    
 @endif
 @if (Route::is(['inactive-blog']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -10676,7 +10676,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -10718,7 +10718,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> John Blair
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -10741,7 +10741,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -10749,9 +10749,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
+                    
 
-                    <!-- Select Date -->
+                    
                     <div class="accordion" id="accordionMain2">
                         <div class="card-header-new" id="headingTwo">
                             <h6 class="filter-title">
@@ -10784,9 +10784,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Select Date -->
+                    
 
-                    <!-- By Status -->
+                    
                     <div class="accordion" id="accordionMain3">
                         <div class="card-header-new" id="headingThree">
                             <h6 class="filter-title">
@@ -10838,9 +10838,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /By Status -->
+                    
 
-                    <!-- Category -->
+                    
                     <div class="accordion accordion-last" id="accordionMain4">
                         <div class="card-header-new" id="headingFour">
                             <h6 class="filter-title">
@@ -10874,7 +10874,7 @@
                                             <input type="checkbox" name="category">
                                             <span class="checkmark"></span> Software
                                         </label>
-                                        <!-- View All -->
+                                        
                                         <div class="view-content">
                                             <div class="viewall-Two">
                                                 <label class="custom_check w-100">
@@ -10896,13 +10896,13 @@
                                                             class="fa fa-circle-chevron-down"></i></span></a>
                                             </div>
                                         </div>
-                                        <!-- /View All -->
+                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- /Category -->
+                    
 
                     <button type="submit"
                         class="d-inline-flex align-items-center justify-content-center btn w-100 btn-primary">
@@ -10914,8 +10914,8 @@
             </div>
         </div>
     </div>
-    <!-- /Add Asset -->
-    <!-- Add Blog -->
+    
+    
     <div class="modal custom-modal modal-lg fade" id="add_blog" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -10994,10 +10994,10 @@
             </div>
         </div>
     </div>
-    <!-- /Add Blog -->
+    
 @endif
 @if (Route::is(['income-report']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -11006,7 +11006,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion accordion-last" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -11048,7 +11048,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> Lexicon Technologies
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -11067,7 +11067,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -11075,7 +11075,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
+                    
 
                     <div class="filter-buttons">
                         <button type="submit"
@@ -11092,7 +11092,7 @@
             </div>
         </div>
     </div>
-    <!--/Add Asset -->
+    
 @endif
 @if (Route::is(['inventory-list']))
     <div class="toggle-sidebar">
@@ -11103,7 +11103,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Product -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -11144,7 +11144,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> Lorem ipsum dolor sit
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -11167,7 +11167,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -11175,9 +11175,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Product -->
+                    
 
-                    <!-- Product Code -->
+                    
                     <div class="accordion" id="accordionMain4">
                         <div class="card-header-new" id="headingFour">
                             <h6 class="filter-title">
@@ -11215,7 +11215,7 @@
                                             <input type="checkbox" name="category">
                                             <span class="checkmark"></span> P125392
                                         </label>
-                                        <!-- View All -->
+                                        
                                         <div class="view-content">
                                             <div class="viewall-Two">
                                                 <label class="custom_check w-100">
@@ -11237,15 +11237,15 @@
                                                             class="fa fa-circle-chevron-down"></i></span></a>
                                             </div>
                                         </div>
-                                        <!-- /View All -->
+                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- /Product Code -->
+                    
 
-                    <!-- Unts -->
+                    
                     <div class="accordion accordion-last" id="accordionMain3">
                         <div class="card-header-new" id="headingThree">
                             <h6 class="filter-title">
@@ -11291,7 +11291,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Units -->
+                    
 
                     <div class="filter-buttons">
                         <button type="submit"
@@ -11308,9 +11308,9 @@
             </div>
         </div>
     </div>
-    <!-- /Add Asset -->
+    
 
-    <!-- Add Stock in Modal -->
+    
     <div class="modal custom-modal fade" id="stock_in" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -11365,10 +11365,10 @@
             </div>
         </div>
     </div>
-    <!-- /Add Stock in Modal -->
+    
 @endif
 @if (Route::is(['invoices']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -11377,7 +11377,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -11419,7 +11419,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> Sharonda
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -11438,7 +11438,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -11446,9 +11446,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
+                    
 
-                    <!-- Invoice Number -->
+                    
                     <div class="accordion" id="accordionMain5">
                         <div class="card-header-new" id="headingFive">
                             <h6 class="filter-title">
@@ -11490,7 +11490,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> 4990
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -11513,7 +11513,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -11521,9 +11521,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Invoice Number -->
+                    
 
-                    <!-- Select Date -->
+                    
                     <div class="accordion" id="accordionMain2">
                         <div class="card-header-new" id="headingTwo">
                             <h6 class="filter-title">
@@ -11556,9 +11556,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Select Date -->
+                    
 
-                    <!-- By Status -->
+                    
                     <div class="accordion" id="accordionMain3">
                         <div class="card-header-new" id="headingThree">
                             <h6 class="filter-title">
@@ -11605,9 +11605,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /By Status -->
+                    
 
-                    <!-- Category -->
+                    
                     <div class="accordion accordion-last" id="accordionMain4">
                         <div class="card-header-new" id="headingFour">
                             <h6 class="filter-title">
@@ -11641,7 +11641,7 @@
                                             <input type="checkbox" name="category">
                                             <span class="checkmark"></span> Repairs
                                         </label>
-                                        <!-- View All -->
+                                        
                                         <div class="view-content">
                                             <div class="viewall-Two">
                                                 <label class="custom_check w-100">
@@ -11663,13 +11663,13 @@
                                                             class="fa fa-circle-chevron-down"></i></span></a>
                                             </div>
                                         </div>
-                                        <!-- /View All -->
+                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- /Category -->
+                    
 
                     <div class="filter-buttons">
                         <button type="submit"
@@ -11686,10 +11686,10 @@
             </div>
         </div>
     </div>
-    <!--/Add Asset -->
+    
 @endif
 @if (Route::is(['stock-report']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -11698,7 +11698,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -11740,7 +11740,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> Amazon Echo Dot
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -11775,7 +11775,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -11783,9 +11783,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
+                    
 
-                    <!-- Product Code -->
+                    
                     <div class="accordion" id="accordionMain2">
                         <div class="card-header-new" id="headingTwo">
                             <h6 class="filter-title">
@@ -11819,7 +11819,7 @@
                                             <input type="checkbox" name="sku">
                                             <span class="checkmark"></span> PPT004
                                         </label>
-                                        <!-- View All -->
+                                        
                                         <div class="view-content">
                                             <div class="viewall-Two">
                                                 <label class="custom_check w-100">
@@ -11833,15 +11833,15 @@
                                                             class="fa fa-circle-chevron-down"></i></span></a>
                                             </div>
                                         </div>
-                                        <!-- /View All -->
+                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- /Product Code -->
+                    
 
-                    <!-- Category -->
+                    
                     <div class="accordion accordion-last" id="accordionMain4">
                         <div class="card-header-new" id="headingFour">
                             <h6 class="filter-title">
@@ -11875,7 +11875,7 @@
                                             <input type="checkbox" name="category">
                                             <span class="checkmark"></span> Repairs
                                         </label>
-                                        <!-- View All -->
+                                        
                                         <div class="view-content">
                                             <div class="viewall-Two">
                                                 <label class="custom_check w-100">
@@ -11893,13 +11893,13 @@
                                                             class="fa fa-circle-chevron-down"></i></span></a>
                                             </div>
                                         </div>
-                                        <!-- /View All -->
+                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- /Category -->
+                    
 
                     <div class="filter-buttons">
                         <button type="submit"
@@ -11916,10 +11916,10 @@
             </div>
         </div>
     </div>
-    <!--/Add Asset -->
+    
 @endif
 @if (Route::is(['low-stock-report']))
-    <!-- Add New Modal -->
+    
     <div class="modal custom-modal fade" id="add_ledger" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-xl">
             <div class="modal-content">
@@ -11969,7 +11969,7 @@
                         </div>
                     </div>
                 </div>
-                <!-- Table -->
+                
                 <div class="modal-body add">
                     <div class="addnew-modal">
                         <div class="row">
@@ -12078,7 +12078,7 @@
                                 </div>
                             </div>
                         </div>
-                        <!-- /Table -->
+                        
 
                         <div class="modal-footer add">
                             <a href="#" data-bs-dismiss="modal" class="btn btn-success  me-2"><i
@@ -12091,9 +12091,9 @@
             </div>
         </div>
     </div>
-    <!-- /Add Supplier Modal -->
+    
 
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -12102,7 +12102,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion accordion-last" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -12144,7 +12144,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> Amazon Echo Dot
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -12179,7 +12179,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -12187,9 +12187,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
+                    
 
-                    <!-- Product Code -->
+                    
                     <div class="accordion" id="accordionMain2">
                         <div class="card-header-new" id="headingTwo">
                             <h6 class="filter-title">
@@ -12223,7 +12223,7 @@
                                             <input type="checkbox" name="sku">
                                             <span class="checkmark"></span> PPT004
                                         </label>
-                                        <!-- View All -->
+                                        
                                         <div class="view-content">
                                             <div class="viewall-Two">
                                                 <label class="custom_check w-100">
@@ -12237,15 +12237,15 @@
                                                             class="fa fa-circle-chevron-down"></i></span></a>
                                             </div>
                                         </div>
-                                        <!-- /View All -->
+                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- /Product Code -->
+                    
 
-                    <!-- Category -->
+                    
                     <div class="accordion accordion-last" id="accordionMain4">
                         <div class="card-header-new" id="headingFour">
                             <h6 class="filter-title">
@@ -12279,7 +12279,7 @@
                                             <input type="checkbox" name="category">
                                             <span class="checkmark"></span> Electronics
                                         </label>
-                                        <!-- View All -->
+                                        
                                         <div class="view-content">
                                             <div class="viewall-Two">
                                                 <label class="custom_check w-100">
@@ -12293,13 +12293,13 @@
                                                             class="fa fa-circle-chevron-down"></i></span></a>
                                             </div>
                                         </div>
-                                        <!-- /View All -->
+                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- /Category -->
+                    
 
                     <div class="filter-buttons">
                         <button type="submit"
@@ -12316,10 +12316,10 @@
             </div>
         </div>
     </div>
-    <!--/Add Asset -->
+    
 @endif
 @if (Route::is(['membership-plans']))
-    <!-- Add Membership -->
+    
     <div class="modal custom-modal modal-lg fade" id="add_membership" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -12509,10 +12509,10 @@
             </div>
         </div>
     </div>
-    <!-- /Add Membership -->
+    
 @endif
 @if (Route::is(['pages']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -12521,7 +12521,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -12563,7 +12563,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> John Blair
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -12586,7 +12586,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -12594,9 +12594,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
+                    
 
-                    <!-- Select Date -->
+                    
                     <div class="accordion" id="accordionMain2">
                         <div class="card-header-new" id="headingTwo">
                             <h6 class="filter-title">
@@ -12629,9 +12629,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Select Date -->
+                    
 
-                    <!-- By Status -->
+                    
                     <div class="accordion" id="accordionMain3">
                         <div class="card-header-new" id="headingThree">
                             <h6 class="filter-title">
@@ -12683,9 +12683,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /By Status -->
+                    
 
-                    <!-- Category -->
+                    
                     <div class="accordion accordion-last" id="accordionMain4">
                         <div class="card-header-new" id="headingFour">
                             <h6 class="filter-title">
@@ -12719,7 +12719,7 @@
                                             <input type="checkbox" name="category">
                                             <span class="checkmark"></span> Software
                                         </label>
-                                        <!-- View All -->
+                                        
                                         <div class="view-content">
                                             <div class="viewall-Two">
                                                 <label class="custom_check w-100">
@@ -12741,13 +12741,13 @@
                                                             class="fa fa-circle-chevron-down"></i></span></a>
                                             </div>
                                         </div>
-                                        <!-- /View All -->
+                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- /Category -->
+                    
 
                     <button type="submit"
                         class="d-inline-flex align-items-center justify-content-center btn w-100 btn-primary">
@@ -12759,9 +12759,9 @@
             </div>
         </div>
     </div>
-    <!--/Add Asset -->
+    
 
-    <!-- Add Page -->
+    
     <div class="modal custom-modal modal-lg fade" id="add_page" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -12872,10 +12872,10 @@
             </div>
         </div>
     </div>
-    <!-- /Add Page -->
+    
 @endif
 @if (Route::is(['payment-report']))
-    <!-- Add New Modal -->
+    
     <div class="modal custom-modal fade" id="add_ledger" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-xl">
             <div class="modal-content">
@@ -12925,7 +12925,7 @@
                         </div>
                     </div>
                 </div>
-                <!-- Table -->
+                
                 <div class="modal-body add">
                     <div class="addnew-modal">
                         <div class="row">
@@ -13034,7 +13034,7 @@
                                 </div>
                             </div>
                         </div>
-                        <!-- /Table -->
+                        
 
                         <div class="modal-footer add">
                             <a href="#" data-bs-dismiss="modal" class="btn btn-success  me-2"><i
@@ -13047,9 +13047,9 @@
             </div>
         </div>
     </div>
-    <!-- /Add Supplier Modal -->
+    
 
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -13058,7 +13058,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion accordion-last" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -13100,7 +13100,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> Lexicon Technologies
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -13119,7 +13119,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -13127,7 +13127,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
+                    
 
                     <div class="filter-buttons">
                         <button type="submit"
@@ -13144,10 +13144,10 @@
             </div>
         </div>
     </div>
-    <!--/Add Asset -->
+    
 @endif
 @if (Route::is(['payments']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -13156,7 +13156,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -13198,7 +13198,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> Sharonda
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -13217,7 +13217,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -13225,9 +13225,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
+                    
 
-                    <!-- Product Code -->
+                    
                     <div class="accordion" id="accordionMain2">
                         <div class="card-header-new" id="headingTwo">
                             <h6 class="filter-title">
@@ -13261,7 +13261,7 @@
                                             <input type="checkbox" name="pay-id">
                                             <span class="checkmark"></span> 25689828
                                         </label>
-                                        <!-- View All -->
+                                        
                                         <div class="view-content">
                                             <div class="viewall-Two">
                                                 <label class="custom_check w-100">
@@ -13279,15 +13279,15 @@
                                                             class="fa fa-circle-chevron-down"></i></span></a>
                                             </div>
                                         </div>
-                                        <!-- /View All -->
+                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- /Product Code -->
+                    
 
-                    <!-- By Status -->
+                    
                     <div class="accordion accordion-last" id="accordionMain3">
                         <div class="card-header-new" id="headingThree">
                             <h6 class="filter-title">
@@ -13318,7 +13318,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /By Status -->
+                    
 
                     <div class="filter-buttons">
                         <button type="submit"
@@ -13336,10 +13336,10 @@
             </div>
         </div>
     </div>
-    <!--/Add Asset -->
+    
 @endif
 @if (Route::is(['profit-loss-list']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -13348,7 +13348,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -13390,7 +13390,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> David
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -13409,7 +13409,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -13417,9 +13417,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
+                    
 
-                    <!-- Select Date -->
+                    
                     <div class="accordion" id="accordionMain2">
                         <div class="card-header-new" id="headingTwo">
                             <h6 class="filter-title">
@@ -13452,7 +13452,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Select Date -->
+                    
 
                     <button type="submit"
                         class="d-inline-flex align-items-center justify-content-center btn w-100 btn-primary">
@@ -13464,10 +13464,10 @@
             </div>
         </div>
     </div>
-    <!--/Add Asset -->
+    
 @endif
 @if (Route::is(['profit-loss-list']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -13476,7 +13476,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -13518,7 +13518,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> David
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -13537,7 +13537,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -13545,9 +13545,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
+                    
 
-                    <!-- Select Date -->
+                    
                     <div class="accordion" id="accordionMain2">
                         <div class="card-header-new" id="headingTwo">
                             <h6 class="filter-title">
@@ -13580,7 +13580,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Select Date -->
+                    
 
                     <button type="submit"
                         class="d-inline-flex align-items-center justify-content-center btn w-100 btn-primary">
@@ -13592,7 +13592,7 @@
             </div>
         </div>
     </div>
-    <!--/Add Asset -->
+    
 @endif
 @if (Route::is([
         'recurring-cancelled',
@@ -13603,7 +13603,7 @@
         'recurring-pending',
         'recurring',
     ]))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -13612,7 +13612,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -13654,7 +13654,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> John Blair
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -13677,7 +13677,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -13685,9 +13685,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
+                    
 
-                    <!-- Select Date -->
+                    
                     <div class="accordion" id="accordionMain2">
                         <div class="card-header-new" id="headingTwo">
                             <h6 class="filter-title">
@@ -13720,9 +13720,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Select Date -->
+                    
 
-                    <!-- By Status -->
+                    
                     <div class="accordion" id="accordionMain3">
                         <div class="card-header-new" id="headingThree">
                             <h6 class="filter-title">
@@ -13774,9 +13774,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /By Status -->
+                    
 
-                    <!-- Category -->
+                    
                     <div class="accordion accordion-last" id="accordionMain4">
                         <div class="card-header-new" id="headingFour">
                             <h6 class="filter-title">
@@ -13810,7 +13810,7 @@
                                             <input type="checkbox" name="category">
                                             <span class="checkmark"></span> Software
                                         </label>
-                                        <!-- View All -->
+                                        
                                         <div class="view-content">
                                             <div class="viewall-Two">
                                                 <label class="custom_check w-100">
@@ -13832,13 +13832,13 @@
                                                             class="fa fa-circle-chevron-down"></i></span></a>
                                             </div>
                                         </div>
-                                        <!-- /View All -->
+                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- /Category -->
+                    
 
                     <button type="submit"
                         class="d-inline-flex align-items-center justify-content-center btn w-100 btn-primary">
@@ -13850,10 +13850,10 @@
             </div>
         </div>
     </div>
-    <!--/Add Asset -->
+    
 @endif
 @if (Route::is(['roles-permission']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -13862,7 +13862,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -13896,7 +13896,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> Customer
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -13915,7 +13915,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -13923,9 +13923,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
+                    
 
-                    <!-- Select Date -->
+                    
                     <div class="accordion" id="accordionMain2">
                         <div class="card-header-new" id="headingTwo">
                             <h6 class="filter-title">
@@ -13958,7 +13958,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Select Date -->
+                    
 
                     <button type="submit"
                         class="d-inline-flex align-items-center justify-content-center btn w-100 btn-primary">
@@ -13970,9 +13970,9 @@
             </div>
         </div>
     </div>
-    <!--/Add Asset -->
+    
 
-    <!-- Add Role Modal -->
+    
     <div class="modal custom-modal fade" id="add_role" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -14005,10 +14005,10 @@
             </div>
         </div>
     </div>
-    <!-- /Add Role Modal -->
+    
 @endif
 @if (Route::is(['sales-report']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -14017,7 +14017,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -14059,7 +14059,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> Amazon Echo Dot
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -14094,7 +14094,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -14102,9 +14102,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
+                    
 
-                    <!-- Product Code -->
+                    
                     <div class="accordion" id="accordionMain2">
                         <div class="card-header-new" id="headingTwo">
                             <h6 class="filter-title">
@@ -14138,7 +14138,7 @@
                                             <input type="checkbox" name="sku">
                                             <span class="checkmark"></span> PPT004
                                         </label>
-                                        <!-- View All -->
+                                        
                                         <div class="view-content">
                                             <div class="viewall-Two">
                                                 <label class="custom_check w-100">
@@ -14152,15 +14152,15 @@
                                                             class="fa fa-circle-chevron-down"></i></span></a>
                                             </div>
                                         </div>
-                                        <!-- /View All -->
+                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- /Product Code -->
+                    
 
-                    <!-- Category -->
+                    
                     <div class="accordion accordion-last" id="accordionMain4">
                         <div class="card-header-new" id="headingFour">
                             <h6 class="filter-title">
@@ -14194,7 +14194,7 @@
                                             <input type="checkbox" name="category">
                                             <span class="checkmark"></span> Repairs
                                         </label>
-                                        <!-- View All -->
+                                        
                                         <div class="view-content">
                                             <div class="viewall-Two">
                                                 <label class="custom_check w-100">
@@ -14212,13 +14212,13 @@
                                                             class="fa fa-circle-chevron-down"></i></span></a>
                                             </div>
                                         </div>
-                                        <!-- /View All -->
+                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- /Category -->
+                    
 
                     <div class="filter-buttons">
                         <button type="submit"
@@ -14235,9 +14235,9 @@
             </div>
         </div>
     </div>
-    <!--/Add Asset -->
+    
 
-    <!-- Add Supplier Modal -->
+    
     <div class="modal custom-modal fade" id="add_vendor" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -14286,10 +14286,10 @@
             </div>
         </div>
     </div>
-    <!-- /Add Supplier Modal -->
+    
 @endif
 @if (Route::is(['sales-return-report']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -14298,7 +14298,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -14340,7 +14340,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> Amazon Echo Dot
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -14375,7 +14375,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -14383,9 +14383,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
+                    
 
-                    <!-- Product Code -->
+                    
                     <div class="accordion" id="accordionMain2">
                         <div class="card-header-new" id="headingTwo">
                             <h6 class="filter-title">
@@ -14419,7 +14419,7 @@
                                             <input type="checkbox" name="sku">
                                             <span class="checkmark"></span> PPT004
                                         </label>
-                                        <!-- View All -->
+                                        
                                         <div class="view-content">
                                             <div class="viewall-Two">
                                                 <label class="custom_check w-100">
@@ -14433,15 +14433,15 @@
                                                             class="fa fa-circle-chevron-down"></i></span></a>
                                             </div>
                                         </div>
-                                        <!-- /View All -->
+                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- /Product Code -->
+                    
 
-                    <!-- Category -->
+                    
                     <div class="accordion accordion-last" id="accordionMain4">
                         <div class="card-header-new" id="headingFour">
                             <h6 class="filter-title">
@@ -14475,7 +14475,7 @@
                                             <input type="checkbox" name="category">
                                             <span class="checkmark"></span> Repairs
                                         </label>
-                                        <!-- View All -->
+                                        
                                         <div class="view-content">
                                             <div class="viewall-Two">
                                                 <label class="custom_check w-100">
@@ -14493,13 +14493,13 @@
                                                             class="fa fa-circle-chevron-down"></i></span></a>
                                             </div>
                                         </div>
-                                        <!-- /View All -->
+                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- /Category -->
+                    
 
                     <div class="filter-buttons">
                         <button type="submit"
@@ -14516,10 +14516,10 @@
             </div>
         </div>
     </div>
-    <!--/Add Asset -->
+    
 @endif
 @if (Route::is(['tax-purchase']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -14528,7 +14528,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -14570,7 +14570,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> David
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -14589,7 +14589,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -14597,9 +14597,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
+                    
 
-                    <!-- Product Code -->
+                    
                     <div class="accordion" id="accordionMain2">
                         <div class="card-header-new" id="headingTwo">
                             <h6 class="filter-title">
@@ -14633,7 +14633,7 @@
                                             <input type="checkbox" name="ref-no">
                                             <span class="checkmark"></span> 763265
                                         </label>
-                                        <!-- View All -->
+                                        
                                         <div class="view-content">
                                             <div class="viewall-Two">
                                                 <label class="custom_check w-100">
@@ -14651,15 +14651,15 @@
                                                             class="fa fa-circle-chevron-down"></i></span></a>
                                             </div>
                                         </div>
-                                        <!-- /View All -->
+                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- /Product Code -->
+                    
 
-                    <!-- By Status -->
+                    
                     <div class="accordion accordion-last" id="accordionMain3">
                         <div class="card-header-new" id="headingThree">
                             <h6 class="filter-title">
@@ -14690,7 +14690,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /By Status -->
+                    
 
                     <div class="filter-buttons">
                         <button type="submit"
@@ -14707,8 +14707,8 @@
             </div>
         </div>
     </div>
-    <!--/Add Asset -->
-   <!-- Add Package Modal -->
+    
+   
    <div class="modal custom-modal fade p-20" id="add_package" role="dialog">
     <div class="modal-dialog modal-dialog-centered modal-md">
         <div class="modal-content">
@@ -14883,10 +14883,10 @@
         </div>
     </div>
 </div>
-<!-- /Add Package Modal -->
+
 @endif
 @if (Route::is(['tax-rates']))
- <!-- Add Tax & Discount Modal -->
+ 
  <div class="modal custom-modal fade" id="add_discount" role="dialog">
     <div class="modal-dialog modal-dialog-centered modal-md">
         <div class="modal-content">
@@ -14938,10 +14938,10 @@
         </div>
     </div>
 </div>
-<!-- /Add Tax & Discount Modal -->
+
 @endif
 @if (Route::is(['tax-sales']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -14950,7 +14950,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -14992,7 +14992,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> Sharonda Letha
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -15011,7 +15011,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -15019,9 +15019,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
+                    
 
-                    <!-- Product Code -->
+                    
                     <div class="accordion" id="accordionMain2">
                         <div class="card-header-new" id="headingTwo">
                             <h6 class="filter-title">
@@ -15055,7 +15055,7 @@
                                             <input type="checkbox" name="ref-no">
                                             <span class="checkmark"></span> INV012649
                                         </label>
-                                        <!-- View All -->
+                                        
                                         <div class="view-content">
                                             <div class="viewall-Two">
                                                 <label class="custom_check w-100">
@@ -15073,15 +15073,15 @@
                                                             class="fa fa-circle-chevron-down"></i></span></a>
                                             </div>
                                         </div>
-                                        <!-- /View All -->
+                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- /Product Code -->
+                    
 
-                    <!-- By Status -->
+                    
                     <div class="accordion accordion-last" id="accordionMain3">
                         <div class="card-header-new" id="headingThree">
                             <h6 class="filter-title">
@@ -15112,7 +15112,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /By Status -->
+                    
 
                     <div class="filter-buttons">
                         <button type="submit"
@@ -15129,8 +15129,8 @@
             </div>
         </div>
     </div>
-    <!--/Add Asset -->
-     <!-- Add Package Modal -->
+    
+     
      <div class="modal custom-modal fade p-20" id="add_package" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -15305,10 +15305,10 @@
             </div>
         </div>
     </div>
-    <!-- /Add Package Modal -->
+    
 @endif
 @if (Route::is(['testimonials']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -15317,7 +15317,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -15359,7 +15359,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> John Blair
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -15382,7 +15382,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -15390,9 +15390,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
+                    
 
-                    <!-- Select Date -->
+                    
                     <div class="accordion" id="accordionMain2">
                         <div class="card-header-new" id="headingTwo">
                             <h6 class="filter-title">
@@ -15425,9 +15425,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Select Date -->
+                    
 
-                    <!-- By Status -->
+                    
                     <div class="accordion" id="accordionMain3">
                         <div class="card-header-new" id="headingThree">
                             <h6 class="filter-title">
@@ -15479,9 +15479,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /By Status -->
+                    
 
-                    <!-- Category -->
+                    
                     <div class="accordion accordion-last" id="accordionMain4">
                         <div class="card-header-new" id="headingFour">
                             <h6 class="filter-title">
@@ -15515,7 +15515,7 @@
                                             <input type="checkbox" name="category">
                                             <span class="checkmark"></span> Software
                                         </label>
-                                        <!-- View All -->
+                                        
                                         <div class="view-content">
                                             <div class="viewall-Two">
                                                 <label class="custom_check w-100">
@@ -15537,13 +15537,13 @@
                                                             class="fa fa-circle-chevron-down"></i></span></a>
                                             </div>
                                         </div>
-                                        <!-- /View All -->
+                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- /Category -->
+                    
 
                     <button type="submit"
                         class="d-inline-flex align-items-center justify-content-center btn w-100 btn-primary">
@@ -15555,8 +15555,8 @@
             </div>
         </div>
     </div>
-    <!--/Add Asset -->
-      <!-- Add Testmonials Modal -->
+    
+      
       <div class="modal custom-modal modal-lg fade" id="add_testimonial" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -15651,7 +15651,7 @@
             </div>
         </div>
     </div>
-    <!-- /Add Testmonials -->
+    
 @endif
 @if (Route::is([
         'tickets-closed',
@@ -15666,7 +15666,7 @@
         'tickets-resolved',
         'tickets',
     ]))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -15675,7 +15675,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -15717,7 +15717,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> John Blair
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -15740,7 +15740,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -15748,9 +15748,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
+                    
 
-                    <!-- Select Date -->
+                    
                     <div class="accordion" id="accordionMain2">
                         <div class="card-header-new" id="headingTwo">
                             <h6 class="filter-title">
@@ -15783,9 +15783,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Select Date -->
+                    
 
-                    <!-- By Status -->
+                    
                     <div class="accordion" id="accordionMain3">
                         <div class="card-header-new" id="headingThree">
                             <h6 class="filter-title">
@@ -15833,9 +15833,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /By Status -->
+                    
 
-                    <!-- Category -->
+                    
                     <div class="accordion accordion-last" id="accordionMain4">
                         <div class="card-header-new" id="headingFour">
                             <h6 class="filter-title">
@@ -15869,7 +15869,7 @@
                                             <input type="checkbox" name="category">
                                             <span class="checkmark"></span> Software
                                         </label>
-                                        <!-- View All -->
+                                        
                                         <div class="view-content">
                                             <div class="viewall-Two">
                                                 <label class="custom_check w-100">
@@ -15891,13 +15891,13 @@
                                                             class="fa fa-circle-chevron-down"></i></span></a>
                                             </div>
                                         </div>
-                                        <!-- /View All -->
+                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- /Category -->
+                    
 
                     <div class="filter-buttons">
                         <button type="submit"
@@ -15914,9 +15914,9 @@
             </div>
         </div>
     </div>
-    <!--/Add Asset -->
+    
 
-    <!-- Add Ticket Modal -->
+    
     <div class="modal custom-modal modal-lg fade" id="add_ticket" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -16009,10 +16009,10 @@
             </div>
         </div>
     </div>
-    <!-- /Add Ticket Modal -->
+    
 @endif
 @if (Route::is(['users']))
-    <!-- Add Asset -->
+    
     <div class="toggle-sidebar">
         <div class="sidebar-layout-filter">
             <div class="sidebar-header">
@@ -16021,7 +16021,7 @@
             </div>
             <div class="sidebar-body">
                 <form action="#" autocomplete="off">
-                    <!-- Customer -->
+                    
                     <div class="accordion" id="accordionMain1">
                         <div class="card-header-new" id="headingOne">
                             <h6 class="filter-title">
@@ -16063,7 +16063,7 @@
                                                     <input type="checkbox" name="username">
                                                     <span class="checkmark"></span> Sharonda
                                                 </label>
-                                                <!-- View All -->
+                                                
                                                 <div class="view-content">
                                                     <div class="viewall-One">
                                                         <label class="custom_check w-100">
@@ -16082,7 +16082,7 @@
                                                                     class="fa fa-circle-chevron-down"></i></span></a>
                                                     </div>
                                                 </div>
-                                                <!-- /View All -->
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -16090,9 +16090,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Customer -->
+                    
 
-                    <!-- Select Date -->
+                    
                     <div class="accordion" id="accordionMain2">
                         <div class="card-header-new" id="headingTwo">
                             <h6 class="filter-title">
@@ -16125,9 +16125,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /Select Date -->
+                    
 
-                    <!-- By Status -->
+                    
                     <div class="accordion accordion-last" id="accordionMain3">
                         <div class="card-header-new" id="headingThree">
                             <h6 class="filter-title">
@@ -16163,7 +16163,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /By Status -->
+                    
                     <div class="filter-buttons">
                         <button type="submit"
                             class="d-inline-flex align-items-center justify-content-center btn w-100 btn-primary">
@@ -16179,9 +16179,9 @@
             </div>
         </div>
     </div>
-    <!--/Add Asset -->
+    
 
-    <!-- Add User -->
+    
     <div class="modal custom-modal modal-lg fade" id="add_user" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -16309,5 +16309,5 @@
             </div>
         </div>
     </div>
-    <!-- /Add User -->
+    
 @endif

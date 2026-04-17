@@ -1,4 +1,4 @@
-<!-- resources/views/product_sales/index.blade.php -->
+
 <h1>Sales for {{ $product->name }}</h1>
 
 <table>

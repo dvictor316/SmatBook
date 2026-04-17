@@ -1186,7 +1186,7 @@ label {
             <div class="header-util-note">Use <span class="accent">search</span> to quickly find products not visible on shelf.</div>
         </div>
 
-        <!-- Header -->
+        
         <div class="pos-header-bar">
                 <div class="d-flex align-items-center gap-3">
                     <h5 class="pos-header-title">SALES <span class="gradient-text">TERMINAL</span></h5>
@@ -1420,7 +1420,7 @@ label {
 
         <div class="col-xl-8">
             <div class="card pos-card p-4">
-                <!-- Customer -->
+                
                 <div class="mb-3">
                     <label>Customer</label>
                     <input type="text" id="customer-search-input" class="form-control mb-2" placeholder="Search customer name...">
@@ -1432,7 +1432,7 @@ label {
                     </select>
                 </div>
 
-                <!-- Cart -->
+                
                 <div class="cart-wrapper">
                     <div id="cart-empty-state" class="cart-empty-state">
                         <div class="cart-empty-shell">
@@ -1460,7 +1460,7 @@ label {
                     </table>
                 </div>
 
-                <!-- Summary -->
+                
                 <div class="summary-panel">
                     <div class="summary-row">
                         <span class="summary-label" style="color: var(--text-secondary);">Subtotal</span>
@@ -1480,7 +1480,7 @@ label {
                         <div class="grand-total" id="grand-total">₦0.00</div>
                     </div>
 
-                    <!-- Payment -->
+                    
                     <div class="row g-3 border-top pt-3">
                         <div class="col-md-6">
                             <label>Payment Method</label>
@@ -1534,14 +1534,14 @@ label {
                         </div>
                     </div>
 
-                    <!-- Change -->
+                    
                     <div class="d-flex justify-content-between align-items-center mt-3">
                         <span class="summary-label" style="color: var(--text-secondary);">Change</span>
                         <span id="change-amount" class="fw-bold tabular-nums" style="font-size: 1.125rem; color: var(--success-500);">₦0.00</span>
                     </div>
                 </div>
 
-                <!-- Process Button -->
+                
                 <button type="button" id="process-btn" class="btn btn-process w-100 mt-3">
                     <span id="btn-text"><i class="fas fa-check-circle me-2"></i> PROCESS SALE</span>
                     <span id="btn-loading" style="display:none;"><i class="fas fa-sync fa-spin me-2"></i> PROCESSING...</span>

@@ -572,20 +572,20 @@
     }
 </style>
 
-<!-- MOBILE HAMBURGER -->
+
 <div class="dm-hamburger" id="dmHamburger" onclick="toggleMobileSidebar()">
     <span></span>
     <span></span>
     <span></span>
 </div>
 
-<!-- MOBILE OVERLAY -->
+
 <div class="dm-overlay" id="dmOverlay" onclick="closeMobileSidebar()"></div>
 
-<!-- DEPLOYMENT SIDEBAR -->
+
 <aside class="deployment-sidebar" id="deploymentSidebar">
 
-    <!-- BRAND -->
+    
     <div class="dm-brand">
         <a href="{{ route('deployment.dashboard') }}" class="dm-brand-logo">
             <div class="dm-brand-icon">
@@ -598,7 +598,7 @@
         </a>
     </div>
 
-    <!-- PROFILE -->
+    
     <div class="dm-profile">
         <div class="dm-profile-wrapper">
             <div class="dm-profile-avatar">
@@ -611,7 +611,7 @@
         </div>
     </div>
 
-    <!-- STATS -->
+    
     <div class="dm-stats-panel">
         <div class="dm-stat-item">
             <span class="dm-stat-label">Deployed</span>
@@ -623,11 +623,11 @@
         </div>
     </div>
 
-    <!-- NAVIGATION -->
+    
     <nav class="dm-nav">
         <ul class="dm-nav-menu">
 
-            <!-- Dashboard -->
+            
             <li class="dm-menu-item">
                 <a href="{{ route('deployment.dashboard') }}" class="dm-menu-link {{ request()->routeIs('deployment.dashboard') ? 'active' : '' }}">
                     <span class="dm-menu-icon"><i class="fas fa-th-large"></i></span>
@@ -635,7 +635,7 @@
                 </a>
             </li>
 
-            <!-- Register Customer -->
+            
             <li class="dm-menu-item">
                 <a href="{{ route('deployment.users.create') }}" class="dm-menu-link {{ request()->routeIs('deployment.customers.create') || request()->routeIs('deployment.users.create') ? 'active' : '' }}">
                     <span class="dm-menu-icon"><i class="fas fa-user-plus"></i></span>
@@ -643,7 +643,7 @@
                 </a>
             </li>
 
-            <!-- My Clients -->
+            
             <li class="dm-menu-item has-submenu {{ request()->routeIs('deployment.companies.*') ? 'open' : '' }}">
                 <a href="#" class="dm-menu-link {{ request()->routeIs('deployment.companies.*') ? 'active' : '' }}" onclick="toggleSubmenu(event, this)">
                     <span class="dm-menu-icon"><i class="fas fa-building"></i></span>
@@ -672,7 +672,7 @@
                 </ul>
             </li>
 
-            <!-- Subscriptions -->
+            
             <li class="dm-menu-item has-submenu {{ request()->routeIs('deployment.subscription.*') ? 'open' : '' }}">
                 <a href="#" class="dm-menu-link {{ request()->routeIs('deployment.subscription.*') ? 'active' : '' }}" onclick="toggleSubmenu(event, this)">
                     <span class="dm-menu-icon"><i class="fas fa-sync-alt"></i></span>
@@ -701,7 +701,7 @@
                 </ul>
             </li>
 
-            <!-- Users -->
+            
             <li class="dm-menu-item">
                 <a href="{{ route('deployment.users.index') }}" class="dm-menu-link {{ request()->routeIs('deployment.users.index') || request()->routeIs('deployment.users.view') ? 'active' : '' }}">
                     <span class="dm-menu-icon"><i class="fas fa-users"></i></span>
@@ -730,7 +730,7 @@
                 </ul>
             </li>
 
-            <!-- Commissions -->
+            
             <li class="dm-menu-item has-submenu {{ request()->routeIs('deployment.commissions.*') ? 'open' : '' }}">
                 <a href="#" class="dm-menu-link {{ request()->routeIs('deployment.commissions.*') ? 'active' : '' }}" onclick="toggleSubmenu(event, this)">
                     <span class="dm-menu-icon"><i class="fas fa-dollar-sign"></i></span>
@@ -844,7 +844,7 @@
         </ul>
     </nav>
 
-    <!-- FOOTER -->
+    
     <div class="dm-footer">
         <a href="{{ route('logout') }}" class="dm-footer-link" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
             <i class="fas fa-sign-out-alt"></i>

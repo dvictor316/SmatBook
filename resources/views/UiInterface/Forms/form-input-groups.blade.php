@@ -1,17 +1,17 @@
 <?php $page = 'form-input-groups'; ?>
 @extends('layout.mainlayout')
 @section('content')
-			<!-- Page Wrapper -->
+			
             <div class="page-wrapper">
                 <div class="content container-fluid">
 
-					<!-- Page Header -->
+					
 					<div class="page-header">
 						<div class="content-page-header">
 							<h5>Input Groups</h5>
 						</div>	
 					</div>
-					<!-- /Page Header -->	
+						
 
 					<div class="row">
 						<div class="col-lg-12">
@@ -218,5 +218,5 @@
 
 				</div>			
 			</div>
-			<!-- /Page Wrapper -->
+			
 @endsection

@@ -1,16 +1,16 @@
 <?php $page = 'offcanvas'; ?>
 @extends('layout.mainlayout')
 @section('content')
-            <!-- Page Wrapper -->
+            
             <div class="page-wrapper">
                 <div class="content container-fluid">
-                    <!-- Page Header -->
+                    
 					<div class="page-header">
 						<div class="content-page-header">
 							<h5>Offcanvas</h5>
 						</div>	
 					</div>
-					<!-- /Page Header -->	
+						
 
                     <div class="row">
                         <div class="col-xl-6">
@@ -26,13 +26,13 @@
                                         <button class="btn btn-primary mt-1" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasExample" aria-controls="offcanvasExample">
                                             Button with data-bs-target
                                         </button>
-                                    </div> <!-- end button-list-->
+                                    </div> 
 
                                     <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasExample" aria-labelledby="offcanvasExampleLabel">
                                         <div class="offcanvas-header">
                                             <h5 class="offcanvas-title" id="offcanvasExampleLabel">Offcanvas</h5>
                                             <button type="button" class="btn-close text-reset mt-1" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-                                        </div> <!-- end offcanvas-header-->
+                                        </div> 
 
                                         <div class="offcanvas-body">
                                             <div>
@@ -51,10 +51,10 @@
                                                 <li class="">Et harum quidem rerum facilis</li>
                                                 <li class="">Temporibus autem quibusdam et aut officiis</li>
                                             </ul>
-                                        </div> <!-- end offcanvas-body-->
-                                    </div> <!-- end offcanvas-->
-                                </div> <!-- end card-body-->
-                            </div> <!-- end card-->
+                                        </div> 
+                                    </div> 
+                                </div> 
+                            </div> 
 
                             <div class="card">
                                 <div class="card-body card-buttons">
@@ -65,13 +65,13 @@
                                         <button class="btn btn-primary mt-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasScrolling" aria-controls="offcanvasScrolling">Enable body scrolling</button>
                                         <button class="btn btn-primary mt-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasWithBackdrop" aria-controls="offcanvasWithBackdrop">Enable backdrop (default)</button>
                                         <button class="btn btn-primary mt-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasWithBothOptions" aria-controls="offcanvasWithBothOptions">Enable both scrolling & backdrop</button>
-                                    </div> <!-- end button-list-->
+                                    </div> 
 
                                     <div class="offcanvas offcanvas-start" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" id="offcanvasScrolling" aria-labelledby="offcanvasScrollingLabel">
                                         <div class="offcanvas-header">
                                             <h5 class="offcanvas-title" id="offcanvasScrollingLabel">Colored with scrolling</h5>
                                             <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-                                        </div> <!-- end offcanvas-header-->
+                                        </div> 
                                         <div class="offcanvas-body">
                                             <div>
                                                 Some text as placeholder. In real life you can have the elements you have chosen. Like, text,
@@ -89,14 +89,14 @@
                                                 <li class="">Et harum quidem rerum facilis</li>
                                                 <li class="">Temporibus autem quibusdam et aut officiis</li>
                                             </ul>
-                                        </div> <!-- end offcanvas-body-->
-                                    </div> <!-- end offcanvas-->
+                                        </div> 
+                                    </div> 
 
                                     <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasWithBackdrop" aria-labelledby="offcanvasWithBackdropLabel">
                                         <div class="offcanvas-header">
                                             <h5 class="offcanvas-title" id="offcanvasWithBackdropLabel">Offcanvas with backdrop</h5>
                                             <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-                                        </div> <!-- end offcanvas-header-->
+                                        </div> 
 
                                         <div class="offcanvas-body">
                                             <div>
@@ -115,14 +115,14 @@
                                                 <li class="">Et harum quidem rerum facilis</li>
                                                 <li class="">Temporibus autem quibusdam et aut officiis</li>
                                             </ul>
-                                        </div> <!-- end offcanvas-body-->
-                                    </div> <!-- end offcanvas-->
+                                        </div> 
+                                    </div> 
 
                                     <div class="offcanvas offcanvas-start" data-bs-scroll="true" tabindex="-1" id="offcanvasWithBothOptions" aria-labelledby="offcanvasWithBothOptionsLabel">
                                         <div class="offcanvas-header">
                                             <h5 class="offcanvas-title" id="offcanvasWithBothOptionsLabel">Backdroped with scrolling</h5>
                                             <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-                                        </div> <!-- end offcanvas-header-->
+                                        </div> 
 
                                         <div class="offcanvas-body">
                                             <div>
@@ -141,11 +141,11 @@
                                                 <li class="">Et harum quidem rerum facilis</li>
                                                 <li class="">Temporibus autem quibusdam et aut officiis</li>
                                             </ul>
-                                        </div> <!-- end offcanvas-body-->
-                                    </div> <!-- end offcanvas-->
-                                </div> <!-- end card-body-->
-                            </div> <!-- end card-->
-                        </div> <!-- end col-->
+                                        </div> 
+                                    </div> 
+                                </div> 
+                            </div> 
+                        </div> 
 
                         <div class="col-xl-6">
                             <div class="card">
@@ -164,13 +164,13 @@
                                             <button class="btn btn-primary mt-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight" aria-controls="offcanvasRight">Toggle right offcanvas</button>
                                             <button class="btn btn-primary mt-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasBottom" aria-controls="offcanvasBottom">Toggle bottom offcanvas</button>
                                             <button class="btn btn-primary mt-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasLeft" aria-controls="offcanvasLeft">Toggle Left offcanvas</button>
-                                        </div> <!-- end button-list-->
+                                        </div> 
 
                                         <div class="offcanvas offcanvas-top" tabindex="-1" id="offcanvasTop" aria-labelledby="offcanvasTopLabel">
                                             <div class="offcanvas-header">
                                                 <h5 id="offcanvasTopLabel">Offcanvas Top</h5>
                                                 <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-                                            </div> <!-- end offcanvas-header-->
+                                            </div> 
 
                                             <div class="offcanvas-body">
                                                 <div>
@@ -183,14 +183,14 @@
                                                     <li class="">Neque porro quisquam est, qui dolorem</li>
                                                     <li class="">Quis autem vel eum iure qui in ea</li>
                                                 </ul>
-                                            </div> <!-- end offcanvas-body-->
-                                        </div> <!-- end offcanvas-->
+                                            </div> 
+                                        </div> 
 
                                         <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
                                             <div class="offcanvas-header">
                                                 <h5 id="offcanvasRightLabel">Offcanvas right</h5>
                                                 <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-                                            </div> <!-- end offcanvas-header-->
+                                            </div> 
 
                                             <div class="offcanvas-body">
                                                 <div>
@@ -203,14 +203,14 @@
                                                     <li class="">Neque porro quisquam est, qui dolorem</li>
                                                     <li class="">Quis autem vel eum iure qui in ea</li>
                                                 </ul>
-                                            </div> <!-- end offcanvas-body-->
-                                        </div> <!-- end offcanvas-->
+                                            </div> 
+                                        </div> 
 
                                         <div class="offcanvas offcanvas-bottom" tabindex="-1" id="offcanvasBottom" aria-labelledby="offcanvasBottomLabel">
                                             <div class="offcanvas-header">
                                                 <h5 class="offcanvas-title" id="offcanvasBottomLabel">Offcanvas bottom</h5>
                                                 <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-                                            </div> <!-- end offcanvas-header-->
+                                            </div> 
 
                                             <div class="offcanvas-body">
                                                 <div>
@@ -223,14 +223,14 @@
                                                     <li class="">Neque porro quisquam est, qui dolorem</li>
                                                     <li class="">Quis autem vel eum iure qui in ea</li>
                                                 </ul>
-                                            </div> <!-- end offcanvas-body-->
-                                        </div> <!-- end offcanvas-->
+                                            </div> 
+                                        </div> 
 
                                         <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasLeft" aria-labelledby="offcanvasLeftLabel">
                                             <div class="offcanvas-header">
                                                 <h5 id="offcanvasLeftLabel">Offcanvas Left</h5>
                                                 <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-                                            </div> <!-- end offcanvas-header-->
+                                            </div> 
 
                                             <div class="offcanvas-body">
                                                 <div>
@@ -243,15 +243,15 @@
                                                     <li class="">Neque porro quisquam est, qui dolorem</li>
                                                     <li class="">Quis autem vel eum iure qui in ea</li>
                                                 </ul>
-                                            </div> <!-- end offcanvas-body-->
-                                        </div> <!-- end offcanvas-->
+                                            </div> 
+                                        </div> 
                                     </div>
-                                </div> <!-- end card-body-->
-                            </div> <!-- end card-->
-                        </div> <!-- end col-->
+                                </div> 
+                            </div> 
+                        </div> 
                     </div> 
 
                 </div>          
             </div>
-            <!-- /Page Wrapper -->
+            
 @endsection

@@ -1227,7 +1227,7 @@
 </head>
 <body>
 
-<!-- ===== NAVIGATION ===== -->
+
 <nav>
     <div class="nav-container">
         <a href="{{ url('/') }}" class="logo-container">
@@ -1253,23 +1253,23 @@
     </div>
 </nav>
 
-<!-- ===== MAIN CONTENT ===== -->
+
 <main>
     @include('layout.partials.flash-messages')
     @yield('content')
 </main>
 
-<!-- ===== FOOTER ===== -->
+
 <footer class="master-footer">
     <div class="footer-content">
         <div class="footer-grid">
-            <!-- Company Info -->
+            
             <div class="footer-col">
                 <a href="{{ url('/') }}" class="footer-logo">SMARTPRO<span>BOOK</span></a>
                 <p>Engineered for excellence. Registered under the laws of the Federal Republic of Nigeria. Global headquarters in Enugu Tech Hub.</p>
             </div>
 
-            <!-- Ecosystem -->
+            
             <div class="footer-col">
                 <h5>Ecosystem</h5>
                 <ul class="footer-links">
@@ -1279,7 +1279,7 @@
                 </ul>
             </div>
 
-            <!-- Governance -->
+            
             <div class="footer-col">
                 <h5>Governance</h5>
                 <ul class="footer-links">
@@ -1289,7 +1289,7 @@
                 </ul>
             </div>
 
-            <!-- Services -->
+            
             <div class="footer-col">
                 <h5>Services</h5>
                 <ul class="footer-links">
@@ -1299,7 +1299,7 @@
                 </ul>
             </div>
 
-            <!-- Contact -->
+            
             <div class="footer-col">
                 <h5>Contact</h5>
                 <p>Enugu Tech Hub<br>Independence Layout<br>Enugu, Nigeria</p>
@@ -1310,17 +1310,17 @@
             </div>
         </div>
 
-        <!-- Footer Divider -->
+        
         <div class="footer-divider"></div>
 
-        <!-- Footer Bottom -->
+        
         <div class="footer-bottom">
             <p>&copy; 2026 SmartProbook Global Infrastructure Inc. All Rights Reserved.</p>
         </div>
     </div>
 </footer>
 
-<!-- ===== SCRIPTS ===== -->
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
 
 <script>

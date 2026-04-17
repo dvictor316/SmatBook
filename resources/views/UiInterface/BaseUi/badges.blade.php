@@ -1,23 +1,23 @@
 <?php $page = 'badges'; ?>
 @extends('layout.mainlayout')
 @section('content')
-			<!-- Page Wrapper -->
+			
             <div class="page-wrapper">
                 <div class="content container-fluid">
-                    <!-- Page Header -->
+                    
                     <div class="page-header">
 						<div class="content-page-header">
 							<h5>Badges</h5>
 						</div>	
 					</div>	
-                    <!-- /Page Header -->
+                    
                     <div class="row">
                         <div class="col-xxl-6">
                             <div class="card">
                                 <div class="card-header align-items-center d-flex">
                                     <h4 class="card-title mb-0">Default Badges</h4>
                                 </div>
-                                <!-- end card header -->
+                                
 
                                 <div class="card-body">
                                     <p class="text-muted">Use the <code>badge</code> class to set a default badge.</p>
@@ -32,16 +32,16 @@
                                         <span class="badge bg-light text-dark">Light</span>
                                     </div>
                                 </div>
-                                <!-- end card-body -->
+                                
                             </div>
-                            <!-- end card -->
+                            
                         </div>
                         <div class="col-xxl-6">
                             <div class="card">
                                 <div class="card-header align-items-center d-flex">
                                     <h4 class="card-title mb-0">Soft Badges </h4>
                                 </div>
-                                <!-- end card header -->
+                                
                                 <div class="card-body">
                                     <p class="text-muted">Use the <code>badge-soft-</code> class with below-mentioned variation to create softer badge.</p>
                                     <div class="d-flex flex-wrap gap-2">
@@ -55,9 +55,9 @@
                                         <span class="badge badge-soft-light text-dark">Light</span>
                                     </div>
                                 </div>
-                                <!-- end card-body -->
+                                
                             </div>
-                            <!-- end card -->
+                            
                         </div>
                     </div>
                     <div class="row">
@@ -66,7 +66,7 @@
                                 <div class="card-header align-items-center d-flex">
                                     <h4 class="card-title mb-0">Outline Badges </h4>
                                 </div>
-                                <!-- end card header -->
+                                
                                 <div class="card-body">
                                     <p class="text-muted">Use the <code>badge-outline-</code> class with the
                                         below-mentioned variation to create a badge with the outline.</p>
@@ -81,9 +81,9 @@
                                         <span class="badge badge-outline-light text-dark">Light</span>
                                     </div>
                                 </div>
-                                <!-- end card-body -->
+                                
                             </div>
-                            <!-- end card -->
+                            
                         </div>
 
                         <div class="col-xxl-6">
@@ -91,7 +91,7 @@
                                 <div class="card-header align-items-center d-flex">
                                     <h4 class="card-title mb-0">Rounded Pill Badges </h4>
                                 </div>
-                                <!-- end card header -->
+                                
 
                                 <div class="card-body">
                                     <p class="text-muted">Use the <code>rounded-pill</code> class to make badges more rounded with a larger border-radius.</p>
@@ -106,9 +106,9 @@
                                         <span class="badge rounded-pill bg-light text-dark">Light</span>
                                     </div>
                                 </div>
-                                <!-- end card-body -->
+                                
                             </div>
-                            <!-- end card -->
+                            
                         </div>
                     </div>
                     <div class="row">
@@ -117,7 +117,7 @@
                                 <div class="card-header align-items-center d-flex">
                                     <h4 class="card-title mb-0">Rounded Pill Badges with soft effect </h4>
                                 </div>
-                                <!-- end card header -->
+                                
 
                                 <div class="card-body">
                                     <p class="text-muted">Use the <code>rounded-pill badge-soft-</code> class with the below-mentioned variation to create a badge more rounded with a soft background.</p>
@@ -132,9 +132,9 @@
                                         <span class="badge rounded-pill badge-soft-light text-dark">Light</span>
                                     </div>
                                 </div>
-                                <!-- end card-body -->
+                                
                             </div>
-                            <!-- end card -->
+                            
                         </div>
 
                         <div class="col-xxl-6">
@@ -142,7 +142,7 @@
                                 <div class="card-header align-items-center d-flex">
                                     <h4 class="card-title mb-0">Soft Border Badges</h4>
                                 </div>
-                                <!-- end card header -->
+                                
 
                                 <div class="card-body">
                                     <p class="text-muted">
@@ -160,9 +160,9 @@
                                         <span class="badge badge-soft-light badge-border text-dark">Light</span>
                                     </div>
                                 </div>
-                                <!-- end card-body -->
+                                
                             </div>
-                            <!-- end card -->
+                            
                         </div>
                     </div>
                     <div class="row">
@@ -171,7 +171,7 @@
                                 <div class="card-header align-items-center d-flex">
                                     <h4 class="card-title mb-0">Outline Pill Badges </h4>
                                 </div>
-                                <!-- end card header -->
+                                
 
                                 <div class="card-body">
                                     <p class="text-muted">
@@ -188,9 +188,9 @@
                                         <span class="badge rounded-pill badge-outline-light text-dark">Light</span>
                                     </div>
                                 </div>
-                                <!-- end card-body -->
+                                
                             </div>
-                            <!-- end card -->
+                            
                         </div>
 
                         <div class="col-xxl-6">
@@ -198,7 +198,7 @@
                                 <div class="card-header align-items-center d-flex">
                                     <h4 class="card-title mb-0">Label Badges </h4>
                                 </div>
-                                <!-- end card header -->
+                                
 
                                 <div class="card-body">
                                     <p class="text-muted">
@@ -214,9 +214,9 @@
                                         <span class="badge badge-label bg-light text-dark"><i class="mdi mdi-circle-medium"></i> Light</span>
                                     </div>
                                 </div>
-                                <!-- end card-body -->
+                                
                             </div>
-                            <!-- end card -->
+                            
                         </div>
                     </div>
                     <div class="row">
@@ -225,7 +225,7 @@
                                 <div class="card-header align-items-center d-flex">
                                     <h4 class="card-title mb-0">Gradient Badges</h4>
                                 </div>
-                                <!-- end card header -->
+                                
 
                                 <div class="card-body">
                                     <p class="text-muted">
@@ -240,11 +240,11 @@
                                         <span class="badge bg-dark">Dark</span>
                                     </div>
                                 </div>
-                                <!-- end card-body -->
+                                
                             </div>
-                            <!-- end card -->
+                            
                         </div>
-                        <!--end col-->
+                        
                     </div>
 
                     <div class="row">
@@ -253,7 +253,7 @@
                                 <div class="card-header align-items-center d-flex">
                                     <h4 class="card-title mb-0">Button Position Badges</h4>
                                 </div>
-                                <!-- end card header -->
+                                
 
                                 <div class="card-body">
                                     <p class="text-muted">Use the below utilities to modify a badge and position it in
@@ -285,14 +285,14 @@
                                         </button>
                                     </div>
                                 </div>
-                                <!-- end card-body -->
+                                
                             </div>
-                            <!-- end card -->
+                            
                             <div class="card">
                                 <div class="card-header align-items-center d-flex">
                                     <h4 class="card-title mb-0">Badges With Button</h4>
                                 </div>
-                                <!-- end card header -->
+                                
                                 <div class="card-body">
                                     <p class="text-muted">Badges can be used as part of buttons to provide a counter.</p>
                                     <div class="d-flex flex-wrap gap-2">
@@ -307,16 +307,16 @@
                                         </button>
                                     </div>
                                 </div>
-                                <!-- end card-body -->
+                                
                             </div>
-                            <!-- end card -->
+                            
                         </div>
                         <div class="col-xxl-6">
                             <div class="card">
                                 <div class="card-header align-items-center d-flex">
                                     <h4 class="card-title mb-0">Badges with Heading</h4>
                                 </div>
-                                <!-- end card header -->
+                                
                                 <div class="card-body">
                                     <p class="text-muted">Example of the badge used in the HTML Heading.</p>
                                     <div>
@@ -328,13 +328,13 @@
                                         <h6 class="mb-0">Example heading <span class="badge bg-secondary">New</span></h6>
                                     </div>
                                 </div>
-                                <!-- end card-body -->
+                                
                             </div>
-                            <!-- end card -->
+                            
                         </div>
                     </div>
 
                 </div>
             </div>
-            <!-- /Page Wrapper -->
+            
 @endsection

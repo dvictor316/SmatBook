@@ -1,17 +1,17 @@
 <?php $page = 'carousel'; ?>
 @extends('layout.mainlayout')
 @section('content')
-    <!-- Page Wrapper -->
+    
     <div class="page-wrapper">
         <div class="content container-fluid">
 
-            <!-- Page Header -->
+            
             <div class="page-header">
                 <div class="content-page-header">
                     <h5>Carousel</h5>
                 </div>
             </div>
-            <!-- /Page Header -->
+            
             <div class="row">
                 <div class="col-lg-6">
                     <div class="card">
@@ -48,7 +48,7 @@
                             <h4 class="header-title">With controls</h4>
                             <p class="sub-header">Adding in the previous and next controls:</p>
 
-                            <!-- START carousel-->
+                            
                             <div id="carouselExampleControls" class="carousel slide" data-bs-ride="carousel">
                                 <div class="carousel-inner" role="listbox">
                                     <div class="carousel-item active">
@@ -78,10 +78,10 @@
 
                         </div>
                     </div>
-                    <!-- END carousel-->
+                    
                 </div>
             </div>
-            <!-- end row -->
+            
 
             <div class="row">
                 <div class="col-lg-6">
@@ -126,7 +126,7 @@
 
                         </div>
                     </div>
-                </div> <!-- end col -->
+                </div> 
 
                 <div class="col-lg-6">
                     <div class="card">
@@ -177,10 +177,10 @@
                         </div>
                     </div>
                 </div>
-                <!-- end col -->
+                
 
             </div>
-            <!-- end row -->
+            
 
             <div class="row">
                 <div class="col-lg-6">
@@ -219,7 +219,7 @@
 
                         </div>
                     </div>
-                </div> <!-- end col -->
+                </div> 
 
                 <div class="col-lg-6">
                     <div class="card">
@@ -258,11 +258,11 @@
                         </div>
                     </div>
                 </div>
-                <!-- end col -->
+                
             </div>
-            <!-- end row -->
+            
         </div>
-        <!-- content -->
+        
     </div>
-    <!-- /Page Wrapper -->
+    
 @endsection

@@ -524,16 +524,16 @@
 
 <div class="smat-viewport">
 
-    <!-- Ultra Light Bubbles -->
+    
     <div class="bubble-bg">
         <div class="bubble" style="width: 500px; height: 500px; top: -150px; left: -100px;"></div>
         <div class="bubble" style="width: 300px; height: 300px; bottom: -50px; right: -50px; animation-delay: -5s;"></div>
     </div>
 
-    <!-- The Card -->
+    
     <div class="smat-card">
 
-        <!-- Sidebar Branding -->
+        
         <div class="smat-aside">
             <div>
                 <x-auth-brand-lockup :logo="asset('/assets/img/logos.png')" theme="dark" size="lg" :tagline="'Secure Business Stack'" />
@@ -563,7 +563,7 @@
             </div>
         </div>
 
-        <!-- Login Form Panel -->
+        
         <div class="smat-main">
             <div class="mobile-brand-lockup">
                 <x-auth-brand-lockup :logo="asset('/assets/img/logos.png')" size="md" :tagline="'Secure Business Stack'" />

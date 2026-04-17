@@ -1,20 +1,20 @@
 <?php $page = 'form-wizard'; ?>
 @extends('layout.mainlayout')
 @section('content')
-			<!-- Page Wrapper -->
+			
             <div class="page-wrapper">
                 <div class="content container-fluid">
 
-					<!-- Page Header -->
+					
 					<div class="page-header">
 						<div class="content-page-header">
 							<h5>Form Wizard</h5>
 						</div>	
 					</div>
-					<!-- /Page Header -->
+					
 
                     <div class="row">					
-						<!-- Lightbox -->
+						
                         <div class="col-lg-12">
                             <div class="card">
                                 <div class="card-header">
@@ -184,5 +184,5 @@
 
 				</div>			
 			</div>
-			<!-- /Page Wrapper -->
+			
 @endsection

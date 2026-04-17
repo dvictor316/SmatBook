@@ -1,21 +1,21 @@
 <?php $page = 'drag-drop'; ?>
 @extends('layout.mainlayout')
 @section('content')
-			<!-- Page Wrapper -->
+			
             <div class="page-wrapper">
                 <div class="content container-fluid">
 
-					<!-- Page Header -->
+					
 					<div class="page-header">
 						<div class="content-page-header">
 							<h5>Drag & Drop</h5>
 						</div>	
 					</div>
-					<!-- /Page Header -->	
+						
 
 					<div class="row" id="card-drag-area">
 
-						<!-- Drag Card -->					
+											
 						<div class="col-md-4 draggable">	
 							<div class="card">
 								<div class="card-header">
@@ -27,9 +27,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Drag Card -->
+						
 
-						<!-- Drag Card -->					
+											
 						<div class="col-md-4 draggable">	
 							<div class="card">
 								<div class="card-header">
@@ -41,9 +41,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Drag Card -->
+						
 
-						<!-- Drag Card -->					
+											
 						<div class="col-md-4 draggable">	
 							<div class="card">
 								<div class="card-header">
@@ -55,7 +55,7 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Drag Card -->
+						
 					</div>	
 
 					<div class="row">						
@@ -65,7 +65,7 @@
 									<h5 class="card-title">Basic List Group Sortable</h5>
 								</div>
 								<div class="card-body">
-									<!-- Drag Card -->					
+														
 									<ul class="list-group" id="basic-list-group">
 										<li class="list-group-item draggable">
 											<div class="chat-block">
@@ -108,7 +108,7 @@
 											</div>
 										</li>
 									  </ul>
-									<!-- /Drag Card -->
+									
 								</div>	
 							</div>	
 						</div>	
@@ -116,7 +116,7 @@
 
 					<div class="row">
 
-						<!-- Drag Card -->					
+											
 						<div class="col-md-12">	
 							<div class="card" id="dd-handle">
 								<div class="card-header">
@@ -148,10 +148,10 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Drag Card -->
+						
 					</div>	
 
 				</div>			
 			</div>
-			<!-- /Page Wrapper -->
+			
 @endsection

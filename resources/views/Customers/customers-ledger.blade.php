@@ -1,17 +1,17 @@
 <?php $page = 'customers-ledger'; ?>
 @extends('layout.mainlayout')
 @section('content')
-    <!-- Page Wrapper -->
+    
     <div class="page-wrapper">
         <div class="content container-fluid">
 
-            <!-- Page Header -->
+            
             @component('components.page-header')
                 @slot('title')
                     Ledger
                 @endslot
             @endcomponent
-            <!-- /Page Header -->
+            
 
             <div class="card p-4 ledger-list">
                 <div class="d-flex align-items-center justify-content-between">
@@ -60,7 +60,7 @@
                         </ul>
                     </div>
                 </div>
-                <!-- Table -->
+                
                 <div class="row">
                     <div class="col-sm-12">
                         <div class="card-table">
@@ -143,11 +143,11 @@
                         </div>
                     </div>
                 </div>
-                <!-- /Table -->
+                
 
             </div>
 
         </div>
     </div>
-    <!-- /Page Wrapper -->
+    
 @endsection

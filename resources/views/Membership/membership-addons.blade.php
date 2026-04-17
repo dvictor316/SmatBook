@@ -1,18 +1,18 @@
 <?php $page = 'membership-addons'; ?>
 @extends('layout.mainlayout')
 @section('content')
-    <!-- Page Wrapper -->
+    
     <div class="page-wrapper">
         <div class="content container-fluid">
             <div class="card mb-0">
                 <div class="card-body">
-                    <!-- Page Header -->
+                    
                     <div class="page-header">
                         <div class="content-page-header">
                             <h5>Membership Addons</h5>
                         </div>
                     </div>
-                    <!-- /Page Header -->
+                    
 
                     @php
                         // Assume $addon is passed from the controller if editing, otherwise it's null
@@ -150,7 +150,7 @@
 
         </div>
     </div>
-    <!-- /Page Wrapper -->
+    
 
     <script>
         function toggleLimitInput(checkbox, targetSelector) {

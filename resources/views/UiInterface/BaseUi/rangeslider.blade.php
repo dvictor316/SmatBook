@@ -1,20 +1,20 @@
 <?php $page = 'rangeslider'; ?>
 @extends('layout.mainlayout')
 @section('content')
-			<!-- Page Wrapper -->
+			
             <div class="page-wrapper">
                 <div class="content container-fluid">
 
-					<!-- Page Header -->
+					
 					<div class="page-header">
 						<div class="content-page-header">
 							<h5>Range Slider</h5>
 						</div>	
 					</div>
-					<!-- /Page Header -->	
+						
 
 					<div class="row">					
-						<!-- Rangeslider -->
+						
 						<div class="col-md-6">	
 							<div class="card">
 								<div class="card-header">
@@ -25,9 +25,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Rangeslider -->
+						
 
-						<!-- Rangeslider -->
+						
 						<div class="col-md-6">	
 							<div class="card">
 								<div class="card-header">
@@ -38,9 +38,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Rangeslider -->
+						
 
-						<!-- Rangeslider -->
+						
 						<div class="col-md-6">	
 							<div class="card">
 								<div class="card-header">
@@ -51,9 +51,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Rangeslider -->
+						
 
-						<!-- Rangeslider -->
+						
 						<div class="col-md-6">	
 							<div class="card">
 								<div class="card-header">
@@ -64,9 +64,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Rangeslider -->
+						
 
-						<!-- Rangeslider -->
+						
 						<div class="col-md-6">	
 							<div class="card">
 								<div class="card-header">
@@ -77,9 +77,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Rangeslider -->
+						
 
-						<!-- Rangeslider -->
+						
 						<div class="col-md-6">	
 							<div class="card">
 								<div class="card-header">
@@ -90,9 +90,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Rangeslider -->
+						
 
-						<!-- Rangeslider -->
+						
 						<div class="col-md-6">	
 							<div class="card">
 								<div class="card-header">
@@ -103,9 +103,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Rangeslider -->
+						
 
-						<!-- Rangeslider -->
+						
 						<div class="col-md-6">	
 							<div class="card">
 								<div class="card-header">
@@ -116,9 +116,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Rangeslider -->
+						
 
-						<!-- Rangeslider -->
+						
 						<div class="col-md-6">	
 							<div class="card">
 								<div class="card-header">
@@ -129,9 +129,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Rangeslider -->
+						
 
-						<!-- Rangeslider -->
+						
 						<div class="col-md-6">	
 							<div class="card">
 								<div class="card-header">
@@ -142,10 +142,10 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Rangeslider -->					
+											
 
 					</div>				
 				</div>			
 			</div>
-			<!-- /Page Wrapper -->
+			
 @endsection

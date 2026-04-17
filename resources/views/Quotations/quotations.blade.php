@@ -1,17 +1,17 @@
 <?php $page = 'quotations'; ?>
 @extends('layout.mainlayout')
 @section('content')
-    <!-- Page Wrapper -->
+    
     <div class="page-wrapper">
         <div class="content container-fluid">
 
-            <!-- Page Header -->
+            
             @component('components.page-header')
                 @slot('title')
                 Quotations
                 @endslot
             @endcomponent
-            <!-- /Page Header -->
+            
 
             @if(session('success'))
                 <div class="alert alert-success border-0 shadow-sm">{{ session('success') }}</div>
@@ -20,12 +20,12 @@
                 <div class="alert alert-danger border-0 shadow-sm">{{ session('error') }}</div>
             @endif
 
-            <!-- Search Filter -->
+            
             @component('components.search-filter')
             @endcomponent
-            <!-- /Search Filter -->
+            
 
-            <!-- Table -->
+            
             <div class="row">
                 <div class="col-sm-12">
                     <div class="card-table">
@@ -141,9 +141,9 @@
                     </div>
                 </div>
             </div>
-            <!-- /Table -->
+            
 
         </div>
     </div>
-    <!-- /Page Wrapper -->
+    
 @endsection

@@ -1,23 +1,23 @@
 <?php $page = 'media'; ?>
 @extends('layout.mainlayout')
 @section('content')
-    <!-- Page Wrapper -->
+    
     <div class="page-wrapper">
         <div class="content container-fluid">
-            <!-- Page Header -->
+            
             <div class="page-header">
                 <div class="content-page-header">
                     <h5>Media</h5>
                 </div>
             </div>
-            <!-- /Page Header -->
+            
             <div class="row">
                 <div class="col-xxl-6">
                     <div class="card">
                         <div class="card-header align-items-center d-flex">
                             <h4 class="card-title mb-0 flex-grow-1">Examples</h4>
                         </div>
-                        <!-- end card header -->
+                        
 
                         <div class="card-body">
                             <p class="text-muted mb-4">Use few flex utilities that allow even more flexibility and
@@ -56,17 +56,17 @@
                                 </div>
                             </div>
                         </div>
-                        <!-- end card-body -->
+                        
                     </div>
-                    <!-- end card -->
+                    
                 </div>
-                <!-- end col -->
+                
                 <div class="col-xxl-6">
                     <div class="card">
                         <div class="card-header align-items-center d-flex">
                             <h4 class="card-title mb-0 flex-grow-1">Nesting Example</h4>
                         </div>
-                        <!-- end card header -->
+                        
                         <div class="card-body">
                             <p class="text-muted mb-4">Media objects can be infinitely nested, though we suggest you stop at
                                 some point. Place nested <code>d-flex align-items-start</code> within the
@@ -105,20 +105,20 @@
                                 </div>
                             </div>
                         </div>
-                        <!-- end card-body -->
+                        
                     </div>
-                    <!-- end card -->
+                    
                 </div>
-                <!-- end col -->
+                
             </div>
-            <!-- end row -->
+            
             <div class="row">
                 <div class="col-lg-12">
                     <div class="card">
                         <div class="card-header align-items-center d-flex">
                             <h4 class="card-title mb-0 flex-grow-1">Media Alignment</h4>
                         </div>
-                        <!-- end card header -->
+                        
                         <div class="card-body">
                             <p class="text-muted mb-4">The images or other media can be aligned top, middle, or bottom. The
                                 default is top aligned.
@@ -172,15 +172,15 @@
                                 </div>
                             </div>
                         </div>
-                        <!-- end card-body -->
+                        
                     </div>
-                    <!-- end card -->
+                    
                 </div>
-                <!-- end col -->
+                
             </div>
-            <!-- end row -->
+            
 
         </div>
     </div>
-    <!-- /Page Wrapper -->
+    
 @endsection

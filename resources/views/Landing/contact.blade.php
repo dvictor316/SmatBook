@@ -2,7 +2,7 @@
 
 @section('content')
 
-<!-- ===== CONTACT PAGE HEADER ===== -->
+
 <section class="contact-header">
     <div class="container text-center">
         <h6 class="section-label">Liaison Office</h6>
@@ -11,11 +11,11 @@
     </div>
 </section>
 
-<!-- ===== CONTACT FORM SECTION ===== -->
+
 <section class="contact-section">
     <div class="container">
         <div class="contact-wrapper">
-            <!-- Left Panel: Contact Info -->
+            
             <div class="contact-info-panel">
                 <div class="info-content">
                     <h2>Global HQ</h2>
@@ -55,7 +55,7 @@
                 </div>
             </div>
 
-            <!-- Right Panel: Contact Form -->
+            
             <div class="contact-form-panel">
                 @if(session('success'))
                     <div class="alert alert-success mb-4">{{ session('success') }}</div>
@@ -67,7 +67,7 @@
                 <form action="{{ route('contact.store') }}" method="POST" class="contact-form">
                     @csrf
 
-                    <!-- Name and Email Row -->
+                    
                     <div class="form-row">
                         <div class="form-group">
                             <label for="fullname">Full Name</label>
@@ -84,7 +84,7 @@
                         <input type="text" id="company_name" name="company_name" class="form-input" placeholder="SmartProbook Global" value="{{ old('company_name') }}">
                     </div>
 
-                    <!-- Inquiry Department -->
+                    
                     <div class="form-group">
                         <label for="department">Inquiry Department</label>
                         <select id="department" name="department" class="form-input" required>
@@ -96,19 +96,19 @@
                         </select>
                     </div>
 
-                    <!-- Message -->
+                    
                     <div class="form-group">
                         <label for="message">Message</label>
                         <textarea id="message" name="message" class="form-input" rows="6" placeholder="Briefly describe your business requirement..." required>{{ old('message') }}</textarea>
                     </div>
 
-                    <!-- Checkbox -->
+                    
                     <div class="form-checkbox">
                         <input type="checkbox" id="agreement" name="agreement" required>
                         <label for="agreement">I agree to the SmartProbook <a href="{{ route('landing.policy') }}">Corporate Policy</a> regarding data handling and communication.</label>
                     </div>
 
-                    <!-- Submit Button -->
+                    
                     <button type="submit" class="btn-submit">Establish Connection</button>
                 </form>
             </div>
@@ -116,7 +116,7 @@
     </div>
 </section>
 
-<!-- ===== ADDITIONAL INFO SECTION ===== -->
+
 <section class="contact-info-section">
     <div class="container">
         <div class="info-grid">
@@ -155,7 +155,7 @@
     </div>
 </section>
 
-<!-- ===== CONTACT PAGE STYLES ===== -->
+
 <style>
     .contact-header,
     .contact-section,

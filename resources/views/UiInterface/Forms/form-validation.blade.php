@@ -1,23 +1,23 @@
 <?php $page = 'form-validation'; ?>
 @extends('layout.mainlayout')
 @section('content')
-			<!-- Page Wrapper -->
+			
             <div class="page-wrapper">
                 <div class="content container-fluid">
 
-					<!-- Page Header -->
+					
 					<div class="page-header">
 						<div class="content-page-header">
 							<h5>Form Validation</h5>
 						</div>	
 					</div>
-					<!-- /Page Header -->
+					
 
-					<!-- Row -->
+					
 					<div class="row">
 						<div class="col-sm-12">
 
-							<!-- Custom Boostrap Validation -->
+							
 							<div class="card">
 								<div class="card-header card-buttons">
 									<h5 class="card-title">Custom Bootstrap Form Validation</h5>
@@ -93,9 +93,9 @@
 									</div>
 								</div>
 							</div>
-							<!-- /Custom Boostrap Validation -->
+							
 
-							<!-- Default Browser Validation -->
+							
 							<div class="card">
 								<div class="card-header card-buttons">
 									<h5 class="card-title">Browser defaults</h5>
@@ -150,9 +150,9 @@
 									</div>
 								</div>
 							</div>
-							<!-- /Default Browser Validation -->
+							
 
-							<!-- Server Side Validation -->
+							
 							<div class="card">
 								<div class="card-header card-buttons">
 									<h5 class="card-title">Server side</h5>
@@ -224,9 +224,9 @@
 									</form>
 								</div>
 							</div>
-							<!-- /Server Side Validation -->
+							
 
-							<!-- Supported Elements -->
+							
 							<div class="card">
 								<div class="card-header card-buttons">
 									<h5 class="card-title">Supported elements</h5>
@@ -279,9 +279,9 @@
 									</div>
 								</div>
 							</div>
-							<!-- /Supported Elements -->
+							
 
-							<!-- Validation Tooltips -->
+							
 							<div class="card">
 								<div class="card-header card-buttons">
 									<h5 class="card-title">Tooltips</h5>
@@ -339,13 +339,13 @@
 									</form>
 								</div>
 							</div>
-							<!-- /Validation Tooltips -->
+							
 
 						</div>
 					</div>
-					<!-- /Row -->
+					
 
 				</div>			
 			</div>
-			<!-- /Page Wrapper -->
+			
 @endsection

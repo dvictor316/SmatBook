@@ -1,19 +1,19 @@
 <?php $page = 'breadcrumbs'; ?>
 @extends('layout.mainlayout')
 @section('content')
-			<!-- Page Wrapper -->
+			
             <div class="page-wrapper">
                 <div class="content container-fluid">
 
-					<!-- Page Header -->
+					
                     <div class="page-header">
 						<div class="content-page-header">
 							<h5>Breadcrumbs</h5>
 						</div>	
 					</div>	
-                    <!-- /Page Header -->
+                    
 
-					<!-- Breadcrumbs -->
+					
 					<div class="col-md-12">
 						<div class="card card-buttons">
 							<div class="card-body">
@@ -126,9 +126,9 @@
 							</div>
 						</div>
 					</div>
-					<!-- /Breadcrumbs -->
+					
 
 				</div>			
 			</div>
-			<!-- /Page Wrapper -->
+			
 @endsection

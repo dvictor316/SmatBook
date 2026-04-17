@@ -1,21 +1,21 @@
 <?php $page = 'stickynote'; ?>
 @extends('layout.mainlayout')
 @section('content')
-			<!-- Page Wrapper -->
+			
             <div class="page-wrapper">
                 <div class="content container-fluid">
 
-					<!-- Page Header -->
+					
 					<div class="page-header">
 						<div class="content-page-header">
 							<h5>Sticky Note</h5>
 						</div>	
 					</div>
-					<!-- /Page Header -->
+					
 
 					<div class="row">
 
-						<!-- Sticky -->
+						
 						<div class="col-md-12">	
 							<div class="card">
 								<div class="card-header">
@@ -26,11 +26,11 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Sticky -->
+						
 
 					</div>
 
 				</div>			
 			</div>
-			<!-- /Page Wrapper -->
+			
 @endsection

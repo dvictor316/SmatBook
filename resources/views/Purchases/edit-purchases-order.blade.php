@@ -1,7 +1,7 @@
 <?php $page = 'edit-purchases-order'; ?>
 @extends('layout.mainlayout')
 @section('content')
-    <!-- Page Wrapper -->
+    
     <div class="page-wrapper">
         <div class="content container-fluid">
             <div class="card mb-0">
@@ -170,5 +170,5 @@
 
         </div>
     </div>
-    <!-- /Page Wrapper -->
+    
 @endsection

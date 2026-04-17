@@ -1,19 +1,19 @@
 <?php $page = 'tab'; ?>
 @extends('layout.mainlayout')
 @section('content')
-			<!-- Page Wrapper -->
+			
             <div class="page-wrapper">
                 <div class="content container-fluid">
 
-					<!-- Page Header -->
+					
 					<div class="page-header">
 						<div class="content-page-header">
 							<h5>Tabs</h5>
 						</div>	
 					</div>
-					<!-- /Page Header -->
+					
 
-					<!-- Tabs -->
+					
 						<div class="row">
 							<div class="col-md-6">
 								<div class="card bg-white">
@@ -289,9 +289,9 @@
 								</div>
 							</div>
 						</div>
-					<!-- /Tabs -->
+					
 
 				</div>			
 			</div>
-			<!-- /Page Wrapper -->
+			
 @endsection

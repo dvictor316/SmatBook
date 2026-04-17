@@ -1,21 +1,21 @@
 <?php $page = 'counter'; ?>
 @extends('layout.mainlayout')
 @section('content')
-			<!-- Page Wrapper -->
+			
             <div class="page-wrapper">
                 <div class="content container-fluid">
 
-					<!-- Page Header -->
+					
 					<div class="page-header">
 						<div class="content-page-header">
 							<h5>Counter</h5>
 						</div>	
 					</div>
-					<!-- /Page Header -->
+					
 
 					<div class="row">
 
-						<!-- Counter -->
+						
 						<div class="col-md-4">	
 							<div class="card">
 								<div class="card-body card-buttons">
@@ -24,9 +24,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Counter -->
+						
 
-						<!-- Counter -->
+						
 						<div class="col-md-4">	
 							<div class="card">
 								<div class="card-body card-buttons">
@@ -35,9 +35,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Counter -->
+						
 
-						<!-- Counter -->
+						
 						<div class="col-md-4">	
 							<div class="card">
 								<div class="card-body card-buttons">
@@ -46,9 +46,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Counter -->
+						
 
-						<!-- Counter -->
+						
 						<div class="col-md-4">	
 							<div class="card">
 								<div class="card-header">
@@ -60,9 +60,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Counter -->
+						
 
-						<!-- Counter -->
+						
 						<div class="col-md-4">	
 							<div class="card">
 								<div class="card-header">
@@ -74,9 +74,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Counter -->
+						
 
-						<!-- Counter -->
+						
 						<div class="col-md-4">	
 							<div class="card">
 								<div class="card-header">
@@ -88,9 +88,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Counter -->
+						
 
-						<!-- Counter -->
+						
 						<div class="col-md-4">	
 							<div class="card">
 								<div class="card-header">
@@ -102,9 +102,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Counter -->
+						
 
-						<!-- Counter -->
+						
 						<div class="col-md-4">	
 							<div class="card">
 								<div class="card-header">
@@ -116,11 +116,11 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Counter -->
+						
 
 					</div>
 
 				</div>			
 			</div>
-			<!-- /Page Wrapper -->
+			
 @endsection

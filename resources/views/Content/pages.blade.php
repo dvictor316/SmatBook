@@ -1,16 +1,16 @@
 <?php $page = 'pages'; ?>
 @extends('layout.mainlayout')
 @section('content')
-    <!-- Page Wrapper -->
+    
     <div class="page-wrapper">
         <div class="content container-fluid">
-            <!-- Page Header -->
+            
             @component('components.page-header')
                 @slot('title')
                     Pages list
                 @endslot
             @endcomponent
-            <!-- /Page Header -->
+            
 
             <div class="row">
                 <div class="col-md-12">
@@ -64,5 +64,5 @@
             </div>
         </div>
     </div>
-    <!-- /Page Wrapper -->
+    
 @endsection

@@ -1,16 +1,16 @@
 <?php $page = 'placeholders'; ?>
 @extends('layout.mainlayout')
 @section('content')
-            <!-- Page Wrapper -->
+            
             <div class="page-wrapper">
                 <div class="content container-fluid">
-                    <!-- Page Header -->
+                    
 					<div class="page-header">
 						<div class="content-page-header">
 							<h5>Placeholders</h5>
 						</div>	
 					</div>
-					<!-- /Page Header -->                   
+					                   
                     <div class="row">
                         <div class="col-xl-6">
                             <div class="card">
@@ -28,9 +28,9 @@
                                                     <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's
                                                         content.</p>
                                                     <a href="#" class="btn btn-primary">Go somewhere</a>
-                                                </div> <!-- end card-body-->
-                                            </div> <!-- end card-->
-                                        </div> <!-- end col-->
+                                                </div> 
+                                            </div> 
+                                        </div> 
 
                                         <div class="col-md-6">
                                             <div class="card border shadow-none mb-0" aria-hidden="true">
@@ -47,12 +47,12 @@
                                                         <span class="placeholder col-8"></span>
                                                     </p>
                                                     <a href="#" tabindex="-1" class="btn btn-primary disabled placeholder col-6"></a>
-                                                </div> <!-- end card-body-->
-                                            </div> <!-- end card-->
-                                        </div> <!-- end col-->
-                                    </div> <!-- end row-->
-                                </div> <!-- end card-body-->
-                            </div> <!-- end card-->
+                                                </div> 
+                                            </div> 
+                                        </div> 
+                                    </div> 
+                                </div> 
+                            </div> 
 
                             <div class="card">
                                 <div class="card-body card-buttons">
@@ -62,9 +62,9 @@
                                     <span class="placeholder col-6"></span>
                                     <span class="placeholder w-75"></span>
                                     <span class="placeholder" style="width: 25%;"></span>
-                                </div> <!-- end card-body-->
-                            </div> <!-- end card-->
-                        </div> <!-- end col-->
+                                </div> 
+                            </div> 
+                        </div> 
 
                         <div class="col-xl-6">
                             <div class="card">
@@ -81,8 +81,8 @@
                                     <span class="placeholder col-12 bg-info"></span>
                                     <span class="placeholder col-12 bg-light"></span>
                                     <span class="placeholder col-12 bg-dark"></span>
-                                </div> <!-- end card-body-->
-                            </div> <!-- end card-->
+                                </div> 
+                            </div> 
 
                             <div class="card">
                                 <div class="card-body card-buttons">
@@ -94,8 +94,8 @@
                                       </p>
 
                                     <a href="#" class="btn btn-primary disabled placeholder col-4" aria-hidden="true"></a>
-                                </div> <!-- end card-body-->
-                            </div> <!-- end card-->
+                                </div> 
+                            </div> 
 
                             <div class="card">
                                 <div class="card-body card-buttons">
@@ -110,10 +110,10 @@
                                         <span class="placeholder col-12"></span>
                                     </p>
                                 </div> 
-                                <!-- end card-body-->
+                                
                             </div> 
-                            <!-- end card-->                            
-                        </div> <!-- end col-->
+                                                        
+                        </div> 
 
                         <div class="col-xl-6">
                             <div class="card">
@@ -125,14 +125,14 @@
                                     <span class="placeholder col-12"></span>
                                     <span class="placeholder col-12 placeholder-sm"></span>
                                     <span class="placeholder col-12 placeholder-xs"></span>
-                                </div> <!-- end card-body-->
-                            </div> <!-- end card-->
+                                </div> 
+                            </div> 
                         </div> 
-                        <!-- end col-->
+                        
 
                     </div> 
-                    <!-- end row-->                    
+                                        
                 </div>          
             </div>
-            <!-- /Page Wrapper -->
+            
 @endsection

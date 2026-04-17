@@ -1,7 +1,7 @@
 <?php $page = 'add-delivery-challans'; ?>
 @extends('layout.mainlayout')
 @section('content')
-    <!-- Page Wrapper -->
+    
     <div class="page-wrapper">
         <div class="content container-fluid">
             <div class="card mb-0">
@@ -178,5 +178,5 @@
             </div>
         </div>
     </div>
-    <!-- /Page Wrapper -->
+    
 @endsection

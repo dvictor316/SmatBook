@@ -1,21 +1,21 @@
 <?php $page = 'horizontal-timeline'; ?>
 @extends('layout.mainlayout')
 @section('content')
-			<!-- Page Wrapper -->
+			
             <div class="page-wrapper">
                 <div class="content container-fluid">
 
-					<!-- Page Header -->
+					
 					<div class="page-header">
 						<div class="content-page-header">
 							<h5>Horizontal Timeline</h5>
 						</div>	
 					</div>
-					<!-- /Page Header -->
+					
 
 					<div class="row">
 
-						<!-- Timeline -->
+						
 						<div class="col-md-12">	
 							<div class="card">
 								<div class="card-body">
@@ -38,15 +38,15 @@
                                                 </ol>
                                                 <span class="filling-line" aria-hidden="true"></span>
                                             </div>
-                                            <!-- events -->
+                                            
                                         </div>
                                         <ul class="cd-timeline-navigation">
                                             <li><a href="#0" class="prev inactive">Prev</a></li>
                                             <li><a href="#0" class="next">Next</a></li>
                                         </ul>
-                                        <!-- cd-timeline-navigation -->
+                                        
                                     </div>
-                                    <!-- timeline -->
+                                    
                                     <div class="events-content">
                                         <ol>
                                             <li class="selected" data-date="16/01/2014">
@@ -117,15 +117,15 @@
                                             </li>
                                         </ol>
                                     </div>
-                                    <!-- .events-content -->
+                                    
                                 </div>
 								</div>
 							</div>
 						</div>
-						<!-- /Ribbon -->
+						
 
 					</div>				
 				</div>			
 			</div>
-			<!-- /Page Wrapper -->
+			
 @endsection

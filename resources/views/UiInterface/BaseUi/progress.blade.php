@@ -1,19 +1,19 @@
 <?php $page = 'progress'; ?>
 @extends('layout.mainlayout')
 @section('content')
-			<!-- Page Wrapper -->
+			
 			<div class="page-wrapper">
 				<div class="content container-fluid">
 
-					<!-- Page Header -->
+					
 					<div class="page-header">
 						<div class="content-page-header">
 							<h5>Progress</h5>
 						</div>	
 					</div>
-					<!-- /Page Header -->	
+						
 
-					<!-- Progress -->
+					
 						<div class="progress-example card bg-white">
 							<div class="card-header">
 								<h5 class="card-title">Large Progress Bars</h5>
@@ -241,9 +241,9 @@
 								</div>
 							</div>
 						</div>
-					<!-- /Progress -->
+					
 
 				</div>			
 			</div>
-			<!-- /Page Wrapper -->	
+				
 @endsection

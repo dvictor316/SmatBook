@@ -1,19 +1,19 @@
 <?php $page = 'signature-list'; ?>
 @extends('layout.mainlayout')
 @section('content')
-    <!-- Page Wrapper -->
+    
     <div class="page-wrapper">
         <div class="content container-fluid">
 
-            <!-- Page Header -->
+            
             @component('components.page-header')
                 @slot('title')
                 Signature
                 @endslot
             @endcomponent
-            <!-- /Page Header -->
+            
 
-            <!-- Table -->
+            
             <div class="row">
                 <div class="col-sm-12">
                     <div class=" card-table">
@@ -78,9 +78,9 @@
                     </div>
                 </div>
             </div>
-            <!-- /Table -->
+            
 
         </div>
     </div>
-    <!-- /Page Wrapper -->
+    
 @endsection

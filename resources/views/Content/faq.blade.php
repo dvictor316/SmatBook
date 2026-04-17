@@ -1,21 +1,21 @@
 <?php $page = 'faq'; ?>
 @extends('layout.mainlayout')
 @section('content')
-    <!-- Page Wrapper -->
+    
     <div class="page-wrapper">
         <div class="content container-fluid">
-            <!-- Page Header -->
+            
             @component('components.page-header')
                 @slot('title')
                     FAQ
                 @endslot
             @endcomponent
-            <!-- /Page Header -->
+            
 
-            <!-- Search Filter -->
+            
             @component('components.search-filter')
             @endcomponent
-            <!-- /Search Filter -->
+            
 
             <div class="row">
                 <div class="col-sm-12">
@@ -62,5 +62,5 @@
             </div>
         </div>
     </div>
-    <!-- /Page Wrapper -->
+    
 @endsection

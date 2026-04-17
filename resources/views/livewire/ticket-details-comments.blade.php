@@ -2,7 +2,7 @@
     <div class="comments-head">
         <h5>Comments</h5>
     </div>
-    <!-- card -->
+    
     <div class="card">
         <div class="card-body">
             <div class="comments-details d-flex align-items-center justify-content-between">
@@ -27,9 +27,9 @@
             </div>
         </div>
     </div>
-    <!-- /card -->
+    
 
-    <!-- card -->
+    
     <div class="card">
         <div class="card-body">
             <div class="comments-details d-flex align-items-center justify-content-between">
@@ -54,9 +54,9 @@
             </div>
         </div>
     </div>
-    <!-- /card -->
+    
 
-    <!-- card -->
+    
     <div class="card">
         <div class="card-body">
             <div class="comments-details d-flex align-items-center justify-content-between">
@@ -81,5 +81,5 @@
             </div>
         </div>
     </div>
-    <!-- /card -->
+    
 </div>

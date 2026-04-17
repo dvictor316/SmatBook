@@ -1,21 +1,21 @@
 <?php $page = 'popover'; ?>
 @extends('layout.mainlayout')
 @section('content')
-			<!-- Page Wrapper -->
+			
             <div class="page-wrapper">
                 <div class="content container-fluid">
 
-					<!-- Page Header -->
+					
 					<div class="page-header">
 						<div class="content-page-header">
 							<h5>Popover</h5>
 						</div>	
 					</div>
-					<!-- /Page Header -->	
+						
 
 					<div class="row">
 
-						<!-- Popover -->
+						
 						<div class="col-md-12">	
 							<div class="card">
 								<div class="card-header">
@@ -32,9 +32,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Popover -->
+						
 
-						<!-- Popover -->
+						
 						<div class="col-md-12">	
 							<div class="card">
 								<div class="card-header">
@@ -50,10 +50,10 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Popover -->							
+													
 					</div>
 
 				</div>			
 			</div>
-			<!-- /Page Wrapper --> 
+			 
 @endsection

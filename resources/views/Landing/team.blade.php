@@ -2,7 +2,7 @@
 
 @section('content')
 
-<!-- ===== TEAM PAGE STYLES ===== -->
+
 <style>
     /* ===== RESET & BASE ===== */
     .sidebar, #sidebar, .sidebar-menu, .main-sidebar, aside {
@@ -463,7 +463,7 @@
     }
 </style>
 
-<!-- ===== TEAM HEADER ===== -->
+
 <section class="team-header">
     <div class="container">
         <h6 class="team-label">Platform Showcase</h6>
@@ -472,7 +472,7 @@
     </div>
 </section>
 
-<!-- ===== CAROUSEL SECTION ===== -->
+
 <section class="carousel-section">
     <div class="carousel-header">
         <h2>Explore the <span>Modules</span></h2>
@@ -540,7 +540,7 @@
     </div>
 </section>
 
-<!-- ===== FULL TEAM SECTION ===== -->
+
 <section class="team-section">
     <div class="container">
         <div style="text-align: center; margin-bottom: 60px;">
@@ -627,7 +627,7 @@
     </div>
 </section>
 
-<!-- ===== SWIPER LIBRARY ===== -->
+
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 

@@ -2,21 +2,21 @@
 @extends('layout.mainlayout')
 
 @section('content')
-    <!-- Page Wrapper -->
+    
     <div class="page-wrapper">
         <div class="content container-fluid">
 
-            <!-- Page Header -->
+            
             <div class="page-header">
                 <div class="content-page-header">
                     <h5>Morris Chart Example (Dynamic Data)</h5>
                 </div>	
             </div>
-            <!-- /Page Header -->
+            
 
             <div class="row">
 
-                <!-- Line Chart (Monthly Sales) -->
+                
                 <div class="col-md-6">	
                     <div class="card">
                         <div class="card-header">
@@ -28,9 +28,9 @@
                         </div>
                     </div>
                 </div>
-                <!-- /Line Chart -->
+                
 
-                <!-- Donut Chart (Company Status) -->
+                
                 <div class="col-md-6">	
                     <div class="card mb-0">
                         <div class="card-header">
@@ -42,7 +42,7 @@
                         </div>
                     </div>
                 </div>
-                <!-- /Donut Chart -->
+                
 
                 <div class="col-md-6">	
                     <div class="card">
@@ -69,7 +69,7 @@
 
         </div>			
     </div>
-    <!-- /Page Wrapper -->
+    
 @endsection
 
 @push('scripts')

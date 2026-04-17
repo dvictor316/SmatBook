@@ -1,23 +1,23 @@
 <?php $page = 'all-blogs'; ?>
 @extends('layout.mainlayout')
 @section('content')
-    <!-- Page Wrapper -->
+    
     <div class="page-wrapper">
         <div class="content container-fluid">
-            <!-- Page Header -->
+            
             @component('components.page-header')
                 @slot('title')
                     Blog
                 @endslot
             @endcomponent
-            <!-- /Page Header -->
+            
 
-            <!-- Search Filter -->
+            
             @component('components.search-filter')
             @endcomponent
-            <!-- /Search Filter -->
+            
 
-            <!-- Blogs-->
+            
             <div class="card invoices-tabs-card">
                 <div class="invoices-main-tabs">
                     <div class="row align-items-center">
@@ -32,10 +32,10 @@
                     </div>
                 </div>
             </div>
-            <!-- /Blogs-->
+            
 
             <div class="row">
-                <!-- Blog Post -->
+                
                 @php
                     $json = file_get_contents(public_path('../public/assets/json/all-blogs.json'));
                     $allblogs = json_decode($json, true);
@@ -92,9 +92,9 @@
                         </div>
                     </div>
                 @endforeach
-                <!-- /Blog Post -->
+                
             </div>
-            <!-- Pagination -->
+            
             <div class="row ">
                 <div class="col-md-12">
                     <div class="pagination-tab  d-flex justify-content-center">
@@ -116,8 +116,8 @@
                     </div>
                 </div>
             </div>
-            <!-- /Pagination -->
+            
         </div>
     </div>
-    <!-- /Page Wrapper -->
+    
 @endsection

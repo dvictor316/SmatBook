@@ -1,16 +1,16 @@
 <?php $page = 'accordions'; ?>
 @extends('layout.mainlayout')
 @section('content')
-			<!-- Page Wrapper -->
+			
             <div class="page-wrapper">
                 <div class="content container-fluid">
-                    <!-- Page Header -->
+                    
                     <div class="page-header">
 						<div class="content-page-header">
 							<h5>Accordions</h5>
 						</div>	
 					</div>	
-                    <!-- /Page Header -->
+                    
 
                     <div class="row">
                         <div class="col-xl-6">
@@ -50,8 +50,8 @@
                                         </div>
                                     </div>
                                 </div>
-                            </div> <!-- end card-->
-                        </div> <!-- end col -->
+                            </div> 
+                        </div> 
 
                         <div class="col-xl-6">
                             <div class="card">
@@ -90,10 +90,10 @@
                                         </div>
                                     </div>
                                 </div>
-                            </div> <!-- end card-->
-                        </div> <!-- end col -->
+                            </div> 
+                        </div> 
                     </div>
-                    <!-- end row -->
+                    
 
                     <div class="row">
                         <div class="col-xl-6">
@@ -117,7 +117,7 @@
                                                     aria-selected="false">
                                                     Settings</a>
                                             </div>
-                                        </div> <!-- end col-->
+                                        </div> 
                                         <div class="col-sm-9">
                                             <div class="tab-content">
                                                 <div class="tab-pane fade active show" id="v-pills-home" role="tabpanel" aria-labelledby="v-pills-home-tab">
@@ -141,11 +141,11 @@
                                                         Lorem ipsum is placeholder text commonly used in the graphic, print, and publishing industries for previewing layouts and visual mockups.Lorem ipsum is placeholder text commonly used in the graphic, print, and publishing industries for previewing layouts and visual mockups.</p>
                                                 </div>
                                             </div>
-                                        </div> <!-- end col-->
-                                    </div> <!-- end row-->
+                                        </div> 
+                                    </div> 
                                 </div>
-                            </div> <!-- end card-->
-                        </div> <!-- end col -->
+                            </div> 
+                        </div> 
 
                         <div class="col-xl-6">
                             <div class="card">
@@ -175,7 +175,7 @@
                                                         Lorem ipsum is placeholder text commonly used in the graphic, print, and publishing industries for previewing layouts and visual mockups.Lorem ipsum is placeholder text commonly used in the graphic, print, and publishing industries for previewing layouts and visual mockups.</p>
                                                 </div>
                                             </div>
-                                        </div> <!-- end col -->
+                                        </div> 
                                         <div class="col-sm-3">
                                             <div class="nav flex-column nav-pills nav-pills-tab" id="v-pills-tab2" role="tablist" aria-orientation="vertical">
                                                 <a class="nav-link active show mb-1" id="v-pills-home-tab2" data-bs-toggle="pill" href="#v-pills-home2" role="tab" aria-controls="v-pills-home2"
@@ -191,13 +191,13 @@
                                                     aria-selected="false">
                                                     Settings</a>
                                             </div>
-                                        </div> <!-- end col -->
-                                    </div> <!-- end row-->
+                                        </div> 
+                                    </div> 
                                 </div>
-                            </div> <!-- end card-->
-                        </div> <!-- end col -->
+                            </div> 
+                        </div> 
                     </div>
-                    <!-- end row -->
+                    
 
                     <div class="row">
                         <div class="col-xl-6">
@@ -237,8 +237,8 @@
                                         </div>
                                     </div>
                                 </div>
-                            </div> <!-- end card-->
-                        </div> <!-- end col -->
+                            </div> 
+                        </div> 
 
                         <div class="col-xl-6">
                             <div class="card">
@@ -277,10 +277,10 @@
                                         </div>
                                     </div>
                                 </div>
-                            </div> <!-- end card-->
-                        </div> <!-- end col -->
+                            </div> 
+                        </div> 
                     </div>
-                    <!-- end row -->
+                    
 
                     <div class="row">
                         <div class="col-xl-6">
@@ -351,8 +351,8 @@
                                         </div>
                                     </div>
                                 </div>
-                            </div> <!-- end #accordions-->
-                        </div> <!-- end col -->
+                            </div> 
+                        </div> 
 
                         <div class="col-xl-6">
                             <div class="accordion custom-accordion" id="custom-accordion-one">
@@ -457,7 +457,7 @@
                                     </div>
                                 </div>
                             </div>
-                        </div> <!-- end col-->
+                        </div> 
 
                         <div class="col-lg-6">
                             <div class="accord-btn">
@@ -475,8 +475,8 @@
                             </div>
                         </div>
                     </div> 
-                    <!-- end row --> 
+                     
                 </div>
             </div>
-            <!-- /Page Wrapper -->
+            
 @endsection

@@ -1,21 +1,21 @@
 <?php $page = 'tooltip'; ?>
 @extends('layout.mainlayout')
 @section('content')
-			<!-- Page Wrapper -->
+			
             <div class="page-wrapper">
                 <div class="content container-fluid">
 
-					<!-- Page Header -->
+					
 					<div class="page-header">
 						<div class="content-page-header">
 							<h5>Tooltip</h5>
 						</div>	
 					</div>
-					<!-- /Page Header -->	
+						
 
 					<div class="row">
 
-						<!-- Tooltip -->
+						
 						<div class="col-md-12">	
 							<div class="card">
 								<div class="card-header">
@@ -28,9 +28,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Tooltip -->
+						
 
-						<!-- Popover -->
+						
 						<div class="col-md-12">	
 							<div class="card">
 								<div class="card-header">
@@ -54,9 +54,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Popover -->
+						
 
-						<!-- Tooltip -->
+						
 						<div class="col-md-12">	
 							<div class="card">
 								<div class="card-header">
@@ -74,11 +74,11 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Tooltip -->
+						
 
 					</div>
 
 				</div>			
 			</div>
-			<!-- /Page Wrapper -->
+			
 @endsection

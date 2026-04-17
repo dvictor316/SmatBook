@@ -649,7 +649,7 @@
                 ];
             }
         @endphp
-        <!-- Action Buttons -->
+        
         <div class="no-print-controls">
             <button onclick="printInvoice()" class="btn-action btn-print">
                 🖨️ Print
@@ -668,7 +668,7 @@
             </a>
         </div>
 
-        <!-- Invoice Header -->
+        
         <div class="invoice-header">
             <div class="company-info">
                 <h4>{{ $companyDisplayName }}</h4>
@@ -695,7 +695,7 @@
             </div>
         </div>
 
-        <!-- Customer & Invoice Details -->
+        
         <div class="customer-section">
             <div class="customer-info">
                 <div class="section-label">Bill To</div>
@@ -736,7 +736,7 @@
             </div>
         </div>
 
-        <!-- Items Table -->
+        
         <table class="table-custom" id="itemsTable">
             <thead>
                 <tr>
@@ -843,7 +843,7 @@
             </tbody>
         </table>
 
-        <!-- Footer Section -->
+        
         <div class="invoice-footer">
             <div class="footer-left">
                 <div class="words-label">Amount in Words</div>
@@ -914,7 +914,7 @@
             </div>
         </div>
 
-        <!-- Thank You Message -->
+        
         <div class="thank-you">
             <p>*** THANK YOU FOR YOUR PATRONAGE ***</p>
             <p style="font-size: 11px; margin-top: 10px; font-weight: 400;">
@@ -923,7 +923,7 @@
         </div>
     </div>
 
-<!-- Required Libraries -->
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>

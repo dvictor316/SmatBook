@@ -10,7 +10,7 @@
                     </label>
                 </div>
             </div>
-            <!-- Support Ticket -->
+            
             <div class="support-details d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center">
                     <span class="support-widget-icon rounded-circle d-inline-flex">
@@ -46,9 +46,9 @@
                     </div>
                 </div>
             </div>
-            <!-- /Support Ticket -->
+            
 
-            <!-- Support Ticket -->
+            
             <div class="support-details d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center">
                     <span class="support-widget-icon rounded-circle d-inline-flex">
@@ -84,9 +84,9 @@
                     </div>
                 </div>
             </div>
-            <!-- /Support Ticket -->
+            
 
-            <!-- Support Ticket -->
+            
             <div class="support-details d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center">
                     <span class="support-widget-icon rounded-circle d-inline-flex">
@@ -122,9 +122,9 @@
                     </div>
                 </div>
             </div>
-            <!-- /Support Ticket -->
+            
 
-            <!-- Support Ticket -->
+            
             <div class="support-details d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center">
                     <span class="support-widget-icon rounded-circle d-inline-flex">
@@ -160,7 +160,7 @@
                     </div>
                 </div>
             </div>
-            <!-- /Support Ticket -->
+            
         </div>
         <div class="col-lg-6 col-md-12">
             <div class="card-inform">

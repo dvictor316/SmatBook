@@ -2,7 +2,7 @@
 
 @section('content')
 
-<!-- ===== HERO CAROUSEL ===== -->
+
 <div id="intelligenceCarousel" class="carousel slide hero-carousel" data-bs-ride="carousel">
     <div class="carousel-inner">
         <div class="carousel-item active">
@@ -32,7 +32,7 @@
     </button>
 </div>
 
-<!-- ===== CORPORATE PROFILE HEADER ===== -->
+
 <header class="about-header">
     <div class="container text-center">
         <h6 class="section-label">Corporate Profile</h6>
@@ -41,7 +41,7 @@
     </div>
 </header>
 
-<!-- ===== MISSION SECTION ===== -->
+
 <section class="about-section">
     <div class="container">
         <div class="row align-items-center g-5">
@@ -59,7 +59,7 @@
     </div>
 </section>
 
-<!-- ===== VISION SECTION ===== -->
+
 <section class="about-section about-section-alt">
     <div class="container">
         <div class="row align-items-center g-5">
@@ -83,7 +83,7 @@
     </div>
 </section>
 
-<!-- ===== VALUES SECTION ===== -->
+
 <section class="about-section">
     <div class="container">
         <div class="row align-items-center g-5">
@@ -101,7 +101,7 @@
     </div>
 </section>
 
-<!-- ===== CORE VALUES GRID ===== -->
+
 <section class="about-section about-section-alt">
     <div class="container">
         <div class="text-center mb-5">
@@ -141,7 +141,7 @@
     </div>
 </section>
 
-<!-- ===== ABOUT STYLES ===== -->
+
 <style>
     /* ===== ABOUT PAGE STYLES ===== */
     .about-header {

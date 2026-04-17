@@ -1,4 +1,4 @@
-<!-- Page Header -->
+
 @php
     $routeName = Route::currentRouteName();
     $knownFilterKeys = ['q', 'status', 'type', 'source_type', 'reimbursement_status', 'period_type', 'party_type', 'month', 'from_date', 'to_date'];
@@ -858,12 +858,12 @@
 </div>
 
 </div>
-<!-- /Page Header -->
+
 @endif
 
 @if (Route::is(['companies','subscription','plans-list','packages']))
 
-<!-- Page Header -->
+
 <div class="page-header">
     <div class="content-page-header">
         <h5>{{$title}}</h5>
@@ -942,5 +942,5 @@
         </div>
     </div>
 </div>
-<!-- /Page Header -->
+
 @endif

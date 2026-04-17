@@ -396,7 +396,7 @@
     <section class="pricing-section">
         <div class="container">
             <div class="pricing-grid">
-                <!-- Basic -->
+                
                 <div class="plan-card">
                     <h3 class="plan-name">Basic Core</h3>
                     <p class="plan-desc">Perfect for small start-up workflows and agile teams.</p>
@@ -415,7 +415,7 @@
                     </div>
                 </div>
 
-                <!-- Pro -->
+                
                 <div class="plan-card featured">
                     <div class="popular-tag">MOST POPULAR</div>
                     <h3 class="plan-name">Pro Engine</h3>
@@ -435,7 +435,7 @@
                     </div>
                 </div>
 
-                <!-- Enterprise -->
+                
                 <div class="plan-card">
                     <h3 class="plan-name">Institutional</h3>
                     <p class="plan-desc">The standard for large corporations and high-node networks.</p>
@@ -454,7 +454,7 @@
                     </div>
                 </div>
 
-                <!-- Bespoke -->
+                
                 <div class="plan-card">
                     <h3 class="plan-name">Bespoke</h3>
                     <p class="plan-desc">Custom infrastructure built for unique compliance needs.</p>

@@ -1,18 +1,18 @@
 <?php $page = 'pagination'; ?>
 @extends('layout.mainlayout')
 @section('content')
-			<!-- Page Wrapper -->
+			
             <div class="page-wrapper">
                 <div class="content container-fluid">
-					<!-- Page Header -->
+					
 					<div class="page-header">
 						<div class="content-page-header">
 							<h5>Pagination</h5>
 						</div>	
 					</div>
-					<!-- /Page Header -->	
+						
 
-					<!-- Pagination -->
+					
 						<div class="card bg-white">
 							<div class="card-body">
 								<div>
@@ -82,9 +82,9 @@
 								</div>
 							</div>
 						</div>
-					<!-- /Pagination -->
+					
 
 				</div>			
 			</div>
-			<!-- /Page Wrapper -->
+			
 @endsection

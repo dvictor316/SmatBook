@@ -1,34 +1,34 @@
 <?php $page = 'tickets-kanban'; ?>
 @extends('layout.mainlayout')
 @section('content')
-    <!-- Page Wrapper -->
+    
     <div class="page-wrapper">
         <div class="content container-fluid">
 
-            <!-- Page Header -->
+            
             @component('components.page-header')
                 @slot('title')
                     Tickets
                 @endslot
             @endcomponent
-            <!-- /Page Header -->
+            
 
-            <!-- Search Filter -->
+            
             @component('components.search-filter')
             @endcomponent
-            <!-- /Search Filter -->
+            
 
-            <!-- Inovices card -->
+            
             @component('components.tickets-card')
             @endcomponent
-            <!-- /Inovices card -->
+            
 
-            <!-- All Invoice -->
+            
             @component('components.tickets-kanban-tab')
             @endcomponent
-            <!-- /All Invoice -->
+            
 
-            <!-- Ticket Kanban -->
+            
             <div class="row">
                 <div class="col-sm-12">
                     <div class="kanban-ticket-main d-flex">
@@ -49,7 +49,7 @@
                                 $tickets = json_decode($json, true);
                             @endphp
                             @foreach ($tickets as $ticket)
-                                <!-- list Grid -->
+                                
                                 <li class="kanban-ticket-grid">
                                     <div class="card-kanban">
                                         <div class="kanban-box">
@@ -112,7 +112,7 @@
                                         </div>
                                     </div>
                                 </li>
-                                <!-- /list Grid -->
+                                
                             @endforeach
                         </ul>
 
@@ -132,7 +132,7 @@
                                 $tickets = json_decode($json, true);
                             @endphp
                             @foreach ($tickets as $ticket)
-                                <!-- list Grid -->
+                                
                                 <li class="kanban-ticket-grid">
                                     <div class="card-kanban">
                                         <div class="kanban-box">
@@ -195,7 +195,7 @@
                                         </div>
                                     </div>
                                 </li>
-                                <!-- /list Grid -->
+                                
                             @endforeach
                         </ul>
 
@@ -215,7 +215,7 @@
                                 $tickets = json_decode($json, true);
                             @endphp
                             @foreach ($tickets as $ticket)
-                                <!-- list Grid -->
+                                
                                 <li class="kanban-ticket-grid">
                                     <div class="card-kanban">
                                         <div class="kanban-box">
@@ -278,7 +278,7 @@
                                         </div>
                                     </div>
                                 </li>
-                                <!-- /list Grid -->
+                                
                             @endforeach
                         </ul>
 
@@ -298,7 +298,7 @@
                                 $tickets = json_decode($json, true);
                             @endphp
                             @foreach ($tickets as $ticket)
-                                <!-- list Grid -->
+                                
                                 <li class="kanban-ticket-grid">
                                     <div class="card-kanban">
                                         <div class="kanban-box">
@@ -361,7 +361,7 @@
                                         </div>
                                     </div>
                                 </li>
-                                <!-- /list Grid -->
+                                
                             @endforeach
                         </ul>
 
@@ -381,7 +381,7 @@
                                 $tickets = json_decode($json, true);
                             @endphp
                             @foreach ($tickets as $ticket)
-                                <!-- list Grid -->
+                                
                                 <li class="kanban-ticket-grid">
                                     <div class="card-kanban">
                                         <div class="kanban-box">
@@ -444,16 +444,16 @@
                                         </div>
                                     </div>
                                 </li>
-                                <!-- /list Grid -->
+                                
                             @endforeach
                         </ul>
 
                     </div>
                 </div>
             </div>
-            <!-- /Ticket Kanban -->
+            
 
         </div>
     </div>
-    <!-- /Page Wrapper -->
+    
 @endsection

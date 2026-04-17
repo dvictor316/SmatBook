@@ -16,14 +16,14 @@
     }" 
     x-init="init()"
 >
-    <!-- Header -->
+    
     <div class="p-4 border-b bg-gray-100 text-lg font-semibold text-gray-700 flex justify-between items-center">
         <span>Live Chat (Chat ID: {{ $chat->id ?? 'N/A' }})</span>
-        <!-- Optional refresh button -->
+        
         <button wire:click="loadMessages" class="text-sm p-1 bg-gray-200 rounded hover:bg-gray-300">Refresh</button>
     </div>
 
-    <!-- Messages Container with polling -->
+    
     <div 
         class="flex-grow p-6 overflow-y-auto space-y-4" 
         x-ref="chatScroll"
@@ -53,7 +53,7 @@
                                 <img src="{{ $message->sender->avatar_url ?? 'https://placehold.co/40x40' }}" alt="User Avatar" class="w-full h-full rounded-full object-cover">
                             </div>
                         @endif
-                        <!-- Message Bubble -->
+                        
                         <div class="max-w-xs sm:max-w-md">
                             <div class="p-3 rounded-xl shadow-md {{ $bubbleClasses }} whitespace-pre-wrap">
                                 @foreach (explode("\n", $message->content) as $paragraph)
@@ -99,7 +99,7 @@
         </ul>
     </div>
 
-    <!-- Input Area -->
+    
     <div class="p-4 border-t bg-white">
         <form wire:submit.prevent="sendMessage" class="flex items-center space-x-3">
             <input 

@@ -190,17 +190,17 @@
 
 <div class="master-provision-overlay">
 
-    <!-- Bubbles -->
+    
     <div class="bubble-bg">
         <div class="bubble" style="width: 500px; height: 500px; top: -150px; left: -100px;"></div>
         <div class="bubble" style="width: 400px; height: 400px; bottom: -100px; right: -50px; animation-delay: -4s;"></div>
         <div class="bubble" style="width: 250px; height: 250px; top: 20%; right: 10%; animation-delay: -8s;"></div>
     </div>
 
-    <!-- The Card -->
+    
     <div class="smat-card">
 
-        <!-- Sidebar Info -->
+        
         <div class="smat-aside">
             <div>
                 <img src="{{ asset('assets/img/logos.png') }}" alt="Logo" class="logo-img">
@@ -224,7 +224,7 @@
             </div>
         </div>
 
-        <!-- Form Section -->
+        
         <div class="smat-main">
             <h1 class="form-title">Setup Subdomain</h1>
             <p class="form-subtitle">Configure your unique workspace URL below.</p>

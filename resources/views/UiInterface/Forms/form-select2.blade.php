@@ -1,22 +1,22 @@
 <?php $page = 'form-select2'; ?>
 @extends('layout.mainlayout')
 @section('content')
-			<!-- Page Wrapper -->
+			
             <div class="page-wrapper">
                 <div class="content container-fluid">
 
-					<!-- Page Header -->
+					
 					<div class="page-header">
 						<div class="content-page-header">
 							<h5>Form Select2</h5>
 						</div>	
 					</div>
-					<!-- /Page Header -->
+					
 
 					<div class="row">
 						<div class="col-md-6">
 
-							<!-- Basic -->
+							
 							<div class="card">
 								<div class="card-header">
 									<h5 class="card-title">Basic</h5>
@@ -34,9 +34,9 @@
 									</div>
 								</div>
 							</div>
-							<!-- /Basic -->
+							
 
-							<!-- Nested -->
+							
 							<div class="card">
 								<div class="card-header">
 									<h5 class="card-title">Nested</h5>
@@ -66,9 +66,9 @@
 									</div>
 								</div>
 							</div>
-							<!-- /Nested -->
+							
 
-							<!-- Placeholder -->							
+														
 							<div class="card">
 								<div class="card-header">
 									<h5 class="card-title">Placeholder</h5>
@@ -89,9 +89,9 @@
 									</div>
 								</div>
 							</div>
-							<!-- /Placeholder -->
+							
 
-							<!-- Tagging with multi-value -->
+							
 							<div class="card">
 								<div class="card-header">
 									<h5 class="card-title">Tagging with multi-value select boxes</h5>
@@ -109,7 +109,7 @@
 									</div>
 								</div>
 							</div>
-							<!-- /Tagging with multi-value -->
+							
 
 						</div>
 
@@ -173,5 +173,5 @@
 
 				</div>			
 			</div>
-			<!-- /Page Wrapper -->
+			
 @endsection

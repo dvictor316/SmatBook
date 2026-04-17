@@ -221,16 +221,16 @@
 
 <div class="smat-viewport">
 
-    <!-- Minimal Bubbles -->
+    
     <div class="bubble-bg">
         <div class="bubble" style="width: 500px; height: 500px; top: -150px; left: -100px;"></div>
         <div class="bubble" style="width: 300px; height: 300px; bottom: -50px; right: -50px; animation-delay: -5s;"></div>
     </div>
 
-    <!-- The Card -->
+    
     <div class="smat-card">
 
-        <!-- Summary Panel -->
+        
         <div class="smat-aside">
             <div>
                 <div class="smat-brand">
@@ -261,7 +261,7 @@
             </div>
         </div>
 
-        <!-- Form Panel -->
+        
         <div class="smat-main">
             <h1 class="form-title">Identity Setup</h1>
             <p class="form-subtitle">Claim your unique subdomain and name your workspace.</p>

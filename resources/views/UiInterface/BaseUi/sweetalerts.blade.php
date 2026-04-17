@@ -1,22 +1,22 @@
 <?php $page = 'sweetalerts'; ?>
 @extends('layout.mainlayout')
 @section('content')
-			<!-- Page Wrapper -->
+			
             <div class="page-wrapper">
                 <div class="content container-fluid">
 
-					<!-- Page Header -->
+					
 					<div class="page-header">
 						<div class="content-page-header">
 							<h5>Sweetalerts</h5>
 						</div>	
 					</div>
-					<!-- /Page Header -->
+					
 
 					<div class="row">
 						<div class="col-md-12">
 
-							<!-- Basic Examples -->
+							
 							<div class="card">
 								<div class="card-header">
 									<h4 class="card-title">Basic Examples</h4>
@@ -29,9 +29,9 @@
 									<button type="button" class="btn btn-outline-primary me-1 mb-1" id="footer-alert">With Footer</button>
 								</div>
 							</div>
-							<!-- /Basic Examples -->
+							
 
-							<!-- Position -->
+							
 							<div class="card">
 								<div class="card-header">
 									<h4 class="card-title">Position</h4>
@@ -44,9 +44,9 @@
 									<button class="btn btn-outline-success me-1 mb-1" id="position-bottom-end">Bottom End</button>
 								</div>
 							</div>
-							<!-- \Position -->
+							
 
-							<!-- Types -->
+							
 							<div class="card">
 								<div class="card-header">
 									<h4 class="card-title">Types</h4>
@@ -61,9 +61,9 @@
 									<button type="button" class="btn btn-outline-danger me-1 mb-1" id="type-error">Error</button>
 								</div>
 							</div>
-							<!-- \Types -->
+							
 
-							<!-- Options -->
+							
 							<div class="card">
 								<div class="card-header">
 									<h4 class="card-title">Options</h4>
@@ -74,9 +74,9 @@
 									<button type="button" class="btn btn-outline-primary me-1 mb-1" id="prompt-function">Question</button>
 								</div>
 							</div>
-							<!-- \Options -->
+							
 
-							<!-- Confirm Options -->
+							
 							<div class="card">
 								<div class="card-header">
 									<h4 class="card-title">Confirm Options</h4>
@@ -90,12 +90,12 @@
 									<button type="button" class="btn btn-outline-primary mb-0" id="confirm-color">Confirm Button Color</button>
 								</div>
 							</div>
-							<!-- \Confirm Options -->
+							
 
 						</div>			
 					</div>
 
 				</div>			
 			</div>
-			<!-- /Page Wrapper -->
+			
 @endsection

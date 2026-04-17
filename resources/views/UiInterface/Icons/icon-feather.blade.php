@@ -1,12 +1,12 @@
 <?php $page = 'icon-feather'; ?>
 @extends('layout.mainlayout')
 @section('content')
-			<!-- Page Wrapper -->
+			
             <div class="page-wrapper">
                 <div class="content container-fluid">
 
 					<div class="row">
-						<!-- Chart -->
+						
 						<div class="col-md-12">	
 							<div class="card">
 								<div class="card-header">
@@ -285,11 +285,11 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Chart -->
+						
 
 					</div>
 
 				</div>			
 			</div>
-			<!-- /Page Wrapper -->
+			
 @endsection

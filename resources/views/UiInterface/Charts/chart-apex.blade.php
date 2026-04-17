@@ -9,21 +9,21 @@
 @endphp
 
 @section('content')
-			<!-- Page Wrapper -->
+			
             <div class="page-wrapper">
                 <div class="content container-fluid">
 
-					<!-- Page Header -->
+					
 					<div class="page-header">
 						<div class="content-page-header">
 							<h5>Charts (Dynamic ApexCharts)</h5>
 						</div>	
 					</div>
-					<!-- /Page Header -->
+					
 
 					<div class="row">
 
-						<!-- Apex Simple (Dynamic Line Chart) -->
+						
 						<div class="col-md-6">	
 							<div class="card">
 								<div class="card-header">
@@ -34,9 +34,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Chart -->
+						
 
-						<!-- Apex Donut Chart (Dynamic) -->
+						
 						<div class="col-md-6">
 							<div class="card mb-0">
 								<div class="card-header">
@@ -47,7 +47,7 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Chart -->
+						
 
 						<div class="col-md-6">
 							<div class="card">
@@ -119,7 +119,7 @@
 
 				</div>			
 			</div>
-			<!-- /Page Wrapper -->
+			
 @endsection
 
 @push('scripts')

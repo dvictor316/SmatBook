@@ -1,4 +1,4 @@
-<!-- Two Col Sidebar -->
+
 <div class="two-col-bar" id="two-col-bar">
     <div class="sidebar sidebar-three" id="sidebar">
         <div class="sidebar-inner slimscroll">
@@ -47,7 +47,7 @@
                 </aside>
                 <div class="tab-content tab-content-three">
                     <ul class="tab-pane active" id="home" aria-labelledby="home-tab">
-                        <!-- Main -->
+                        
                         <li class="menu-title"><span>Main</span></li>
                         <li class="submenu">
                             <a href="#"><i class="fe fe-home"></i> <span> Dashboard</span> <span
@@ -69,9 +69,9 @@
                                         href="{{ url('inbox') }}">Email</a></li>
                             </ul>
                         </li>
-                        <!-- /Main -->
+                        
 
-                        <!-- Customers -->
+                        
                         <li>
                             <a class="{{ Request::is('customers') ? 'active' : '' }}" href="{{ url('customers') }}"><i
                                     class="fe fe-users"></i> <span>Customers</span></a>
@@ -85,9 +85,9 @@
                             <a class="{{ Request::is('suppliers*') ? 'active' : '' }}" href="{{ url('suppliers') }}"><i
                                     class="fe fe-user"></i> <span>Suppliers</span></a>
                         </li>
-                        <!-- /Customers -->
+                        
 
-                        <!-- Inventory -->
+                        
                         <li class="submenu">
                             <a href="#"><i class="fe fe-package"></i> <span> Products / Services</span> <span
                                     class="menu-arrow"></span></a>
@@ -111,9 +111,9 @@
                                     class="fe fe-shuffle"></i> <span>Transfer Audit</span></a>
                         </li>
                         @endif
-                        <!-- /Inventory -->
+                        
 
-                        <!-- Signature -->
+                        
                         <li class="submenu">
                             <a href="#"><span>Signature</span> <span class="menu-arrow"></span></a>
                             <ul>
@@ -129,9 +129,9 @@
                                 </li>
                             </ul>
                         </li>
-                        <!-- /Signature -->
+                        
 
-                        <!-- Sales -->
+                        
                         <li class="submenu">
                             <a class="{{ Request::is('invoices') ? 'active' : '' }}" href="{{ url('invoices') }}"><i
                                     class="fe fe-file"></i> <span>Invoices</span><span class="menu-arrow"></span></a>
@@ -159,9 +159,9 @@
                                 href="{{ url('credit-notes') }}"><i class="fe fe-edit"></i> <span>Credit
                                     Notes</span></a>
                         </li>
-                        <!-- /Sales -->
+                        
 
-                        <!-- Purchases -->
+                        
                         <li>
                             <a class="{{ Request::is('purchases') ? 'active' : '' }}"
                                 href="{{ url('purchases') }}"><i class="fe fe-shopping-cart"></i>
@@ -177,9 +177,9 @@
                                 href="{{ url('debit-notes') }}"><i class="fe fe-file-text"></i> <span>Debit
                                     Notes</span></a>
                         </li>
-                        <!-- /Purchases -->
+                        
 
-                        <!-- Finance & Accounts -->
+                        
                         @php
                             $twoColPlan = strtolower(trim((string) (session('user_plan') ?: (auth()->user()?->company?->plan ?? 'basic'))));
                             $twoColIsSuper = auth()->check() && (
@@ -255,9 +255,9 @@
                                 <span>Upgrade for Assets & Budgets</span></a>
                         </li>
                         @endif
-                        <!-- /Finance & Accounts -->
+                        
 
-                        <!-- Quotations -->
+                        
                         <li>
                             <a class="{{ Request::is('quotations') ? 'active' : '' }}"
                                 href="{{ url('quotations') }}"><i class="fe fe-clipboard"></i>
@@ -268,9 +268,9 @@
                                 href="{{ url('delivery-challans') }}"><i class="fe fe-file-text"></i> <span>Delivery
                                     Challans</span></a>
                         </li>
-                        <!-- /Quotations -->
+                        
 
-                        <!-- Reports -->
+                        
                         <li>
                             <a class="{{ Request::is('reports') ? 'active' : '' }}"
                                 href="{{ route('reports.hub') }}"><i class="fe fe-bar-chart-2"></i> <span>Reports</span></a>
@@ -312,9 +312,9 @@
                                         href="{{ route('reports.cash-flow') }}">Cash Flow</a></li>
                             </ul>
                         </li>
-                        <!-- /Reports -->
+                        
 
-                        <!-- User Management -->
+                        
                         <li class="submenu">
                             <a href="#"><i class="fe fe-user"></i> <span> Manage Users</span> <span
                                     class="menu-arrow"></span></a>
@@ -347,9 +347,9 @@
                                 href="{{ route('close.index') }}"><i class="fe fe-lock"></i> <span>Period Close</span></a>
                         </li>
                         @endif
-                        <!-- /User Management -->
+                        
 
-                        <!-- Membership) -->
+                        
                         <li class="submenu">
                             <a href="#"><i class="fe fe-book"></i> <span> Membership</span> <span
                                     class="menu-arrow"></span></a>
@@ -364,9 +364,9 @@
                                         href="{{ url('transactions') }}">Transactions</a></li>
                             </ul>
                         </li>
-                        <!-- /Membership) -->
+                        
 
-                        <!-- Content (CMS) -->
+                        
                         <li>
                             <a class="{{ Request::is('pages') ? 'active' : '' }}" href="{{ url('pages') }}"><i
                                     class="fe fe-folder"></i> <span>Pages</span></a>
@@ -404,9 +404,9 @@
                             <a class="{{ Request::is('faq') ? 'active' : '' }}" href="{{ url('faq') }}"><i
                                     class="fe fe-alert-circle"></i> <span>FAQ</span></a>
                         </li>
-                        <!-- /Content (CMS) -->
+                        
 
-                        <!-- Support -->
+                        
                         <li>
                             <a class="{{ Request::is('contact-messages') ? 'active' : '' }}"
                                 href="{{ url('contact-messages') }}"><i class="fe fe-printer"></i> <span>Contact
@@ -426,10 +426,10 @@
                                         href="{{ url('ticket-details') }}">Ticket Overview</a></li>
                             </ul>
                         </li>
-                        <!-- /Support -->
+                        
                     </ul>
 
-                    <!-- UI Interface -->
+                    
                     <ul class="tab-pane" id="messages" aria-labelledby="messages-tab">
                         <li class="menu-title">
                             <span>UI Interface</span>
@@ -603,9 +603,9 @@
                             </ul>
                         </li>
                     </ul>
-                    <!-- /UI Interface -->
+                    
 
-                    <!-- Pages -->
+                    
                     <ul class="tab-pane" id="profile" aria-labelledby="profile-tab">
                         <li class="menu-title menu-title-three">
                             <span>Pages</span>
@@ -654,10 +654,10 @@
                                     Maps</span></a>
                         </li>
                     </ul>
-                    <!-- /Pages -->
+                    
                 </div>
             </div>
         </div>
     </div>
 </div>
-<!-- /Two Col Sidebar -->
+

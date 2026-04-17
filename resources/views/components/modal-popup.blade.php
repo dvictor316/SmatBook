@@ -1,6 +1,6 @@
 @if (Route::is(['companies']))
 
-		<!-- Add Asset -->
+		
 		<div class="toggle-sidebar">
 			<div class="sidebar-layout-filter">
 				<div class="sidebar-header">
@@ -9,7 +9,7 @@
 				</div>
 				<div class="sidebar-body">
 					<form action="#" autocomplete="off">
-						<!-- Customer -->
+						
 						<div class="accordion" id="accordionMain1">
 							<div class="card-header-new" id="headingOne">
 								<h6 class="filter-title">
@@ -80,9 +80,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Customer -->
+						
 
-						<!-- By Plane -->
+						
 						<div class="accordion" id="accordionMain3">
 							<div class="card-header-new" id="headingThree">
 								<h6 class="filter-title">
@@ -129,9 +129,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /By Plane -->
+						
 
-						<!-- By Plane -->
+						
 						<div class="accordion" id="accordionMain4">
 							<div class="card-header-new" id="headingFour">
 								<h6 class="filter-title">
@@ -170,9 +170,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /By Plane -->
+						
 
-						<!-- Select Date -->
+						
 						<div class="accordion accordion-last" id="accordionMain2">
 							<div class="card-header-new" id="headingTwo">
 								<h6 class="filter-title">
@@ -204,7 +204,7 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Select Date -->
+						
 
 						<div class="filter-buttons">
 							<button type="submit" class="d-inline-flex align-items-center justify-content-center btn w-100 btn-primary">
@@ -219,9 +219,9 @@
 				</div>
 			</div>
 		</div>
-		<!--/Add Asset -->
+		
 
-		<!-- Delete Items Modal -->
+		
 		<div class="modal custom-modal fade modal-delete" id="delete_modal" role="dialog">
 			<div class="modal-dialog modal-dialog-centered modal-md">
 				<div class="modal-content">
@@ -243,9 +243,9 @@
 				</div>
 			</div>
 		</div>
-		<!-- /Delete Items Modal -->
+		
 
-		<!-- Add Companies Modal -->
+		
 		<div class="modal custom-modal custom-lg-modal fade p-20" id="add_companies" role="dialog">
 			<div class="modal-dialog modal-dialog-centered modal-md">
 				<div class="modal-content">
@@ -409,9 +409,9 @@
 				</div>
 			</div>
 		</div>
-		<!-- /Add Companies Modal -->
+		
 
-		<!-- Edit Companies Modal -->
+		
 		<div class="modal custom-modal custom-lg-modal fade p-20" id="edit_companies" role="dialog">
 			<div class="modal-dialog modal-dialog-centered modal-md">
 				<div class="modal-content">
@@ -571,9 +571,9 @@
 				</div>
 			</div>
 		</div>
-		<!-- /Edit Companies Modal -->
+		
 
-		<!-- View Companies Modal -->
+		
 		<div class="modal custom-modal custom-lg-modal fade p-20" id="view_companies" role="dialog">
 			<div class="modal-dialog modal-dialog-centered modal-md">
 				<div class="modal-content">
@@ -705,9 +705,9 @@
 				</div>
 			</div>
 		</div>
-		<!-- /View Companies Modal -->
+		
 
-		<!-- Change Plane Modal -->
+		
 		<div class="modal custom-modal custom-lg-modal fade p-20" id="change_pane" role="dialog">
 			<div class="modal-dialog modal-dialog-centered modal-md">
 				<div class="modal-content">
@@ -844,11 +844,11 @@
 				</div>
 			</div>
 		</div>
-		<!-- /Change Plane Modal -->
+		
 @endif
 
 @if (Route::is(['all-blogs']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="deleteModal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -873,11 +873,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['inactive-blog']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="deleteModal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -902,11 +902,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if(Route::is(['customers-ledger']))
-<!-- Delete Items Modal -->
+
 <div class="modal custom-modal fade" id="delete_modal" role="dialog">
     <div class="modal-dialog modal-dialog-centered modal-md">
         <div class="modal-content">
@@ -929,11 +929,11 @@
         </div>
     </div>
 </div>
-<!-- /Delete Items Modal -->
+
 @endif
 
 @if (Route::is(['subscription']))
-<!-- Filter -->
+
 <div class="toggle-sidebar">
     <div class="sidebar-layout-filter">
         <div class="sidebar-header">
@@ -942,7 +942,7 @@
         </div>
         <div class="sidebar-body">						
             <form action="#" autocomplete="off">
-                <!-- Customer -->
+                
                 <div class="accordion" id="accordionMain1">
                     <div class="card-header-new" id="headingOne">
                         <h6 class="filter-title">
@@ -1010,9 +1010,9 @@
                         </div>
                     </div>
                 </div>
-                <!-- /Customer -->
+                
 
-                <!-- By Package -->
+                
                 <div class="accordion" id="accordionMain4">
                     <div class="card-header-new" id="headingFive">
                         <h6 class="filter-title">
@@ -1056,9 +1056,9 @@
                         </div>
                     </div>
                 </div>
-                <!-- /By Package -->
+                
 
-                <!-- By Status -->
+                
                 <div class="accordion" id="accordionMain3">
                     <div class="card-header-new" id="headingThree">
                         <h6 class="filter-title">
@@ -1094,9 +1094,9 @@
                         </div>
                     </div>
                 </div>
-                <!-- /By Status -->
+                
 
-                <!-- Payment Gateway -->
+                
                 <div class="accordion" id="accordionMain5">
                     <div class="card-header-new" id="headingfive">
                         <h6 class="filter-title">
@@ -1132,9 +1132,9 @@
                         </div>
                     </div>
                 </div>
-                <!-- /Payment Gateway -->
+                
 
-                <!-- Select Date -->
+                
                 <div class="accordion accordion-last" id="accordionMain2">
                     <div class="card-header-new" id="headingTwo">
                         <h6 class="filter-title">
@@ -1162,7 +1162,7 @@
                         </div>
                     </div>
                 </div>
-                <!-- /Select Date -->
+                
 
                 <div class="filter-buttons">
                     <button type="submit" class="d-inline-flex align-items-center justify-content-center btn w-100 btn-primary">
@@ -1177,9 +1177,9 @@
         </div>
     </div>
 </div>
-<!-- /Filter -->
 
-  <!-- Edit Supplier Modal -->
+
+  
   <div class="modal custom-modal fade" id="edit_contact" role="dialog">
     <div class="modal-dialog modal-dialog-centered modal-md">
         <div class="modal-content">
@@ -1232,9 +1232,9 @@
         </div>
     </div>
 </div>
-<!-- /Edit Supplier Modal -->
 
-<!-- Delete Items Modal -->
+
+
 <div class="modal custom-modal fade modal-delete" id="delete_modal" role="dialog">
     <div class="modal-dialog modal-dialog-centered modal-md">
         <div class="modal-content">
@@ -1256,12 +1256,12 @@
         </div>
     </div>
 </div>
-<!-- /Delete Items Modal -->
+
 
 @endif
 
 @if (Route::is(['packages']))
-   <!-- Add Asset -->
+   
    <div class="toggle-sidebar">
     <div class="sidebar-layout-filter">
         <div class="sidebar-header">
@@ -1271,7 +1271,7 @@
         <div class="sidebar-body">
             <form action="#" autocomplete="off">
 
-                <!-- By Plane -->
+                
                 <div class="accordion" id="accordionMain3">
                     <div class="card-header-new" id="headingThree">
                         <h6 class="filter-title">
@@ -1318,9 +1318,9 @@
                         </div>
                     </div>
                 </div>
-                <!-- /By Plane -->
+                
 
-                <!-- By Plane -->
+                
                 <div class="accordion" id="accordionMain4">
                     <div class="card-header-new" id="headingFour">
                         <h6 class="filter-title">
@@ -1359,9 +1359,9 @@
                         </div>
                     </div>
                 </div>
-                <!-- /By Plane -->
+                
 
-                <!-- Select Date -->
+                
                 <div class="accordion accordion-last" id="accordionMain2">
                     <div class="card-header-new" id="headingTwo">
                         <h6 class="filter-title">
@@ -1393,7 +1393,7 @@
                         </div>
                     </div>
                 </div>
-                <!-- /Select Date -->
+                
 
                 <div class="filter-buttons">
                     <button type="submit" class="d-inline-flex align-items-center justify-content-center btn w-100 btn-primary">
@@ -1408,9 +1408,9 @@
         </div>
     </div>
 </div>
-<!--/Add Asset -->
 
-<!-- Delete Items Modal -->
+
+
 <div class="modal custom-modal fade modal-delete" id="delete_modal" role="dialog">
     <div class="modal-dialog modal-dialog-centered modal-md">
         <div class="modal-content">
@@ -1432,12 +1432,12 @@
         </div>
     </div>
 </div>
-<!-- /Delete Items Modal -->
+
 
 @endif
 
 @if (Route::is(['domain-request']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -1462,11 +1462,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['domain']))
-   <!-- Add Asset -->
+   
    <div class="toggle-sidebar">
     <div class="sidebar-layout-filter">
         <div class="sidebar-header">
@@ -1475,7 +1475,7 @@
         </div>
         <div class="sidebar-body">						
             <form action="#" autocomplete="off">
-                <!-- Company -->
+                
                 <div class="accordion" id="accordionMain1">
                     <div class="card-header-new" id="headingOne">
                         <h6 class="filter-title">
@@ -1543,9 +1543,9 @@
                         </div>
                     </div>
                 </div>
-                <!-- /Company -->
+                
 
-                <!-- Domain -->
+                
                 <div class="accordion" id="accordionMain5">
                     <div class="card-header-new" id="headingFive">
                         <h6 class="filter-title">
@@ -1572,9 +1572,9 @@
                         </div>
                     </div>
                 </div>
-                <!-- /Domain -->
+                
 
-                <!-- By Package -->
+                
                 <div class="accordion" id="accordionMain4">
                     <div class="card-header-new" id="headingFour">
                         <h6 class="filter-title">
@@ -1618,9 +1618,9 @@
                         </div>
                     </div>
                 </div>
-                <!-- /By Package -->
+                
 
-                <!-- Plans Type -->
+                
                 <div class="accordion" id="accordionMain3">
                     <div class="card-header-new" id="headingThree">
                         <h6 class="filter-title">
@@ -1656,9 +1656,9 @@
                         </div>
                     </div>
                 </div>
-                <!-- /Plans Type -->
+                
 
-                <!-- Select Date -->
+                
                 <div class="accordion accordion-last" id="accordionMain2">
                     <div class="card-header-new" id="headingTwo">
                         <h6 class="filter-title">
@@ -1684,7 +1684,7 @@
                         </div>
                     </div>
                 </div>
-                <!-- /Select Date -->
+                
 
                 <div class="filter-buttons">
                     <button type="submit" class="d-inline-flex align-items-center justify-content-center btn w-100 btn-primary">
@@ -1699,9 +1699,9 @@
         </div>
     </div>
 </div>	
-<!-- /Add Asset -->
 
-<!-- View Companies Modal -->
+
+
 <div class="modal custom-modal custom-lg-modal fade p-20" id="view_doamin" role="dialog">
     <div class="modal-dialog modal-dialog-centered modal-md">
         <div class="modal-content">
@@ -1799,9 +1799,9 @@
         </div>
     </div>
 </div>
-<!-- /View Companies Modal -->
 
-<!-- Delete Items Modal -->
+
+
 <div class="modal custom-modal fade modal-delete" id="delete_modal" role="dialog">
     <div class="modal-dialog modal-dialog-centered modal-md">
         <div class="modal-content">
@@ -1823,12 +1823,12 @@
         </div>
     </div>
 </div>
-<!-- /Delete Items Modal -->
+
 
 @endif
 
 @if (Route::is(['customers']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -1853,11 +1853,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['ledger']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -1882,11 +1882,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['vendors']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -1911,11 +1911,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['customer-details']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -1940,11 +1940,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['product-list']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -1969,11 +1969,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['category']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -1998,11 +1998,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['units']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -2027,11 +2027,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['states']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -2056,11 +2056,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['signature-invoice']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_discount" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -2087,11 +2087,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['active-customers']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -2116,11 +2116,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['deactive-customers']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -2145,11 +2145,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['purchase-return']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -2174,11 +2174,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['purchase-orders']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -2203,11 +2203,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['quotations']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -2231,11 +2231,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['bank-account']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -2260,11 +2260,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['cities']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -2289,11 +2289,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['contact-messages']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -2318,11 +2318,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['countries']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -2347,11 +2347,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['credit-notes']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -2376,11 +2376,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['custom-filed']))
-        <!-- Delete Items Modal -->
+        
         <div class="modal custom-modal fade" id="delete_modal" role="dialog">
             <div class="modal-dialog modal-dialog-centered modal-md">
                 <div class="modal-content">
@@ -2405,11 +2405,11 @@
                 </div>
             </div>
         </div>
-        <!-- /Delete Items Modal -->
+        
 @endif
 
 @if (Route::is(['customer-ledger']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -2434,11 +2434,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['debit-notes']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -2463,11 +2463,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['delete-account-request']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -2491,11 +2491,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['purchase-report']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -2520,11 +2520,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['purchases']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -2549,11 +2549,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['quotation-report']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -2578,11 +2578,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['rexpense-report']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -2607,11 +2607,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['expenses']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -2636,11 +2636,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['faq']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -2665,11 +2665,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['income-report']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -2694,7 +2694,7 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is([
@@ -2707,7 +2707,7 @@
         'invoices-unpaid',
         'invoices',
     ]))
-    <!-- Delete Paid Modal -->
+    
     <div class="modal custom-modal fade" id="delete_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -2731,11 +2731,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Paid Modal -->
+    
 @endif
 
 @if (Route::is(['stock-report']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -2760,11 +2760,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['low-stock-report']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -2789,11 +2789,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['payment-report']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -2818,11 +2818,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['payments']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -2847,11 +2847,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['profit-loss-list']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -2876,11 +2876,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['sales-report']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -2905,11 +2905,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['sales-return-report']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -2934,11 +2934,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['tax-purchase']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -2963,11 +2963,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['tax-rates']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -2992,11 +2992,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['tax-sales']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -3021,11 +3021,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['testimonials']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -3050,11 +3050,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['users']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -3078,11 +3078,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['purchase-transcation']))
-		<!-- Add Asset -->
+		
 		<div class="toggle-sidebar">
 			<div class="sidebar-layout-filter">
 				<div class="sidebar-header">
@@ -3091,7 +3091,7 @@
 				</div>
 				<div class="sidebar-body">
 					<form action="#" autocomplete="off">
-						<!-- Product -->
+						
 						<div class="accordion" id="accordionMain1">
 							<div class="card-header-new" id="headingOne">
 								<h6 class="filter-title">
@@ -3126,7 +3126,7 @@
 														<input type="checkbox" name="username">
 														<span class="checkmark"></span> Sumo Soft Limited
 													</label>
-													<!-- View All -->
+													
 													<div class="view-content">
 														<div class="viewall-One">
 															<label class="custom_check w-100">
@@ -3145,7 +3145,7 @@
 																		class="fa fa-circle-chevron-down"></i></span></a>
 														</div>
 													</div>
-													<!-- /View All -->
+													
 												</div>
 											</div>
 										</div>
@@ -3153,9 +3153,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Product -->
+						
 
-						<!-- Product Code -->
+						
 						<div class="accordion" id="accordionMain4">
 							<div class="card-header-new" id="headingFour">
 								<h6 class="filter-title">
@@ -3190,9 +3190,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Product Code -->
+						
 
-						<!-- Unts -->
+						
 						<div class="accordion accordion-last" id="accordionMain3">
 							<div class="card-header-new" id="headingThree">
 								<h6 class="filter-title">
@@ -3223,7 +3223,7 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Units -->
+						
 
 						<div class="filter-buttons">
 							<button type="submit"
@@ -3240,9 +3240,9 @@
 				</div>
 			</div>
 		</div>
-		<!-- /Add Asset -->
+		
 
-		<!-- Add Stock in Modal -->
+		
 		<div class="modal custom-modal fade" id="stock_in" role="dialog">
 			<div class="modal-dialog modal-dialog-centered modal-md">
 				<div class="modal-content">
@@ -3296,9 +3296,9 @@
 				</div>
 			</div>
 		</div>
-		<!-- /Add Stock in Modal -->
+		
 
-		<!-- Remove Stock Modal -->
+		
 		<div class="modal custom-modal fade" id="stock_out" role="dialog">
 			<div class="modal-dialog modal-dialog-centered modal-md">
 				<div class="modal-content">
@@ -3353,9 +3353,9 @@
 				</div>
 			</div>
 		</div>
-		<!-- /Remove Stock Modal -->
+		
 
-		<!-- Edit Stock in Modal -->
+		
 		<div class="modal custom-modal fade" id="edit_inventory" role="dialog">
 			<div class="modal-dialog modal-dialog-centered modal-lg">
 				<div class="modal-content">
@@ -3420,9 +3420,9 @@
 				</div>
 			</div>
 		</div>
-		<!-- /Edit Stock in Modal -->
+		
 
-		<!-- Delete Items Modal -->
+		
 		<div class="modal custom-modal fade" id="delete_modal" role="dialog">
 			<div class="modal-dialog modal-dialog-centered modal-md">
 				<div class="modal-content">
@@ -3445,11 +3445,11 @@
 				</div>
 			</div>
 		</div>
-		<!-- /Delete Items Modal -->
+		
 @endif
 
 @if (Route::is(['inventory']))
-    <!-- Remove Stock Modal -->
+    
     <div class="modal custom-modal fade" id="stock_out" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -3507,9 +3507,9 @@
             </div>
         </div>
     </div>
-    <!-- /Remove Stock Modal -->
+    
 
-    <!-- Delete Stock Modal -->
+    
     <div class="modal custom-modal fade" id="delete_stock" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -3533,11 +3533,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Stock Modal -->
+    
 @endif
 
 @if (Route::is(['inventory-history']))
-    <!-- Remove Stock Modal -->
+    
     <div class="modal custom-modal fade" id="stock_out" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -3595,9 +3595,9 @@
             </div>
         </div>
     </div>
-    <!-- /Remove Stock Modal -->
+    
 
-    <!-- Delete Stock Modal -->
+    
     <div class="modal custom-modal fade" id="delete_stock" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -3621,11 +3621,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Stock Modal -->
+    
 @endif
 
 @if (Route::is(['signature-list']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade signature-delete-modal" id="warning_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -3644,9 +3644,9 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade signature-delete-modal" id="delete_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -3663,11 +3663,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['add-credit-notes']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_discount" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -3694,11 +3694,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['delivery-challans']))
-    <!-- View Modal -->
+    
     <div class="modal custom-modal fade" id="view_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-xl">
             <div class="modal-content view-delivery-challans">
@@ -3852,9 +3852,9 @@
             </div>
         </div>
     </div>
-    <!-- /View Modal -->
+    
 
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -3878,11 +3878,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['add-delivery-challans']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_discount" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -3907,11 +3907,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['add-invoice']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_discount" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -3938,11 +3938,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['add-purchase-return']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_discount" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -3966,11 +3966,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['add-purchase-order']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_discount" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -3994,10 +3994,10 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 @if (Route::is(['add-purchases']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_discount" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -4021,11 +4021,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['add-quotations']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_discount" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -4050,11 +4050,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['categories']))
-    <!-- modal -->
+    
     <div class="modal modal-lg custom-modal fade" id="blog-categories" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -4128,7 +4128,7 @@
         </div>
     </div>
 
-    <!-- Modal -->
+    
     <div class="modal fade contentmodal" id="deleteModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content doctor-profile">
@@ -4150,11 +4150,11 @@
             </div>
         </div>
     </div>
-    <!-- /Modal -->
+    
 @endif
 
 @if (Route::is(['edit-credit-notes']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_discount" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -4181,11 +4181,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['edit-delivery-challans']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_discount" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -4212,11 +4212,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['edit-invoice']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_discount" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -4243,11 +4243,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['edit-purchase-return']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_discount" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -4271,11 +4271,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['edit-purchases-order']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_discount" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -4302,11 +4302,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['edit-purchases']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_discount" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -4333,11 +4333,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['edit-quotations']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="delete_discount" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -4364,11 +4364,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['email-settings']))
-    <!-- PHP Mail Modal -->
+    
     <div class="modal custom-modal fade" id="bank_details" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -4414,11 +4414,11 @@
             </div>
         </div>
     </div>
-    <!-- /PHP Mail Modal -->
+    
 @endif
 
 @if (Route::is(['form-wizard']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="save_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -4443,11 +4443,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['inventory-list']))
-    <!-- Remove Stock Modal -->
+    
     <div class="modal custom-modal fade" id="stock_out" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -4502,9 +4502,9 @@
             </div>
         </div>
     </div>
-    <!-- /Remove Stock Modal -->
+    
 
-    <!-- Delete Stock Modal -->
+    
     <div class="modal custom-modal fade" id="delete_stock" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -4528,11 +4528,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Stock Modal -->
+    
 @endif
 
 @if (Route::is(['invoice-details']))
-    <!-- Pay Now Modal -->
+    
     <div class="modal custom-modal fade pay-modal" id="paynow_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
@@ -4606,11 +4606,11 @@
             </div>
         </div>
     </div>
-    <!-- /Pay Now Modal -->
+    
 @endif
 
 @if (Route::is(['invoices']))
-    <!-- View Modal -->
+    
     <div class="modal custom-modal fade" id="view_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-xl">
             <div class="modal-content view-delivery-challans">
@@ -4765,11 +4765,11 @@
             </div>
         </div>
     </div>
-    <!-- /View Modal -->
+    
 @endif
 
 @if (Route::is(['notifications']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade signature-delete-modal" id="notification-delete" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -4786,11 +4786,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is(['pages']))
-    <!-- Delete Items Modal -->
+    
     <div class="modal custom-modal fade" id="page_delete" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -4814,7 +4814,7 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Items Modal -->
+    
 @endif
 
 @if (Route::is([
@@ -4826,7 +4826,7 @@
         'recurring-pending',
         'recurring',
     ]))
-    <!-- Delete Paid Modal -->
+    
     <div class="modal custom-modal fade" id="delete_paid" role="dialog">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -4850,11 +4850,11 @@
             </div>
         </div>
     </div>
-    <!-- /Delete Paid Modal -->
+    
 @endif
 
 @if (Route::is(['pay-online']))
-    <!-- Success Items Modal -->
+    
     <div class="modal custom-modal fade signature-success-modal" id="success_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -4871,11 +4871,11 @@
             </div>
         </div>
     </div>
-    <!-- /Success Items Modal -->
+    
 @endif
 
 @if (Route::is(['purchase-details']))
-    <!-- Pay Now Modal -->
+    
     <div class="modal custom-modal fade pay-modal" id="paynow_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
@@ -4945,11 +4945,11 @@
             </div>
         </div>
     </div>
-    <!-- /Pay Now Modal -->
+    
 @endif
 
 @if(Route::is(['plans-list']))
-<!-- Add Asset -->
+
 <div class="toggle-sidebar">
     <div class="sidebar-layout-filter">
         <div class="sidebar-header">
@@ -4959,7 +4959,7 @@
         <div class="sidebar-body">
             <form action="#" autocomplete="off">
 
-                <!-- By Plane -->
+                
                 <div class="accordion" id="accordionMain3">
                     <div class="card-header-new" id="headingThree">
                         <h6 class="filter-title">
@@ -5006,9 +5006,9 @@
                         </div>
                     </div>
                 </div>
-                <!-- /By Plane -->
+                
 
-                <!-- By Plane -->
+                
                 <div class="accordion" id="accordionMain4">
                     <div class="card-header-new" id="headingFour">
                         <h6 class="filter-title">
@@ -5047,9 +5047,9 @@
                         </div>
                     </div>
                 </div>
-                <!-- /By Plane -->
+                
 
-                <!-- Select Date -->
+                
                 <div class="accordion accordion-last" id="accordionMain2">
                     <div class="card-header-new" id="headingTwo">
                         <h6 class="filter-title">
@@ -5081,7 +5081,7 @@
                         </div>
                     </div>
                 </div>
-                <!-- /Select Date -->
+                
 
                 <div class="filter-buttons">
                     <button type="submit" class="d-inline-flex align-items-center justify-content-center btn w-100 btn-primary">
@@ -5096,9 +5096,9 @@
         </div>
     </div>
 </div>
-<!--/Add Asset -->
 
-<!-- Add New Package Modal -->
+
+
 <div class="modal custom-modal fade p-20" id="add_newpackage" role="dialog">
     <div class="modal-dialog modal-dialog-centered modal-md">
         <div class="modal-content">
@@ -5394,9 +5394,9 @@
         </div>
     </div>
 </div>
-<!-- /Add New Package Modal -->
 
-<!-- Edit Package Modal -->
+
+
 <div class="modal custom-modal custom-lg-modal fade p-20" id="edit_package" role="dialog">
     <div class="modal-dialog modal-dialog-centered modal-md">
         <div class="modal-content">
@@ -5692,9 +5692,9 @@
         </div>
     </div>
 </div>
-<!-- /Edit Package Modal -->
 
-<!-- Delete Items Modal -->
+
+
 <div class="modal custom-modal fade modal-delete" id="delete_modal" role="dialog">
     <div class="modal-dialog modal-dialog-centered modal-md">
         <div class="modal-content">
@@ -5716,5 +5716,5 @@
         </div>
     </div>
 </div>
-<!-- /Delete Items Modal -->
+
 @endif

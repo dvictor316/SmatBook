@@ -2,7 +2,7 @@
 
 @section('content')
 
-<!-- ===== POLICY PAGE STYLES ===== -->
+
 <style>
     /* ===== RESET & BASE ===== */
     .sidebar, #sidebar, .sidebar-menu, .main-sidebar, aside {
@@ -367,7 +367,7 @@
     }
 </style>
 
-<!-- ===== POLICY HEADER ===== -->
+
 <section class="policy-header">
     <div class="container">
         <h6 class="policy-label">Service Agreement & Terms of Use</h6>
@@ -376,11 +376,11 @@
     </div>
 </section>
 
-<!-- ===== POLICY SECTION ===== -->
+
 <section class="policy-section">
     <div class="container">
         <div class="policy-document">
-            <!-- Table of Contents -->
+            
             <div class="toc">
                 <h4>📋 Table of Contents</h4>
                 <ul>
@@ -397,7 +397,7 @@
                 </ul>
             </div>
 
-            <!-- Section 1 -->
+            
             <h2 id="section-1">1. License and Restrictions</h2>
             <p>SmartProbook Global Infrastructure Inc. ("SmartProbook") grants you a personal, limited, non-exclusive, revocable, and non-transferable license to use our Software-as-a-Service (SaaS) platform, subject to the terms and conditions of this Agreement. You agree not to use, nor permit any third party to use, the Services in a manner that violates any applicable law, regulation, court order, or this Agreement.</p>
 
@@ -412,7 +412,7 @@
                 <li>Circumvent security measures or attempt unauthorized system access.</li>
             </ul>
 
-            <!-- Section 2 -->
+            
             <h2 id="section-2">2. Your Content and Data</h2>
             <p>You are solely responsible for all materials, data, financial information, and documents ("Content") uploaded, posted, or stored through your use of the Services. You grant SmartProbook a worldwide, royalty-free, non-exclusive, revocable license to host, process, and use the Content only as necessary to provide you with the Services and comply with legal obligations.</p>
 
@@ -425,7 +425,7 @@
             <h3>2.3 Data Backup & Recovery</h3>
             <p>SmartProbook maintains automated daily backups of all Content to ensure data integrity and disaster recovery. In the event of data loss due to system failure, SmartProbook will restore your data from the most recent backup at no additional cost.</p>
 
-            <!-- Section 3 -->
+            
             <div class="disclaimer-box">
                 <h4>⚠️ Section 3. Professional Disclaimer & Limitation of Liability</h4>
                 <p><strong>SmartProbook IS NOT A LICENSED ACCOUNTING FIRM, LAW FIRM, OR AUDITING ENTITY.</strong> SmartProbook is a financial management software tool designed to automate bookkeeping and reporting. Use of the Services does <em>not</em> create an accountant-client, attorney-client, or auditor-client relationship. SmartProbook employees are not qualified to provide professional tax, legal, or accounting advice.</p>
@@ -433,7 +433,7 @@
                 <p><strong>LIMITATION OF LIABILITY:</strong> SmartProbook shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including but not limited to damages for loss of profits, goodwill, use, data, or other intangible losses arising from: (i) unauthorized access to or use of the Services; (ii) data corruption, security breaches, or loss of data; (iii) viruses, malware, spyware, or ransomware; (iv) third-party interference; or (v) any other cause beyond SmartProbook's reasonable control. <strong>Total liability shall not exceed fees paid in the preceding 12 months.</strong></p>
             </div>
 
-            <!-- Section 4 -->
+            
             <h2 id="section-4">4. Compliance with Laws and Regulations</h2>
             <p>You represent and warrant that your use of the Services will comply with all applicable local, state, federal, and international laws and regulations. For users in Nigeria, this includes but is not limited to:</p>
             <ul>
@@ -449,7 +449,7 @@
             <h3>4.1 AML/CFT Compliance</h3>
             <p>SmartProbook reserves the right to suspend any account or block transactions suspected of violating Anti-Money Laundering (AML) or Counter-Financing of Terrorism (CFT) regulations. SmartProbook may conduct periodic compliance audits and may require additional documentation or verification.</p>
 
-            <!-- Section 5 -->
+            
             <h2 id="section-5">5. Subscription, Fees, and Taxes</h2>
             <p>Service rates and subscription tiers are established at the time of registration. SmartProbook reserves the right to adjust pricing with <strong>30 days' advance written notice</strong> to affected users. Price changes will not apply retroactively to active subscriptions without consent.</p>
 
@@ -462,14 +462,14 @@
             <h3>5.3 Refunds</h3>
             <p>Annual and quarterly subscriptions are non-refundable except as required by law. Monthly subscriptions may be cancelled with 14 days' notice for a prorated refund of unused service days.</p>
 
-            <!-- Section 6 -->
+            
             <h2 id="section-6">6. Intellectual Property Rights</h2>
             <p>All intellectual property rights, including patents, copyrights, trademarks, and trade secrets related to the SmartProbook platform, software code, documentation, and all improvements remain the exclusive property of SmartProbook Global Infrastructure Inc. You are granted a limited license to use these materials solely for operating your subscription account.</p>
 
             <h3>6.1 User Feedback</h3>
             <p>Any feedback, suggestions, or feature requests you provide to SmartProbook may be used without compensation or attribution. You grant SmartProbook a perpetual, royalty-free license to all such feedback.</p>
 
-            <!-- Section 7 -->
+            
             <h2 id="section-7">7. Confidentiality & Data Security</h2>
             <p>SmartProbook implements industry-standard security measures including <strong>256-bit AES encryption</strong> for data in transit and at rest, regular security audits, and intrusion detection systems. However, no system is 100% secure. SmartProbook cannot guarantee absolute security against all attacks.</p>
 
@@ -479,7 +479,7 @@
             <h3>7.2 Confidential Information</h3>
             <p>Each party agrees to maintain confidentiality of the other's proprietary information and trade secrets. This obligation survives termination of this Agreement for a period of <strong>three (3) years</strong>.</p>
 
-            <!-- Section 8 -->
+            
             <h2 id="section-8">8. Termination of Service</h2>
             <p>Either party may terminate this Agreement at any time. Upon termination:</p>
             <ul>
@@ -493,7 +493,7 @@
             <h3>8.1 Suspension for Violation</h3>
             <p>SmartProbook may immediately suspend or terminate your account without notice if you violate this Agreement, engage in illegal activity, or pose a risk to SmartProbook's systems or other users.</p>
 
-            <!-- Section 9 -->
+            
             <h2 id="section-9">9. Governing Law and Jurisdiction</h2>
             <p>This Agreement is governed by and construed in accordance with the <strong>laws of the Federal Republic of Nigeria</strong>, without regard to its conflict of law principles. Both parties irrevocably submit to the exclusive jurisdiction of the <strong>High Court of Enugu State, Nigeria</strong> for resolution of any disputes.</p>
 
@@ -502,7 +502,7 @@
                 <p><strong>Arbitration Clause:</strong> Before initiating litigation, both parties agree to attempt resolution through good-faith negotiation. If negotiation fails, disputes shall be submitted to binding arbitration under the rules of the <strong>Nigerian Arbitration and Conciliation Act</strong>, with arbitration conducted in Enugu, Nigeria.</p>
             </div>
 
-            <!-- Section 10 -->
+            
             <h2 id="section-10">10. Contact & Support</h2>
             <p>For questions, concerns, or formal notice regarding these terms, please contact:</p>
 

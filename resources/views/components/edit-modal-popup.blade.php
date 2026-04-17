@@ -1,5 +1,5 @@
 @if (Route::is(['subscription']))
-    <!-- Edit Supplier Modal -->
+    
     <div class="modal custom-modal fade" id="edit_contact" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -55,11 +55,11 @@
             </div>
         </div>
     </div>
-    <!-- /Edit Supplier Modal -->
+    
 @endif
 
 @if(Route::is(['customers-ledger']))
-<!-- Edit Ledger Modal -->
+
 <div class="modal custom-modal fade" id="edit_ledger" role="dialog">
     <div class="modal-dialog modal-dialog-centered modal-md">
         <div class="modal-content">
@@ -111,11 +111,11 @@
         </div>
     </div>
 </div>
-<!-- /Edit Ledger Modal -->
+
 @endif
 
 @if (Route::is(['packages']))
-<!-- Edit Package Modal -->
+
 <div class="modal custom-modal custom-lg-modal fade p-20" id="edit_package" role="dialog">
     <div class="modal-dialog modal-dialog-centered modal-md">
         <div class="modal-content">
@@ -411,11 +411,11 @@
         </div>
     </div>
 </div>
-<!-- /Edit Package Modal -->
+
 @endif
 
 @if (Route::is(['domain']))
-    <!-- Edit Supplier Modal -->
+    
     <div class="modal custom-modal fade" id="edit_contact" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -473,11 +473,11 @@
             </div>
         </div>
     </div>
-    <!-- /Edit Supplier Modal -->
+    
 @endif
 
 @if (Route::is(['purchase-transcation']))
-    <!-- Edit Stock in Modal -->
+    
     <div class="modal custom-modal fade" id="edit_inventory" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
@@ -542,11 +542,11 @@
             </div>
         </div>
     </div>
-    <!-- /Edit Stock in Modal -->
+    
 @endif
 
 @if (Route::is(['ledger']))
-    <!-- Edit Ledger Modal -->
+    
     <div class="modal custom-modal fade" id="edit_ledger" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -605,11 +605,11 @@
             </div>
         </div>
     </div>
-    <!-- /Edit Ledger Modal -->
+    
 @endif
 
 @if (Route::is(['vendors']))
-    <!-- Edit Supplier Modal -->
+    
     <div class="modal custom-modal fade" id="edit_vendor" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -664,11 +664,11 @@
             </div>
         </div>
     </div>
-    <!-- /Edit Supplier Modal -->
+    
 @endif
 
 @if (Route::is(['inventory']))
-    <!-- Edit Stock in Modal -->
+    
     <div class="modal custom-modal fade" id="edit_inventory" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
@@ -737,11 +737,11 @@
             </div>
         </div>
     </div>
-    <!-- /Edit Stock in Modal -->
+    
 @endif
 
 @if (Route::is(['inventory-history']))
-    <!-- Edit Stock in Modal -->
+    
     <div class="modal custom-modal fade" id="edit_inventory" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
@@ -810,11 +810,11 @@
             </div>
         </div>
     </div>
-    <!-- /Edit Stock in Modal -->
+    
 @endif
 
 @if (Route::is(['states']))
-    <!-- Edit Items Modal -->
+    
     <div class="modal custom-modal fade" id="edit_state" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -878,11 +878,11 @@
             </div>
         </div>
     </div>
-    <!-- /Edit Items Modal -->
+    
 @endif
 
 @if (Route::is(['signature-list']))
-    <!-- Edit Modal -->
+    
     <div class="modal custom-modal signature-add-modal fade" id="edit_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -941,11 +941,11 @@
             </div>
         </div>
     </div>
-    <!-- / Edit Modal -->
+    
 @endif
 
 @if (Route::is(['signature-invoice']))
-    <!-- Edit Bank Details Modal -->
+    
     <div class="modal custom-modal fade" id="bank_details" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -992,11 +992,11 @@
             </div>
         </div>
     </div>
-    <!-- /Edit Bank Details Modal -->
+    
 @endif
 
 @if (Route::is(['purchase-return']))
-    <!-- Edit Supplier Modal -->
+    
     <div class="modal custom-modal fade" id="edit_vendor" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -1047,11 +1047,11 @@
             </div>
         </div>
     </div>
-    <!-- /Edit Supplier Modal -->
+    
 @endif
 
 @if (Route::is(['all-blogs']))
-    <!-- Edit Blog -->
+    
     <div class="modal custom-modal modal-lg fade" id="edit_blog" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -1134,11 +1134,11 @@
             </div>
         </div>
     </div>
-    <!-- /Edit Blog -->
+    
 @endif
 
 @if (Route::is(['inactive-blog']))
-    <!-- Edit Blog -->
+    
     <div class="modal custom-modal modal-lg fade" id="edit_blog" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -1221,11 +1221,11 @@
             </div>
         </div>
     </div>
-    <!-- /Edit Blog -->
+    
 @endif
 
 @if (Route::is(['categories']))
-    <!-- modal -->
+    
     <div class="modal custom-modal fade bank-details" id="edit-blog-categories" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -1298,7 +1298,7 @@
 @endif
 
 @if (Route::is(['cities']))
-    <!-- Edit Items Modal -->
+    
     <div class="modal custom-modal fade" id="edit_city" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -1362,11 +1362,11 @@
             </div>
         </div>
     </div>
-    <!-- /Edit Items Modal -->
+    
 @endif
 
 @if (Route::is(['contact-messages']))
-    <!-- Edit Supplier Modal -->
+    
     <div class="modal custom-modal fade" id="edit_contact" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -1428,11 +1428,11 @@
             </div>
         </div>
     </div>
-    <!-- /Edit Supplier Modal -->
+    
 @endif
 
 @if (Route::is(['countries']))
-    <!-- Edit Items Modal -->
+    
     <div class="modal custom-modal fade" id="edit_country" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -1488,11 +1488,11 @@
             </div>
         </div>
     </div>
-    <!-- /Edit Items Modal -->
+    
 @endif
 
 @if (Route::is(['custom-filed']))
-    <!-- Edit Modal -->
+    
     <div class="modal custom-modal fade" id="edit" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -1593,11 +1593,11 @@
             </div>
         </div>
     </div>
-    <!-- /Edit Modal -->
+    
 @endif
 
 @if (Route::is(['edit-credit-notes']))
-    <!-- Edit Bank Details Modal -->
+    
     <div class="modal custom-modal fade" id="bank_details" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -1644,11 +1644,11 @@
             </div>
         </div>
     </div>
-    <!-- /Edit Bank Details Modal -->
+    
 @endif
 
 @if (Route::is(['edit-delivery-challans']))
-    <!-- Edit Bank Details Modal -->
+    
     <div class="modal custom-modal fade" id="bank_details" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -1696,11 +1696,11 @@
             </div>
         </div>
     </div>
-    <!-- /Edit Bank Details Modal -->
+    
 @endif
 
 @if (Route::is(['edit-invoice']))
-    <!-- Edit Bank Details Modal -->
+    
     <div class="modal custom-modal fade" id="bank_details" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -1748,11 +1748,11 @@
             </div>
         </div>
     </div>
-    <!-- /Edit Bank Details Modal -->
+    
 @endif
 
 @if (Route::is(['purchase-report']))
-    <!-- Edit Supplier Modal -->
+    
     <div class="modal custom-modal fade" id="edit_vendor" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -1804,11 +1804,11 @@
             </div>
         </div>
     </div>
-    <!-- /Edit Supplier Modal -->
+    
 @endif
 
 @if (Route::is(['edit-purchases-order']))
-    <!-- Edit Bank Details Modal -->
+    
     <div class="modal custom-modal fade" id="bank_details" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -1856,11 +1856,11 @@
             </div>
         </div>
     </div>
-    <!-- /Edit Bank Details Modal -->
+    
 @endif
 
 @if (Route::is(['edit-purchases']))
-    <!-- Edit Bank Details Modal -->
+    
     <div class="modal custom-modal fade" id="bank_details" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -1908,11 +1908,11 @@
             </div>
         </div>
     </div>
-    <!-- /Edit Bank Details Modal -->
+    
 @endif
 
 @if (Route::is(['edit-quotations']))
-    <!-- Edit Bank Details Modal -->
+    
     <div class="modal custom-modal fade" id="bank_details" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -1960,11 +1960,11 @@
             </div>
         </div>
     </div>
-    <!-- /Edit Bank Details Modal -->
+    
 @endif
 
 @if (Route::is(['rexpense-report']))
-    <!-- Edit Supplier Modal -->
+    
     <div class="modal custom-modal fade" id="edit_vendor" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -2016,11 +2016,11 @@
             </div>
         </div>
     </div>
-    <!-- /Edit Supplier Modal -->
+    
 @endif
 
 @if (Route::is(['expenses']))
-    <!-- Edit Expenses Modal -->
+    
     <div class="modal custom-modal modal-lg fade" id="edit_expenses" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -2126,11 +2126,11 @@
             </div>
         </div>
     </div>
-    <!-- /Edit Expenses Modal -->
+    
 @endif
 
 @if (Route::is(['faq']))
-    <!-- Edit FAQ Modal -->
+    
     <div class="modal custom-modal fade" id="edit_faq" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -2186,11 +2186,11 @@
             </div>
         </div>
     </div>
-    <!-- /Edit FAQ Modal -->
+    
 @endif
 
 @if (Route::is(['inventory-list']))
-    <!-- Edit Stock in Modal -->
+    
     <div class="modal custom-modal fade" id="edit_inventory" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
@@ -2255,11 +2255,11 @@
             </div>
         </div>
     </div>
-    <!-- /Edit Stock in Modal -->
+    
 @endif
 
 @if (Route::is(['pages']))
-    <!-- Modal -->
+    
     <div class="modal custom-modal fade" id="pages_edit" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -2302,11 +2302,11 @@
             </div>
         </div>
     </div>
-    <!-- /Modal -->
+    
 @endif
 
 @if (Route::is(['roles-permission']))
-    <!-- Edit Role Modal -->
+    
     <div class="modal custom-modal fade" id="edit_role" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -2340,11 +2340,11 @@
             </div>
         </div>
     </div>
-    <!-- /Edit Role Modal -->
+    
 @endif
 
 @if (Route::is(['sales-report']))
-    <!-- Edit Supplier Modal -->
+    
     <div class="modal custom-modal fade" id="edit_vendor" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -2396,11 +2396,11 @@
             </div>
         </div>
     </div>
-    <!-- /Edit Supplier Modal -->
+    
 @endif
 
 @if (Route::is(['testimonials']))
-    <!-- Edit Testmonials Modal -->
+    
     <div class="modal custom-modal modal-lg fade" id="edit_testimonial" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -2497,7 +2497,7 @@
             </div>
         </div>
     </div>
-    <!-- /Edit Testmonials -->
+    
 @endif
 
 @if (Route::is([
@@ -2513,7 +2513,7 @@
         'tickets-resolved',
         'tickets',
     ]))
-    <!-- Edit Ticket Modal -->
+    
     <div class="modal custom-modal modal-lg fade" id="edit_ticket" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -2608,11 +2608,11 @@
             </div>
         </div>
     </div>
-    <!-- /Edit Ticket Modal -->
+    
 @endif
 
 @if (Route::is(['users']))
-    <!-- Edit User -->
+    
     <div class="modal custom-modal modal-lg fade" id="edit_user" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
@@ -2744,5 +2744,5 @@
             </div>
         </div>
     </div>
-    <!-- /Edit User -->
+    
 @endif

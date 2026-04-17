@@ -1,21 +1,21 @@
 <?php $page = 'rating'; ?>
 @extends('layout.mainlayout')
 @section('content')
-			<!-- Page Wrapper -->
+			
             <div class="page-wrapper">
                 <div class="content container-fluid">
 
-					<!-- Page Header -->
+					
 					<div class="page-header">
 						<div class="content-page-header">
 							<h5>Rating</h5>
 						</div>	
 					</div>
-					<!-- /Page Header -->
+					
 
 					<div class="row">
 
-						<!-- Rating -->
+						
 						<div class="col-md-6">	
 							<div class="card">
 								<div class="card-header">
@@ -27,9 +27,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Rating -->
+						
 
-						<!-- Rating -->
+						
 						<div class="col-md-6">	
 							<div class="card">
 								<div class="card-header">
@@ -41,9 +41,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Rating -->
+						
 
-						<!-- Rating -->
+						
 						<div class="col-md-6">	
 							<div class="card">
 								<div class="card-header">
@@ -55,9 +55,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Rating -->
+						
 
-						<!-- Rating -->
+						
 						<div class="col-md-6">	
 							<div class="card">
 								<div class="card-header">
@@ -69,9 +69,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Rating -->
+						
 
-						<!-- Rating -->
+						
 						<div class="col-md-6">	
 							<div class="card">
 								<div class="card-header">
@@ -83,9 +83,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Rating -->
+						
 
-						<!-- Rating -->
+						
 						<div class="col-md-6">	
 							<div class="card">
 								<div class="card-header">
@@ -97,11 +97,11 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Rating -->
+						
 
 					</div>
 
 				</div>			
 			</div>
-			<!-- /Page Wrapper -->
+			
 @endsection

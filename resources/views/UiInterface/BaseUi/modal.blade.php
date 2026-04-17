@@ -1,16 +1,16 @@
 <?php $page = 'modal'; ?>
 @extends('layout.mainlayout')
 @section('content')
-    <!-- Page Wrapper -->
+    
     <div class="page-wrapper">
         <div class="content container-fluid">
-            <!-- Page Header -->
+            
             <div class="page-header">
                 <div class="content-page-header">
                     <h5>Modal</h5>
                 </div>
             </div>
-            <!-- /Page Header -->
+            
             <div class="row">
                 <div class="col-xl-6">
                     <div class="card">
@@ -21,7 +21,7 @@
                                 A rendered modal with header, body, and set of actions in the footer.
                             </p>
 
-                            <!-- Standard modal content -->
+                            
                             <div id="standard-modal" class="modal fade" tabindex="-1" role="dialog"
                                 aria-labelledby="standard-modalLabel" aria-hidden="true">
                                 <div class="modal-dialog">
@@ -50,11 +50,11 @@
                                                 data-bs-dismiss="modal">Close</button>
                                             <button type="button" class="btn btn-primary">Save changes</button>
                                         </div>
-                                    </div><!-- /.modal-content -->
-                                </div><!-- /.modal-dialog -->
-                            </div><!-- /.modal -->
+                                    </div>
+                                </div>
+                            </div>
 
-                            <!--  Modal content for the Large example -->
+                            
                             <div class="modal fade" id="bs-example-modal-lg" tabindex="-1" role="dialog"
                                 aria-labelledby="myLargeModalLabel" aria-hidden="true">
                                 <div class="modal-dialog modal-lg">
@@ -67,9 +67,9 @@
                                         <div class="modal-body">
                                             ...
                                         </div>
-                                    </div><!-- /.modal-content -->
-                                </div><!-- /.modal-dialog -->
-                            </div><!-- /.modal -->
+                                    </div>
+                                </div>
+                            </div>
 
                             <div class="modal fade" id="bs-example-modal-sm" tabindex="-1" role="dialog"
                                 aria-labelledby="mySmallModalLabel" aria-hidden="true">
@@ -83,11 +83,11 @@
                                         <div class="modal-body">
                                             ...
                                         </div>
-                                    </div><!-- /.modal-content -->
-                                </div><!-- /.modal-dialog -->
-                            </div><!-- /.modal -->
+                                    </div>
+                                </div>
+                            </div>
 
-                            <!-- Full width modal content -->
+                            
                             <div id="full-width-modal" class="modal fade" tabindex="-1" role="dialog"
                                 aria-labelledby="fullWidthModalLabel" aria-hidden="true">
                                 <div class="modal-dialog modal-full-width">
@@ -116,11 +116,11 @@
                                                 data-bs-dismiss="modal">Close</button>
                                             <button type="button" class="btn btn-primary">Save changes</button>
                                         </div>
-                                    </div><!-- /.modal-content -->
-                                </div><!-- /.modal-dialog -->
-                            </div><!-- /.modal -->
+                                    </div>
+                                </div>
+                            </div>
 
-                            <!-- Long Content Scroll Modal -->
+                            
                             <div class="modal fade" id="scrollable-modal" tabindex="-1" role="dialog"
                                 aria-labelledby="scrollableModalTitle" aria-hidden="true">
                                 <div class="modal-dialog modal-dialog-scrollable" role="document">
@@ -197,30 +197,30 @@
                                                 data-bs-dismiss="modal">Close</button>
                                             <button type="button" class="btn btn-primary">Save changes</button>
                                         </div>
-                                    </div><!-- /.modal-content -->
-                                </div><!-- /.modal-dialog -->
-                            </div><!-- /.modal -->
+                                    </div>
+                                </div>
+                            </div>
 
                             <div class="button-list">
-                                <!-- Standard  modal -->
+                                
                                 <button type="button" class="btn btn-primary mt-1" data-bs-toggle="modal"
                                     data-bs-target="#standard-modal">Standard Modal</button>
-                                <!-- Large modal -->
+                                
                                 <button type="button" class="btn btn-info mt-1" data-bs-toggle="modal"
                                     data-bs-target="#bs-example-modal-lg">Large Modal</button>
-                                <!-- Small modal -->
+                                
                                 <button type="button" class="btn btn-success mt-1" data-bs-toggle="modal"
                                     data-bs-target="#bs-example-modal-sm">Small Modal</button>
-                                <!-- Full width modal -->
+                                
                                 <button type="button" class="btn btn-primary mt-1" data-bs-toggle="modal"
                                     data-bs-target="#full-width-modal">Full width Modal</button>
-                                <!-- Scrollable modal -->
+                                
                                 <button type="button" class="btn btn-secondary mt-1" data-bs-toggle="modal"
                                     data-bs-target="#scrollable-modal">Scrollable Modal</button>
                             </div>
-                        </div> <!-- end card-body -->
-                    </div> <!-- end card-->
-                </div> <!-- end col -->
+                        </div> 
+                    </div> 
+                </div> 
 
                 <div class="col-xl-6">
                     <div class="card">
@@ -228,7 +228,7 @@
                             <h4 class="header-title">Modal with Pages</h4>
                             <p>Examples of custom modals.</p>
 
-                            <!-- Signup modal content -->
+                            
                             <div id="signup-modal" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true">
                                 <div class="modal-dialog">
                                     <div class="modal-content">
@@ -280,11 +280,11 @@
                                             </form>
 
                                         </div>
-                                    </div><!-- /.modal-content -->
-                                </div><!-- /.modal-dialog -->
-                            </div><!-- /.modal -->
+                                    </div>
+                                </div>
+                            </div>
 
-                            <!-- SignIn modal content -->
+                            
                             <div id="login-modal" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true">
                                 <div class="modal-dialog">
                                     <div class="modal-content">
@@ -330,24 +330,24 @@
                                             </form>
 
                                         </div>
-                                    </div><!-- /.modal-content -->
-                                </div><!-- /.modal-dialog -->
-                            </div><!-- /.modal -->
+                                    </div>
+                                </div>
+                            </div>
 
                             <div class="button-list">
-                                <!-- Sign Up modal -->
+                                
                                 <button type="button" class="btn btn-primary mt-1" data-bs-toggle="modal"
                                     data-bs-target="#signup-modal">Sign Up Modal</button>
-                                <!-- Log In modal -->
+                                
                                 <button type="button" class="btn btn-info mt-1" data-bs-toggle="modal"
                                     data-bs-target="#login-modal">Log In Modal</button>
                             </div>
 
-                        </div> <!-- end card-body -->
-                    </div> <!-- end card-->
-                </div> <!-- end col -->
+                        </div> 
+                    </div> 
+                </div> 
             </div>
-            <!-- end row -->
+            
 
             <div class="row">
                 <div class="col-xl-6">
@@ -360,7 +360,7 @@
                                 <code>modal-dialog-centered</code> and <code>modal-right
                                 </code> respectively.</p>
 
-                            <!-- Top modal content -->
+                            
                             <div id="top-modal" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true">
                                 <div class="modal-dialog modal-top">
                                     <div class="modal-content">
@@ -378,11 +378,11 @@
                                                 data-bs-dismiss="modal">Close</button>
                                             <button type="button" class="btn btn-primary">Save changes</button>
                                         </div>
-                                    </div><!-- /.modal-content -->
-                                </div><!-- /.modal-dialog -->
-                            </div><!-- /.modal -->
+                                    </div>
+                                </div>
+                            </div>
 
-                            <!-- Right modal content -->
+                            
                             <div id="right-modal" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true">
                                 <div class="modal-dialog modal-sm modal-right">
                                     <div class="modal-content">
@@ -398,11 +398,11 @@
                                                     data-bs-dismiss="modal">Close</button>
                                             </div>
                                         </div>
-                                    </div><!-- /.modal-content -->
-                                </div><!-- /.modal-dialog -->
-                            </div><!-- /.modal -->
+                                    </div>
+                                </div>
+                            </div>
 
-                            <!-- Bottom modal content -->
+                            
                             <div id="bottom-modal" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true">
                                 <div class="modal-dialog modal-sm modal-bottom">
                                     <div class="modal-content">
@@ -420,11 +420,11 @@
                                                 data-bs-dismiss="modal">Close</button>
                                             <button type="button" class="btn btn-primary">Save changes</button>
                                         </div>
-                                    </div><!-- /.modal-content -->
-                                </div><!-- /.modal-dialog -->
-                            </div><!-- /.modal -->
+                                    </div>
+                                </div>
+                            </div>
 
-                            <!-- Center modal content -->
+                            
                             <div class="modal fade" id="centermodal" tabindex="-1" role="dialog" aria-hidden="true">
                                 <div class="modal-dialog modal-dialog-centered">
                                     <div class="modal-content">
@@ -441,28 +441,28 @@
                                             <p>Praesent commodo cursus magna, vel scelerisque nisl consectetur et. Vivamus
                                                 sagittis lacus vel augue laoreet rutrum faucibus dolor auctor.</p>
                                         </div>
-                                    </div><!-- /.modal-content -->
-                                </div><!-- /.modal-dialog -->
-                            </div><!-- /.modal -->
+                                    </div>
+                                </div>
+                            </div>
 
                             <div class="button-list">
-                                <!-- Top modal -->
+                                
                                 <button type="button" class="btn btn-secondary mt-1" data-bs-toggle="modal"
                                     data-bs-target="#top-modal">Top Modal</button>
-                                <!-- Bottom modal -->
+                                
                                 <button type="button" class="btn btn-secondary mt-1" data-bs-toggle="modal"
                                     data-bs-target="#bottom-modal">Bottom Modal</button>
-                                <!-- Center modal -->
+                                
                                 <button type="button" class="btn btn-secondary mt-1" data-bs-toggle="modal"
                                     data-bs-target="#centermodal">Center modal</button>
-                                <!-- Right modal -->
+                                
                                 <button type="button" class="btn btn-secondary mt-1" data-bs-toggle="modal"
                                     data-bs-target="#right-modal">Rightbar Modal</button>
                             </div>
 
-                        </div> <!-- end card-body -->
-                    </div> <!-- end card-->
-                </div> <!-- end col -->
+                        </div> 
+                    </div> 
+                </div> 
 
                 <div class="col-xl-6">
                     <div class="card">
@@ -470,7 +470,7 @@
                             <h4 class="header-title">Modal based Alerts</h4>
                             <p>Show different contexual alert messages using modal component</p>
 
-                            <!-- Success Alert Modal -->
+                            
                             <div id="success-alert-modal" class="modal fade" tabindex="-1" role="dialog"
                                 aria-hidden="true">
                                 <div class="modal-dialog modal-sm">
@@ -486,11 +486,11 @@
                                                     data-bs-dismiss="modal">Continue</button>
                                             </div>
                                         </div>
-                                    </div><!-- /.modal-content -->
-                                </div><!-- /.modal-dialog -->
-                            </div><!-- /.modal -->
+                                    </div>
+                                </div>
+                            </div>
 
-                            <!-- Info Alert Modal -->
+                            
                             <div id="info-alert-modal" class="modal fade" tabindex="-1" role="dialog"
                                 aria-hidden="true">
                                 <div class="modal-dialog modal-sm">
@@ -505,11 +505,11 @@
                                                     data-bs-dismiss="modal">Continue</button>
                                             </div>
                                         </div>
-                                    </div><!-- /.modal-content -->
-                                </div><!-- /.modal-dialog -->
-                            </div><!-- /.modal -->
+                                    </div>
+                                </div>
+                            </div>
 
-                            <!-- Warning Alert Modal -->
+                            
                             <div id="warning-alert-modal" class="modal fade" tabindex="-1" role="dialog"
                                 aria-hidden="true">
                                 <div class="modal-dialog modal-sm">
@@ -524,11 +524,11 @@
                                                     data-bs-dismiss="modal">Continue</button>
                                             </div>
                                         </div>
-                                    </div><!-- /.modal-content -->
-                                </div><!-- /.modal-dialog -->
-                            </div><!-- /.modal -->
+                                    </div>
+                                </div>
+                            </div>
 
-                            <!-- Danger Alert Modal -->
+                            
                             <div id="danger-alert-modal" class="modal fade" tabindex="-1" role="dialog"
                                 aria-hidden="true">
                                 <div class="modal-dialog modal-sm">
@@ -544,29 +544,29 @@
                                                     data-bs-dismiss="modal">Continue</button>
                                             </div>
                                         </div>
-                                    </div><!-- /.modal-content -->
-                                </div><!-- /.modal-dialog -->
-                            </div><!-- /.modal -->
+                                    </div>
+                                </div>
+                            </div>
 
                             <div class="button-list">
-                                <!-- Success Alert modal -->
+                                
                                 <button type="button" class="btn btn-success mt-1" data-bs-toggle="modal"
                                     data-bs-target="#success-alert-modal">Success Alert</button>
-                                <!-- Info Alert modal -->
+                                
                                 <button type="button" class="btn btn-info mt-1" data-bs-toggle="modal"
                                     data-bs-target="#info-alert-modal">Info Alert</button>
-                                <!-- Warning Alert modal -->
+                                
                                 <button type="button" class="btn btn-warning mt-1" data-bs-toggle="modal"
                                     data-bs-target="#warning-alert-modal">Warning Alert</button>
-                                <!-- Danger Alert modal -->
+                                
                                 <button type="button" class="btn btn-danger mt-1" data-bs-toggle="modal"
                                     data-bs-target="#danger-alert-modal">Danger Alert</button>
                             </div>
-                        </div> <!-- end card-body -->
-                    </div> <!-- end card-->
-                </div> <!-- end col -->
+                        </div> 
+                    </div> 
+                </div> 
             </div>
-            <!-- end row -->
+            
 
             <div class="row">
                 <div class="col-xl-6">
@@ -576,7 +576,7 @@
                             <p>Display a series of modals one by one to guide your users on multiple aspects or take step
                                 wise input.</p>
 
-                            <!-- Modal -->
+                            
                             <div class="modal fade" id="exampleModalToggle" aria-hidden="true"
                                 aria-labelledby="exampleModalToggleLabel" tabindex="-1">
                                 <div class="modal-dialog modal-dialog-centered">
@@ -593,11 +593,11 @@
                                             <button class="btn btn-primary" data-bs-target="#exampleModalToggle2"
                                                 data-bs-toggle="modal" data-bs-dismiss="modal">Open second modal</button>
                                         </div>
-                                    </div><!-- /.modal-content -->
-                                </div><!-- /.modal-dialog -->
-                            </div><!-- /.modal -->
+                                    </div>
+                                </div>
+                            </div>
 
-                            <!-- Modal -->
+                            
                             <div class="modal fade" id="exampleModalToggle2" aria-hidden="true"
                                 aria-labelledby="exampleModalToggleLabel2" tabindex="-1">
                                 <div class="modal-dialog modal-dialog-centered">
@@ -614,16 +614,16 @@
                                             <button class="btn btn-primary" data-bs-target="#exampleModalToggle"
                                                 data-bs-toggle="modal" data-bs-dismiss="modal">Back to first</button>
                                         </div>
-                                    </div><!-- /.modal-content -->
-                                </div><!-- /.modal-dialog -->
-                            </div><!-- /.modal -->
+                                    </div>
+                                </div>
+                            </div>
 
                             <a class="btn btn-secondary" data-bs-toggle="modal" href="#exampleModalToggle"
                                 role="button">Open first modal</a>
 
-                        </div> <!-- end card-body -->
-                    </div> <!-- end card-->
-                </div> <!-- end col -->
+                        </div> 
+                    </div> 
+                </div> 
 
                 <div class="col-xl-6">
                     <div class="card">
@@ -632,7 +632,7 @@
 
                             <p>Examples of custom modals.</p>
 
-                            <!-- sample modal content -->
+                            
 
                             <div id="con-close-modal" class="modal fade" tabindex="-1" role="dialog"
                                 aria-hidden="true" style="display: none;">
@@ -709,7 +709,7 @@
                                         </div>
                                     </div>
                                 </div>
-                            </div><!-- /.modal -->
+                            </div>
 
                             <div id="accordion-modal" class="modal fade" tabindex="-1" role="dialog"
                                 aria-hidden="true" style="display: none;">
@@ -799,24 +799,24 @@
                                                 </div>
                                             </div>
                                         </div>
-                                    </div><!-- /.modal-content -->
-                                </div><!-- /.modal-dialog -->
-                            </div><!-- /.modal -->
+                                    </div>
+                                </div>
+                            </div>
 
                             <div class="button-list">
-                                <!-- Responsive modal -->
+                                
                                 <button type="button" class="btn btn-success waves-effect waves-light mt-1"
                                     data-bs-toggle="modal" data-bs-target="#con-close-modal">Responsive Modal</button>
-                                <!-- Accordion modal -->
+                                
                                 <button type="button" class="btn btn-secondary waves-effect waves-light mt-1"
                                     data-bs-toggle="modal" data-bs-target="#accordion-modal">Accordion in Modal</button>
                             </div>
                         </div>
-                    </div> <!-- end card-->
-                </div> <!-- end col -->
+                    </div> 
+                </div> 
 
             </div>
-            <!-- end row -->
+            
 
             <div class="row">
                 <div class="col-xl-6">
@@ -834,7 +834,7 @@
                                 Launch static backdrop modal
                             </button>
 
-                            <!-- Modal -->
+                            
                             <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static"
                                 data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel"
                                 aria-hidden="true">
@@ -867,5 +867,5 @@
             </div>
         </div>
     </div>
-    <!-- /Page Wrapper -->
+    
 @endsection

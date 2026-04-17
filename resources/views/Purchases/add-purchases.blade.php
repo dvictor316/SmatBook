@@ -40,13 +40,13 @@
         <form action="{{ route('purchases.store') }}" method="POST" enctype="multipart/form-data" id="purchaseForm" novalidate>
             @csrf
 
-            <!-- Purchase Details Section -->
+            
             <div class="row mb-4">
                 <div class="col-12">
                     <div class="card p-3">
                         <h5 class="card-title">Purchase Details</h5>
                         <div class="row g-3">
-                            <!-- Purchase ID (Auto-generated or manual) -->
+                            
                             <div class="col-md-4">
                                 <label for="purchase_id" class="form-label">Purchase ID</label>
                                 <input type="text" id="purchase_id" name="purchase_id" 
@@ -54,7 +54,7 @@
                                        class="form-control" readonly>
                             </div>
 
-                            <!-- Select Supplier -->
+                            
                             <div class="col-md-4">
                                 <label for="supplier_id" class="form-label">Select Supplier *</label>
                                 <div class="input-group">
@@ -81,7 +81,7 @@
                                 @enderror
                             </div>
 
-                            <!-- Purchase Date -->
+                            
                             <div class="col-md-4">
                                 <label for="purchase_date" class="form-label">Purchase Date *</label>
                                 <input type="date" id="purchase_date" name="purchase_date" 
@@ -92,7 +92,7 @@
                                 @enderror
                             </div>
 
-                            <!-- Due Date -->
+                            
                             <div class="col-md-4">
                                 <label for="due_date" class="form-label">Due Date</label>
                                 <input type="date" id="due_date" name="due_date" 
@@ -103,7 +103,7 @@
                                 @enderror
                             </div>
 
-                            <!-- Reference No -->
+                            
                             <div class="col-md-4">
                                 <label for="reference_no" class="form-label">Reference No</label>
                                 <input type="text" id="reference_no" name="reference_no" 
@@ -115,7 +115,7 @@
                                 @enderror
                             </div>
 
-                            <!-- Supplier Invoice Serial No -->
+                            
                             <div class="col-md-4">
                                 <label for="invoice_serial_no" class="form-label">Supplier Invoice Serial No</label>
                                 <input type="text" id="invoice_serial_no" name="invoice_serial_no" 
@@ -131,7 +131,7 @@
                 </div>
             </div>
 
-            <!-- Products Selection & Table -->
+            
             <div class="row mb-4">
                 <div class="col-12">
                     <div class="card">
@@ -164,13 +164,13 @@
                 </div>
             </div>
 
-            <!-- Discount & Tax -->
+            
             <div class="row mb-4">
                 <div class="col-12">
                     <div class="card p-3">
                         <h5 class="card-title">Discount & Tax</h5>
                         <div class="row g-3 align-items-center">
-                            <!-- Discount Type -->
+                            
                             <div class="col-md-4">
                                 <label for="discount_type" class="form-label">Discount Type</label>
                                 <select id="discount_type" name="discount_type" class="form-select">
@@ -179,7 +179,7 @@
                                 </select>
                             </div>
 
-                            <!-- Discount Value -->
+                            
                             <div class="col-md-4">
                                 <label for="discount_value" class="form-label">Discount</label>
                                 <input type="number" id="discount_value" name="discount_value" 
@@ -187,7 +187,7 @@
                                        class="form-control" step="0.01" min="0">
                             </div>
 
-                            <!-- Tax Selection -->
+                            
                             <div class="col-md-4">
                                 <label for="tax_id" class="form-label">Tax</label>
                                 <select id="tax_id" name="tax_id" class="form-select">
@@ -210,16 +210,16 @@
                 </div>
             </div>
 
-            <!-- Bank Details & Totals -->
+            
             <div class="row mb-4">
                 <div class="col-12">
                     <div class="card p-3">
                         <div class="row g-3">
-                            <!-- Bank & Notes -->
+                            
                             <div class="col-md-6">
                                 <h5>Bank Details</h5>
 
-                                <!-- Select Bank -->
+                                
                                 <div class="mb-3">
                                     <label for="bank_id" class="form-label">Select Bank</label>
                                     <div class="input-group">
@@ -238,14 +238,14 @@
                                     </div>
                                 </div>
 
-                                <!-- Notes -->
+                                
                                 <div class="mb-3">
                                     <label for="notes" class="form-label">Notes</label>
                                     <textarea id="notes" name="notes" class="form-control" rows="3" 
                                               placeholder="Enter Notes">{{ old('notes') }}</textarea>
                                 </div>
 
-                                <!-- Terms & Conditions -->
+                                
                                 <div class="mb-3">
                                     <label for="terms_conditions" class="form-label">Terms & Conditions</label>
                                     <textarea id="terms_conditions" name="terms_conditions" class="form-control" rows="3" 
@@ -253,7 +253,7 @@
                                 </div>
                             </div>
 
-                            <!-- Totals & Signature -->
+                            
                             <div class="col-md-6">
                                 <h5>Totals & Signature</h5>
                                 <div class="mb-3">
@@ -272,7 +272,7 @@
                                     <h4>Total Amount: <span id="totalAmount">0.00</span></h4>
                                 </div>
 
-                                <!-- Signature Name -->
+                                
                                 <div class="mb-3">
                                     <label for="signature_name" class="form-label">Signature Name</label>
                                     <input type="text" id="signature_name" name="signature_name" 
@@ -280,7 +280,7 @@
                                            class="form-control" placeholder="Enter Signature Name">
                                 </div>
 
-                                <!-- Signature Upload -->
+                                
                                 <div class="mb-3">
                                     <label for="signature_image" class="form-label">Upload Signature</label>
                                     <input type="file" id="signature_image" name="signature_image" 
@@ -295,10 +295,10 @@
                 </div>
             </div>
 
-            <!-- Hidden fields for products -->
+            
             <div id="productsData"></div>
 
-            <!-- Submit Buttons -->
+            
             <div class="row">
                 <div class="col-12 d-flex justify-content-end gap-2">
                     <button type="reset" class="btn btn-secondary">Reset</button>

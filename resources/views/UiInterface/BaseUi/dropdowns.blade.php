@@ -1,19 +1,19 @@
 <?php $page = 'dropdowns'; ?>
 @extends('layout.mainlayout')
 @section('content')
-			<!-- Page Wrapper -->
+			
             <div class="page-wrapper">
                 <div class="content container-fluid">
 
-					<!-- Page Header -->
+					
                     <div class="page-header">
 						<div class="content-page-header">
 							<h5>Dropdowns</h5>
 						</div>	
 					</div>	
-                    <!-- /Page Header -->
+                    
 
-					<!-- Dropdowns -->
+					
 						<div class="card">
 							<div class="card-body card-buttons">
 								<h5 class="card-title">Dropdowns within Text</h5>
@@ -156,8 +156,8 @@
 								</div>
 							</div>
 						</div>
-					<!-- /Dropdowns -->				
+									
 				</div>			
 			</div>
-			<!-- /Page Wrapper -->
+			
 @endsection

@@ -2,21 +2,21 @@
 @extends('layout.mainlayout')
 @section('content')
 
-			<!-- Page Wrapper -->
+			
             <div class="page-wrapper">
                 <div class="content container-fluid">
 
-					<!-- Page Header -->
+					
 					<div class="page-header">
 						<div class="content-page-header">
 							<h5>Ribbons</h5>
 						</div>	
 					</div>
-					<!-- /Page Header -->	
+						
 
 					<div class="row">
 
-						<!-- Ribbon -->
+						
 						<div class="col-md-4 col-sm-6">	
 							<div class="ribbon-wrapper card">
 								<div class="card-body">
@@ -25,9 +25,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Ribbon -->
+						
 
-						<!-- Ribbon -->
+						
 						<div class="col-md-4 col-sm-6">	
 							<div class="ribbon-wrapper card">
 								<div class="card-body">
@@ -36,9 +36,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Ribbon -->
+						
 
-						<!-- Ribbon -->
+						
 						<div class="col-md-4 col-sm-6">	
 							<div class="ribbon-wrapper card">
 								<div class="card-body">
@@ -47,9 +47,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Ribbon -->
+						
 
-						<!-- Ribbon -->
+						
 						<div class="col-md-4 col-sm-6">	
 							<div class="ribbon-wrapper card">
 								<div class="card-body">
@@ -58,9 +58,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Ribbon -->
+						
 
-						<!-- Ribbon -->
+						
 						<div class="col-md-4 col-sm-6">	
 							<div class="ribbon-wrapper card">
 								<div class="card-body">
@@ -69,9 +69,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Ribbon -->
+						
 
-						<!-- Ribbon -->
+						
 						<div class="col-md-4 col-sm-6">	
 							<div class="ribbon-wrapper card">
 								<div class="card-body">
@@ -80,9 +80,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Ribbon -->
+						
 
-						<!-- Ribbon -->
+						
 						<div class="col-md-4 col-sm-6">	
 							<div class="ribbon-vertical-left-wrapper card">
 								<div class="card-body">
@@ -91,9 +91,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Ribbon -->
+						
 
-						<!-- Ribbon -->
+						
 						<div class="col-md-4 col-sm-6">	
 							<div class="ribbon-vertical-left-wrapper card">
 								<div class="card-body">
@@ -102,9 +102,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Ribbon -->
+						
 
-						<!-- Ribbon -->
+						
 						<div class="col-md-4 col-sm-6">	
 							<div class="ribbon-vertical-left-wrapper card">
 								<div class="card-body">
@@ -113,9 +113,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Ribbon -->
+						
 
-						<!-- Ribbon -->
+						
 						<div class="col-md-4 col-sm-6">	
 							<div class="ribbon-vertical-right-wrapper card">
 								<div class="card-body">
@@ -124,9 +124,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Ribbon -->
+						
 
-						<!-- Ribbon -->
+						
 						<div class="col-md-4 col-sm-6">	
 							<div class="ribbon-vertical-right-wrapper card">
 								<div class="card-body">
@@ -135,9 +135,9 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Ribbon -->
+						
 
-						<!-- Ribbon -->
+						
 						<div class="col-md-4 col-sm-6">	
 							<div class="ribbon-vertical-right-wrapper card">
 								<div class="card-body">
@@ -146,10 +146,10 @@
 								</div>
 							</div>
 						</div>
-						<!-- /Ribbon -->
+						
 
 					</div>				
 				</div>			
 			</div>
-			<!-- /Page Wrapper -->
+			
 @endsection
