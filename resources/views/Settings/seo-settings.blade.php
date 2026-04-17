@@ -41,7 +41,7 @@
                                 <i class="fa fa-print"></i> Print
                             </button>
                         </div>
-                        
+
                         <form action="{{ route('settings.update') }}" method="POST" enctype="multipart/form-data">
                             @csrf
                             <div class="row">
@@ -63,7 +63,7 @@
                                         <textarea class="summernote form-control" name="seo_meta_keywords" placeholder="Type your message">{{ $settings['seo_meta_keywords'] ?? '' }}</textarea>
                                     </div>
                                 </div>
-                                
+
                                 <div class="col-md-12">
                                     <div class="seo-setting">
                                         <h6 class="mb-3">Meta Image</h6>

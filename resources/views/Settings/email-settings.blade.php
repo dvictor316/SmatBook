@@ -10,7 +10,7 @@
             background-color: #f8fafc;
         }
         body.mini-sidebar .page-wrapper { margin-left: 80px; }
-        
+
         @media (max-width: 1200px) {
             .page-wrapper { margin-left: 0 !important; }
         }
@@ -29,7 +29,7 @@
         }
         .mail-provider:hover { border-color: #0369a1; box-shadow: 0 4px 12px rgba(3, 105, 161, 0.08); }
         .mail-provider h4 { margin-bottom: 0; font-size: 16px; font-weight: 700; color: #1e293b; }
-        
+
         .mail-setting { display: flex; align-items: center; gap: 15px; }
         .mail-setting i { font-size: 18px; color: #64748b; transition: color 0.2s; }
         .mail-setting i:hover { color: #0369a1; }
@@ -49,7 +49,7 @@
 
     <div class="page-wrapper">
         <div class="content container-fluid">
-            
+
             <div class="row">
                 <div class="col-xl-3 col-md-4">
                     <div class="card shadow-sm border-0">
@@ -81,7 +81,7 @@
                                 <div class="col-12">
                                     <h5 class="mail-title">Mail Providers</h5>
                                 </div>
-                                
+
                                 <div class="col-lg-6 col-12">
                                     <div class="mail-provider">
                                         <div class="d-flex align-items-center">

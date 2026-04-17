@@ -4,7 +4,6 @@
     <div class="page-wrapper">
         <div class="content container-fluid">
 
-            {{-- Page Header --}}
             <div class="page-header mb-4">
                 <div class="row align-items-center">
                     <div class="col">
@@ -12,11 +11,11 @@
                         <p class="text-muted mb-0">Monitor and manage your current stock levels</p>
                     </div>
                     <div class="col-auto d-flex">
-                        {{-- Quick Adjustment Button --}}
+
                         <button class="btn btn-primary me-2 shadow-sm" data-bs-toggle="modal" data-bs-target="#stock_adjustment_modal">
                             <i class="feather-plus-circle me-1"></i> Quick Adjustment
                         </button>
-                        {{-- Direct URL link to avoid Route Errors --}}
+
                         <a href="{{ url('add-products') }}" class="btn btn-outline-primary shadow-sm">
                             <i class="feather-plus me-1"></i> Add New Product
                         </a>
@@ -24,7 +23,6 @@
                 </div>
             </div>
 
-            {{-- Inventory Table --}}
             <div class="row">
                 <div class="col-sm-12">
                     <div class="card border-0 shadow-sm">
@@ -87,7 +85,6 @@
         </div>
     </div>
 
-    {{-- Modal: Quick Stock Adjustment --}}
     <div class="modal fade" id="stock_adjustment_modal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 shadow">

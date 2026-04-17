@@ -4,7 +4,6 @@
 <div class="page-wrapper">
     <div class="content container-fluid">
 
-        {{-- Page Header --}}
         <div class="page-header">
             <div class="content-page-header">
                 <h5>Signature List</h5>
@@ -25,7 +24,6 @@
             </div>
         </div>
 
-        {{-- Table Section --}}
         <div class="row">
             <div class="col-sm-12">
                 <div class="card-table">
@@ -84,7 +82,6 @@
     </div>
 </div>
 
-{{-- Add Signature Modal --}}
 <div class="modal custom-modal fade" id="add_signature" role="dialog">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">

@@ -26,7 +26,7 @@
                         <h4 class="card-title">Supplier Information</h4>
                     </div>
                     <div class="card-body">
-                        
+
                         @if ($errors->any())
                             <div class="alert alert-danger">
                                 <ul>
@@ -64,7 +64,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-6">
-                                    {{-- Displaying the dynamically calculated balance from the controller --}}
+
                                     <div class="form-group">
                                         <label for="current_balance" class="col-form-label">Current Balance (Read Only)</label>
                                         <input type="text" id="current_balance" class="form-control" 
@@ -72,7 +72,7 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="form-group">
                                 <label for="address" class="col-form-label">Address</label>
                                 <textarea id="address" name="address" rows="3" class="form-control">{{ old('address', $vendor->address) }}</textarea>

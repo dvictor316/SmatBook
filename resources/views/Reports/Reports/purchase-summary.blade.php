@@ -39,7 +39,6 @@
         </div>
     </div>
 
-    {{-- KPI cards --}}
     <div class="d-flex gap-2 flex-wrap mb-4">
         <div class="ps-kpi"><div class="ps-kpi-label">Total Purchased</div><div class="ps-kpi-val" style="color:#0891b2">{{ $fmt($totalAmount) }}</div></div>
         <div class="ps-kpi"><div class="ps-kpi-label">Order Count</div><div class="ps-kpi-val" style="color:#7c3aed">{{ number_format($totalCount) }}</div></div>

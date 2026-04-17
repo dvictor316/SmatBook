@@ -8,8 +8,7 @@
 @endphp
 <div class="page-wrapper">
     <div class="content container-fluid">
-        
-        {{-- Header & Multi-Export Actions --}}
+
         <div class="page-header mb-3 no-print">
             <div class="row align-items-center">
                 <div class="col">
@@ -36,7 +35,6 @@
             'periodLabel' => 'As At: ' . $toDate,
         ])
 
-        {{-- Filters --}}
         <div class="card shadow-none border mb-3 no-print">
             <div class="card-body p-2">
                 <form action="{{ route('reports.stock') }}" method="GET">
@@ -89,7 +87,6 @@
             $lowStockCount = $stockrows->where('Status', 'Low Stock')->count();
         @endphp
 
-        {{-- Summary Cards --}}
         <div class="row g-2 mb-3">
             <div class="col-md-4">
                 <div class="card border shadow-none mb-0 report-metric-card"><div class="card-body p-3">
@@ -125,7 +122,6 @@
             </div>
         </div>
 
-        {{-- Warehouse Table --}}
         <div class="card border shadow-none overflow-hidden">
             <div class="table-responsive">
                 <table class="table table-sm mb-0" id="stockTable">
@@ -230,7 +226,7 @@
 @endsection
 
 @push('scripts')
-{{-- Export Libraries --}}
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
@@ -247,7 +243,7 @@
     document.getElementById('export_pdf').addEventListener('click', function() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('p', 'pt', 'a4');
-        
+
         doc.setFontSize(16);
         doc.text("Warehouse Stock Report", 40, 40);
         doc.setFontSize(10);

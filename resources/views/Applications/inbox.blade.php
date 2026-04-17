@@ -2,11 +2,10 @@
 @extends('layout.mainlayout')
 
 @section('content')
-    {{-- Main Wrapper --}}
+
     <div class="page-wrapper">
         <div class="content container-fluid">
 
-            {{-- Page Header --}}
             <div class="page-header">
                 <div class="content-page-header d-flex justify-content-between align-items-center">
                     <h5 class="fw-bold mb-0">Mailbox</h5>
@@ -19,12 +18,11 @@
             </div>
 
             <div class="row">
-                {{-- Sidebar Navigation --}}
+
                 <div class="col-xl-4 col-lg-5">
                     <div class="card shadow-sm border-0 sticky-top" style="border-radius: 20px; top: 20px;">
                         <div class="card-body p-4">
-                            
-                            {{-- Compose Button --}}
+
                             <div class="compose-btn mb-4">
                                 <a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#compose_modal" 
                                    class="btn btn-primary w-100 shadow rounded-pill py-3 fw-bold fs-5">
@@ -32,7 +30,6 @@
                                 </a>
                             </div>
 
-                            {{-- Navigation Menu with Functional Badges --}}
                             <ul class="inbox-menu list-unstyled mb-0">
                                 <li class="mb-2">
                                     <a href="javascript:void(0);" 
@@ -63,11 +60,10 @@
                     </div>
                 </div>
 
-                {{-- Livewire Content Area --}}
                 <div class="col-xl-8 col-lg-7">
                     <div class="card shadow-sm border-0" style="border-radius: 20px; min-height: 75vh;">
                         <div class="card-body p-0">
-                            {{-- This Livewire component must contain the toggleMessage() triggers --}}
+
                             @livewire('inbox-component')
                         </div>
                     </div>
@@ -76,7 +72,6 @@
         </div>
     </div>
 
-    {{-- Compose Modal --}}
     <div class="modal fade" id="compose_modal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0" style="border-radius: 20px; overflow: hidden;">
@@ -121,7 +116,7 @@
         .active-folder { background-color: rgba(0, 123, 255, 0.12) !important; color: #007bff !important; font-weight: bold; }
         .hover-menu:hover { background-color: #f4f7fe; color: #007bff !important; padding-left: 1.8rem !important; }
         .form-control { border-radius: 10px; border: 1px solid #e0e0e0; padding: 12px; }
-        
+
         /* Expandable Content Styling */
         .message-content-row { 
             background-color: #fafafa; 
@@ -219,14 +214,14 @@
                 console.error("Message row with ID " + id + " not found.");
                 return;
             }
-            
+
             const isHidden = contentRow.classList.contains('d-none');
-            
+
             // Step 1: Hide any other messages that might be open
             document.querySelectorAll('.message-content-row').forEach(row => {
                 row.classList.add('d-none');
             });
-            
+
             // Step 2: Toggle the clicked message
             if (isHidden) {
                 contentRow.classList.remove('d-none');

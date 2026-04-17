@@ -1,4 +1,4 @@
-<div class="row d-print-none"> {{-- Hidden when printing --}}
+<div class="row d-print-none"> 
     @if(isset($invoicescards) && is_iterable($invoicescards))
         @foreach ($invoicescards as $card)
             <div class="col-xl-3 col-lg-4 col-sm-6 col-12 d-flex">
@@ -21,7 +21,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="d-flex justify-content-between align-items-center mt-3">
                             <p class="inovices-all mb-0 small">Volume: 
                                 <span class="badge rounded-pill bg-light text-dark border ms-1">
@@ -44,7 +44,6 @@
     @endif
 </div>
 
-{{-- Ensure Feather Icons load --}}
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         if (typeof feather !== 'undefined') {

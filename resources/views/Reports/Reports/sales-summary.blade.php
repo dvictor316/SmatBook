@@ -44,7 +44,6 @@
         </div>
     </div>
 
-    {{-- KPI cards --}}
     <div class="d-flex gap-2 flex-wrap mb-4">
         <div class="ss-kpi"><div class="ss-kpi-label">Total Sales</div><div class="ss-kpi-val" style="color:#3b82f6">{{ $fmt($totalSales) }}</div></div>
         <div class="ss-kpi"><div class="ss-kpi-label">Total Paid</div><div class="ss-kpi-val" style="color:#16a34a">{{ $fmt($totalPaid) }}</div></div>
@@ -53,7 +52,6 @@
         <div class="ss-kpi"><div class="ss-kpi-label">Average Sale</div><div class="ss-kpi-val" style="color:#0891b2">{{ $fmt($avgSale) }}</div></div>
     </div>
 
-    {{-- Breakdown by status --}}
     <div class="card shadow-none border mb-3">
         <div class="card-header bg-white py-2"><h6 class="mb-0 fw-bold">Breakdown by Payment Status</h6></div>
         <div class="card-body">
@@ -70,7 +68,6 @@
         </div>
     </div>
 
-    {{-- Summary table --}}
     <div class="card shadow-none border">
         <div class="card-header bg-white py-2"><h6 class="mb-0 fw-bold">Period Summary</h6></div>
         <div class="card-body p-0">

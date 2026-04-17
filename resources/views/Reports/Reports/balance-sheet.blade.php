@@ -362,7 +362,7 @@
             'periodLabel' => 'As at ' . \Carbon\Carbon::parse($reportDate ?? now())->format('d M Y'),
         ])
         <div class="report-container">
-        
+
         <div class="report-header d-flex justify-content-between align-items-end">
             <div>
                 <div class="report-title">Statement of Financial Position</div>
@@ -411,10 +411,8 @@
             </div>
         @endif
 
-        
-
         <div class="balance-sheet-grid">
-            {{-- ASSETS SIDE --}}
+
             <div class="statement-panel statement-panel--assets">
                 <div class="ledger-section-title">01 Assets</div>
                 <div class="section-card">
@@ -487,7 +485,6 @@
                 </div>
             </div>
 
-            {{-- LIABILITIES SIDE --}}
             <div class="statement-panel statement-panel--liabilities">
                 <div class="ledger-section-title">02 Liabilities & Equity</div>
                 <div class="section-card">
@@ -564,7 +561,6 @@
                 </div>
             </div>
 
-            {{-- Validation --}}
             @php
                 $diff = abs(($totalAssets ?? 0) - (($totalLiabilities ?? 0) + ($totalEquity ?? 0)));
                 $isBalanced = $diff < 0.01;

@@ -20,25 +20,19 @@
                     <tbody>
                         @forelse($sale->items as $item)
                             <tr>
-                                {{-- Dynamic Product Name --}}
+
                                 <td>{{ $item->product_name ?? ($item->product->name ?? 'Unknown Product') }}</td>
-                                
-                                {{-- Dynamic Quantity --}}
+
                                 <td>{{ $item->quantity ?? $item->qty }}</td>
-                                
-                                {{-- Dynamic Unit --}}
+
                                 <td>{{ $item->unit ?? 'Pcs' }}</td>
-                                
-                                {{-- Dynamic Rate/Price --}}
+
                                 <td>${{ number_format($item->price ?? $item->rate, 2) }}</td>
-                                
-                                {{-- Dynamic Discount --}}
+
                                 <td>{{ $item->discount ?? 0 }}{{ ($item->discount_type == 'percentage') ? '%' : '' }}</td>
-                                
-                                {{-- Dynamic Tax --}}
+
                                 <td>{{ $item->tax_rate ?? $item->tax ?? 0 }}%</td>
-                                
-                                {{-- Dynamic Row Total --}}
+
                                 <td class="text-end">
                                     ${{ number_format($item->total ?? ($item->quantity * ($item->price ?? $item->rate)), 2) }}
                                 </td>

@@ -1086,12 +1086,10 @@
     @media print { .header { display: none !important; } }
 </style>
 
-{{-- ── Sidebar Overlay (tap to close) ── --}}
 <div id="sidebar-overlay"></div>
 
 <div class="header d-print-none">
 
-    {{-- 1. Mobile Hamburger --}}
     <button id="mobile_btn" aria-label="Open menu" aria-expanded="false">
         <div class="toggle-bars">
             <span class="bar-icon"></span>
@@ -1100,7 +1098,6 @@
         </div>
     </button>
 
-    {{-- 2. Logo --}}
     <div class="header-logo">
         <a href="{{ $headerHomeUrl }}">
             <img src="{{ $headerLogoUrl }}" alt="Logo">
@@ -1108,7 +1105,6 @@
         <span class="spb-wordmark">SmartPro<span class="book">book</span></span>
     </div>
 
-    {{-- 3. Desktop Toggle --}}
     <a href="javascript:void(0);" id="toggle_btn" class="header-toggle">
         <span class="toggle-bars">
             <span class="bar-icon"></span>
@@ -1117,7 +1113,6 @@
         </span>
     </a>
 
-    {{-- 4. Search --}}
     <div class="header-search-container">
         <div class="header-search">
             <input type="text" id="globalSearch"
@@ -1128,7 +1123,6 @@
         </div>
     </div>
 
-    {{-- 5. Right Actions --}}
     <div class="header-actions">
         @if($isWorkspaceSwitcherVisible)
             <div class="workspace-switcher">
@@ -1170,7 +1164,6 @@
             <i class="fas fa-search"></i>
         </button>
 
-        {{-- Language --}}
         <div class="dropdown">
             <a href="#" class="country-selector" data-bs-toggle="dropdown" id="geoCountryToggle">
                 <img id="geoCountryFlag" src="{{ asset('assets/img/flags/ng.png') }}" alt="NG" width="20" height="14">
@@ -1226,7 +1219,6 @@
             </a>
         @endif
 
-        {{-- Notifications --}}
         <div class="dropdown">
             <a href="#" class="notification-bell {{ $unreadNotificationCount > 0 ? 'has-alert' : '' }}" id="headerNotificationIndicator" data-bs-toggle="dropdown">
                 <i class="fas fa-bell"></i>
@@ -1261,7 +1253,6 @@
             </div>
         </div>
 
-        {{-- User Profile --}}
         @auth
         <div class="dropdown">
             <a href="#" class="user-profile" data-bs-toggle="dropdown">
@@ -1290,7 +1281,6 @@
     </div>
 </div>
 
-{{-- Mobile Search Overlay --}}
 <div class="mobile-search-overlay" id="mobileSearchOverlay">
     <div class="header-search" style="max-width:100%">
         <input type="text" id="mobileGlobalSearch" placeholder="{{ $headerSearchPlaceholder }}" autocomplete="off">

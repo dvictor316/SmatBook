@@ -8,7 +8,6 @@
     <div class="page-wrapper">
         <div class="content container-fluid">
 
-            {{-- Page Header --}}
             <div class="page-header d-print-none">
                 <div class="row align-items-center">
                     <div class="col">
@@ -29,7 +28,6 @@
                 </div>
             </div>
 
-            {{-- Statistics Overview --}}
             <div class="row d-print-none">
                 @if(isset($invoicescards))
                     @foreach ($invoicescards as $card)
@@ -68,13 +66,11 @@
                 @endcomponent
             </div>
 
-            {{-- Invoice List Table --}}
             <div class="row">
                 <div class="col-sm-12">
                     <div class="card card-table shadow-sm border-0" id="printableArea">
                         <div class="card-body p-4">
-                            
-                            {{-- Print-only Title --}}
+
                             <div class="d-none d-print-block mb-4 text-center">
                                 <h2 style="color: #4b308b;">Invoice Summary Report</h2>
                                 <p class="text-muted">Generated on {{ date('d M Y, h:i A') }}</p>
@@ -135,17 +131,15 @@
                                                             <i class="fas fa-ellipsis-v"></i>
                                                         </a>
                                                             <div class="dropdown-menu dropdown-menu-end">
-                                                                {{-- Edit Route --}}
+
                                                                 <a class="dropdown-item" href="{{ route('invoices.edit', $invoice->id) }}">
                                                                     <i class="far fa-edit me-2"></i>Edit
                                                                 </a>
 
-                                                                {{-- View Route --}}
                                                                 <a class="dropdown-item" href="{{ route('invoice-details-admin', $invoice->id) }}">
                                                                     <i class="far fa-eye me-2"></i>View
                                                                 </a>
 
-                                                                {{-- Pay Route (only show if not fully paid) --}}
                                                                 @php
                                                                     $payStatus = strtolower($invoice->effective_payment_status ?? $invoice->payment_status ?? $invoice->status);
                                                                 @endphp
@@ -186,7 +180,6 @@
         </div>
     </div>
 
-    {{-- Script for Printing the Table Report --}}
     <script>
         function printReport() {
             const printContents = document.getElementById('printableArea').innerHTML;

@@ -273,8 +273,7 @@
 <div class="auth-wrapper">
     <div class="login-card-custom">
         <div class="row g-0">
-            
-            {{-- Left Side: Branding --}}
+
             <div class="col-lg-6 d-none d-lg-block branding-side">
                 <div class="h-100 d-flex flex-column justify-content-center text-white">
                     <x-auth-brand-lockup :logo="asset('/assets/img/logos.png')" theme="dark" size="lg" :tagline="'Secure Business Stack'" />
@@ -299,7 +298,6 @@
                 </div>
             </div>
 
-            {{-- Right Side: Form --}}
             <div class="col-lg-6 form-panel">
                 <div class="mobile-brand-lockup">
                     <x-auth-brand-lockup :logo="asset('/assets/img/logos.png')" size="md" :tagline="'Secure Business Stack'" />
@@ -323,7 +321,7 @@
 
                     <form method="POST" action="{{ route('password.email') }}">
                         @csrf
-                        
+
                         <div class="mb-4">
                             <label class="form-label small fw-bold text-secondary">Email Address</label>
                             <div class="input-group">

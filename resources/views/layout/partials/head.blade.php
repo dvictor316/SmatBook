@@ -1,12 +1,8 @@
-{{-- ============================================================== --}}
-{{--  1. CORE FRAMEWORK & FONTS                                     --}}
-{{-- ============================================================== --}}
+
 <link rel="stylesheet" href="{{ asset('assets/css/bootstrap.min.css') }}">
 
-{{-- Google Fonts --}}
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap">
 
-{{-- FontAwesome (Local Fallback to CDN) --}}
 @if (file_exists(public_path('assets/plugins/fontawesome/css/all.min.css')))
     <link rel="stylesheet" href="{{ asset('assets/plugins/fontawesome/css/fontawesome.min.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/plugins/fontawesome/css/all.min.css') }}">
@@ -20,25 +16,15 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/v4-shims.min.css">
 @endif
 
-{{-- Core Icons --}}
 <link rel="stylesheet" href="{{ asset('assets/plugins/feather/feather.css') }}">
 
-{{-- ============================================================== --}}
-{{--  2. GLOBAL PLUGINS                                             --}}
-{{-- ============================================================== --}}
 <link rel="stylesheet" href="{{ asset('assets/plugins/select2/css/select2.min.css') }}">
 
-{{-- Layout Logic & DateTimePicker (Excluded on Auth/Landing pages) --}}
 @unless(Route::is(['index-two', 'saas-login', 'saas-register', 'forgot-password', 'password.reset']))
     <link rel="stylesheet" href="{{ asset('assets/css/bootstrap-datetimepicker.min.css') }}">
     <script src="{{ asset('assets/js/layout.js') }}"></script>
 @endunless
 
-{{-- ============================================================== --}}
-{{--  3. PAGE SPECIFIC PLUGINS                                      --}}
-{{-- ============================================================== --}}
-
-{{-- DataTables --}}
 @unless(Route::is(['index-two', 'companies', 'saas-login', 'saas-register', 'forgot-password', 'password.reset']))
     <link rel="stylesheet" href="{{ asset('assets/plugins/datatables/datatables.min.css') }}">
 @endunless
@@ -47,7 +33,6 @@
     <link rel="stylesheet" href="{{ asset('assets/css/dataTables.bootstrap5.min.css') }}">
 @endif
 
-{{-- Form Elements (Intl Input, Summernote, Rangeslider, Dragula) --}}
 @if (Route::is(['add-customer', 'edit-customer', 'testimonials', 'companies']))
     <link rel="stylesheet" href="{{ asset('assets/plugins/intltelinput/css/intlTelInput.css') }}">
     @if(Route::is('companies'))
@@ -69,7 +54,6 @@
     <link rel="stylesheet" href="{{ asset('assets/plugins/ion-rangeslider/css/ion.rangeSlider.min.css') }}">
 @endif
 
-{{-- UI Components (Calendar, Lightbox, Scrollbar, Charts) --}}
 @if (Route::is('calendar'))
     <link rel="stylesheet" href="{{ asset('assets/plugins/fullcalendar/fullcalendar.min.css') }}">
 @endif
@@ -102,9 +86,6 @@
     <link rel="stylesheet" href="{{ asset('assets/plugins/c3-chart/c3.min.css') }}">
 @endif
 
-{{-- ============================================================== --}}
-{{--  4. ICON SETS (Conditional Loading)                            --}}
-{{-- ============================================================== --}}
 @if (Route::is('icon-ionic'))       <link rel="stylesheet" href="{{ asset('assets/plugins/icons/ionic/ionicons.css') }}"> @endif
 @if (Route::is('icon-material'))    <link rel="stylesheet" href="{{ asset('assets/plugins/material/materialdesignicons.css') }}"> @endif
 @if (Route::is('icon-pe7'))         <link rel="stylesheet" href="{{ asset('assets/plugins/icons/pe7/pe-icon-7.css') }}"> @endif
@@ -114,7 +95,6 @@
 @if (Route::is('icon-typicon'))     <link rel="stylesheet" href="{{ asset('assets/plugins/icons/typicons/typicons.css') }}"> @endif
 @if (Route::is('icon-flag'))        <link rel="stylesheet" href="{{ asset('assets/plugins/icons/flags/flags.css') }}"> @endif
 
-{{-- Extra Feather Icons for Invoice/Receipt Pages --}}
 @if (Route::is([
     'bus-ticket', 'car-booking-invoice', 'cashreceipt-*', 'coffee-shop', 'domain-hosting',
     'ecommerce', 'fitness-center', 'flight-booking', 'General-invoice-*', 'hotel-booking',
@@ -125,9 +105,6 @@
     <link rel="stylesheet" href="{{ asset('assets/css/feather.css') }}">
 @endif
 
-{{-- ============================================================== --}}
-{{--  5. MAIN THEME CSS (Loaded last to override plugins)           --}}
-{{-- ============================================================== --}}
 <link rel="stylesheet" href="{{ asset('assets/css/style.css') }}">
 
 <style>

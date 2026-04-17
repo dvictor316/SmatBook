@@ -36,7 +36,7 @@
 
         <form action="{{ route('purchases.store') }}" method="POST" enctype="multipart/form-data" id="purchaseForm">
             @csrf
-            
+
             <!-- Purchase Details Section -->
             <div class="row mb-4">
                 <div class="col-12">
@@ -205,7 +205,7 @@
                             <!-- Bank & Notes -->
                             <div class="col-md-6">
                                 <h5>Bank Details</h5>
-                                
+
                                 <!-- Select Bank -->
                                 <div class="mb-3">
                                     <label for="bank_id" class="form-label">Select Bank</label>
@@ -427,19 +427,19 @@
             });
 
             createEmptyRow();
-            
+
             // Global functions for inline event handlers
             window.updateProductAmount = function(rowIndex) {
                 const quantity = parseFloat(document.querySelector(`input[name="products[${rowIndex}][quantity]"]`).value) || 0;
                 const rate = parseFloat(document.querySelector(`input[name="products[${rowIndex}][rate]"]`).value) || 0;
                 const discount = parseFloat(document.querySelector(`input[name="products[${rowIndex}][discount]"]`).value) || 0;
-                
+
                 const amount = (quantity * rate) - discount;
                 document.getElementById(`amount_${rowIndex}`).textContent = amount.toFixed(2);
-                
+
                 updateTotals();
             };
-            
+
             window.removeProductRow = function(rowId) {
                 const row = document.getElementById(rowId);
                 if (row) {
@@ -449,39 +449,39 @@
                 if (tableBody.children.length === 0) {
                     createEmptyRow();
                 }
-                
+
                 updateTotals();
             };
-            
+
             function updateTotals() {
                 let taxableAmount = 0;
                 let totalDiscount = 0;
-                
+
                 // Calculate from visible rows
                 const quantityInputs = document.querySelectorAll('.quantity-input');
                 const rateInputs = document.querySelectorAll('.rate-input');
                 const discountInputs = document.querySelectorAll('.discount-input');
-                
+
                 for (let i = 0; i < quantityInputs.length; i++) {
                     const quantity = parseFloat(quantityInputs[i].value) || 0;
                     const rate = parseFloat(rateInputs[i].value) || 0;
                     const discount = parseFloat(discountInputs[i].value) || 0;
-                    
+
                     taxableAmount += quantity * rate;
                     totalDiscount += discount;
                 }
-                
+
                 // Apply global discount
                 const discountType = document.getElementById('discount_type').value;
                 const discountValue = parseFloat(document.getElementById('discount_value').value) || 0;
                 let globalDiscount = 0;
-                
+
                 if (discountType === 'percentage') {
                     globalDiscount = (taxableAmount * discountValue) / 100;
                 } else {
                     globalDiscount = discountValue;
                 }
-                
+
                 // Calculate tax
                 const taxId = document.getElementById('tax_id').value;
                 let taxRate = 0;
@@ -490,20 +490,20 @@
                         taxRate = {{ $tax->rate ?? 0 }};
                     }
                 @endforeach
-                
+
                 const vatAmount = ((taxableAmount - totalDiscount - globalDiscount) * taxRate) / 100;
-                
+
                 // Calculate totals
                 const subtotal = taxableAmount - totalDiscount - globalDiscount;
                 const roundOff = document.getElementById('round_off').checked;
                 let roundOffAmount = 0;
                 let totalAmount = subtotal + vatAmount;
-                
+
                 if (roundOff) {
                     totalAmount = Math.round(totalAmount);
                     roundOffAmount = totalAmount - (subtotal + vatAmount);
                 }
-                
+
                 // Update UI
                 document.getElementById('taxableAmount').textContent = taxableAmount.toFixed(2);
                 document.getElementById('totalDiscount').textContent = (totalDiscount + globalDiscount).toFixed(2);
@@ -511,31 +511,31 @@
                 document.getElementById('roundOffAmount').textContent = roundOffAmount.toFixed(2);
                 document.getElementById('totalAmount').textContent = totalAmount.toFixed(2);
             }
-            
+
             // Event listeners for dynamic updates
             document.getElementById('discount_type').addEventListener('change', updateTotals);
             document.getElementById('discount_value').addEventListener('input', updateTotals);
             document.getElementById('tax_id').addEventListener('change', updateTotals);
             document.getElementById('round_off').addEventListener('change', updateTotals);
-            
+
             // Form validation
             document.getElementById('purchaseForm').addEventListener('submit', function(e) {
                 const vendorId = document.getElementById('vendor_id').value;
                 const purchaseDate = document.getElementById('purchase_date').value;
                 const productRows = document.querySelectorAll('#productsTableBody tr:not(#noProductsRow)');
-                
+
                 if (!vendorId) {
                     e.preventDefault();
                     alert('Please select a vendor');
                     return;
                 }
-                
+
                 if (!purchaseDate) {
                     e.preventDefault();
                     alert('Please select a purchase date');
                     return;
                 }
-                
+
                 if (productRows.length === 0) {
                     e.preventDefault();
                     alert('Please add at least one product');

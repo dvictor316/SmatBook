@@ -1,10 +1,10 @@
 @extends('layout.mainlayout')
 
 @section('content')
-{{-- Enhanced container with proper sidebar offset and modern card styling --}}
+
 <div class="page-wrapper" style="padding-left: 280px;">
     <div class="content container-fluid" style="max-width: 1400px; margin: 0 auto;">
-        
+
         <div class="page-header mb-4">
             <div class="row align-items-center">
                 <div class="col">
@@ -131,7 +131,6 @@
     </div>
 </div>
 
-{{-- Add Custom Scrollbar for Recent Activity --}}
 <style>
     .activity-feed::-webkit-scrollbar { width: 5px; }
     .activity-feed::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }

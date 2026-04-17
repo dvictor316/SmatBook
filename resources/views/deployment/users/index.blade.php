@@ -28,7 +28,7 @@
     }
 
     .dm-card { border-radius: 12px; background: #fff; border: none; box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); }
-    
+
     .breadcrumb-container { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748b; margin-bottom: 20px; }
     .breadcrumb-container a { color: #1e40af; text-decoration: none; font-weight: 500; }
 
@@ -43,15 +43,13 @@
 
 @section('content')
 <div class="page-content-wrapper">
-    
-    {{-- 1. Breadcrumbs --}}
+
     <div class="breadcrumb-container d-print-none">
         <a href="{{ $isAdmin ? route('super_admin.dashboard', ['subdomain' => $sub]) : route('deployment.dashboard') }}">Home</a>
         <i class="fas fa-chevron-right" style="font-size: 10px;"></i>
         <span>{{ $isAdmin ? 'Deployment Managers' : 'Users' }}</span>
     </div>
 
-    {{-- 2. Header Section --}}
     <div class="d-flex align-items-center justify-content-between mb-4 d-print-none">
         <div>
             <h4 class="fw-bold mb-1" style="color:#0f172a; letter-spacing: -0.5px;">
@@ -66,8 +64,7 @@
                 @endif
             </div>
         </div>
-        
-        {{-- DYNAMIC ADD BUTTON --}}
+
         @if($isAdmin)
             <a href="{{ route('super_admin.users.create', ['subdomain' => $sub]) }}" class="btn shadow-sm text-white" style="background:#1e40af; border-radius:8px; padding: 10px 20px; font-weight:600;">
                 <i class="fas fa-plus-circle me-2"></i>Add Manager
@@ -79,7 +76,6 @@
         @endif
     </div>
 
-    {{-- 3. Main Card & Table --}}
     <div class="dm-card card shadow-sm border-0">
         <div class="table-responsive">
             <table class="table table-hover mb-0" style="vertical-align: middle;">
@@ -104,7 +100,7 @@
                     @forelse($users as $u)
                     <tr>
                         @if($isAdmin)
-                            {{-- Super Admin viewing Deployment Managers --}}
+
                             <td class="ps-4">
                                 <div class="fw-bold text-dark">{{ $u->business_name ?? 'N/A' }}</div>
                                 <div class="text-muted small">Ref: #{{ $u->id }}</div>
@@ -113,7 +109,7 @@
                             <td>{{ $u->phone ?? 'N/A' }}</td>
                             <td><span class="small text-muted">{{ $u->id_type ?? 'N/A' }}: {{ $u->id_number ?? 'N/A' }}</span></td>
                         @else
-                            {{-- Deployment Manager viewing Users --}}
+
                             <td class="ps-4">
                                 <div class="fw-bold text-dark">{{ $u->name }}</div>
                                 <div class="text-muted small">Joined {{ $u->created_at->format('M Y') }}</div>
@@ -132,12 +128,12 @@
                                 <span class="badge rounded-pill" style="background:#fef2f2; color:#dc2626; font-size:10px; border: 1px solid #fee2e2;">{{ ucfirst($u->status ?? 'pending') }}</span>
                             @endif
                         </td>
-                        
+
                         <td class="text-end pe-4">
                             <div class="action-btn-group">
-                                {{-- View --}}
+
                                 @if($isAdmin)
-                                    {{-- Super Admin doesn't have a view route for managers, use edit instead --}}
+
                                     <a href="{{ route('super_admin.users.edit', [$u->id, 'subdomain' => $sub]) }}" class="btn-action" title="View/Edit">
                                         <i class="fas fa-eye"></i>
                                     </a>
@@ -146,8 +142,7 @@
                                         <i class="fas fa-eye"></i>
                                     </a>
                                 @endif
-                                
-                                {{-- Edit --}}
+
                                 @if($isAdmin)
                                     <a href="{{ route('super_admin.users.edit', [$u->id, 'subdomain' => $sub]) }}" class="btn-action" title="Edit">
                                         <i class="fas fa-pencil-alt"></i>
@@ -158,7 +153,6 @@
                                     </a>
                                 @endif
 
-                                {{-- Activate (Only if not active) --}}
                                 @if($u->status !== 'active')
                                     @if($isAdmin)
                                         <form action="{{ route('super_admin.users.activate', [$u->id, 'subdomain' => $sub]) }}" method="POST" class="d-inline">
@@ -177,10 +171,9 @@
                                     @endif
                                 @endif
 
-                                {{-- Suspend (Only if active) --}}
                                 @if($u->status === 'active')
                                     @if($isAdmin)
-                                        {{-- Super Admin doesn't have suspend route, skip it --}}
+
                                     @else
                                         <form action="{{ route('deployment.users.suspend', $u->id) }}" method="POST" class="d-inline">
                                             @csrf
@@ -191,7 +184,6 @@
                                     @endif
                                 @endif
 
-                                {{-- Deactivate --}}
                                 @if($isAdmin)
                                     <form action="{{ route('super_admin.users.deactivate', [$u->id, 'subdomain' => $sub]) }}" method="POST" class="d-inline">
                                         @csrf
@@ -217,7 +209,6 @@
             </table>
         </div>
 
-        {{-- 4. Pagination Section --}}
         @if(method_exists($users, 'links'))
             <div class="card-footer bg-white border-top d-flex justify-content-between align-items-center">
                 <div class="text-muted small">

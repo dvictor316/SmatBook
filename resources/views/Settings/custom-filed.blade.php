@@ -9,7 +9,7 @@
             transition: all 0.3s ease-in-out;
         }
         body.mini-sidebar .page-wrapper { margin-left: 80px; }
-        
+
         @media (max-width: 1200px) {
             .page-wrapper { margin-left: 0 !important; }
         }
@@ -32,7 +32,7 @@
 
     <div class="page-wrapper">
         <div class="content container-fluid">
-            
+
             <div class="row">
                 <div class="col-xl-3 col-md-4">
                     <div class="card mb-4">

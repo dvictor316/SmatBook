@@ -67,7 +67,7 @@
                         </div>
                         <div class="tab-content">
                             @livewire('template-invoice')
-                            
+
                             <div class="tab-pane" id="purchases_tab" role="tabpanel" aria-labelledby="purchases-tab" tabindex="0">
                                 <div class="card template-invoice-card">
                                     <div class="card-body pb-0">

@@ -14,7 +14,7 @@
                 <div class="card-body p-4">
                     <form action="{{ route('manager.submit.verification') }}" method="POST">
                         @csrf
-                        
+
                         <div class="row">
                             <div class="col-md-12 mb-4">
                                 <h5 class="text-muted border-bottom pb-2">Business Information</h5>
@@ -75,7 +75,7 @@
                     </form>
                 </div>
             </div>
-            
+
             <div class="text-center mt-4">
                 <p class="text-muted small">By submitting, you agree to our Partner Terms of Service and Deployment Guidelines.</p>
             </div>

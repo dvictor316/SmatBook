@@ -218,10 +218,10 @@ $(document).ready(function() {
         let q = parseFloat(row.find('.qty').val()) || 0;
         let r = parseFloat(row.find('.rate').val()) || 0;
         let d = parseFloat(row.find('.discount').val()) || 0;
-        
+
         let subtotal = q * r;
         let total = subtotal - (subtotal * (d / 100));
-        
+
         row.find('.row-total').text('₦' + total.toLocaleString(undefined, {minimumFractionDigits: 2}));
         calculateGrandTotal();
     }

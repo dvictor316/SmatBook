@@ -4,9 +4,6 @@
 
 @section('content')
 
-{{-- 
-    CUSTOM STYLES: SIDEBAR AWARENESS & UI 
---}}
 <style>
     :root {
         --side-w: 270px;
@@ -68,8 +65,7 @@
 </style>
 
 <div id="settings-wrapper">
-    
-    {{-- Header Section --}}
+
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <nav aria-label="breadcrumb">
@@ -87,8 +83,7 @@
 
     <div class="row justify-content-center">
         <div class="col-lg-8 col-xl-7">
-            
-            {{-- Settings Form Card --}}
+
             <div class="settings-card p-4">
                 <div class="d-flex align-items-center mb-4 pb-3 border-bottom">
                     <div class="bg-primary-subtle text-primary rounded-circle p-3 me-3">
@@ -103,8 +98,7 @@
                 <form action="{{ route('deployment.settings.update') }}" method="POST">
                     @csrf
                     @method('PUT')
-                    
-                    {{-- Section 1: Environment --}}
+
                     <div class="mb-4">
                         <label class="form-label fw-bold small text-uppercase text-muted">Domain Environment</label>
                         <div class="input-group">
@@ -115,7 +109,6 @@
                         <div class="form-text">Defined in environment configuration. Cannot be changed here.</div>
                     </div>
 
-                    {{-- Section 2: Personal Info --}}
                     <div class="row g-3 mb-4">
                         <div class="col-md-6">
                             <label class="form-label fw-bold small text-uppercase text-muted">Full Name</label>
@@ -127,10 +120,9 @@
                         </div>
                     </div>
 
-                    {{-- Section 3: Preferences --}}
                     <div class="mb-4">
                         <label class="form-label fw-bold small text-uppercase text-muted mb-3">System Notifications</label>
-                        
+
                         <div class="card bg-light border-0 p-3">
                             <div class="form-check form-switch d-flex justify-content-between ps-0 align-items-center">
                                 <label class="form-check-label ms-2" for="notifyDeploy">
@@ -207,7 +199,6 @@
     </div>
 </div>
 
-{{-- Sidebar Toggle Listener script --}}
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         // Ensure content resizes if sidebar is toggled via navbar button

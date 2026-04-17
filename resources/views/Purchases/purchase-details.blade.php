@@ -13,7 +13,7 @@
     @endphp
     <div class="page-wrapper">
         <div class="content container-fluid">
-            
+
             <div class="page-header">
                 <div class="row align-items-center">
                     <div class="col">
@@ -52,7 +52,7 @@
                         <div class="card-body">
                             <div class="card-table">
                                 <div class="card-body">
-                                    
+
                                     <div class="invoice-item invoice-item-one">
                                         <div class="row align-items-center">
                                             <div class="col-md-6">
@@ -256,7 +256,7 @@
     </div>
 
             <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-            
+
             <script>
         function generatePDF() {
             window.smartProbookExportElementToPdf('#invoice-content', {

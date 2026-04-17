@@ -143,7 +143,7 @@
          */
         function renderTransactions() {
             const tableBody = document.getElementById('table-body');
-            
+
             // Clear existing rows
             tableBody.innerHTML = ''; 
 
@@ -165,14 +165,14 @@
 
                 // 2. Type
                 row.appendChild(createCell(transaction.Type, 'text-gray-700'));
-                
+
                 // 3. Amount
                 // Uses the dynamic ClassAmount from mock data for coloring
                 row.appendChild(createCell(`<span class="font-semibold ${transaction.ClassAmount}">${transaction.Amount}</span>`, ''));
-                
+
                 // 4. Date
                 row.appendChild(createCell(transaction.Date, 'text-gray-500'));
-                
+
                 // 5. Payment Type
                 row.appendChild(createCell(transaction.PaymentType, 'text-gray-500'));
 

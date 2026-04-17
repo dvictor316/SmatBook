@@ -9,7 +9,7 @@
         transition: all 0.3s ease-in-out;
     }
     body.mini-sidebar .page-wrapper { margin-left: 80px; }
-    
+
     @media (max-width: 1200px) {
         .page-wrapper { margin-left: 0 !important; }
     }

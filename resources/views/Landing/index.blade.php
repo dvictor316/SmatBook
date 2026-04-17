@@ -1,6 +1,4 @@
 
-
-
 @extends('layout.landing_nav')
 
 @section('content')
@@ -367,7 +365,6 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 .pb-icon { width: 24px; height: 24px; border-radius: 7px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .pb-main { font-family: var(--font-display); font-size: 10px; font-weight: 800; color: var(--navy); line-height: 1; }
 .pb-sub { font-size: 7px; color: var(--muted); font-weight: 600; margin-top: 2px; }
-
 
 /* phone zone */
 .hero-right {
@@ -1256,7 +1253,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     .hero-cta-stack { max-width: min(190px,54vw) !important; gap: 7px !important; }
     .hero-trust { margin-top: 7px !important; }
     .trust-text { font-size: clamp(7px,1.9vw,8.5px) !important; }
-    
+
     #mujiNav {
         position: fixed;
         top: var(--nav-h);
@@ -1356,9 +1353,9 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     .hero-cta-stack { max-width: min(176px,52vw) !important; gap: 6px !important; }
     .hero-trust { gap: 6px !important; margin-top: 6px !important; }
     .trust-text { font-size: clamp(6.8px,1.9vw,8px) !important; }
-    
+
     .circle-badge { display: none !important; } /* Hide flanking badges on mobile */
-    
+
     .benefit-card { border-color: var(--border); background: #fff; }
     .benefit-belt { padding: 32px 12px 0; }
     .impact-story-image-wrap,
@@ -1498,7 +1495,6 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 }
 </style>
 
-{{-- NAVBAR --}}
 <nav class="navbar navbar-expand-lg fixed-top sb-nav" id="mainNav">
     <div class="container">
         <a class="sb-brand navbar-brand" href="#home">
@@ -1528,7 +1524,6 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     </div>
 </nav>
 
-{{-- ANNOUNCEMENT BAR --}}
 <div class="announce-bar" id="announceBar">
     <div class="announce-label"><span class="announce-dot"></span> 📡 LIVE UPDATES</div>
     <div class="announce-track" id="announceTrack">
@@ -1539,16 +1534,13 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     </div>
 </div>
 
-{{-- HERO --}}
 <section id="home" class="hero-wrap">
     <div class="hero-orb2"></div>
     <div class="hero-content">
 
-        {{-- CIRCLE WITH FLANKING BADGES --}}
         <div class="hero-left">
             <div class="hero-circle-wrapper">
-                
-                {{-- 4 Left Badges --}}
+
                 <div class="circle-badge cb-left cb-1">
                     <div class="pb-icon" style="background:#fee2e2;"><svg width="14" height="14" fill="none" stroke="#b91c1c" stroke-width="2.5" viewBox="0 0 24 24"><path d="M4 19h16"/><path d="M7 15l3-4 3 2 4-6"/></svg></div>
                     <div><div class="pb-main">Cash Flow</div><div class="pb-sub">Forecast updated</div></div>
@@ -1566,7 +1558,6 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                     <div><div class="pb-main">Live Reports</div><div class="pb-sub">Updated hourly</div></div>
                 </div>
 
-                {{-- The Circle --}}
                 <div class="hero-circle">
                     <div class="hero-circle-orbit"></div>
                     <div class="hero-eyebrow">SmartProbook</div>
@@ -1583,7 +1574,6 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                     </div>
                 </div>
 
-                {{-- 4 Right Badges --}}
                 <div class="circle-badge cb-right cb-5">
                     <div class="pb-icon" style="background:#dcfce7;"><svg width="14" height="14" fill="none" stroke="#15803d" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></div>
                     <div><div class="pb-main">+24.8%</div><div class="pb-sub">Monthly Revenue</div></div>
@@ -1604,7 +1594,6 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
             </div>
         </div>
 
-        {{-- PHONE --}}
         <div class="hero-right">
             <div class="hero-phone">
                 <div class="phone-notch-bar">
@@ -1680,9 +1669,8 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
             </div>
         </div>
 
-    </div>{{-- .hero-content --}}
+    </div>
 
-    {{-- FX TICKER --}}
     <div class="hero-ticker">
         <div class="ticker-label"><span class="announce-dot"></span> FX LIVE</div>
         <div class="ticker-track-wrap">
@@ -1693,7 +1681,6 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     </div>
 </section>
 
-{{-- BENEFIT CARDS --}}
 <section class="benefit-belt">
     <div class="benefit-grid">
         <article class="benefit-card">
@@ -1715,7 +1702,6 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     </div>
 </section>
 
-{{-- STATS --}}
 <section class="stats-section">
     <div class="container">
         <div class="row text-center g-4">
@@ -1727,7 +1713,6 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     </div>
 </section>
 
-{{-- FEATURES --}}
 <section class="sb-section" id="platform-features">
     <div class="container">
         <div class="text-center mb-5">
@@ -1736,7 +1721,6 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
             <p class="sb-lead text-center mx-auto">SmartProbook is not just bookkeeping software. It's a complete business management system — from your first sale to your annual tax filing.</p>
         </div>
 
-        {{-- Feature 1 --}}
         <div class="row align-items-center g-5 mb-5 pb-4">
             <div class="col-lg-7 gadget-mobile-column">
                 <div class="gadget-visual gadget-visual--left gadget-mobile-bleed">
@@ -1879,7 +1863,6 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
             </div>
         </div>
 
-        {{-- Feature 2 --}}
         <div class="row align-items-center g-5 pt-4">
             <div class="col-lg-5">
                 <span class="sb-eyebrow">02 — Inventory Control</span>
@@ -2020,7 +2003,6 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     </div>
 </section>
 
-{{-- EXPENSES — DARK --}}
 <section class="sb-section sb-section--dark" id="expenses">
     <div class="container">
         <div class="row align-items-center g-5">
@@ -2169,7 +2151,6 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     </div>
 </section>
 
-{{-- STRIP --}}
 <section class="strip-section">
     <div class="container">
         <div class="text-center mb-5">
@@ -2186,7 +2167,6 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     </div>
 </section>
 
-{{-- SOLUTIONS --}}
 <section class="sb-section sb-section--alt" id="solutions">
     <div class="container">
         <div class="text-center mb-5">
@@ -2202,7 +2182,6 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     </div>
 </section>
 
-{{-- CAPABILITIES --}}
 <section class="sb-section" id="capabilities">
     <div class="container">
         <div class="row align-items-center g-5 mb-5 pb-5">
@@ -2225,7 +2204,6 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     </div>
 </section>
 
-{{-- PROJECTS --}}
 <section class="sb-section sb-section--alt" id="team">
     <div class="container">
         <div class="text-center mb-5">
@@ -2254,7 +2232,6 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     </div>
 </section>
 
-{{-- TESTIMONIALS --}}
 <section class="testi-section sb-section--dark">
     <div class="container text-center mb-5">
         <span class="sb-eyebrow" style="justify-content:center;display:inline-flex;">Global Adoption</span>
@@ -2279,7 +2256,6 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     </div>
 </section>
 
-{{-- LICENSING --}}
 <section class="sb-section" id="licensing">
     <div class="container">
         <div class="text-center mb-5">
@@ -2303,7 +2279,6 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     </div>
 </section>
 
-{{-- Floating Support Widget --}}
 <div class="spb-support" id="spbSupportWidget">
     <div class="spb-support-floating" id="spbSupportFloating">
         <div class="spb-float-msg" id="spbMsgHello">👋 Hello!</div>
@@ -2339,7 +2314,6 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     </button>
 </div>
 
-{{-- FOOTER --}}
 <footer class="sb-footer" id="contact">
     <div class="container" style="position:relative;z-index:1;">
         <div class="row g-5 mb-5 pb-5" style="border-bottom:1px solid var(--border);">

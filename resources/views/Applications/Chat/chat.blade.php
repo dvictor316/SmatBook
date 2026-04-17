@@ -130,7 +130,7 @@
 
 <div class="page-wrapper">
     <div class="content container-fluid">
-        
+
         <div class="page-header">
             <div class="row align-items-center">
                 <div class="col">
@@ -146,7 +146,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="chat-wrapper">
             <div class="chat-sidebar">
                 <div class="p-4 border-bottom d-flex align-items-center justify-content-between">
@@ -165,7 +165,7 @@
                 <div class="online-status-wrapper">
                     <small class="text-uppercase text-muted fw-bold mb-3 d-block" style="font-size: 10px; letter-spacing: 0.5px;">Active Friends</small>
                     <div id="onlineUsersBar">
-                        {{-- FIX: Check for is_online if you have that column, otherwise list all --}}
+
                         @foreach($allUsers as $u)
                             @if($u->id !== Auth::id())
                                 <a href="{{ route('chat.show', $u->id) }}" class="online-user-card">
@@ -178,7 +178,7 @@
                         @endforeach
                     </div>
                 </div>
-                
+
                 <div class="contacts-list overflow-auto">
                     @forelse($contacts as $contact)
                         <a href="{{ route('chat.show', $contact->id) }}" class="contact-item {{ (isset($selectedUser) && $selectedUser->id == $contact->id) ? 'active' : '' }}">
@@ -200,7 +200,7 @@
                     @endforelse
                 </div>
             </div>
-            
+
             <div class="chat-main">
                 @if(isset($selectedUser))
                     <div class="p-3 border-bottom d-flex align-items-center justify-content-between bg-white shadow-sm" style="z-index: 10;">
@@ -212,9 +212,9 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="messages-container" id="messagesContainer">
-                        {{-- FIX: Using user_id and content to match your model and controller --}}
+
                         @foreach($messages as $message)
                             <div class="message-wrapper {{ $message->user_id == Auth::id() ? 'sent' : 'received' }}">
                                 <div class="message-bubble shadow-sm">
@@ -251,7 +251,6 @@
     </div>
 </div>
 
-{{-- MODAL SECTION (NEW CHAT) --}}
 <div class="modal fade" id="newChatModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
@@ -289,12 +288,12 @@
 
         const searchInput = document.getElementById('modalUserSearch');
         const userList = document.getElementById('modalUserList');
-        
+
         if (searchInput) {
             searchInput.addEventListener('keyup', function() {
                 const term = this.value.toLowerCase();
                 const users = userList.getElementsByClassName('user-select-item');
-                
+
                 Array.from(users).forEach(user => {
                     const name = user.querySelector('.user-name').textContent.toLowerCase();
                     user.style.display = name.includes(term) ? 'flex' : 'none';

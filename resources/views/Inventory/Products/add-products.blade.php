@@ -136,7 +136,7 @@
 </style>
     <div class="page-wrapper">
     <div class="content container-fluid product-form-shell">
-        
+
         <div class="product-form-hero no-print">
             <div class="row align-items-center g-3">
                 <div class="col-lg">
@@ -180,7 +180,6 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
 
-        {{-- Main Form --}}
         <div class="card product-form-card border-0 mb-4">
             <div class="card-body">
                 <form action="{{ route('inventory.Products.store') }}" method="POST" enctype="multipart/form-data" novalidate id="add_product_form">
@@ -324,7 +323,7 @@
                             <div class="form-control bg-light-info fw-semibold" id="units_per_carton_preview">0 Units</div>
                             <small class="field-note">Packaging preview only. This does not increase stock until you enter opening cartons, rolls, or loose units below.</small>
                         </div>
-                        
+
                         <div class="col-md-3 mb-3">
                             <label class="field-label" id="opening_unit_label">Opening Loose Unit Quantity</label>
                             <input type="number" name="stock_units" id="stock_units" class="form-control @error('stock_units') is-invalid @enderror" value="{{ old('stock_units', 0) }}">

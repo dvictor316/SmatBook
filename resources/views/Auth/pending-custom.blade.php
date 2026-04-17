@@ -3,12 +3,11 @@
 @section('content')
 <div class="container d-flex align-items-center justify-content-center" style="min-height: 80vh;">
     <div class="text-center" style="max-width: 500px;">
-        {{-- Branding --}}
+
         <div class="mb-4">
             <x-auth-brand-lockup :logo="asset('assets/img/logos.png')" size="lg" :tagline="'Business Stack'" />
         </div>
-        
-        {{-- Animated Icon --}}
+
         <div class="mb-4">
             <i class="fas fa-shield-alt fa-4x text-gold" style="color: #c5a059; animation: pulse 2s infinite;"></i>
         </div>
@@ -31,7 +30,7 @@
         </p>
 
         <hr>
-        
+
         <div class="d-flex justify-content-center gap-3">
             <a href="mailto:management@smartprobook.com" class="btn btn-outline-dark btn-sm">Contact Management</a>
             <form action="{{ route('logout') }}" method="POST">

@@ -4,7 +4,7 @@
         border-radius: 20px;
         overflow: hidden;
     }
-    
+
     .table-custom-sapphire thead th {
         background-color: #f8fbff;
         border-bottom: 1px solid #edf2f7;

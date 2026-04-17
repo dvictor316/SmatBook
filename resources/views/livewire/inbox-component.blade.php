@@ -1,8 +1,8 @@
-<div> {{-- Critical Single Root Element --}}
+<div> 
     <div class="col-lg-12">
         <div class="card bg-white border-0 shadow-sm" style="border-radius: 15px;">
             <div class="card-body">
-                {{-- Email Header: Search and Actions --}}
+
                 <div class="email-header">
                     <div class="row align-items-center">
                         <div class="col top-action-left">
@@ -17,7 +17,7 @@
                                         <a class="dropdown-item" href="javascript:void(0);">Unread</a>
                                     </div>
                                 </div>
-                                
+
                                 <div class="mail-search flex-grow-1">
                                     <div class="input-group">
                                         <span class="input-group-text bg-transparent border-end-0"><i class="fas fa-search text-muted"></i></span>
@@ -33,7 +33,6 @@
                     </div>
                 </div>
 
-                {{-- Email List Table --}}
                 <div class="email-content mt-3">
                     <div class="table-responsive">
                         <table class="table table-inbox table-hover border-top">
@@ -51,27 +50,27 @@
                                 @forelse ($messages as $message)
                                     <tr class="{{ $message->read_at ? 'text-muted' : 'fw-bold bg-soft-primary' }}" 
                                         style="cursor: pointer; transition: all 0.2s;">
-                                        
+
                                         <td class="text-center ps-3">
                                             <input type="checkbox" class="form-check-input me-2">
                                         </td>
-                                        
+
                                         <td class="star-col" style="width: 30px;">
                                             <span class="mail-important">
                                                 <i class="far fa-star text-warning"></i>
                                             </span>
                                         </td>
-                                        
+
                                         <td class="name" style="width: 200px;">
                                             {{ $folder == 'sent' ? 'To: ' . ($message->receiver->name ?? 'User') : ($message->sender->name ?? 'System') }}
                                         </td>
-                                        
+
                                         <td class="subject">
                                             <span class="badge bg-soft-info text-info me-2">{{ ucfirst($folder) }}</span>
                                             <strong>{{ $message->subject }}</strong> 
                                             <span class="text-muted fw-normal">- {{ Str::limit($message->content, 100) }}</span>
                                         </td>
-                                        
+
                                         <td class="mail-date text-end pe-3 text-nowrap">
                                             {{ $message->created_at->diffForHumans() }}
                                         </td>
@@ -92,7 +91,6 @@
                     </div>
                 </div>
 
-                {{-- Custom Pagination --}}
                 <div class="mt-4 d-flex justify-content-center">
                     {{ $messages->links() }}
                 </div>
@@ -104,7 +102,7 @@
         .bg-soft-primary { background-color: rgba(0, 123, 255, 0.03); border-left: 3px solid #007bff; }
         .table-inbox tr:hover { transform: scale(1.002); box-shadow: 0 4px 10px rgba(0,0,0,0.05); z-index: 10; }
         .mail-search .form-control:focus { box-shadow: none; border-color: #dee2e6; }
-        
+
         @media print {
             .email-header, .star-col, .form-check-input, .pagination { display: none !important; }
             .card { border: none !important; box-shadow: none !important; }

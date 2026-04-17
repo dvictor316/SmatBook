@@ -19,15 +19,15 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="row">
                     <div class="col-md-12">
                         <form action="{{ route('customers.store') }}" method="POST" enctype="multipart/form-data">
                             @csrf
-                            
+
                             <div class="form-group-item">
                                 <h5 class="form-title">Basic Details</h5>
-                                
+
                                 <div class="profile-picture">
                                     <div class="upload-profile">
                                         <div class="profile-img">

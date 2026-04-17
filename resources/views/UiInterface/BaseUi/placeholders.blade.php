@@ -17,12 +17,12 @@
                                 <div class="card-body card-buttons pb-0">
                                     <h4 class="header-title">Placeholders</h4>
                                     <p class="text-muted">In the example below, we take a typical card component and recreate it with placeholders applied to create a “loading card”. Size and proportions are the same between the two.</p>
-                                    
+
                                     <div class="row">
                                         <div class="col-md-6">
                                             <div class="card border shadow-none">
                                                 <img src="{{ URL::asset('/assets/img/img-1.jpg')}}" class="card-img-top" alt="...">
-                                            
+
                                                 <div class="card-body">
                                                     <h5 class="card-title">Card title</h5>
                                                     <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's
@@ -58,14 +58,14 @@
                                 <div class="card-body card-buttons">
                                     <h4 class="header-title">Width</h4>
                                     <p class="text-muted">You can change the <code>width</code> through grid column classes, width utilities, or inline styles.</p>
-                                    
+
                                     <span class="placeholder col-6"></span>
                                     <span class="placeholder w-75"></span>
                                     <span class="placeholder" style="width: 25%;"></span>
                                 </div> <!-- end card-body-->
                             </div> <!-- end card-->
                         </div> <!-- end col-->
-                        
+
                         <div class="col-xl-6">
                             <div class="card">
                                 <div class="card-body card-buttons">
@@ -88,11 +88,11 @@
                                 <div class="card-body card-buttons">
                                     <h4 class="header-title">How it works</h4>
                                     <p class="text-muted">Create placeholders with the <code>.placeholder</code> class and a grid column class (e.g., <code>.col-6</code>) to set the <code>width</code>. They can replace the text inside an element or as be added as a modifier class to an existing component.</p>
-                                    
+
                                     <p aria-hidden="true">
                                         <span class="placeholder col-6"></span>
                                       </p>
-                                      
+
                                     <a href="#" class="btn btn-primary disabled placeholder col-4" aria-hidden="true"></a>
                                 </div> <!-- end card-body-->
                             </div> <!-- end card-->
@@ -101,11 +101,11 @@
                                 <div class="card-body card-buttons">
                                     <h4 class="header-title">Animation</h4>
                                     <p class="text-muted">Animate placehodlers with <code>.placeholder-glow</code> or <code>.placeholder-wave</code> to better convey the perception of something being <em>actively</em> loaded.</p>
-                                    
+
                                     <p class="placeholder-glow">
                                         <span class="placeholder col-12"></span>
                                     </p>
-                                      
+
                                     <p class="placeholder-wave mb-0">
                                         <span class="placeholder col-12"></span>
                                     </p>
@@ -129,7 +129,7 @@
                             </div> <!-- end card-->
                         </div> 
                         <!-- end col-->
-                        
+
                     </div> 
                     <!-- end row-->                    
                 </div>          

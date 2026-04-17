@@ -9,7 +9,6 @@
 <div class="page-wrapper">
     <div class="content container-fluid">
 
-        {{-- 1. Page Header --}}
         @component('components.page-header')
             @slot('title') {{ __('Expense Report') }} @endslot
         @endcomponent
@@ -20,7 +19,6 @@
                 : 'Current Expense Ledger',
         ])
 
-        {{-- 2. Functional Filter Section --}}
         <div class="card shadow-sm border-0 mb-4">
             <div class="card-body">
                 <form action="{{ url()->current() }}" method="GET" id="filter-form">
@@ -57,7 +55,6 @@
             </div>
         </div>
 
-        {{-- 3. Summary Widget --}}
         <div class="row">
             <div class="col-md-4">
                 <div class="card bg-white shadow-sm border-0 mb-4 border-start border-danger border-4 expense-total-card">
@@ -82,7 +79,6 @@
             </div>
         </div>
 
-        {{-- 4. Report Table --}}
         <div class="row">
             <div class="col-sm-12">
                 <div class="card shadow-sm border-0">
@@ -92,7 +88,7 @@
                                 <h5 class="card-title fw-bold">{{ __('Expense Data') }}</h5>
                             </div>
                             <div class="col-auto">
-                                {{-- Target for DataTables Buttons --}}
+
                                 <div id="btn_export_group"></div>
                             </div>
                         </div>
@@ -161,7 +157,7 @@
 @endsection
 
 @section('script')
-{{-- DataTables Buttons Dependencies --}}
+
 <script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>

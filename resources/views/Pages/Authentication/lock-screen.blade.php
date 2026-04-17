@@ -2,7 +2,7 @@
 @extends('layout.mainlayout')
 
 @section('content')
-{{-- User requested print script integration --}}
+
 <script>
     // Global print configuration for this page
     window.onbeforeprint = function() {
@@ -17,7 +17,7 @@
                 <div class="mb-4">
                     <x-auth-brand-lockup :logo="URL::asset('/assets/img/logos.png')" size="md" :tagline="'Secure Access'" />
                 </div>
-                
+
                 <div class="lock-user mb-4">
                     <div class="position-relative d-inline-block">
                         <img class="rounded-circle img-thumbnail shadow-sm" 

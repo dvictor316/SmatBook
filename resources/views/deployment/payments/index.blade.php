@@ -2,11 +2,6 @@
 
 @section('content')
 
-{{-- 
-    CUSTOM STYLES: SIDEBAR AWARENESS & UI 
-    - Width adjusted to 270px for Deployment Manager Sidebar
-    - Added logic for 'sidebar-icon-only' toggle state
---}}
 <style>
     :root {
         --deploy-sidebar-w: 270px;
@@ -75,8 +70,7 @@
 
 <div id="payments-wrapper">
     <div class="container-fluid px-0">
-        
-        {{-- Header Section --}}
+
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <nav aria-label="breadcrumb">
@@ -95,7 +89,6 @@
             </div>
         </div>
 
-        {{-- Transactions Card --}}
         <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
             <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
                 <h6 class="mb-0 fw-bold text-dark">Recent Transactions</h6>

@@ -4,7 +4,7 @@
 			<!-- Page Wrapper -->
             <div class="page-wrapper">
                 <div class="content container-fluid">
-				
+
 					<!-- Page Header -->
 					<div class="page-header">
 						<div class="content-page-header">
@@ -12,9 +12,9 @@
 						</div>	
 					</div>
 					<!-- /Page Header -->
-					
+
 					<div class="row">
-					
+
 						<!-- Timeline -->
 						<div class="col-md-12">	
 							<div class="card">
@@ -123,7 +123,7 @@
 							</div>
 						</div>
 						<!-- /Ribbon -->
-							
+
 					</div>				
 				</div>			
 			</div>

@@ -101,8 +101,7 @@
 </style>
 
 <div class="master-hub-wrapper">
-    
-    {{-- THE FIX: Feedback Alerts --}}
+
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
             <i class="fas fa-check-circle me-2"></i> {{ session('success') }}
@@ -117,7 +116,6 @@
         </div>
     @endif
 
-    {{-- Header --}}
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h3 class="fw-bold text-dark mb-0">{{ $pageTitle }}</h3>
@@ -130,7 +128,6 @@
         </div>
     </div>
 
-    {{-- Metrics Row --}}
     <div class="row g-3 mb-4">
         @php
             $stats = [
@@ -158,7 +155,6 @@
         @endforeach
     </div>
 
-    {{-- Filter Bar --}}
     <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px;">
         <div class="card-body p-3">
             <form action="{{ url()->current() }}" method="GET" class="row g-2 align-items-center">
@@ -187,7 +183,6 @@
         </div>
     </div>
 
-    {{-- Data Table --}}
     <div class="hub-table-container custom-scrollbar">
         <table class="table table-hover align-middle mb-0">
             <thead>
@@ -240,7 +235,7 @@
                                 <button class="btn btn-xs btn-primary dropdown-toggle" data-bs-toggle="dropdown" data-bs-boundary="viewport">Manage</button>
                                 <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg">
                                     <li><h6 class="dropdown-header extra-small text-uppercase">Partner Control</h6></li>
-                                    
+
                                     @if(in_array($manager->status, ['pending', 'pending_info', 'rejected', 'suspended']))
                                     <li>
                                         <form action="{{ route('super_admin.managers.approve', $manager->id) }}" method="POST" onsubmit="return confirm('Approve this partner for {{ env('SESSION_DOMAIN') }}?')">
@@ -297,7 +292,6 @@
         </table>
     </div>
 
-    {{-- Pagination --}}
     <div class="py-3 d-flex justify-content-between align-items-center">
         <span class="small text-muted">
             Showing {{ method_exists($managers, 'firstItem') ? ($managers->firstItem() ?? 0) : 0 }}

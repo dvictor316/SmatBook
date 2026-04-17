@@ -1,14 +1,8 @@
 
-
 @extends('layout.mainlayout')
 
 @section('content')
 
-{{-- 
-    CUSTOM STYLES: SIDEBAR AWARENESS & UI 
-    - Width adjusted to 270px to match Deployment Manager Sidebar
-    - Added logic for 'sidebar-icon-only' toggle state
---}}
 <style>
     :root {
         --deploy-sidebar-w: 270px;
@@ -77,8 +71,7 @@
 
 <div id="commissions-wrapper">
     <div class="container-fluid px-0">
-        
-        {{-- Header Section --}}
+
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h4 class="fw-bold text-dark mb-1">Commissions Management</h4>
@@ -91,7 +84,6 @@
             </div>
         </div>
 
-        {{-- Metrics Cards --}}
         <div class="row g-3 mb-4">
             <div class="col-md-4">
                 <div class="card border-0 shadow-sm border-start border-primary border-4 h-100">
@@ -286,7 +278,6 @@
             </div>
         </div>
 
-        {{-- Commission Logs Table --}}
         <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
             <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
                 <h6 class="mb-0 fw-bold text-dark">Commission Ledger</h6>

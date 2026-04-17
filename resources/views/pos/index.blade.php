@@ -16,7 +16,7 @@
     --danger-500: #ef4444;
     --warning-500: #f59e0b;
     --indigo-600: #4f46e5;
-    
+
     /* Neutral Palette */
     --gray-50: #f9fafb;
     --gray-100: #f3f4f6;
@@ -28,7 +28,7 @@
     --gray-700: #374151;
     --gray-800: #1f2937;
     --gray-900: #111827;
-    
+
     /* Design Tokens */
     --text-primary: #111827;
     --text-secondary: #6b7280;
@@ -1110,7 +1110,7 @@ label {
         padding: 10px;
         flex-wrap: wrap;
     }
-    
+
     .search-wrapper {
         order: 3;
         width: 100%;
@@ -1118,7 +1118,7 @@ label {
         min-width: 0;
         margin: 8px 0 0 0;
     }
-    
+
     .user-info {
         display: none;
     }
@@ -2029,7 +2029,7 @@ $(document).ready(function() {
         const unitMeta = resolveUnitMetrics(opt);
         let stock = opt.data('stock');
         const maxAllowed = Math.max(unitMeta.maxQty, 0);
-        
+
         if(maxAllowed <= 0) {
             showAlert({ icon: 'error', title: 'Unavailable', text: `No ${unitMeta.unitName} available for this product`, confirmButtonColor: '#ef4444' });
             return;
@@ -2073,7 +2073,7 @@ $(document).ready(function() {
         $('#discount').attr('max', '100');
         $('#price-tier').val('retail');
         $('#barcode-input').val('').focus();
-        
+
         showAlert({ icon: 'success', title: 'Added', timer: 1000, toast: true, position: 'top-end', showConfirmButton: false });
     });
 
@@ -2088,7 +2088,7 @@ $(document).ready(function() {
                 totDisc += item.discVal;
                 totTax += item.taxVal;
                 totGrand += item.total;
-                
+
                 html += `
                     <tr>
                         <td class="ps-3">
@@ -2139,9 +2139,9 @@ $(document).ready(function() {
         $('#sum-tax').text(totTax > 0 ? '+ ' + fmt.format(totTax) : fmt.format(0));
         $('#grand-total').text(fmt.format(totGrand));
         $('#hdr-cart-count').text(cart.length);
-        
+
         $('#amount-paid').val(totGrand.toFixed(2));
-        
+
         updateChange();
         $('.cart-wrapper').scrollTop($('.cart-wrapper')[0].scrollHeight);
     }

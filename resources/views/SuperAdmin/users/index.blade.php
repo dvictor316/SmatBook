@@ -83,7 +83,7 @@
 </style>
 
 <div class="master-hub-wrapper">
-    {{-- Header --}}
+
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h3 class="fw-bold text-dark mb-0">Registered Users</h3>
@@ -96,7 +96,6 @@
         </div>
     </div>
 
-    {{-- Metrics Row --}}
     <div class="row g-3 mb-4">
         @php
             $stats = [
@@ -124,7 +123,6 @@
         @endforeach
     </div>
 
-    {{-- Filter Bar --}}
     <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px;">
         <div class="card-body p-3">
             <form action="{{ url()->current() }}" method="GET" class="row g-2 align-items-center">
@@ -160,7 +158,6 @@
         </div>
     </div>
 
-    {{-- Data Table --}}
     <div class="hub-table-container custom-scrollbar">
         <table class="table table-hover align-middle mb-0">
             <thead>
@@ -253,7 +250,6 @@
         </table>
     </div>
 
-    {{-- Pagination --}}
     <div class="py-3 d-flex justify-content-between align-items-center">
         <span class="small text-muted">
             Showing {{ method_exists($users, 'firstItem') ? ($users->firstItem() ?? 0) : 0 }}

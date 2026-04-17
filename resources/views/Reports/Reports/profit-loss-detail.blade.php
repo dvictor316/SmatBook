@@ -50,14 +50,12 @@
         </div>
     </div>
 
-    {{-- KPI --}}
     <div class="pld-summary-strip">
         <div class="pld-kpi"><div class="pld-kpi-label">Total Income</div><div class="pld-kpi-val" style="color:#16a34a">{{ $fmt($totalIncome) }}</div></div>
         <div class="pld-kpi"><div class="pld-kpi-label">Total Expenses</div><div class="pld-kpi-val" style="color:#dc2626">{{ $fmt($totalExpense) }}</div></div>
         <div class="pld-kpi"><div class="pld-kpi-label">Net Profit</div><div class="pld-kpi-val" style="color:{{ $netProfit >= 0 ? '#16a34a' : '#dc2626' }}">{{ $fmt($netProfit) }}</div></div>
     </div>
 
-    {{-- Income rows --}}
     @if($salesRows->count())
     <div class="card shadow-none border mb-4">
         <div class="card-header bg-white py-2"><h6 class="mb-0 fw-bold text-success"><i class="fas fa-arrow-up me-1"></i> Income Transactions</h6></div>
@@ -83,7 +81,6 @@
     </div>
     @endif
 
-    {{-- Expense rows --}}
     @if($expenseRows->count())
     <div class="card shadow-none border mb-4">
         <div class="card-header bg-white py-2"><h6 class="mb-0 fw-bold text-danger"><i class="fas fa-arrow-down me-1"></i> Expense Transactions</h6></div>

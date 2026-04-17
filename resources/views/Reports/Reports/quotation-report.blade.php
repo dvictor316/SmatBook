@@ -19,7 +19,7 @@
         text-transform: uppercase;
         color: #102a5a;
     }
-    
+
     @media print {
         .no-print, .pagination-container, .dt-buttons { display: none !important; }
         .page-wrapper { margin: 0; padding: 0; background: white !important; }
@@ -50,7 +50,6 @@
                 : 'All Recorded Quotations',
         ])
 
-        {{-- Filter Card --}}
         <div class="card mb-4 border-0 shadow-sm no-print quotation-report-filter">
             <div class="card-body">
                 <form action="{{ \Illuminate\Support\Facades\Route::has('reports.quotation') ? route('reports.quotation') : route('quotation') }}" method="GET">
@@ -111,7 +110,6 @@
                     </table>
                 </div>
 
-                {{-- Bootstrap 5.3 Pagination --}}
                 @if($quotationExists)
                 <div class="card-footer bg-white border-top-0 pt-0 pb-4 no-print">
                     <div class="d-flex justify-content-between align-items-center">

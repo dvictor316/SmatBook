@@ -39,7 +39,6 @@
         </div>
     </div>
 
-    {{-- KPI cards --}}
     <div class="d-flex gap-2 flex-wrap mb-4">
         <div class="ts-kpi"><div class="ts-kpi-label">Tax on Sales (Output)</div><div class="ts-kpi-val" style="color:#16a34a">{{ $fmt($taxOnSales) }}</div></div>
         <div class="ts-kpi"><div class="ts-kpi-label">Tax on Purchases (Input)</div><div class="ts-kpi-val" style="color:#dc2626">{{ $fmt($taxOnPurchases) }}</div></div>

@@ -4,7 +4,7 @@
 			<!-- Page Wrapper -->
 			<div class="page-wrapper">
 				<div class="content container-fluid">
-				
+
 					<!-- Page Header -->
 					<div class="page-header">
 						<div class="content-page-header">
@@ -12,7 +12,7 @@
 						</div>	
 					</div>
 					<!-- /Page Header -->	
-						
+
 					<!-- Progress -->
 						<div class="progress-example card bg-white">
 							<div class="card-header">
@@ -59,7 +59,7 @@
 								</div>
 							</div>
 						</div>
-						
+
 						<div class="progress-example card bg-white">
 							<div class="card-header">
 								<h5 class="card-title">Default Progress Bars</h5>
@@ -103,7 +103,7 @@
 								</div>
 							</div>
 						</div>
-						
+
 						<div class="progress-example card bg-white">
 							<div class="card-header">
 								<h5 class="card-title">Medium Progress Bars</h5>
@@ -149,7 +149,7 @@
 								</div>
 							</div>
 						</div>
-						
+
 						<div class="progress-example card bg-white">
 							<div class="card-header">
 								<h5 class="card-title">Small Progress Bars</h5>
@@ -195,7 +195,7 @@
 								</div>
 							</div>
 						</div>
-						
+
 						<div class="progress-example card bg-white">
 							<div class="card-header">
 								<h5 class="card-title">Extra Small Progress Bars</h5>
@@ -242,7 +242,7 @@
 							</div>
 						</div>
 					<!-- /Progress -->
-					
+
 				</div>			
 			</div>
 			<!-- /Page Wrapper -->	

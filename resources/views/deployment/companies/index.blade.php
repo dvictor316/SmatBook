@@ -2,11 +2,6 @@
 
 @section('content')
 
-{{-- 
-    CUSTOM STYLES: SIDEBAR AWARENESS & UI 
-    - Width adjusted to 270px to match Deployment Manager Sidebar
-    - Added logic for 'sidebar-icon-only' toggle state
---}}
 <style>
     :root {
         --deploy-sidebar-w: 270px;
@@ -68,8 +63,7 @@
             $isPendingView = request()->routeIs('deployment.companies.pending');
             $isActiveView = request()->routeIs('deployment.companies.active');
         @endphp
-        
-        {{-- Header Section --}}
+
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h4 class="fw-bold text-dark mb-1">
@@ -93,7 +87,6 @@
             </div>
         </div>
 
-        {{-- Companies Table Card --}}
         <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
             <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
                 <h6 class="mb-0 fw-bold text-dark">

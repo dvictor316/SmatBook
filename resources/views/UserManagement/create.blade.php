@@ -392,7 +392,6 @@
 <div class="page-wrapper create-shell">
 <div class="content container-fluid">
 
-    {{-- ── Hero ── --}}
     <div class="perm-hero">
         <div class="perm-hero-left">
             <div class="perm-hero-icon"><i class="fa fa-user-plus"></i></div>
@@ -420,11 +419,9 @@
 
         <div class="row g-4">
 
-            {{-- ══════ LEFT PANEL ══════ --}}
             <div class="col-lg-4">
                 <div class="create-left-sticky">
 
-                    {{-- Personal Info card --}}
                     <div class="create-info-card">
                         <div class="create-section-label"><i class="fa fa-id-card text-muted me-1"></i> Personal Information</div>
                         <div class="row g-3">
@@ -465,7 +462,6 @@
                         </div>
                     </div>
 
-                    {{-- Account Settings card --}}
                     <div class="create-info-card">
                         <div class="create-section-label"><i class="fa fa-lock text-muted me-1"></i> Account Settings</div>
                         <div class="row g-3">
@@ -515,7 +511,6 @@
                         </div>
                     </div>
 
-                    {{-- Branch Access card --}}
                     @if(($branches ?? collect())->isNotEmpty())
                     <div class="create-info-card">
                         <div class="create-section-label"><i class="fa fa-code-branch text-muted me-1"></i> Branch Access</div>
@@ -539,12 +534,10 @@
                     @endif
 
                 </div>
-            </div>{{-- /col-lg-4 --}}
+            </div>
 
-            {{-- ══════ RIGHT PANEL — PERMISSIONS ══════ --}}
             <div class="col-lg-8">
 
-                {{-- Toolbar --}}
                 <div class="perm-toolbar">
                     <div class="perm-toolbar-left">
                         <span style="font-weight:700;font-size:.9rem;color:#1a2236;">Module Access Permissions</span>
@@ -561,7 +554,6 @@
                     </div>
                 </div>
 
-                {{-- Permission matrix --}}
                 @foreach ($categories as $catName => $catModules)
                     <div class="perm-category-row">
                         <span class="perm-category-label">{{ $catName }}</span>
@@ -621,10 +613,9 @@
                     </div>
                 @endforeach
 
-            </div>{{-- /col-lg-8 --}}
-        </div>{{-- /row --}}
+            </div>
+        </div>
 
-        {{-- Sticky action bar --}}
         <div class="perm-action-bar">
             <a href="{{ route('users.index') }}" class="btn-perm-cancel">
                 <i class="fa fa-times me-1"></i> Cancel

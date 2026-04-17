@@ -4,8 +4,7 @@
 @section('content')
     <div class="page-wrapper">
         <div class="content container-fluid">
-            
-            {{-- Navigation and Action Header (Hidden on Print) --}}
+
             <div class="page-header d-print-none">
                 <div class="content-invoice-header">
                     <h5>Invoice Management: #{{ $sale->invoice_no ?? $sale->id }}</h5>
@@ -27,12 +26,11 @@
             </div>
 
             <div class="row">
-                {{-- LEFT SIDE: The Printable Invoice Section --}}
+
                 <div class="col-lg-8" id="printableArea">
                     <div class="card shadow-sm border-0">
                         <div class="card-body p-0">
-                            
-                            {{-- Header Info --}}
+
                             <div class="p-4 bg-white rounded-top border-bottom">
                                 <div class="row">
                                     <div class="col-sm-6">
@@ -43,22 +41,20 @@
                                     <div class="col-sm-6 text-sm-end mt-3 mt-sm-0">
                                         <h6 class="text-muted text-uppercase small fw-bold">Invoice Details</h6>
                                         <p class="mb-1 text-dark">Date: <strong>{{ $sale->created_at->format('d M Y') }}</strong></p>
-                                        {{-- Fixed: Using payment_status --}}
+
                                         <p class="mb-0 text-dark">Status: <strong class="text-uppercase">{{ $sale->effective_payment_status ?? $sale->payment_status }}</strong></p>
                                     </div>
                                 </div>
                             </div>
 
-                            {{-- Item Table (Include shared partial) --}}
                             @include('Sales.Invoices.invoice-details')
-                            
-                            {{-- Summary & Totals --}}
+
                             <div class="p-4 bg-white border-top">
                                 <div class="row justify-content-end">
                                     <div class="col-sm-5">
                                         <div class="d-flex justify-content-between mb-2">
                                             <span class="text-muted">Subtotal:</span>
-                                            {{-- Fixed: Summing items subtotal --}}
+
                                             <span class="fw-bold text-dark">{{ number_format($sale->items->sum('subtotal'), 2) }}</span>
                                         </div>
                                         <div class="d-flex justify-content-between mb-2">
@@ -81,7 +77,6 @@
                                 </div>
                             </div>
 
-                            {{-- Terms & Signature Section --}}
                             <div class="p-4 border-top bg-white rounded-bottom">
                                 <div class="row align-items-center">
                                     <div class="col-sm-6">
@@ -104,7 +99,6 @@
                     </div>
                 </div>
 
-                {{-- RIGHT SIDE: Admin Controls (Hidden on Print) --}}
                 <div class="col-lg-4 d-print-none">
                     <div class="card timeline-card border-0 shadow-sm">
                         <div class="card-header bg-white">
@@ -148,7 +142,6 @@
         </div>
     </div>
 
-    {{-- Script Integration for Printing --}}
     <script>
         function printInvoice() {
             const printContents = document.getElementById('printableArea').innerHTML;
@@ -198,7 +191,7 @@
             background: #4b308b;
             border-radius: 50%;
         }
-        
+
         @media print {
             .page-header, .sidebar, .header, .btn, .d-print-none, .timeline-card { 
                 display: none !important; 

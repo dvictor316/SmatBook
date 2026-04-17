@@ -9,14 +9,14 @@
             transition: all 0.3s ease-in-out;
         }
         body.mini-sidebar .page-wrapper { margin-left: 80px; }
-        
+
         @media (max-width: 1200px) {
             .page-wrapper { margin-left: 0 !important; }
         }
 
         .card { border-radius: 15px; border: none; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
         .thead-light th { background-color: #f8f9fa; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; }
-        
+
         /* Print Styles */
         @media print {
             .page-wrapper { margin-left: 0 !important; padding: 0 !important; }
@@ -28,7 +28,7 @@
 
     <div class="page-wrapper">
         <div class="content container-fluid">
-            
+
             <div class="row">
                 <div class="col-xl-3 col-md-4">
                     <div class="card shadow-sm">

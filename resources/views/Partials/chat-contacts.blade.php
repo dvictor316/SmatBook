@@ -9,7 +9,7 @@
              onclick="selectContact({{ $contact->id }})"
              style="cursor: pointer; padding: 10px; border-bottom: 1px solid #f5f5f5;"
              data-user-id="{{ $contact->id }}">
-            
+
             <div class="contact-avatar me-3" style="position: relative;">
                 <img src="{{ $contact->avatar_url }}" 
                      alt="{{ $contact->name }}" 
@@ -30,7 +30,7 @@
                         @if($lastMessage->user_id == Auth::id())
                             <i class="fas fa-check {{ $lastMessage->is_read ? 'text-success' : '' }} me-1"></i>
                         @endif
-                        {{ Str::limit($lastMessage->content, 30) }} {{-- FIXED: Changed 'message' to 'content' --}}
+                        {{ Str::limit($lastMessage->content, 30) }} 
                     </p>
                 @else
                     <p class="last-message mb-0 text-muted" style="font-size: 13px;">No messages yet</p>
@@ -46,7 +46,7 @@
         </div>
     @endforeach
 @else
-    {{-- Empty State --}}
+
     <div class="text-center py-5">
         <div class="mb-3">
             <i class="fas fa-users fa-3x text-muted"></i>

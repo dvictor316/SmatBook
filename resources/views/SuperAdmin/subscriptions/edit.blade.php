@@ -87,7 +87,6 @@
 
 <div class="page-wrapper"> <div class="content container-fluid">
 
-    {{-- Header Section --}}
     <div class="page-header">
         <div class="row align-items-center">
             <div class="col">
@@ -105,20 +104,19 @@
             <form action="{{ route('super_admin.subscriptions.update', $subscription->id) }}" method="POST">
                 @csrf
                 @method('PUT')
-                
+
                 <div class="card">
                     <div class="card-header">
                         <h5 class="card-title mb-0">Billing & Account Details</h5>
                     </div>
                     <div class="card-body">
                         <div class="row">
-                            {{-- MySQL: subscriber_name --}}
+
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Subscriber / Business Name</label>
                                 <input type="text" class="form-control" value="{{ $subscription->subscriber_name ?? 'N/A' }}" disabled>
                             </div>
 
-                            {{-- MySQL: domain_prefix --}}
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Subdomain Access</label>
                                 <div class="input-group">
@@ -130,19 +128,16 @@
                                 </div>
                             </div>
 
-                            {{-- MySQL: plan_name --}}
                             <div class="col-md-4 mb-3">
                                 <label class="form-label">Subscription Plan</label>
                                 <input type="text" class="form-control" value="{{ $subscription->plan_name }}" disabled>
                             </div>
 
-                            {{-- MySQL: billing_cycle --}}
                             <div class="col-md-4 mb-3">
                                 <label class="form-label">Billing Cycle</label>
                                 <input type="text" class="form-control" value="{{ ucfirst($subscription->billing_cycle) }}" disabled>
                             </div>
 
-                            {{-- MySQL: amount --}}
                             <div class="col-md-4 mb-3">
                                 <label class="form-label">Amount (NGN)</label>
                                 <input type="text" class="form-control" value="₦{{ number_format($subscription->amount, 2) }}" disabled>
@@ -150,9 +145,6 @@
 
                             <div class="col-12"><hr class="my-3" style="border-top: 1px solid #eff2f7;"></div>
 
-                            {{-- EDITABLE FIELDS --}}
-                            
-                            {{-- MySQL: status --}}
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Account Status</label>
                                 <select name="status" class="form-select">
@@ -163,7 +155,6 @@
                                 </select>
                             </div>
 
-                            {{-- MySQL: payment_status --}}
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Payment Verification</label>
                                 <select name="payment_status" class="form-select">
@@ -172,13 +163,11 @@
                                 </select>
                             </div>
 
-                            {{-- MySQL: start_date --}}
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Subscription Start Date</label>
                                 <input type="date" name="start_date" class="form-control" value="{{ $subscription->start_date }}">
                             </div>
 
-                            {{-- MySQL: end_date --}}
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Subscription Expiry Date</label>
                                 <input type="date" name="end_date" class="form-control" value="{{ $subscription->end_date }}">
@@ -194,32 +183,28 @@
             </form>
         </div>
 
-        {{-- Sidebar Meta Information --}}
         <div class="col-xl-4 col-lg-4">
             <div class="card">
                 <div class="card-header">
                     <h5 class="card-title mb-0">Transaction Metadata</h5>
                 </div>
                 <div class="card-body">
-                    {{-- MySQL: payment_gateway --}}
+
                     <div class="mb-4">
                         <span class="info-label">Payment Gateway</span>
                         <h4 class="mb-0">{{ $subscription->payment_gateway ?? 'Manual Entry' }}</h4>
                     </div>
 
-                    {{-- MySQL: payment_reference --}}
                     <div class="mb-4">
                         <span class="info-label">Reference ID</span>
                         <p class="text-dark fw-bold">{{ $subscription->payment_reference ?? 'N/A' }}</p>
                     </div>
 
-                    {{-- MySQL: employee_size --}}
                     <div class="mb-4">
                         <span class="info-label">Employee Capacity</span>
                         <h4 class="mb-0">{{ $subscription->employee_size ?? '0' }} Staff Units</h4>
                     </div>
 
-                    {{-- MySQL: created_at --}}
                     <div class="pt-3 border-top">
                         <span class="info-label">Record Created</span>
                         <small class="text-muted">{{ \Carbon\Carbon::parse($subscription->created_at)->format('d M Y, h:i A') }}</small>

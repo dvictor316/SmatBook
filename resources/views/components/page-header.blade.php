@@ -735,7 +735,7 @@
                             Tickets</a>
                     </li>
                 @endif
-              
+
                 @if (Route::is(['custom-filed']))
                     <li>
                         <a class="btn btn-primary" href="javascript:void(0);" data-bs-toggle="modal"
@@ -862,7 +862,7 @@
 @endif
 
 @if (Route::is(['companies','subscription','plans-list','packages']))
-    
+
 <!-- Page Header -->
 <div class="page-header">
     <div class="content-page-header">
@@ -893,7 +893,6 @@
                                     src="{{URL::asset('/assets/img/icons/filter-icon.svg')}}" alt="filter"></span>Filter
                         </a>
                     </li>
-                  
 
                     <li>
                         <div class="dropdown dropdown-action" data-bs-toggle="tooltip"
@@ -922,7 +921,7 @@
                                     class="fe fe-printer"></i></span> Print
                         </a>
                     </li>
-                  
+
                     @if (Route::is(['companies']))
                     <li>
                         <a class="btn btn-primary" href="#" data-bs-toggle="modal" data-bs-target="#add_companies"><i class="fa fa-plus-circle me-2" aria-hidden="true"></i>Add Company</a>

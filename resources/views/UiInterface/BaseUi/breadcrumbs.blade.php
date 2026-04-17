@@ -4,7 +4,7 @@
 			<!-- Page Wrapper -->
             <div class="page-wrapper">
                 <div class="content container-fluid">
-				
+
 					<!-- Page Header -->
                     <div class="page-header">
 						<div class="content-page-header">
@@ -12,7 +12,7 @@
 						</div>	
 					</div>	
                     <!-- /Page Header -->
-											
+
 					<!-- Breadcrumbs -->
 					<div class="col-md-12">
 						<div class="card card-buttons">
@@ -127,7 +127,7 @@
 						</div>
 					</div>
 					<!-- /Breadcrumbs -->
-									
+
 				</div>			
 			</div>
 			<!-- /Page Wrapper -->

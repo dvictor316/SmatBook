@@ -4,7 +4,7 @@
 			<!-- Page Wrapper -->
             <div class="page-wrapper">
                 <div class="content container-fluid">
-				
+
 					<!-- Page Header -->
 					<div class="page-header">
 						<div class="content-page-header">
@@ -12,12 +12,12 @@
 						</div>	
 					</div>
 					<!-- /Page Header -->
-					
+
 					<div class="row">
-					
+
 						<!-- Drag Card -->					
 						<div class="col-md-12">	
-						
+
 							<div class="card">
 								<div class="card-header">
 									<h5 class="card-title">Copy from input</h5>
@@ -32,7 +32,7 @@
 									</div>
 								</div>
 							</div>
-							
+
 							<div class="card">
 								<div class="card-header">
 									<h5 class="card-title">Copy from Text Area</h5>
@@ -47,7 +47,7 @@
 									</div>
 								</div>
 							</div>
-							
+
 							<div class="card">
 								<div class="card-header">
 									<h5 class="card-title">Copy Text from Paragraph</h5>
@@ -60,7 +60,7 @@
 									</div>
 								</div>
 							</div>
-							
+
 							<div class="card">
 								<div class="card-header">
 									<h5 class="card-title">Copy Hidden Text (Advanced)</h5>
@@ -73,11 +73,11 @@
 									</div>
 								</div>
 							</div>
-							
+
 						</div>
 						<!-- /Drag Card -->
 					</div>
-				
+
 				</div>			
 			</div>
 			<!-- /Page Wrapper -->

@@ -17,7 +17,7 @@
                             <th class="table-profit-head" colspan="5">Income</th>
                         </tr>
                     </thead>
-                    
+
                     <tbody>
                         @php
                         $json = file_get_contents(public_path('../public/assets/json/profit.json'));
@@ -33,7 +33,7 @@
                         </tr>
                         @endforeach
                     </tbody>
-                    
+
                 </table>
             </td>
         </tr>
@@ -61,7 +61,6 @@
                     @endforeach
                     </tbody>
 
-                
                 </table>
             </td>
         </tr>

@@ -11,7 +11,7 @@
 			<!-- Page Wrapper -->
             <div class="page-wrapper">
                 <div class="content container-fluid">
-				
+
 					<!-- Page Header -->
 					<div class="page-header">
 						<div class="content-page-header">
@@ -19,10 +19,9 @@
 						</div>	
 					</div>
 					<!-- /Page Header -->
-					
-					
+
 					<div class="row">
-					
+
 						<!-- Bar Chart (Dynamic) -->
 						<div class="col-md-6">	
 							<div class="card">
@@ -48,10 +47,7 @@
 							</div>
 						</div>
 						<!-- /Chart -->
-						
-						
-						{{-- Placeholders for other charts --}}
-						
+
 						<div class="col-md-6">	
 							<div class="card">
 								<div class="card-header">
@@ -62,7 +58,7 @@
 								</div>
 							</div>
 						</div>
-						
+
 						<div class="col-md-6">	
 							<div class="card">
 								<div class="card-header">
@@ -73,7 +69,7 @@
 								</div>
 							</div>
 						</div>
-						
+
 						<div class="col-md-6">	
 							<div class="card">
 								<div class="card-header">
@@ -84,7 +80,7 @@
 								</div>
 							</div>
 						</div>
-						
+
 						<div class="col-md-6">	
 							<div class="card">
 								<div class="card-header">
@@ -95,7 +91,7 @@
 								</div>
 							</div>
 						</div>
-						
+
 						<div class="col-md-6">	
 							<div class="card">
 								<div class="card-header">
@@ -106,7 +102,7 @@
 								</div>
 							</div>
 						</div>
-						
+
 						<div class="col-md-6">	
 							<div class="card mb-0">
 								<div class="card-header">
@@ -117,24 +113,23 @@
 								</div>
 							</div>
 						</div>
-						
+
 					</div>
-				
+
 				</div>			
 			</div>
 			<!-- /Page Wrapper -->
 @endsection
 
 @push('scripts')
-{{-- Assuming Flot JS libraries (jquery.flot.js, jquery.flot.pie.js, jquery.flot.categories.js, etc.) 
-     are loaded in your main layout file. Flot requires many plugins. --}}
+
 <script>
 $(document).ready(function() {
 
     // --- 1. Dynamic Bar Chart (Monthly Company Creation) ---
     // Data is passed as [[1, count1], [2, count2], ...]
     var barData = @json($flotBarData);
-    
+
     // Define options
     var barOptions = {
         series: {
@@ -154,9 +149,8 @@ $(document).ready(function() {
         tooltip: true,
         tooltipOpts: { content: "Month %x.1: %y new companies" }
     };
-    
-    $.plot($("#flotBar1"), [barData], barOptions);
 
+    $.plot($("#flotBar1"), [barData], barOptions);
 
     // --- 2. Dynamic Donut Chart (Company Status Distribution) ---
     // Data is passed as [{ label: "Active", data: 10 }, ...]
@@ -182,7 +176,6 @@ $(document).ready(function() {
     };
 
     $.plot($("#flotPie2"), donutData, donutOptions);
-
 
     // The rest of your theme's Flot JS initialization scripts for other IDs go here...
 });

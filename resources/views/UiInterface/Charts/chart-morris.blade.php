@@ -5,7 +5,7 @@
     <!-- Page Wrapper -->
     <div class="page-wrapper">
         <div class="content container-fluid">
-        
+
             <!-- Page Header -->
             <div class="page-header">
                 <div class="content-page-header">
@@ -13,9 +13,9 @@
                 </div>	
             </div>
             <!-- /Page Header -->
-            
+
             <div class="row">
-            
+
                 <!-- Line Chart (Monthly Sales) -->
                 <div class="col-md-6">	
                     <div class="card">
@@ -23,13 +23,13 @@
                             <h5 class="card-title">Monthly Sales Line Chart</h5>
                         </div>
                         <div class="card-body">
-                            {{-- This div will be targeted by Morris JS --}}
+
                             <div id="morrisLineSales"></div>
                         </div>
                     </div>
                 </div>
                 <!-- /Line Chart -->
-                
+
                 <!-- Donut Chart (Company Status) -->
                 <div class="col-md-6">	
                     <div class="card mb-0">
@@ -37,14 +37,13 @@
                             <h5 class="card-title">Company Distribution Donut Chart</h5>
                         </div>
                         <div class="card-body">
-                            {{-- This div will be targeted by Morris JS --}}
+
                             <div id="morrisDonutStatus"></div>
                         </div>
                     </div>
                 </div>
                 <!-- /Donut Chart -->
-                
-                {{-- Example placeholders for other charts (without specific data mapping in this script) --}}
+
                 <div class="col-md-6">	
                     <div class="card">
                         <div class="card-header">
@@ -67,20 +66,19 @@
                 </div>
 
             </div>
-        
+
         </div>			
     </div>
     <!-- /Page Wrapper -->
 @endsection
 
-{{-- Pushing scripts to the footer of the main layout --}}
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // --- 1. Line Chart Data (Monthly Sales) ---
         // We use the data passed from the Laravel controller via Blade syntax
         const monthlySalesData = @json($monthlySales ?? []); // Use default empty array if variable isn't set
-        
+
         // Transform data into the format Morris expects: [{ y: 'Month Name', a: 100, b: 90 }]
         const formattedSalesData = monthlySalesData.map(item => {
             return {
@@ -118,7 +116,7 @@
                 resize: true
             });
         }
-        
+
         // --- 3. Placeholders for other charts (using dummy data as an example) ---
         if (typeof Morris !== 'undefined') {
              Morris.Bar({

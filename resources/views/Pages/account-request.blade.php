@@ -3,7 +3,7 @@
 @section('content')
 <div id="main-content-wrapper" class="transition-all" style="margin-left: 250px; min-height: 100vh; background-color: #f4f7f6;">
     <div class="container-fluid py-4 px-md-5">
-        
+
         <button id="sidebar-toggle" class="btn btn-white shadow-sm mb-4 border" onclick="toggleSidebar()">
             <i class="fas fa-bars text-primary"></i>
         </button>
@@ -42,7 +42,7 @@
                                     <h4 class="font-weight-bold text-dark mb-1">Support & Assistance</h4>
                                     <p class="text-muted">Need help? Connect with our team through the channels below.</p>
                                 </div>
-                                
+
                                 <div class="row g-3">
                                     <div class="col-md-6 mb-3">
                                         <a href="{{ url('/messages.chat') }}" class="btn btn-white border shadow-sm btn-lg btn-block py-3 text-left transition-hover">
@@ -91,7 +91,7 @@
     #main-content-wrapper {
         transition: all 0.3s ease-in-out;
     }
-    
+
     .sidebar-collapsed {
         margin-left: 0 !important;
     }
@@ -150,7 +150,7 @@
     const timer = setInterval(() => {
         secondsLeft--;
         if (countdownElement) countdownElement.innerText = secondsLeft;
-        
+
         // Update progress bar percentage
         if (progressBar) {
             let percentage = (secondsLeft / 30) * 100;

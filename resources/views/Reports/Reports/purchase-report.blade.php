@@ -46,7 +46,6 @@
                     : 'All Recorded Purchases',
             ])
 
-            {{-- Summary Card: Now calculates based on the paginated data or total --}}
             <div class="row">
                 <div class="col-xl-4 col-sm-6 col-12">
                     <div class="card shadow-sm border-0 mb-4 purchase-report-metric">
@@ -65,7 +64,6 @@
                 </div>
             </div>
 
-            {{-- Filter Section --}}
             <div class="card shadow-sm border-0 mb-4 no-print">
                 <div class="card-body">
                     <form action="{{ route('reports.purchase') }}" method="GET">
@@ -149,8 +147,7 @@
                                     </tbody>
                                 </table>
                             </div>
-                            
-                            {{-- Pagination Links --}}
+
                             <div class="d-flex justify-content-between align-items-center mt-3">
                                 <div>
                                     Showing {{ $purchases->firstItem() ?? 0 }} to {{ $purchases->lastItem() ?? 0 }} of {{ $purchases->total() }} entries
@@ -169,7 +166,7 @@
 @endsection
 
 @section('script')
-{{-- DataTables Buttons & Export Tools --}}
+
 <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.bootstrap5.min.css">
 <script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>

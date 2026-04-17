@@ -175,14 +175,12 @@
 <div class="page-wrapper">
     <div class="content container-fluid">
 
-        {{-- ── Tabs ── --}}
         <div class="prokip-tabs">
             <a href="#" class="prokip-tab active">Users</a>
             <a href="{{ route('roles.index') }}" class="prokip-tab">Roles</a>
             <a href="#" class="prokip-tab">Sales Commission Agent</a>
         </div>
 
-        {{-- ── Header ── --}}
         <div class="d-flex align-items-start justify-content-between mb-4 flex-wrap gap-3">
             <div>
                 <div class="users-page-title">Users &amp; Roles</div>
@@ -200,7 +198,6 @@
             <div class="alert alert-danger alert-dismissible fade show">{{ session('error') }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
         @endif
 
-        {{-- ── Table Card ── --}}
         <div class="card border-0 shadow-sm">
             <div class="card-body">
 
@@ -292,7 +289,6 @@
 
     </div>
 </div>
-
 
 @push('scripts')
 <script>

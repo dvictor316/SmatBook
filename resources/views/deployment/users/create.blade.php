@@ -364,7 +364,6 @@
 
 <div class="sb-shell" id="register-wrapper">
 
-    {{-- ── Flash messages ── --}}
     @if ($errors->any())
     <div class="alert alert-danger alert-dismissible fade show mb-4 rounded-3">
         <i class="fas fa-exclamation-triangle me-2"></i>
@@ -385,7 +384,6 @@
     </div>
     @endif
 
-    {{-- ── Header ── --}}
     <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
         <div>
             <nav aria-label="breadcrumb">
@@ -407,7 +405,6 @@
         </a>
     </div>
 
-    {{-- ── Step Wizard ── --}}
     <div class="wizard-track">
         <div class="wizard-step active" id="step1">
             <div class="wizard-bubble"><span>1</span></div>
@@ -423,18 +420,9 @@
         </div>
     </div>
 
-    {{-- ════════════════════════════════════════════
-         FORM — posts to deployment.customers.store
-         store() → creates User + Company + Subscription
-         → redirects to /saas/checkout/{id} (SaaS checkout)
-         → successful payment redirects to /saas/success/{id} and deploys workspace/subdomain
-         ════════════════════════════════════════════ --}}
     <form action="{{ route('deployment.customers.store') }}" method="POST" id="regForm" novalidate>
         @csrf
 
-        {{-- ════════════════
-             STEP 1: Company
-             ════════════════ --}}
         <div id="pane1">
             <div class="row justify-content-center">
                 <div class="col-lg-7">
@@ -527,9 +515,6 @@
             </div>
         </div>
 
-        {{-- ══════════════════
-             STEP 2: Plan
-             ══════════════════ --}}
         <div id="pane2" style="display:none">
             <div class="row justify-content-center">
                 <div class="col-lg-11">
@@ -542,13 +527,11 @@
                         </div>
                         <div class="p-4">
 
-                            {{-- Hidden plan inputs --}}
                             <input type="hidden" name="plan_id"       id="planId"    value="{{ old('plan_id') }}">
                             <input type="hidden" name="plan_name"     id="planName"  value="{{ old('plan_name') }}">
                             <input type="hidden" name="plan_price"    id="planPrice" value="{{ old('plan_price') }}">
                             <input type="hidden" name="billing_cycle" id="planCycle" value="{{ old('billing_cycle', 'monthly') }}">
 
-                            {{-- Billing Toggle --}}
                             <div class="text-center mb-4">
                                 <div class="billing-toggle">
                                     <button type="button" id="btnMonthly" class="active" onclick="setCycle('monthly')">Monthly</button>
@@ -558,7 +541,6 @@
                                 </div>
                             </div>
 
-                            {{-- MONTHLY --}}
                             <div id="wrapMonthly" class="plans-wrap active">
                                 <div class="row g-4">
                                     <div class="col-lg-4 col-md-6">
@@ -668,7 +650,6 @@
                                 </div>
                             </div>
 
-                            {{-- YEARLY --}}
                             <div id="wrapYearly" class="plans-wrap">
                                 <div class="row g-4">
                                     <div class="col-lg-4 col-md-6">
@@ -778,7 +759,6 @@
                                 </div>
                             </div>
 
-                            {{-- Commission preview --}}
                             <div class="commission-banner mt-4">
                                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                                     <div>
@@ -805,13 +785,9 @@
             </div>
         </div>
 
-        {{-- ════════════════════
-             STEP 3: Credentials
-             ════════════════════ --}}
         <div id="pane3" style="display:none">
             <div class="row justify-content-center g-4">
 
-                {{-- Left: credentials form --}}
                 <div class="col-lg-7">
                     <div class="dm-card">
                         <div class="dm-card-header">
@@ -902,7 +878,7 @@
                                 <button type="button" class="btn-prev" onclick="toStep(2)">
                                     <i class="fas fa-arrow-left me-2"></i>Previous
                                 </button>
-                                {{-- type="submit" — no JS preventDefault, no double-fire --}}
+
                                 <button type="submit" class="btn-submit" id="btnSubmit">
                                     <i class="fas fa-credit-card me-2"></i>Proceed to Payment
                                 </button>
@@ -911,7 +887,6 @@
                     </div>
                 </div>
 
-                {{-- Right: registration summary --}}
                 <div class="col-lg-4">
                     <div class="dm-card">
                         <div class="dm-card-header">

@@ -11,7 +11,7 @@
         .company-details { font-size: 13px; color: #6c757d; line-height: 1.6; }
         .table thead th { background-color: #fcfcfc; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; }
         .receipt-header { border-bottom: 2px solid #f8f9fa; padding-bottom: 20px; }
-        
+
         @media print {
             .no-print { display: none !important; }
             body { background-color: #fff !important; padding: 0; }
@@ -48,7 +48,7 @@
         <div class="row justify-content-center">
             <div class="col-lg-9">
                 <div class="receipt-card p-5">
-                    
+
                     <div class="row receipt-header mb-5 align-items-top">
                         <div class="col-sm-6">
                             <div class="receipt-logo mb-2">{{ $receiptBrandName }}</div>

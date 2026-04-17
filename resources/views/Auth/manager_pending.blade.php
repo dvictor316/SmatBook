@@ -1,6 +1,5 @@
 @extends('layout.mainlayout')
 
-{{-- Use these variables to tell your mainlayout to hide the bars --}}
 @php
     $hideSidebar = true;
     $hideHeader = true;
@@ -27,7 +26,7 @@
     }
     .badge-success-border { border: 1px solid #28a745; color: #28a745; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; }
     .bg-soft-info { background-color: #e7f3ff; color: #007bff; }
-    
+
     @media print {
         .btn, .mt-5, .text-center small { display: none !important; }
         .card { border: 1px solid #eee !important; box-shadow: none !important; }
@@ -79,7 +78,7 @@
                         </div>
 
                         <div class="mt-4 d-flex justify-content-center gap-2">
-                            {{-- [2025-12-30] Mandatory Print Script Trigger --}}
+
                             <button onclick="printPage()" class="btn btn-outline-secondary btn-rounded">
                                 <i class="fas fa-print"></i> Print Status
                             </button>
@@ -95,7 +94,7 @@
 
                         <div class="mt-5 text-center pt-3 border-top">
                             <span class="text-muted small">Need to speak with us?</span><br>
-                            {{-- [2026-01-17] Support Links - Corrected with Subdomain parameter --}}
+
                             <a href="{{ $supportChatUrl }}" class="btn btn-sm btn-link font-weight-bold">Live Chat</a>
                             <span class="text-muted">|</span>
                             <a href="{{ $supportEmailUrl }}" class="btn btn-sm btn-link font-weight-bold">Email Support</a>

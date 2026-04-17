@@ -297,7 +297,6 @@
 
 <div class="payroll-shell">
 
-    {{-- Header --}}
     <div class="payroll-header mb-4">
         <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
             <div>
@@ -324,7 +323,6 @@
         </div>
     @endif
 
-    {{-- KPI Row --}}
     <div class="row g-3 mb-4">
         <div class="col-6 col-lg-3">
             <div class="kpi-card">
@@ -360,10 +358,8 @@
         </div>
     </div>
 
-    {{-- Main Content Row --}}
     <div class="row g-4 mb-4">
 
-        {{-- Payroll Cycle Info --}}
         <div class="col-lg-4">
             <div class="cycle-card h-100">
                 <h6>📅 Current Pay Cycle</h6>
@@ -407,7 +403,6 @@
             </div>
         </div>
 
-        {{-- Salary Distribution Chart --}}
         <div class="col-lg-8">
             <div class="payroll-table-wrap h-100">
                 <div class="payroll-table-header">
@@ -435,7 +430,6 @@
 
                     <hr style="border-color:#e8ecf4; margin:20px 0;">
 
-                    {{-- Summary Row --}}
                     <div class="row g-3 text-center">
                         <div class="col-4">
                             <div style="font-size:0.68rem;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;">Basic Salary</div>
@@ -455,7 +449,6 @@
         </div>
     </div>
 
-    {{-- Staff Payroll Table --}}
     <div class="payroll-table-wrap mb-4">
         <div class="payroll-table-header">
             <h6><i class="fas fa-users me-2" style="color:var(--gold);"></i>Staff Payroll — {{ now()->format('F Y') }}</h6>
@@ -548,7 +541,6 @@
         @endif
     </div>
 
-    {{-- Recent Payroll Runs --}}
     <div class="row g-4">
         <div class="col-lg-6">
             <div class="payroll-table-wrap">

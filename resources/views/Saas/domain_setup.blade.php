@@ -220,7 +220,7 @@
 </style>
 
 <div class="smat-viewport">
-    
+
     <!-- Minimal Bubbles -->
     <div class="bubble-bg">
         <div class="bubble" style="width: 500px; height: 500px; top: -150px; left: -100px;"></div>
@@ -229,7 +229,7 @@
 
     <!-- The Card -->
     <div class="smat-card">
-        
+
         <!-- Summary Panel -->
         <div class="smat-aside">
             <div>
@@ -250,7 +250,7 @@
             <div>
                 <div class="info-row"><span class="info-label">Selected Tier</span><span class="info-value">{{ strtoupper($activeTier) }}</span></div>
                 <div class="info-row"><span class="info-label">Billing Cycle</span><span class="info-value">{{ strtoupper($cycle) }}</span></div>
-                
+
                 <div class="amount-display text-center">
                     <span class="info-label" style="display: block; margin-bottom: 5px;">Payable Amount</span>
                     <div class="amount-value">₦{{ number_format($displayPrice, 2) }}</div>

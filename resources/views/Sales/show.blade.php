@@ -42,7 +42,7 @@
         align-items: center;
         border-bottom: 1px solid #dfe8f7;
     }
-    
+
     .inv-header h5, 
     .inv-header .inv-date {
         color: #0f172a !important;
@@ -58,7 +58,7 @@
         box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
         background: #fff;
     }
-    
+
     .stat-box { 
         padding: 15px; 
         border: 1px solid #e6edf7;
@@ -92,8 +92,7 @@
 
 <div class="pos-content-area">
     <div class="invoice-fit-container">
-        
-        {{-- Show View Header --}}
+
         <div class="report-header no-print">
             <div>
                 <h3 class="fw-bold mb-0" style="color: #0f172a;">Sale Details</h3>
@@ -137,7 +136,7 @@
         </div>
 
         <div class="card show-card">
-            {{-- Slim Header with White Font --}}
+
             <div class="inv-header">
                 <h5>INVOICE #{{ $sale->invoice_no }}</h5>
                 <span class="inv-date">Date: {{ $sale->created_at->format('M d, Y') }}</span>

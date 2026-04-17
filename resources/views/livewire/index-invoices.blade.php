@@ -1,12 +1,8 @@
-{{-- resources/views/livewire/index-invoices.blade.php (Fully Rewritten) --}}
 
-{{-- WRAP EVERYTHING IN A SINGLE ROOT DIV FOR LIVEWIRE COMPATIBILITY --}}
 <div> 
 
-    {{-- Row 1: Table and Doughnut Chart side-by-side --}}
     <div class="row">
-        
-        {{-- Left Side: Recent Invoices Table (col-md-6) --}}
+
         <div class="col-md-6 col-sm-6">
             <div class="card">
                 <div class="card-header">
@@ -21,8 +17,8 @@
                         </div>
                     </div>
                 </div>
-                <div class="card-body" style="height: 400px; overflow-y: auto;"> {{-- Added fixed height for balance --}}
-                    {{-- Progress bars and stats (Dynamic) --}}
+                <div class="card-body" style="height: 400px; overflow-y: auto;"> 
+
                     <div class="progress progress-md rounded-pill mb-3">
                         <div class="progress-bar bg-success" role="progressbar" style="width: {{ $percentages['paid'] ?? 0 }}%" aria-valuenow="{{ $percentages['paid'] ?? 0 }}" aria-valuemin="0" aria-valuemax="100"></div>
                         <div class="progress-bar bg-warning" role="progressbar" style="width: {{ $percentages['unpaid'] ?? 0 }}%" aria-valuenow="{{ $percentages['unpaid'] ?? 0 }}" aria-valuemin="0" aria-valuemax="100"></div>
@@ -41,7 +37,6 @@
                         </div>
                     </div>
 
-                    {{-- Invoice table --}}
                     <div class="table-responsive">
                         <table class="table table-striped table-hover">
                             <thead class="thead-light"><tr><th>Customer</th><th>Amount</th><th>Due Date</th><th>Status</th><th class="text-end">Action</th></tr></thead>
@@ -57,28 +52,25 @@
                                 @endforeach 
                             </tbody>
                         </table>
-                    </div> {{-- table-responsive --}}
-                </div> {{-- card-body --}}
-            </div> {{-- card --}}
-        </div> {{-- col-md-6 --}}
+                    </div> 
+                </div> 
+            </div> 
+        </div> 
 
-
-        {{-- Right Side: Doughnut Chart (col-md-6, fixed height for balance) --}}
         <div class="col-md-6 col-sm-6">
             <div class="card">
                 <div class="card-header">
                     <h5 class="card-title">Invoice Status Overview</h5>
                 </div>
                 <div class="card-body">
-                    <canvas id="invoiceDoughnutChart" style="height: 400px;"></canvas> {{-- Height increased to match table card --}}
+                    <canvas id="invoiceDoughnutChart" style="height: 400px;"></canvas> 
                 </div>
             </div>
         </div>
-        
-    </div> {{-- End of the main row (Row 1) --}}
 
-</div> {{-- END OF SINGLE PARENT DIV --}}
+    </div> 
 
+</div> 
 
 @push('scripts')
 <script>

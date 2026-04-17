@@ -1,7 +1,7 @@
 @php
     $user = Auth::user();
     $notifications = [];
-    
+
     // 1. Optimized Notification Logic
     if ($user && Schema::hasTable('notifications')) {
         $notifications = DB::table('notifications')
@@ -11,7 +11,7 @@
             ->limit(5)
             ->get();
     }
-    
+
     // 2. Profile Image & Avatar Fallback Logic
     $defaultAvatar = asset('assets/img/profiles/avatar-07.jpg');
     $profileImagePath = $user?->avatar_url ?: $defaultAvatar;
@@ -389,7 +389,6 @@
 
 <div class="header d-print-none">
 
-    {{-- 1. Logo Section (Matches Sidebar Width) --}}
     <div class="header-left">
         <a href="{{ url('/') }}" class="header-logo">
             <img src="{{ asset('assets/img/logos.png') }}" alt="SmartProbook Logo">
@@ -397,7 +396,6 @@
         <span class="spb-wordmark">SmartPro<span class="book">book</span></span>
     </div>
 
-    {{-- 2. Toggle Button --}}
     <a href="javascript:void(0);" id="toggle_btn" class="header-toggle">
         <span class="toggle-bars">
             <span class="bar-icon"></span>
@@ -406,10 +404,8 @@
         </span>
     </a>
 
-    {{-- 3. Spacer --}}
     <div class="header-spacer"></div>
 
-    {{-- 4. Search Bar --}}
     <div class="header-search-wrapper">
         <div class="header-search">
             <input type="text" id="globalSearch" placeholder="Search..." autocomplete="off">
@@ -418,15 +414,12 @@
         </div>
     </div>
 
-    {{-- 5. Right Actions --}}
     <div class="header-actions">
-        
-        {{-- Mobile Search Toggle --}}
+
         <button class="mobile-search-btn" id="mobileSearchToggle">
             <i class="fas fa-search"></i>
         </button>
 
-        {{-- Country Selector --}}
         <div class="dropdown">
             <a href="#" class="country-selector" data-bs-toggle="dropdown">
                 <img src="{{ asset('assets/img/flags/ng.png') }}" alt="Nigeria" width="20">
@@ -447,7 +440,6 @@
             </div>
         </div>
 
-        {{-- Notifications --}}
         <div class="dropdown">
             <a href="#" class="notification-bell" data-bs-toggle="dropdown">
                 <i class="far fa-bell"></i>
@@ -486,7 +478,6 @@
             </div>
         </div>
 
-        {{-- User Profile --}}
         @auth
         <div class="dropdown">
             <a href="#" class="user-profile" data-bs-toggle="dropdown">
@@ -514,7 +505,6 @@
     </div>
 </div>
 
-{{-- Mobile Search Overlay --}}
 <div class="mobile-search-overlay" id="mobileSearchOverlay">
     <div class="header-search">
         <input type="text" id="mobileGlobalSearch" placeholder="Search..." autocomplete="off">
@@ -523,12 +513,10 @@
     </div>
 </div>
 
-{{-- Logout Form --}}
 <form id="logout-form-header" action="{{ route('emergency.logout') }}" method="POST" class="d-none">
     @csrf
 </form>
 
-{{-- JavaScript --}}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // ============================================================
@@ -540,11 +528,11 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             // Toggle the class on the body that CSS responds to
             document.body.classList.toggle('sidebar-collapsed');
-            
+
             // Persist state in LocalStorage
             const isCollapsed = document.body.classList.contains('sidebar-collapsed');
             localStorage.setItem('sidebarCollapsed', isCollapsed);
-            
+
             // Dispatch resize event to fix charts/tables
             window.dispatchEvent(new Event('resize'));
         });
@@ -573,11 +561,11 @@ document.addEventListener('DOMContentLoaded', function() {
             container.classList.remove('show');
             return;
         }
-        
+
         // Simple client-side filter
         const lowerQuery = query.toLowerCase();
         const results = searchableData.pages.filter(item => item.title.toLowerCase().includes(lowerQuery));
-        
+
         let html = '';
         if (results.length > 0) {
             results.forEach(item => {
@@ -590,7 +578,7 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             html = '<div class="search-no-results">No results found</div>';
         }
-        
+
         container.innerHTML = html;
         container.classList.add('show');
     }
@@ -600,10 +588,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const input = document.getElementById(id);
         const resultsId = id === 'globalSearch' ? 'searchResults' : 'mobileSearchResults';
         const results = document.getElementById(resultsId);
-        
+
         if (input && results) {
             input.addEventListener('input', (e) => performSearch(e.target.value, results));
-            
+
             // Hide on outside click
             document.addEventListener('click', (e) => {
                 if (!input.contains(e.target) && !results.contains(e.target)) {

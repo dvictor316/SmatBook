@@ -48,7 +48,7 @@
         <h6 class="mb-0 fw-bold" style="color: var(--deep-sapphire);">Inventory Depletion Alerts</h6>
         <span class="badge rounded-pill bg-danger" style="font-size: 0.6rem;">CRITICAL</span>
     </div>
-    
+
     <div class="stock-list">
         @forelse($lowStockProducts as $product)
             @php

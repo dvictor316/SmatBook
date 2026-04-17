@@ -4,7 +4,7 @@
 			<!-- Page Wrapper -->
             <div class="page-wrapper">
                 <div class="content container-fluid">
-				
+
 					<!-- Page Header -->
 					<div class="page-header">
 						<div class="content-page-header">
@@ -12,10 +12,10 @@
 						</div>	
 					</div>
 					<!-- /Page Header -->
-					
+
 					<div class="row">
 						<div class="col-md-6">
-						
+
 							<!-- Basic -->
 							<div class="card">
 								<div class="card-header">
@@ -35,7 +35,7 @@
 								</div>
 							</div>
 							<!-- /Basic -->
-							
+
 							<!-- Nested -->
 							<div class="card">
 								<div class="card-header">
@@ -67,7 +67,7 @@
 								</div>
 							</div>
 							<!-- /Nested -->
-							
+
 							<!-- Placeholder -->							
 							<div class="card">
 								<div class="card-header">
@@ -90,7 +90,7 @@
 								</div>
 							</div>
 							<!-- /Placeholder -->
-							
+
 							<!-- Tagging with multi-value -->
 							<div class="card">
 								<div class="card-header">
@@ -110,9 +110,9 @@
 								</div>
 							</div>
 							<!-- /Tagging with multi-value -->
-							
+
 						</div>
-					
+
 						<div class="col-md-6">
 							<div class="card">
 								<div class="card-header">
@@ -131,7 +131,7 @@
 									</div>
 								</div>
 							</div>
-							
+
 							<div class="card">
 								<div class="card-header">
 									<h5 class="card-title">Disabling options</h5>
@@ -149,7 +149,7 @@
 									</div>
 								</div>
 							</div>
-							
+
 							<div class="card">
 								<div class="card-header">
 									<h5 class="card-title">Limiting the number of Tagging</h5>
@@ -167,10 +167,10 @@
 									</div>
 								</div>
 							</div>
-							
+
 						</div>
 					</div>
-				
+
 				</div>			
 			</div>
 			<!-- /Page Wrapper -->

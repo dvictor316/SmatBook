@@ -11,7 +11,7 @@
 						</div>	
 					</div>
 					<!-- /Page Header -->	
-                        
+
                     <div class="row">
                         <div class="col-xl-6">
                             <div class="card">
@@ -27,7 +27,7 @@
                                             Button with data-bs-target
                                         </button>
                                     </div> <!-- end button-list-->
-                            
+
                                     <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasExample" aria-labelledby="offcanvasExampleLabel">
                                         <div class="offcanvas-header">
                                             <h5 class="offcanvas-title" id="offcanvasExampleLabel">Offcanvas</h5>
@@ -66,7 +66,7 @@
                                         <button class="btn btn-primary mt-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasWithBackdrop" aria-controls="offcanvasWithBackdrop">Enable backdrop (default)</button>
                                         <button class="btn btn-primary mt-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasWithBothOptions" aria-controls="offcanvasWithBothOptions">Enable both scrolling & backdrop</button>
                                     </div> <!-- end button-list-->
-                                    
+
                                     <div class="offcanvas offcanvas-start" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" id="offcanvasScrolling" aria-labelledby="offcanvasScrollingLabel">
                                         <div class="offcanvas-header">
                                             <h5 class="offcanvas-title" id="offcanvasScrollingLabel">Colored with scrolling</h5>
@@ -91,7 +91,7 @@
                                             </ul>
                                         </div> <!-- end offcanvas-body-->
                                     </div> <!-- end offcanvas-->
-                                    
+
                                     <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasWithBackdrop" aria-labelledby="offcanvasWithBackdropLabel">
                                         <div class="offcanvas-header">
                                             <h5 class="offcanvas-title" id="offcanvasWithBackdropLabel">Offcanvas with backdrop</h5>
@@ -165,7 +165,7 @@
                                             <button class="btn btn-primary mt-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasBottom" aria-controls="offcanvasBottom">Toggle bottom offcanvas</button>
                                             <button class="btn btn-primary mt-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasLeft" aria-controls="offcanvasLeft">Toggle Left offcanvas</button>
                                         </div> <!-- end button-list-->
-                                        
+
                                         <div class="offcanvas offcanvas-top" tabindex="-1" id="offcanvasTop" aria-labelledby="offcanvasTopLabel">
                                             <div class="offcanvas-header">
                                                 <h5 id="offcanvasTopLabel">Offcanvas Top</h5>
@@ -250,7 +250,7 @@
                             </div> <!-- end card-->
                         </div> <!-- end col-->
                     </div> 
-                
+
                 </div>          
             </div>
             <!-- /Page Wrapper -->

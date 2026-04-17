@@ -25,12 +25,11 @@
                         <h4 class="card-title mb-0">Update Company Profiles & Infrastructure</h4>
                     </div>
                     <div class="card-body">
-                        {{-- Explicitly using the update URL to match your controller fix --}}
+
                         <form action="{{ url('/superadmin/companies/' . $company->id) }}" method="POST" enctype="multipart/form-data">
                             @csrf
                             @method('PUT') 
 
-                            {{-- Display Validation Errors --}}
                             @if ($errors->any())
                                 <div class="alert alert-danger alert-dismissible fade show">
                                     <ul class="mb-0">
@@ -41,7 +40,7 @@
                                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                                 </div>
                             @endif
-                            
+
                             <div class="row">
                                 <div class="col-md-6">
                                     <h5 class="text-primary mb-3"><i class="fas fa-id-card me-2"></i>Identity & Domain</h5>

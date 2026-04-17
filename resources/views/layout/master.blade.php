@@ -63,7 +63,7 @@
 
     <link rel="stylesheet" href="{{ asset('assets/css/style.css') }}">
     @include('layout.partials.design-system')
-    
+
     <style>
 
         .subscription-banner {
@@ -85,8 +85,7 @@
 <body class="{{ ($domainRecord && $daysRemaining <= 7 && $daysRemaining >= 0) ? 'has-banner' : '' }}">
 
     <div class="main-wrapper">
-        
-        {{-- 1. SUBSCRIPTION EXPIRY BANNER --}}
+
         @if($domainRecord && $daysRemaining <= 7 && $daysRemaining >= 0)
             <div class="subscription-banner shadow-sm d-flex align-items-center justify-content-center">
                 <i class="fas fa-clock me-2"></i>
@@ -170,7 +169,7 @@
         <div class="page-wrapper">
             <div class="content container-fluid">
                 @yield('content')
-                
+
             </div>
         </div>
 
@@ -196,7 +195,7 @@
     <script src="{{ asset('assets/js/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ asset('assets/plugins/feather/feather.min.js') }}"></script>
     <script src="{{ asset('assets/plugins/slimscroll/jquery.slimscroll.min.js') }}"></script>
-    
+
     @if(!Route::is('index-two'))
         <script src="{{ asset('assets/js/layout.js') }}"></script>
     @endif

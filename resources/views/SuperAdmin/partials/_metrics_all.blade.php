@@ -29,7 +29,7 @@
         overflow: hidden;
         transition: all 0.3s ease;
     }
-    
+
     .metric-glass:hover {
         transform: translateY(-5px);
         box-shadow: 0 15px 35px rgba(0, 35, 71, 0.1);
@@ -149,7 +149,7 @@
 </style>
 
 <div class="row g-4">
-    {{-- 1. Today's Revenue --}}
+
     <div class="col-md-3">
         <div class="card metric-glass metric-theme-primary p-3">
             <div class="d-flex align-items-center gap-3">
@@ -164,7 +164,6 @@
         </div>
     </div>
 
-    {{-- 2. Total Profit (Pro/Enterprise Only) --}}
     <div class="col-md-3">
         <div class="card metric-glass metric-theme-success p-3">
             @if($isBasic)
@@ -184,7 +183,6 @@
         </div>
     </div>
 
-    {{-- 3. Total Expenses (Pro/Enterprise Only) --}}
     <div class="col-md-3">
         <div class="card metric-glass metric-theme-danger p-3">
             @if($isBasic)
@@ -204,7 +202,6 @@
         </div>
     </div>
 
-    {{-- 4. Inventory Value --}}
     <div class="col-md-3">
         <div class="card metric-glass metric-theme-dark p-3">
             <div class="d-flex align-items-center gap-3">

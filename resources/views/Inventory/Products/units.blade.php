@@ -39,7 +39,7 @@
 
                                         @foreach ($units as $unit)
                                             <tr>
-                                                {{-- Fixed the keys to lowercase to match the array above --}}
+
                                                 <td>{{ $unit['id'] }}</td>
                                                 <td>{{ $unit['name'] }}</td>
                                                 <td>{{ $unit['short'] }}</td>

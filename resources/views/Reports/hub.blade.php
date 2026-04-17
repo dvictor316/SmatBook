@@ -96,7 +96,6 @@ Note: The tool simplified the command to `cat > "/mnt/c/Users/victor/Desktop/sma
 <div class="page-wrapper rh-page">
 <div class="content container-fluid">
 
-    {{-- Page heading --}}
     <div class="d-flex flex-wrap justify-content-between align-items-center mb-0" style="gap:10px;padding-bottom:14px;">
         <div>
             <h4 class="fw-bold mb-1" style="color:#0f172a;font-size:20px;">Reports</h4>
@@ -106,15 +105,12 @@ Note: The tool simplified the command to `cat > "/mnt/c/Users/victor/Desktop/sma
 
     <div style="border:1px solid #dee2e9;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.05);overflow:hidden;">
 
-        {{-- Tab bar --}}
-        {{-- QB-style: 3 top-level tabs matching QuickBooks exactly --}}
         <div class="rh-tab-bar">
             <button class="rh-tab" data-tab="standard">Standard reports <span class="rh-cnt" id="cnt-standard">0</span></button>
             <button class="rh-tab" data-tab="management">Management reports <span class="rh-cnt" id="cnt-management">0</span></button>
             <button class="rh-tab" data-tab="custom">Custom reports <span class="rh-cnt" id="cnt-custom">0</span></button>
         </div>
 
-        {{-- Toolbar: search + favourites toggle --}}
         <div class="rh-toolbar">
             <div class="rh-search-wrap">
                 <i class="fas fa-search rh-search-icon"></i>
@@ -125,10 +121,8 @@ Note: The tool simplified the command to `cat > "/mnt/c/Users/victor/Desktop/sma
             </button>
         </div>
 
-        {{-- Report list body --}}
         <div class="rh-body">
 
-            {{-- ★ FAVOURITES (dynamic — shown when any starred) --}}
             <div class="rh-fav-section rh-section" id="favSection" data-section="favs">
                 <div class="rh-sec-head" onclick="toggleSection(this)">
                     <span class="rh-sec-icon pal-amber"><i class="fas fa-star"></i></span>
@@ -137,11 +131,10 @@ Note: The tool simplified the command to `cat > "/mnt/c/Users/victor/Desktop/sma
                     <i class="fas fa-chevron-down rh-sec-chevron"></i>
                 </div>
                 <div class="rh-col-grid" id="favGrid">
-                    {{-- populated by JS --}}
+
                 </div>
             </div>
 
-            {{-- ══ 1. BUSINESS OVERVIEW ════════════════════════════════════ --}}
             <div class="rh-section" data-section="overview">
                 <div class="rh-sec-head" onclick="toggleSection(this)">
                     <span class="rh-sec-icon pal-blue"><i class="fas fa-tachometer-alt"></i></span>
@@ -218,7 +211,6 @@ Note: The tool simplified the command to `cat > "/mnt/c/Users/victor/Desktop/sma
                 </div>
             </div>
 
-            {{-- ══ 2. WHO OWES YOU ════════════════════════════════════════ --}}
             <div class="rh-section" data-section="owes">
                 <div class="rh-sec-head" onclick="toggleSection(this)">
                     <span class="rh-sec-icon pal-amber"><i class="fas fa-user-clock"></i></span>
@@ -267,7 +259,6 @@ Note: The tool simplified the command to `cat > "/mnt/c/Users/victor/Desktop/sma
                 </div>
             </div>
 
-            {{-- ══ 3. SALES & PURCHASES ══════════════════════════════════ --}}
             <div class="rh-section" data-section="sales">
                 <div class="rh-sec-head" onclick="toggleSection(this)">
                     <span class="rh-sec-icon pal-teal"><i class="fas fa-shopping-bag"></i></span>
@@ -362,7 +353,6 @@ Note: The tool simplified the command to `cat > "/mnt/c/Users/victor/Desktop/sma
                 </div>
             </div>
 
-            {{-- ══ 4. INVENTORY ══════════════════════════════════════════ --}}
             <div class="rh-section" data-section="inventory">
                 <div class="rh-sec-head" onclick="toggleSection(this)">
                     <span class="rh-sec-icon pal-green"><i class="fas fa-boxes"></i></span>
@@ -405,7 +395,6 @@ Note: The tool simplified the command to `cat > "/mnt/c/Users/victor/Desktop/sma
                 </div>
             </div>
 
-            {{-- ══ 5. FINANCIAL STATEMENTS ════════════════════════════════ --}}
             <div class="rh-section" data-section="financial">
                 <div class="rh-sec-head" onclick="toggleSection(this)">
                     <span class="rh-sec-icon pal-purple"><i class="fas fa-university"></i></span>
@@ -470,7 +459,6 @@ Note: The tool simplified the command to `cat > "/mnt/c/Users/victor/Desktop/sma
                 </div>
             </div>
 
-            {{-- ══ 6. CUSTOM REPORTS ════════════════════════════════════ --}}
             <div class="rh-section" data-section="custom">
                 <div class="rh-sec-head" onclick="toggleSection(this)">
                     <span class="rh-sec-icon pal-indigo"><i class="fas fa-magic"></i></span>
@@ -487,16 +475,15 @@ Note: The tool simplified the command to `cat > "/mnt/c/Users/victor/Desktop/sma
                 </div>
             </div>
 
-            {{-- Empty state --}}
             <div id="rh-empty" class="rh-empty">
                 <i class="fas fa-search fa-2x mb-3 d-block" style="color:#cbd5e1;"></i>
                 No reports match your search.
             </div>
 
-        </div>{{-- /.rh-body --}}
+        </div>
     </div>
 
-</div>{{-- /.content --}}
+</div>
 </div>
 
 <script>

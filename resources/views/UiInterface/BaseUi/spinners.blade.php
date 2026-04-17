@@ -4,7 +4,7 @@
 			<!-- Page Wrapper -->
             <div class="page-wrapper">
                 <div class="content container-fluid">
-				
+
 					<!-- Page Header -->
 					<div class="page-header">
 						<div class="content-page-header">
@@ -12,7 +12,7 @@
 						</div>	
 					</div>
 					<!-- /Page Header -->	
-						
+
                     <div class="row">
                         <div class="col-lg-6">
                             <div class="card">
@@ -130,7 +130,7 @@
                                             <div class="spinner-border avatar-md text-primary m-2" role="status"></div>
                                             <div class="spinner-grow avatar-md text-secondary m-2" role="status"></div>
                                         </div><!-- end col -->
-                                        
+
                                         <div class="col-lg-6">
                                             <div class="spinner-border avatar-sm text-primary m-2" role="status"></div>
                                             <div class="spinner-grow avatar-sm text-secondary m-2" role="status"></div>
@@ -186,7 +186,7 @@
                         <!-- end col -->
                     </div> 
                     <!-- end row -->		
-				
+
 				</div>			
 			</div>
 			<!-- /Page Wrapper -->

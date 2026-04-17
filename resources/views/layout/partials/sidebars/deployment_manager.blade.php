@@ -1,18 +1,12 @@
-{{--
-    ┌─────────────────────────────────────────────────────────────────┐
-    │     DEPLOYMENT MANAGER SIDEBAR WITH MOBILE HAMBURGER            │
-    │     Professional, Responsive, Mobile-Ready                       │
-    └─────────────────────────────────────────────────────────────────┘
---}}
 
 @php
     $currentRoute = Route::currentRouteName();
     $manager = auth()->user();
-    
+
     $deploymentStats = DB::table('deployment_managers')
         ->where('user_id', $manager->id)
         ->first();
-    
+
     $managedCompanyIds = DB::table('deployment_companies')
         ->where('manager_id', $manager->id)
         ->pluck('company_id')
@@ -29,9 +23,9 @@
     $deployedCompanies = $companyIds->count();
     $deploymentLimit = $deploymentStats->deployment_limit ?? 10;
     $commissionRate = $deploymentStats->commission_rate ?? 35;
-    
+
     $totalUsers = \App\Models\User::whereIn('company_id', $companyIds->all())->count();
-    
+
     $pendingCustomers = \App\Models\Company::whereIn('id', $companyIds->all())
         ->where('status', 'pending')
         ->count();
@@ -590,7 +584,7 @@
 
 <!-- DEPLOYMENT SIDEBAR -->
 <aside class="deployment-sidebar" id="deploymentSidebar">
-    
+
     <!-- BRAND -->
     <div class="dm-brand">
         <a href="{{ route('deployment.dashboard') }}" class="dm-brand-logo">
@@ -632,7 +626,7 @@
     <!-- NAVIGATION -->
     <nav class="dm-nav">
         <ul class="dm-nav-menu">
-            
+
             <!-- Dashboard -->
             <li class="dm-menu-item">
                 <a href="{{ route('deployment.dashboard') }}" class="dm-menu-link {{ request()->routeIs('deployment.dashboard') ? 'active' : '' }}">
@@ -868,14 +862,14 @@
     function toggleSubmenu(event, element) {
         event.preventDefault();
         const menuItem = element.closest('.dm-menu-item');
-        
+
         // Close other submenus
         document.querySelectorAll('.dm-menu-item.has-submenu').forEach(item => {
             if (item !== menuItem) {
                 item.classList.remove('open');
             }
         });
-        
+
         menuItem.classList.toggle('open');
     }
 
@@ -884,7 +878,7 @@
         const sidebar = document.getElementById('deploymentSidebar');
         const hamburger = document.getElementById('dmHamburger');
         const overlay = document.getElementById('dmOverlay');
-        
+
         sidebar.classList.toggle('mobile-open');
         hamburger.classList.toggle('active');
         overlay.classList.toggle('active');
@@ -895,7 +889,7 @@
         const sidebar = document.getElementById('deploymentSidebar');
         const hamburger = document.getElementById('dmHamburger');
         const overlay = document.getElementById('dmOverlay');
-        
+
         sidebar.classList.remove('mobile-open');
         hamburger.classList.remove('active');
         overlay.classList.remove('active');

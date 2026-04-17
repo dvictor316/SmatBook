@@ -62,7 +62,7 @@
         z-index: 1;
         height: 100%;
     }
-    
+
     .glass-card-pro:hover { 
         transform: translateY(-5px); 
     }
@@ -270,7 +270,6 @@
         $branchLabel = $activeBranch['name'] ?? 'Workspace Default';
     @endphp
 
-    {{-- Header Section --}}
     <div class="d-flex justify-content-between align-items-center mb-5">
         <div class="pro-header">
             <div class="d-flex align-items-center gap-3 mb-1">
@@ -294,7 +293,6 @@
         </div>
     </div>
 
-    {{-- 1. Expanded Metrics (Pro Tier includes Expense/Profit Visibility) --}}
     <div class="row g-4 mb-5">
         <div class="col-md-3">
             <div class="glass-card-pro metric-indigo p-4">
@@ -338,7 +336,6 @@
         </div>
     </div>
 
-    {{-- 2. Advanced Sales Chart --}}
     <div class="row mb-5">
         <div class="col-12">
             <div class="glass-card-pro p-4">
@@ -405,7 +402,6 @@
         </div>
     </div>
 
-    {{-- Live Metrics Strip --}}
     <div class="row g-3 mb-4">
         @foreach([
             ['label' => 'Profit Margin', 'value' => number_format($metrics['profitMargin'] ?? 0, 1) . '%'],
@@ -469,7 +465,7 @@
     </div>
 
     <div class="row g-4">
-        {{-- 3. Invoices --}}
+
         <div class="col-xl-7">
             <div class="glass-card-pro p-4">
                 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -481,8 +477,7 @@
                 </div>
             </div>
         </div>
-        
-        {{-- 4. Enterprise Teaser --}}
+
         <div class="col-xl-5">
             <div class="teaser-lock h-100 p-5 d-flex flex-column align-items-center justify-content-center text-center">
                 <div class="mb-3">
@@ -564,7 +559,6 @@
     </div>
 </div>
 
-{{-- Global Print Script - 2025-12-30 Policy --}}
 <script> 
     function printReport() { 
         window.print(); 

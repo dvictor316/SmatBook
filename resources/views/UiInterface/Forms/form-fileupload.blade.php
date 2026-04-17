@@ -4,7 +4,7 @@
 			<!-- Page Wrapper -->
             <div class="page-wrapper">
                 <div class="content container-fluid">
-				
+
 					<!-- Page Header -->
 					<div class="page-header">
 						<div class="content-page-header">
@@ -12,12 +12,12 @@
 						</div>	
 					</div>
 					<!-- /Page Header -->
-					
+
 					<div class="row">
-					
+
 						<!-- Drag Card -->					
 						<div class="col-md-12">	
-						
+
 							<div class="card">
 								<div class="card-header">
 									<h5 class="card-title">Single File Upload</h5>
@@ -34,7 +34,7 @@
 									</div>
 								</div>
 							</div>
-							
+
 							<div class="card">
 								<div class="card-header">
 									<h5 class="card-title">Multiple File Upload</h5>
@@ -53,9 +53,9 @@
 							</div>
 						</div>
 						<!-- /Drag Card -->
-						
+
 					</div>
-				
+
 				</div>			
 			</div>
 			<!-- /Page Wrapper -->

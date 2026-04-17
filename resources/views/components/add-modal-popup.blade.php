@@ -696,7 +696,7 @@
                             <h5 class="form-title mb-3">Plan Info</h5>
                         </div>
                         <div class="col-sm-12 col-md-6">
-                            
+
                             <div class="input-block mb-3">
                                 <label>Plan Name</label>
                                 <input type="text" class="form-control" placeholder="Enter Plan Name" value="">
@@ -903,7 +903,7 @@
                                 </div>										
                             </div>
                         </div>
-                        
+
                     </div>
                     <div class="d-flex align-items-center mb-3">
                         <h6 class="mb-0">Access Trial</h6>
@@ -929,7 +929,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="row">
                         <div class="col-sm-12">
                             <div class="input-block mb-3">
@@ -1879,7 +1879,7 @@
 								<h4 class="mb-0">Add Ledger</h4>
 							</div>
 							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
-								
+
 							</button>
 						</div>
 						<div class="modal-body">
@@ -6021,7 +6021,6 @@
                     </div>
                     <!-- /By Status -->
 
-
                     <div class="filter-buttons">
                         <button type="submit"
                             class="d-inline-flex align-items-center justify-content-center btn w-100 btn-primary">
@@ -6385,7 +6384,7 @@
         </div>
     </div>
     <!-- /Add Asset -->
-    
+
     <!-- Add Blog -->
     <div class="modal custom-modal modal-lg fade" id="add_blog" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
@@ -8289,7 +8288,7 @@
                         </a> 
                         </h6>
                     </div>
-                
+
                     <div id="collapseOne" class="collapse show" aria-labelledby="headingOne"  data-bs-parent="#accordionExample1">
                         <div class="card-body-chat">
                             <div class="row">
@@ -8342,7 +8341,6 @@
                 </div>
                 <!-- /Customer -->
 
-
                 <!-- By Status -->
                 <div class="accordion accordion-last" id="accordionMain3">
                     <div class="card-header-new" id="headingThree">
@@ -8375,7 +8373,7 @@
                     </div>
                 </div>
                 <!-- /By Status -->
-                
+
                 <div class="filter-buttons">
                     <button type="submit" class="d-inline-flex align-items-center justify-content-center btn w-100 btn-primary">
                         Apply
@@ -8399,7 +8397,7 @@
                     <h4 class="mb-0">Add Ledger</h4>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
-                    
+
                 </button>
             </div>
             <div class="modal-body">

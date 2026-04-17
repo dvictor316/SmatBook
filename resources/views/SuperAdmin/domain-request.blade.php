@@ -189,7 +189,7 @@
 </style>
 
 <div class="master-provision-overlay">
-    
+
     <!-- Bubbles -->
     <div class="bubble-bg">
         <div class="bubble" style="width: 500px; height: 500px; top: -150px; left: -100px;"></div>
@@ -199,7 +199,7 @@
 
     <!-- The Card -->
     <div class="smat-card">
-        
+
         <!-- Sidebar Info -->
         <div class="smat-aside">
             <div>

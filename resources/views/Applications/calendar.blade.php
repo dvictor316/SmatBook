@@ -8,11 +8,11 @@
             @endcomponent
 
             <div class="row">
-                {{-- Sidebar: Left Side Card with Add Event --}}
+
                 <div class="col-lg-3 col-md-4">
                     <div class="card shadow-sm border-0" style="border-radius: 15px;">
                         <div class="card-body">
-                            {{-- Add Event Form (Sidebar) --}}
+
                             <h5 class="card-title mb-3 fw-bold">Add Event</h5>
                             <form id="sidebar_add_event_form" class="mb-4">
                                 <div class="mb-3">
@@ -40,7 +40,7 @@
                                     <i class="fas fa-circle me-2"></i> Task Done
                                 </div>
                             </div>
-                            
+
                             <button type="button" class="btn btn-outline-primary w-100 shadow-sm rounded-pill mt-2" data-bs-toggle="modal" data-bs-target="#add_category_modal">
                                 <i class="fas fa-plus me-1"></i> Add Category
                             </button>
@@ -48,7 +48,6 @@
                     </div>
                 </div>
 
-                {{-- Calendar Main --}}
                 <div class="col-lg-9 col-md-8">
                     <div class="card bg-white shadow-sm border-0" style="border-radius: 15px;">
                         <div class="card-body">
@@ -60,7 +59,6 @@
         </div>
     </div>
 
-    {{-- Modal: Add New Category --}}
     <div class="modal fade" id="add_category_modal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -91,7 +89,6 @@
         </div>
     </div>
 
-    {{-- Modal: Edit/Delete Existing Event --}}
     <div class="modal fade" id="edit_event_modal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">

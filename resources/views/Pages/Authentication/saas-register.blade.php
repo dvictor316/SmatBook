@@ -8,11 +8,11 @@
 @php
     // Detect if this is a manager signup via URL query or session
     $isManager = request()->query('type') === 'manager' || session('reg_role') === 'deployment_manager';
-    
+
     // Logic Alignment: Managers get 'Partner' plan, others get the passed $selectedPlan or Pro.
     $lookupPlan = $isManager ? 'Partner' : ($selectedPlan ?? session('selected_plan', 'pro'));
     $finalCycle = $isManager ? 'Lifetime' : ($billing_cycle ?? session('selected_cycle', 'monthly'));
-    
+
     // Display Price Logic: Ensure the controller's $amount takes precedence.
     $displayPrice = $isManager ? 0 : ($amount ?? session('selected_amount', 0));
     $googleAuthUrl = route('social.login', [
@@ -698,14 +698,14 @@
                     <span class="info-label">Access Level</span>
                     <span class="info-value text-capitalize">{{ $isManager ? 'Master / Partner' : $lookupPlan }}</span>
                 </div>
-                
+
                 <div class="amount-display text-center">
                     <span class="info-label" style="display: block; margin-bottom: 5px;">{{ $isManager ? 'Setup Status' : 'Final Commitment' }}</span>
                     <div class="amount-value">
                         @if($isManager)
                             FREE <span style="font-size: 0.8rem; color: #94a3b8;">(Partner)</span>
                         @else
-                            {{-- Corrected pricing display with comma separation --}}
+
                             ₦{{ number_format($displayPrice, 2) }}
                         @endif
                     </div>
@@ -860,7 +860,7 @@
                         </div>
                     </div>
                 @endif
-                
+
                 <div class="bottom-link">
                     Choose your onboarding path
                     <div class="bottom-actions">

@@ -50,10 +50,10 @@
     @endphp
     <div class="page-wrapper">
         <div class="content container-fluid">
-            
+
             <div class="card shadow-sm border-0">
                 <div class="card-body">
-                    {{-- Navigation and Action Header (Hidden on Print) --}}
+
                     <div class="page-header d-print-none">
                         <div class="content-invoice-header">
                             <h5>Invoice Details</h5>
@@ -78,8 +78,7 @@
                         <div class="col-lg-12">
                             <div class="invoice-card border-0">
                                 <div class="card-body p-0">
-                                    
-                                    {{-- 1. Logo and Status Banner --}}
+
                                     <div class="invoice-item invoice-item-one pb-3">
                                         <div class="row align-items-center">
                                             <div class="col-md-6">
@@ -95,7 +94,7 @@
                                             </div>
                                             <div class="col-md-6 text-md-end">
                                                 <div class="invoice-info">
-                                                    {{-- Fixed: Changed 'status' to 'payment_status' and matched lowercase 'paid' --}}
+
                                                     <h1 class="{{ ($displayStatus == 'paid') ? 'text-success' : (($displayStatus == 'partial') ? 'text-info' : 'text-danger') }} fw-bold mb-1">
                                                         {{ strtoupper($displayStatus) }}
                                                     </h1>
@@ -105,7 +104,6 @@
                                         </div>
                                     </div>
 
-                                    {{-- 2. Date and Reference Bar --}}
                                     <div class="invoice-item invoice-item-date border-top border-bottom py-3 my-4 bg-light-soft">
                                         <div class="row text-center text-md-start">
                                             <div class="col-md-4">
@@ -151,7 +149,6 @@
                                         </div>
                                     @endif
 
-                                    {{-- 3. Populated Items Table --}}
                                     <div class="invoice-add-table mt-4">
                                         <div class="table-responsive">
                                             <table class="table table-hover mb-0">
@@ -180,7 +177,7 @@
                                                             <td class="text-dark fw-bold">
                                                                 {{ $item->product->name ?? 'Product/Service' }}
                                                             </td>
-                                                            {{-- Fixed: Using unit_price and quantity --}}
+
                                                             <td>{{ number_format($item->unit_price, 2) }}</td>
                                                             <td>
                                                                 <span class="fw-bold">{{ $soldQuantity }}</span>
@@ -188,7 +185,7 @@
                                                             </td>
                                                             <td>{{ number_format($item->discount, 2) }}%</td>
                                                             <td class="text-end fw-bold text-dark">
-                                                                {{-- Fixed: DB column is 'subtotal' --}}
+
                                                                 {{ number_format($item->subtotal, 2) }}
                                                             </td>
                                                         </tr>
@@ -202,7 +199,6 @@
                                         </div>
                                     </div>
 
-                                    {{-- 4. Totals and Signatures --}}
                                     <div class="row mt-5 align-items-end">
                                         <div class="col-lg-7">
                                             <div class="invoice-notes p-3 bg-light rounded border-start border-primary border-4">
@@ -214,17 +210,17 @@
                                                 <div class="mt-2" style="border-bottom: 1px solid #ddd; width: 200px;"></div>
                                             </div>
                                         </div>
-                                        
+
                                         <div class="col-lg-5">
                                             <div class="invoice-total-card p-3 border rounded bg-white shadow-sm">
                                                 <div class="d-flex justify-content-between mb-2">
                                                     <span class="text-muted">Subtotal</span>
-                                                    {{-- Fixed: Summing the 'subtotal' column --}}
+
                                                     <span class="fw-bold">{{ number_format($sale->items->sum('subtotal'), 2) }}</span>
                                                 </div>
                                                 <div class="d-flex justify-content-between mb-2 text-muted">
                                                     <span>Tax</span>
-                                                    {{-- Fixed: DB column is 'tax' --}}
+
                                                     <span>{{ number_format($sale->tax ?? 0, 2) }}</span>
                                                 </div>
                                                 <div class="d-flex justify-content-between mb-2 text-muted">
@@ -257,7 +253,7 @@
                                                 <hr class="my-2">
                                                 <div class="d-flex justify-content-between align-items-center">
                                                     <h4 class="text-primary fw-bold mb-0">Total</h4>
-                                                    {{-- Fixed: DB column is 'total' --}}
+
                                                     <h4 class="text-primary fw-bold mb-0">{{ number_format($sale->total, 2) }}</h4>
                                                 </div>
                                             </div>
@@ -273,10 +269,9 @@
         </div>
     </div>
 
-    {{-- Print Management Styling --}}
     <style>
         .bg-light-soft { background-color: #fbfbfb; }
-        
+
         @media print {
             .page-header, .sidebar, .header, .btn, .list-btn, .footer, .d-print-none {
                 display: none !important;

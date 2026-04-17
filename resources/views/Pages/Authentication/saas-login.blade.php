@@ -137,7 +137,7 @@
         display: flex;
         overflow: hidden;
         border: 1px solid rgba(255, 255, 255, 0.8);
-        
+
         /* KEY FIX: This centers it vertically but allows scrolling if needed */
         margin: 24px auto !important;
         backdrop-filter: blur(18px);
@@ -523,7 +523,7 @@
 </style>
 
 <div class="smat-viewport">
-    
+
     <!-- Ultra Light Bubbles -->
     <div class="bubble-bg">
         <div class="bubble" style="width: 500px; height: 500px; top: -150px; left: -100px;"></div>
@@ -532,7 +532,7 @@
 
     <!-- The Card -->
     <div class="smat-card">
-        
+
         <!-- Sidebar Branding -->
         <div class="smat-aside">
             <div>

@@ -6,11 +6,6 @@
 
 @section('content')
 
-{{-- 
-    CUSTOM STYLES: SIDEBAR AWARENESS & UI 
-    - Width adjusted to 270px for Deployment Manager Sidebar
-    - Added logic for 'sidebar-icon-only' toggle state
---}}
 <style>
     :root {
         --deploy-sidebar-w: 270px;
@@ -77,7 +72,7 @@
         box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         border-color: #cbd5e1;
     }
-    
+
     .icon-box {
         width: 48px; height: 48px;
         border-radius: 10px;
@@ -95,8 +90,7 @@
 </style>
 
 <div id="subscription-wrapper">
-    
-    {{-- Header Section --}}
+
     <div class="d-flex justify-content-between align-items-end mb-4 flex-wrap gap-2">
         <div>
             <nav aria-label="breadcrumb">
@@ -110,7 +104,7 @@
                 Managed Domain: <span class="fw-bold text-primary">{{ env('SESSION_DOMAIN', 'Primary Cluster') }}</span>
             </p>
         </div>
-        
+
         <div class="d-flex gap-2">
             <button onclick="window.location.reload()" class="btn btn-light border bg-white shadow-sm no-print">
                 <i class="fas fa-sync-alt text-muted"></i>
@@ -121,9 +115,8 @@
         </div>
     </div>
 
-    {{-- Dynamic Metrics Cards --}}
     <div class="row g-3 mb-4">
-        {{-- Total Revenue --}}
+
         <div class="col-xl-3 col-md-6">
             <div class="stat-card p-4">
                 <div class="d-flex justify-content-between align-items-start">
@@ -139,7 +132,6 @@
             </div>
         </div>
 
-        {{-- Active Plans --}}
         <div class="col-xl-3 col-md-6">
             <div class="stat-card p-4">
                 <div class="d-flex justify-content-between align-items-start">
@@ -155,7 +147,6 @@
             </div>
         </div>
 
-        {{-- Expiring Soon --}}
         <div class="col-xl-3 col-md-6">
             <div class="stat-card p-4">
                 <div class="d-flex justify-content-between align-items-start">
@@ -171,7 +162,6 @@
             </div>
         </div>
 
-        {{-- Pending / Issues --}}
         <div class="col-xl-3 col-md-6">
             <div class="stat-card p-4">
                 <div class="d-flex justify-content-between align-items-start">
@@ -188,7 +178,6 @@
         </div>
     </div>
 
-    {{-- Dynamic Data Table --}}
     <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
         <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
             <h6 class="fw-bold m-0 text-dark">Active Subscriptions Registry</h6>
@@ -281,7 +270,7 @@
                 </table>
             </div>
         </div>
-        {{-- Pagination (if available) --}}
+
         @if(method_exists($subscriptions, 'links'))
             <div class="card-footer bg-white py-3">
                 {{ $subscriptions->links() }}
@@ -297,7 +286,7 @@
      */
     document.addEventListener("DOMContentLoaded", function() {
         const toggleBtns = document.querySelectorAll('.navbar-toggler, #sidebarToggle');
-        
+
         toggleBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 // The CSS relies on body.sidebar-icon-only or body.sidebar-collapsed

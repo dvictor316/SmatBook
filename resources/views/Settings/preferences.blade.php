@@ -9,7 +9,7 @@
         transition: all 0.3s ease-in-out;
     }
     body.mini-sidebar .page-wrapper { margin-left: 80px; }
-    
+
     @media (max-width: 1200px) {
         .page-wrapper { margin-left: 0 !important; }
     }
@@ -51,7 +51,7 @@
                                 <i class="fas fa-print me-1"></i> Print Preferences
                             </button>
                         </div>
-                        
+
                         <form action="{{ route('settings.update') }}" method="POST">
                             @csrf
                         <div class="row">
@@ -130,7 +130,7 @@
                                     </select>
                                 </div>
                             </div>
-                            
+
                             <div class="col-lg-12 d-print-none">
                                 <div class="btn-path text-end border-top pt-4 mt-2">
                                     <a href="javascript:void(0);" class="btn btn-cancel bg-primary-light me-3">Cancel</a>

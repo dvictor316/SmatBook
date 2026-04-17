@@ -1,22 +1,15 @@
-{{-- 
-    File: resources/views/layout/partials/sidebar.blade.php
-    
-    CRITICAL FIX: Check deployment_managers table FIRST before checking role
-    This prevents deployment managers with 'administrator' role from being 
-    treated as super admins.
---}}
 
 @php
     $user = auth()->user();
     $workspaceContext = session('workspace_context', 'platform');
-    
+
     // If no user, don't show sidebar
     if (!$user) { return; } 
 
     // PRIORITY 1: Check deployment_managers table FIRST
     // This is CRITICAL - must check database, not just role
     $isDeploymentManager = \App\Models\DeploymentManager::where('user_id', $user->id)->exists();
-    
+
     // PRIORITY 2: Check if TRUE super admin (only specific emails/roles)
     $isSuperAdmin = false;
     if (!$isDeploymentManager) {
@@ -25,7 +18,7 @@
         $isSuperAdmin = in_array($role, ['super_admin', 'superadmin']) || 
                        $user->email === 'donvictorlive@gmail.com';
     }
-    
+
     // PRIORITY 3: Determine plan for regular tenants
     $plan = 'basic'; // default
     $shouldResolveBusinessPlan = !$isDeploymentManager && (!$isSuperAdmin || $workspaceContext === 'business');
@@ -46,14 +39,14 @@
             ->latest('paid_at')
             ->latest('id')
             ->first();
-        
+
         if ($subscription) {
             $planName = strtolower(
                 $subscription->plan
                 ?? $subscription->plan_name
                 ?? (optional($user->company)->plan ?? '')
             );
-            
+
             if (str_contains($planName, 'enterprise')) {
                 $plan = 'enterprise';
             } elseif (str_contains($planName, 'prof') || str_contains($planName, 'pro')) {
@@ -74,7 +67,7 @@
 @endphp
 
 @unless(Route::is(['index-two', 'index-three', 'index-four', 'index-five']))
-    {{-- Deployment/plan sidebars are self-contained containers. --}}
+
     @if($isDeploymentManager)
         @include('layout.partials.sidebars.deployment_manager')
     @elseif($isSuperAdmin && $workspaceContext === 'business')
@@ -98,7 +91,7 @@
     @elseif($plan === 'pro')
         @include('layout.partials.sidebars.pro')
     @else
-        {{-- Basic sidebar is menu-only, so wrap it here. --}}
+
         <div class="sidebar" id="sidebar">
             <div class="sidebar-inner slimscroll">
                 <div id="sidebar-menu" class="sidebar-menu">

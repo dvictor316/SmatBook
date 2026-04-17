@@ -20,11 +20,11 @@
                         </ul>
                     </div>
                 @endif
-                
+
                 <form action="{{ route('customers.update', $customer->id) }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
-                    
+
                     <input type="hidden" name="status" value="{{ $customer->status ?? 'active' }}">
 
                     <div class="form-group-item">

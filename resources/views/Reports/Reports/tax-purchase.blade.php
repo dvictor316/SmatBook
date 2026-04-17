@@ -26,7 +26,7 @@
         overflow-wrap: anywhere;
         word-break: break-word;
     }
-    
+
     .dt-buttons { margin-bottom: 15px; gap: 5px; display: flex; }
     .dt-button { 
         border: 1px solid #d1d5db !important;
@@ -58,7 +58,6 @@
 <div class="page-wrapper">
     <div class="content container-fluid">
 
-        {{-- Header --}}
         <div class="page-header mb-3">
             <div class="row align-items-center">
                 <div class="col">
@@ -77,7 +76,6 @@
             'periodLabel' => 'Generated on ' . $reportDate,
         ])
 
-        {{-- Tabs --}}
         <div class="report-tabs mb-4 no-print tax-report-tabs">
             <ul class="nav nav-pills">
                 <li class="nav-item">
@@ -89,7 +87,6 @@
             </ul>
         </div>
 
-        {{-- Summary Card --}}
         <div class="row mb-4">
             <div class="col-md-4">
                 <div class="card shadow-sm border-0 bg-primary-light">
@@ -101,7 +98,6 @@
             </div>
         </div>
 
-        {{-- Search Filter --}}
         <div class="no-print mb-4">
             <form method="GET" action="{{ route('reports.tax-purchase') }}" class="row g-2 align-items-end">
                 <div class="col-md-3">

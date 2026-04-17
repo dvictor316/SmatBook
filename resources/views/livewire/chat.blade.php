@@ -37,7 +37,7 @@
                 @if (isset($message->is_date_divider))
                     <li class="text-center text-sm text-gray-400 my-4">{{ $message->date_text }}</li>
                 @elseif (isset($message->is_typing_indicator))
-                    {{-- Optional: handle typing indicator --}}
+
                 @else
                     @php
                         $isSent = ($message->sender_id ?? null) == $currentUserId;
@@ -60,7 +60,6 @@
                                     <p class="mb-1 last:mb-0">{{ $paragraph }}</p>
                                 @endforeach
 
-                                {{-- Attachments --}}
                                 @php
                                     $attachments = isset($message->attachments) ? $message->attachments : [];
                                     $attachmentsCount = is_array($attachments) ? count($attachments) : 0;
@@ -77,7 +76,6 @@
                                     </div>
                                 @endif
 
-                                {{-- Timestamp & Actions --}}
                                 <div class="flex items-center mt-1 text-xs opacity-80 {{ $isSent ? 'justify-end text-blue-200' : 'justify-start text-gray-500' }}">
                                     <span>{{ \Illuminate\Support\Carbon::parse($message->created_at)->format('h:i A') }}</span>
                                     @if ($isSent)

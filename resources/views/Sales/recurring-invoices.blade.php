@@ -112,7 +112,6 @@
         </div>
     </div>
 
-    {{-- Delete Confirmation Modal --}}
     <div class="modal custom-modal fade" id="delete_modal" role="dialog">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -145,7 +144,6 @@
             document.getElementById('delete_form').action = actionUrl;
         }
 
-        {{-- Mandatory Printing Script --}}
         document.addEventListener('click', function(e) {
             if (e.target.classList.contains('fa-print') || e.target.closest('.btn-print')) {
                 window.print();

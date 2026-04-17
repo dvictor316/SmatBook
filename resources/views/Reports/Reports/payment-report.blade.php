@@ -4,7 +4,7 @@
     $currencyCode = $geoCurrency ?? \App\Support\GeoCurrency::currentCurrency();
     $currencyLocale = $geoCurrencyLocale ?? \App\Support\GeoCurrency::currentLocale();
     $currencySymbol = $geoCurrencySymbol ?? \App\Support\GeoCurrency::currentSymbol();
-    
+
     // Safety checks
     $paymentsExists = isset($payments) && $payments->count() > 0;
     $pageTotal = $paymentsExists ? $payments->sum('amount') : 0;
@@ -26,12 +26,12 @@
         letter-spacing: 0.025em;
         border-top: none;
     }
-    
+
     /* Pagination Styling Fixes */
     .pagination { margin-bottom: 0; }
     .page-link { padding: 0.5rem 0.85rem; color: #6366f1; }
     .page-item.active .page-link { background-color: #6366f1; border-color: #6366f1; }
-    
+
     /* Summary Card Styling */
     .card-total {
         background: linear-gradient(135deg, #0f2d5c 0%, #2563eb 100%);
@@ -55,7 +55,6 @@
 <div class="page-wrapper">
     <div class="content container-fluid" data-print-scope>
 
-        {{-- Page Header --}}
         <div class="page-header mb-4">
             <div class="row align-items-center">
                 <div class="col">
@@ -82,7 +81,6 @@
                 : 'All Recorded Payments',
         ])
 
-        {{-- Top Summary Stats --}}
         <div class="row mb-4">
             <div class="col-xl-3 col-sm-6 col-12">
                 <div class="card card-total shadow-sm">
@@ -101,7 +99,6 @@
             </div>
         </div>
 
-        {{-- Search Filter --}}
         <div class="card mb-4 border-0 shadow-sm no-print">
             <div class="card-body p-3">
                 <form action="{{ route('reports.payment') }}" method="GET">
@@ -145,7 +142,6 @@
             </div>
         </div>
 
-        {{-- Results Table --}}
         <div class="card border-0 shadow-sm">
             <div class="card-body p-0">
                 <div class="table-responsive">
@@ -233,8 +229,7 @@
                         @endif
                     </table>
                 </div>
-                
-                {{-- Bootstrap 5.3 Pagination Wrapper --}}
+
                 @if($paymentsExists)
                 <div class="card-footer bg-white border-top-0 pt-0 pb-4 no-print">
                     <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
@@ -254,7 +249,7 @@
 @endsection
 
 @section('script')
-{{-- DataTables Buttons for Excel/PDF Export --}}
+
 <script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>

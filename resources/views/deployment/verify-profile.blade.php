@@ -1,5 +1,4 @@
 
-
 @extends('layout.mainlayout', [
     'hideNavbar' => true,
     'hideSidebar' => true,
@@ -13,8 +12,7 @@
             <div class="card shadow border-0">
                 <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                     <h4 class="mb-0">Complete Your Manager Profile</h4>
-                    
-                    {{-- Emergency Logout to prevent users getting stuck in a redirect loop --}}
+
                     <form action="{{ route('logout') }}" method="POST" class="m-0">
                         @csrf
                         <button type="submit" class="btn btn-sm btn-outline-light">
@@ -31,7 +29,7 @@
 
                     <form action="{{ route('manager.submit.verification') }}" method="POST">
                         @csrf
-                        
+
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold">Business/Trading Name</label>
@@ -93,7 +91,7 @@
                     </form>
                 </div>
             </div>
-            
+
             <p class="text-center mt-4 text-muted small">
                 &copy; {{ date('Y') }} {{ env('APP_NAME', 'Smatbook') }}. All rights reserved.
             </p>
@@ -101,7 +99,6 @@
     </div>
 </div>
 
-{{-- Standard Print Script Integration --}}
 <script>
     function printPage() {
         window.print();

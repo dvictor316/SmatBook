@@ -28,7 +28,6 @@
                         <form action="{{ url('/superadmin/companies') }}" method="POST">
                             @csrf
 
-                            {{-- Display Validation Errors --}}
                             @if ($errors->any())
                                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
                                     <ul class="mb-0">
@@ -39,7 +38,7 @@
                                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                                 </div>
                             @endif
-                            
+
                             <div class="row">
                                 <div class="col-md-6">
                                     <h5 class="text-primary mb-3">Identity & Domain</h5>

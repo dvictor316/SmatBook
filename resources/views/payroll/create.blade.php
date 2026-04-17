@@ -60,7 +60,6 @@
         <div class="row g-4">
             <div class="col-lg-8">
 
-                {{-- Personal Info --}}
                 <div class="form-card">
                     <div class="form-card-header">
                         <i class="fas fa-user" style="color:var(--gold);"></i>
@@ -122,7 +121,6 @@
                     </div>
                 </div>
 
-                {{-- Salary Structure --}}
                 <div class="form-card">
                     <div class="form-card-header">
                         <i class="fas fa-money-bill-wave" style="color:var(--gold);"></i>
@@ -213,7 +211,6 @@
                 </div>
             </div>
 
-            {{-- Sidebar: Net Pay Preview --}}
             <div class="col-lg-4">
                 <div class="net-preview mb-4">
                     <div class="label">Net Pay Preview</div>
@@ -238,7 +235,6 @@
                     </div>
                 </div>
 
-                {{-- Nigerian Statutory Info --}}
                 <div class="form-card">
                     <div class="form-card-header">
                         <i class="fas fa-info-circle" style="color:var(--gold);"></i>

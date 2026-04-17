@@ -14,7 +14,6 @@
                     </div>
                     <!-- /Page Header -->
 
-                    {{-- Determine if we are creating or editing --}}
                     @php
                         // Assume $addon is passed from the controller if editing, otherwise it's null
                         $isEditing = isset($addon) && $addon;
@@ -25,14 +24,12 @@
                     <div class="row">
                         <div class="col-md-12">
 
-                            {{-- Form Start --}}
                             <form action="{{ $actionUrl }}" method="POST">
                                 @csrf
                                 @if ($isEditing)
-                                    @method('PUT') {{-- Use PUT method for updates --}}
+                                    @method('PUT') 
                                 @endif
 
-                                {{-- Display Validation Errors --}}
                                 @if ($errors->any())
                                     <div class="alert alert-danger">
                                         <p class="mb-0 fw-bold">Please correct the following errors:</p>
@@ -63,8 +60,7 @@
                                 <div class="form-group-add">
                                     <h5 class="form-title">Addon Settings</h5>
                                     <div class="row">
-                                        
-                                        {{-- Helper macro/loop could simplify this, but sticking to explicit code for clarity --}}
+
                                         @php
                                             $features = [
                                                 'services' => ['label' => 'Services', 'id' => 1],
@@ -90,7 +86,7 @@
                                                 <div class="input-block mb-3">
                                                     <label>{{ $feature['label'] }}</label>
                                                     <div class="align-center d-flex align-items-center">
-                                                        {{-- Limit Input --}}
+
                                                         <input type="number" name="{{ $inputNameLimit }}" 
                                                             class="form-control me-2" 
                                                             placeholder="1-100" 
@@ -98,8 +94,7 @@
                                                             min="1" 
                                                             max="100"
                                                             @if($isUnlimited) disabled @endif>
-                                                        
-                                                        {{-- Enable/Disable Toggle --}}
+
                                                         <div class="status-toggle flex-shrink-0 ms-2">
                                                             <input id="rating_{{ $feature['id'] }}" name="{{ $inputNameEnabled }}" class="check" type="checkbox" 
                                                                 value="1" 
@@ -107,8 +102,7 @@
                                                             <label for="rating_{{ $feature['id'] }}" class="checktoggle checkbox-bg">checkbox</label>
                                                         </div>
                                                     </div>
-                                                    
-                                                    {{-- Unlimited Checkbox --}}
+
                                                     <span>
                                                         <label class="custom_check">
                                                             <input type="checkbox" name="{{ $inputNameUnlimited }}" 
@@ -124,8 +118,7 @@
                                                 </div>
                                             </div>
                                         @endforeach
-                                        
-                                        {{-- Special case for Booking Option (only a toggle) --}}
+
                                         <div class="col-lg-6 col-md-6 col-sm-12">
                                             <div class="input-block mb-3 booking-option">
                                                 <label>Booking Option</label>
@@ -142,14 +135,13 @@
                                 </div>
 
                                 <div class="text-end mt-4">
-                                    {{-- Assuming 'addons.index' route for Cancel button --}}
+
                                     <a href="{{ url('/superadmin/addons') }}" class="btn btn-primary cancel me-2">Cancel</a> 
                                     <button type="submit" class="btn btn-primary">
                                         {{ $isEditing ? 'Update Changes' : 'Save Changes' }}
                                     </button>
                                 </div>
                             </form>
-                            {{-- Form End --}}
 
                         </div>
                     </div>
@@ -160,7 +152,6 @@
     </div>
     <!-- /Page Wrapper -->
 
-    {{-- JavaScript to manage the Unlimited checkbox interaction --}}
     <script>
         function toggleLimitInput(checkbox, targetSelector) {
             const limitInput = document.querySelector(targetSelector);

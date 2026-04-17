@@ -4,7 +4,7 @@
 			<!-- Page Wrapper -->
             <div class="page-wrapper">
                 <div class="content container-fluid">
-				
+
 					<!-- Page Header -->
 					<div class="page-header">
 						<div class="content-page-header">
@@ -12,11 +12,11 @@
 						</div>	
 					</div>
 					<!-- /Page Header -->
-					
+
 					<!-- Row -->
 					<div class="row">
 						<div class="col-sm-12">
-						
+
 							<!-- Custom Boostrap Validation -->
 							<div class="card">
 								<div class="card-header card-buttons">
@@ -94,7 +94,7 @@
 								</div>
 							</div>
 							<!-- /Custom Boostrap Validation -->
-							
+
 							<!-- Default Browser Validation -->
 							<div class="card">
 								<div class="card-header card-buttons">
@@ -225,7 +225,7 @@
 								</div>
 							</div>
 							<!-- /Server Side Validation -->
-							
+
 							<!-- Supported Elements -->
 							<div class="card">
 								<div class="card-header card-buttons">
@@ -243,13 +243,13 @@
 													Please enter a message in the textarea.
 												  </div>
 												</div>
-											  
+
 												<div class="form-check mb-3">
 												  	<input type="checkbox" class="form-check-input" id="validationFormCheck1" required>
 												  	<label class="form-check-label" for="validationFormCheck1">Check this checkbox</label>
 												  	<div class="invalid-feedback">Example invalid feedback text</div>
 												</div>
-											  
+
 												<div class="form-check">
 												  	<input type="radio" class="form-check-input" id="validationFormCheck2" name="radio-stacked" required>
 												  	<label class="form-check-label" for="validationFormCheck2">Toggle this radio</label>
@@ -259,7 +259,7 @@
 												  	<label class="form-check-label" for="validationFormCheck3">Or toggle this other radio</label>
 												  	<div class="invalid-feedback">More example invalid feedback text</div>
 												</div>
-											  
+
 												<div class="mb-3">
 													<select class="form-select" required aria-label="select example">
 														<option value="">Open this select menu</option>
@@ -269,7 +269,7 @@
 													</select>
 													<div class="invalid-feedback">Example invalid select feedback</div>
 												</div>
-											  
+
 												<div class="mb-3">
 												  	<input type="file" class="form-control" aria-label="file example" required>
 												  	<div class="invalid-feedback">Example invalid form file feedback</div>
@@ -280,7 +280,7 @@
 								</div>
 							</div>
 							<!-- /Supported Elements -->
-							
+
 							<!-- Validation Tooltips -->
 							<div class="card">
 								<div class="card-header card-buttons">
@@ -340,11 +340,11 @@
 								</div>
 							</div>
 							<!-- /Validation Tooltips -->
-							
+
 						</div>
 					</div>
 					<!-- /Row -->
-				
+
 				</div>			
 			</div>
 			<!-- /Page Wrapper -->

@@ -9,7 +9,7 @@
     <div class="content container-fluid">
         <div class="row justify-content-center">
             <div class="col-xl-8">
-                {{-- ID used by the custom print script --}}
+
                 <div class="card invoice-info-custom shadow-sm" id="printableArea">
                     <div class="card-body p-5">
                         <div class="invoice-item invoice-item-one">
@@ -24,7 +24,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-6 text-end d-print-none">
-                                    {{-- Custom Print Button --}}
+
                                     <button onclick="printInvoice()" class="btn btn-primary">
                                         <i class="fa fa-print me-1"></i> Print Invoice
                                     </button>
@@ -48,7 +48,7 @@
                                         <strong>Total Amount:</strong> {{ \App\Support\GeoCurrency::format((float) ($invoice->total ?? 0), 'NGN', $currencyCode, $currencyLocale) }}<br>
                                         <strong>Status:</strong> <span class="text-uppercase">{{ $invoice->status }}</span><br>
                                         <strong>Date:</strong> {{ $invoice->created_at->format('d M Y') }}<br>
-                                        {{-- Added Sales Person --}}
+
                                         <strong>Sales Person:</strong> {{ $invoice->user->name ?? 'System' }}
                                     </p>
                                 </div>
@@ -79,8 +79,7 @@
                                 </tbody>
                             </table>
                         </div>
-                        
-                        {{-- Print-only Footer --}}
+
                         <div class="d-none d-print-block mt-5 text-center">
                             <hr>
                             <p class="text-muted small">Thank you for your business!</p>

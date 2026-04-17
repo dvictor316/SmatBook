@@ -400,7 +400,7 @@
             <!-- Section 1 -->
             <h2 id="section-1">1. License and Restrictions</h2>
             <p>SmartProbook Global Infrastructure Inc. ("SmartProbook") grants you a personal, limited, non-exclusive, revocable, and non-transferable license to use our Software-as-a-Service (SaaS) platform, subject to the terms and conditions of this Agreement. You agree not to use, nor permit any third party to use, the Services in a manner that violates any applicable law, regulation, court order, or this Agreement.</p>
-            
+
             <h3>1.1 Usage Restrictions</h3>
             <p>You shall not:</p>
             <ul>
@@ -415,7 +415,7 @@
             <!-- Section 2 -->
             <h2 id="section-2">2. Your Content and Data</h2>
             <p>You are solely responsible for all materials, data, financial information, and documents ("Content") uploaded, posted, or stored through your use of the Services. You grant SmartProbook a worldwide, royalty-free, non-exclusive, revocable license to host, process, and use the Content only as necessary to provide you with the Services and comply with legal obligations.</p>
-            
+
             <h3>2.1 Data Ownership</h3>
             <p>You retain all ownership rights to your Content. SmartProbook does not claim ownership of your financial data, customer information, or proprietary business documents. You are responsible for maintaining accurate and lawful Content.</p>
 

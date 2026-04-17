@@ -139,7 +139,7 @@
         }
 
         .plan-card:hover { transform: translateY(-8px); box-shadow: var(--shadow-premium); border-color: var(--muji-blue-accent); }
-        
+
         .plan-card.featured { 
             border: 2px solid var(--muji-blue-accent); 
             background: #fff;
@@ -153,7 +153,7 @@
 
         .plan-name { font-weight: 700; color: var(--muji-blue-deep); font-size: 1.25rem; margin-bottom: 8px; }
         .plan-desc { font-size: 0.9rem; color: #64748b; margin-bottom: 30px; line-height: 1.4; height: 40px; }
-        
+
         .price-display { font-size: 2.25rem; font-weight: 800; color: var(--muji-blue-deep); margin-bottom: 12px; letter-spacing: -1px; }
         .price-display small { font-size: 0.9rem; color: #64748b; font-weight: 500; letter-spacing: 0; }
         .price-secondary { font-size: 1.05rem; font-weight: 800; color: var(--muji-gold); margin: -2px 0 24px; line-height: 1.4; }
@@ -184,7 +184,7 @@
             transform: none;
             box-shadow: none;
         }
-        
+
         .btn-outline {
             background: linear-gradient(135deg, var(--muji-blue-soft) 0%, var(--muji-blue-soft-end) 100%);
             color: #fff;
@@ -381,7 +381,7 @@
                     </div>
                 @endif
             </div>
-            
+
             <div class="billing-toggle">
                 <span id="monthlyLabel" style="color: var(--muji-blue-accent)">Monthly</span>
                 <label class="switch">
@@ -544,13 +544,13 @@
      * This ensures the 'cycle' parameter is passed exactly as the controller 
      * expects to prevent the "Monthly Reset" bug.
      */
-    
+
     // The base URL for your registration endpoint
     const registerUrl = "{{ route('saas-register-initial') }}";
     const upgradeUrl = "{{ route('subscription.upgrade.redirect') }}";
     const userIsAuthenticated = @json(auth()->check());
     const suggestedUpgradePlan = @json($suggestedUpgradePlan);
-    
+
     const prices = {
         monthly: {
             basic: '₦5,500',
@@ -586,7 +586,7 @@
         document.getElementById('price-pro-solo').innerText = prices[period].proSolo;
         document.getElementById('price-enterprise').innerText = prices[period].enterprise;
         document.getElementById('price-enterprise-solo').innerText = prices[period].enterpriseSolo;
-        
+
         document.getElementById('period-basic').innerText = smallText;
         document.getElementById('period-basic-solo').innerText = smallText;
         document.getElementById('period-pro').innerText = smallText;

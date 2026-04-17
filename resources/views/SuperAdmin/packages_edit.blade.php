@@ -16,8 +16,7 @@
 
 <div class="page-wrapper bg-gray-50 min-h-screen">
     <div class="p-4 sm:p-6 lg:p-8 w-full max-w-2xl mx-auto">
-        
-        {{-- Breadcrumbs / Back Button --}}
+
         <div class="mb-6">
             <a href="{{ route('super_admin.packages.index') }}" class="inline-flex items-center text-sm font-medium text-gray-500 hover:text-primary transition">
                 <i class="fe fe-arrow-left mr-2"></i> Back to All Plans
@@ -32,10 +31,9 @@
 
             <form action="{{ route('super_admin.packages.update', $plan->id) }}" method="POST" class="p-8">
                 @csrf
-                {{-- Note: Your route is defined as POST in web.php, so no @method('PUT') is needed unless you change the route --}}
-                
+
                 <div class="space-y-6">
-                    {{-- Plan Name --}}
+
                     <div>
                         <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Plan Name</label>
                         <input type="text" name="name" value="{{ old('name', $plan->name) }}" required 
@@ -43,13 +41,13 @@
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
-                        {{-- Price --}}
+
                         <div>
                             <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Price ($)</label>
                             <input type="number" step="0.01" name="price" value="{{ old('price', $plan->price) }}" required 
                                 class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none font-semibold">
                         </div>
-                        {{-- Billing Cycle --}}
+
                         <div>
                             <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Billing Cycle</label>
                             <select name="duration" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none font-semibold">
@@ -60,7 +58,6 @@
                         </div>
                     </div>
 
-                    {{-- Features --}}
                     <div>
                         <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Features (Comma separated)</label>
                         <textarea name="features" rows="4" 
@@ -68,7 +65,6 @@
                         <p class="mt-2 text-[10px] text-gray-400 italic">Example: 24/7 Support, Unlimited Reports, Pro Tools</p>
                     </div>
 
-                    {{-- Status --}}
                     <div>
                         <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Status</label>
                         <div class="flex items-center space-x-4">

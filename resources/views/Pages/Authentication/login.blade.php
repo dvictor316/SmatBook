@@ -2,7 +2,6 @@
 @extends('layout.mainlayout')
 @section('content')
 
-{{-- User requested print script integration --}}
 <script>
     window.onbeforeprint = function() {
         console.log("Preparing login page for printing...");
@@ -11,7 +10,7 @@
 
 <div class="login-wrapper">
     <div class="container">
-        {{-- Dynamic Logo Section --}}
+
         <div class="text-center mb-4">
             @php
                 // Logic to fetch client logo based on domain or session
@@ -20,24 +19,22 @@
             @endphp
             <x-auth-brand-lockup :logo="$clientLogo" size="md" />
         </div>
-        
+
         <div class="loginbox">
             <div class="row g-0">
-                {{-- Left Side: Using smat15 as requested --}}
+
                 <div class="col-lg-6 d-none d-lg-block">
                     <div class="authentication-wrapper h-100" style="background: #3d5ee1; display: flex; align-items: center; justify-content: center; padding: 20px;">
                         <img src="{{ URL::asset('/assets/img/logos.png') }}" class="img-fluid" alt="SmartProbook Login Visual">
                     </div>
                 </div>
 
-                {{-- Right Side: Login Form --}}
                 <div class="col-lg-6">
                     <div class="login-right">
                         <div class="login-right-wrap p-4">
                             <h1>Login</h1>
                             <p class="account-subtitle">Access to our dashboard</p>
 
-                            {{-- Messages --}}
                             @if(session('success'))
                                 <div class="alert alert-success alert-dismissible fade show small py-2" role="alert">
                                     {{ session('success') }}
@@ -58,7 +55,7 @@
 
                             <form method="POST" action="{{ route('saas-login.post') }}">
                                 @csrf
-                                
+
                                 <div class="input-block mb-3">
                                     <label class="form-control-label">Email Address</label>
                                     <input type="email" name="email" class="form-control @error('email') is-invalid @enderror" value="{{ old('email') }}" placeholder="Enter your email" required autofocus>
@@ -85,9 +82,9 @@
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <button class="btn btn-lg btn-primary w-100 fw-bold shadow-sm" type="submit">Login</button>
-                                
+
                                 <div class="login-or my-4">
                                     <span class="or-line"></span>
                                     <span class="span-or">or</span>
@@ -99,7 +96,6 @@
                                     <a href="{{ route('social.login', 'google') }}" class="btn btn-outline-light border"><i class="fab fa-google text-danger"></i></a>
                                 </div>
 
-                                {{-- Role-based Register Link: Hidden if the user/tenant settings restrict registration --}}
                                 @if(!isset($settings) || $settings->allow_registration)
                                     <div class="text-center dont-have mt-3">
                                         Don't have an account yet? <a href="{{ route('saas-register') }}" class="text-primary fw-bold">Register</a>
@@ -109,7 +105,7 @@
                         </div>
                     </div>
                 </div>
-            </div> {{-- End Row --}}
+            </div> 
         </div>
     </div>
 </div>

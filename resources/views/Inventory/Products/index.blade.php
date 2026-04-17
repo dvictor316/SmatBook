@@ -250,7 +250,7 @@
         gap: 0.45rem;
         font-weight: 700;
     }
-    
+
     @media print {
         .no-print, .dt-buttons, .main-header, .sidebar { display: none !important; }
         .card { border: none !important; box-shadow: none !important; }
@@ -316,7 +316,6 @@
 <div class="page-wrapper" id="main-content-wrapper">
     <div class="content container-fluid">
 
-        {{-- INLINE HEADER & CONTROLS --}}
         <div class="card shadow-sm mb-3 no-print">
             <div class="card-body">
                 <div class="row align-items-center inventory-page-header">
@@ -331,7 +330,7 @@
                                     <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i></button>
                                 </div>
                             </form>
-                            
+
                             <div class="dropdown">
                                 <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
                                     <i class="fas fa-download me-1"></i> Export
@@ -540,7 +539,6 @@
 </div>
 @endif
 
-{{-- MODAL: ADD PRODUCT --}}
 <div class="modal fade" id="addProductModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -776,7 +774,6 @@
     </div>
 </div>
 
-{{-- MODAL: QUICK ADD CATEGORY --}}
 <div class="modal fade" id="addCategoryModal" tabindex="-1" style="z-index: 1060;">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -799,7 +796,7 @@
 </div>
 
 @push('scripts')
-{{-- Required DataTables Buttons Assets --}}
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
@@ -1165,7 +1162,7 @@
                 btn.prop('disabled', false);
                 return;
             }
-            
+
             fetch(categoryStoreUrl, {
                 method: "POST",
                 credentials: 'same-origin',

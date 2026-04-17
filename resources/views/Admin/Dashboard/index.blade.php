@@ -37,7 +37,7 @@
     .metric-card:hover { transform: translateY(-5px); }
     .metric-title { font-size: 11px; font-weight: 800; color: #996515; text-transform: uppercase; margin-bottom: 8px; }
     .metric-value { font-size: 1.5rem; font-weight: 700; }
-    
+
     .chart-card { padding: 20px; }
     .chart-card h5 {
         color: #0369a1;
@@ -57,7 +57,7 @@
 </style>
 
 <div class="pos-content-area">
-    {{-- Page Header --}}
+
     <div class="report-header">
         <div>
             <h3 class="fw-bold mb-0" style="color: #0369a1;">Business Analytics</h3>
@@ -73,7 +73,6 @@
         </div>
     </div>
 
-    {{-- Metric Cards --}}
     <div class="row mb-4 g-3">
         @php
             $cards = [
@@ -101,7 +100,6 @@
         @endforeach
     </div>
 
-    {{-- Chart Row 1 --}}
     <div class="row mb-4">
         <div class="col-md-8">
             <div class="card chart-card">
@@ -117,7 +115,6 @@
         </div>
     </div>
 
-    {{-- Chart Row 2 --}}
     <div class="row">
         <div class="col-md-7">
             <div class="card chart-card">

@@ -4,11 +4,6 @@
 
 @section('content')
 
-{{-- 
-    DEPLOYMENT MANAGER DASHBOARD WITH PAYMENT TRACKING
-    Fetches data from DeploymentManagerController
-    Shows: Total Revenue, Commission Earned, Pending Payments, Active Subscriptions
---}}
 <style>
     :root {
         --primary-color: #2563eb;
@@ -124,8 +119,7 @@
 </style>
 
 <div id="deployment-wrapper">
-    
-    {{-- Top Action Bar --}}
+
     <div class="d-flex justify-content-between align-items-end mb-4 flex-wrap gap-3">
         <div>
             <nav aria-label="breadcrumb">
@@ -147,7 +141,6 @@
         </div>
     </div>
 
-    {{-- PRIMARY METRICS WITH PAYMENT DATA --}}
     <div class="row g-3 mb-4">
         @php
             $totalRevenue = $metrics['monthlyRevenue'] ?? 0;
@@ -162,7 +155,6 @@
             $minimumPayoutAmount = (float) ($metrics['minimumPayoutAmount'] ?? 5000);
         @endphp
 
-        {{-- Total Companies --}}
         <div class="col-xl-3 col-md-6">
             <div class="glass-card p-3 border-start border-3" style="border-start-color: #7c3aed !important;">
                 <div class="d-flex justify-content-between align-items-center">
@@ -178,7 +170,6 @@
             </div>
         </div>
 
-        {{-- Total Revenue --}}
         <div class="col-xl-3 col-md-6">
             <div class="glass-card revenue-card p-3">
                 <div class="d-flex justify-content-between align-items-center">
@@ -194,7 +185,6 @@
             </div>
         </div>
 
-        {{-- Commission Earned --}}
         <div class="col-xl-3 col-md-6">
             <div class="glass-card commission-card p-3">
                 <div class="d-flex justify-content-between align-items-center">
@@ -211,7 +201,6 @@
             </div>
         </div>
 
-        {{-- Active Subscriptions --}}
         <div class="col-xl-3 col-md-6">
             <div class="glass-card p-3 border-start border-3" style="border-start-color: #10b981 !important;">
                 <div class="d-flex justify-content-between align-items-center">
@@ -228,9 +217,8 @@
         </div>
     </div>
 
-    {{-- Secondary Metrics Row --}}
     <div class="row g-3 mb-4">
-        {{-- Available Commission --}}
+
         <div class="col-lg-3 col-md-6">
             <div class="glass-card p-3" style="background:linear-gradient(135deg,#fff7ed,#ffedd5);">
                 <div class="d-flex justify-content-between align-items-center mb-1">
@@ -242,7 +230,6 @@
             </div>
         </div>
 
-        {{-- Trial Accounts --}}
         <div class="col-lg-3 col-md-6">
             <div class="glass-card p-3" style="background:linear-gradient(135deg,#ecfeff,#cffafe);">
                 <div class="d-flex justify-content-between align-items-center mb-1">
@@ -254,7 +241,6 @@
             </div>
         </div>
 
-        {{-- Processing Payouts --}}
         <div class="col-lg-3 col-md-6">
             <div class="glass-card p-3" style="background:linear-gradient(135deg,#eff6ff,#dbeafe);">
                 <div class="d-flex justify-content-between align-items-center mb-1">
@@ -266,7 +252,6 @@
             </div>
         </div>
 
-        {{-- Payout Readiness --}}
         <div class="col-lg-3 col-md-6">
             <div class="glass-card p-3" style="background:linear-gradient(135deg,#ecfdf5,#d1fae5);">
                 <div class="d-flex justify-content-between align-items-center mb-1">
@@ -279,7 +264,6 @@
         </div>
     </div>
 
-    {{-- ACTION SIGNAL METRICS --}}
     @php
         $pendingPaymentsValue = $metrics['pendingPaymentsValue']  ?? 0;
         $pendingPaymentsCount = $metrics['pendingPayments']        ?? 0;
@@ -289,7 +273,7 @@
         $expiryRatio          = $activeSubsCount > 0 ? min(($expiringSoon / max($activeSubsCount,1)) * 100, 100) : 0;
     @endphp
     <div class="row g-3 mb-4">
-        {{-- Uncollected Revenue --}}
+
         <div class="col-lg-6">
             <div class="glass-card p-3" style="background:linear-gradient(135deg,#f43f5e 0%,#fda4af 100%);border-left:5px solid #be185d;box-shadow:0 2px 16px 0 rgba(244,63,94,0.08);color:#fff;">
                 <div class="d-flex justify-content-between align-items-start mb-2">
@@ -311,7 +295,6 @@
             </div>
         </div>
 
-        {{-- Expiring Soon --}}
         <div class="col-lg-6">
             <div class="glass-card p-3" style="background:linear-gradient(135deg,#f59e0b 0%,#fef08a 100%);border-left:5px solid #b45309;box-shadow:0 2px 16px 0 rgba(245,158,11,0.08);color:#fff;">
                 <div class="d-flex justify-content-between align-items-start mb-2">
@@ -344,7 +327,6 @@
         <a href="{{ route('deployment.commissions.index') }}" class="btn btn-outline-primary btn-sm">Open Payout Center</a>
     </div>
 
-    {{-- Payment Alert --}}
     @if($pendingPayments > 0)
     <div class="alert alert-warning d-flex align-items-center mb-4 border-0 shadow-sm">
         <i class="fas fa-exclamation-triangle me-3 fa-2x"></i>
@@ -388,7 +370,6 @@
     </div>
     @endif
 
-    {{-- QUICK ACTIONS --}}
     <h6 class="fw-bold text-muted text-uppercase small mb-3">Quick Navigation</h6>
     <div class="row g-3 mb-4">
         <div class="col-xl-2 col-md-4 col-6">
@@ -435,7 +416,6 @@
         </div>
     </div>
 
-    {{-- CHARTS --}}
     <div class="row g-3 mb-4">
         <div class="col-lg-6">
             <div class="glass-card chart-panel p-3">
@@ -469,7 +449,6 @@
         </div>
     </div>
 
-    {{-- WAVE CHART: 30-Day Activity --}}
     <div class="row g-3 mb-4">
         <div class="col-12">
             <div class="glass-card p-3" style="background:linear-gradient(135deg,#0f172a 0%,#1e1b4b 55%,#0c4a6e 100%);border:none;">
@@ -494,7 +473,6 @@
         </div>
     </div>
 
-    {{-- TABLE & ACTIVITY --}}
     <div class="row g-3">
         <div class="col-lg-8">
             <div class="glass-card overflow-hidden">
@@ -588,8 +566,7 @@
                     <div class="text-center text-muted py-3 small"><i class="fas fa-info-circle mb-2 d-block"></i>No recent activity.</div>
                     @endforelse
                 </div>
-                
-                {{-- Stats Widget --}}
+
                 <div class="mt-4 p-3 bg-dark rounded-3 text-white">
                     <h6 class="fw-bold mb-3 small text-uppercase">Performance Stats</h6>
                     @php
@@ -644,17 +621,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const subscriptions = @json($recentSubscriptions ?? []);
     const commissionRate = {{ $commissionRate }};
-    
+
     // Revenue & Commission Chart
     const revenueCtx = document.getElementById('revenueChart');
     if (revenueCtx) {
         const ctx = revenueCtx.getContext('2d');
-        
+
         // Calculate monthly data
         const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         const revenueData = {};
         const commissionData = {};
-        
+
         subscriptions.forEach(s => {
             if(s.payment_status === 'paid') {
                 const d = new Date(s.created_at);
@@ -663,7 +640,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 commissionData[k] = (commissionData[k] || 0) + ((s.amount || 0) * commissionRate / 100);
             }
         });
-        
+
         const labels = Object.keys(revenueData).slice(-6);
         const revenueValues = labels.map(l => revenueData[l] || 0);
         const commissionValues = labels.map(l => commissionData[l] || 0);

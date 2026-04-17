@@ -1,4 +1,4 @@
-{{-- Core JS --}}
+
 <script src="{{ URL::asset('/assets/js/jquery-3.7.1.min.js') }}"></script>
 <script src="{{ URL::asset('/assets/js/bootstrap.bundle.min.js') }}"></script>
 <script src="{{ URL::asset('/assets/js/feather.min.js') }}"></script>
@@ -6,19 +6,16 @@
 <script src="{{ URL::asset('/assets/plugins/slimscroll/jquery.slimscroll.min.js') }}"></script>
 <script src="{{ URL::asset('/assets/js/jquery-ui.min.js') }}"></script>
 
-{{-- Common Plugins (Excluded from SaaS Auth Pages to prevent console errors) --}}
 @if (!Route::is(['saas-login', 'saas-register', 'forgot-password', 'password.reset']))
     <script src="{{ URL::asset('/assets/plugins/select2/js/select2.min.js') }}"></script>
     <script src="{{ URL::asset('/assets/plugins/moment/moment.min.js') }}"></script>
     <script src="{{ URL::asset('/assets/js/bootstrap-datetimepicker.min.js') }}"></script>
 @endif
 
-{{-- DataTables Logic --}}
 @if (!Route::is(['companies', 'saas-login', 'saas-register', 'forgot-password', 'password.reset']))
     <script src="{{ URL::asset('/assets/plugins/datatables/datatables.min.js') }}"></script>
 @endif
 
-{{-- Dashboard & Charts Logic --}}
 @php
     $dashboardRoutes = ['chart-apex', 'chart-js', 'dashboard', 'index-five', 'index-four', 'index-three', 'index-two', 'index', '/'];
 @endphp
@@ -55,7 +52,6 @@
     <script src="{{ URL::asset('/assets/plugins/c3-chart/chart-data.js') }}"></script>
 @endif
 
-{{-- UI Components --}}
 @if (Route::is('horizontal-timeline'))
     <script src="{{ URL::asset('/assets/plugins/timeline/horizontal-timeline.js') }}"></script>
 @endif
@@ -152,5 +148,4 @@
     <script src="{{ URL::asset('/assets/js/jvectormap.js') }}"></script>
 @endif
 
-{{-- Main Theme Script --}}
 <script src="{{ URL::asset('/assets/js/script.js') }}"></script>

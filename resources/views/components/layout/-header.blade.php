@@ -15,7 +15,7 @@ class Header extends Component
     public function __construct()
     {
         $this->user = Auth::user();
-        
+
         // Fetch notifications using Eloquent relationship
         $this->notifications = $this->user 
             ? $this->user->notifications()->latest()->limit(5)->get() 

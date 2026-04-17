@@ -87,7 +87,7 @@
             $showingFrom = $payments->firstItem() ?? 0;
             $showingTo = $payments->lastItem() ?? 0;
         @endphp
-        
+
         <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
             <div>
                 <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">Payment Summary Report</h1>
@@ -96,7 +96,7 @@
                     <span class="text-green-600 font-bold text-base">{{ \App\Support\GeoCurrency::format($totalRevenue ?? 0, 'NGN', $currencyCode, $currencyLocale) }}</span>
                 </p>
             </div>
-            
+
             <div class="flex items-center space-x-2 no-print">
                 <button onclick="generatePDF()" class="report-btn inline-flex items-center bg-white border border-gray-200 rounded-xl font-semibold text-red-500 hover:bg-gray-50 transition">
                     <i class="fas fa-file-pdf mr-2"></i> PDF
@@ -296,7 +296,7 @@
     <div class="flex items-center justify-center min-h-screen px-4">
         <div class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm" onclick="closeModal()"></div>
         <div class="relative bg-white rounded-3xl shadow-2xl max-w-2xl w-full p-6 md:p-8 overflow-hidden transition-all">
-            
+
             <div class="flex justify-between items-center mb-6 no-print">
                 <h3 class="text-xl font-bold text-gray-900" id="modalTitle">Details</h3>
                 <div class="flex space-x-2">
@@ -333,7 +333,7 @@
 
                 <div class="receipt-panel bg-gray-50 rounded-2xl p-4 md:p-5 mb-5 border border-gray-200 relative overflow-hidden">
                     <div id="paid-stamp" class="receipt-stamp absolute top-5 right-5 border-2 border-green-500/30 text-green-500/35 font-black px-3 py-1 rotate-12 rounded-lg pointer-events-none uppercase">Paid</div>
-                    
+
                     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
                         <div class="receipt-fact">
                             <p class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.25em]">Method</p>
@@ -575,7 +575,7 @@
             .then(res => res.json())
             .then(data => {
                 const isView = mode === 'view';
-                
+
                 // Populate Receipt Mode
                 document.getElementById('rec_id').innerText = data.payment_id;
                 document.getElementById('rec_method').innerText = data.method || 'Not specified';
@@ -610,7 +610,7 @@
                 document.getElementById('editForm').classList.toggle('hidden', isView);
                 document.getElementById('printReceiptBtn').classList.toggle('hidden', !isView);
                 document.getElementById('modalTitle').innerText = isView ? "Payment Receipt" : "Edit Transaction";
-                
+
                 // Stamp Styling
                 const stamp = document.getElementById('paid-stamp');
                 stamp.innerText = resolvedStatus;
@@ -626,7 +626,7 @@
     // 2. ACTIONS (VIEW, EDIT, DELETE)
     function viewPayment(id) { openModal(id, 'view'); }
     function editPayment(id) { openModal(id, 'edit'); }
-    
+
     function savePayment(e) {
         e.preventDefault();
         const id = document.getElementById('edit_id').value;

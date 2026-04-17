@@ -3,20 +3,18 @@
         <div class="sidebar-inner slimscroll">
             <div id="sidebar-menu" class="sidebar-menu">
 
-                {{-- Horizontal/Greedy Menu --}}
                 <nav class="greedys sidebar-horizantal">
                     <ul class="list-inline-item list-unstyled links">
-                        
-                        {{-- Main Section --}}
+
                         <li class="menu-title"><span>Main</span></li>
-                        
+
                         <li class="submenu">
                             <a href="#"><i class="fe fe-home"></i> <span>Dashboard</span> <span class="menu-arrow"></span></a>
                             <ul>
                                 <li><a href="{{ url('/') }}" class="{{ Request::is('index', '/') ? 'active' : '' }}">Admin Dashboard</a></li>
                             </ul>
                         </li>
-                        
+
                         <li class="submenu">
                             <a href="#"><i class="fe fe-grid"></i> <span>Applications</span> <span class="menu-arrow"></span></a>
                             <ul>
@@ -25,7 +23,7 @@
                                 <li><a href="{{ url('inbox') }}" class="{{ Request::is('inbox') ? 'active' : '' }}">Email</a></li>
                             </ul>
                         </li>
-                        
+
                         <li class="submenu">
                             <a href="#"><i class="fe fe-user"></i> <span>Super Admin</span> <span class="menu-arrow"></span></a>
                             <ul>
@@ -38,7 +36,6 @@
                             </ul>
                         </li>
 
-                        {{-- Customers Section --}}
                         <li class="submenu">
                             <a href="#"><i class="fe fe-users"></i><span>Customers</span> <span class="menu-arrow"></span></a>
                             <ul>
@@ -48,9 +45,8 @@
                             </ul>
                         </li>
 
-                        {{-- Inventory Section --}}
                         <li class="menu-title"><span>Inventory</span></li>
-                        
+
                         <li class="submenu">
                             <a href="#"><i class="fe fe-package"></i> <span>Products / Services</span> <span class="menu-arrow"></span></a>
                             <ul>
@@ -59,7 +55,7 @@
                                 <li><a href="{{ url('units') }}" class="{{ Request::is('units') ? 'active' : '' }}">Product Units</a></li>
                             </ul>
                         </li>
-                        
+
                         <li>
                             <a href="{{ url('inventory') }}" class="{{ Request::is('inventory', 'inventory-history') ? 'active' : '' }}"><i class="fe fe-archive"></i> <span>Inventory</span></a>
                         </li>
@@ -77,9 +73,8 @@
                             </ul>
                         </li>
 
-                        {{-- Sales Section --}}
                         <li class="menu-title"><span>Sales</span></li>
-                        
+
                         <li class="submenu">
                             <a href="#"><i class="fe fe-file"></i> <span>Invoices</span><span class="menu-arrow"></span></a>
                             <ul>
@@ -90,14 +85,14 @@
                                 <li><a href="{{ url('invoice-template') }}" class="{{ Request::is('invoice-template') ? 'active' : '' }}">Invoice Templates</a></li>
                             </ul>
                         </li>
-                        
+
                         <li>
                             <a href="{{ url('pos') }}" class="{{ Request::is('pos*') ? 'active' : '' }}"><i class="fe fe-shopping-cart"></i> <span>POS</span></a>
                         </li>
                     </ul>
-                    
+
                     <button class="viewmoremenu">More Menu</button>
-                    
+
                     <ul class="hidden-links hidden">
                         <li>
                             <a href="{{ url('recurring-invoices') }}" class="{{ Request::is('recurring-invoices') ? 'active' : '' }}"><i class="fe fe-clipboard"></i> <span>Recurring Invoices</span></a>
@@ -105,8 +100,7 @@
                         <li>
                             <a href="{{ url('credit-notes') }}" class="{{ Request::is('credit-notes', 'add-credit-notes', 'edit-credit-notes') ? 'active' : '' }}"><i class="fe fe-edit"></i> <span>Credit Notes</span></a>
                         </li>
-                        
-                        {{-- Purchases Section --}}
+
                         <li class="menu-title"><span>Purchases</span></li>
                         <li>
                             <a href="{{ url('purchases') }}" class="{{ Request::is('purchases', 'add-purchases', 'edit-purchases', 'add-purchase-return', 'edit-purchase-return') ? 'active' : '' }}"><i class="fe fe-shopping-cart"></i> <span>Purchases</span></a>
@@ -128,7 +122,6 @@
                             $sidebarHasEnterprise = $sidebarIsSuper || str_contains($sidebarPlan, 'enterprise');
                         @endphp
 
-                        {{-- Finance & Accounts Section --}}
                         <li class="menu-title"><span>Finance & Accounts</span></li>
                         <li>
                             <a href="{{ url('expenses') }}" class="{{ Request::is('expenses') ? 'active' : '' }}"><i class="fe fe-file-plus"></i> <span>Expenses</span></a>
@@ -177,7 +170,6 @@
                         </li>
                         @endif
 
-                        {{-- Quotations Section --}}
                         <li class="menu-title"><span>Quotations</span></li>
                         <li>
                             <a href="{{ url('quotations') }}" class="{{ Request::is('quotations', 'add-quotations', 'edit-quotations') ? 'active' : '' }}"><i class="fe fe-clipboard"></i> <span>Quotations</span></a>
@@ -186,12 +178,11 @@
                             <a href="{{ url('delivery-challans') }}" class="{{ Request::is('delivery-challans', 'add-delivery-challans', 'edit-delivery-challans') ? 'active' : '' }}"><i class="fe fe-file-text"></i> <span>Delivery Challans</span></a>
                         </li>
 
-                        {{-- Reports Section --}}
                         <li class="menu-title"><span>Reports</span></li>
                         <li>
                             <a href="{{ route('reports.payment-summary') }}" class="{{ Request::is('reports/payment-summary') ? 'active' : '' }}"><i class="fe fe-credit-card"></i> <span>Payment Summary</span></a>
                         </li>
-                        
+
                         <li class="submenu">
                             <a href="#"><i class="fe fe-bar-chart"></i><span>Reports</span> <span class="menu-arrow"></span></a>
                             <ul>
@@ -212,7 +203,6 @@
                             </ul>
                         </li>
 
-                        {{-- User Management Section --}}
                         <li class="menu-title"><span>User Management</span></li>
                         <li>
                             <a href="{{ url('users') }}" class="{{ Request::is('users') ? 'active' : '' }}"><i class="fe fe-user"></i> <span>Users</span></a>
@@ -234,7 +224,6 @@
                         </li>
                         @endif
 
-                        {{-- Membership Section --}}
                         <li class="menu-title"><span>Membership</span></li>
                         <li class="submenu">
                             <a href="#"><i class="fe fe-book"></i> <span>Membership</span> <span class="menu-arrow"></span></a>
@@ -246,15 +235,13 @@
                             </ul>
                         </li>
 
-                        {{-- Forms Section --}}
                         <li class="submenu">
                             <a href="#"><i class="fe fe-sidebar"></i> <span>Forms</span> <span class="menu-arrow"></span></a>
                             <ul>
                                 <li><a href="{{ url('form-basic-inputs') }}" class="{{ Request::is('form-basic-inputs') ? 'active' : '' }}">Basic Inputs</a></li>
                             </ul>
                         </li>
-                        
-                        {{-- Tables Section --}}
+
                         <li class="submenu">
                             <a href="#"><i class="fe fe-layout"></i> <span>Tables</span> <span class="menu-arrow"></span></a>
                             <ul>
@@ -263,7 +250,6 @@
                             </ul>
                         </li>
 
-                        {{-- Settings Section --}}
                         <li class="menu-title"><span>Settings</span></li>
                         <li>
                             <a href="{{ url('settings') }}" class="{{ Request::is('settings', 'company-settings', 'invoice-settings', 'template-invoice', 'payment-settings', 'bank-account', 'tax-rates', 'plan-billing', 'two-factor', 'custom-filed', 'email-settings', 'preferences', 'saas-settings', 'seo-settings', 'email-template') ? 'active' : '' }}"><i class="fe fe-settings"></i> <span>Settings</span></a>
@@ -271,19 +257,17 @@
                     </ul>
                 </nav>
 
-                {{-- Vertical Menu --}}
                 <ul class="sidebar-vertical">
-                    
-                    {{-- Main Section --}}
+
                     <li class="menu-title"><span>Main</span></li>
-                    
+
                     <li class="submenu">
                         <a href="#"><i class="fe fe-home"></i> <span>Dashboard</span> <span class="menu-arrow"></span></a>
                         <ul>
                             <li><a href="{{ url('/') }}" class="{{ Request::is('index', '/') ? 'active' : '' }}">Admin Dashboard</a></li>
                         </ul>
                     </li>
-                    
+
                     <li class="submenu">
                         <a href="#"><i class="fe fe-grid"></i> <span>Applications</span> <span class="menu-arrow"></span></a>
                         <ul>
@@ -292,7 +276,7 @@
                             <li><a href="{{ url('inbox') }}" class="{{ Request::is('inbox') ? 'active' : '' }}">Email</a></li>
                         </ul>
                     </li>
-                    
+
                     <li class="submenu">
                         <a href="#"><i class="fe fe-user"></i> <span>Super Admin</span> <span class="menu-arrow"></span></a>
                         <ul>
@@ -305,7 +289,6 @@
                         </ul>
                     </li>
 
-                    {{-- POS Section --}}
                     <li class="menu-title"><span>POS</span></li>
                     <li class="submenu">
                         <a href="#"><i class="fe fe-shopping-cart"></i> <span>POS Terminal</span> <span class="menu-arrow"></span></a>
@@ -315,8 +298,7 @@
                             <li><a href="{{ url('pos/reports') }}" class="{{ Request::is('pos/reports') ? 'active' : '' }}">Items Sold</a></li>
                         </ul>
                     </li>
-                    
-                    {{-- Customers Section --}}
+
                     <li class="menu-title"><span>Customers</span></li>
                     <li>
                         <a href="{{ url('customers') }}" class="{{ Request::is('customers', 'add-customer', 'edit-customer', 'active-customers', 'deactive-customers') ? 'active' : '' }}"><i class="fe fe-users"></i> <span>Customers</span></a>
@@ -327,8 +309,7 @@
                     <li>
                         <a href="{{ url('suppliers') }}" class="{{ Request::is('suppliers*') ? 'active' : '' }}"><i class="fe fe-user"></i> <span>Suppliers</span></a>
                     </li>
-                    
-                    {{-- Inventory Section --}}
+
                     <li class="menu-title"><span>Inventory</span></li>
                     <li class="submenu">
                         <a href="#"><i class="fe fe-package"></i> <span>Products / Services</span> <span class="menu-arrow"></span></a>
@@ -346,8 +327,7 @@
                         <a href="{{ route('inventory.transfer-audit') }}" class="{{ Request::is('inventory-transfer-audit') ? 'active' : '' }}"><i class="fe fe-shuffle"></i> <span>Transfer Audit</span></a>
                     </li>
                     @endif
-                    
-                    {{-- Signature Section --}}
+
                     <li class="menu-title"><span>Signature</span></li>
                     <li>
                         <a href="{{ url('signature-list') }}" class="{{ Request::is('signature-list') ? 'active' : '' }}"><i class="fe fe-clipboard"></i> <span>List of Signature</span></a>
@@ -355,8 +335,7 @@
                     <li>
                         <a href="{{ url('signature-invoice') }}" class="{{ Request::is('signature-invoice') ? 'active' : '' }}"><i class="fe fe-box"></i> <span>Signature Invoice</span></a>
                     </li>
-                    
-                    {{-- Sales Section --}}
+
                     <li class="menu-title"><span>Sales</span></li>
                     <li class="submenu">
                         <a href="#"><i class="fe fe-file"></i> <span>Invoices</span><span class="menu-arrow"></span></a>
@@ -374,8 +353,7 @@
                     <li>
                         <a href="{{ url('credit-notes') }}" class="{{ Request::is('credit-notes', 'add-credit-notes', 'edit-credit-notes') ? 'active' : '' }}"><i class="fe fe-edit"></i> <span>Credit Notes</span></a>
                     </li>
-                    
-                    {{-- Purchases Section --}}
+
                     <li class="menu-title"><span>Purchases</span></li>
                     <li>
                         <a href="{{ url('purchases') }}" class="{{ Request::is('purchases', 'add-purchases', 'edit-purchases', 'add-purchase-return', 'edit-purchase-return') ? 'active' : '' }}"><i class="fe fe-shopping-cart"></i> <span>Purchases</span></a>
@@ -386,8 +364,7 @@
                     <li>
                         <a href="{{ url('debit-notes') }}" class="{{ Request::is('debit-notes') ? 'active' : '' }}"><i class="fe fe-file-text"></i> <span>Debit Notes</span></a>
                     </li>
-                    
-                    {{-- Finance & Accounts Section --}}
+
                     <li class="menu-title"><span>Finance & Accounts</span></li>
                     <li>
                         <a href="{{ url('expenses') }}" class="{{ Request::is('expenses') ? 'active' : '' }}"><i class="fe fe-file-plus"></i> <span>Expenses</span></a>
@@ -435,8 +412,7 @@
                             <a href="{{ route('membership-plans', ['plan' => 'enterprise']) }}" class="{{ Request::is('membership-plans*') ? 'active' : '' }}"><i class="fe fe-lock"></i> <span>Upgrade for Assets & Budgets</span></a>
                         </li>
                         @endif
-                    
-                    {{-- Quotations Section --}}
+
                     <li class="menu-title"><span>Quotations</span></li>
                     <li>
                         <a href="{{ url('quotations') }}" class="{{ Request::is('quotations', 'add-quotations', 'edit-quotations') ? 'active' : '' }}"><i class="fe fe-clipboard"></i> <span>Quotations</span></a>
@@ -444,8 +420,7 @@
                     <li>
                         <a href="{{ url('delivery-challans') }}" class="{{ Request::is('delivery-challans', 'add-delivery-challans', 'edit-delivery-challans') ? 'active' : '' }}"><i class="fe fe-file-text"></i> <span>Delivery Challans</span></a>
                     </li>
-                    
-                    {{-- Reports Section --}}
+
                     <li class="menu-title"><span>Reports</span></li>
                         <li>
                             <a href="{{ route('reports.payment-summary') }}" class="{{ Request::is('reports/payment-summary') ? 'active' : '' }}"><i class="fe fe-credit-card"></i> <span>Payment Summary</span></a>
@@ -469,8 +444,7 @@
                             <li><a href="{{ route('reports.cash-flow') }}" class="{{ Request::is('cash-flow') ? 'active' : '' }}">Cash Flow Statement</a></li>
                         </ul>
                     </li>
-                    
-                    {{-- User Management Section --}}
+
                     <li class="menu-title"><span>User Management</span></li>
                     <li>
                         <a class="{{ Request::is('users') ? 'active' : '' }}" href="{{ url('users') }}"><i

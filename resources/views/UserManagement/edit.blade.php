@@ -19,11 +19,11 @@
             <div class="col-md-8 offset-md-2">
                 <div class="card">
                     <div class="card-body">
-                        {{-- Form points back to your update method --}}
+
                         <form action="{{ route($updateRouteName, $user->id) }}" method="POST" enctype="multipart/form-data">
                             @csrf
                             @method('PUT')
-                            {{-- We use hidden input or route param depending on your controller --}}
+
                             <input type="hidden" name="user_id" value="{{ $user->id }}">
 
                             <div class="mb-3">

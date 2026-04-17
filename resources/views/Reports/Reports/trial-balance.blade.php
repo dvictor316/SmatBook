@@ -160,7 +160,7 @@
         background: white;
         transition: 0.2s;
     }
-    
+
     .btn-export:hover { background: var(--bg-alice); }
 
     .status-strip {
@@ -228,8 +228,7 @@
             'periodLabel' => 'Period: ' . $startDate . ' to ' . $endDate,
         ])
         <div class="report-container">
-        
-        {{-- Header --}}
+
         <div class="report-header d-flex justify-content-between align-items-end no-print">
             <div>
                 <div class="report-title">Financial Audit Report</div>
@@ -248,7 +247,6 @@
             </div>
         </div>
 
-        {{-- Filters --}}
         <div class="filter-card no-print">
             <form action="" method="GET" class="row g-2 align-items-end">
                 <div class="col-md-4">
@@ -265,7 +263,6 @@
             </form>
         </div>
 
-        {{-- Summary --}}
         <div class="summary-grid">
             <div class="summary-card">
                 <span class="summary-label">Total Debits</span>
@@ -303,7 +300,6 @@
             </div>
         @endif
 
-        {{-- Table --}}
         <div class="table-card">
             <div class="table-scroll">
             <table class="table align-middle" id="trialBalanceTable">
@@ -348,7 +344,6 @@
     </div>
 </div>
 
-{{-- Scripts remain the same for DataTables functionality --}}
 <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>

@@ -4,7 +4,7 @@
 			<!-- Page Wrapper -->
             <div class="page-wrapper">
                 <div class="content container-fluid">
-				
+
 					<!-- Page Header -->
                     <div class="page-header">
 						<div class="content-page-header">
@@ -12,7 +12,7 @@
 						</div>	
 					</div>	
                     <!-- /Page Header -->
-											
+
 					<!-- Buttons -->
 					<div class="card card-buttons">
 						<div class="card-body">
@@ -88,7 +88,7 @@
 						</div>
 					</div>
 					<!-- /Rounded Button -->
-					
+
 					<!-- Outline Buttons -->
 					<div class="card card-buttons">
 						<div class="card-header">

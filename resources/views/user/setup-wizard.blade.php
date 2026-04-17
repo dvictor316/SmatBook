@@ -1,16 +1,13 @@
 @extends('layout.mainlayout')
 
 @section('content')
-{{-- 
-    We use a "wizard-mode" class on the wrapper to give us 
-    complete control over the layout via CSS 
---}}
+
 <div class="page-wrapper ms-0 wizard-mode">
     <div class="content container-fluid">
-        
+
         <div class="row justify-content-center align-items-center" style="min-height: 90vh;">
             <div class="col-lg-5 col-md-7">
-                
+
                 <div class="card shadow-lg border-0 mt-5">
                     <div class="card-body p-5">
                         <div class="text-center mb-4">
@@ -23,7 +20,7 @@
 
                         <form action="{{ route('saas.store') }}" method="POST">
                             @csrf
-                            
+
                             <div class="mb-4">
                                 <label class="form-label fw-bold">Workspace URL</label>
                                 <div class="input-group input-group-lg">
@@ -54,7 +51,6 @@
     </div>
 </div>
 
-{{-- HARD RESTRICTION CSS --}}
 <style>
     /* 1. Physically hide the Sidebar and Top Header */
     .sidebar, 
@@ -66,7 +62,7 @@
         visibility: hidden !important;
         width: 0 !important;
     }
-    
+
     /* 2. Force the Page Wrapper to take up the full screen */
     .page-wrapper { 
         margin-left: 0 !important; 

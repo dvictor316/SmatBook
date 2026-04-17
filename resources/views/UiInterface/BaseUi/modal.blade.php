@@ -284,7 +284,6 @@
                                 </div><!-- /.modal-dialog -->
                             </div><!-- /.modal -->
 
-
                             <!-- SignIn modal content -->
                             <div id="login-modal" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true">
                                 <div class="modal-dialog">

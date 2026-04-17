@@ -60,7 +60,6 @@
 
 <div class="page-wrapper"> <div class="content container-fluid">
 
-    {{-- Alerts --}}
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm" role="alert">
             <i class="fas fa-check-circle me-2"></i> <strong>Success!</strong> {{ session('success') }}
@@ -68,7 +67,6 @@
         </div>
     @endif
 
-    {{-- Page Header --}}
     <div class="page-header">
         <div class="content-page-header">
             <div>
@@ -97,7 +95,6 @@
         </div>
     </div>
 
-    {{-- Filter Section --}}
     <div id="filter_inputs" class="card filter-card" style="{{ request('search') || request('start_date') ? '' : 'display: none;' }}">
         <div class="card-body">
             <form action="{{ route('purchase-transaction') }}" method="GET">
@@ -128,7 +125,6 @@
         </div>
     </div>
 
-    {{-- Data Table --}}
     <div class="row">
         <div class="col-sm-12">
             <div class="card border-0">
@@ -188,7 +184,6 @@
                                             </td>
                                         </tr>
 
-                                        {{-- Delete Modal --}}
                                         @if(($transaction->source_type ?? '') !== 'inventory_history')
                                         <div class="modal fade" id="delete_modal_{{ $transaction->id }}" tabindex="-1" aria-hidden="true">
                                             <div class="modal-dialog modal-dialog-centered">
@@ -230,8 +225,7 @@
                     </div>
                 </div>
             </div>
-            
-            {{-- Pagination --}}
+
             @isset($purchasereports)
                 <div class="d-flex justify-content-between align-items-center mt-3">
                     <div class="text-muted small">Total Transactions: {{ $purchasereports->total() }}</div>

@@ -72,7 +72,7 @@
     @php($faviconVersion = file_exists(public_path('assets/img/log-favicon.png')) ? filemtime(public_path('assets/img/log-favicon.png')) : time())
     <link rel="icon" type="image/png" href="{{ asset('assets/img/log-favicon.png') }}?v={{ $faviconVersion }}">
     <link rel="shortcut icon" href="{{ asset('assets/img/log-favicon.png') }}?v={{ $faviconVersion }}">
-    
+
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
@@ -780,7 +780,7 @@
             .footer-grid { 
                 grid-template-columns: repeat(2, 1fr); 
             }
-            
+
             .feature-row, 
             .feature-row.reverse { 
                 flex-direction: column; 
@@ -1234,7 +1234,7 @@
             <img src="{{ asset('assets/img/logos.png') }}" class="brand-img" alt="SmartProbook"> 
             <span class="logo-text">SmartPro<span>book</span></span>
         </a>
-        
+
         <button class="hamburger" id="navTrigger" type="button" aria-label="Toggle navigation">
             <span></span>
             <span></span>

@@ -2,13 +2,8 @@
 
 @section('content')
 
-{{-- 
-    WRAPPER: This div pushes the content 270px to the right 
-    to accommodate the fixed sidebar 
---}}
 <div class="sb-shell page-content-wrapper dm-main-content">
-    
-    {{-- Toggle Button (Visible if you don't have a top navbar) --}}
+
     <button onclick="toggleSidebar()" class="btn btn-light border mb-3 d-lg-none">
         <i class="fas fa-bars"></i> Menu
     </button>

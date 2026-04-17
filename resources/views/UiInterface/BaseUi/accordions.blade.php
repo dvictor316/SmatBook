@@ -17,7 +17,7 @@
                             <div class="card">
                                 <div class="card-body">
                                     <h4 class="header-title mb-4">Default Tabs</h4>
-    
+
                                     <ul class="nav nav-tabs">
                                         <li class="nav-item">
                                             <a href="#home" data-bs-toggle="tab" aria-expanded="false" class="nav-link">
@@ -52,12 +52,12 @@
                                 </div>
                             </div> <!-- end card-->
                         </div> <!-- end col -->
-    
+
                         <div class="col-xl-6">
                             <div class="card">
                                 <div class="card-body">
                                     <h4 class="header-title mb-4">Tabs Justified</h4>
-    
+
                                     <ul class="nav nav-pills navtab-bg nav-justified">
                                         <li class="nav-item">
                                             <a href="#home1" data-bs-toggle="tab" aria-expanded="false" class="nav-link">
@@ -94,13 +94,13 @@
                         </div> <!-- end col -->
                     </div>
                     <!-- end row -->
-    
+
                     <div class="row">
                         <div class="col-xl-6">
                             <div class="card">
                                 <div class="card-body">
                                     <h4 class="header-title mb-4">Tabs Vertical Left</h4>
-    
+
                                     <div class="row">
                                         <div class="col-sm-3">
                                             <div class="nav flex-column nav-pills nav-pills-tab" id="v-pills-tab" role="tablist" aria-orientation="vertical">
@@ -146,12 +146,12 @@
                                 </div>
                             </div> <!-- end card-->
                         </div> <!-- end col -->
-    
+
                         <div class="col-xl-6">
                             <div class="card">
                                 <div class="card-body">
                                     <h4 class="header-title mb-4">Tabs Vertical Right</h4>
-    
+
                                     <div class="row">
                                         <div class="col-sm-9">
                                             <div class="tab-content" id="v-pills-tabContent">
@@ -198,13 +198,13 @@
                         </div> <!-- end col -->
                     </div>
                     <!-- end row -->
-    
+
                     <div class="row">
                         <div class="col-xl-6">
                             <div class="card">
                                 <div class="card-body">
                                     <h4 class="header-title mb-4">Tabs Bordered</h4>
-    
+
                                     <ul class="nav nav-tabs nav-bordered">
                                         <li class="nav-item">
                                             <a href="#home-b1" data-bs-toggle="tab" aria-expanded="false" class="nav-link">
@@ -239,12 +239,12 @@
                                 </div>
                             </div> <!-- end card-->
                         </div> <!-- end col -->
-    
+
                         <div class="col-xl-6">
                             <div class="card">
                                 <div class="card-body">
                                     <h4 class="header-title mb-4">Tabs Bordered Justified</h4>
-    
+
                                     <ul class="nav nav-tabs nav-bordered nav-justified">
                                         <li class="nav-item">
                                             <a href="#home-b2" data-bs-toggle="tab" aria-expanded="false" class="nav-link">
@@ -281,7 +281,7 @@
                         </div> <!-- end col -->
                     </div>
                     <!-- end row -->
-    
+
                     <div class="row">
                         <div class="col-xl-6">
                             <div id="accordion" class="custom-faq">
@@ -294,7 +294,7 @@
                                             </a>
                                         </h5>
                                     </div>
-                        
+
                                     <div id="collapseOne" class="collapse show" aria-labelledby="headingOne" data-bs-parent="#accordion">
                                         <div class="card-body">
                                             Lorem ipsum is placeholder text commonly used in the graphic, print, and publishing industries for previewing layouts and visual mockups.
@@ -334,7 +334,7 @@
                                         </div>
                                     </div>
                                 </div>
-    
+
                                 <div class="card mb-1">
                                     <div class="card-header" id="headingFour">
                                         <h5 class="accordion-faq m-0">

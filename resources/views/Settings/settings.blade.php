@@ -42,7 +42,7 @@
                                 <i class="fa fa-print"></i> Print Settings
                             </button>
                         </div>
-                        
+
                         <form action="{{ route('settings.update') }}" method="POST" enctype="multipart/form-data">
                             @csrf
                         <div class="row">
@@ -109,7 +109,7 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="col-lg-12">
                                 <div class="form-title">
                                     <h5>Address Information</h5>
@@ -145,7 +145,7 @@
                                     <input type="text" class="form-control" name="postal_code" value="{{ $settings->postal_code ?? '' }}">
                                 </div>
                             </div>
-                            
+
                             <div class="col-lg-12 d-print-none">
                                 <div class="btn-path text-end">
                                     @php

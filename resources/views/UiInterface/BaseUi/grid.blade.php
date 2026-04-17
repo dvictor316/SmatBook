@@ -4,7 +4,7 @@
 			<!-- Page Wrapper -->
             <div class="page-wrapper">
                 <div class="content container-fluid">
-				
+
 					<!-- Page Header -->
                     <div class="page-header">
 						<div class="content-page-header">
@@ -276,7 +276,7 @@
 											</div>
 										</div> <!-- end row -->
 									</div> <!-- grid-structure -->
-									
+
 								</div> <!-- end card-body-->
 							</div> <!-- end card-->
 						</div> <!-- end col-->

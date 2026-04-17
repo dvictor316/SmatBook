@@ -81,7 +81,7 @@
         font-size: 1.6rem; 
         margin-bottom: 5px; 
     }
-    
+
     .form-subtitle { 
         color: var(--spa-muted); 
         font-size: 14px; 
@@ -152,7 +152,7 @@
         border: 1px solid #f1f5f9;
         flex-shrink: 0;
     }
-    
+
     .tile-icon.paystack i { color: #00C3F7; font-size: 22px; }
     .tile-icon.flutterwave i { color: #F5A623; font-size: 22px; }
     .tile-icon.stripe i { color: #635bff; font-size: 22px; }
@@ -168,7 +168,7 @@
         display: block; 
         margin-bottom: 3px;
     }
-    
+
     .tile-desc { 
         font-size: 12px; 
         color: #94a3b8; 
@@ -353,7 +353,7 @@
         z-index: 10000; 
         text-align: center;
     }
-    
+
     .spinner { 
         width: 50px; 
         height: 50px; 
@@ -363,7 +363,7 @@
         animation: spin 0.8s linear infinite; 
         margin: 0 auto 20px; 
     }
-    
+
     @keyframes spin { 
         100% { transform: rotate(360deg); } 
     }
@@ -389,14 +389,14 @@
 </style>
 
 <div class="smat-viewport">
-    
+
     <div class="bubble-bg">
         <div class="bubble" style="width: 500px; height: 500px; top: -150px; left: -100px;"></div>
         <div class="bubble" style="width: 300px; height: 300px; bottom: -50px; right: -50px; animation-delay: -5s;"></div>
     </div>
 
     <div class="smat-card">
-        
+
         <!-- Payment panel (left) -->
         <div class="smat-main">
             <h1 class="form-title">Payment Method</h1>
@@ -451,7 +451,7 @@
                         <i class="fas fa-arrow-left"></i>
                         <span>Previous</span>
                     </button>
-                    
+
                     <button type="submit" class="btn-process" id="processBtn">
                         <i class="fas fa-lock"></i>
                         <span>Process Payment</span>

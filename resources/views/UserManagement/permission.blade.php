@@ -179,7 +179,6 @@
 <div class="page-wrapper perm-shell">
 <div class="content container-fluid">
 
-    {{-- ─── Hero ──────────────────────────────────────────────────── --}}
     <div class="perm-hero">
         <div class="perm-hero-left">
             <div class="perm-hero-icon"><i class="fa fa-shield-alt"></i></div>
@@ -497,7 +496,6 @@
             foreach ($modules as $m) { $categories[$m['cat']][] = $m; }
         @endphp
 
-        {{-- ─── Toolbar ───────────────────────────────────────────────── --}}
         <div class="perm-toolbar">
             <div class="perm-toolbar-left">
                 <span style="font-weight:700;font-size:0.9rem;color:#1a2236;">Module Permissions</span>
@@ -516,7 +514,6 @@
             </div>
         </div>
 
-        {{-- ─── Categories ──────────────────────────────────────────── --}}
         @foreach ($categories as $catName => $catModules)
             <div class="perm-category-row">
                 <span class="perm-category-label">{{ $catName }}</span>
@@ -593,7 +590,6 @@
             </div>
         @endforeach
 
-        {{-- ─── Save bar ────────────────────────────────────────────── --}}
         <div class="perm-action-bar">
             <a href="{{ route('roles.index') }}" class="btn-perm-cancel">Cancel</a>
             <button type="submit" class="btn-perm-save">

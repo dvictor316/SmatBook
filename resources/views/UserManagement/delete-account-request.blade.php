@@ -8,7 +8,6 @@
                 @slot('title') Delete Account Request @endslot
             @endcomponent
 
-            {{-- Alert Messages --}}
             @if(session('success'))
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
                     {{ session('success') }}
@@ -51,14 +50,13 @@
                                                 <td>{{ $account['RequisitionDate'] }}</td>
                                                 <td>{{ $account['DeleteRequestDate'] }}</td>
                                                 <td class="text-end">
-                                                    {{-- Standard Confirm Button --}}
+
                                                     <button type="button" class="btn btn-greys btn-sm trigger-delete" 
                                                             data-id="{{ $account['Id'] }}" 
                                                             data-name="{{ $account['UserName'] }}">
                                                         Confirm
                                                     </button>
 
-                                                    {{-- Dropdown Actions --}}
                                                     <div class="dropdown dropdown-action d-inline-block">
                                                         <a href="javascript:void(0);" class="btn-action-icon" data-bs-toggle="dropdown" aria-expanded="false">
                                                             <i class="fas fa-ellipsis-v"></i>
@@ -86,7 +84,6 @@
         </div>
     </div>
 
-    {{-- The Modal --}}
     <div class="modal fade" id="delete_modal" tabindex="-1" aria-hidden="true" style="z-index: 1060;">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -94,7 +91,7 @@
                     @csrf
                     @method('DELETE')
                     <input type="hidden" name="user_id" id="modal_user_id">
-                    
+
                     <div class="modal-body text-center pt-4">
                         <div class="mb-3">
                             <i class="fas fa-exclamation-triangle fa-4x text-danger"></i>
@@ -122,7 +119,7 @@ $(document).ready(function() {
      */
     $(document).on('click', '.trigger-delete', function(e) {
         e.preventDefault();
-        
+
         // Fetch data from the clicked element
         var userId = $(this).data('id');
         var userName = $(this).data('name');

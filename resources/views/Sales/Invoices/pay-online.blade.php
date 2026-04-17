@@ -14,7 +14,7 @@
 
     @if($invoice)
         <div class="row g-4">
-            {{-- Invoice Summary --}}
+
             <div class="col-lg-6">
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-header bg-white border-bottom">
@@ -88,7 +88,6 @@
                 </div>
             </div>
 
-            {{-- Payment Form --}}
             <div class="col-lg-6">
                 <div class="card border-0 shadow-sm">
                     <div class="card-header bg-white border-bottom">
@@ -138,7 +137,6 @@
                                     @enderror
                                 </div>
 
-                                {{-- Bank account details (shown when Bank Transfer is selected) --}}
                                 @php $hasBanks = isset($banks) && $banks->count() > 0; @endphp
                                 <div id="bankDetailsSection" style="display:none;" class="mb-3">
                                     <div class="alert alert-info border-0 py-3 px-3" style="background:#f0f7ff;">

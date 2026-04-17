@@ -65,7 +65,7 @@
                         </ul>
                     </div>
                 @endif
-                
+
                 <form action="{{ $formAction }}" method="POST" enctype="multipart/form-data" id="invoice-form">
                     @csrf
                     @if($isEditMode)
@@ -75,7 +75,7 @@
                         <div class="col-md-12">
                             <div class="form-group-item border-0 mb-0">
                                 <div class="row align-item-center">
-                                    {{-- 1. Customer Selection --}}
+
                                     <div class="col-lg-4 col-md-6 col-sm-12">
                                         <div class="input-block mb-3">
                                             <label>Customer Name <span class="text-danger">*</span></label>
@@ -133,7 +133,6 @@
                                 </div>
                             </div>
 
-                            {{-- 2. Dynamic Product Table --}}
                             <div class="form-group-item mt-4">
                                 <div class="card-table">
                                     <div class="table-responsive">
@@ -233,8 +232,6 @@
         </div>
     </div>
 </div>
-
-
 
 <script>
     let rowIndex = {{ count($invoiceItems) }};

@@ -139,7 +139,7 @@
                 }
             }
         </style>
-        
+
         <div class="page-header">
             <div class="row align-items-center">
                 <div class="col">
@@ -300,7 +300,7 @@
                                                                 $imagePath = 'storage/' . $customer->image;
                                                             }
                                                         @endphp
-                                                        
+
                                                         <a href="{{ route('customers.show', $customer->id) }}" class="avatar avatar-md me-2">
                                                             <img class="avatar-img rounded-circle"
                                                                 src="{{ asset($imagePath) }}"

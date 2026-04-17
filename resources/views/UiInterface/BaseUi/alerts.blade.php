@@ -11,7 +11,7 @@
 						</div>	
 					</div>
 					<!-- /Page Header -->					
-						
+
 					<!-- Alerts -->
 					<div class="card bg-white">
 						<div class="card-body">

@@ -40,20 +40,18 @@
                                         <span>{{ $notification->data['action_text'] }} </span>
                                         {{ $notification->data['target_item'] }}
                                     </h6>
-                                    
-                                    {{-- Dynamic quote/comment section if exists --}}
+
                                     @if(isset($notification->data['comment']))
                                         <blockquote>"{{ Str::limit($notification->data['comment'], 150) }}"</blockquote>
                                     @endif
 
-                                    {{-- Action Buttons for specific notification types --}}
                                     @if(isset($notification->data['type']) && $notification->data['type'] == 'request')
                                         <div class="follow-btn">
                                         <a href="{{ url('action/accept/'.$notification->id) }}" class="btn btn-primary">Accept</a>
                                         <a href="{{ url('action/reject/'.$notification->id) }}" class="btn btn-outline-primary">Reject</a>
                                         </div>
                                     @endif
-                                    
+
                                     <span class="time">{{ $notification->created_at->diffForHumans() }}</span>
                                 </div>
                                 <div class="chat-user-time">
@@ -78,7 +76,6 @@
                         </div>
                     @endforelse
 
-                    {{-- Dynamic Pagination --}}
                     <div class="d-flex justify-content-center mt-4">
                         {{ $notifications->links() }}
                     </div>

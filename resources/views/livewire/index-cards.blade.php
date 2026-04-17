@@ -1,5 +1,5 @@
 <div class="row">
-    {{-- Card 1: Total Companies --}}
+
     <div class="col-xl-3 col-sm-6 col-12">
         <div class="card">
             <div class="card-body">
@@ -18,7 +18,6 @@
         </div>
     </div>
 
-    {{-- Card 2: Active Companies --}}
     <div class="col-xl-3 col-sm-6 col-12">
         <div class="card">
             <div class="card-body">
@@ -37,7 +36,6 @@
         </div>
     </div>
 
-    {{-- Card 3: Inactive Companies --}}
     <div class="col-xl-3 col-sm-6 col-12">
         <div class="card">
             <div class="card-body">
@@ -56,7 +54,6 @@
         </div>
     </div>
 
-    {{-- Card 4: New Today --}}
     <div class="col-xl-3 col-sm-6 col-12">
         <div class="card">
             <div class="card-body">

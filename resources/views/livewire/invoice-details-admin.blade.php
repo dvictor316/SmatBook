@@ -4,12 +4,11 @@
 <div class="page-wrapper">
     <div class="content container-fluid">
         <div class="row">
-            {{-- Left Side: The Actual Invoice (Dynamic & Printable) --}}
+
             <div class="col-lg-9">
                 @include('Sales.Invoices.invoice-details') 
             </div>
 
-            {{-- Right Side: Admin Tools (Timeline & Status) --}}
             <div class="col-lg-3 d-print-none">
                 <div class="card">
                     <div class="card-header">
@@ -53,7 +52,6 @@
     </div>
 </div>
 
-{{-- Your Saved Print Script --}}
 <script>
     function printInvoice() {
         window.print();

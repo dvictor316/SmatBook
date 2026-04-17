@@ -44,7 +44,6 @@
         </div>
     </div>
 
-    {{-- Bucket summary cards --}}
     <div class="d-flex gap-2 flex-wrap mb-4">
         @foreach($buckets as $label => $amount)
         @php $color = $bucketColors[$label] ?? '#94a3b8'; @endphp

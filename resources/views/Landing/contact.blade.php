@@ -20,7 +20,7 @@
                 <div class="info-content">
                     <h2>Global HQ</h2>
                     <p>Strategically positioned in the heart of the Enugu Tech Hub to drive financial innovation across West Africa.</p>
-                    
+
                     <div class="contact-item">
                         <i class="fas fa-map-marker-alt"></i>
                         <div>

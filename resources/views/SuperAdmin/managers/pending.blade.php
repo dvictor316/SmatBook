@@ -13,7 +13,7 @@
                     </ul>
                 </div>
                 <div class="col-auto float-right ml-auto">
-                    {{-- Implementation of [2025-12-30] Print Script Rule --}}
+
                     <button onclick="window.print();" class="btn btn-white border shadow-sm">
                         <i class="fas fa-print"></i> Print Verification List
                     </button>
@@ -60,8 +60,7 @@
                                             <button type="button" class="btn btn-sm btn-danger btn-rounded shadow-sm" data-toggle="modal" data-target="#rejectModal{{ $manager->id }}">
                                                 <i class="fas fa-times"></i> Reject
                                             </button>
-                                            
-                                            {{-- Integration of [2026-01-17] Chat for clarification --}}
+
                                             <a href="{{ route('messages.index', ['type' => 'chat', 'user' => $manager->id]) }}" class="btn btn-sm btn-outline-primary btn-rounded shadow-sm">
                                                 <i class="fas fa-comments"></i> Chat
                                             </a>
@@ -119,7 +118,7 @@
         padding: 5px 10px;
     }
     .btn-rounded { border-radius: 50px; }
-    
+
     @media print {
         .btn, .sidebar, .header, .text-right, .modal, .breadcrumb { display: none !important; }
         .page-wrapper { margin-left: 0 !important; padding: 0 !important; }

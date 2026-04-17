@@ -58,26 +58,26 @@
                                                 <td>{{ $vendor->created_at->format('M d, Y') ?? 'N/A' }}</td>
                                                 <td>₦{{ number_format($vendor->current_balance ?? 0, 2) }}</td>
                                                 <td class="d-flex align-items-center">
-                                                    {{-- Link to the specific supplier's ledger --}}
+
                                                     <a href="{{ route('vendors.ledger', ['id' => $vendor->id]) }}" class="btn btn-greys me-2"><i
                                                             class="fa fa-eye me-1"></i> Ledger</a>
                                                     <a href="{{ route('vendors.transactions.create', ['id' => $vendor->id]) }}" class="btn btn-primary me-2">
                                                         <i class="fa fa-plus-circle me-1"></i> Add Txn
                                                     </a>
-                                                    
+
                                                     <div class="dropdown dropdown-action">
                                                         <a href="#" class="btn-action-icon" data-bs-toggle="dropdown"
                                                             aria-expanded="false"><i class="fas fa-ellipsis-v"></i></a>
                                                         <div class="dropdown-menu dropdown-menu-end">
                                                             <ul>
                                                                 <li>
-                                                                    {{-- Link to the EDIT page (no modal required) --}}
+
                                                                     <a class="dropdown-item" href="{{ route('vendors.edit', $vendor->id) }}">
                                                                         <i class="far fa-edit me-2"></i>Edit
                                                                     </a>
                                                                 </li>
                                                                 <li>
-                                                                    {{-- Form for DELETING a vendor --}}
+
                                                                     <form action="{{ route('vendors.destroy', $vendor->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this supplier? This action is permanent.');">
                                                                         @csrf
                                                                         @method('DELETE')

@@ -43,7 +43,7 @@
         transition: transform 0.2s;
     }
     .stat-card:hover { transform: translateY(-3px); }
-    
+
     .icon-box {
         width: 48px;
         height: 48px;
@@ -69,15 +69,13 @@
 
 @section('content')
 <div class="page-content-wrapper">
-    
-    {{-- 1. Breadcrumbs --}}
+
     <div class="breadcrumb-container d-print-none">
         <a href="{{ route('super_admin.dashboard', ['subdomain' => $sub]) }}">Dashboard</a>
         <i class="fas fa-chevron-right" style="font-size: 10px;"></i>
         <span class="text-muted">Analytics & Reports</span>
     </div>
 
-    {{-- 2. Header --}}
     <div class="d-flex align-items-center justify-content-between mb-4">
         <div>
             <h4 class="fw-bold mb-1" style="color:#0f172a;">Deployment Analytics</h4>
@@ -97,7 +95,6 @@
         </div>
     </div>
 
-    {{-- 3. Top Stats Grid --}}
     <div class="row g-4 mb-4">
         <div class="col-md-3">
             <div class="stat-card">
@@ -152,7 +149,6 @@
         </div>
     </div>
 
-    {{-- 4. Charts Row --}}
     <div class="row">
         <div class="col-lg-8">
             <div class="chart-container">
@@ -171,7 +167,6 @@
         </div>
     </div>
 
-    {{-- 5. Bottom Table: Top Companies --}}
     <div class="chart-container">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h5 class="fw-bold mb-0">Top Performing Clients</h5>
@@ -216,11 +211,10 @@
     </div>
 </div>
 
-{{-- Scripts for Charts (ApexCharts) --}}
 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        
+
         // --- Dynamic Revenue Trend Chart ---
         // Expecting $revenueTrendData as [val1, val2...] and $revenueTrendLabels as ['Jan', 'Feb'...]
         var revenueOptions = {

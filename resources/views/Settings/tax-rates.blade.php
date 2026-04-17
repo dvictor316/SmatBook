@@ -50,7 +50,7 @@
                                 </a>
                             </div>
                         </div>
-                        
+
                         <div class="row">
                             <div class="col-sm-12">
                                 <div class="card-table">
@@ -101,7 +101,7 @@
                                                     @endforeach
                                                 </tbody>
                                             </table>
-                                            
+
                                             <div class="col-lg-12 d-print-none">
                                                 <div class="btn-path text-end mt-4">
                                                     <a href="{{ route('tax-rates') }}" class="btn btn-cancel bg-primary-light me-3">Cancel</a>

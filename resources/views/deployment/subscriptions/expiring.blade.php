@@ -1,7 +1,7 @@
 @extends('layout.mainlayout')
 
 @section('content')
-{{-- Custom CSS to handle the 270px Sidebar --}}
+
 <style>
     .page-wrapper {
         margin-left: 270px; /* Space for the sidebar */
@@ -21,7 +21,6 @@
 <div class="page-wrapper page-content-wrapper">
     <div class="content container-fluid">
 
-        {{-- Page Header --}}
         <div class="page-header">
             <div class="content-page-header">
                 <h5>Expiring Subscriptions</h5>
@@ -42,7 +41,6 @@
             </div>
         </div>
 
-        {{-- Subscription Stats --}}
         <div class="row">
             <div class="col-xl-3 col-sm-6 col-12">
                 <div class="card subscribers-card">
@@ -61,7 +59,6 @@
             </div>
         </div>
 
-        {{-- Table Section --}}
         <div class="row">
             <div class="col-sm-12">
                 <div class="card-table">
@@ -133,7 +130,6 @@
             </div>
         </div>
 
-        {{-- Pagination --}}
         <div class="row align-items-center">
             <div class="col-sm-12 col-md-5">
                 <div class="dataTables_info">

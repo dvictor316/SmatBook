@@ -5,7 +5,7 @@
     <div class="content container-fluid">
         <div class="row justify-content-center">
             <div class="col-xl-8">
-                {{-- Display Validation Errors to see why redirect fails --}}
+
                 @if ($errors->any())
                     <div class="alert alert-danger">
                         <ul>
@@ -21,7 +21,7 @@
                         <h4 class="card-title mb-0">Edit Invoice: {{ $invoice->invoice_no }}</h4>
                     </div>
                     <div class="card-body">
-                        {{-- Ensure the route name 'invoices.update' is correct in your web.php --}}
+
                         <form action="{{ route('invoices.update', $invoice->id) }}" method="POST">
                             @csrf
                             @method('PUT')
@@ -68,7 +68,6 @@
                                 </div>
                             </div>
 
-                            {{-- Invoice Items Table --}}
                             <div class="mt-4">
                                 <h5 class="mb-3">Invoice Items</h5>
                                 <div class="table-responsive">

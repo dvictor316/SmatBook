@@ -8,7 +8,7 @@
 @endphp
 <div class="page-wrapper">
     <div class="content container-fluid">
-        
+
         <div class="page-header mb-3 no-print">
             <div class="row align-items-center">
                 <div class="col">

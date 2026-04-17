@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Invoice #{{ $sale->invoice_no }}</title>
     <link rel="stylesheet" href="{{ URL::asset('/assets/css/bootstrap.min.css') }}">
-    
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
@@ -34,7 +34,7 @@
             padding: 20px; 
             color: var(--gray-700);
         }
-        
+
         .invoice-wrapper { 
             width: 210mm; 
             max-width: 100%;
@@ -54,7 +54,7 @@
             margin-bottom: 30px;
             flex-wrap: wrap;
         }
-        
+
         .btn-action { 
             font-size: 13px; 
             padding: 10px 20px; 
@@ -80,16 +80,16 @@
 
         .btn-print { background-color: var(--deep-blue); color: white; }
         .btn-print:hover { background-color: #075985; }
-        
+
         .btn-pdf { background-color: var(--gray-700); color: white; }
         .btn-pdf:hover { background-color: #1f2937; }
-        
+
         .btn-excel { background-color: var(--success-green); color: white; }
         .btn-excel:hover { background-color: #059669; }
-        
+
         .btn-email { background-color: #9333ea; color: white; }
         .btn-email:hover { background-color: #7c3aed; }
-        
+
         .btn-close-window { 
             background-color: var(--sweet-red); 
             color: white; 
@@ -753,27 +753,27 @@
                     $calculatedSubtotal = 0;
                     $totalDiscount = 0;
                     $totalTax = 0;
-                    
+
                     // First calculate all line items
                     foreach(($sale->items ?? []) as $item) {
                         $qty = (float)($item->qty ?? 0);
                         $unitPrice = (float)($item->unit_price ?? 0);
                         $discountPercent = (float)($item->discount ?? 0);
                         $taxPercent = (float)($item->tax ?? 0);
-                        
+
                         $lineSubtotal = $qty * $unitPrice;
                         $discountAmount = ($lineSubtotal * $discountPercent) / 100;
                         $afterDiscount = $lineSubtotal - $discountAmount;
                         $taxAmount = ($afterDiscount * $taxPercent) / 100;
-                        
+
                         $calculatedSubtotal += $lineSubtotal;
                         $totalDiscount += $discountAmount;
                         $totalTax += $taxAmount;
                     }
-                    
+
                     // Calculate grand total
                     $grandTotal = $calculatedSubtotal - $totalDiscount + $totalTax;
-                    
+
                     // Net amount applied to the sale
                     $appliedAmount = (float)(
                         $sale->amount_paid ?? 
@@ -802,19 +802,19 @@
                             default => $soldUnitType !== '' ? $soldUnitType : 'pcs',
                         };
                         $soldQuantity = rtrim(rtrim(number_format($qty, 2), '0'), '.');
-                        
+
                         // Calculate line total before discount
                         $lineSubtotal = $qty * $unitPrice;
-                        
+
                         // Calculate discount amount
                         $discountAmount = ($lineSubtotal * $discountPercent) / 100;
-                        
+
                         // Subtotal after discount
                         $afterDiscount = $lineSubtotal - $discountAmount;
-                        
+
                         // Calculate tax amount
                         $taxAmount = ($afterDiscount * $taxPercent) / 100;
-                        
+
                         // Final line total
                         $lineTotal = $afterDiscount + $taxAmount;
                     @endphp
@@ -850,13 +850,13 @@
                 <div class="amount-words">
                     {{ $sale->amount_in_words_display }}
                 </div>
-                
+
                 <div class="cashier-info">
                     <p><strong>Served by:</strong> {{ auth()->user()->name ?? 'Administrator' }}</p>
                     <p><strong>Date:</strong> {{ now()->format('d M, Y h:i A') }}</p>
                 </div>
             </div>
-            
+
             <div class="summary-section">
                 <div class="summary-box">
                     <table class="summary-table">
@@ -913,7 +913,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Thank You Message -->
         <div class="thank-you">
             <p>*** THANK YOU FOR YOUR PATRONAGE ***</p>

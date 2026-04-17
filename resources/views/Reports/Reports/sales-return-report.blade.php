@@ -5,7 +5,7 @@
 <style>
     .card-table { border-radius: 15px; overflow: hidden; }
     #salesReturnTable { font-size: 0.875rem !important; }
-    
+
     /* Pagination Styling */
     .pagination { margin-bottom: 0; gap: 4px; }
     .page-link { border-radius: 12px !important; border: 1px solid #d7e2f0; background: #f8f9fa; color: #102a5a; }
@@ -39,7 +39,6 @@
     <div class="page-wrapper">
         <div class="content container-fluid">
 
-            {{-- Page Header --}}
             <div class="page-header mb-4">
                 <div class="row align-items-center">
                     <div class="col">
@@ -61,7 +60,6 @@
                 'reportLabel' => 'Sales Return Report'
             ])
 
-            {{-- Statistics Row --}}
             <div class="row mb-4">
                 <div class="col-xl-4 col-sm-6 col-12">
                     <div class="card shadow-sm border-0 overflow-hidden sales-return-summary">
@@ -80,7 +78,6 @@
                 </div>
             </div>
 
-            {{-- Filter Section --}}
             <div class="no-print mb-4">
                 <form method="GET" action="{{ route('reports.sales-return') }}" class="row g-2 align-items-end">
                     <div class="col-md-3">
@@ -102,7 +99,6 @@
                 </form>
             </div>
 
-            {{-- Main Table Card --}}
             <div class="card card-table shadow-sm border-0">
                 <div class="card-body p-0">
                     <div class="table-responsive">
@@ -162,7 +158,6 @@
                         </table>
                     </div>
 
-                    {{-- Pagination Footer --}}
                     @if($salesreturnreports->hasPages() || $salesreturnreports->total() > 0)
                     <div class="d-flex flex-column flex-md-row justify-content-between align-items-center p-4 border-top no-print">
                         <div class="text-muted small mb-3 mb-md-0">
@@ -182,7 +177,7 @@
 @endsection
 
 @section('script')
-{{-- Required Libraries for PDF/Excel Exports --}}
+
 <script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>

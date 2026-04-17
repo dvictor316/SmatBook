@@ -4,11 +4,6 @@
 
 @section('content')
 
-{{-- 
-    CUSTOM STYLES: SIDEBAR AWARENESS & UI 
-    - Width adjusted to 270px to match Deployment Manager Sidebar
-    - Added logic for 'sidebar-icon-only' toggle state
---}}
 <style>
     :root {
         --deploy-sidebar-w: 270px;
@@ -66,7 +61,7 @@
 </style>
 
 <div id="profile-wrapper">
-    {{-- Breadcrumb Navigation --}}
+
     <div class="mb-4 d-flex justify-content-between align-items-center">
         <div>
             <nav aria-label="breadcrumb">
@@ -87,7 +82,7 @@
 
     <div class="container-fluid px-0">
         <div class="row g-4">
-            {{-- LEFT COLUMN: Profile Card (Recognizes Sidebar Space) --}}
+
             <div class="col-xl-4 col-lg-5">
                 <div class="dm-card h-100">
                     <div class="card-header bg-white border-0 pt-4 pb-0 text-center">
@@ -97,7 +92,7 @@
                         </div>
                         <h5 class="fw-bold mb-1" style="color:#0f172a; letter-spacing: -0.5px;">{{ $user->name }}</h5>
                         <p class="text-muted" style="font-size:13px;">{{ $user->email }}</p>
-                        
+
                         <div class="d-flex justify-content-center gap-2 mb-3">
                             <span class="badge" style="background:#eef2ff;color:#1e40af;font-weight:700;font-size:11px;padding:6px 14px;border-radius:20px;">
                                 <i class="fas fa-shield-alt me-1"></i>{{ ucfirst($user->role) }}
@@ -147,13 +142,11 @@
                 </div>
             </div>
 
-            {{-- RIGHT COLUMN: Extended Info/Activity (Balances the Sidebar) --}}
             <div class="col-xl-8 col-lg-7">
                 <div class="dm-card h-100" style="min-height: 400px;">
                     <div class="p-4">
                         <h6 class="fw-bold mb-4" style="color: #1e293b;"><i class="fas fa-history me-2 text-primary"></i> Recent Activity</h6>
-                        
-                        {{-- Placeholder for activity logs or permissions --}}
+
                         <div class="text-center py-5">
                             <div class="mb-3">
                                 <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 64px; height: 64px;">

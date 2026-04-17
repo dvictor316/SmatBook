@@ -75,7 +75,7 @@ $(document).ready(function() {
      */
     $('#invoice_select').on('change select2:select', function() {
         let id = $(this).val();
-        
+
         if(!id) {
             $('#invoice_item_list').html('<tr><td colspan="5" class="text-center py-4 text-muted">Select a sale to load items.</td></tr>');
             $('#credit_grand_total').text('₦0.00');
@@ -90,7 +90,7 @@ $(document).ready(function() {
             dataType: 'json',
             success: function(items) {
                 let html = '';
-                
+
                 if(items.length === 0) {
                     html = '<tr><td colspan="5" class="text-center text-danger">No items found for this sale.</td></tr>';
                 } else {

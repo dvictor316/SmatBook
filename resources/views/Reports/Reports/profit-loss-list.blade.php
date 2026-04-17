@@ -4,7 +4,7 @@
     $currencyCode = $geoCurrency ?? \App\Support\GeoCurrency::currentCurrency();
     $currencyLocale = $geoCurrencyLocale ?? \App\Support\GeoCurrency::currentLocale();
     $currencySymbol = $geoCurrencySymbol ?? \App\Support\GeoCurrency::currentSymbol();
-    
+
     // Subdomain parameter detection for all routes
     $currentSubdomain = request()->route('subdomain') ?? 'admin';
     $routeParams = ['subdomain' => $currentSubdomain];
@@ -205,7 +205,6 @@
 <div class="page-wrapper">
     <div class="content container-fluid pl-report-shell">
 
-        {{-- Header Section --}}
         <div class="page-header mb-4 pl-page-header">
             <div class="row align-items-center">
                 <div class="col">
@@ -232,7 +231,6 @@
                 : 'Current Business Performance',
         ])
 
-        {{-- Summary Cards (Grand Totals) --}}
         <div class="row mb-4">
             <div class="col-md-3">
                 <div class="card pl-summary-card">
@@ -269,10 +267,9 @@
             </div>
         </div>
 
-        {{-- Filter Form --}}
         <div class="card mb-4 filter-card no-print pl-filter-card">
             <div class="card-body">
-                {{-- CORRECTED ROUTE: reports.profit-loss --}}
+
                 <form method="GET" action="{{ route('reports.profit-loss', $routeParams) }}">
                     <div class="row align-items-end g-3">
                         <div class="col-lg-4 col-md-6">
@@ -287,7 +284,7 @@
                             <button type="submit" class="btn btn-primary btn-sm flex-fill">
                                 <i class="fas fa-filter"></i> {{ __('Apply Filter') }}
                             </button>
-                            {{-- CORRECTED ROUTE: reports.profit-loss --}}
+
                             <a href="{{ route('reports.profit-loss', $routeParams) }}" class="btn btn-light btn-sm border">
                                 <i class="fas fa-redo"></i>
                             </a>
@@ -297,7 +294,6 @@
             </div>
         </div>
 
-        {{-- Data Table --}}
         <div class="card mb-4 pl-table-card">
             <div class="card-body p-3">
                 <div class="table-responsive">

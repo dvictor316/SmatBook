@@ -122,14 +122,12 @@ body.mini-sidebar .report-page-wrapper { margin-left: 80px; }
 </style>
 
 <div class="report-page-wrapper">
-    
-    {{-- Institutional Tabs --}}
+
     <div class="inst-nav-tabs no-print">
         <a href="{{ route('super_admin.packages.index') }}" class="inst-nav-link {{ $page == 'packages' ? 'active' : '' }}">Subscription Plans</a>
         <a href="{{ route('super_admin.subscriptions.index') }}" class="inst-nav-link {{ $page == 'subscription' ? 'active' : '' }}">Subscribers Registry</a>
     </div>
 
-    {{-- Command Header --}}
     <div class="report-header-bar">
         <div class="d-flex align-items-center">
             <h5 class="fw-bold">SUBSCRIBER MANAGEMENT HUB</h5>
@@ -146,7 +144,6 @@ body.mini-sidebar .report-page-wrapper { margin-left: 80px; }
         </div>
     </div>
 
-    {{-- Metrics --}}
     <div class="metric-grid">
         <div class="metric-node">
             <div class="metric-label">System Liquidity</div>
@@ -166,7 +163,6 @@ body.mini-sidebar .report-page-wrapper { margin-left: 80px; }
         </div>
     </div>
 
-    {{-- Registry Table --}}
     <div class="report-card">
         <div class="table-responsive">
             <table class="table table-hover mb-0">
@@ -271,7 +267,6 @@ body.mini-sidebar .report-page-wrapper { margin-left: 80px; }
             </table>
         </div>
 
-        {{-- RESTORED PAGINATION --}}
         <div class="pagination-container no-print">
             <div class="d-flex justify-content-between align-items-center">
                 <p class="small text-muted fw-bold mb-0">Showing {{ $subscriptions->firstItem() }} to {{ $subscriptions->lastItem() }} of {{ $subscriptions->total() }} Nodes</p>
@@ -281,7 +276,6 @@ body.mini-sidebar .report-page-wrapper { margin-left: 80px; }
             </div>
         </div>
 
-        {{-- Print Footer --}}
         <div class="d-none d-print-block p-4 text-center border-top">
             <p class="small text-muted fw-bold">SmartProbook Institutional Node Audit Summary • Generated: {{ date('d M Y H:i') }}</p>
         </div>

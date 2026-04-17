@@ -6,7 +6,7 @@
 </head>
 <body style="margin: 0; padding: 0; background-color: #f6f9fc; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
     <div style="max-width: 650px; margin: 20px auto; padding: 30px; border: 1px solid #e2e8f0; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-        
+
         <div style="text-align: center; border-bottom: 3px solid #7F9CF5; padding-bottom: 15px; margin-bottom: 25px;">
             <h2 style="color: #2d3748; margin: 0; text-transform: uppercase; letter-spacing: 1px;">Executive Summary</h2>
             <p style="color: #718096; margin: 5px 0;">Date: <strong>{{ date('d M Y') }}</strong></p>

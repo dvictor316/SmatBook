@@ -1,5 +1,5 @@
 @if (Route::is(['companies']))
-   
+
 		<!-- Add Asset -->
 		<div class="toggle-sidebar">
 			<div class="sidebar-layout-filter">
@@ -206,8 +206,6 @@
 						</div>
 						<!-- /Select Date -->
 
-						
-
 						<div class="filter-buttons">
 							<button type="submit" class="d-inline-flex align-items-center justify-content-center btn w-100 btn-primary">
 								Apply
@@ -259,7 +257,7 @@
 						</button>
 					</div>
 					<form action="{{url('companies')}}">
-						
+
 						<div class="modal-body">
 							<div class="row">
 								<div class="col-md-12">
@@ -303,7 +301,7 @@
 											<input type="text" class="form-control" placeholder="Account URL">
 											<span class="url-text">kanakku.com</span>
 										</div>
-										
+
 									</div>
 								</div>
 								<div class="col-md-6">
@@ -401,7 +399,7 @@
 									</div>
 								</div>
 							</div>
-							
+
 						</div>
 						<div class="modal-footer">
 							<button type="button" data-bs-dismiss="modal" class="btn btn-back cancel-btn me-2">Cancel</button>
@@ -425,7 +423,7 @@
 						</button>
 					</div>
 					<form action="{{url('companies')}}">
-						
+
 						<div class="modal-body">
 							<div class="row">
 								<div class="col-md-12">
@@ -469,7 +467,7 @@
 											<input type="text" class="form-control" placeholder="Account URL" value="www.hru.example.com">
 											<span class="url-text">kanakku.com</span>
 										</div>
-										
+
 									</div>
 								</div>
 								<div class="col-md-6">
@@ -563,7 +561,7 @@
 									</div>
 								</div>
 							</div>
-							
+
 						</div>
 						<div class="modal-footer">
 							<button type="button" data-bs-dismiss="modal" class="btn btn-back cancel-btn me-2">Cancel</button>
@@ -588,7 +586,7 @@
 							<button type="button" class="btn-close ms-2" data-bs-dismiss="modal" aria-label="Close">
 							</button>
 						</div>
-						
+
 					</div>
 					<div class="modal-body pb-0">
 						<div class="row">
@@ -617,46 +615,46 @@
 												<h6>Account URL</h6>
 												<p>hru.example.com</p>
 											</div>
-											
+
 										</div>
 										<div class="col-md-4 col-sm-6">
 											<div class="basic-info-detail">
 												<h6>Phone Number</h6>
 												<p>+1 15541 54544</p>
 											</div>
-											
+
 										</div>
 										<div class="col-md-4 col-sm-6">
 											<div class="basic-info-detail">
 												<h6>Website</h6>
 												<p>www.example.com</p>
 											</div>
-											
+
 										</div>
 										<div class="col-md-4 col-sm-6">
 											<div class="basic-info-detail">
 												<h6>Company Address</h6>
 												<p>22 Junior Avenue <br>Duluth, GA 30097</p>
 											</div>
-											
+
 										</div>
 										<div class="col-md-4 col-sm-6">
 											<div class="basic-info-detail">
 												<h6>Currency</h6>
 												<p>United Stated Dollar (USD)</p>
 											</div>
-											
+
 										</div>
 										<div class="col-md-4 col-sm-6">
 											<div class="basic-info-detail">
 												<h6>Language</h6>
 												<p>English</p>
 											</div>
-											
+
 										</div>
 									</div>
 								</div>
-								
+
 							</div>
 							<div class="col-md-12">
 								<div class="plane-basic-info plane-detail">
@@ -667,42 +665,42 @@
 												<h6>Plan Name</h6>
 												<p>Enterprise</p>
 											</div>
-											
+
 										</div>
 										<div class="col-md-4 col-sm-6">
 											<div class="basic-info-detail">
 												<h6>Plan Type</h6>
 												<p>Yearly</p>
 											</div>
-											
+
 										</div>
 										<div class="col-md-4 col-sm-6">
 											<div class="basic-info-detail">
 												<h6>Price</h6>
 												<p>$200</p>
 											</div>
-											
+
 										</div>
 										<div class="col-md-4 col-sm-6">
 											<div class="basic-info-detail">
 												<h6>Register Date</h6>
 												<p>15 Jan 2024</p>
 											</div>
-											
+
 										</div>
 										<div class="col-md-4 col-sm-6">
 											<div class="basic-info-detail">
 												<h6>Expiring On</h6>
 												<p>15 Jan 2025</p>
 											</div>
-											
+
 										</div>
 									</div>
 								</div>
-								
+
 							</div>
 						</div>
-						
+
 					</div>
 				</div>
 			</div>
@@ -719,7 +717,7 @@
 						</div>
 						<button type="button" class="btn-close ms-2" data-bs-dismiss="modal" aria-label="Close">
 						</button>
-						
+
 					</div>
 					<form action="#">
 						<div class="modal-body">
@@ -733,46 +731,46 @@
 													<h6>Company Name</h6>
 													<p>Hermann Groups</p>
 												</div>
-												
+
 											</div>
 											<div class="col-md-4 col-sm-6">
 												<div class="basic-info-detail">
 													<h6>Plan Name</h6>
 													<p>Enterprise</p>
 												</div>
-												
+
 											</div>
 											<div class="col-md-4 col-sm-6">
 												<div class="basic-info-detail">
 													<h6>Plan Type</h6>
 													<p>Yearly</p>
 												</div>
-												
+
 											</div>
 											<div class="col-md-4 col-sm-6">
 												<div class="basic-info-detail">
 													<h6>Price</h6>
 													<p>$200</p>
 												</div>
-												
+
 											</div>
 											<div class="col-md-4 col-sm-6">
 												<div class="basic-info-detail">
 													<h6>Register Date</h6>
 													<p>15 Jan 2024</p>
 												</div>
-												
+
 											</div>
 											<div class="col-md-4 col-sm-6">
 												<div class="basic-info-detail">
 													<h6>Expiring On</h6>
 													<p>15 Jan 2025</p>
 												</div>
-												
+
 											</div>
 										</div>
 									</div>
-									
+
 								</div>
 								<div class="col-md-12">
 									<div class="plane-basic-info plane-detail">
@@ -832,17 +830,17 @@
 											</div>
 										</div>
 									</div>
-									
+
 								</div>
 							</div>
-							
+
 						</div>
 						<div class="modal-footer">
 							<button type="button" data-bs-dismiss="modal" class="btn btn-back cancel-btn me-2">Cancel</button>
 							<button type="submit" data-bs-dismiss="modal" class="btn btn-primary paid-continue-btn">Save Changes</button>
 						</div>
 					</form>
-					
+
 				</div>
 			</div>
 		</div>
@@ -954,7 +952,7 @@
                         </a> 
                         </h6>
                     </div>
-                
+
                     <div id="collapseOne" class="collapse show" aria-labelledby="headingOne"  data-bs-parent="#accordionExample1">
                         <div class="card-body-chat">
                             <div class="row">
@@ -1024,7 +1022,7 @@
                         </a> 
                         </h6>
                     </div>
-                
+
                     <div id="collapseFour" class="collapse" aria-labelledby="headingFive"  data-bs-parent="#accordionExample3">
                         <div class="card-body-chat">
                             <div id="checkBoxes2">
@@ -1070,7 +1068,7 @@
                         </a> 
                         </h6>
                     </div>
-                
+
                     <div id="collapseThree" class="collapse" aria-labelledby="headingThree"  data-bs-parent="#accordionExample3">
                         <div class="card-body-chat">
                             <div id="checkBoxes3">
@@ -1108,7 +1106,7 @@
                         </a> 
                         </h6>
                     </div>
-                
+
                     <div id="collapsefive" class="collapse" aria-labelledby="headingfive"  data-bs-parent="#accordionExample5">
                         <div class="card-body-chat">
                             <div id="checkBoxes4">
@@ -1146,7 +1144,7 @@
                         </a> 
                         </h6>
                     </div>
-                
+
                     <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo"  data-bs-parent="#accordionExample2">
                         <div class="card-body-chat">
                             <div class="input-block mb-3">
@@ -1166,8 +1164,6 @@
                 </div>
                 <!-- /Select Date -->
 
-                
-
                 <div class="filter-buttons">
                     <button type="submit" class="d-inline-flex align-items-center justify-content-center btn w-100 btn-primary">
                         Apply
@@ -1177,7 +1173,7 @@
                     </button>
                 </div>
             </form>
-            
+
         </div>
     </div>
 </div>
@@ -1192,7 +1188,7 @@
                     <h4 class="mb-0">Edit Contact Messages</h4>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
-                    
+
                 </button>
             </div>
             <div class="modal-body">
@@ -1399,8 +1395,6 @@
                 </div>
                 <!-- /Select Date -->
 
-                
-
                 <div class="filter-buttons">
                     <button type="submit" class="d-inline-flex align-items-center justify-content-center btn w-100 btn-primary">
                         Apply
@@ -1491,7 +1485,7 @@
                         </a> 
                         </h6>
                     </div>
-                
+
                     <div id="collapseOne" class="collapse show" aria-labelledby="headingOne"  data-bs-parent="#accordionExample1">
                         <div class="card-body-chat">
                             <div class="row">
@@ -1561,7 +1555,7 @@
                         </a> 
                         </h6>
                     </div>
-                
+
                     <div id="collapseFive" class="collapse" aria-labelledby="headingFive"  data-bs-parent="#accordionExample5">
                         <div class="card-body-chat">
                             <div class="row">
@@ -1571,7 +1565,7 @@
                                             <input type="text" class="form-control " id="member_search2" placeholder="Search Domain">
                                             <span><img src="{{URL::asset('assets/img/icons/search.svg')}}" alt="img"></span>
                                         </div>
-                                        
+
                                     </div>
                                 </div>
                             </div>
@@ -1590,7 +1584,7 @@
                         </a> 
                         </h6>
                     </div>
-                
+
                     <div id="collapseFour" class="collapse" aria-labelledby="headingFour"  data-bs-parent="#accordionExample3">
                         <div class="card-body-chat">
                             <div id="checkBoxes3">
@@ -1636,7 +1630,7 @@
                         </a> 
                         </h6>
                     </div>
-                
+
                     <div id="collapseThree" class="collapse" aria-labelledby="headingThree"  data-bs-parent="#accordionExample3">
                         <div class="card-body-chat">
                             <div id="checkBoxes2">
@@ -1674,7 +1668,7 @@
                         </a> 
                         </h6>
                     </div>
-                
+
                     <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo"  data-bs-parent="#accordionExample2">
                         <div class="card-body-chat">
                             <div class="input-block mb-3">
@@ -1701,7 +1695,7 @@
                     </button>
                 </div>
             </form>
-            
+
         </div>
     </div>
 </div>	
@@ -1718,7 +1712,7 @@
                 </div>
                 <button type="button" class="btn-close ms-2" data-bs-dismiss="modal" aria-label="Close">
                 </button>
-                
+
             </div>
             <div class="modal-body pb-0">
                 <div class="row">
@@ -1737,7 +1731,7 @@
                                     <span class="badge bg-success d-inline-flex align-items-center me-2"><i class="fe fe-check me-1"></i>Approve</span>
                                     <span class="badge bg-danger d-inline-flex align-items-center"><i class="fe fe-x me-1"></i>Reject</span>								
                                 </div>
-                                
+
                             </div>
                         </div>
                     </div>
@@ -1750,11 +1744,11 @@
                                         <h6>Account URL</h6>
                                         <p>hru.example.com</p>
                                     </div>
-                                    
+
                                 </div>
                             </div>
                         </div>
-                        
+
                     </div>
                     <div class="col-md-12">
                         <div class="plane-basic-info plane-detail">
@@ -1765,42 +1759,42 @@
                                         <h6>Plan Name</h6>
                                         <p>Enterprise</p>
                                     </div>
-                                    
+
                                 </div>
                                 <div class="col-md-4 col-sm-6">
                                     <div class="basic-info-detail">
                                         <h6>Plan Type</h6>
                                         <p>Yearly</p>
                                     </div>
-                                    
+
                                 </div>
                                 <div class="col-md-4 col-sm-6">
                                     <div class="basic-info-detail">
                                         <h6>Price</h6>
                                         <p>$200</p>
                                     </div>
-                                    
+
                                 </div>
                                 <div class="col-md-4 col-sm-6">
                                     <div class="basic-info-detail">
                                         <h6>Register Date</h6>
                                         <p>15 Jan 2024</p>
                                     </div>
-                                    
+
                                 </div>
                                 <div class="col-md-4 col-sm-6">
                                     <div class="basic-info-detail">
                                         <h6>Expiring On</h6>
                                         <p>15 Jan 2025</p>
                                     </div>
-                                    
+
                                 </div>
                             </div>
                         </div>
-                        
+
                     </div>
                 </div>
-                
+
             </div>
         </div>
     </div>
@@ -5089,8 +5083,6 @@
                 </div>
                 <!-- /Select Date -->
 
-                
-
                 <div class="filter-buttons">
                     <button type="submit" class="d-inline-flex align-items-center justify-content-center btn w-100 btn-primary">
                         Apply
@@ -5144,7 +5136,7 @@
                             <h5 class="form-title mb-3">Plan Info</h5>
                         </div>
                         <div class="col-sm-12 col-md-6">
-                            
+
                             <div class="input-block mb-3">
                                 <label>Plan Name</label>
                                 <input type="text" class="form-control" placeholder="Enter Plan Name" value="">
@@ -5351,7 +5343,7 @@
                                 </div>										
                             </div>
                         </div>
-                        
+
                     </div>
                     <div class="d-flex align-items-center mb-3">
                         <h6 class="mb-0">Access Trial</h6>
@@ -5377,7 +5369,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="row">
                         <div class="col-sm-12">
                             <div class="input-block mb-3">
@@ -5442,7 +5434,7 @@
                             <h5 class="form-title mb-3">Plan Info</h5>
                         </div>
                         <div class="col-sm-12 col-md-6">
-                            
+
                             <div class="input-block mb-3">
                                 <label>Plan Name</label>
                                 <input type="text" class="form-control" placeholder="Enter Plan Name" value="Enterprise">
@@ -5649,7 +5641,7 @@
                                 </div>										
                             </div>
                         </div>
-                        
+
                     </div>
                     <div class="d-flex align-items-center mb-3">
                         <h6 class="mb-0">Access Trial</h6>
@@ -5675,7 +5667,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="row">
                         <div class="col-sm-12">
                             <div class="input-block mb-3">

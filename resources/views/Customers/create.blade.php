@@ -26,8 +26,7 @@
                         <h4 class="card-title">Supplier Information</h4>
                     </div>
                     <div class="card-body">
-                        
-                        {{-- Add validation error display if needed --}}
+
                         @if ($errors->any())
                             <div class="alert alert-danger">
                                 <ul>
@@ -38,7 +37,6 @@
                             </div>
                         @endif
 
-                        {{-- Action points to the vendors.store route we defined --}}
                         <form action="{{ route('vendors.store') }}" method="POST" enctype="multipart/form-data">
                             @csrf
 
@@ -51,14 +49,14 @@
                                     </div>
                                 </div>
                                 <div class="col-md-6">
-                                    {{-- Name Field --}}
+
                                     <div class="form-group">
                                         <label for="name" class="col-form-label">Name <span class="text-danger">*</span></label>
                                         <input type="text" id="name" name="name" class="form-control" value="{{ old('name') }}" required>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
-                                    {{-- Email Field --}}
+
                                     <div class="form-group">
                                         <label for="email" class="col-form-label">Email</label>
                                         <input type="email" id="email" name="email" class="form-control" value="{{ old('email') }}">
@@ -68,30 +66,28 @@
 
                             <div class="row">
                                 <div class="col-md-6">
-                                    {{-- Phone Field --}}
+
                                     <div class="form-group">
                                         <label for="phone" class="col-form-label">Phone</label>
                                         <input type="text" id="phone" name="phone" class="form-control" value="{{ old('phone') }}">
                                     </div>
                                 </div>
                                 <div class="col-md-6">
-                                     {{-- Balance Field --}}
+
                                      <div class="form-group">
                                         <label for="balance" class="col-form-label">Starting Balance</label>
                                         <input type="number" step="0.01" id="balance" name="balance" class="form-control" value="{{ old('balance', 0.00) }}">
                                     </div>
                                 </div>
                             </div>
-                            
-                            {{-- Address Field --}}
+
                             <div class="form-group">
                                 <label for="address" class="col-form-label">Address</label>
                                 <textarea id="address" name="address" rows="3" class="form-control">{{ old('address') }}</textarea>
                             </div>
 
-                            {{-- Submit Button and Cancel Button --}}
                             <div class="text-end mt-4">
-                                {{-- Link points back to the vendor index page --}}
+
                                 <a href="{{ route('vendors.index') }}" class="btn btn-light me-2">Cancel</a>
                                 <button type="submit" class="btn btn-primary">Create Supplier</button>
                             </div>

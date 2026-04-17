@@ -13,7 +13,7 @@
 
     html, body { height: 100%; overflow: hidden !important; background-color: var(--muji-blue-light); font-family: 'Inter', sans-serif; }
     .header, .sidebar, .settings-icon, .two-col-bar, .breadcrumb { display: none !important; }
-    
+
     .page-wrapper { 
         margin-left: 0 !important; 
         padding: 0 !important; 
@@ -112,18 +112,17 @@
 </style>
 
 <div class="landscape-card" data-aos="zoom-in">
-    {{-- Left Side: Summary Panel --}}
+
     <div class="summary-side">
         <div class="mb-5 align-self-start">
             <x-auth-brand-lockup :logo="asset('assets/img/logos.png')" theme="dark" size="lg" :tagline="'Business Stack'" />
         </div>
-        
+
         <span class="gold-label">Institutional Uplink</span>
         <h2 class="fw-bold mb-1 text-white">Finalize Setup</h2>
-        
-        {{-- CORRECTED: Accessing via subscription object property --}}
+
         <p class="text-white-50 small mb-5">Deployment Tier: <strong>{{ ucfirst($subscription->plan_name ?? 'Standard') }} Hub</strong></p>
-        
+
         <div class="workspace-info mb-5">
             <div class="d-flex justify-content-between mb-2 small">
                 <span class="opacity-50">Workspace Domain</span>
@@ -135,7 +134,7 @@
             </div>
             <div class="mt-4 pt-4 border-top border-secondary">
                 <span class="gold-label">Total Due Now</span>
-                {{-- CORRECTED: Mapping $amount to object property to prevent ErrorException --}}
+
                 <div class="total-amount">₦{{ number_format($subscription->amount, 2) }}</div>
             </div>
         </div>
@@ -146,7 +145,6 @@
         </div>
     </div>
 
-    {{-- Right Side: Gateway Selection --}}
     <div class="payment-side">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h4 class="fw-bold m-0" style="color: var(--muji-blue-deep);">Select Gateway</h4>
@@ -154,7 +152,7 @@
         </div>
 
         <div class="mb-3"><small class="text-muted fw-bold text-uppercase" style="font-size: 0.65rem; letter-spacing: 1px;">Primary Node: Paystack</small></div>
-        
+
         <div class="payment-tile" onclick="payWithPaystack()">
             <div class="d-flex align-items-center">
                 <img src="https://paystack.com/assets/img/login/paystack-logo.png" class="gateway-logo me-3" alt="Paystack">
@@ -191,7 +189,7 @@
             </div>
             <i class="fas fa-arrow-right text-muted small"></i>
         </div>
-        
+
         <p class="text-center text-muted mt-5 mb-0" style="font-size: 0.7rem;">
             Securely initializing connection for <strong>{{ auth()->user()->email }}</strong>.
         </p>

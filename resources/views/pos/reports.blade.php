@@ -206,7 +206,6 @@
 <div class="page-wrapper qb-report-page">
     <div class="content container-fluid">
 
-        {{-- ── Page top bar (breadcrumb + action buttons) ────────────────────── --}}
         <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 no-print" style="gap:10px;">
             <div>
                 <nav aria-label="breadcrumb" style="font-size:12.5px;">
@@ -226,10 +225,8 @@
             </div>
         </div>
 
-        {{-- ── Report document ─────────────────────────────────────────────────── --}}
         <div class="qb-report-doc">
 
-            {{-- Header band --}}
             <div class="qb-report-header">
                 <div class="d-flex flex-wrap justify-content-between align-items-start" style="gap:12px;">
                     <div>
@@ -243,7 +240,7 @@
                             @endif
                         </div>
                     </div>
-                    {{-- Logo placeholder slot --}}
+
                     <div class="d-flex align-items-center gap-2 no-print" style="margin-top:2px;">
                         <span style="font-size:11px;color:#94a3b8;">Period:</span>
                         <span style="font-size:12px;font-weight:600;color:#1e3a5f;">
@@ -256,12 +253,10 @@
                 </div>
             </div>
 
-            {{-- Filter bar --}}
             <div class="qb-filter-band no-print">
                 @component('components.search-filter') @endcomponent
             </div>
 
-            {{-- KPI strip --}}
             <div class="qb-kpi-strip">
                 <div class="qb-kpi-cell">
                     <div class="qb-kpi-icon" style="background:#eef4ff;color:#3356c8;">
@@ -297,7 +292,6 @@
                 </div>
             </div>
 
-            {{-- Data table --}}
             <div class="table-responsive">
                 <table class="qb-report-table">
                     <thead>
@@ -363,7 +357,6 @@
                 </table>
             </div>
 
-            {{-- Footer / pagination --}}
             <div class="qb-report-footer">
                 <span class="qb-footer-note">
                     <i class="fas fa-info-circle me-1"></i>
@@ -372,7 +365,7 @@
                 <div>{{ $reports->links() }}</div>
             </div>
 
-        </div>{{-- /.qb-report-doc --}}
+        </div>
 
     </div>
 </div>

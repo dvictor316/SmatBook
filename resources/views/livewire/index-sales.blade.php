@@ -1,12 +1,8 @@
-{{-- resources/views/livewire/index-sales.blade.php --}}
 
-{{-- WRAP ALL CONTENT IN A SINGLE PARENT DIV FOR LIVEWIRE COMPATIBILITY --}}
 <div> 
 
-    {{-- Row 1: The Stat Cards (Shadows removed, text bolded) --}}
     <div class="row">
-        
-        {{-- Card 1: Total Sales (Primary/Blue) --}}
+
         <div class="col-md-6 col-sm-6 col-lg-6 col-xl-3">
             <div class="card dash-widget">
                 <div class="card-body">
@@ -18,8 +14,7 @@
                 </div>
             </div>
         </div>
-        
-        {{-- Card 2: Total Receipts (Success/Green) --}}
+
         <div class="col-md-6 col-sm-6 col-lg-6 col-xl-3">
             <div class="card dash-widget">
                 <div class="card-body">
@@ -32,7 +27,6 @@
             </div>
         </div>
 
-        {{-- Card 3: Total Expenses (Warning/Yellow) --}}
         <div class="col-md-6 col-sm-6 col-lg-6 col-xl-3">
             <div class="card dash-widget">
                 <div class="card-body">
@@ -44,8 +38,7 @@
                 </div>
             </div>
         </div>
-        
-        {{-- Card 4: Total Earnings (Info/Light Blue) --}}
+
         <div class="col-md-6 col-sm-6 col-lg-6 col-xl-3">
             <div class="card dash-widget">
                 <div class="card-body">
@@ -60,7 +53,6 @@
 
     </div>
 
-    {{-- Row 2: The Two Charts side-by-side (Shadows removed) --}}
     <div class="row">
         <div class="col-lg-6"> 
             <div class="card">
@@ -85,8 +77,7 @@
         </div>
     </div>
 
-</div> {{-- END OF SINGLE PARENT DIV --}}
-
+</div> 
 
 @push('scripts')
 <script>

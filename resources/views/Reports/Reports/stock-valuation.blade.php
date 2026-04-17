@@ -30,7 +30,6 @@
         </div>
     </div>
 
-    {{-- KPI cards --}}
     <div class="d-flex gap-2 flex-wrap mb-4">
         <div class="sv-kpi"><div class="sv-kpi-label">Total Stock Value</div><div class="sv-kpi-val" style="color:#3b82f6">{{ $fmt($totalValue) }}</div></div>
         <div class="sv-kpi"><div class="sv-kpi-label">Total Units</div><div class="sv-kpi-val" style="color:#7c3aed">{{ number_format($totalQty) }}</div></div>

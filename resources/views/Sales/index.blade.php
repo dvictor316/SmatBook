@@ -154,7 +154,7 @@
 </style>
 
 <div class="pos-content-area">
-    {{-- Page Header with Quick ID Search --}}
+
     <div class="report-header">
         <div>
             <h3 class="fw-bold mb-0 page-title">Sales Transactions</h3>
@@ -166,21 +166,20 @@
                 </span>
             </div>
         </div>
-        
+
         <div class="d-none d-md-flex gap-3 align-items-center">
-            {{-- THE QUICK SEARCH BOX --}}
+
             <div class="header-search-container">
                 <i class="fas fa-search header-search-icon"></i>
                 <input type="text" id="quick-invoice-id-search" class="form-control header-search-input" placeholder="Quick Search Invoice ID...">
             </div>
-            
+
             <span class="badge bg-white text-dark border p-2 shadow-sm">
                 <i class="fas fa-calendar-alt text-warning me-2"></i>{{ date('D, M d, Y') }}
             </span>
         </div>
     </div>
 
-    {{-- Filter Section --}}
     <div class="card filter-card mb-4">
         <div class="card-body p-4">
             <form action="{{ route('sales.index') }}" method="GET" class="row g-3 align-items-end">
@@ -214,7 +213,6 @@
         </div>
     </div>
 
-    {{-- Table Section --}}
     <div class="card sales-table-card">
         <div class="card-body p-0">
             @if($sales->count())
@@ -286,7 +284,7 @@
                     </tbody>
                 </table>
             </div>
-            
+
             <div class="p-4 border-top bg-light">
                 <div class="d-flex justify-content-between align-items-center">
                     <p class="text-muted small mb-0">Record {{ $sales->firstItem() }} to {{ $sales->lastItem() }} of {{ $sales->total() }}</p>

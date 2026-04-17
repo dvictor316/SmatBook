@@ -4,7 +4,7 @@
 			<!-- Page Wrapper -->
             <div class="page-wrapper">
                 <div class="content container-fluid">
-				
+
 					<!-- Page Header -->
 					<div class="page-header">
 						<div class="content-page-header">
@@ -12,9 +12,9 @@
 						</div>	
 					</div>
 					<!-- /Page Header -->
-					
+
 					<div class="row">
-					
+
 						<!-- Chart -->
 						<div class="col-md-12">	
 							<div class="card">
@@ -58,7 +58,7 @@
 							</div>
 						</div>
 						<!-- /Chart -->
-						
+
 						<!-- Chart -->
 						<div class="col-md-12">	
 							<div class="card">
@@ -102,7 +102,7 @@
 							</div>
 						</div>
 						<!-- /Chart -->
-						
+
 						<!-- Chart -->
 						<div class="col-md-12">
 							<div class="card">
@@ -130,7 +130,7 @@
 								</div>
 							</div>
 						</div>
-							
+
 						<div class="col-md-12">
 							<div class="card">
 								<div class="card-header">
@@ -158,7 +158,7 @@
 							</div>
 						</div>
 						<!-- /Chart -->
-						
+
 						<div class="col-lg-12 col-md-12">
 							<div class="card">
 								<div class="card-header">
@@ -212,7 +212,7 @@
 								</div>
 							</div>
 						</div>
-							
+
 						<div class="col-lg-12 col-md-12">
 							<div class="card mb-0">
 								<div class="card-header">
@@ -244,9 +244,9 @@
 								</div>
 							</div>
 						</div>
-						
+
 					</div>
-				
+
 				</div>			
 			</div>
 			<!-- /Page Wrapper -->

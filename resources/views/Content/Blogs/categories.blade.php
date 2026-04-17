@@ -10,7 +10,7 @@
                     Categories
                 @endslot
             @endcomponent
-            {{-- Alert Messages --}}
+
             @if(session('success')) <div class="alert alert-success">{{ session('success') }}</div> @endif
             @if(session('error')) <div class="alert alert-danger">{{ session('error') }}</div> @endif
 
@@ -44,7 +44,7 @@
                                                         {{ $category->name ?? 'N/A' }}
                                                     </h2>
                                                 </td>
-                                                {{-- FIX FOR LINE 51: Using optional() or checking if property exists --}}
+
                                                 <td>
                                                     @if(isset($category->created_at))
                                                         {{ is_string($category->created_at) ? date('d M Y', strtotime($category->created_at)) : $category->created_at->format('d M Y') }}
@@ -73,7 +73,7 @@
                                                        data-bs-toggle="modal" data-bs-target="#editCategory{{ $category->id }}">
                                                         <i class="fe fe-edit"></i>
                                                     </a>
-                                                    
+
                                                     <form action="{{ route('categories.destroy', $category->id) }}" method="POST" style="display:inline;">
                                                         @csrf 
                                                         @method('DELETE')

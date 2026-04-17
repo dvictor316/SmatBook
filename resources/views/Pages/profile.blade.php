@@ -20,14 +20,13 @@
         <div class="content container-fluid">
             <div class="row justify-content-lg-center">
                 <div class="col-lg-10">
-                    
+
                     <div class="page-header">
                         <div class="content-page-header">
                             <h5>My Profile</h5>
                         </div>
                     </div>
 
-                    {{-- Image Upload Form - domain => env('SESSION_DOMAIN', null) --}}
                     <form action="{{ route('profile.update.images') }}" method="POST" enctype="multipart/form-data" id="imageUploadForm">
                         @csrf
                         <div class="profile-cover">
@@ -36,7 +35,7 @@
 
                                 <div class="cover-content">
                                     <div class="custom-file-btn">
-                                        {{-- Input name matches controller: cover_photo --}}
+
                                         <input type="file" name="cover_photo" class="custom-file-btn-input" id="cover_upload" accept="image/*" onchange="this.form.submit()">
                                         <label class="custom-file-btn-label btn btn-sm btn-white" for="cover_upload">
                                             <i class="fas fa-camera"></i>
@@ -50,7 +49,7 @@
                         <div class="text-center mb-5">
                             <label class="avatar avatar-xxl profile-cover-avatar" for="avatar_upload">
                                 <img class="avatar-img" id="avatar-preview" src="{{ $profilePhoto }}" alt="Profile Picture" onerror="this.src='{{ asset('assets/img/profiles/avatar-02.jpg') }}'">
-                                {{-- Input name matches controller: profile_photo --}}
+
                                 <input type="file" name="profile_photo" id="avatar_upload" accept="image/*" hidden onchange="this.form.submit()">
                                 <span class="avatar-edit">
                                     <i class="fe fe-edit avatar-uploader-icon shadow-soft"></i>
@@ -69,7 +68,7 @@
                     </form>
 
                     <div class="row">
-                        {{-- Left Column: Stats & Info --}}
+
                         <div class="col-lg-4">
                             <div class="card card-body mb-4">
                                 <h5 class="card-title">Profile Completeness</h5>
@@ -105,7 +104,6 @@
                             </div>
                         </div>
 
-                        {{-- Right Column: Activity --}}
                         <div class="col-lg-8">
                             <div class="card">
                                 <div class="card-header">

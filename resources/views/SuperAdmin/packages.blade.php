@@ -22,7 +22,7 @@
         font-family: 'Inter', sans-serif;
     }
     body.mini-sidebar .page-wrapper { margin-left: 80px; }
-    
+
     .content-container { padding: 30px; }
 
     /* Custom Institutional Header */
@@ -140,13 +140,11 @@
 <div class="page-wrapper">
     <div class="content-container">
 
-        {{-- Navigation Tabs --}}
         <div class="d-flex gap-4 mb-4 no-print">
             <a href="{{ route('super_admin.packages.index') }}" class="text-decoration-none fw-bold small text-primary border-bottom border-2 border-primary pb-2">SERVICE PACKAGES</a>
             <a href="{{ route('super_admin.subscriptions.index') }}" class="text-decoration-none fw-bold small text-muted hover-primary pb-2">SUBSCRIBER REGISTRY</a>
         </div>
 
-        {{-- Header --}}
         <div class="inst-header-bar no-print">
             <h1>SERVICE INFRASTRUCTURE PACKAGES</h1>
             <div class="d-flex gap-2">
@@ -159,7 +157,6 @@
             </div>
         </div>
 
-        {{-- Statistics Dashboard --}}
         <div class="metric-grid">
             <div class="metric-node">
                 <div class="metric-label">Total Node Packages</div>
@@ -179,7 +176,6 @@
             </div>
         </div>
 
-        {{-- Forced 3-Column Grid --}}
         <div class="pricing-grid">
             @forelse ($plans as $plan)
                 @php
@@ -276,14 +272,12 @@
     </div>
 </div>
 
-{{-- Printing Script --}}
 <script>
     window.onbeforeprint = function() {
         console.log("Generating Package Registry context for domain: {{ env('SESSION_DOMAIN', 'null') }}");
     };
 </script>
 
-{{-- INSTITUTIONAL MODAL --}}
 <div class="modal fade no-print" id="add_plan" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="border-radius: 20px; border: none; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
@@ -291,7 +285,7 @@
                 @csrf
                 <div class="p-5">
                     <h4 class="fw-800 text-dark mb-4" style="letter-spacing: -1px;">Construct New Package Node</h4>
-                    
+
                     <div class="mb-3">
                         <label class="small fw-bold text-muted text-uppercase mb-1 d-block">Node Name</label>
                         <input type="text" name="name" required class="form-control border-2 bg-light py-2 px-3 fw-bold" placeholder="e.g. Pro Engine">

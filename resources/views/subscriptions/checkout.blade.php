@@ -151,7 +151,7 @@
         </div>
 
         <div class="checkout-body">
-            {{-- Order Summary --}}
+
             <div class="order-summary">
                 <h5 class="fw-bold mb-3">Order Summary</h5>
 
@@ -187,7 +187,6 @@
                 </div>
             </div>
 
-            {{-- Payment Methods --}}
             <h5 class="fw-bold mb-3">Select Payment Method</h5>
 
             <form action="{{ route('saas.payment.process.checkout', $subscription->id) }}" method="POST" id="paymentForm">

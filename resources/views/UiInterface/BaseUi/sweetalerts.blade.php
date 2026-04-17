@@ -4,7 +4,7 @@
 			<!-- Page Wrapper -->
             <div class="page-wrapper">
                 <div class="content container-fluid">
-				
+
 					<!-- Page Header -->
 					<div class="page-header">
 						<div class="content-page-header">
@@ -12,10 +12,10 @@
 						</div>	
 					</div>
 					<!-- /Page Header -->
-					
+
 					<div class="row">
 						<div class="col-md-12">
-							
+
 							<!-- Basic Examples -->
 							<div class="card">
 								<div class="card-header">
@@ -30,7 +30,7 @@
 								</div>
 							</div>
 							<!-- /Basic Examples -->
-							
+
 							<!-- Position -->
 							<div class="card">
 								<div class="card-header">
@@ -45,7 +45,7 @@
 								</div>
 							</div>
 							<!-- \Position -->
-							
+
 							<!-- Types -->
 							<div class="card">
 								<div class="card-header">
@@ -62,7 +62,7 @@
 								</div>
 							</div>
 							<!-- \Types -->
-							
+
 							<!-- Options -->
 							<div class="card">
 								<div class="card-header">
@@ -75,7 +75,7 @@
 								</div>
 							</div>
 							<!-- \Options -->
-							
+
 							<!-- Confirm Options -->
 							<div class="card">
 								<div class="card-header">
@@ -91,10 +91,10 @@
 								</div>
 							</div>
 							<!-- \Confirm Options -->
-							
+
 						</div>			
 					</div>
-				
+
 				</div>			
 			</div>
 			<!-- /Page Wrapper -->

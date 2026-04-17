@@ -10,7 +10,7 @@
                     <h5>Blank Page</h5>
                 </div>
             </div>
-            {{-- Main Content Start --}}
+
             <div class="row">
                 <div class="col-sm-12">
                     <div class="card">
@@ -20,7 +20,6 @@
                     </div>
                 </div>
             </div>
-            {{-- Main Content End --}}
 
         </div>
     </div>

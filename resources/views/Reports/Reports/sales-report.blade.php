@@ -40,7 +40,7 @@
     </style>
     <div class="page-wrapper">
         <div class="content container-fluid">
-            {{-- Page Header --}}
+
             <div class="page-header no-print">
                 <div class="content-page-header">
                     <div>
@@ -84,7 +84,6 @@
                     : 'Current Workspace Activity',
             ])
 
-            {{-- Summary Cards --}}
             <div class="row">
                 <div class="col-xl-3 col-sm-6 col-12">
                     <div class="card reporte-card bg-primary-light sales-summary-card">
@@ -128,7 +127,6 @@
                 </div>
             </div>
 
-            {{-- Search Filter Container --}}
             <div id="filter_inputs" class="card filter-card no-print" style="display: none;">
                 <div class="card-body pb-0">
                     <form action="{{ route('reports.sales') }}" method="GET" class="pb-3">
@@ -160,7 +158,6 @@
                 </div>
             </div>
 
-            {{-- Main Sales Table --}}
             <div class="row">
                 <div class="col-sm-12">
                     <div class="card sales-table-card">
@@ -203,7 +200,6 @@
                                     </tbody>
                                 </table>
 
-                                {{-- Pagination Links using Bootstrap 5.3 --}}
                                 <div class="pagination-wrapper">
                                     {!! $salesreports->links('pagination::bootstrap-5') !!}
                                 </div>

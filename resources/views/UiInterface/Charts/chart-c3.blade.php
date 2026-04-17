@@ -15,7 +15,7 @@
 			<!-- Page Wrapper -->
             <div class="page-wrapper">
                 <div class="content container-fluid">
-				
+
 					<!-- Page Header -->
 					<div class="page-header">
 						<div class="content-page-header">
@@ -23,10 +23,9 @@
 						</div>	
 					</div>
 					<!-- /Page Header -->
-					
-					
+
 					<div class="row">
-					
+
 						<!-- Multiple Bar Chart (Dynamic) -->
 						<div class="col-md-6">	
 							<div class="card">
@@ -52,9 +51,6 @@
 							</div>
 						</div>
 						<!-- /Chart -->
-						
-						
-						{{-- Placeholders for other charts --}}
 
 						<div class="col-md-6">	
 							<div class="card">
@@ -66,7 +62,7 @@
 								</div>
 							</div>
 						</div>
-						
+
 						<div class="col-md-6">	
 							<div class="card">
 								<div class="card-header">
@@ -77,7 +73,7 @@
 								</div>
 							</div>
 						</div>
-						
+
 						<div class="col-md-6">	
 							<div class="card">
 								<div class="card-header">
@@ -88,7 +84,7 @@
 								</div>
 							</div>
 						</div>
-						
+
 						<div class="col-md-6">	
 							<div class="card">
 								<div class="card-header">
@@ -99,7 +95,7 @@
 								</div>
 							</div>
 						</div>
-						
+
 						<div class="col-md-6">	
 							<div class="card">
 								<div class="card-header">
@@ -110,7 +106,7 @@
 								</div>
 							</div>
 						</div>
-						
+
 						<div class="col-md-6">	
 							<div class="card mb-0">
 								<div class="card-header">
@@ -121,16 +117,16 @@
 								</div>
 							</div>
 						</div>
-						
+
 					</div>
-				
+
 				</div>			
 			</div>
 			<!-- /Page Wrapper -->
 @endsection
 
 @push('scripts')
-{{-- Assuming C3/D3 JS libraries are loaded in your main layout file --}}
+
 <script>
 $(document).ready(function() {
 
@@ -157,7 +153,6 @@ $(document).ready(function() {
         }
     });
 
-
     // --- 2. Dynamic Donut Chart ---
     c3.generate({
         bindto: '#chart-donut',
@@ -177,7 +172,7 @@ $(document).ready(function() {
             title: "Company Status"
         }
     });
-    
+
     // The rest of your theme's C3 JS initialization scripts for other IDs go here...
 
 });

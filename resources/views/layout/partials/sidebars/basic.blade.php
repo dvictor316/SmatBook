@@ -1,12 +1,7 @@
-{{-- ============================================
-     BASIC PLAN SIDEBAR (CLEANED)
-     File: resources/views/layout/partials/sidebars/basic.blade.php
-     ============================================ --}}
 
 <ul>
     <li class="menu-title"><span>Main</span></li>
 
-    {{-- Dashboard --}}
     <li class="{{ Request::is('home', 'dashboard') ? 'active' : '' }}">
         <a href="{{ route('home') }}">
             <i class="fe fe-home"></i>
@@ -14,7 +9,6 @@
         </a>
     </li>
 
-    {{-- POS Terminal --}}
     @if(Route::has('sales.showPos'))
     <li class="submenu {{ Request::is('pos*', 'sales*') ? 'active subdrop' : '' }}">
         <a href="#"><i class="fe fe-shopping-cart"></i><span>POS Terminal</span><span class="menu-arrow"></span></a>
@@ -32,7 +26,6 @@
 
     <li class="menu-title"><span>Inventory</span></li>
 
-    {{-- Products --}}
     @if(Route::has('product-list'))
     <li class="submenu {{ Request::is('product-list*', 'add-products*') ? 'active subdrop' : '' }}">
         <a href="#"><i class="fe fe-package"></i><span>Products</span><span class="menu-arrow"></span></a>
@@ -45,7 +38,6 @@
     </li>
     @endif
 
-    {{-- Customers --}}
     @if(Route::has('customers.index'))
     <li class="submenu {{ Request::is('customers*') ? 'active subdrop' : '' }}">
         <a href="#"><i class="fe fe-users"></i><span>Customers</span><span class="menu-arrow"></span></a>
@@ -58,7 +50,6 @@
     </li>
     @endif
 
-    {{-- Suppliers --}}
     @if(Route::has('suppliers.index'))
     <li class="submenu {{ Request::is('suppliers*') ? 'active subdrop' : '' }}">
         <a href="#"><i class="fe fe-briefcase"></i><span>Suppliers</span><span class="menu-arrow"></span></a>
@@ -71,7 +62,6 @@
     </li>
     @endif
 
-    {{-- Purchases (Stock In) --}}
     @if(Route::has('purchases.index'))
     <li class="submenu {{ Request::is('purchases*', 'purchase-*', 'add-purchases*') ? 'active subdrop' : '' }}">
         <a href="#"><i class="fe fe-shopping-bag"></i><span>Purchases</span><span class="menu-arrow"></span></a>
@@ -89,7 +79,6 @@
 
     <li class="menu-title"><span>Sales</span></li>
 
-    {{-- Invoices --}}
     @if(Route::has('invoices.index'))
     <li class="submenu {{ Request::is('invoices*', 'add-invoice*') ? 'active subdrop' : '' }}">
         <a href="#"><i class="fe fe-file"></i><span>Invoices</span><span class="menu-arrow"></span></a>
@@ -102,7 +91,6 @@
     </li>
     @endif
 
-    {{-- Applications --}}
     @if(Route::has('chat.index'))
     <li class="submenu {{ Request::is('chat*', 'calendar*', 'messages*') ? 'active subdrop' : '' }}">
         <a href="#"><i class="fe fe-grid"></i><span>Applications</span><span class="menu-arrow"></span></a>
@@ -120,7 +108,6 @@
     </li>
     @endif
 
-    {{-- Quotations --}}
     @if(Route::has('quotations'))
     <li class="submenu {{ Request::is('quotations*') ? 'active subdrop' : '' }}">
         <a href="#"><i class="fe fe-file-text"></i><span>Quotations</span><span class="menu-arrow"></span></a>
@@ -135,24 +122,20 @@
 
     <li class="menu-title"><span>Finance</span></li>
 
-    {{-- Payments --}}
     @if(Route::has('payments.index'))
         <li><a href="{{ route('payments.index') }}"><i class="fe fe-credit-card"></i><span>Payments</span></a></li>
     @endif
 
-    {{-- Expenses --}}
     @if(Route::has('expenses.index'))
         <li><a href="{{ route('expenses.index') }}"><i class="fe fe-file-plus"></i><span>Expenses</span></a></li>
     @endif
 
     <li class="menu-title"><span>Reports</span></li>
 
-    {{-- QB-Style Reports Dropdown --}}
     @include('layout.partials.sidebars.reports-menu', ['reportAccess' => 'basic'])
 
-    {{-- LOCKED FEATURES (Upgrade to Pro/Enterprise) --}}
     <li class="menu-title"><span>Upgrade for More</span></li>
-    
+
     <li>
         <a href="{{ Route::has('membership-plans') ? route('membership-plans', ['plan' => 'pro']) : url('/membership-plans?plan=pro') }}">
             <i class="fe fe-lock"></i>
@@ -189,7 +172,7 @@
         </a>
     </li>
     <li class="menu-title"><span>Settings</span></li>
-    
+
     @if(Route::has('settings.index'))
         <li><a href="{{ route('settings.index') }}"><i class="fe fe-settings"></i><span>Settings</span></a></li>
     @endif

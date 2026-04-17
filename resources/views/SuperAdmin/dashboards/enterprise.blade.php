@@ -207,7 +207,6 @@
         $branchLabel = $dashboardBranchLabel ?? ($activeBranch['name'] ?? 'All Branches');
     @endphp
 
-    {{-- 1. Master Header --}} 
     <div class="enterprise-header"> 
         <div> 
             <div class="d-flex align-items-center gap-2 mb-1"> 
@@ -234,12 +233,10 @@
         </div> 
     </div>
 
-    {{-- 2. Full Metrics Integration --}}
     <div class="mb-5">
         @include('SuperAdmin.partials._metrics_all')
     </div>
 
-    {{-- Enterprise Live Strip --}}
     <div class="row g-3 mb-4">
         @foreach([
             ['label' => 'Platform Revenue', 'value' => '₦' . number_format($metrics['totalSales'] ?? 0, 0)],
@@ -259,7 +256,6 @@
         @endforeach
     </div>
 
-    {{-- 3. Visual Analytics Row --}}
     <div class="row g-4 mb-4">
         <div class="col-xl-8">
             <div class="card enterprise-card p-4">
@@ -291,7 +287,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="col-xl-4">
             <div class="card enterprise-card p-4">
                 <h5 class="fw-bold mb-4" style="color: var(--deep-sapphire);">
@@ -309,7 +305,6 @@
         </div>
     </div>
 
-    {{-- 4. Operations Row --}}
     <div class="row g-4 mb-4">
         <div class="col-xl-6">
             <div class="card enterprise-card p-4">
@@ -435,7 +430,6 @@
     </div>
 </div>
 
-{{-- Global Print Script - 2025-12-30 Policy --}}
 <script> 
     function printReport() { 
         window.print(); 

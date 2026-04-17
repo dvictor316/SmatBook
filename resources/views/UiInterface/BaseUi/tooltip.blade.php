@@ -4,7 +4,7 @@
 			<!-- Page Wrapper -->
             <div class="page-wrapper">
                 <div class="content container-fluid">
-				
+
 					<!-- Page Header -->
 					<div class="page-header">
 						<div class="content-page-header">
@@ -12,9 +12,9 @@
 						</div>	
 					</div>
 					<!-- /Page Header -->	
-					
+
 					<div class="row">
-					
+
 						<!-- Tooltip -->
 						<div class="col-md-12">	
 							<div class="card">
@@ -29,7 +29,7 @@
 							</div>
 						</div>
 						<!-- /Tooltip -->
-					
+
 						<!-- Popover -->
 						<div class="col-md-12">	
 							<div class="card">
@@ -55,7 +55,7 @@
 							</div>
 						</div>
 						<!-- /Popover -->
-						
+
 						<!-- Tooltip -->
 						<div class="col-md-12">	
 							<div class="card">
@@ -75,9 +75,9 @@
 							</div>
 						</div>
 						<!-- /Tooltip -->
-							
+
 					</div>
-				
+
 				</div>			
 			</div>
 			<!-- /Page Wrapper -->

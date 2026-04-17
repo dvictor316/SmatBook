@@ -19,7 +19,6 @@
     <div class="page-wrapper">
         <div class="content container-fluid">
 
-            {{-- Header --}}
             <div class="page-header mb-4">
                 <div class="row align-items-center">
                     <div class="col">
@@ -33,7 +32,6 @@
                 </div>
             </div>
 
-            {{-- Summary Card --}}
             <div class="row mb-4">
                 <div class="col-xl-4 col-sm-6 col-12">
                     <div class="card shadow-sm border-0">
@@ -45,7 +43,6 @@
                 </div>
             </div>
 
-            {{-- Data Table --}}
             <div class="card card-table shadow-sm border-0">
                 <div class="card-body p-0">
                     <div class="table-responsive">

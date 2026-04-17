@@ -159,7 +159,7 @@
                                     @endforelse
                                 </tbody>
                             </table>
-                            
+
                             <div class="d-flex justify-content-center mt-4">
                                 {{ $expenses->links() }}
                             </div>
@@ -196,7 +196,7 @@
                                 @endforeach
                             </datalist>
                         </div>
-                        
+
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Amount *</label>
                             <div class="input-group">
@@ -258,7 +258,7 @@
                             <label class="form-label fw-bold">Reference #</label>
                             <input type="text" class="form-control" name="reference" placeholder="Ref/Inv Number">
                         </div>
-                        
+
                         <div class="col-md-4">
                             <label class="form-label fw-bold">Status *</label>
                             <select class="form-select" name="status" required>
@@ -288,7 +288,6 @@
     </div>
 </div>
 
-{{-- Quick Add Supplier Modal --}}
 <div class="modal fade" id="quick_add_supplier_modal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -526,7 +525,6 @@
     </div>
 </div>
 
-{{-- Pay Now Modal --}}
 @if (strtolower((string) $expense->status) !== 'paid')
 <div class="modal fade" id="pay_expense_{{ $expense->id }}" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">

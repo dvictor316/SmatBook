@@ -1,7 +1,6 @@
 <?php $page = 'chart-apex'; ?>
 @extends('layout.mainlayout')
 
-{{-- Define default values for safety if controller doesn't pass all data --}}
 @php
     $invoiceMonths = $invoiceMonths ?? [];
     $invoiceCounts = $invoiceCounts ?? [];
@@ -13,7 +12,7 @@
 			<!-- Page Wrapper -->
             <div class="page-wrapper">
                 <div class="content container-fluid">
-				
+
 					<!-- Page Header -->
 					<div class="page-header">
 						<div class="content-page-header">
@@ -21,9 +20,9 @@
 						</div>	
 					</div>
 					<!-- /Page Header -->
-					
+
 					<div class="row">
-					
+
 						<!-- Apex Simple (Dynamic Line Chart) -->
 						<div class="col-md-6">	
 							<div class="card">
@@ -36,7 +35,7 @@
 							</div>
 						</div>
 						<!-- /Chart -->
-							
+
 						<!-- Apex Donut Chart (Dynamic) -->
 						<div class="col-md-6">
 							<div class="card mb-0">
@@ -50,8 +49,6 @@
 						</div>
 						<!-- /Chart -->
 
-						{{-- Placeholders for other charts (ApexCharts examples usually provide the static JS for these IDs) --}}
-						
 						<div class="col-md-6">
 							<div class="card">
 								<div class="card-header">
@@ -62,7 +59,7 @@
 								</div>
 							</div>
 						</div>
-						
+
 						<div class="col-md-6">
 							<div class="card">
 								<div class="card-header">
@@ -73,7 +70,7 @@
 								</div>
 							</div>
 						</div>
-						
+
 						<div class="col-md-6">
 							<div class="card">
 								<div class="card-header">
@@ -84,7 +81,7 @@
 								</div>
 							</div>
 						</div>
-						
+
 						<div class="col-md-6">
 							<div class="card">
 								<div class="card-header">
@@ -95,7 +92,7 @@
 								</div>
 							</div>
 						</div>
-						
+
 						<div class="col-md-6">
 							<div class="card">
 								<div class="card-header">
@@ -106,7 +103,7 @@
 								</div>
 							</div>
 						</div>
-						
+
 						<div class="col-md-6">
 							<div class="card mb-0">
 								<div class="card-header">
@@ -117,16 +114,15 @@
 								</div>
 							</div>
 						</div>
-						
+
 					</div>
-				
+
 				</div>			
 			</div>
 			<!-- /Page Wrapper -->
 @endsection
 
 @push('scripts')
-{{-- Assuming ApexCharts JS library is loaded in your main layout file e.g., <script src="/assets/plugins/apexchart/apexcharts.min.js"></script> --}}
 
 <script>
 $(document).ready(function() {
@@ -154,7 +150,6 @@ $(document).ready(function() {
     };
     var chart_line = new ApexCharts(document.querySelector("#s-line"), sline);
     chart_line.render();
-
 
     // --- 2. Dynamic Donut Chart ---
     var optionsDonut = {

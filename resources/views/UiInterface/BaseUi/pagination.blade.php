@@ -11,7 +11,7 @@
 						</div>	
 					</div>
 					<!-- /Page Header -->	
-											
+
 					<!-- Pagination -->
 						<div class="card bg-white">
 							<div class="card-body">
@@ -64,7 +64,7 @@
 										</li>
 									</ul>
 								</div>
-								
+
 								<div>
 									<ul class="pagination pagination-sm mb-0">
 										<li class="page-item disabled">
@@ -83,7 +83,7 @@
 							</div>
 						</div>
 					<!-- /Pagination -->
-				
+
 				</div>			
 			</div>
 			<!-- /Page Wrapper -->

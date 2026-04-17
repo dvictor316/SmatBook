@@ -4,8 +4,7 @@
 @section('content')
 <div class="page-wrapper">
     <div class="content container-fluid">
-        
-        {{-- Header Section --}}
+
         <div class="page-header mb-4 no-print">
             <div class="row align-items-center">
                 <div class="col">
@@ -27,7 +26,6 @@
             'periodLabel' => 'Threshold: ' . $threshold . ' | Restock Target: ' . $target,
         ])
 
-        {{-- Light Summary Cards --}}
         @php $totalValuation = $products->sum(fn($p) => $p->stock * $p->purchase_price); @endphp
         <div class="row g-3 mb-4 no-print">
             <div class="col-md-4">
@@ -48,7 +46,6 @@
             </div>
         </div>
 
-        {{-- Main Table --}}
         <div class="card border shadow-none overflow-hidden">
             <div class="table-responsive">
                 <table class="table table-hover mb-0 align-middle" id="reportTable">
@@ -139,7 +136,7 @@
 @endsection
 
 @push('scripts')
-{{-- Libraries for Export --}}
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
@@ -154,7 +151,7 @@
             btn.innerHTML = '<i class="feather-mail me-1"></i> Email';
             return;
         }
-        
+
         fetch("{{ route('reports.email-low-stock') }}", {
             method: 'POST',
             headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json', 'Accept': 'application/json' },

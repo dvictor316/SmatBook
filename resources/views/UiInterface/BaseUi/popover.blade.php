@@ -4,7 +4,7 @@
 			<!-- Page Wrapper -->
             <div class="page-wrapper">
                 <div class="content container-fluid">
-				
+
 					<!-- Page Header -->
 					<div class="page-header">
 						<div class="content-page-header">
@@ -12,9 +12,9 @@
 						</div>	
 					</div>
 					<!-- /Page Header -->	
-					
+
 					<div class="row">
-					
+
 						<!-- Popover -->
 						<div class="col-md-12">	
 							<div class="card">
@@ -24,16 +24,16 @@
 								<div class="card-body card-buttons">
 									<div class="popover-list">
 										<button class="btn btn-primary" type="button" data-bs-toggle="popover" title="Popover title" data-bs-content="And here's some amazing content. It's very engaging. Right?">Click to toggle popover</button>
-										
+
 										<a class="example-popover btn btn-primary" tabindex="0" role="button" data-bs-toggle="popover" data-bs-trigger="focus" title="Popover title" data-bs-content="And here's some amazing content. It's very engaging. Right?">Dismissible popover</a>
-										
+
 										<button class="example-popover btn btn-primary" type="button" data-bs-trigger="hover" data-container="body" data-bs-toggle="popover" data-bs-placement="bottom" title="Popover title" data-offset="-20px -20px" data-bs-content="Vivamus sagittis lacus vel augue laoreet rutrum faucibus.">On Hover Tooltip</button>
 									</div>
 								</div>
 							</div>
 						</div>
 						<!-- /Popover -->
-						
+
 						<!-- Popover -->
 						<div class="col-md-12">	
 							<div class="card">
@@ -52,7 +52,7 @@
 						</div>
 						<!-- /Popover -->							
 					</div>
-				
+
 				</div>			
 			</div>
 			<!-- /Page Wrapper --> 

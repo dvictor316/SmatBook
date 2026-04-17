@@ -104,7 +104,7 @@
 </style>
 
 <div class="slip-wrap">
-    {{-- Action Bar --}}
+
     <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2 no-print">
         <a href="{{ route('payroll.index') }}" class="btn-outline">
             <i class="fas fa-arrow-left"></i> Back to Payroll
@@ -119,10 +119,8 @@
         </div>
     </div>
 
-    {{-- Payslip --}}
     <div class="payslip-card" id="payslipDocument">
 
-        {{-- Header --}}
         <div class="payslip-top">
             <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
                 <div>
@@ -138,10 +136,8 @@
             </div>
         </div>
 
-        {{-- Body --}}
         <div class="payslip-body">
 
-            {{-- Employee Details --}}
             <div class="employee-section">
                 <div class="d-flex align-items-center gap-3 mb-3">
                     <div class="emp-avatar">{{ strtoupper(substr($payroll->employee->name ?? 'E', 0, 2)) }}</div>
@@ -180,7 +176,6 @@
                 </div>
             </div>
 
-            {{-- Earnings --}}
             <table class="slip-table">
                 <tr><td colspan="2" class="section-label">💰 Earnings</td></tr>
                 <tr>
@@ -205,7 +200,6 @@
 
             <div style="height:16px;"></div>
 
-            {{-- Deductions --}}
             <table class="slip-table">
                 <tr><td colspan="2" class="section-label" style="background:#fff5f5;color:var(--red);">➖ Deductions</td></tr>
                 <tr>
@@ -224,7 +218,6 @@
                 </tr>
             </table>
 
-            {{-- Net Pay --}}
             <div class="net-box">
                 <div>
                     <div class="net-label">Net Pay</div>

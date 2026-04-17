@@ -68,7 +68,7 @@
                     <h4 class="mb-0">Edit Ledger</h4>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
-                    
+
                 </button>
             </div>
             <div class="modal-body">
@@ -153,7 +153,7 @@
                             <h5 class="form-title mb-3">Plan Info</h5>
                         </div>
                         <div class="col-sm-12 col-md-6">
-                            
+
                             <div class="input-block mb-3">
                                 <label>Plan Name</label>
                                 <input type="text" class="form-control" placeholder="Enter Plan Name" value="Enterprise">
@@ -360,7 +360,7 @@
                                 </div>										
                             </div>
                         </div>
-                        
+
                     </div>
                     <div class="d-flex align-items-center mb-3">
                         <h6 class="mb-0">Access Trial</h6>
@@ -386,7 +386,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="row">
                         <div class="col-sm-12">
                             <div class="input-block mb-3">

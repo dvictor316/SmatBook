@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Client Portal & Subscriptions | SmartProbook Global</title>
-    
+
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
@@ -127,7 +127,7 @@
                 <h6 class="text-red fw-bold text-uppercase mb-3" style="letter-spacing: 5px;">Coming Soon</h6>
                 <h2 class="display-4 fw-bold mb-4">Your Financial <span class="text-gold">Command Center.</span></h2>
                 <p class="lead text-muted mb-5">We are finalizing our automated subscription management module. Soon, you will be able to scale your operations, add entities, and manage global compliance from this portal.</p>
-                
+
                 <div class="row g-4 text-start">
                     <div class="col-md-6">
                         <div class="card premium-card p-4 h-100">

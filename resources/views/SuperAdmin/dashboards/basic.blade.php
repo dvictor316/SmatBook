@@ -97,7 +97,7 @@
         border-radius: 20px; color: white; padding: 30px;
         position: relative; overflow: hidden; z-index: 1;
     }
-    
+
     .upgrade-banner::after {
         content: '\f521'; font-family: 'Font Awesome 5 Free'; font-weight: 900;
         position: absolute; right: -20px; bottom: -20px;
@@ -278,7 +278,6 @@
         $branchLabel = $activeBranch['name'] ?? 'Workspace Default';
     @endphp
 
-    {{-- Header Section --}}
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <div class="d-flex align-items-center gap-2 mb-1">
@@ -302,7 +301,6 @@
         </div>
     </div>
 
-    {{-- Primary Metrics Row --}}
     <div class="row g-4 mb-4">
         <div class="col-md-3">
             <div class="metric-card-basic metric-sky">
@@ -334,7 +332,6 @@
         </div>
     </div>
 
-    {{-- Secondary Analytics Row --}}
     <div class="row g-4 mb-4">
         <div class="col-lg-8">
             <div class="card metric-card-basic p-4">
@@ -404,7 +401,6 @@
         </div>
     </div>
 
-    {{-- Live Metrics Strip --}}
     <div class="row g-3 mb-4">
         @foreach([
             ['label' => 'Avg Order Value', 'value' => '₦' . number_format($metrics['avgOrderValue'] ?? 0, 0)],
@@ -443,7 +439,6 @@
         @endforeach
     </div>
 
-    {{-- Secondary Analytics Row --}}
     <div class="row g-4 mb-4">
         <div class="col-lg-8">
             <div class="card metric-card-basic p-4">
@@ -485,7 +480,6 @@
         </div>
     </div>
 
-    {{-- Upgrade Call-to-Action --}}
     <div class="upgrade-banner d-flex justify-content-between align-items-center">
         <div>
             <h4 class="fw-bold mb-2">Unlock Financial Intelligence</h4>

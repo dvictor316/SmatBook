@@ -3,7 +3,7 @@
 @section('content')
 <div class="page-wrapper">
     <div class="content container-fluid">
-        {{-- Page Header: Hidden during print --}}
+
         <div class="page-header no-print">
             <div class="content-page-header">
                 <h5>Invoice Preview</h5>
@@ -23,7 +23,7 @@
             <div class="col-md-12">
                 <div class="card">
                     <div class="card-body">
-                        {{-- Invoice Header --}}
+
                         <div class="invoice-item">
                             <div class="row">
                                 <div class="col-md-6">
@@ -39,7 +39,6 @@
                             </div>
                         </div>
 
-                        {{-- Client & Company Details --}}
                         <div class="invoice-item mt-4">
                             <div class="row">
                                 <div class="col-md-6">
@@ -57,7 +56,6 @@
                             </div>
                         </div>
 
-                        {{-- Items Table --}}
                         <div class="table-responsive mt-4">
                             <table class="table table-striped table-hover">
                                 <thead class="thead-light">
@@ -85,7 +83,6 @@
                             </table>
                         </div>
 
-                        {{-- Calculation & Totals --}}
                         <div class="row mt-4">
                             <div class="col-md-7">
                                 <div class="invoice-info">
@@ -108,7 +105,6 @@
                             </div>
                         </div>
 
-                        {{-- Dynamic Signature Section --}}
                         <div class="row mt-5">
                             <div class="col-md-6"></div>
                             <div class="col-md-6 text-end">
@@ -133,7 +129,6 @@
     </div>
 </div>
 
-{{-- Printing Styles --}}
 <style>
     @media print {
         .header, .sidebar, .no-print, .list-btn {

@@ -266,13 +266,12 @@
 
             <div class="success-card">
 
-                {{-- Success icon --}}
                 <div class="success-icon">
                     <i class="fas fa-check fa-2x text-white"></i>
                 </div>
 
                 @if($isManager)
-                    {{-- ── MANAGER VIEW ── --}}
+
                     <h3 class="fw-bold mb-1" style="color:#1f2937">Customer Deployed! 🎉</h3>
                     <p class="text-muted mb-0">Payment confirmed. The dashboard is live and ready to use.</p>
 
@@ -355,7 +354,7 @@
                     </div>
 
                 @else
-                    {{-- ── CUSTOMER VIEW ── --}}
+
                     <h3 class="fw-bold mb-1" style="color:#1f2937">Payment Successful! 🎉</h3>
                     <p class="text-muted mb-0">Your dashboard is now active and ready to use.</p>
                     @php

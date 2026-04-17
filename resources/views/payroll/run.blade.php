@@ -64,7 +64,6 @@
         </div>
     </div>
 
-    {{-- Step Indicator --}}
     <div class="step-indicator no-print">
         <div class="step done"><div class="step-num"><i class="fas fa-check" style="font-size:0.7rem;"></i></div><div class="step-label">Setup</div></div>
         <div class="step-line"></div>
@@ -80,7 +79,6 @@
         <div class="row g-4">
             <div class="col-lg-8">
 
-                {{-- Pay Period --}}
                 <div class="run-card">
                     <div class="run-card-header">
                         <i class="fas fa-calendar" style="color:var(--gold);"></i>
@@ -112,13 +110,11 @@
                     </div>
                 </div>
 
-                {{-- Warning --}}
                 <div class="warning-box">
                     <i class="fas fa-exclamation-triangle me-2"></i>
                     <strong>Important:</strong> Please review all salary figures carefully before processing. Payroll runs cannot be easily reversed once processed.
                 </div>
 
-                {{-- Staff Selection --}}
                 <div class="run-card">
                     <div class="run-card-header">
                         <i class="fas fa-users" style="color:var(--gold);"></i>
@@ -166,7 +162,6 @@
                 </div>
             </div>
 
-            {{-- Sidebar Summary --}}
             <div class="col-lg-4">
                 <div class="summary-box">
                     <h6>📊 Payroll Summary</h6>

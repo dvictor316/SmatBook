@@ -20,7 +20,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="input-block mb-3 notes-form-group-info">
                     <label>Notes</label>
                     <textarea class="form-control" placeholder="Enter Notes"></textarea>

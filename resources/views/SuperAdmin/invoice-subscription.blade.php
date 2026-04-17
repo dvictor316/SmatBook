@@ -86,7 +86,7 @@
                                         <td class="text-end">{{ $invoice->currency_symbol }}{{ number_format($item->qty * $item->price, 2) }}</td>
                                     </tr>
                                 @endforeach
-                                
+
                                 <tr>
                                     <td colspan="4"></td>
                                     <td class="text-end">
@@ -134,7 +134,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="file-link justify-content-center subscription-invoice-foot">
             <button class="download_btn" onclick="window.print()">
                 <i class="feather-download-cloud me-1"></i> <span>{{ __('Download PDF') }}</span>

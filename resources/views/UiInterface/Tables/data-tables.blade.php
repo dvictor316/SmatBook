@@ -12,7 +12,7 @@
 						</div>	
 					</div>
 					<!-- /Page Header -->
-					
+
 					<div class="row">
 						<div class="col-sm-12">
 							<div class="card">
@@ -58,7 +58,7 @@
 							</div>
 						</div>
 					</div>
-				
+
 				</div>			
 			</div>
 			<!-- /Page Wrapper -->

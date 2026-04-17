@@ -1,7 +1,4 @@
-{{--
-    QB-style Reports sidebar dropdown.
-    3 category links — each opens the hub with that tab active.
---}}
+
 @php
     $currentTab = request('tab', 'standard');
     $isReports  = Request::is('reports*');

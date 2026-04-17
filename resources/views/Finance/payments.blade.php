@@ -23,13 +23,11 @@
 <div class="page-wrapper">
     <div class="content container-fluid">
 
-        {{-- Header Section --}}
         @component('components.page-header')
             @slot('title') Payments & Revenue @endslot
             @slot('subtitle') Real-time income tracking and ledger postings @endslot
         @endcomponent
 
-        {{-- Summary Cards --}}
         <div class="row mb-4">
             <div class="col-xl-4 col-sm-6 col-12">
                 <div class="card shadow-sm border-0 h-100">
@@ -46,7 +44,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="col-xl-4 col-sm-6 col-12">
                 <div class="card shadow-sm border-0 h-100">
                     <div class="card-body">
@@ -74,7 +72,6 @@
             </div>
         </div>
 
-        {{-- Payments Table --}}
         <div class="card shadow-sm border-0">
             <div class="card-header bg-white py-3">
                 <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
@@ -209,7 +206,6 @@
     </div>
 </div>
 
-{{-- Add Payment Modal --}}
 <div class="modal fade" id="add_payment" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content border-0">

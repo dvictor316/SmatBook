@@ -7,11 +7,6 @@
     $recentUsers = $recentUsers ?? collect();
 @endphp
 
-{{-- 
-    CUSTOM STYLES FOR SIDEBAR AWARENESS & LAYOUT FIXES
-    -------------------------------------------------------
-    Updated to resolve Navbar overlap issues.
---}}
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap');
 
@@ -989,14 +984,12 @@
     }
 </style>
 
-{{-- WRAPPER START --}}
 <div id="main-content-wrapper" class="container-fluid px-4 pb-4">
 
     <div class="row">
         <div class="col-sm-12">
             <div class="home-tab">
-                
-                {{-- Header Section --}}
+
                 <div class="header-responsive-flex border-bottom pb-3 mb-4">
                     <div class="d-flex align-items-center">
                         <div>
@@ -1007,8 +1000,7 @@
                             </p>
                         </div>
                     </div>
-                    
-                    {{-- Sync Status Indicator --}}
+
                     @if(auth()->user()->role === 'deployment_manager')
                         @php
                             $isSynced = auth()->user()->is_verified == 1 && 
@@ -1028,7 +1020,6 @@
                         </div>
                     @endif
 
-                    {{-- Action Buttons --}}
                     <div class="btn-wrapper d-flex gap-2 flex-wrap">
                         <button type="button" onclick="shareDashboard()" class="btn btn-outline-secondary btn-icon-text">
                             <i class="mdi mdi-share-variant me-1"></i> Share
@@ -1045,7 +1036,6 @@
                 <div class="tab-content tab-content-basic dashboard-tight">
                     <div class="tab-pane fade show active" id="overview" role="tabpanel">
 
-                        {{-- ROW 1: Key Financial & User Metrics --}}
                         <div class="row">
                             <div class="col-lg-3 col-md-6 grid-margin stretch-card">
                                 <div class="card executive-kpi kpi-revenue border-0">
@@ -1117,7 +1107,6 @@
                             </div>
                         </div>
 
-                        {{-- ROW 2: Operational Alerts --}}
                         <div class="row mt-2">
                             <div class="col-md-3 grid-margin stretch-card">
                                 <div class="card card-rounded tone-card tone-rose shadow-sm">
@@ -1173,7 +1162,6 @@
                             </div>
                         </div>
 
-                        {{-- ROW 2B: Extra KPI Density (reduce dead white space) --}}
                         <div class="row mt-2">
                             <div class="col-md-3 grid-margin stretch-card">
                                 <div class="card card-rounded tone-card tone-cobalt shadow-sm">
@@ -1262,7 +1250,6 @@
                         </div>
                         @endif
 
-                        {{-- ROW 2C: Plan-Based Module Matrix --}}
                         <div class="row mt-2">
                             <div class="col-12 grid-margin stretch-card">
                                 <div class="card card-rounded shadow-sm border-0">
@@ -1301,7 +1288,6 @@
                             </div>
                         </div>
 
-                        {{-- ROW 2D: Live KPI Strip (fills chart whitespace) --}}
                         <div class="row mt-2">
                             @foreach([
                                 ['label' => 'Live MRR', 'value' => '₦' . number_format($metrics['platform_revenue'] ?? 0, 0), 'tone' => 'tone-indigo'],
@@ -1323,9 +1309,8 @@
                             @endforeach
                         </div>
 
-                        {{-- ROW 3: Primary Analytics - Pie, Line, Bar Charts --}}
                         <div class="row mt-4">
-                            {{-- Revenue by Plan - Pie Chart --}}
+
                             <div class="col-lg-4 grid-margin stretch-card">
                                 <div class="card card-rounded shadow-sm">
                                     <div class="card-body">
@@ -1341,7 +1326,6 @@
                                 </div>
                             </div>
 
-                            {{-- User Traffic & Engagement - Line Chart --}}
                             <div class="col-lg-4 grid-margin stretch-card">
                                 <div class="card card-rounded shadow-sm">
                                     <div class="card-body">
@@ -1357,7 +1341,6 @@
                                 </div>
                             </div>
 
-                            {{-- Monthly Sales Volume - Bar Chart --}}
                             <div class="col-lg-4 grid-margin stretch-card">
                                 <div class="card card-rounded shadow-sm">
                                     <div class="card-body">
@@ -1565,13 +1548,10 @@
                             </div>
                         </div>
 
-                        {{-- ROW 4: Revenue Chart & System Health --}}
                         <div class="row mt-4 dashboard-row-balanced">
-                            
-                            {{-- LEFT COLUMN: Revenue Growth Chart --}}
+
                             <div class="col-12 col-xl-7 dashboard-stack">
-                                
-                                {{-- Revenue Growth Chart --}}
+
                                 <div class="card card-rounded shadow-sm">
                                     <div class="card-body">
                                         <div class="d-flex justify-content-between align-items-center mb-2">
@@ -1613,11 +1593,10 @@
                                     </div>
                                 </div>
 
-                                {{-- System Capacity & Health Progress Bars --}}
                                 <div class="card card-rounded shadow-sm">
                                     <div class="card-body">
                                         <h4 class="card-title card-title-dash mb-4">System Capacity & Health</h4>
-                                        
+
                                         @php
                                             $activeTenantPct = $systemHealth['company_provisioning_rate'] ?? 0;
                                             $managerHealthPct = $systemHealth['manager_verification_rate'] ?? 0;
@@ -1678,7 +1657,6 @@
                                     </div>
                                 </div>
 
-                                {{-- Platform Pulse (fills dead space under capacity card) --}}
                                 <div class="card card-rounded shadow-sm">
                                     <div class="card-body">
                                         <div class="d-flex justify-content-between align-items-center mb-3">
@@ -1817,7 +1795,6 @@
                                 </div>
                             </div>
 
-                            {{-- RIGHT COLUMN: Deployment Manager Authorization List --}}
                             <div class="col-12 col-xl-5 grid-margin dashboard-stack">
                                 <div class="card card-rounded shadow-sm">
                                     <div class="card-body">
@@ -1900,8 +1877,7 @@
                                                                     <button type="submit" class="btn btn-inverse-success btn-icon btn-sm" title="Approve"><i class="mdi mdi-check"></i></button>
                                                                 </form>
                                                                 <button type="button" class="btn btn-inverse-danger btn-icon btn-sm ms-1" data-bs-toggle="modal" data-bs-target="#rejectModal{{$manager->id}}" title="Decline"><i class="mdi mdi-close"></i></button>
-                                                                
-                                                                {{-- Rejection Modal --}}
+
                                                                 <div class="modal fade" id="rejectModal{{$manager->id}}" tabindex="-1">
                                                                     <div class="modal-dialog">
                                                                         <form class="modal-content" action="{{ route('super_admin.managers.reject', $manager->id) }}" method="POST">
@@ -2051,12 +2027,10 @@
                             </div>
                         </div>
 
-                        {{-- ROW 5: OPTIMIZED LAYOUT - New Company Registrations + Live Activity (LEFT) & Regional Map (RIGHT) --}}
                         <div class="row dashboard-row-balanced">
-                            {{-- LEFT COLUMN: New Company Registrations + User Registrations + Live Platform Activity --}}
+
                             <div class="col-12 col-xl-5 grid-margin dashboard-stack">
-                                
-                                {{-- New Company Registrations (Scrollable) --}}
+
                                 <div class="card card-rounded shadow-sm">
                                     <div class="card-body">
                                         <div class="dashboard-split-card">
@@ -2117,7 +2091,6 @@
                                     </div>
                                 </div>
 
-                                {{-- Latest User Registrations --}}
                                 <div class="card card-rounded shadow-sm">
                                     <div class="card-body">
                                         <div class="dashboard-split-card">
@@ -2177,7 +2150,6 @@
                                     </div>
                                 </div>
 
-                                {{-- Live Platform Activity --}}
                                 <div class="card card-rounded shadow-sm">
                                     <div class="card-body">
                                         <div class="dashboard-split-card">
@@ -2279,7 +2251,6 @@
                                 </div>
                             </div>
 
-                            {{-- RIGHT COLUMN: Real-time Regional Distribution Map --}}
                             <div class="col-12 col-xl-7 grid-margin dashboard-stack">
                                 <div class="card card-rounded shadow-sm">
                                     <div class="card-body">
@@ -2448,7 +2419,6 @@
                             </div>
                         </div>
 
-                        {{-- ROW 6: HEAT MAP --}}
                         <div class="row">
                             <div class="col-12 grid-margin stretch-card">
                                 <div class="card card-rounded shadow-sm">
@@ -2460,16 +2430,15 @@
                                             </div>
                                             <span class="badge bg-opacity-10 bg-info text-info"><i class="mdi mdi-information-outline"></i> Live Data</span>
                                         </div>
-                                        
+
                                         <div class="heatmap-container overflow-auto">
                                             <div class="heatmap-grid">
-                                                {{-- Hours Header --}}
+
                                                 <div></div> 
                                                 @for($h=0; $h<24; $h++)
                                                     <div class="text-center text-muted small" style="font-size:9px;">{{ str_pad($h, 2, '0', STR_PAD_LEFT) }}</div>
                                                 @endfor
 
-                                                {{-- Days Rows --}}
                                                 @php $days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']; @endphp
                                                 @foreach($days as $day)
                                                     <div class="heatmap-label">{{ $day }}</div>
@@ -2500,7 +2469,6 @@
         </div>
     </div>
 </div>
-{{-- WRAPPER END --}}
 
 @if(view()->exists('scripts.print_handler'))
     @include('scripts.print_handler')
@@ -2511,10 +2479,9 @@
 @endsection
 
 @push('scripts')
-{{-- Chart.js Library --}}
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-{{-- Leaflet Map Library --}}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -2586,7 +2553,7 @@
     document.addEventListener("DOMContentLoaded", function() {
         const chartSeries = @json($dashboardChartSeries);
         const activityHeatmap = @json($dashboardActivityHeatmap);
-        
+
         // --- 1. REVENUE TREND CHART (Line) ---
         const revenueCtx = document.getElementById('revenueTrendChart');
         if (revenueCtx) {
@@ -3022,7 +2989,7 @@
 
             mapElement.addEventListener('click', () => setMapInteraction(true));
             mapElement.addEventListener('mouseleave', () => setMapInteraction(false));
-            
+
             // Add tile layer
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; OpenStreetMap contributors',
@@ -3104,7 +3071,7 @@
                     if (value > 0 && value <= 2) intensity = 1;
                     else if (value > 2 && value <= 5) intensity = 2;
                     else if (value > 5) intensity = 3;
-                    
+
                     if (intensity === 1) cell.style.backgroundColor = '#b1d3fa'; 
                     if (intensity === 2) cell.style.backgroundColor = '#52a2f5'; 
                     if (intensity === 3) cell.style.backgroundColor = '#1F3BB3'; 

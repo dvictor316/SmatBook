@@ -29,10 +29,10 @@
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         const ctx = document.getElementById('monthlySalesChart').getContext('2d');
-        
+
         // Data passed from DashboardController
         const salesData = @json($monthlySalesData);
-        
+
         const labels = salesData.map(data => data.month);
         const totals = salesData.map(data => data.total_sales);
 

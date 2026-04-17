@@ -1,7 +1,7 @@
 <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee;">
     <h2 style="color: #333;">Daily Executive Summary</h2>
     <p>Here is the financial performance for today, <strong>{{ date('d M Y') }}</strong>:</p>
-    
+
     <table style="width: 100%; border-collapse: collapse;">
         <tr>
             <td style="padding: 10px; border: 1px solid #eee;">Total Inflow (Revenue)</td>

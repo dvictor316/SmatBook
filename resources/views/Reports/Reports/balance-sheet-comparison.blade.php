@@ -31,7 +31,6 @@
 <div class="page-wrapper">
 <div class="content container-fluid">
 
-    {{-- Header --}}
     <div class="page-header no-print">
         <div class="content-page-header">
             <div>
@@ -46,7 +45,6 @@
         </div>
     </div>
 
-    {{-- Date Filter --}}
     <div class="card shadow-none border mb-3 no-print">
         <div class="card-body p-2">
             <form action="{{ url()->current() }}" method="GET" class="d-flex flex-wrap align-items-end gap-3">
@@ -79,7 +77,7 @@
                 </tr>
             </thead>
             <tbody>
-                {{-- Assets --}}
+
                 <tr class="section-head"><td colspan="5">Assets</td></tr>
                 <tr>
                     <td>Total Assets</td>
@@ -90,7 +88,6 @@
                     <td class="{{ $d >= 0 ? 'bsc-tag-up' : 'bsc-tag-dn' }}">{{ $p !== null ? ($p >= 0 ? '+' : '').$p.'%' : '—' }}</td>
                 </tr>
 
-                {{-- Liabilities --}}
                 <tr class="section-head"><td colspan="5">Liabilities</td></tr>
                 <tr>
                     <td>Total Liabilities</td>
@@ -101,7 +98,6 @@
                     <td class="{{ $d >= 0 ? 'bsc-tag-up' : 'bsc-tag-dn' }}">{{ $p !== null ? ($p >= 0 ? '+' : '').$p.'%' : '—' }}</td>
                 </tr>
 
-                {{-- Equity --}}
                 <tr class="section-head"><td colspan="5">Equity</td></tr>
                 <tr>
                     <td>Retained Earnings</td>
@@ -120,7 +116,6 @@
                     <td class="{{ $d >= 0 ? 'bsc-tag-up' : 'bsc-tag-dn' }}">{{ $p !== null ? ($p >= 0 ? '+' : '').$p.'%' : '—' }}</td>
                 </tr>
 
-                {{-- Net --}}
                 <tr class="section-head"><td colspan="5">Summary</td></tr>
                 <tr class="total-row">
                     <td>Total Liabilities &amp; Equity</td>

@@ -23,7 +23,7 @@
         </div>
 
         <div class="row">
-            {{-- Map Column --}}
+
             <div class="col-xl-7 col-lg-12">
                 <div class="card shadow-sm border-0">
                     <div class="card-header bg-transparent border-bottom">
@@ -35,7 +35,6 @@
                 </div>
             </div>
 
-            {{-- Inbox/Stream Column --}}
             <div class="col-xl-5 col-lg-12">
                 <div class="card shadow-sm border-0">
                     <div class="card-header bg-transparent border-bottom d-flex justify-content-between align-items-center">
@@ -66,7 +65,7 @@
                                                     <div class="avatar avatar-sm {{ ($msg['Class'] ?? 'unread') == 'unread' ? 'bg-primary' : 'bg-light text-dark' }} rounded-circle text-white">
                                                         {{ substr($msg['Name'] ?? 'U', 0, 1) }}
                                                     </div>
-                                                    {{-- Status Dot --}}
+
                                                     <span class="status-indicator {{ ($msg['Status'] ?? 'offline') == 'online' ? 'bg-success' : 'bg-secondary' }}"></span>
                                                 </div>
                                             </td>
@@ -106,7 +105,6 @@
     </div>
 </div>
 
-{{-- Leaflet Assets --}}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -140,7 +138,7 @@
     .cursor-pointer { cursor: pointer; }
     .message-row { transition: all 0.2s ease; border-left: 3px solid transparent; }
     .message-row:hover { background-color: #f0f4ff !important; border-left: 3px solid #3d5ee1; transform: translateX(5px); }
-    
+
     #dynamic_world_map { border-bottom-left-radius: 10px; border-bottom-right-radius: 10px; }
     .avatar-sm { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; }
 </style>
@@ -166,7 +164,7 @@
         messageData.forEach((msg, index) => {
             const isOnline = msg.Status === 'online';
             const markerColor = isOnline ? '#28a745' : (msg.Class === 'unread' ? '#3d5ee1' : '#9e9e9e');
-            
+
             const marker = L.circleMarker([msg.lat, msg.lng], {
                 radius: isOnline ? 10 : 8,
                 fillColor: markerColor,

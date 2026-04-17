@@ -5,7 +5,6 @@
     <div class="page-wrapper">
         <div class="content container-fluid">
 
-            {{-- Page Header --}}
             <div class="page-header no-print">
                 <div class="row align-items-center">
                     <div class="col">
@@ -19,7 +18,7 @@
                         <a href="javascript:void(0);" class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#addCategory">
                             <i class="fas fa-plus me-2"></i>Add New Category
                         </a>
-                        {{-- Trigger for Print --}}
+
                         <button onclick="window.print()" class="btn btn-white text-black-50 shadow-sm">
                             <i class="fas fa-print"></i>
                         </button>
@@ -27,7 +26,6 @@
                 </div>
             </div>
 
-            {{-- Success Messages --}}
             @if(session('success'))
                 <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm" role="alert">
                     <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
@@ -35,7 +33,6 @@
                 </div>
             @endif
 
-            {{-- Table Section --}}
             <div class="row">
                 <div class="col-sm-12">
                     <div class="card shadow-sm border-0">
@@ -64,7 +61,7 @@
                                                 </td>
                                                 <td>
                                                     <div class="description-output">
-                                                        {{-- Direct property check for Object or Model --}}
+
                                                         @if(!empty($category->description))
                                                             {{ $category->description }}
                                                         @else
@@ -101,7 +98,7 @@
                                                                 <span class="d-none d-md-inline">Clear Products</span>
                                                             </button>
                                                         </form>
-                                                        
+
                                                         <form action="{{ route('categories.destroy', data_get($category, 'id')) }}" method="POST" onsubmit="return confirm('Are you sure?')">
                                                             @csrf @method('DELETE')
                                                             <button type="submit" class="btn btn-sm btn-white text-danger shadow-sm d-flex align-items-center gap-1">
@@ -113,7 +110,6 @@
                                                 </td>
                                             </tr>
 
-                                            {{-- Edit Category Modal (Nested to ensure data consistency) --}}
                                             <div class="modal fade" id="editCategory{{ data_get($category, 'id') }}" tabindex="-1" aria-hidden="true">
                                                 <div class="modal-dialog modal-dialog-centered">
                                                     <div class="modal-content border-0">
@@ -163,7 +159,6 @@
         </div>
     </div>
 
-    {{-- Add Category Modal --}}
     <div class="modal fade" id="addCategory" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0">
@@ -192,11 +187,10 @@
         </div>
     </div>
 
-    {{-- Styles for clean UI and Print formatting --}}
     <style>
         .bg-info-light { background-color: rgba(0, 209, 209, 0.1); color: #00d1d1; font-weight: 600; }
         .btn-white { background: #fff; border: 1px solid #e2e8f0; }
-        
+
         .description-output {
             max-width: 300px;
             white-space: normal;

@@ -8,7 +8,6 @@
     <div class="page-wrapper">
         <div class="content container-fluid">
 
-            {{-- Page Header --}}
             <div class="page-header mb-4 no-print">
                 <div class="row g-3 align-items-start">
                     <div class="col-lg-8">
@@ -278,7 +277,6 @@
         </div>
     </div>
 
-    {{-- Edit Modal --}}
     <div class="modal fade" id="edit_history_modal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -312,7 +310,6 @@
         </div>
     </div>
 
-    {{-- Delete Modal --}}
     <div class="modal fade" id="delete_history_modal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-sm">
             <div class="modal-content text-center p-4">
@@ -334,7 +331,6 @@
     </div>
 
     <style>
-
 
         .button-debug { display: none !important; }
         .bg-light-success { background-color: #f0fdf4 !important; color: #166534 !important; border: 1px solid #dcfce7; }

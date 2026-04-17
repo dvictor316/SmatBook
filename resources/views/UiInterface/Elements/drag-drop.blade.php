@@ -4,7 +4,7 @@
 			<!-- Page Wrapper -->
             <div class="page-wrapper">
                 <div class="content container-fluid">
-				
+
 					<!-- Page Header -->
 					<div class="page-header">
 						<div class="content-page-header">
@@ -12,9 +12,9 @@
 						</div>	
 					</div>
 					<!-- /Page Header -->	
-					
+
 					<div class="row" id="card-drag-area">
-					
+
 						<!-- Drag Card -->					
 						<div class="col-md-4 draggable">	
 							<div class="card">
@@ -28,7 +28,7 @@
 							</div>
 						</div>
 						<!-- /Drag Card -->
-						
+
 						<!-- Drag Card -->					
 						<div class="col-md-4 draggable">	
 							<div class="card">
@@ -42,7 +42,7 @@
 							</div>
 						</div>
 						<!-- /Drag Card -->
-						
+
 						<!-- Drag Card -->					
 						<div class="col-md-4 draggable">	
 							<div class="card">
@@ -57,7 +57,7 @@
 						</div>
 						<!-- /Drag Card -->
 					</div>	
-					
+
 					<div class="row">						
 						<div class="col-md-12">
 							<div class="card">
@@ -113,9 +113,9 @@
 							</div>	
 						</div>	
 					</div>	
-					
+
 					<div class="row">
-					
+
 						<!-- Drag Card -->					
 						<div class="col-md-12">	
 							<div class="card" id="dd-handle">
@@ -150,7 +150,7 @@
 						</div>
 						<!-- /Drag Card -->
 					</div>	
-				
+
 				</div>			
 			</div>
 			<!-- /Page Wrapper -->

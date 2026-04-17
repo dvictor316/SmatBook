@@ -39,7 +39,6 @@
 <div class="page-wrapper">
 <div class="content container-fluid">
 
-    {{-- Header --}}
     <div class="page-header no-print">
         <div class="content-page-header">
             <div>
@@ -55,7 +54,6 @@
         </div>
     </div>
 
-    {{-- Date Filter --}}
     <div class="card shadow-none border mb-3 no-print">
         <div class="card-body p-2">
             <form action="{{ url()->current() }}" method="GET" class="d-flex align-items-end gap-3 flex-wrap">
@@ -69,7 +67,6 @@
         </div>
     </div>
 
-    {{-- KPI Cards --}}
     <div class="kpi-grid">
         <div class="kpi-card blue">
             <div class="kpi-label">Total Assets</div>
@@ -85,7 +82,6 @@
         </div>
     </div>
 
-    {{-- Summary Card --}}
     <div class="bss-wrap">
         <div class="bss-card">
             <div class="text-center mb-3">

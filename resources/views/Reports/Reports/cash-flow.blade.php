@@ -3,13 +3,13 @@
 @section('content')
 <style>
     .report-container { max-width: 980px; margin: 0 auto; }
-    
+
     .report-header { 
         border-bottom: 1px solid #dbe7f5; 
         padding-bottom: 1rem; 
         margin-bottom: 1.5rem; 
     }
-    
+
     /* Summary Cards */
     .summary-grid {
         display: grid;
@@ -111,14 +111,14 @@
             'reportLabel' => 'Cash Flow Statement',
             'periodLabel' => 'Period: ' . $start->format('d M Y') . ' to ' . $end->format('d M Y'),
         ])
-        
+
         <div class="report-header d-flex justify-content-between align-items-end">
             <div>
                 <div class="text-primary fw-bold small text-uppercase cash-report-kicker">Statement of Cash Flows</div>
                 <h1 class="cash-report-company m-0">{{ $cashFlowCompanyName }}</h1>
                 <div class="text-muted small" style="font-size: 0.82rem;">Period: <strong>{{ $start->format('d M Y') }}</strong> to <strong>{{ $end->format('d M Y') }}</strong></div>
             </div>
-            
+
             <div class="d-flex gap-2 no-print">
                 <form action="" method="GET" class="d-flex gap-2 align-items-center me-3">
                     <input type="date" name="start_date" value="{{ $start->toDateString() }}" class="form-control form-control-sm">
@@ -204,7 +204,7 @@
             <span class="text-uppercase">Net Cash Position at Period End</span>
             <span>₦{{ number_format($closingBalance, 2) }}</span>
         </div>
-        
+
     </div>
 </div>
 

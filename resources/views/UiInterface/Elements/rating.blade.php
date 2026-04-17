@@ -4,7 +4,7 @@
 			<!-- Page Wrapper -->
             <div class="page-wrapper">
                 <div class="content container-fluid">
-				
+
 					<!-- Page Header -->
 					<div class="page-header">
 						<div class="content-page-header">
@@ -12,9 +12,9 @@
 						</div>	
 					</div>
 					<!-- /Page Header -->
-					
+
 					<div class="row">
-					
+
 						<!-- Rating -->
 						<div class="col-md-6">	
 							<div class="card">
@@ -28,7 +28,7 @@
 							</div>
 						</div>
 						<!-- /Rating -->
-						
+
 						<!-- Rating -->
 						<div class="col-md-6">	
 							<div class="card">
@@ -42,7 +42,7 @@
 							</div>
 						</div>
 						<!-- /Rating -->
-						
+
 						<!-- Rating -->
 						<div class="col-md-6">	
 							<div class="card">
@@ -56,7 +56,7 @@
 							</div>
 						</div>
 						<!-- /Rating -->
-						
+
 						<!-- Rating -->
 						<div class="col-md-6">	
 							<div class="card">
@@ -70,7 +70,7 @@
 							</div>
 						</div>
 						<!-- /Rating -->
-						
+
 						<!-- Rating -->
 						<div class="col-md-6">	
 							<div class="card">
@@ -84,7 +84,7 @@
 							</div>
 						</div>
 						<!-- /Rating -->
-						
+
 						<!-- Rating -->
 						<div class="col-md-6">	
 							<div class="card">
@@ -98,9 +98,9 @@
 							</div>
 						</div>
 						<!-- /Rating -->
-							
+
 					</div>
-				
+
 				</div>			
 			</div>
 			<!-- /Page Wrapper -->

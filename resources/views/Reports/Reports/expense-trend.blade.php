@@ -51,7 +51,6 @@
         </div>
     </div>
 
-    {{-- KPI summary --}}
     @php
         $nonZero = array_filter((array)$months, fn($v) => $v > 0);
         $avgMonthly = count($nonZero) > 0 ? $grandTotal / count($nonZero) : 0;
