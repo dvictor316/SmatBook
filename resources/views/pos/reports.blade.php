@@ -3,319 +3,377 @@
 @section('content')
 @php
     $grandTotalStockValue = (float) $reports->sum(fn ($report) => ((float) ($report->instock_qty ?? 0)) * ((float) ($report->product_price ?? 0)));
-    $totalSoldAmount = (float) $reports->sum(fn ($report) => (float) ($report->total_sold_amount ?? 0));
-    $totalSoldUnits = (float) $reports->sum(fn ($report) => (float) ($report->total_sold_qty ?? 0));
-    $catalogItems = (int) $reports->count();
+    $totalSoldAmount     = (float) $reports->sum(fn ($report) => (float) ($report->total_sold_amount ?? 0));
+    $totalSoldUnits      = (float) $reports->sum(fn ($report) => (float) ($report->total_sold_qty ?? 0));
+    $catalogItems        = (int) $reports->count();
+    $companyName         = Auth::user()?->company?->name ?? config('app.name', 'My Business');
 @endphp
 
 <style>
-    .pos-report-hero {
-        background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
-        border: 1px solid #dbe7ff;
-        border-radius: 22px;
-        padding: 22px;
-        box-shadow: 0 14px 40px rgba(37, 99, 235, 0.08);
-    }
+/* ─── QuickBooks-style Report Page ─── */
+.qb-report-page { background: #f7f8fc; min-height: 100vh; }
 
-    .pos-report-chip {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 6px 12px;
-        border-radius: 999px;
-        background: #eef4ff;
-        color: #3156c8;
-        font-size: 11px;
-        font-weight: 700;
-    }
+/* Report document wrapper */
+.qb-report-doc {
+    background: #fff;
+    border: 1px solid #dee2e9;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    overflow: hidden;
+}
 
-    .pos-report-card {
-        border: 1px solid #e6edf7;
-        border-radius: 20px;
-        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
-        overflow: hidden;
-    }
+/* Report header band */
+.qb-report-header {
+    background: #fff;
+    border-bottom: 2px solid #e4e8f0;
+    padding: 24px 28px 20px;
+}
+.qb-report-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -.3px;
+    line-height: 1.25;
+}
+.qb-report-meta {
+    font-size: 12.5px;
+    color: #64748b;
+    margin-top: 3px;
+}
+.qb-company-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1e3a5f;
+    letter-spacing: .02em;
+    text-transform: uppercase;
+}
 
-    .pos-metric-card {
-        border: 1px solid #e6edf7;
-        border-radius: 20px;
-        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
-    }
+/* Action buttons */
+.qb-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 6px;
+    font-size: 12.5px;
+    font-weight: 600;
+    border: 1px solid #dee2e9;
+    background: #fff;
+    color: #374151;
+    cursor: pointer;
+    transition: background .15s, box-shadow .15s;
+    text-decoration: none;
+}
+.qb-btn:hover { background: #f1f5f9; box-shadow: 0 1px 4px rgba(0,0,0,.08); color: #111; }
+.qb-btn-primary { background: #2563eb; color: #fff; border-color: #1d4ed8; }
+.qb-btn-primary:hover { background: #1d4ed8; color: #fff; }
 
-    .pos-metric-icon {
-        width: 42px;
-        height: 42px;
-        border-radius: 14px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 16px;
-    }
+/* Divider band */
+.qb-filter-band {
+    background: #f8fafd;
+    border-bottom: 1px solid #e4e8f0;
+    padding: 14px 28px;
+}
 
-    .pos-report-table thead th {
-        background: #f5f8ff;
-        border-bottom: 1px solid #dfe8f7;
-        color: #5b6b87;
-        font-size: 12px;
-        font-weight: 800;
-        letter-spacing: 0.04em;
-        padding: 12px 12px;
-        text-transform: uppercase;
-    }
+/* KPI strip */
+.qb-kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border-bottom: 1px solid #e4e8f0;
+}
+@media (max-width: 768px) {
+    .qb-kpi-strip { grid-template-columns: repeat(2, 1fr); }
+}
+.qb-kpi-cell {
+    padding: 18px 22px;
+    border-right: 1px solid #e4e8f0;
+    position: relative;
+}
+.qb-kpi-cell:last-child { border-right: 0; }
+.qb-kpi-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: #94a3b8;
+    margin-bottom: 5px;
+}
+.qb-kpi-value {
+    font-size: 20px;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.1;
+}
+.qb-kpi-sub {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-top: 3px;
+}
+.qb-kpi-icon {
+    position: absolute;
+    top: 16px;
+    right: 18px;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+}
 
-    .pos-report-table tbody td {
-        padding: 12px 12px;
-        vertical-align: middle;
-    }
+/* Table */
+.qb-report-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.qb-report-table thead tr {
+    background: #f1f5fb;
+    border-top: 1px solid #e4e8f0;
+    border-bottom: 1px solid #c8d3e8;
+}
+.qb-report-table thead th {
+    padding: 10px 14px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: #4b5e7a;
+    white-space: nowrap;
+}
+.qb-report-table tbody tr {
+    border-bottom: 1px solid #edf0f6;
+    transition: background .1s;
+}
+.qb-report-table tbody tr:hover { background: #f5f8ff; }
+.qb-report-table tbody td {
+    padding: 11px 14px;
+    vertical-align: middle;
+    color: #1e293b;
+}
+.qb-report-table tfoot tr {
+    background: #f1f5fb;
+    border-top: 2px solid #c8d3e8;
+}
+.qb-report-table tfoot td {
+    padding: 11px 14px;
+    font-weight: 700;
+    font-size: 12.5px;
+    color: #0f172a;
+}
 
-    .pos-report-table tbody tr:hover {
-        background: #fafcff;
-    }
+/* Badges */
+.qb-sku-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    font-size: 11px;
+    font-weight: 600;
+    color: #475569;
+    font-family: monospace;
+}
+.qb-stock-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    min-width: 80px;
+    text-align: center;
+}
+.qb-stock-ok  { background: #dcfce7; color: #15803d; }
+.qb-stock-low { background: #fee2e2; color: #b91c1c; }
 
-    .pos-report-sku {
-        display: inline-flex;
-        align-items: center;
-        padding: 6px 10px;
-        border-radius: 999px;
-        background: #f8fafc;
-        color: #334155;
-        font-size: 11px;
-        font-weight: 700;
-        border: 1px solid #e2e8f0;
-    }
+/* Footer / pagination bar */
+.qb-report-footer {
+    padding: 14px 28px;
+    border-top: 1px solid #e4e8f0;
+    background: #f8fafd;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.qb-footer-note { font-size: 11.5px; color: #94a3b8; }
 
-    .pos-stock-badge {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-width: 92px;
-        padding: 6px 10px;
-        border-radius: 999px;
-        font-size: 11px;
-        font-weight: 800;
-    }
-
-    .pos-stock-good {
-        background: #dcfce7;
-        color: #166534;
-    }
-
-    .pos-stock-low {
-        background: #fee2e2;
-        color: #b91c1c;
-    }
-
-    .pos-summary-card {
-        border: 1px solid #e6edf7;
-        border-radius: 20px;
-        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
-    }
-
-    .pos-report-hero h2 {
-        font-size: 20px;
-        line-height: 1.3;
-    }
-
-    .pos-report-hero p {
-        font-size: 13px;
-    }
-
-    .pos-metric-card h3 {
-        font-size: 20px;
-    }
-
-    .pos-metric-card .text-muted.small {
-        font-size: 12px;
-    }
+@media print {
+    .qb-report-page .no-print { display: none !important; }
+    .qb-report-doc { border: none; box-shadow: none; }
+    .qb-report-table tbody tr:hover { background: transparent; }
+}
 </style>
 
-<div class="page-wrapper">
+<div class="page-wrapper qb-report-page">
     <div class="content container-fluid">
-        @component('components.page-header')
-            @slot('title')
-                POS Reports
-            @endslot
-        @endcomponent
 
-        <div class="pos-report-hero mb-4">
-            <div class="row align-items-center g-3">
-                <div class="col-lg-8">
-                    <div class="d-flex flex-wrap gap-2 mb-3">
-                        <span class="pos-report-chip">
-                            <i class="fas fa-chart-line"></i>
-                            Items Sold Report
-                        </span>
-                        <span class="pos-report-chip">
-                            <i class="fas fa-calendar-alt"></i>
-                            {{ now()->format('l, d M Y') }}
-                        </span>
-                    </div>
-                    <h2 class="mb-2" style="color:#0f172a;font-weight:800;">POS performance in the same app style</h2>
-                    <p class="mb-0 text-muted">Track sold units, sales value, and live stock position from your POS activity without leaving the main reporting experience.</p>
-                </div>
-                <div class="col-lg-4 text-lg-end">
-                    <button onclick="print()" class="btn btn-white border shadow-sm">
-                        <i class="fas fa-print me-2"></i>Print Report
-                    </button>
-                </div>
+        {{-- ── Page top bar (breadcrumb + action buttons) ────────────────────── --}}
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 no-print" style="gap:10px;">
+            <div>
+                <nav aria-label="breadcrumb" style="font-size:12.5px;">
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item"><a href="{{ url('/') }}">Home</a></li>
+                        <li class="breadcrumb-item active">POS Sales Report</li>
+                    </ol>
+                </nav>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+                <button onclick="window.print()" class="qb-btn">
+                    <i class="fas fa-print"></i> Print
+                </button>
+                <a href="{{ request()->fullUrlWithQuery(['export' => 'csv']) }}" class="qb-btn">
+                    <i class="fas fa-file-csv"></i> Export CSV
+                </a>
             </div>
         </div>
 
-        <div class="row g-4 mb-4">
-            <div class="col-xl-3 col-sm-6">
-                <div class="card pos-metric-card h-100">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <div>
-                                <div class="text-muted small text-uppercase fw-bold">Total Units Sold</div>
-                                <h3 class="mt-2 mb-0 fw-bold">{{ number_format($totalSoldUnits) }}</h3>
-                            </div>
-                            <span class="pos-metric-icon" style="background:#eef4ff;color:#3156c8;">
-                                <i class="fas fa-box-open"></i>
-                            </span>
-                        </div>
-                        <div class="text-muted small">All units sold across the filtered POS report set.</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-xl-3 col-sm-6">
-                <div class="card pos-metric-card h-100">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <div>
-                                <div class="text-muted small text-uppercase fw-bold">Gross Sales Value</div>
-                                <h3 class="mt-2 mb-0 fw-bold text-primary">₦{{ number_format($totalSoldAmount, 2) }}</h3>
-                            </div>
-                            <span class="pos-metric-icon" style="background:#eff6ff;color:#2563eb;">
-                                <i class="fas fa-money-bill-wave"></i>
-                            </span>
-                        </div>
-                        <div class="text-muted small">Combined sold valuation from reported POS item movement.</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-xl-3 col-sm-6">
-                <div class="card pos-metric-card h-100">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <div>
-                                <div class="text-muted small text-uppercase fw-bold">Current Stock Value</div>
-                                <h3 class="mt-2 mb-0 fw-bold text-success">₦{{ number_format($grandTotalStockValue, 2) }}</h3>
-                            </div>
-                            <span class="pos-metric-icon" style="background:#ecfdf5;color:#059669;">
-                                <i class="fas fa-warehouse"></i>
-                            </span>
-                        </div>
-                        <div class="text-muted small">Live inventory value based on remaining stock and current prices.</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-xl-3 col-sm-6">
-                <div class="card pos-metric-card h-100">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <div>
-                                <div class="text-muted small text-uppercase fw-bold">Catalog Items</div>
-                                <h3 class="mt-2 mb-0 fw-bold">{{ number_format($catalogItems) }}</h3>
-                            </div>
-                            <span class="pos-metric-icon" style="background:#fff7ed;color:#ea580c;">
-                                <i class="fas fa-tags"></i>
-                            </span>
-                        </div>
-                        <div class="text-muted small">Products currently represented in this POS sales report.</div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        {{-- ── Report document ─────────────────────────────────────────────────── --}}
+        <div class="qb-report-doc">
 
-        <div class="card pos-report-card mb-4">
-            <div class="card-body">
+            {{-- Header band --}}
+            <div class="qb-report-header">
+                <div class="d-flex flex-wrap justify-content-between align-items-start" style="gap:12px;">
+                    <div>
+                        <div class="qb-company-name mb-1">{{ $companyName }}</div>
+                        <div class="qb-report-title">POS Sales Report</div>
+                        <div class="qb-report-meta">
+                            Items sold &amp; stock position &nbsp;·&nbsp;
+                            Generated {{ now()->format('M d, Y') }}
+                            @if(request('branch'))
+                                &nbsp;·&nbsp; Branch: <strong>{{ request('branch') }}</strong>
+                            @endif
+                        </div>
+                    </div>
+                    {{-- Logo placeholder slot --}}
+                    <div class="d-flex align-items-center gap-2 no-print" style="margin-top:2px;">
+                        <span style="font-size:11px;color:#94a3b8;">Period:</span>
+                        <span style="font-size:12px;font-weight:600;color:#1e3a5f;">
+                            {{ request('from') ? \Carbon\Carbon::parse(request('from'))->format('M d, Y') : 'All time' }}
+                            @if(request('to'))
+                                – {{ \Carbon\Carbon::parse(request('to'))->format('M d, Y') }}
+                            @endif
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Filter bar --}}
+            <div class="qb-filter-band no-print">
                 @component('components.search-filter') @endcomponent
             </div>
-        </div>
 
-        <div class="card pos-report-card">
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table pos-report-table mb-0">
-                        <thead>
-                            <tr>
-                                <th class="text-center" style="width: 70px;">#</th>
-                                <th>Product</th>
-                                <th>SKU</th>
-                                <th>Category</th>
-                                <th class="text-end">Unit Price</th>
-                                <th class="text-center">Sold Units</th>
-                                <th class="text-end">Sold Value</th>
-                                <th class="text-center">Stock Left</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($reports as $key => $report)
-                                @php
-                                    $stock = (float) ($report->instock_qty ?? 0);
-                                @endphp
-                                <tr>
-                                    <td class="text-center text-muted">{{ $reports->firstItem() + $key }}</td>
-                                    <td>
-                                        <div class="fw-bold text-dark">{{ $report->product_name ?? 'N/A' }}</div>
-                                    </td>
-                                    <td>
-                                        <span class="pos-report-sku">{{ $report->sku ?? 'N/A' }}</span>
-                                    </td>
-                                    <td>
-                                        <span class="text-muted fw-semibold">{{ $report->category_name ?? 'N/A' }}</span>
-                                    </td>
-                                    <td class="text-end fw-bold">₦{{ number_format((float) ($report->product_price ?? 0), 2) }}</td>
-                                    <td class="text-center">
-                                        <span class="fw-bold text-primary">{{ number_format((float) ($report->total_sold_qty ?? 0)) }}</span>
-                                    </td>
-                                    <td class="text-end fw-bold text-dark">₦{{ number_format((float) ($report->total_sold_amount ?? 0), 2) }}</td>
-                                    <td class="text-center">
-                                        <span class="pos-stock-badge {{ $stock > 5 ? 'pos-stock-good' : 'pos-stock-low' }}">
-                                            {{ number_format($stock) }} units
-                                        </span>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="8" class="text-center py-5">
-                                        <div class="text-muted">
-                                            <i class="fas fa-database fa-2x mb-3 d-block"></i>
-                                            No POS report data found for the current filter.
-                                        </div>
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+            {{-- KPI strip --}}
+            <div class="qb-kpi-strip">
+                <div class="qb-kpi-cell">
+                    <div class="qb-kpi-icon" style="background:#eef4ff;color:#3356c8;">
+                        <i class="fas fa-box-open"></i>
+                    </div>
+                    <div class="qb-kpi-label">Units Sold</div>
+                    <div class="qb-kpi-value">{{ number_format($totalSoldUnits) }}</div>
+                    <div class="qb-kpi-sub">Total across all products</div>
+                </div>
+                <div class="qb-kpi-cell">
+                    <div class="qb-kpi-icon" style="background:#eff6ff;color:#2563eb;">
+                        <i class="fas fa-money-bill-wave"></i>
+                    </div>
+                    <div class="qb-kpi-label">Gross Sales</div>
+                    <div class="qb-kpi-value" style="color:#2563eb;">₦{{ number_format($totalSoldAmount, 2) }}</div>
+                    <div class="qb-kpi-sub">Combined POS revenue</div>
+                </div>
+                <div class="qb-kpi-cell">
+                    <div class="qb-kpi-icon" style="background:#f0fdf4;color:#16a34a;">
+                        <i class="fas fa-warehouse"></i>
+                    </div>
+                    <div class="qb-kpi-label">Stock Value</div>
+                    <div class="qb-kpi-value" style="color:#16a34a;">₦{{ number_format($grandTotalStockValue, 2) }}</div>
+                    <div class="qb-kpi-sub">Remaining inventory value</div>
+                </div>
+                <div class="qb-kpi-cell">
+                    <div class="qb-kpi-icon" style="background:#fff7ed;color:#ea580c;">
+                        <i class="fas fa-tags"></i>
+                    </div>
+                    <div class="qb-kpi-label">Products</div>
+                    <div class="qb-kpi-value">{{ number_format($catalogItems) }}</div>
+                    <div class="qb-kpi-sub">Items in this report</div>
                 </div>
             </div>
-            <div class="card-footer bg-white border-0 d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
-                <span class="text-muted small">Items sold summary generated from POS sales and live inventory balances.</span>
+
+            {{-- Data table --}}
+            <div class="table-responsive">
+                <table class="qb-report-table">
+                    <thead>
+                        <tr>
+                            <th style="width:46px;">#</th>
+                            <th>Product</th>
+                            <th>SKU</th>
+                            <th>Category</th>
+                            <th class="text-end">Unit Price</th>
+                            <th class="text-end">Sold Units</th>
+                            <th class="text-end">Sold Value</th>
+                            <th class="text-center">Stock Left</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($reports as $key => $report)
+                            @php $stock = (float) ($report->instock_qty ?? 0); @endphp
+                            <tr>
+                                <td class="text-muted" style="font-size:12px;">{{ $reports->firstItem() + $key }}</td>
+                                <td>
+                                    <span class="fw-semibold" style="color:#0f172a;">{{ $report->product_name ?? '—' }}</span>
+                                </td>
+                                <td>
+                                    <span class="qb-sku-badge">{{ $report->sku ?? '—' }}</span>
+                                </td>
+                                <td style="color:#475569;">{{ $report->category_name ?? '—' }}</td>
+                                <td class="text-end" style="font-variant-numeric:tabular-nums;">
+                                    ₦{{ number_format((float) ($report->product_price ?? 0), 2) }}
+                                </td>
+                                <td class="text-end fw-semibold" style="color:#2563eb;font-variant-numeric:tabular-nums;">
+                                    {{ number_format((float) ($report->total_sold_qty ?? 0)) }}
+                                </td>
+                                <td class="text-end fw-semibold" style="font-variant-numeric:tabular-nums;">
+                                    ₦{{ number_format((float) ($report->total_sold_amount ?? 0), 2) }}
+                                </td>
+                                <td class="text-center">
+                                    <span class="qb-stock-badge {{ $stock > 5 ? 'qb-stock-ok' : 'qb-stock-low' }}">
+                                        {{ number_format($stock) }} units
+                                    </span>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="8" class="text-center py-5" style="color:#94a3b8;">
+                                    <i class="fas fa-inbox fa-2x mb-3 d-block"></i>
+                                    No products found for the selected filter.
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                    @if($reports->count() > 0)
+                    <tfoot>
+                        <tr>
+                            <td colspan="5" style="font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:#64748b;">
+                                Page Totals ({{ $reports->count() }} items)
+                            </td>
+                            <td class="text-end" style="color:#2563eb;">{{ number_format($totalSoldUnits) }}</td>
+                            <td class="text-end" style="color:#2563eb;">₦{{ number_format($totalSoldAmount, 2) }}</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                    @endif
+                </table>
+            </div>
+
+            {{-- Footer / pagination --}}
+            <div class="qb-report-footer">
+                <span class="qb-footer-note">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Sold units &amp; values reflect POS activity. Stock value = remaining qty × unit price.
+                </span>
                 <div>{{ $reports->links() }}</div>
             </div>
-        </div>
 
-        <div class="row g-4 mt-1">
-            <div class="col-lg-7">
-                <div class="card pos-summary-card h-100">
-                    <div class="card-body">
-                        <h5 class="fw-bold text-dark mb-3">POS Report Summary</h5>
-                        <p class="text-muted mb-0">This page now follows the same visual structure as the rest of the app, while still summarizing sold units, sales value, and stock position from POS activity in a clean reporting layout.</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-5">
-                <div class="card pos-summary-card h-100">
-                    <div class="card-body text-lg-end">
-                        <div class="text-muted small text-uppercase fw-bold mb-2">Inventory Valuation</div>
-                        <h3 class="fw-bold text-primary mb-1">₦{{ number_format($grandTotalStockValue, 2) }}</h3>
-                        <div class="text-muted small">Based on current stock quantity multiplied by unit price.</div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        </div>{{-- /.qb-report-doc --}}
+
     </div>
 </div>
 @endsection
