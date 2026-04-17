@@ -529,6 +529,11 @@ Route::middleware(['auth'])->prefix('ajax/inventory')->name('ajax.inventory.')->
     Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
 });
 
+// Reports hub — accessible to all authenticated users (superadmin, managers, staff)
+Route::middleware(['auth'])->group(function () {
+    Route::get('/reports', [ReportController::class, 'reportsHub'])->name('reports.hub');
+});
+
 /*
 |--------------------------------------------------------------------------
 | TENANT APP ROUTES (ALL COMPLETE ROUTES)
@@ -844,7 +849,6 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
     
     // Reports
     Route::controller(ReportController::class)->prefix('reports')->name('reports.')->group(function () {
-        Route::get('/', 'reportsHub')->name('hub');
         Route::get('/expense-report', 'expense_report')->name('expense');
         Route::get('/income-report', 'income_report')->name('income');
         Route::get('/payment-report', 'payment_report')->name('payment');
