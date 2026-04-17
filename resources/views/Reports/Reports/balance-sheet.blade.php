@@ -308,6 +308,38 @@
         .page-wrapper { padding-top: 0; }
         .balance-sheet-grid { gap: 2.5rem; }
         .account-row { border-bottom-color: #f1f1f1 !important; }
+
+        /* Expand all scrollable transaction lists so nothing is clipped */
+        .txn-scroll {
+            max-height: none !important;
+            overflow: visible !important;
+            overflow-y: visible !important;
+            overflow-x: visible !important;
+            height: auto !important;
+        }
+
+        /* Ensure transaction items wrap instead of overflow on narrow paper */
+        .txn-item {
+            min-width: 0 !important;
+            grid-template-columns: 74px 80px 1fr 88px 88px !important;
+        }
+
+        /* Avoid page breaks inside an account block */
+        .account-block {
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+
+        /* Keep cards readable when printed */
+        .report-container {
+            box-shadow: none !important;
+            border: 1px solid #ccc !important;
+        }
+
+        .summary-card {
+            box-shadow: none !important;
+            border: 1px solid #ccc !important;
+        }
     }
 </style>
 
