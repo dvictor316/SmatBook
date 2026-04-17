@@ -825,12 +825,3 @@
 @endpush
 
 @endsection
-            <div class="small text-muted">View file: <code>UserManagement/create.blade.php</code></div>
-            <div class="mt-3">
-                <a href="{{ url()->previous() }}" class="btn btn-light border">Go Back</a>
-                <a href="{{ route('home') }}" class="btn btn-primary">Home</a>
-            </div>
-        </div>
-    </div>
-</div>
-@endsection
