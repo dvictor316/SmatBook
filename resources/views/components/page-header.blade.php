@@ -167,7 +167,8 @@
                         'calendar',
                         'customers-ledger',
                         'domain',
-                        'purchase-transaction'
+                        'purchase-transaction',
+                        'reports.*'
                     ]))
                     <li>
                         <div class="dropdown">
@@ -254,6 +255,7 @@
                 @if (
                     !Route::is([
                         'signature-list',
+                        'reports.*',
                         'invoices',
                         'invoices-paid',
                         'invoices-overdue',
