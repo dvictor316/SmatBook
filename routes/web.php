@@ -580,6 +580,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::post('/users/{id}/activate', [UserController::class, 'activate'])->name('users.activate');
         Route::post('/users/{id}/deactivate', [UserController::class, 'deactivate'])->name('users.deactivate');
         Route::get('/users/{id}/activity', [UserController::class, 'activityLog'])->name('users.activity');
+        Route::get('/roles/permissions-json', [UserController::class, 'rolePermissionsJson'])->name('roles.permissions.json');
     });
 
     // Roles & Permissions (available to all subscribed plans)

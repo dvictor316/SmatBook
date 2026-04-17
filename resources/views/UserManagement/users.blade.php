@@ -59,6 +59,23 @@
     .users-table tbody tr:hover { background: #fafbff; }
     .users-table .user-username { font-weight: 600; color: #1a2236; font-size: 0.88rem; }
 
+    /* ── Avatar ── */
+    .user-avatar-circle {
+        width: 36px; height: 36px; border-radius: 50%;
+        background: linear-gradient(135deg, #1a2236, #2d3a57);
+        color: #d4a017; font-weight: 700; font-size: 0.88rem;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+    }
+    .user-avatar-img {
+        width: 36px; height: 36px; border-radius: 50%; object-fit: cover; flex-shrink: 0;
+    }
+    td.td-avatar { width: 52px; padding-right: 4px !important; }
+
+    /* ── Status badge ── */
+    .badge-active   { background: #dcfce7; color: #16a34a; border-radius: 20px; padding: 3px 10px; font-size: 0.72rem; font-weight: 700; }
+    .badge-inactive { background: #fee2e2; color: #dc2626; border-radius: 20px; padding: 3px 10px; font-size: 0.72rem; font-weight: 700; }
+
     /* ── Action icons ── */
     .action-icon { color: #7a869a; font-size: 1rem; padding: 4px 6px; transition: color 0.15s; }
     .action-icon:hover { color: #1a2236; }
@@ -171,9 +188,9 @@
                 <div class="users-page-title">Users &amp; Roles</div>
                 <div class="users-page-sub">Users</div>
             </div>
-            <button class="btn-add-user" data-bs-toggle="modal" data-bs-target="#add_user">
-                <i class="fas fa-plus"></i> Add
-            </button>
+            <a href="{{ route('users.create') }}" class="btn-add-user">
+                <i class="fas fa-plus"></i> Add User
+            </a>
         </div>
 
         @if(session('success'))
@@ -206,25 +223,41 @@
                     <table class="table table-hover users-table" id="usersTable">
                         <thead>
                             <tr>
+                                <th class="td-avatar"></th>
                                 <th>Username</th>
                                 <th>Name</th>
                                 <th>Role</th>
                                 <th>Email</th>
+                                <th>Status</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse ($users as $user)
+                            @php
+                                $roleName   = $user->roleModel->name ?? ucwords(str_replace('_', ' ', $user->role ?? ''));
+                                $isActive   = ($user->is_active ?? $user->status ?? true);
+                                $initials   = strtoupper(substr($user->name ?? $user->first_name ?? '?', 0, 1));
+                            @endphp
                             <tr>
+                                <td class="td-avatar">
+                                    @if($user->profile_photo)
+                                        <img src="{{ asset('storage/'.$user->profile_photo) }}" alt="" class="user-avatar-img">
+                                    @else
+                                        <div class="user-avatar-circle">{{ $initials }}</div>
+                                    @endif
+                                </td>
                                 <td><span class="user-username">{{ $user->username ?? $user->name }}</span></td>
                                 <td>{{ $user->name }}</td>
-                                <td>
-                                    @php
-                                        $roleName = $user->roleModel->name ?? ucwords(str_replace('_', ' ', $user->role ?? ''));
-                                    @endphp
-                                    {{ $roleName }}
-                                </td>
+                                <td>{{ $roleName }}</td>
                                 <td>{{ $user->email }}</td>
+                                <td>
+                                    @if($isActive)
+                                        <span class="badge-active">Active</span>
+                                    @else
+                                        <span class="badge-inactive">Inactive</span>
+                                    @endif
+                                </td>
                                 <td>
                                     <a href="{{ route($showRouteName, $user->id) }}" class="action-icon" title="View">
                                         <i class="far fa-eye"></i>
@@ -238,7 +271,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="5" class="text-center py-5 text-muted">No users found.</td>
+                                <td colspan="7" class="text-center py-5 text-muted">No users found.</td>
                             </tr>
                             @endforelse
                         </tbody>
@@ -260,181 +293,24 @@
     </div>
 </div>
 
-{{-- ═══════════════════════════════════════════════════ --}}
-{{-- MODAL: ADD USER (Prokip pattern)                    --}}
-{{-- ═══════════════════════════════════════════════════ --}}
-<div class="modal fade" id="add_user" tabindex="-1" aria-labelledby="addUserLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header border-0 pb-0">
-                <div>
-                    <h4 class="modal-title fw-bold mb-1" id="addUserLabel">Add user</h4>
-                    <p class="text-muted small mb-0">Users &amp; Roles</p>
-                </div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-
-            <form action="{{ route($storeRouteName) }}" method="POST" enctype="multipart/form-data" id="addUserForm">
-                @csrf
-                <div class="modal-body pt-3">
-
-                    {{-- ── Section 1: Personal Information ── --}}
-                    <div class="mb-3">
-                        <button type="button" class="section-toggle" data-bs-toggle="collapse" data-bs-target="#sectionPersonal" aria-expanded="true">
-                            Personal Information <i class="fas fa-chevron-down chevron"></i>
-                        </button>
-                        <div class="collapse show" id="sectionPersonal">
-                            <div class="pt-3 px-1">
-                                <div class="row g-3">
-                                    <div class="col-md-6">
-                                        <label class="form-label">First Name:<span class="text-danger">*</span></label>
-                                        <input type="text" name="first_name" class="form-control" placeholder="First Name" required>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">Last Name:</label>
-                                        <input type="text" name="last_name" class="form-control" placeholder="Last Name">
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">Email:<span class="text-danger">*</span></label>
-                                        <input type="email" name="email" class="form-control" placeholder="Email" required>
-                                    </div>
-                                    <div class="col-md-6 d-flex align-items-end pb-1">
-                                        <div class="toggle-wrap">
-                                            <label class="toggle-switch">
-                                                <input type="checkbox" name="is_active" value="1" checked>
-                                                <span class="toggle-slider"></span>
-                                            </label>
-                                            <span class="text-muted small">Is active ?</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- ── Section 2: Roles and Permissions ── --}}
-                    <div class="mb-3">
-                        <button type="button" class="section-toggle" data-bs-toggle="collapse" data-bs-target="#sectionRoles" aria-expanded="false">
-                            Roles and Permissions <i class="fas fa-chevron-down chevron"></i>
-                        </button>
-                        <div class="collapse" id="sectionRoles">
-                            <div class="pt-3 px-1">
-                                <div class="row g-3">
-
-                                    {{-- Allow login toggle --}}
-                                    <div class="col-12">
-                                        <div class="toggle-wrap">
-                                            <label class="toggle-switch">
-                                                <input type="checkbox" name="allow_login" value="1" checked>
-                                                <span class="toggle-slider"></span>
-                                            </label>
-                                            <span class="text-muted small">Allow login</span>
-                                        </div>
-                                    </div>
-
-                                    {{-- Username with tenant suffix --}}
-                                    <div class="col-12">
-                                        <label class="form-label">Username:</label>
-                                        <div class="username-input-group">
-                                            <input type="text" name="username_base" id="usernameBase"
-                                                   class="form-control"
-                                                   placeholder="Leave blank to auto generate username"
-                                                   autocomplete="off">
-                                            @if($suffix)
-                                            <span class="username-suffix">-{{ $suffix }}</span>
-                                            @endif
-                                        </div>
-                                        <div class="username-preview" id="usernamePreview">
-                                            Leave blank to auto generate username
-                                        </div>
-                                    </div>
-
-                                    {{-- Password --}}
-                                    <div class="col-md-6">
-                                        <label class="form-label">Password:<span class="text-danger">*</span></label>
-                                        <input type="password" name="password" class="form-control" placeholder="Password" required autocomplete="new-password">
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">Confirm Password:<span class="text-danger">*</span></label>
-                                        <input type="password" name="confirm_password" class="form-control" placeholder="Confirm Password" required autocomplete="new-password">
-                                    </div>
-
-                                    {{-- Role --}}
-                                    <div class="col-12">
-                                        <label class="form-label">Role:<span class="text-danger">*</span></label>
-                                        <select name="role" class="form-select" required>
-                                            <option value="" disabled selected>Select a role</option>
-                                            @foreach(($roles ?? []) as $role)
-                                                <option value="{{ $role }}">{{ ucwords(str_replace('_', ' ', $role)) }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-
-                                    {{-- Access Locations --}}
-                                    @if(($branches ?? collect())->isNotEmpty())
-                                    <div class="col-12">
-                                        <label class="form-label fw-semibold">Access locations</label>
-                                        <div class="form-check mb-2">
-                                            <input class="form-check-input" type="checkbox" name="access_all_locations" value="1" id="accessAll" checked>
-                                            <label class="form-check-label" for="accessAll">All Locations</label>
-                                        </div>
-                                        <div id="branchCheckboxes">
-                                            @foreach($branches as $branch)
-                                            <div class="form-check mb-1">
-                                                <input class="form-check-input branch-check" type="checkbox"
-                                                       name="access_branches[]" value="{{ $branch['id'] }}"
-                                                       id="branch_{{ $branch['id'] }}">
-                                                <label class="form-check-label" for="branch_{{ $branch['id'] }}">
-                                                    {{ $branch['name'] }} {{ $branch['code'] ? '(' . $branch['code'] . ')' : '' }}
-                                                </label>
-                                            </div>
-                                            @endforeach
-                                        </div>
-                                    </div>
-                                    @endif
-
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- ── Section 3: Invoices ── --}}
-                    <div class="mb-3">
-                        <button type="button" class="section-toggle" data-bs-toggle="collapse" data-bs-target="#sectionInvoices" aria-expanded="false">
-                            Invoices <i class="fas fa-chevron-down chevron"></i>
-                        </button>
-                        <div class="collapse" id="sectionInvoices">
-                            <div class="pt-3 px-1">
-                                <p class="text-muted small">Invoice access settings will be available here.</p>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-                <div class="modal-footer border-0">
-                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-add-user">Save User</button>
-                </div>
-            </form>
-
-        </div>
-    </div>
-</div>
 
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 
-    // ── Chevron toggle sync ──
-    document.querySelectorAll('.section-toggle').forEach(function (btn) {
-        var target = document.querySelector(btn.dataset.bsTarget);
-        if (!target) return;
-        target.addEventListener('show.bs.collapse', function () { btn.setAttribute('aria-expanded', 'true'); });
-        target.addEventListener('hide.bs.collapse', function () { btn.setAttribute('aria-expanded', 'false'); });
-    });
+    // ── Client-side search ──
+    var searchInput = document.getElementById('userSearch');
+    var tableBody = document.querySelector('#usersTable tbody');
+    if (searchInput && tableBody) {
+        searchInput.addEventListener('input', function () {
+            var q = this.value.toLowerCase();
+            tableBody.querySelectorAll('tr').forEach(function (row) {
+                row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+            });
+        });
+    }
 
-    // ── Username live preview ──
-    var usernameInput = document.getElementById('usernameBase');
+});
     var preview = document.getElementById('usernamePreview');
     var suffix = '{{ $suffix ? "-" . $suffix : "" }}';
 

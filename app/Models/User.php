@@ -54,7 +54,10 @@ class User extends Authenticatable
         'last_seen',     
         'is_verified',    
         'verified_at',    
-        'verified_by',    
+        'verified_by',
+
+        // Per-user permission overrides
+        'permissions_override',
     ];
 
     /**
@@ -76,9 +79,10 @@ class User extends Authenticatable
         'verified_at'       => 'datetime',
         'last_seen'         => 'datetime',
         'password'          => 'hashed',
-        'is_verified'       => 'boolean', // Casts 1/0 to true/false automatically
-        'role_id'           => 'integer',
-        'company_id'        => 'integer',
+        'is_verified'          => 'boolean',
+        'role_id'              => 'integer',
+        'company_id'           => 'integer',
+        'permissions_override' => 'array',
     ];
 
     /* =========================================================================
@@ -235,11 +239,17 @@ class User extends Authenticatable
 
     public function hasPermissionTo(string $permissionName): bool
     {
+        $permissionName = strtolower(trim($permissionName));
+
+        // Per-user override takes full precedence over role permissions
+        if ($this->permissions_override !== null) {
+            return in_array($permissionName, array_map('strtolower', $this->permissions_override), true);
+        }
+
         if (!Schema::hasTable('permissions') || !Schema::hasTable('role_has_permissions')) {
             return false;
         }
 
-        $permissionName = strtolower(trim($permissionName));
 
         if (!empty($this->role_id)) {
             return $this->role()

@@ -94,8 +94,17 @@ class UserController extends Controller
      */
     public function create()
     {
-        $roles = $this->getRoles();
-        return view('UserManagement.create', compact('roles'));
+        $roles  = $this->getRoles();
+        $actor  = Auth::user();
+        $suffix = $actor?->company_id ?? '';
+
+        $companyId  = (int) ($actor?->company_id ?? 0);
+        $settingKey = $companyId > 0 ? "branches_json_company_{$companyId}" : 'branches_json';
+        $branches   = collect(json_decode(
+            \App\Models\Setting::where('key', $settingKey)->value('value') ?? '[]', true
+        ) ?: [])->filter(fn($b) => !empty($b['id']) && !empty($b['name']))->values();
+
+        return view('UserManagement.create', compact('roles', 'suffix', 'branches'));
     }
 
     /**
@@ -166,6 +175,14 @@ class UserController extends Controller
             $user->profile_photo = $request->file('profile_photo')->store('profiles', 'public');
         }
 
+        // Save per-user permission overrides if any were submitted
+        $checkPerms = $request->input('permissions', []);
+        $radioPerms = array_filter(array_values($request->input('perm_radio', [])));
+        $allPerms   = array_values(array_unique(array_filter(array_merge($checkPerms, $radioPerms))));
+        if (!empty($allPerms)) {
+            $user->permissions_override = $allPerms;
+        }
+
         $user->save();
 
         ActivityLog::record('users', 'create_user', 'Created user ' . $user->name, [
@@ -179,6 +196,23 @@ class UserController extends Controller
         
         return redirect()->route($this->usersIndexRoute())
             ->with('success', 'User created successfully.');
+    }
+
+    /**
+     * Return a role's permissions as JSON (for AJAX pre-fill in create form)
+     */
+    public function rolePermissionsJson(\Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse
+    {
+        $roleName = trim((string) $request->query('role', ''));
+
+        if (!$roleName || !Schema::hasTable('roles') || !Schema::hasTable('role_has_permissions')) {
+            return response()->json(['permissions' => []]);
+        }
+
+        $role = \App\Models\Role::whereRaw('LOWER(name) = ?', [strtolower($roleName)])->first();
+        $perms = $role ? $role->permissions()->pluck('name')->map('strtolower')->toArray() : [];
+
+        return response()->json(['permissions' => $perms]);
     }
 
     /**
