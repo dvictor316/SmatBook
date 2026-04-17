@@ -5,58 +5,25 @@
 @section('content')
 <style>
 :root {
-    --blue-deep: #002347;
-    --gold: #c5a059;
-    --gold-bright: #ffdf91;
-    --red: #bc002d;
-    --blue-light: #f4f8ff;
+    --blue-deep: #0f172a;
+    --gold: #2563eb;
+    --gold-bright: #93c5fd;
+    --red: #dc2626;
+    --blue-light: #f0f7ff;
 }
 
-/* 
-   --------------------------------------------------
-   SIDEBAR & LAYOUT LOGIC 
-   --------------------------------------------------
-*/
 .payroll-shell {
     padding: 1.5rem;
-    transition: all 0.3s ease; /* Smooth transition when toggling */
     width: 100%;
     overflow-x: hidden;
 }
-
-.payroll-shell .row {
-    margin-left: 0;
-    margin-right: 0;
-}
+.payroll-shell .row { margin-left: 0; margin-right: 0; }
 .payroll-shell .row > * {
     padding-left: calc(var(--bs-gutter-x, 1.5rem) * 0.5);
     padding-right: calc(var(--bs-gutter-x, 1.5rem) * 0.5);
 }
-
-/* Desktop: Standard State (Sidebar is 270px) */
-@media (min-width: 992px) {
-    /* When sidebar is OPEN (Default) */
-    body:not(.sidebar-icon-only):not(.sidebar-collapse):not(.sidebar-collapsed) .payroll-shell {
-        margin-left: 270px;
-        width: calc(100% - 270px);
-    }
-
-    /* When sidebar is COLLAPSED (Mini/Toggled) */
-    body.sidebar-icon-only .payroll-shell,
-    body.sidebar-collapse .payroll-shell,
-    body.sidebar-collapsed .payroll-shell {
-        margin-left: 70px; /* Standard collapsed sidebar width */
-        width: calc(100% - 70px);
-    }
-}
-
-/* Mobile/Tablet: Full Width */
 @media (max-width: 991.98px) {
-    .payroll-shell {
-        margin-left: 0 !important;
-        width: 100% !important;
-        padding: 1rem 0.75rem;
-    }
+    .payroll-shell { padding: 1rem 0.75rem; }
 }
 
 /* 
@@ -66,129 +33,113 @@
 */
 
 .payroll-header {
-    background: linear-gradient(135deg, var(--blue-deep) 0%, #003d6b 100%);
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
     border-radius: 16px;
-    padding: 32px 36px;
-    color: white;
-    margin-bottom: 28px;
-    position: relative;
-    overflow: hidden;
+    padding: 18px 24px;
+    color: var(--blue-deep);
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(15,23,42,0.04);
 }
-.payroll-header::before {
-    content: '';
-    position: absolute;
-    top: -60px; right: -60px;
-    width: 220px; height: 220px;
-    border-radius: 50%;
-    border: 1px solid rgba(197,160,89,0.15);
-}
-.payroll-header::after {
-    content: '';
-    position: absolute;
-    top: -30px; right: -30px;
-    width: 140px; height: 140px;
-    border-radius: 50%;
-    border: 1px solid rgba(197,160,89,0.25);
-}
-.payroll-header h1 { font-size: 1.8rem; font-weight: 800; margin: 0; }
-.payroll-header p { color: rgba(255,255,255,0.7); margin: 6px 0 0; font-size: 0.9rem; }
+.payroll-header h1 { font-size: 0.92rem; font-weight: 800; margin: 0; color: var(--blue-deep); }
+.payroll-header p { color: #64748b; margin: 4px 0 0; font-size: 0.78rem; }
 .header-badge {
-    background: rgba(197,160,89,0.2);
-    border: 1px solid rgba(197,160,89,0.4);
-    color: var(--gold-bright);
-    padding: 4px 14px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
+    padding: 3px 10px;
     border-radius: 20px;
-    font-size: 0.72rem;
+    font-size: 0.68rem;
     font-weight: 800;
-    letter-spacing: 1px;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     display: inline-block;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
 }
 
 /* KPI Cards */
 .kpi-card {
     background: #fff;
-    border: 1px solid #e8ecf4;
+    border: 1px solid #e2e8f0;
     border-radius: 14px;
-    padding: 22px 24px;
+    padding: 16px 18px;
     height: 100%;
     position: relative;
     overflow: hidden;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 12px rgba(0,35,71,0.05);
+    transition: box-shadow 0.2s ease;
+    box-shadow: 0 2px 8px rgba(15,23,42,0.04);
 }
-.kpi-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,35,71,0.10); }
+.kpi-card:hover { box-shadow: 0 6px 20px rgba(15,23,42,0.08); }
 .kpi-card::before {
     content: '';
     position: absolute;
     top: 0; left: 0;
     width: 4px; height: 100%;
-    background: var(--gold);
+    background: #2563eb;
 }
-.kpi-card.blue::before { background: var(--blue-deep); }
+.kpi-card.blue::before { background: #2563eb; }
 .kpi-card.red::before { background: var(--red); }
-.kpi-card.green::before { background: #22c55e; }
+.kpi-card.green::before { background: #16a34a; }
 .kpi-icon {
-    width: 48px; height: 48px;
-    border-radius: 12px;
+    width: 36px; height: 36px;
+    border-radius: 10px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 1.3rem;
-    margin-bottom: 14px;
+    font-size: 1rem;
+    margin-bottom: 10px;
 }
-.kpi-label { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: #8a92a0; margin-bottom: 6px; }
-.kpi-value { font-size: 1.7rem; font-weight: 900; color: var(--blue-deep); line-height: 1; margin-bottom: 6px; }
-.kpi-sub { font-size: 0.75rem; font-weight: 600; }
-.kpi-sub.up { color: #22c55e; }
+.kpi-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #64748b; margin-bottom: 4px; }
+.kpi-value { font-size: 0.88rem; font-weight: 800; color: var(--blue-deep); line-height: 1.2; margin-bottom: 4px; }
+.kpi-sub { font-size: 0.72rem; font-weight: 600; }
+.kpi-sub.up { color: #16a34a; }
 .kpi-sub.down { color: var(--red); }
-.kpi-sub.neutral { color: #f59e0b; }
+.kpi-sub.neutral { color: #d97706; }
 
 /* Table */
 .payroll-table-wrap {
     background: #fff;
-    border: 1px solid #e8ecf4;
+    border: 1px solid #e2e8f0;
     border-radius: 14px;
     overflow: hidden;
-    box-shadow: 0 2px 12px rgba(0,35,71,0.05);
+    box-shadow: 0 2px 8px rgba(15,23,42,0.04);
 }
 .payroll-table-header {
-    padding: 20px 24px;
-    border-bottom: 1px solid #e8ecf4;
+    padding: 12px 18px;
+    border-bottom: 1px solid #e2e8f0;
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
-    gap: 12px;
+    gap: 10px;
 }
-.payroll-table-header h6 { font-weight: 800; color: var(--blue-deep); margin: 0; font-size: 0.95rem; }
+.payroll-table-header h6 { font-weight: 700; color: var(--blue-deep); margin: 0; font-size: 0.8rem; }
 .table-search {
-    border: 1px solid #e8ecf4;
+    border: 1px solid #e2e8f0;
     border-radius: 8px;
-    padding: 8px 14px;
-    font-size: 0.82rem;
+    padding: 7px 12px;
+    font-size: 0.78rem;
     color: var(--blue-deep);
     outline: none;
-    width: 220px;
+    width: 200px;
 }
-.table-search:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(197,160,89,0.15); }
+.table-search:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
 .payroll-table { width: 100%; border-collapse: collapse; }
 .payroll-table th {
-    padding: 12px 16px;
-    font-size: 0.72rem;
-    font-weight: 800;
+    padding: 9px 13px;
+    font-size: 0.68rem;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 1px;
-    color: #8a92a0;
-    border-bottom: 1px solid #e8ecf4;
-    background: #f8faff;
+    letter-spacing: 0.08em;
+    color: #64748b;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
     text-align: left;
     white-space: nowrap;
 }
 .payroll-table td {
-    padding: 14px 16px;
-    border-bottom: 1px solid #f0f4f8;
-    font-size: 0.85rem;
-    color: #3d4a5c;
+    padding: 10px 13px;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.8rem;
+    color: #334155;
     vertical-align: middle;
 }
 .payroll-table tr:last-child td { border-bottom: none; }
@@ -217,87 +168,87 @@
 
 /* Action Buttons */
 .btn-gold {
-    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-bright) 100%);
-    color: var(--blue-deep) !important;
+    background: #2563eb;
+    color: #fff !important;
     border: none;
-    padding: 10px 22px;
-    font-weight: 800;
-    border-radius: 8px;
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    transition: all 0.3s ease;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    cursor: pointer;
-}
-.btn-gold:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(197,160,89,0.4); color: var(--blue-deep) !important; }
-.btn-blue {
-    background: var(--blue-deep);
-    color: white !important;
-    border: none;
-    padding: 10px 22px;
-    font-weight: 800;
-    border-radius: 8px;
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    transition: all 0.3s ease;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    cursor: pointer;
-}
-.btn-blue:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,35,71,0.3); color: white !important; }
-.btn-outline {
-    background: transparent;
-    color: var(--blue-deep) !important;
-    border: 1.5px solid #e8ecf4;
-    padding: 8px 16px;
+    padding: 8px 18px;
     font-weight: 700;
     border-radius: 8px;
-    font-size: 0.78rem;
-    transition: all 0.3s ease;
+    font-size: 0.76rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    transition: background 0.2s, box-shadow 0.2s;
     text-decoration: none;
     display: inline-flex;
     align-items: center;
     gap: 6px;
     cursor: pointer;
 }
-.btn-outline:hover { border-color: var(--gold); color: var(--gold) !important; }
+.btn-gold:hover { background: #1d4ed8; color: #fff !important; box-shadow: 0 4px 12px rgba(37,99,235,0.3); }
+.btn-blue {
+    background: #0f172a;
+    color: white !important;
+    border: none;
+    padding: 8px 18px;
+    font-weight: 700;
+    border-radius: 8px;
+    font-size: 0.76rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    transition: background 0.2s, box-shadow 0.2s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+.btn-blue:hover { background: #1e293b; color: white !important; box-shadow: 0 4px 12px rgba(15,23,42,0.25); }
+.btn-outline {
+    background: transparent;
+    color: #334155 !important;
+    border: 1.5px solid #e2e8f0;
+    padding: 6px 13px;
+    font-weight: 600;
+    border-radius: 8px;
+    font-size: 0.74rem;
+    transition: border-color 0.2s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+}
+.btn-outline:hover { border-color: #2563eb; color: #2563eb !important; }
 
 /* Payroll Cycle Card */
 .cycle-card {
-    background: linear-gradient(135deg, #001529 0%, var(--blue-deep) 100%);
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
     border-radius: 14px;
-    padding: 24px;
+    padding: 18px;
     color: white;
     height: 100%;
 }
-.cycle-card h6 { color: var(--gold); font-weight: 800; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 16px; }
+.cycle-card h6 { color: #93c5fd; font-weight: 700; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 12px; }
 .cycle-item {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 0;
+    padding: 7px 0;
     border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 .cycle-item:last-child { border-bottom: none; }
-.cycle-label { font-size: 0.82rem; color: rgba(255,255,255,0.65); }
-.cycle-value { font-size: 0.88rem; font-weight: 700; color: white; }
+.cycle-label { font-size: 0.74rem; color: rgba(255,255,255,0.6); }
+.cycle-value { font-size: 0.78rem; font-weight: 700; color: white; }
 
 /* Progress ring */
-.progress-ring-wrap { text-align: center; padding: 10px 0; }
-.progress-ring-label { font-size: 0.75rem; color: rgba(255,255,255,0.55); margin-top: 8px; }
+.progress-ring-wrap { text-align: center; padding: 8px 0; }
+.progress-ring-label { font-size: 0.7rem; color: rgba(255,255,255,0.5); margin-top: 6px; }
 
 /* Chart bar */
 .bar-chart-wrap { padding: 4px 0; }
-.bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-.bar-label { font-size: 0.75rem; color: #6b7280; width: 80px; flex-shrink: 0; text-align: right; }
-.bar-track { flex: 1; height: 8px; background: #f0f4f8; border-radius: 99px; overflow: hidden; }
-.bar-fill { height: 100%; border-radius: 99px; background: linear-gradient(to right, var(--blue-deep), var(--gold)); transition: width 1.2s ease; }
-.bar-val { font-size: 0.75rem; font-weight: 700; color: var(--blue-deep); width: 55px; }
+.bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.bar-label { font-size: 0.7rem; color: #64748b; width: 80px; flex-shrink: 0; text-align: right; }
+.bar-track { flex: 1; height: 6px; background: #e2e8f0; border-radius: 99px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 99px; background: linear-gradient(to right, #2563eb, #60a5fa); transition: width 1.2s ease; }
+.bar-val { font-size: 0.7rem; font-weight: 700; color: var(--blue-deep); width: 50px; }
 
 /* Modal */
 .modal-content { border: none; border-radius: 16px; overflow: hidden; }
@@ -335,12 +286,12 @@
 }
 
 @media (max-width: 768px) {
-    .payroll-header { padding: 22px 20px; }
-    .payroll-header h1 { font-size: 1.35rem; }
-    .kpi-value { font-size: 1.35rem; }
+    .payroll-header { padding: 14px 16px; }
+    .payroll-header h1 { font-size: 0.88rem; }
+    .kpi-value { font-size: 0.88rem; }
     .table-search { width: 100%; }
     .payroll-table-header { flex-direction: column; align-items: flex-start; }
-    .payroll-table td, .payroll-table th { padding: 10px 12px; font-size: 0.78rem; }
+    .payroll-table td, .payroll-table th { padding: 8px 10px; font-size: 0.74rem; }
 }
 </style>
 
@@ -433,7 +384,7 @@
                 </div>
                 <div class="cycle-item">
                     <span class="cycle-label">Pay Date</span>
-                    <span class="cycle-value" style="color:var(--gold-bright);">{{ now()->endOfMonth()->format('M d, Y') }}</span>
+                    <span class="cycle-value" style="color:#93c5fd;">{{ now()->endOfMonth()->format('M d, Y') }}</span>
                 </div>
                 <div class="cycle-item">
                     <span class="cycle-label">Total Gross</span>
@@ -445,7 +396,7 @@
                 </div>
                 <div class="cycle-item">
                     <span class="cycle-label">Net Payable</span>
-                    <span class="cycle-value" style="color:#4ade80; font-size:1rem;">₦{{ number_format($netPayable ?? 0) }}</span>
+                    <span class="cycle-value" style="color:#4ade80; font-size:0.82rem;">₦{{ number_format($netPayable ?? 0) }}</span>
                 </div>
                 <div class="mt-4">
                     <a href="{{ ($schemaReady ?? true) ? route('payroll.run') : 'javascript:void(0);' }}"
@@ -487,16 +438,16 @@
                     {{-- Summary Row --}}
                     <div class="row g-3 text-center">
                         <div class="col-4">
-                            <div style="font-size:0.7rem;color:#8a92a0;font-weight:700;text-transform:uppercase;letter-spacing:1px;">Basic Salary</div>
-                            <div style="font-size:1.1rem;font-weight:900;color:var(--blue-deep);">₦{{ number_format($totalBasic ?? 0) }}</div>
+                            <div style="font-size:0.68rem;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;">Basic Salary</div>
+                            <div style="font-size:0.82rem;font-weight:800;color:var(--blue-deep);">₦{{ number_format($totalBasic ?? 0) }}</div>
                         </div>
                         <div class="col-4">
-                            <div style="font-size:0.7rem;color:#8a92a0;font-weight:700;text-transform:uppercase;letter-spacing:1px;">Allowances</div>
-                            <div style="font-size:1.1rem;font-weight:900;color:#22c55e;">+₦{{ number_format($totalAllowances ?? 0) }}</div>
+                            <div style="font-size:0.68rem;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;">Allowances</div>
+                            <div style="font-size:0.82rem;font-weight:800;color:#16a34a;">+₦{{ number_format($totalAllowances ?? 0) }}</div>
                         </div>
                         <div class="col-4">
-                            <div style="font-size:0.7rem;color:#8a92a0;font-weight:700;text-transform:uppercase;letter-spacing:1px;">Deductions</div>
-                            <div style="font-size:1.1rem;font-weight:900;color:var(--red);">-₦{{ number_format($totalDeductions ?? 0) }}</div>
+                            <div style="font-size:0.68rem;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;">Deductions</div>
+                            <div style="font-size:0.82rem;font-weight:800;color:var(--red);">-₦{{ number_format($totalDeductions ?? 0) }}</div>
                         </div>
                     </div>
                 </div>
@@ -650,8 +601,8 @@
                     </div>
                     @endforeach
                     <div class="d-flex justify-content-between mt-3 pt-2">
-                        <span style="font-weight:800;font-size:0.9rem;color:var(--blue-deep);">Total Deductions</span>
-                        <span style="font-weight:900;font-size:1rem;color:var(--red);">₦{{ number_format($totalDeductions ?? 0) }}</span>
+                        <span style="font-weight:700;font-size:0.8rem;color:var(--blue-deep);">Total Deductions</span>
+                        <span style="font-weight:800;font-size:0.82rem;color:var(--red);">₦{{ number_format($totalDeductions ?? 0) }}</span>
                     </div>
                 </div>
             </div>

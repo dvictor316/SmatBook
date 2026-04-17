@@ -33,10 +33,10 @@
     }
 
     .coa-summary-value {
-        font-size: 1.5rem;
+        font-size: 0.88rem;
         font-weight: 800;
         color: #0f172a;
-        line-height: 1.1;
+        line-height: 1.2;
     }
 
     .coa-summary-meta {
@@ -127,7 +127,7 @@
             <div class="col-xl-9 col-md-8">
                 <div class="content-page-header d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
                     <div>
-                        <h4 class="mb-1">Chart of Accounts</h4>
+                        <h5 class="mb-1">Chart of Accounts</h5>
                         <p class="text-muted mb-0">Manage the account structure behind your ledger, reports, and financial statements.</p>
                     </div>
                     <span class="coa-chip"><i class="fe fe-book-open"></i> Core Accounting Control</span>
