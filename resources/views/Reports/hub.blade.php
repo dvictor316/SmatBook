@@ -1,4 +1,3 @@
-Note: The tool simplified the command to `cat > "/mnt/c/Users/victor/Desktop/smat-book/resources/views/Reports/hub.blade.php" << 'BLADE_EOF'
 @extends('layout.mainlayout')
 
 @section('content')
@@ -548,10 +547,3 @@ Note: The tool simplified the command to `cat > "/mnt/c/Users/victor/Desktop/sma
 })();
 </script>
 @endsection
-BLADE_EOF
-echo "Exit: $?"`, and this is the output of running that command instead:
-ParserError: 
-Line |
-   1 |  … or/Desktop/smat-book/resources/views/Reports/hub.blade.php" << 'BLADE …
-     |                                                                 ~
-     | Missing file specification after redirection operator.
