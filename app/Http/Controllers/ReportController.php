@@ -2125,6 +2125,13 @@ public function destroy($id)
          */
         public function purchase_return_report(Request $request)
         {
+            if (!Schema::hasTable('purchase_return_items') || !Schema::hasTable('purchase_returns')) {
+                return view('Reports.Reports.purchase-return', [
+                    'purchasereturns' => new \Illuminate\Pagination\LengthAwarePaginator([], 0, 15),
+                    'totalRefunded'   => 0,
+                ]);
+            }
+
             $query = $this->scopedTable('purchase_return_items')
                 ->join('purchase_returns', 'purchase_return_items.purchase_return_id', '=', 'purchase_returns.id')
                 ->join('products', 'purchase_return_items.product_id', '=', 'products.id')
@@ -2928,7 +2935,12 @@ public function destroy($id)
             $totalCount   = (int)   (clone $query)->count();
             $avgSale      = $totalCount > 0 ? $totalSales / $totalCount : 0;
 
-            $byStatus = (clone $query)->select('payment_status', DB::raw('COUNT(*) as cnt'), DB::raw('SUM(total) as amt'))->groupBy('payment_status')->get();
+            $byStatus = (clone $query)
+                ->select('payment_status', DB::raw('COUNT(*) as cnt'), DB::raw('SUM(total) as amt'))
+                ->groupBy('payment_status')
+                ->get()
+                ->keyBy('payment_status')
+                ->map(fn ($row) => ['count' => (int) $row->cnt, 'total' => (float) $row->amt]);
 
             return view('Reports.Reports.sales-summary', compact('totalSales', 'totalPaid', 'totalBalance', 'totalCount', 'avgSale', 'byStatus', 'from', 'to'));
         }
@@ -3031,8 +3043,11 @@ public function destroy($id)
                 $qtyCol  = Schema::hasColumn('products', 'quantity') ? 'quantity' : (Schema::hasColumn('products', 'stock_quantity') ? 'stock_quantity' : null);
                 $costCol = Schema::hasColumn('products', 'purchase_price') ? 'purchase_price' : (Schema::hasColumn('products', 'cost_price') ? 'cost_price' : 'price');
                 if ($qtyCol) {
+                    $catExpr = Schema::hasColumn('products', 'category')
+                        ? "COALESCE(category,'Uncategorized')"
+                        : "'Uncategorized'";
                     $query = DB::table('products')
-                        ->select('name', 'sku', DB::raw("COALESCE(category,'Uncategorized') as category"), DB::raw("{$qtyCol} as qty"), DB::raw("{$costCol} as unit_cost"), DB::raw("{$qtyCol} * {$costCol} as total_value"))
+                        ->select('name', 'sku', DB::raw("{$catExpr} as category"), DB::raw("{$qtyCol} as qty"), DB::raw("{$costCol} as unit_cost"), DB::raw("{$qtyCol} * {$costCol} as total_value"))
                         ->where($qtyCol, '>', 0)
                         ->orderByDesc(DB::raw("{$qtyCol} * {$costCol}"));
                     $this->applyTenantScope($query, 'products');
@@ -3053,9 +3068,12 @@ public function destroy($id)
                 $qtyCol  = Schema::hasColumn('products', 'quantity') ? 'quantity' : (Schema::hasColumn('products', 'stock_quantity') ? 'stock_quantity' : null);
                 $costCol = Schema::hasColumn('products', 'purchase_price') ? 'purchase_price' : (Schema::hasColumn('products', 'cost_price') ? 'cost_price' : 'price');
                 if ($qtyCol) {
+                    $catExpr = Schema::hasColumn('products', 'category')
+                        ? "COALESCE(category,'Uncategorized')"
+                        : "'Uncategorized'";
                     $query = DB::table('products')
-                        ->select(DB::raw("COALESCE(category,'Uncategorized') as category"), DB::raw("COUNT(*) as product_count"), DB::raw("SUM({$qtyCol}) as total_qty"), DB::raw("SUM({$qtyCol} * {$costCol}) as total_value"))
-                        ->groupBy(DB::raw("COALESCE(category,'Uncategorized')"))
+                        ->select(DB::raw("{$catExpr} as category"), DB::raw("COUNT(*) as product_count"), DB::raw("SUM({$qtyCol}) as total_qty"), DB::raw("SUM({$qtyCol} * {$costCol}) as total_value"))
+                        ->groupBy(DB::raw($catExpr))
                         ->orderByDesc(DB::raw("SUM({$qtyCol} * {$costCol})"));
                     $this->applyTenantScope($query, 'products');
                     $rows = $query->get();

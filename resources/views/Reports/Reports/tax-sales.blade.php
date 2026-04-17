@@ -133,7 +133,7 @@
         <div class="card shadow-sm border-0">
             <div class="card-body p-3">
                 <div class="table-responsive">
-                    <table id="taxSalesTable" class="table table-center table-hover datatable">
+                    <table id="taxSalesTable" class="table table-center table-hover">
                         <thead class="thead-light">
                             <tr>
                                 <th>#</th>

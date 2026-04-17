@@ -28,7 +28,18 @@ Version      : 1.0
 			if (!$(this).hasClass('subdrop')) {
 				$('ul', $(this).parents('ul:first')).slideUp(350);
 				$('a', $(this).parents('ul:first')).removeClass('subdrop');
-				$(this).next('ul').slideDown(350);
+				$(this).next('ul').slideDown(350, function () {
+					// On mobile: scroll the sidebar so the expanded submenu is visible
+					var $inner = $('#sidebar .sidebar-inner, .sidebar .sidebar-inner').first();
+					var $li = $(this).closest('li.submenu');
+					if ($inner.length && $li.length) {
+						var liBottom = $li[0].offsetTop + $li[0].offsetHeight;
+						var visibleBottom = $inner.scrollTop() + $inner.innerHeight();
+						if (liBottom > visibleBottom) {
+							$inner.animate({ scrollTop: liBottom - $inner.innerHeight() + 20 }, 200);
+						}
+					}
+				});
 				$(this).addClass('subdrop');
 			} else if ($(this).hasClass('subdrop')) {
 				$(this).removeClass('subdrop');
