@@ -67,8 +67,24 @@
             </div>
 
             <div class="no-print mb-4">
-                @component('components.search-filter')
-                @endcomponent
+                <form method="GET" action="{{ route('reports.purchase-return') }}" class="row g-2 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label small fw-semibold">{{ __('Search') }}</label>
+                        <input type="text" name="search" class="form-control form-control-sm" placeholder="Product, Supplier..." value="{{ request('search') }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-semibold">{{ __('From Date') }}</label>
+                        <input type="date" name="start_date" class="form-control form-control-sm" value="{{ request('start_date') }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-semibold">{{ __('To Date') }}</label>
+                        <input type="date" name="end_date" class="form-control form-control-sm" value="{{ request('end_date') }}">
+                    </div>
+                    <div class="col-md-3 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary btn-sm">{{ __('Apply') }}</button>
+                        <a href="{{ route('reports.purchase-return') }}" class="btn btn-secondary btn-sm">{{ __('Clear') }}</a>
+                    </div>
+                </form>
             </div>
 
             <div class="card card-table shadow-sm border-0">

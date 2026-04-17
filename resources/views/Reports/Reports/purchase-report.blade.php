@@ -65,10 +65,37 @@
                 </div>
             </div>
 
-            {{-- Filter Section (Search/Reset) --}}
-            @component('components.search-filter')
-                @slot('route') {{ route('purchase-report') }} @endslot
-            @endcomponent
+            {{-- Filter Section --}}
+            <div class="card shadow-sm border-0 mb-4 no-print">
+                <div class="card-body">
+                    <form action="{{ route('reports.purchase') }}" method="GET">
+                        <div class="row gx-2 align-items-end">
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold">{{ __('Search Reference / Supplier') }}</label>
+                                <input type="text" name="search" class="form-control" placeholder="Search reference or supplier" value="{{ request('search') }}">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small fw-bold">{{ __('From Date') }}</label>
+                                <input type="date" name="start_date" class="form-control" value="{{ request('start_date') }}">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small fw-bold">{{ __('To Date') }}</label>
+                                <input type="date" name="end_date" class="form-control" value="{{ request('end_date') }}">
+                            </div>
+                            <div class="col-md-4">
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="feather-filter me-1"></i> {{ __('Apply') }}
+                                    </button>
+                                    <a href="{{ route('reports.purchase') }}" class="btn btn-secondary w-100">
+                                        {{ __('Reset') }}
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
 
             <div class="row">
                 <div class="col-sm-12">

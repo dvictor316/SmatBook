@@ -871,6 +871,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::get('/sales-return-report', 'credit_notes')->name('sales-return');
         Route::get('/create-sales-return', 'create_credit_note')->name('create-sales-return');
         Route::post('/sales-return/store', 'store_credit_note')->name('credit-notes-store');
+        Route::get('/purchase-return-report', 'purchase_return_report')->name('purchase-return');
         Route::post('/email-report', 'email_report')->name('email-report');
         Route::post('/email-low-stock', 'email_low_stock_report')->name('email-low-stock');
         Route::get('/payment-summary', 'paymentSummary')->name('payment-summary');

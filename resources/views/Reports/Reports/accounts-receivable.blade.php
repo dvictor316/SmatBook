@@ -32,7 +32,7 @@
     @endphp
     <div class="page-wrapper">
         <div class="content container-fluid">
-            <div class="page-header">
+            <div class="page-header no-print">
                 <div class="content-page-header">
                     <div>
                         <h5>{{ __('Accounts Receivable') }}</h5>
@@ -44,6 +44,16 @@
                                 <a class="btn btn-secondary w-auto" href="javascript:void(0);" onclick="window.print()">
                                     <i class="feather-printer me-1"></i> {{ __('Print') }}
                                 </a>
+                            </li>
+                            <li>
+                                <button id="export_excel" class="btn btn-success w-auto">
+                                    <i class="feather-file me-1"></i> {{ __('Excel') }}
+                                </button>
+                            </li>
+                            <li>
+                                <button id="export_pdf" class="btn btn-danger w-auto">
+                                    <i class="feather-file-text me-1"></i> {{ __('PDF') }}
+                                </button>
                             </li>
                         </ul>
                     </div>
@@ -87,7 +97,7 @@
                 <div class="col-sm-12">
                     <div class="card receivable-table-card">
                         <div class="card-body">
-                            <form method="GET" action="{{ route('reports.accounts-receivable') }}" class="row g-3 mb-3">
+                            <form method="GET" action="{{ route('reports.accounts-receivable') }}" class="row g-3 mb-3 no-print">
                                 <div class="col-md-3">
                                     <label class="form-label">Search Customer</label>
                                     <input type="text" name="customer_name" class="form-control" placeholder="Customer name..." value="{{ $filters['customer_name'] ?? '' }}">
@@ -116,7 +126,7 @@
                                 </div>
                             </form>
                             <div class="table-responsive">
-                                <table class="table table-center table-hover">
+                                <table class="table table-center table-hover" id="ar-table">
                                     <thead class="thead-light">
                                         <tr>
                                             <th>#</th>
@@ -170,3 +180,33 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+<script>
+document.getElementById('export_excel').addEventListener('click', function() {
+    const table = document.getElementById('ar-table');
+    const wb = XLSX.utils.table_to_book(table, { sheet: 'AccountsReceivable' });
+    XLSX.writeFile(wb, 'Accounts_Receivable_{{ date("Y-m-d") }}.xlsx');
+});
+document.getElementById('export_pdf').addEventListener('click', function() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('l', 'pt', 'a4');
+    doc.setFontSize(14);
+    doc.text('Accounts Receivable', 40, 40);
+    doc.setFontSize(9);
+    doc.text('Generated: {{ now()->format("d M Y H:i") }}', 40, 56);
+    doc.autoTable({
+        html: '#ar-table',
+        startY: 70,
+        styles: { fontSize: 7, cellPadding: 3 },
+        headStyles: { fillColor: [37, 99, 235], textColor: 255, fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        margin: { left: 40, right: 40 },
+    });
+    doc.save('Accounts_Receivable_{{ date("Y-m-d") }}.pdf');
+});
+</script>
+@endpush

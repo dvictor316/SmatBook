@@ -39,14 +39,17 @@
         {{-- Filters --}}
         <div class="card shadow-none border mb-3 no-print">
             <div class="card-body p-2">
-                @php
-                    $stockRouteName = \Illuminate\Support\Facades\Route::has('stock')
-                        ? 'stock'
-                        : (\Illuminate\Support\Facades\Route::has('stock-report') ? 'stock-report' : null);
-                @endphp
-                <form action="{{ $stockRouteName ? route($stockRouteName) : url('/stock-report') }}" method="GET">
+                <form action="{{ route('reports.stock') }}" method="GET">
                     <div class="row gx-2 align-items-end">
-                        <div class="col-md-10">
+                        <div class="col-md-3">
+                            <label class="report-filter-label">From Date</label>
+                            <input type="date" name="from_date" class="form-control form-control-sm border-0 bg-light" value="{{ $fromDate }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="report-filter-label">To Date</label>
+                            <input type="date" name="to_date" class="form-control form-control-sm border-0 bg-light" value="{{ $toDate }}">
+                        </div>
+                        <div class="col-md-4">
                             <label class="report-filter-label">Product Filter</label>
                             <select name="product_id" class="form-select form-select-sm border-0 bg-light">
                                 <option value="">All Inventory Items</option>

@@ -103,16 +103,25 @@
 
         {{-- Search Filter --}}
         <div class="no-print mb-4">
-            @component('components.search-filter')
-            @endcomponent
+            <form method="GET" action="{{ route('reports.tax-purchase') }}" class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label small fw-semibold">{{ __('Search') }}</label>
+                    <input type="text" name="search" class="form-control form-control-sm" placeholder="Supplier, Ref No..." value="{{ request('search') }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-semibold">{{ __('From Date') }}</label>
+                    <input type="date" name="start_date" class="form-control form-control-sm" value="{{ request('start_date') }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-semibold">{{ __('To Date') }}</label>
+                    <input type="date" name="end_date" class="form-control form-control-sm" value="{{ request('end_date') }}">
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary btn-sm">{{ __('Apply') }}</button>
+                    <a href="{{ route('reports.tax-purchase') }}" class="btn btn-secondary btn-sm">{{ __('Clear') }}</a>
+                </div>
+            </form>
         </div>
-
-        {{-- Table Section --}}
-        <div class="card shadow-sm border-0">
-            <div class="card-body p-3">
-                <div class="table-responsive">
-                    <table id="taxPurchaseTable" class="table table-center table-hover datatable">
-                        <thead class="thead-light">
                             <tr>
                                 <th>#</th>
                                 <th>{{ __('Supplier') }}</th>
