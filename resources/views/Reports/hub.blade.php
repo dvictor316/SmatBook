@@ -1,622 +1,519 @@
+Note: The tool simplified the command to `cat > "/mnt/c/Users/victor/Desktop/smat-book/resources/views/Reports/hub.blade.php" << 'BLADE_EOF'
 @extends('layout.mainlayout')
 
 @section('content')
 <style>
-/* ── Reports Hub — QuickBooks-style ─────────────────────── */
-.rh-page { background: #f7f8fc; min-height: 100vh; }
+/* ══════════════════════════════════════════════════════════
+   Reports Hub  —  QuickBooks row-list style
+   ══════════════════════════════════════════════════════════ */
+.rh-page { background:#f1f4f9; min-height:100vh; }
 
-/* Tab bar */
-.rh-tab-bar {
-    display: flex;
-    gap: 0;
-    border-bottom: 2px solid #dee2e9;
-    background: #fff;
-    padding: 0 24px;
-    overflow-x: auto;
-    scrollbar-width: none;
-}
-.rh-tab-bar::-webkit-scrollbar { display: none; }
-.rh-tab {
-    padding: 13px 20px;
-    font-size: 13px;
-    font-weight: 600;
-    color: #64748b;
-    cursor: pointer;
-    border-bottom: 3px solid transparent;
-    margin-bottom: -2px;
-    transition: color .15s, border-color .15s;
-    background: none;
-    border-top: none;
-    border-left: none;
-    border-right: none;
-    white-space: nowrap;
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    flex-shrink: 0;
-}
-.rh-tab:hover { color: #1e3a5f; }
-.rh-tab.active { color: #2563eb; border-bottom-color: #2563eb; }
-.rh-tab .rh-tab-count {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 19px;
-    height: 19px;
-    border-radius: 10px;
-    background: #e8eef8;
-    color: #2563eb;
-    font-size: 10px;
-    font-weight: 800;
-    padding: 0 5px;
-}
-.rh-tab.active .rh-tab-count { background: #2563eb; color: #fff; }
+/* ── Tab bar ──────────────────────────────────────────────── */
+.rh-tab-bar{display:flex;gap:0;border-bottom:2px solid #dee2e9;background:#fff;padding:0 24px;overflow-x:auto;scrollbar-width:none;}
+.rh-tab-bar::-webkit-scrollbar{display:none;}
+.rh-tab{padding:13px 18px;font-size:12.5px;font-weight:600;color:#64748b;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;background:none;border-top:none;border-left:none;border-right:none;white-space:nowrap;display:flex;align-items:center;gap:6px;flex-shrink:0;transition:color .15s,border-color .15s;}
+.rh-tab:hover{color:#1e3a5f;}
+.rh-tab.active{color:#2563eb;border-bottom-color:#2563eb;}
+.rh-cnt{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;border-radius:9px;background:#e8eef8;color:#2563eb;font-size:10px;font-weight:800;padding:0 4px;}
+.rh-tab.active .rh-cnt{background:#2563eb;color:#fff;}
 
-/* Search bar */
-.rh-search-wrap {
-    background: #f8fafd;
-    border-bottom: 1px solid #e4e8f0;
-    padding: 12px 24px;
-}
-.rh-search-input {
-    width: 100%;
-    max-width: 320px;
-    padding: 8px 14px 8px 36px;
-    border: 1px solid #d1d5db;
-    border-radius: 6px;
-    font-size: 13px;
-    color: #1e293b;
-    background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E") no-repeat 10px center;
-    transition: border-color .15s, box-shadow .15s;
-}
-.rh-search-input:focus {
-    outline: none;
-    border-color: #2563eb;
-    box-shadow: 0 0 0 3px rgba(37,99,235,.1);
-}
+/* ── Search / toolbar ─────────────────────────────────────── */
+.rh-toolbar{background:#fff;border-bottom:1px solid #e4e8f0;padding:10px 24px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.rh-search-wrap{position:relative;flex:1;max-width:340px;}
+.rh-search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:12px;pointer-events:none;}
+.rh-search{width:100%;padding:7px 12px 7px 32px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;color:#1e293b;background:#fff;transition:border-color .15s,box-shadow .15s;}
+.rh-search:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1);}
+.rh-fav-toggle{padding:7px 14px;font-size:12px;font-weight:600;color:#64748b;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .15s;white-space:nowrap;}
+.rh-fav-toggle.active,.rh-fav-toggle:hover{background:#fffbeb;border-color:#fbbf24;color:#d97706;}
+.rh-fav-toggle.active .fav-star-icon{color:#f59e0b;}
 
-/* Section headers */
-.rh-section {
-    margin-top: 28px;
-}
-.rh-section:first-child { margin-top: 4px; }
-.rh-section-head {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 14px;
-}
-.rh-section-icon {
-    width: 30px;
-    height: 30px;
-    border-radius: 7px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 13px;
-    flex-shrink: 0;
-}
-.rh-section-name {
-    font-size: 13px;
-    font-weight: 800;
-    color: #1e293b;
-    letter-spacing: .01em;
-}
-.rh-section-divider {
-    flex: 1;
-    height: 1px;
-    background: #e4e8f0;
-    margin-left: 4px;
-}
+/* ── Two-column list layout ───────────────────────────────── */
+.rh-body{padding:20px 24px;}
+.rh-section{margin-bottom:8px;border:1px solid #e2e8f0;border-radius:8px;background:#fff;overflow:hidden;}
+.rh-section.rh-hidden{display:none!important;}
 
-/* Report cards grid */
-.rh-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 12px;
-}
+/* Section header (collapsible) */
+.rh-sec-head{display:flex;align-items:center;gap:10px;padding:11px 16px;cursor:pointer;user-select:none;border-bottom:1px solid #f1f4f9;transition:background .12s;}
+.rh-sec-head:hover{background:#f8fafd;}
+.rh-sec-icon{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;}
+.rh-sec-title{font-size:13px;font-weight:800;color:#0f172a;flex:1;}
+.rh-sec-count{font-size:11px;color:#94a3b8;font-weight:600;margin-right:6px;}
+.rh-sec-chevron{color:#94a3b8;font-size:11px;transition:transform .2s;}
+.rh-section.collapsed .rh-sec-chevron{transform:rotate(-90deg);}
+.rh-section.collapsed .rh-col-grid{display:none;}
 
-/* Individual report card */
-.rh-card {
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    padding: 16px 42px 16px 16px;
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    text-decoration: none;
-    color: inherit;
-    transition: border-color .15s, box-shadow .15s, transform .1s;
-    position: relative;
-    overflow: hidden;
-}
-.rh-card:hover {
-    border-color: #93c5fd;
-    box-shadow: 0 3px 12px rgba(37,99,235,.10);
-    transform: translateY(-1px);
-    text-decoration: none;
-    color: inherit;
-}
-.rh-card-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    flex-shrink: 0;
-    margin-top: 1px;
-}
-.rh-card-title {
-    font-size: 13px;
-    font-weight: 700;
-    color: #0f172a;
-    line-height: 1.35;
-}
-.rh-card-desc {
-    font-size: 11.5px;
-    color: #94a3b8;
-    line-height: 1.45;
-    margin-top: 3px;
-}
-.rh-card-arrow {
-    position: absolute;
-    right: 14px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #d1d5db;
-    font-size: 11px;
-    transition: color .15s, right .1s;
-}
-.rh-card:hover .rh-card-arrow { color: #2563eb; right: 11px; }
+/* Two-column grid for rows */
+.rh-col-grid{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #f0f3f8;}
+@media(max-width:700px){.rh-col-grid{grid-template-columns:1fr;}}
 
-/* Plan badges */
-.rh-plan-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
-    padding: 1px 6px;
-    border-radius: 3px;
-    font-size: 9.5px;
-    font-weight: 800;
-    letter-spacing: .04em;
-    position: absolute;
-    top: 9px;
-    right: 9px;
-}
-.rh-badge-pro  { background: #eff6ff; color: #1d4ed8; }
-.rh-badge-ent  { background: #fdf4ff; color: #7c3aed; }
+/* Individual report row */
+.rl-row{display:flex;align-items:center;gap:0;padding:0;border-bottom:1px solid #f0f3f8;min-height:44px;position:relative;}
+.rl-row:last-child{border-bottom:none;}
+.rl-row.rh-hidden{display:none!important;}
+/* Odd/even col separator */
+.rh-col-grid .rl-row:nth-child(odd){border-right:1px solid #f0f3f8;}
 
-/* Hidden / empty */
-.rh-card.rh-hidden       { display: none !important; }
-.rh-section.rh-hidden    { display: none !important; }
-.rh-empty {
-    text-align: center;
-    padding: 40px 20px;
-    color: #94a3b8;
-    font-size: 13px;
-    display: none;
-}
+/* Star favorite */
+.rl-star{width:36px;height:44px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:none;border:none;cursor:pointer;color:#d1d5db;font-size:13px;transition:color .15s,transform .15s;padding:0;}
+.rl-star:hover{color:#f59e0b;transform:scale(1.2);}
+.rl-star.starred{color:#f59e0b;}
+.rl-star.starred i::before{content:"\f005";font-weight:900;}/* solid star */
 
-/* Colour palettes */
-.pal-blue   { background: #eff6ff; color: #2563eb; }
-.pal-green  { background: #f0fdf4; color: #16a34a; }
-.pal-orange { background: #fff7ed; color: #ea580c; }
-.pal-purple { background: #fdf4ff; color: #7c3aed; }
-.pal-red    { background: #fef2f2; color: #dc2626; }
-.pal-teal   { background: #f0fdfa; color: #0d9488; }
-.pal-amber  { background: #fffbeb; color: #d97706; }
-.pal-slate  { background: #f8fafc; color: #475569; }
-.pal-indigo { background: #eef2ff; color: #4f46e5; }
+/* Report name link */
+.rl-name{flex:1;font-size:12.5px;font-weight:600;color:#1e40af;text-decoration:none;padding:0 4px 0 0;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;transition:color .12s;}
+.rl-name:hover{color:#1d4ed8;text-decoration:underline;}
+
+/* Plan badge inline */
+.rl-badge{display:inline-flex;align-items:center;gap:2px;padding:1px 5px;border-radius:3px;font-size:9px;font-weight:800;letter-spacing:.04em;margin-right:4px;flex-shrink:0;}
+.rl-badge-pro{background:#eff6ff;color:#1d4ed8;}
+.rl-badge-ent{background:#fdf4ff;color:#7c3aed;}
+
+/* Run button */
+.rl-run{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;font-size:11.5px;font-weight:700;color:#fff;background:#2563eb;border:none;border-radius:5px;cursor:pointer;text-decoration:none;transition:background .15s,box-shadow .15s;flex-shrink:0;margin-right:10px;white-space:nowrap;}
+.rl-run:hover{background:#1d4ed8;box-shadow:0 2px 8px rgba(37,99,235,.3);color:#fff;text-decoration:none;}
+.rl-run i{font-size:9px;}
+
+/* Favourites tab — "Favourites" section  */
+.rh-fav-section{margin-bottom:8px;border:1px solid #fde68a;border-radius:8px;background:#fffdf5;overflow:hidden;display:none;}
+.rh-fav-section.has-favs{display:block;}
+.rh-fav-section .rh-sec-head{border-bottom-color:#fef3c7;background:#fffbeb;}
+
+/* Empty state */
+.rh-empty{text-align:center;padding:40px 20px;color:#94a3b8;font-size:13px;display:none;}
+
+/* Palette helpers */
+.pal-blue{background:#eff6ff;color:#2563eb;}
+.pal-green{background:#f0fdf4;color:#16a34a;}
+.pal-orange{background:#fff7ed;color:#ea580c;}
+.pal-purple{background:#fdf4ff;color:#7c3aed;}
+.pal-red{background:#fef2f2;color:#dc2626;}
+.pal-teal{background:#f0fdfa;color:#0d9488;}
+.pal-amber{background:#fffbeb;color:#d97706;}
+.pal-slate{background:#f8fafc;color:#475569;}
+.pal-indigo{background:#eef2ff;color:#4f46e5;}
 </style>
 
 <div class="page-wrapper rh-page">
-    <div class="content container-fluid">
+<div class="content container-fluid">
 
-        {{-- Page heading --}}
-        <div class="d-flex flex-wrap justify-content-between align-items-center mb-0" style="gap:10px; padding-bottom:16px;">
-            <div>
-                <h4 class="fw-bold mb-1" style="color:#0f172a; font-size:20px;">Reports</h4>
-                <div style="font-size:12.5px; color:#64748b;">Select a report to view detailed data for your business.</div>
-            </div>
+    {{-- Page heading --}}
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-0" style="gap:10px;padding-bottom:14px;">
+        <div>
+            <h4 class="fw-bold mb-1" style="color:#0f172a;font-size:20px;">Reports</h4>
+            <div style="font-size:12.5px;color:#64748b;">Select a report to view or run. Star your favourites for quick access.</div>
+        </div>
+    </div>
+
+    <div style="border:1px solid #dee2e9;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.05);overflow:hidden;">
+
+        {{-- Tab bar --}}
+        <div class="rh-tab-bar">
+            <button class="rh-tab active" data-tab="all">All Reports <span class="rh-cnt" id="cnt-all">0</span></button>
+            <button class="rh-tab" data-tab="overview"><i class="fas fa-tachometer-alt" style="font-size:10px;"></i> Business Overview <span class="rh-cnt" id="cnt-overview">0</span></button>
+            <button class="rh-tab" data-tab="owes"><i class="fas fa-user-clock" style="font-size:10px;"></i> Who Owes You <span class="rh-cnt" id="cnt-owes">0</span></button>
+            <button class="rh-tab" data-tab="sales"><i class="fas fa-shopping-bag" style="font-size:10px;"></i> Sales; &amp; Purchases <span class="rh-cnt" id="cnt-sales">0</span></button>
+            <button class="rh-tab" data-tab="inventory"><i class="fas fa-boxes" style="font-size:10px;"></i> Inventory <span class="rh-cnt" id="cnt-inventory">0</span></button>
+            <button class="rh-tab" data-tab="financial"><i class="fas fa-university" style="font-size:10px;"></i> Financial <span class="rh-cnt" id="cnt-financial">0</span></button>
         </div>
 
-        <div style="background:#fff; border:1px solid #dee2e9; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,.05); overflow:hidden;">
-
-            {{-- Tab bar --}}
-            <div class="rh-tab-bar">
-                <button class="rh-tab active" data-tab="all">
-                    <i class="fas fa-th-large" style="font-size:11px;"></i> All Reports
-                    <span class="rh-tab-count" id="count-all">0</span>
-                </button>
-                <button class="rh-tab" data-tab="overview">
-                    <i class="fas fa-tachometer-alt" style="font-size:11px;"></i> Business Overview
-                    <span class="rh-tab-count" id="count-overview">0</span>
-                </button>
-                <button class="rh-tab" data-tab="owes">
-                    <i class="fas fa-hand-holding-usd" style="font-size:11px;"></i> Who Owes You
-                    <span class="rh-tab-count" id="count-owes">0</span>
-                </button>
-                <button class="rh-tab" data-tab="sales">
-                    <i class="fas fa-shopping-bag" style="font-size:11px;"></i> Sales &amp; Purchases
-                    <span class="rh-tab-count" id="count-sales">0</span>
-                </button>
-                <button class="rh-tab" data-tab="inventory">
-                    <i class="fas fa-boxes" style="font-size:11px;"></i> Inventory
-                    <span class="rh-tab-count" id="count-inventory">0</span>
-                </button>
-                <button class="rh-tab" data-tab="financial">
-                    <i class="fas fa-university" style="font-size:11px;"></i> Financial
-                    <span class="rh-tab-count" id="count-financial">0</span>
-                </button>
-            </div>
-
-            {{-- Search --}}
+        {{-- Toolbar: search + favourites toggle --}}
+        <div class="rh-toolbar">
             <div class="rh-search-wrap">
-                <input type="text" id="rh-search" class="rh-search-input" placeholder="Search reports…" autocomplete="off">
+                <i class="fas fa-search rh-search-icon"></i>
+                <input type="text" id="rh-search" class="rh-search" placeholder="Type report name here…" autocomplete="off">
             </div>
-
-            {{-- Report sections --}}
-            <div class="p-4">
-
-                {{-- ══ 1. BUSINESS OVERVIEW ═════════════════════════════════════ --}}
-                <div class="rh-section" data-section="overview">
-                    <div class="rh-section-head">
-                        <span class="rh-section-icon pal-blue"><i class="fas fa-tachometer-alt"></i></span>
-                        <span class="rh-section-name">Business Overview</span>
-                        <span class="rh-section-divider"></span>
-                    </div>
-                    <div class="rh-grid">
-
-                        <a href="{{ route('reports.profit-loss') }}" class="rh-card" data-section="overview" data-tab="overview" data-keywords="profit loss p&l income statement net earnings">
-                            <span class="rh-plan-badge rh-badge-pro"><i class="fas fa-star" style="font-size:8px;"></i> Pro</span>
-                            <div class="rh-card-icon pal-blue"><i class="fas fa-chart-line"></i></div>
-                            <div>
-                                <div class="rh-card-title">Profit &amp; Loss</div>
-                                <div class="rh-card-desc">Net profit or loss — income vs expenses over a date range.</div>
-                            </div>
-                            <i class="fas fa-chevron-right rh-card-arrow"></i>
-                        </a>
-
-                        <a href="{{ route('balance-sheet') }}" class="rh-card" data-section="overview" data-tab="overview" data-keywords="balance sheet assets liabilities equity net worth">
-                            <div class="rh-card-icon pal-teal"><i class="fas fa-landmark"></i></div>
-                            <div>
-                                <div class="rh-card-title">Balance Sheet</div>
-                                <div class="rh-card-desc">Snapshot of assets, liabilities, and equity at a point in time.</div>
-                            </div>
-                            <i class="fas fa-chevron-right rh-card-arrow"></i>
-                        </a>
-
-                        <a href="{{ route('reports.cash-flow') }}" class="rh-card" data-section="overview" data-tab="overview" data-keywords="cash flow liquidity inflows outflows">
-                            <div class="rh-card-icon pal-green"><i class="fas fa-water"></i></div>
-                            <div>
-                                <div class="rh-card-title">Cash Flow</div>
-                                <div class="rh-card-desc">Inflows and outflows of cash across operating activities.</div>
-                            </div>
-                            <i class="fas fa-chevron-right rh-card-arrow"></i>
-                        </a>
-
-                        <a href="{{ route('reports.income') }}" class="rh-card" data-section="overview" data-tab="overview" data-keywords="income report earnings revenue streams">
-                            <div class="rh-card-icon pal-green"><i class="fas fa-hand-holding-usd"></i></div>
-                            <div>
-                                <div class="rh-card-title">Income Report</div>
-                                <div class="rh-card-desc">All income streams and total earnings over a selected period.</div>
-                            </div>
-                            <i class="fas fa-chevron-right rh-card-arrow"></i>
-                        </a>
-
-                        <a href="{{ route('reports.expense') }}" class="rh-card" data-section="overview" data-tab="overview" data-keywords="expense report spending costs categories">
-                            <div class="rh-card-icon pal-red"><i class="fas fa-receipt"></i></div>
-                            <div>
-                                <div class="rh-card-title">Expense Report</div>
-                                <div class="rh-card-desc">All recorded expenses broken down by category and date.</div>
-                            </div>
-                            <i class="fas fa-chevron-right rh-card-arrow"></i>
-                        </a>
-
-                    </div>
-                </div>
-
-                {{-- ══ 2. WHO OWES YOU ══════════════════════════════════════════ --}}
-                <div class="rh-section" data-section="owes">
-                    <div class="rh-section-head">
-                        <span class="rh-section-icon pal-amber"><i class="fas fa-user-clock"></i></span>
-                        <span class="rh-section-name">Who Owes You</span>
-                        <span class="rh-section-divider"></span>
-                    </div>
-                    <div class="rh-grid">
-
-                        <a href="{{ route('reports.accounts-receivable') }}" class="rh-card" data-section="owes" data-tab="owes" data-keywords="accounts receivable debtors outstanding balance overdue aging">
-                            <div class="rh-card-icon pal-amber"><i class="fas fa-user-clock"></i></div>
-                            <div>
-                                <div class="rh-card-title">Accounts Receivable</div>
-                                <div class="rh-card-desc">Outstanding customer balances, aging buckets, and overdue invoices.</div>
-                            </div>
-                            <i class="fas fa-chevron-right rh-card-arrow"></i>
-                        </a>
-
-                        <a href="{{ route('reports.payment') }}" class="rh-card" data-section="owes" data-tab="owes" data-keywords="payment report received collection status">
-                            <div class="rh-card-icon pal-amber"><i class="fas fa-money-check-alt"></i></div>
-                            <div>
-                                <div class="rh-card-title">Payment Report</div>
-                                <div class="rh-card-desc">All incoming payments received and outstanding collection status.</div>
-                            </div>
-                            <i class="fas fa-chevron-right rh-card-arrow"></i>
-                        </a>
-
-                        <a href="{{ route('reports.payment-summary') }}" class="rh-card" data-section="owes" data-tab="owes" data-keywords="payment summary overview total revenue collected">
-                            <div class="rh-card-icon pal-blue"><i class="fas fa-credit-card"></i></div>
-                            <div>
-                                <div class="rh-card-title">Payment Summary</div>
-                                <div class="rh-card-desc">High-level view of all payments collected and totals by method.</div>
-                            </div>
-                            <i class="fas fa-chevron-right rh-card-arrow"></i>
-                        </a>
-
-                        <a href="{{ route('reports.sales') }}" class="rh-card" data-section="owes" data-tab="owes" data-keywords="sales report unpaid partial invoices due balance">
-                            <div class="rh-card-icon pal-indigo"><i class="fas fa-file-invoice-dollar"></i></div>
-                            <div>
-                                <div class="rh-card-title">Sales Report</div>
-                                <div class="rh-card-desc">Review invoices including paid, unpaid, and partial balances.</div>
-                            </div>
-                            <i class="fas fa-chevron-right rh-card-arrow"></i>
-                        </a>
-
-                    </div>
-                </div>
-
-                {{-- ══ 3. SALES & PURCHASES ═════════════════════════════════════ --}}
-                <div class="rh-section" data-section="sales">
-                    <div class="rh-section-head">
-                        <span class="rh-section-icon pal-teal"><i class="fas fa-shopping-bag"></i></span>
-                        <span class="rh-section-name">Sales &amp; Purchases</span>
-                        <span class="rh-section-divider"></span>
-                    </div>
-                    <div class="rh-grid">
-
-                        <a href="{{ route('reports.sales') }}" class="rh-card" data-section="sales" data-tab="sales" data-keywords="sales report revenue transactions customers">
-                            <div class="rh-card-icon pal-blue"><i class="fas fa-file-invoice-dollar"></i></div>
-                            <div>
-                                <div class="rh-card-title">Sales Report</div>
-                                <div class="rh-card-desc">All sales transactions, revenue totals, and customer activity.</div>
-                            </div>
-                            <i class="fas fa-chevron-right rh-card-arrow"></i>
-                        </a>
-
-                        <a href="{{ route('reports.purchase') }}" class="rh-card" data-section="sales" data-tab="sales" data-keywords="purchase report suppliers buying orders">
-                            <div class="rh-card-icon pal-teal"><i class="fas fa-shopping-cart"></i></div>
-                            <div>
-                                <div class="rh-card-title">Purchase Report</div>
-                                <div class="rh-card-desc">Purchases from suppliers — amounts spent and order history.</div>
-                            </div>
-                            <i class="fas fa-chevron-right rh-card-arrow"></i>
-                        </a>
-
-                        <a href="{{ route('reports.quotation') }}" class="rh-card" data-section="sales" data-tab="sales" data-keywords="quotation estimates quotes conversion">
-                            <div class="rh-card-icon pal-slate"><i class="fas fa-file-contract"></i></div>
-                            <div>
-                                <div class="rh-card-title">Quotation Report</div>
-                                <div class="rh-card-desc">Issued quotes, conversion rates, and pending estimates.</div>
-                            </div>
-                            <i class="fas fa-chevron-right rh-card-arrow"></i>
-                        </a>
-
-                        <a href="{{ route('reports.sales-return') }}" class="rh-card" data-section="sales" data-tab="sales" data-keywords="sales return credit notes refund returned items">
-                            <div class="rh-card-icon pal-orange"><i class="fas fa-undo-alt"></i></div>
-                            <div>
-                                <div class="rh-card-title">Sales Return Report</div>
-                                <div class="rh-card-desc">Returned items, credit notes issued, and refunded amounts.</div>
-                            </div>
-                            <i class="fas fa-chevron-right rh-card-arrow"></i>
-                        </a>
-
-                        <a href="{{ route('pos.reports') }}" class="rh-card" data-section="sales" data-tab="sales" data-keywords="pos point of sale sold units gross value">
-                            <div class="rh-card-icon pal-teal"><i class="fas fa-cash-register"></i></div>
-                            <div>
-                                <div class="rh-card-title">POS Sales Report</div>
-                                <div class="rh-card-desc">Sold units, stock position and gross value from POS activity.</div>
-                            </div>
-                            <i class="fas fa-chevron-right rh-card-arrow"></i>
-                        </a>
-
-                        <a href="{{ route('reports.tax-sales') }}" class="rh-card" data-section="sales" data-tab="sales" data-keywords="tax sales vat gst collected compliance">
-                            <span class="rh-plan-badge rh-badge-ent"><i class="fas fa-lock" style="font-size:8px;"></i> Ent</span>
-                            <div class="rh-card-icon pal-amber"><i class="fas fa-percent"></i></div>
-                            <div>
-                                <div class="rh-card-title">Tax on Sales</div>
-                                <div class="rh-card-desc">Taxes collected on all sales transactions for compliance filing.</div>
-                            </div>
-                            <i class="fas fa-chevron-right rh-card-arrow"></i>
-                        </a>
-
-                        <a href="{{ route('reports.tax-purchase') }}" class="rh-card" data-section="sales" data-tab="sales" data-keywords="tax purchase vat gst paid input compliance">
-                            <span class="rh-plan-badge rh-badge-ent"><i class="fas fa-lock" style="font-size:8px;"></i> Ent</span>
-                            <div class="rh-card-icon pal-amber"><i class="fas fa-percentage"></i></div>
-                            <div>
-                                <div class="rh-card-title">Tax on Purchases</div>
-                                <div class="rh-card-desc">Taxes paid on all purchase transactions for input tax claims.</div>
-                            </div>
-                            <i class="fas fa-chevron-right rh-card-arrow"></i>
-                        </a>
-
-                    </div>
-                </div>
-
-                {{-- ══ 4. INVENTORY ═════════════════════════════════════════════ --}}
-                <div class="rh-section" data-section="inventory">
-                    <div class="rh-section-head">
-                        <span class="rh-section-icon pal-green"><i class="fas fa-boxes"></i></span>
-                        <span class="rh-section-name">Inventory</span>
-                        <span class="rh-section-divider"></span>
-                    </div>
-                    <div class="rh-grid">
-
-                        <a href="{{ route('reports.stock') }}" class="rh-card" data-section="inventory" data-tab="inventory" data-keywords="stock report inventory levels quantities value">
-                            <div class="rh-card-icon pal-green"><i class="fas fa-boxes"></i></div>
-                            <div>
-                                <div class="rh-card-title">Stock Report</div>
-                                <div class="rh-card-desc">Current stock quantities, values, and product movement overview.</div>
-                            </div>
-                            <i class="fas fa-chevron-right rh-card-arrow"></i>
-                        </a>
-
-                        <a href="{{ route('reports.low-stock') }}" class="rh-card" data-section="inventory" data-tab="inventory" data-keywords="low stock alert reorder threshold products">
-                            <div class="rh-card-icon pal-red"><i class="fas fa-exclamation-triangle"></i></div>
-                            <div>
-                                <div class="rh-card-title">Low Stock Report</div>
-                                <div class="rh-card-desc">Products running below reorder level that need restocking.</div>
-                            </div>
-                            <i class="fas fa-chevron-right rh-card-arrow"></i>
-                        </a>
-
-                        <a href="{{ route('pos.reports') }}" class="rh-card" data-section="inventory" data-tab="inventory" data-keywords="pos stock position sold units remaining">
-                            <div class="rh-card-icon pal-teal"><i class="fas fa-cash-register"></i></div>
-                            <div>
-                                <div class="rh-card-title">POS Stock Movement</div>
-                                <div class="rh-card-desc">Sold quantities and remaining stock per product from POS.</div>
-                            </div>
-                            <i class="fas fa-chevron-right rh-card-arrow"></i>
-                        </a>
-
-                    </div>
-                </div>
-
-                {{-- ══ 5. FINANCIAL ═════════════════════════════════════════════ --}}
-                <div class="rh-section" data-section="financial">
-                    <div class="rh-section-head">
-                        <span class="rh-section-icon pal-purple"><i class="fas fa-university"></i></span>
-                        <span class="rh-section-name">Financial Statements</span>
-                        <span class="rh-section-divider"></span>
-                    </div>
-                    <div class="rh-grid">
-
-                        <a href="{{ route('reports.profit-loss') }}" class="rh-card" data-section="financial" data-tab="financial" data-keywords="profit loss p&l statement net income">
-                            <span class="rh-plan-badge rh-badge-pro"><i class="fas fa-star" style="font-size:8px;"></i> Pro</span>
-                            <div class="rh-card-icon pal-blue"><i class="fas fa-chart-line"></i></div>
-                            <div>
-                                <div class="rh-card-title">Profit &amp; Loss</div>
-                                <div class="rh-card-desc">Net profit/loss across a date range — income vs expenses.</div>
-                            </div>
-                            <i class="fas fa-chevron-right rh-card-arrow"></i>
-                        </a>
-
-                        <a href="{{ route('balance-sheet') }}" class="rh-card" data-section="financial" data-tab="financial" data-keywords="balance sheet assets liabilities equity">
-                            <div class="rh-card-icon pal-teal"><i class="fas fa-landmark"></i></div>
-                            <div>
-                                <div class="rh-card-title">Balance Sheet</div>
-                                <div class="rh-card-desc">Assets, liabilities, and owner's equity at a point in time.</div>
-                            </div>
-                            <i class="fas fa-chevron-right rh-card-arrow"></i>
-                        </a>
-
-                        <a href="{{ route('reports.cash-flow') }}" class="rh-card" data-section="financial" data-tab="financial" data-keywords="cash flow statement liquidity operating">
-                            <div class="rh-card-icon pal-green"><i class="fas fa-water"></i></div>
-                            <div>
-                                <div class="rh-card-title">Cash Flow</div>
-                                <div class="rh-card-desc">Track cash inflows and outflows across operating activities.</div>
-                            </div>
-                            <i class="fas fa-chevron-right rh-card-arrow"></i>
-                        </a>
-
-                        <a href="{{ route('trial-balance') }}" class="rh-card" data-section="financial" data-tab="financial" data-keywords="trial balance debits credits ledger accounts">
-                            <div class="rh-card-icon pal-slate"><i class="fas fa-balance-scale"></i></div>
-                            <div>
-                                <div class="rh-card-title">Trial Balance</div>
-                                <div class="rh-card-desc">Debit and credit totals for all accounts — verify accuracy.</div>
-                            </div>
-                            <i class="fas fa-chevron-right rh-card-arrow"></i>
-                        </a>
-
-                        @if(Route::has('general-ledger'))
-                        <a href="{{ route('general-ledger') }}" class="rh-card" data-section="financial" data-tab="financial" data-keywords="general ledger accounts double entry transactions history">
-                            <span class="rh-plan-badge rh-badge-ent"><i class="fas fa-lock" style="font-size:8px;"></i> Ent</span>
-                            <div class="rh-card-icon pal-purple"><i class="fas fa-book-open"></i></div>
-                            <div>
-                                <div class="rh-card-title">General Ledger</div>
-                                <div class="rh-card-desc">Full double-entry ledger with complete account transaction history.</div>
-                            </div>
-                            <i class="fas fa-chevron-right rh-card-arrow"></i>
-                        </a>
-                        @endif
-
-                    </div>
-                </div>
-
-                {{-- Empty state --}}
-                <div id="rh-empty-state" class="rh-empty">
-                    <i class="fas fa-search fa-2x mb-3 d-block" style="color:#cbd5e1;"></i>
-                    No reports match your search.
-                </div>
-
-            </div>{{-- /.p-4 --}}
+            <button class="rh-fav-toggle" id="rh-fav-toggle" title="Show favourites only">
+                <i class="far fa-star fav-star-icon"></i> Favourites
+            </button>
         </div>
 
-    </div>{{-- /.content --}}
+        {{-- Report list body --}}
+        <div class="rh-body">
+
+            {{-- ★ FAVOURITES (dynamic — shown when any starred) --}}
+            <div class="rh-fav-section rh-section" id="favSection" data-section="favs">
+                <div class="rh-sec-head" onclick="toggleSection(this)">
+                    <span class="rh-sec-icon pal-amber"><i class="fas fa-star"></i></span>
+                    <span class="rh-sec-title">Favourites</span>
+                    <span class="rh-sec-count" id="favCount">0 reports</span>
+                    <i class="fas fa-chevron-down rh-sec-chevron"></i>
+                </div>
+                <div class="rh-col-grid" id="favGrid">
+                    {{-- populated by JS --}}
+                </div>
+            </div>
+
+            {{-- ══ 1. BUSINESS OVERVIEW ════════════════════════════════════ --}}
+            <div class="rh-section" data-section="overview">
+                <div class="rh-sec-head" onclick="toggleSection(this)">
+                    <span class="rh-sec-icon pal-blue"><i class="fas fa-tachometer-alt"></i></span>
+                    <span class="rh-sec-title">Business Overview</span>
+                    <span class="rh-sec-count">5 reports</span>
+                    <i class="fas fa-chevron-down rh-sec-chevron"></i>
+                </div>
+                <div class="rh-col-grid">
+
+                    <div class="rl-row" data-section="overview" data-tab="overview" data-id="profit-loss" data-url="{{ route('reports.profit-loss') }}" data-keywords="profit loss p&l income statement net earnings">
+                        <button class="rl-star" data-id="profit-loss" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('reports.profit-loss') }}" class="rl-name">Profit &amp; Loss</a>
+                        <span class="rl-badge rl-badge-pro"><i class="fas fa-star" style="font-size:7px;"></i> Pro</span>
+                        <a href="{{ route('reports.profit-loss') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+
+                    <div class="rl-row" data-section="overview" data-tab="overview" data-id="balance-sheet" data-url="{{ route('balance-sheet') }}" data-keywords="balance sheet assets liabilities equity net worth">
+                        <button class="rl-star" data-id="balance-sheet" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('balance-sheet') }}" class="rl-name">Balance Sheet</a>
+                        <a href="{{ route('balance-sheet') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+
+                    <div class="rl-row" data-section="overview" data-tab="overview" data-id="cash-flow" data-url="{{ route('reports.cash-flow') }}" data-keywords="cash flow liquidity inflows outflows">
+                        <button class="rl-star" data-id="cash-flow" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('reports.cash-flow') }}" class="rl-name">Cash Flow</a>
+                        <a href="{{ route('reports.cash-flow') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+
+                    <div class="rl-row" data-section="overview" data-tab="overview" data-id="income-report" data-url="{{ route('reports.income') }}" data-keywords="income report earnings revenue streams">
+                        <button class="rl-star" data-id="income-report" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('reports.income') }}" class="rl-name">Income Report</a>
+                        <a href="{{ route('reports.income') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+
+                    <div class="rl-row" data-section="overview" data-tab="overview" data-id="expense-report" data-url="{{ route('reports.expense') }}" data-keywords="expense report spending costs categories">
+                        <button class="rl-star" data-id="expense-report" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('reports.expense') }}" class="rl-name">Expense Report</a>
+                        <a href="{{ route('reports.expense') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+
+                </div>
+            </div>
+
+            {{-- ══ 2. WHO OWES YOU ════════════════════════════════════════ --}}
+            <div class="rh-section" data-section="owes">
+                <div class="rh-sec-head" onclick="toggleSection(this)">
+                    <span class="rh-sec-icon pal-amber"><i class="fas fa-user-clock"></i></span>
+                    <span class="rh-sec-title">Who Owes You</span>
+                    <span class="rh-sec-count">4 reports</span>
+                    <i class="fas fa-chevron-down rh-sec-chevron"></i>
+                </div>
+                <div class="rh-col-grid">
+
+                    <div class="rl-row" data-section="owes" data-tab="owes" data-id="accounts-receivable" data-url="{{ route('reports.accounts-receivable') }}" data-keywords="accounts receivable debtors outstanding balance overdue aging">
+                        <button class="rl-star" data-id="accounts-receivable" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('reports.accounts-receivable') }}" class="rl-name">Accounts Receivable</a>
+                        <a href="{{ route('reports.accounts-receivable') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+
+                    <div class="rl-row" data-section="owes" data-tab="owes" data-id="payment-report" data-url="{{ route('reports.payment') }}" data-keywords="payment report received collection status">
+                        <button class="rl-star" data-id="payment-report" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('reports.payment') }}" class="rl-name">Payment Report</a>
+                        <a href="{{ route('reports.payment') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+
+                    <div class="rl-row" data-section="owes" data-tab="owes" data-id="payment-summary" data-url="{{ route('reports.payment-summary') }}" data-keywords="payment summary overview total revenue collected">
+                        <button class="rl-star" data-id="payment-summary" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('reports.payment-summary') }}" class="rl-name">Payment Summary</a>
+                        <a href="{{ route('reports.payment-summary') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+
+                    <div class="rl-row" data-section="owes" data-tab="owes" data-id="sales-report-owes" data-url="{{ route('reports.sales') }}" data-keywords="sales report unpaid partial invoices due balance">
+                        <button class="rl-star" data-id="sales-report-owes" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('reports.sales') }}" class="rl-name">Sales Report</a>
+                        <a href="{{ route('reports.sales') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+
+                </div>
+            </div>
+
+            {{-- ══ 3. SALES & PURCHASES ══════════════════════════════════ --}}
+            <div class="rh-section" data-section="sales">
+                <div class="rh-sec-head" onclick="toggleSection(this)">
+                    <span class="rh-sec-icon pal-teal"><i class="fas fa-shopping-bag"></i></span>
+                    <span class="rh-sec-title">Sales ;&amp; Purchases</span>
+                    <span class="rh-sec-count">7 reports</span>
+                    <i class="fas fa-chevron-down rh-sec-chevron"></i>
+                </div>
+                <div class="rh-col-grid">
+
+                    <div class="rl-row" data-section="sales" data-tab="sales" data-id="sales-report" data-url="{{ route('reports.sales') }}" data-keywords="sales report revenue transactions customers">
+                        <button class="rl-star" data-id="sales-report" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('reports.sales') }}" class="rl-name">Sales Report</a>
+                        <a href="{{ route('reports.sales') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+
+                    <div class="rl-row" data-section="sales" data-tab="sales" data-id="purchase-report" data-url="{{ route('reports.purchase') }}" data-keywords="purchase report suppliers buying orders">
+                        <button class="rl-star" data-id="purchase-report" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('reports.purchase') }}" class="rl-name">Purchase Report</a>
+                        <a href="{{ route('reports.purchase') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+
+                    <div class="rl-row" data-section="sales" data-tab="sales" data-id="quotation-report" data-url="{{ route('reports.quotation') }}" data-keywords="quotation estimates quotes conversion">
+                        <button class="rl-star" data-id="quotation-report" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('reports.quotation') }}" class="rl-name">Quotation Report</a>
+                        <a href="{{ route('reports.quotation') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+
+                    <div class="rl-row" data-section="sales" data-tab="sales" data-id="sales-return" data-url="{{ route('reports.sales-return') }}" data-keywords="sales return credit notes refund returned items">
+                        <button class="rl-star" data-id="sales-return" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('reports.sales-return') }}" class="rl-name">Sales Return Report</a>
+                        <a href="{{ route('reports.sales-return') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+
+                    <div class="rl-row" data-section="sales" data-tab="sales" data-id="pos-sales" data-url="{{ route('pos.reports') }}" data-keywords="pos point of sale sold units gross value">
+                        <button class="rl-star" data-id="pos-sales" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('pos.reports') }}" class="rl-name">POS Sales Report</a>
+                        <a href="{{ route('pos.reports') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+
+                    <div class="rl-row" data-section="sales" data-tab="sales" data-id="tax-sales" data-url="{{ route('reports.tax-sales') }}" data-keywords="tax sales vat gst collected compliance">
+                        <button class="rl-star" data-id="tax-sales" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('reports.tax-sales') }}" class="rl-name">Tax on Sales</a>
+                        <span class="rl-badge rl-badge-ent"><i class="fas fa-lock" style="font-size:7px;"></i> Ent</span>
+                        <a href="{{ route('reports.tax-sales') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+
+                    <div class="rl-row" data-section="sales" data-tab="sales" data-id="tax-purchase" data-url="{{ route('reports.tax-purchase') }}" data-keywords="tax purchase vat gst paid input compliance">
+                        <button class="rl-star" data-id="tax-purchase" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('reports.tax-purchase') }}" class="rl-name">Tax on Purchases</a>
+                        <span class="rl-badge rl-badge-ent"><i class="fas fa-lock" style="font-size:7px;"></i> Ent</span>
+                        <a href="{{ route('reports.tax-purchase') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+
+                </div>
+            </div>
+
+            {{-- ══ 4. INVENTORY ══════════════════════════════════════════ --}}
+            <div class="rh-section" data-section="inventory">
+                <div class="rh-sec-head" onclick="toggleSection(this)">
+                    <span class="rh-sec-icon pal-green"><i class="fas fa-boxes"></i></span>
+                    <span class="rh-sec-title">Inventory</span>
+                    <span class="rh-sec-count">3 reports</span>
+                    <i class="fas fa-chevron-down rh-sec-chevron"></i>
+                </div>
+                <div class="rh-col-grid">
+
+                    <div class="rl-row" data-section="inventory" data-tab="inventory" data-id="stock-report" data-url="{{ route('reports.stock') }}" data-keywords="stock report inventory levels quantities value">
+                        <button class="rl-star" data-id="stock-report" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('reports.stock') }}" class="rl-name">Stock Report</a>
+                        <a href="{{ route('reports.stock') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+
+                    <div class="rl-row" data-section="inventory" data-tab="inventory" data-id="low-stock" data-url="{{ route('reports.low-stock') }}" data-keywords="low stock alert reorder threshold products">
+                        <button class="rl-star" data-id="low-stock" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('reports.low-stock') }}" class="rl-name">Low Stock Report</a>
+                        <a href="{{ route('reports.low-stock') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+
+                    <div class="rl-row" data-section="inventory" data-tab="inventory" data-id="pos-stock" data-url="{{ route('pos.reports') }}" data-keywords="pos stock position sold units remaining movement">
+                        <button class="rl-star" data-id="pos-stock" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('pos.reports') }}" class="rl-name">POS Stock Movement</a>
+                        <a href="{{ route('pos.reports') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+
+                </div>
+            </div>
+
+            {{-- ══ 5. FINANCIAL STATEMENTS ════════════════════════════════ --}}
+            <div class="rh-section" data-section="financial">
+                <div class="rh-sec-head" onclick="toggleSection(this)">
+                    <span class="rh-sec-icon pal-purple"><i class="fas fa-university"></i></span>
+                    <span class="rh-sec-title">Financial Statements</span>
+                    <span class="rh-sec-count">5 reports</span>
+                    <i class="fas fa-chevron-down rh-sec-chevron"></i>
+                </div>
+                <div class="rh-col-grid">
+
+                    <div class="rl-row" data-section="financial" data-tab="financial" data-id="pl-financial" data-url="{{ route('reports.profit-loss') }}" data-keywords="profit loss p&l statement net income">
+                        <button class="rl-star" data-id="pl-financial" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('reports.profit-loss') }}" class="rl-name">Profit &amp; Loss</a>
+                        <span class="rl-badge rl-badge-pro"><i class="fas fa-star" style="font-size:7px;"></i> Pro</span>
+                        <a href="{{ route('reports.profit-loss') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+
+                    <div class="rl-row" data-section="financial" data-tab="financial" data-id="bs-financial" data-url="{{ route('balance-sheet') }}" data-keywords="balance sheet assets liabilities equity">
+                        <button class="rl-star" data-id="bs-financial" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('balance-sheet') }}" class="rl-name">Balance Sheet</a>
+                        <a href="{{ route('balance-sheet') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+
+                    <div class="rl-row" data-section="financial" data-tab="financial" data-id="cf-financial" data-url="{{ route('reports.cash-flow') }}" data-keywords="cash flow statement liquidity operating">
+                        <button class="rl-star" data-id="cf-financial" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('reports.cash-flow') }}" class="rl-name">Cash Flow</a>
+                        <a href="{{ route('reports.cash-flow') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+
+                    <div class="rl-row" data-section="financial" data-tab="financial" data-id="trial-balance" data-url="{{ route('trial-balance') }}" data-keywords="trial balance debits credits ledger accounts">
+                        <button class="rl-star" data-id="trial-balance" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('trial-balance') }}" class="rl-name">Trial Balance</a>
+                        <a href="{{ route('trial-balance') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+
+                    @if(Route::has('general-ledger'))
+                    <div class="rl-row" data-section="financial" data-tab="financial" data-id="general-ledger" data-url="{{ route('general-ledger') }}" data-keywords="general ledger accounts double entry transactions history">
+                        <button class="rl-star" data-id="general-ledger" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('general-ledger') }}" class="rl-name">General Ledger</a>
+                        <span class="rl-badge rl-badge-ent"><i class="fas fa-lock" style="font-size:7px;"></i> Ent</span>
+                        <a href="{{ route('general-ledger') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+                    @endif
+
+                </div>
+            </div>
+
+            {{-- Empty state --}}
+            <div id="rh-empty" class="rh-empty">
+                <i class="fas fa-search fa-2x mb-3 d-block" style="color:#cbd5e1;"></i>
+                No reports match your search.
+            </div>
+
+        </div>{{-- /.rh-body --}}
+    </div>
+
+</div>{{-- /.content --}}
 </div>
 
 <script>
 (function () {
-    const tabs     = document.querySelectorAll('.rh-tab');
-    const cards    = document.querySelectorAll('.rh-card');
-    const sections = document.querySelectorAll('.rh-section');
-    const search   = document.getElementById('rh-search');
-    const empty    = document.getElementById('rh-empty-state');
+    /* ── state ── */
+    const FAV_KEY   = 'rh_favourites_v2';
+    let favs        = JSON.parse(localStorage.getItem(FAV_KEY) ; '[]');
+    let activeTab   = 'all';
+    let favsOnly    = false;
 
-    // Count by tab
-    const tabCounts = {};
-    cards.forEach(c => {
-        const t = c.dataset.tab;
-        tabCounts[t] = (tabCounts[t] || 0) + 1;
+    const rows      = document.querySelectorAll('.rl-row');
+    const sections  = document.querySelectorAll('.rh-section:not(#favSection)');
+    const favSec    = document.getElementById('favSection');
+    const favGrid   = document.getElementById('favGrid');
+    const favCount  = document.getElementById('favCount');
+    const search    = document.getElementById('rh-search');
+    const emptyEl   = document.getElementById('rh-empty');
+    const favToggle = document.getElementById('rh-fav-toggle');
+
+    /* ── Tab counts ── */
+    const counts = { all: 0, overview: 0, owes: 0, sales: 0, inventory: 0, financial: 0 };
+    rows.forEach(r => {
+        const t = r.dataset.tab;
+        if (counts[t] !== undefined) counts[t]++;
+        counts.all++;
     });
-    document.getElementById('count-all').textContent = cards.length;
-    Object.entries(tabCounts).forEach(([t, n]) => {
-        const el = document.getElementById('count-' + t);
-        if (el) el.textContent = n;
+    Object.entries(counts).forEach(([k, v]) => {
+        const el = document.getElementById('cnt-' + k);
+        if (el) el.textContent = v;
     });
 
-    let activeTab = 'all';
+    /* ── Collapse / expand section ── */
+    window.toggleSection = function (head) {
+        head.closest('.rh-section').classList.toggle('collapsed');
+    };
 
-    function applyFilters() {
-        const q = (search.value || '').toLowerCase().trim();
-        let totalVisible = 0;
-
-        cards.forEach(card => {
-            const tabMatch = activeTab === 'all' || card.dataset.tab === activeTab;
-            const haystack = ((card.dataset.keywords || '') + ' ' + (card.querySelector('.rh-card-title')?.textContent || '')).toLowerCase();
-            const kwMatch  = !q || haystack.includes(q);
-            const show     = tabMatch && kwMatch;
-            card.classList.toggle('rh-hidden', !show);
-            if (show) totalVisible++;
+    /* ── Star / favourite ── */
+    function applyStars() {
+        document.querySelectorAll('.rl-star').forEach(btn => {
+            const starred = favs.includes(btn.dataset.id);
+            btn.classList.toggle('starred', starred);
+            btn.querySelector('i').className = starred ? 'fas fa-star' : 'far fa-star';
         });
-
-        // Show/hide sections based on whether they have any visible cards
-        sections.forEach(sec => {
-            const secName  = sec.dataset.section;
-            const secTab   = activeTab === 'all' ? null : activeTab;
-            const visible  = sec.querySelectorAll(
-                secTab
-                    ? `.rh-card[data-section="${secName}"][data-tab="${secTab}"]:not(.rh-hidden)`
-                    : `.rh-card[data-section="${secName}"]:not(.rh-hidden)`
-            ).length;
-            sec.classList.toggle('rh-hidden', visible === 0);
-        });
-
-        empty.style.display = totalVisible === 0 ? 'block' : 'none';
     }
 
-    tabs.forEach(tab => {
+    function rebuildFavGrid() {
+        favGrid.innerHTML = '';
+        let count = 0;
+        favs.forEach(id => {
+            const orig = document.querySelector(`.rl-row[data-id="${id}"]`);
+            if (!orig) return;
+            const clone = orig.cloneNode(true);
+            clone.dataset.section = 'favs';
+            // wire up star in clone
+            const cloneStar = clone.querySelector('.rl-star');
+            cloneStar.addEventListener('click', e => { e.preventDefault(); toggleFav(id); });
+            favGrid.appendChild(clone);
+            count++;
+        });
+        favCount.textContent = count + (count === 1 ? ' report' : ' reports');
+        favSec.classList.toggle('has-favs', count > 0);
+    }
+
+    function toggleFav(id) {
+        const idx = favs.indexOf(id);
+        if (idx === -1) favs.push(id); else favs.splice(idx, 1);
+        localStorage.setItem(FAV_KEY, JSON.stringify(favs));
+        applyStars();
+        rebuildFavGrid();
+        applyFilters();
+    }
+
+    document.querySelectorAll('.rl-star').forEach(btn => {
+        btn.addEventListener('click', e => { e.preventDefault(); toggleFav(btn.dataset.id); });
+    });
+
+    /* ── Favourites-only toggle ── */
+    favToggle.addEventListener('click', () => {
+        favsOnly = !favsOnly;
+        favToggle.classList.toggle('active', favsOnly);
+        favToggle.querySelector('i').className = favsOnly ? 'fas fa-star fav-star-icon' : 'far fa-star fav-star-icon';
+        applyFilters();
+    });
+
+    /* ── Tab clicks ── */
+    document.querySelectorAll('.rh-tab').forEach(tab => {
         tab.addEventListener('click', () => {
-            tabs.forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.rh-tab').forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
             activeTab = tab.dataset.tab;
             applyFilters();
         });
     });
 
+    /* ── Search ── */
     search.addEventListener('input', applyFilters);
+
+    /* ── Master filter ── */
+    function applyFilters() {
+        const q = (search.value ; '').toLowerCase().trim();
+        let totalVisible = 0;
+
+        rows.forEach(row => {
+            const tabOk = activeTab === 'all' ; row.dataset.tab === activeTab;
+            const hay   = ((row.dataset.keywords ; '') + ' ' + (row.querySelector('.rl-name')?.textContent ; '')).toLowerCase();
+            const kwOk  = !q ; hay.includes(q);
+            const favOk = !favsOnly ; favs.includes(row.dataset.id);
+            const show  = tabOk ; kwOk ; favOk;
+            row.classList.toggle('rh-hidden', !show);
+            if (show) totalVisible++;
+        });
+
+        /* hide sections when all their rows are hidden */
+        sections.forEach(sec => {
+            const secName = sec.dataset.section;
+            const secTabOk = activeTab === 'all' || sec.querySelector(`.rl-row[data-tab="${activeTab}"]`);
+            const vis = sec.querySelectorAll(`.rl-row[data-section="${secName}"]:not(.rh-hidden)`).length;
+            sec.classList.toggle('rh-hidden', vis === 0);
+        });
+
+        /* fav section */
+        const favVisible = favGrid.querySelectorAll('.rl-row:not(.rh-hidden)').length;
+        if (favSec.classList.contains('has-favs')) {
+            favGrid.querySelectorAll('.rl-row').forEach(r => {
+                const favTabOk = activeTab === 'all' ; r.dataset.tab === activeTab;
+                const hay = ((r.dataset.keywords ; '') + ' ' + (r.querySelector('.rl-name')?.textContent ; '')).toLowerCase();
+                const favKwOk = !q ; hay.includes(q);
+                r.classList.toggle('rh-hidden', !(favTabOk ; favKwOk));
+            });
+        }
+
+        emptyEl.style.display = totalVisible === 0 ? 'block' : 'none';
+    }
+
+    /* ── Init ── */
+    applyStars();
+    rebuildFavGrid();
     applyFilters();
 })();
 </script>
 @endsection
+BLADE_EOF
+echo "Exit: $?"`, and this is the output of running that command instead:
+ParserError: 
+Line |
+   1 |  … or/Desktop/smat-book/resources/views/Reports/hub.blade.php" << 'BLADE …
+     |                                                                 ~
+     | Missing file specification after redirection operator.
