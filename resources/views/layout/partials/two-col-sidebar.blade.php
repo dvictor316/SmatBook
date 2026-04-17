@@ -272,6 +272,10 @@
 
                         <!-- Reports -->
                         <li>
+                            <a class="{{ Request::is('reports') ? 'active' : '' }}"
+                                href="{{ route('reports.hub') }}"><i class="fe fe-bar-chart-2"></i> <span>Reports</span></a>
+                        </li>
+                        <li>
                             <a class="{{ Request::is('reports/payment-summary') ? 'active' : '' }}"
                                 href="{{ route('reports.payment-summary') }}"><i class="fe fe-credit-card"></i> <span>Payment
                                     Summary</span></a>

@@ -844,6 +844,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
     
     // Reports
     Route::controller(ReportController::class)->prefix('reports')->name('reports.')->group(function () {
+        Route::get('/', 'reportsHub')->name('hub');
         Route::get('/expense-report', 'expense_report')->name('expense');
         Route::get('/income-report', 'income_report')->name('income');
         Route::get('/payment-report', 'payment_report')->name('payment');

@@ -45,6 +45,11 @@ use App\Support\InventoryQuantity;
                 : ['debit' => abs($amount), 'credit' => 0.0];
         }
 
+        public function reportsHub()
+        {
+            return view('Reports.hub');
+        }
+
         private function ignoredAppliedPaymentStatuses(): array
         {
             return ['failed', 'cancelled', 'pending approval'];
