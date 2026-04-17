@@ -243,6 +243,9 @@
 
                 {{-- Activity Log --}}
                 <li><a href="{{ route('activity-log.index') }}"><i class="fe fe-activity"></i><span>Activity Log</span></a></li>
+                @if(Route::has('audit.index'))
+                    <li><a href="{{ route('audit.index') }}"><i class="fe fe-clipboard"></i><span>Audit Trail</span></a></li>
+                @endif
                 @if(Route::has('close.index'))
                     <li><a href="{{ route('close.index') }}"><i class="fe fe-lock"></i><span>Period Close</span></a></li>
                 @endif

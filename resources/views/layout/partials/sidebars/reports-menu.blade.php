@@ -1,13 +1,40 @@
 {{--
-    QuickBooks-style Reports dropdown for all sidebars.
-    Expects: $reportAccess — 'basic' | 'pro' | 'enterprise' | 'full'
-    'full' = super_admin (no plan gate, all reports visible)
+    QB-style Reports sidebar dropdown.
+    3 category links — each opens the hub with that tab active.
 --}}
 @php
-    $ra = $reportAccess ?? 'basic';
-    $isPro  = in_array($ra, ['pro', 'enterprise', 'full']);
-    $isEnt  = in_array($ra, ['enterprise', 'full']);
-    $isFull = $ra === 'full';
+    $currentTab = request('tab', 'standard');
+    $isReports  = Request::is('reports*');
+@endphp
+
+<li class="submenu {{ $isReports ? 'active subdrop' : '' }}">
+    <a href="{{ route('reports.hub') }}">
+        <i class="fe fe-bar-chart-2"></i>
+        <span>Reports</span>
+        <span class="menu-arrow"></span>
+    </a>
+    <ul>
+        <li>
+            <a href="{{ route('reports.hub') }}?tab=standard"
+               class="{{ $isReports && $currentTab === 'standard' ? 'active' : '' }}">
+                Standard Reports
+            </a>
+        </li>
+        <li>
+            <a href="{{ route('reports.hub') }}?tab=management"
+               class="{{ $isReports && $currentTab === 'management' ? 'active' : '' }}">
+                Management Reports
+            </a>
+        </li>
+        <li>
+            <a href="{{ route('reports.hub') }}?tab=custom"
+               class="{{ $isReports && $currentTab === 'custom' ? 'active' : '' }}">
+                Custom Reports
+            </a>
+        </li>
+    </ul>
+</li>
+
 
     // Active detection across all report URLs
     $reportsActive = Request::is(

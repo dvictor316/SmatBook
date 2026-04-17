@@ -196,6 +196,12 @@
     @if(Route::has('roles.index'))
         <li><a href="{{ route('roles.index') }}"><i class="fe fe-shield"></i><span>Roles & Permission</span></a></li>
     @endif
+    @if(Route::has('activity-log.index'))
+        <li><a href="{{ route('activity-log.index') }}"><i class="fe fe-activity"></i><span>Activity Log</span></a></li>
+    @endif
+    @if(Route::has('audit.index'))
+        <li><a href="{{ route('audit.index') }}"><i class="fe fe-clipboard"></i><span>Audit Trail</span></a></li>
+    @endif
 
     @if(Route::has('profile'))
         <li><a href="{{ route('profile') }}"><i class="fe fe-user"></i><span>Profile</span></a></li>

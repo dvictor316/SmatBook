@@ -214,6 +214,10 @@
                 {{-- Roles & Permission --}}
                 <li><a href="{{ route('roles.index') }}"><i class="fe fe-shield"></i><span>Roles & Permission</span></a></li>
 
+                @if(Route::has('audit.index'))
+                    <li><a href="{{ route('audit.index') }}"><i class="fe fe-clipboard"></i><span>Audit Trail</span></a></li>
+                @endif
+
                 @if(Route::has('profile'))
                     <li><a href="{{ route('profile') }}"><i class="fe fe-user-check"></i><span>Profile</span></a></li>
                 @endif

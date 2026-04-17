@@ -107,13 +107,11 @@ Note: The tool simplified the command to `cat > "/mnt/c/Users/victor/Desktop/sma
     <div style="border:1px solid #dee2e9;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.05);overflow:hidden;">
 
         {{-- Tab bar --}}
+        {{-- QB-style: 3 top-level tabs matching QuickBooks exactly --}}
         <div class="rh-tab-bar">
-            <button class="rh-tab active" data-tab="all">All Reports <span class="rh-cnt" id="cnt-all">0</span></button>
-            <button class="rh-tab" data-tab="overview"><i class="fas fa-tachometer-alt" style="font-size:10px;"></i> Business Overview <span class="rh-cnt" id="cnt-overview">0</span></button>
-            <button class="rh-tab" data-tab="owes"><i class="fas fa-user-clock" style="font-size:10px;"></i> Who Owes You <span class="rh-cnt" id="cnt-owes">0</span></button>
-            <button class="rh-tab" data-tab="sales"><i class="fas fa-shopping-bag" style="font-size:10px;"></i> Sales; &amp; Purchases <span class="rh-cnt" id="cnt-sales">0</span></button>
-            <button class="rh-tab" data-tab="inventory"><i class="fas fa-boxes" style="font-size:10px;"></i> Inventory <span class="rh-cnt" id="cnt-inventory">0</span></button>
-            <button class="rh-tab" data-tab="financial"><i class="fas fa-university" style="font-size:10px;"></i> Financial <span class="rh-cnt" id="cnt-financial">0</span></button>
+            <button class="rh-tab" data-tab="standard">Standard reports <span class="rh-cnt" id="cnt-standard">0</span></button>
+            <button class="rh-tab" data-tab="management">Management reports <span class="rh-cnt" id="cnt-management">0</span></button>
+            <button class="rh-tab" data-tab="custom">Custom reports <span class="rh-cnt" id="cnt-custom">0</span></button>
         </div>
 
         {{-- Toolbar: search + favourites toggle --}}
@@ -258,6 +256,14 @@ Note: The tool simplified the command to `cat > "/mnt/c/Users/victor/Desktop/sma
                         <a href="{{ route('reports.sales-return') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
                     </div>
 
+                    @if(Route::has('reports.purchase-return'))
+                    <div class="rl-row" data-section="sales" data-tab="sales" data-id="purchase-return" data-url="{{ route('reports.purchase-return') }}" data-keywords="purchase return debit notes supplier refund returned goods">
+                        <button class="rl-star" data-id="purchase-return" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('reports.purchase-return') }}" class="rl-name">Purchase Return Report</a>
+                        <a href="{{ route('reports.purchase-return') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+                    @endif
+
                     <div class="rl-row" data-section="sales" data-tab="sales" data-id="pos-sales" data-url="{{ route('pos.reports') }}" data-keywords="pos point of sale sold units gross value">
                         <button class="rl-star" data-id="pos-sales" title="Favourite"><i class="far fa-star"></i></button>
                         <a href="{{ route('pos.reports') }}" class="rl-name">POS Sales Report</a>
@@ -359,6 +365,23 @@ Note: The tool simplified the command to `cat > "/mnt/c/Users/victor/Desktop/sma
                 </div>
             </div>
 
+            {{-- ══ 6. CUSTOM REPORTS ════════════════════════════════════ --}}
+            <div class="rh-section" data-section="custom">
+                <div class="rh-sec-head" onclick="toggleSection(this)">
+                    <span class="rh-sec-icon pal-indigo"><i class="fas fa-magic"></i></span>
+                    <span class="rh-sec-title">Custom Reports</span>
+                    <span class="rh-sec-count">Build your own</span>
+                    <i class="fas fa-chevron-down rh-sec-chevron"></i>
+                </div>
+                <div class="rh-col-grid">
+                    <div class="rl-row" data-section="custom" data-id="my-favourites" data-keywords="starred favourites saved reports bookmarks">
+                        <button class="rl-star" data-id="my-favourites" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="#" onclick="document.getElementById('rh-fav-toggle').click(); return false;" class="rl-name">My Favourites</a>
+                        <a href="#" onclick="document.getElementById('rh-fav-toggle').click(); return false;" class="rl-run"><i class="fas fa-play"></i> View</a>
+                    </div>
+                </div>
+            </div>
+
             {{-- Empty state --}}
             <div id="rh-empty" class="rh-empty">
                 <i class="fas fa-search fa-2x mb-3 d-block" style="color:#cbd5e1;"></i>
@@ -373,11 +396,20 @@ Note: The tool simplified the command to `cat > "/mnt/c/Users/victor/Desktop/sma
 
 <script>
 (function () {
-    /* ── state ── */
-    const FAV_KEY   = 'rh_favourites_v2';
-    let favs        = JSON.parse(localStorage.getItem(FAV_KEY) ; '[]');
-    let activeTab   = 'all';
-    let favsOnly    = false;
+    /* ── Tab → section mapping ── */
+    const TAB_SECTIONS = {
+        standard:   ['overview', 'owes', 'sales', 'inventory'],
+        management: ['financial'],
+        custom:     ['custom'],
+    };
+
+    /* ── State ── */
+    const FAV_KEY = 'rh_favourites_v2';
+    let favs      = JSON.parse(localStorage.getItem(FAV_KEY) || '[]');
+
+    const urlTab  = new URLSearchParams(location.search).get('tab') || 'standard';
+    let activeTab = Object.keys(TAB_SECTIONS).includes(urlTab) ? urlTab : 'standard';
+    let favsOnly  = false;
 
     const rows      = document.querySelectorAll('.rl-row');
     const sections  = document.querySelectorAll('.rh-section:not(#favSection)');
@@ -388,24 +420,28 @@ Note: The tool simplified the command to `cat > "/mnt/c/Users/victor/Desktop/sma
     const emptyEl   = document.getElementById('rh-empty');
     const favToggle = document.getElementById('rh-fav-toggle');
 
+    /* ── Activate correct tab on load ── */
+    document.querySelectorAll('.rh-tab').forEach(t => {
+        t.classList.toggle('active', t.dataset.tab === activeTab);
+    });
+
     /* ── Tab counts ── */
-    const counts = { all: 0, overview: 0, owes: 0, sales: 0, inventory: 0, financial: 0 };
-    rows.forEach(r => {
-        const t = r.dataset.tab;
-        if (counts[t] !== undefined) counts[t]++;
-        counts.all++;
-    });
-    Object.entries(counts).forEach(([k, v]) => {
-        const el = document.getElementById('cnt-' + k);
-        if (el) el.textContent = v;
-    });
+    function updateCounts() {
+        Object.entries(TAB_SECTIONS).forEach(([tab, secs]) => {
+            let count = 0;
+            rows.forEach(r => { if (secs.includes(r.dataset.section)) count++; });
+            const el = document.getElementById('cnt-' + tab);
+            if (el) el.textContent = count;
+        });
+    }
+    updateCounts();
 
     /* ── Collapse / expand section ── */
     window.toggleSection = function (head) {
         head.closest('.rh-section').classList.toggle('collapsed');
     };
 
-    /* ── Star / favourite ── */
+    /* ── Stars / favourites ── */
     function applyStars() {
         document.querySelectorAll('.rl-star').forEach(btn => {
             const starred = favs.includes(btn.dataset.id);
@@ -422,9 +458,7 @@ Note: The tool simplified the command to `cat > "/mnt/c/Users/victor/Desktop/sma
             if (!orig) return;
             const clone = orig.cloneNode(true);
             clone.dataset.section = 'favs';
-            // wire up star in clone
-            const cloneStar = clone.querySelector('.rl-star');
-            cloneStar.addEventListener('click', e => { e.preventDefault(); toggleFav(id); });
+            clone.querySelector('.rl-star').addEventListener('click', e => { e.preventDefault(); toggleFav(id); });
             favGrid.appendChild(clone);
             count++;
         });
@@ -459,6 +493,7 @@ Note: The tool simplified the command to `cat > "/mnt/c/Users/victor/Desktop/sma
             document.querySelectorAll('.rh-tab').forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
             activeTab = tab.dataset.tab;
+            history.replaceState(null, '', '?tab=' + activeTab);
             applyFilters();
         });
     });
@@ -466,38 +501,41 @@ Note: The tool simplified the command to `cat > "/mnt/c/Users/victor/Desktop/sma
     /* ── Search ── */
     search.addEventListener('input', applyFilters);
 
-    /* ── Master filter ── */
+    /* ── Master filter function ── */
     function applyFilters() {
-        const q = (search.value ; '').toLowerCase().trim();
-        let totalVisible = 0;
+        const q           = (search.value || '').toLowerCase().trim();
+        const allowedSecs = TAB_SECTIONS[activeTab] || [];
+        let totalVisible  = 0;
 
         rows.forEach(row => {
-            const tabOk = activeTab === 'all' ; row.dataset.tab === activeTab;
-            const hay   = ((row.dataset.keywords ; '') + ' ' + (row.querySelector('.rl-name')?.textContent ; '')).toLowerCase();
-            const kwOk  = !q ; hay.includes(q);
-            const favOk = !favsOnly ; favs.includes(row.dataset.id);
-            const show  = tabOk ; kwOk ; favOk;
+            const secOk = allowedSecs.includes(row.dataset.section);
+            const hay   = ((row.dataset.keywords || '') + ' ' + (row.querySelector('.rl-name')?.textContent || '')).toLowerCase();
+            const kwOk  = !q || hay.includes(q);
+            const favOk = !favsOnly || favs.includes(row.dataset.id);
+            const show  = secOk && kwOk && favOk;
             row.classList.toggle('rh-hidden', !show);
             if (show) totalVisible++;
         });
 
-        /* hide sections when all their rows are hidden */
         sections.forEach(sec => {
-            const secName = sec.dataset.section;
-            const secTabOk = activeTab === 'all' || sec.querySelector(`.rl-row[data-tab="${activeTab}"]`);
-            const vis = sec.querySelectorAll(`.rl-row[data-section="${secName}"]:not(.rh-hidden)`).length;
-            sec.classList.toggle('rh-hidden', vis === 0);
+            const secName  = sec.dataset.section;
+            const secTabOk = allowedSecs.includes(secName);
+            const vis      = sec.querySelectorAll(`.rl-row[data-section="${secName}"]:not(.rh-hidden)`).length;
+            sec.classList.toggle('rh-hidden', !secTabOk || vis === 0);
         });
 
-        /* fav section */
-        const favVisible = favGrid.querySelectorAll('.rl-row:not(.rh-hidden)').length;
         if (favSec.classList.contains('has-favs')) {
             favGrid.querySelectorAll('.rl-row').forEach(r => {
-                const favTabOk = activeTab === 'all' ; r.dataset.tab === activeTab;
-                const hay = ((r.dataset.keywords ; '') + ' ' + (r.querySelector('.rl-name')?.textContent ; '')).toLowerCase();
-                const favKwOk = !q ; hay.includes(q);
-                r.classList.toggle('rh-hidden', !(favTabOk ; favKwOk));
+                const origSec  = document.querySelector(`.rl-row[data-id="${r.dataset.id}"]:not([data-section="favs"])`)?.dataset.section;
+                const favSecOk = !origSec || allowedSecs.includes(origSec);
+                const hay      = ((r.dataset.keywords || '') + ' ' + (r.querySelector('.rl-name')?.textContent || '')).toLowerCase();
+                const favKwOk  = !q || hay.includes(q);
+                r.classList.toggle('rh-hidden', !(favSecOk && favKwOk));
             });
+            const favVis = favGrid.querySelectorAll('.rl-row:not(.rh-hidden)').length;
+            favSec.classList.toggle('rh-hidden', favVis === 0 && !favsOnly);
+        } else {
+            favSec.classList.add('rh-hidden');
         }
 
         emptyEl.style.display = totalVisible === 0 ? 'block' : 'none';

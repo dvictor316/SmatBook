@@ -232,6 +232,12 @@
                 <li class="menu-title"><span>Settings</span></li>
                 <li><a href="{{ route('settings.index') }}"><i class="fe fe-settings"></i><span>Settings</span></a></li>
                 <li><a href="{{ route('roles.index') }}"><i class="fe fe-shield"></i><span>Roles & Permission</span></a></li>
+                @if(Route::has('activity-log.index'))
+                    <li><a href="{{ route('activity-log.index') }}"><i class="fe fe-activity"></i><span>Activity Log</span></a></li>
+                @endif
+                @if(Route::has('audit.index'))
+                    <li><a href="{{ route('audit.index') }}"><i class="fe fe-clipboard"></i><span>Audit Trail</span></a></li>
+                @endif
 
             </ul>
         </div>
