@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Sale;
+use App\Models\Bank;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\Signature;
@@ -1080,7 +1081,8 @@ class InvoiceController extends Controller
         if ($id) {
             $invoice = $this->applyTenantScope(Sale::with(['items.product', 'customer']), 'sales')->find($id);
         }
-        return view('Sales.Invoices.pay-online', compact('invoice'));
+        $banks = $this->applyTenantScope(Bank::query(), 'banks')->orderBy('name')->get();
+        return view('Sales.Invoices.pay-online', compact('invoice', 'banks'));
     }
 
     public function processPayment(Request $request, $id)

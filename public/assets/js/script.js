@@ -266,6 +266,7 @@ Version      : 1.0
 			// "scrollX": true,
 			"autoWidth": false,
 			"sDom": 'fBtlpi', 
+			"order": [],
 			"ordering": true,
 			"columnDefs": [ {
 				"targets": 'no-sort',
