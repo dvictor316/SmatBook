@@ -875,6 +875,36 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::post('/email-report', 'email_report')->name('email-report');
         Route::post('/email-low-stock', 'email_low_stock_report')->name('email-low-stock');
         Route::get('/payment-summary', 'paymentSummary')->name('payment-summary');
+
+        // Sub-report family — P&L
+        Route::get('/profit-loss-comparison', 'profitLossComparison')->name('profit-loss-comparison');
+        Route::get('/profit-loss-by-month', 'profitLossByMonth')->name('profit-loss-by-month');
+        Route::get('/profit-loss-detail', 'profitLossDetail')->name('profit-loss-detail');
+
+        // Sub-report family — Who Owes You / AR
+        Route::get('/ar-ageing-detail', 'accountsReceivableAgeingDetail')->name('ar-ageing-detail');
+        Route::get('/open-invoices', 'openInvoicesReport')->name('open-invoices');
+
+        // Sub-report family — Sales
+        Route::get('/sales-by-customer', 'salesByCustomer')->name('sales-by-customer');
+        Route::get('/sales-by-product', 'salesByProduct')->name('sales-by-product');
+        Route::get('/sales-summary', 'salesSummary')->name('sales-summary');
+
+        // Sub-report family — Purchases
+        Route::get('/purchase-by-supplier', 'purchaseBySupplier')->name('purchase-by-supplier');
+        Route::get('/purchase-summary', 'purchaseSummary')->name('purchase-summary');
+
+        // Sub-report family — Expenses
+        Route::get('/expense-by-category', 'expenseByCategory')->name('expense-by-category');
+        Route::get('/expense-trend', 'expenseTrend')->name('expense-trend');
+
+        // Sub-report family — Stock
+        Route::get('/stock-valuation', 'stockValuation')->name('stock-valuation');
+        Route::get('/stock-by-category', 'stockByCategory')->name('stock-by-category');
+
+        // Sub-report family — Tax
+        Route::get('/tax-summary', 'taxSummary')->name('tax-summary');
+
         Route::prefix('payments')->name('payments.')->group(function () {
             Route::post('/bulk-update', 'bulkUpdate')->name('bulk-update');
             Route::get('/{id}', 'show')->name('show');
@@ -888,6 +918,8 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
     Route::get('/cash-flow/export', [CashFlowController::class, 'exportCashFlow'])->name('reports.cash-flow.export');
     Route::get('/balance-sheet', [BalanceSheetController::class, 'index'])->name('balance-sheet');
     Route::get('/balance-sheet/export', [BalanceSheetController::class, 'export'])->name('balance-sheet.export');
+    Route::get('/balance-sheet-summary', [BalanceSheetController::class, 'summary'])->name('balance-sheet-summary');
+    Route::get('/balance-sheet-comparison', [BalanceSheetController::class, 'comparison'])->name('balance-sheet-comparison');
     Route::get('/trial-balance', [TrialBalanceController::class, 'index'])->name('trial-balance');
     Route::get('/trial-balance/export', [TrialBalanceController::class, 'export'])->name('trial-balance.export');
     Route::get('/general-ledger', [GeneralLedgerController::class, 'index'])

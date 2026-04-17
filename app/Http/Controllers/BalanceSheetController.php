@@ -446,6 +446,97 @@ class BalanceSheetController extends Controller
         })->where('balance', '>', 0);
     }
 
+    /** Balance Sheet Summary — same data, summary-only view */
+    public function summary(Request $request)
+    {
+        $activeBranch = $this->resolveActiveBranch($request);
+        $reportDate   = $request->date ? Carbon::parse($request->date) : Carbon::now();
+
+        if (!Schema::hasTable('accounts') || !Schema::hasTable('transactions')) {
+            return view('Reports.Reports.balance-sheet-summary', [
+                'reportDate' => $reportDate, 'totalAssets' => 0, 'totalLiabilities' => 0,
+                'totalEquity' => 0, 'retainedEarnings' => 0, 'activeBranch' => $activeBranch,
+            ]);
+        }
+
+        $txnTotals = Transaction::query()
+            ->selectRaw('account_id, SUM(debit) as total_debit, SUM(credit) as total_credit')
+            ->where('transaction_date', '<=', $reportDate)
+            ->tap(fn ($q) => $this->applyTransactionScope($q, $request))
+            ->groupBy('account_id')->get()->keyBy('account_id');
+
+        $accounts = Account::query()
+            ->where(fn ($q) => !$txnTotals->isEmpty() ? $q->whereIn('id', $txnTotals->keys()->all())->orWhere('opening_balance', '!=', 0) : $q->where('opening_balance', '!=', 0))
+            ->tap(fn ($q) => $this->applyAccountScope($q, $request))->get()
+            ->transform(function ($a) use ($txnTotals) {
+                $t = $txnTotals->get($a->id);
+                $a->total_debit  = (float)($t->total_debit ?? 0);
+                $a->total_credit = (float)($t->total_credit ?? 0);
+                $type = $this->normalizeAccountType($a->type ?? null);
+                $isDebit = in_array($type, ['asset', 'expense'], true);
+                $a->balance = $isDebit
+                    ? ((float)($a->opening_balance ?? 0) + $a->total_debit) - $a->total_credit
+                    : ((float)($a->opening_balance ?? 0) + $a->total_credit) - $a->total_debit;
+                return $a;
+            });
+
+        $totalRevenue    = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type ?? null) === 'revenue')->sum('balance');
+        $totalExpenses   = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type ?? null) === 'expense')->sum('balance');
+        $retainedEarnings = $totalRevenue - $totalExpenses;
+
+        $totalAssets      = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type ?? null) === 'asset')->sum('balance');
+        $totalLiabilities = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type ?? null) === 'liability')->sum('balance');
+        $equityBase       = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type ?? null) === 'equity')->sum('balance');
+        $totalEquity      = $equityBase + $retainedEarnings;
+
+        return view('Reports.Reports.balance-sheet-summary', compact('reportDate', 'totalAssets', 'totalLiabilities', 'totalEquity', 'retainedEarnings', 'activeBranch'));
+    }
+
+    /** Balance Sheet Comparison — two dates side by side */
+    public function comparison(Request $request)
+    {
+        $dateA = $request->input('date_a') ? Carbon::parse($request->input('date_a')) : Carbon::now();
+        $dateB = $request->input('date_b') ? Carbon::parse($request->input('date_b')) : Carbon::now()->subYear();
+
+        $build = function (Carbon $reportDate) use ($request) {
+            if (!Schema::hasTable('accounts') || !Schema::hasTable('transactions')) {
+                return ['assets' => 0, 'liabilities' => 0, 'equity' => 0, 'retained' => 0];
+            }
+            $txnTotals = Transaction::query()
+                ->selectRaw('account_id, SUM(debit) as td, SUM(credit) as tc')
+                ->where('transaction_date', '<=', $reportDate)
+                ->tap(fn ($q) => $this->applyTransactionScope($q, $request))
+                ->groupBy('account_id')->get()->keyBy('account_id');
+
+            $accounts = Account::query()
+                ->tap(fn ($q) => $this->applyAccountScope($q, $request))->get()
+                ->transform(function ($a) use ($txnTotals) {
+                    $t = $txnTotals->get($a->id);
+                    $type    = $this->normalizeAccountType($a->type ?? null);
+                    $isDebit = in_array($type, ['asset', 'expense'], true);
+                    $dr = (float)($t->td ?? 0); $cr = (float)($t->tc ?? 0);
+                    $ob = (float)($a->opening_balance ?? 0);
+                    $a->balance = $isDebit ? ($ob + $dr) - $cr : ($ob + $cr) - $dr;
+                    return $a;
+                });
+
+            $revenue  = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type) === 'revenue')->sum('balance');
+            $expenses = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type) === 'expense')->sum('balance');
+            return [
+                'assets'      => $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type) === 'asset')->sum('balance'),
+                'liabilities' => $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type) === 'liability')->sum('balance'),
+                'equity'      => $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type) === 'equity')->sum('balance') + ($revenue - $expenses),
+                'retained'    => $revenue - $expenses,
+            ];
+        };
+
+        $periodA = $build($dateA);
+        $periodB = $build($dateB);
+
+        $activeBranch = $this->resolveActiveBranch($request);
+        return view('Reports.Reports.balance-sheet-comparison', compact('dateA', 'dateB', 'periodA', 'periodB', 'activeBranch'));
+    }
+
     /**
      * Calculate retained earnings
      */

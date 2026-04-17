@@ -1,3 +1,4 @@
+Note: The tool simplified the command to `cat > "/mnt/c/Users/victor/Desktop/smat-book/resources/views/Reports/hub.blade.php" << 'BLADE_EOF'
 @extends('layout.mainlayout')
 
 @section('content')
@@ -145,7 +146,7 @@
                 <div class="rh-sec-head" onclick="toggleSection(this)">
                     <span class="rh-sec-icon pal-blue"><i class="fas fa-tachometer-alt"></i></span>
                     <span class="rh-sec-title">Business Overview</span>
-                    <span class="rh-sec-count">5 reports</span>
+                    <span class="rh-sec-count">10 reports</span>
                     <i class="fas fa-chevron-down rh-sec-chevron"></i>
                 </div>
                 <div class="rh-col-grid">
@@ -181,6 +182,39 @@
                         <a href="{{ route('reports.expense') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
                     </div>
 
+                    <div class="rl-row" data-section="overview" data-tab="overview" data-id="pl-comparison" data-url="{{ route('reports.profit-loss-comparison') }}" data-keywords="profit loss comparison two periods compare p&l">
+                        <button class="rl-star" data-id="pl-comparison" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('reports.profit-loss-comparison') }}" class="rl-name">P&amp;L Comparison</a>
+                        <span class="rl-badge rl-badge-pro"><i class="fas fa-star" style="font-size:7px;"></i> Pro</span>
+                        <a href="{{ route('reports.profit-loss-comparison') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+
+                    <div class="rl-row" data-section="overview" data-tab="overview" data-id="pl-by-month" data-url="{{ route('reports.profit-loss-by-month') }}" data-keywords="profit loss monthly breakdown month by month 12 months p&l trend">
+                        <button class="rl-star" data-id="pl-by-month" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('reports.profit-loss-by-month') }}" class="rl-name">P&amp;L by Month</a>
+                        <span class="rl-badge rl-badge-pro"><i class="fas fa-star" style="font-size:7px;"></i> Pro</span>
+                        <a href="{{ route('reports.profit-loss-by-month') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+
+                    <div class="rl-row" data-section="overview" data-tab="overview" data-id="pl-detail" data-url="{{ route('reports.profit-loss-detail') }}" data-keywords="profit loss detail line items transactions income expense detailed">
+                        <button class="rl-star" data-id="pl-detail" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('reports.profit-loss-detail') }}" class="rl-name">P&amp;L Detail</a>
+                        <span class="rl-badge rl-badge-pro"><i class="fas fa-star" style="font-size:7px;"></i> Pro</span>
+                        <a href="{{ route('reports.profit-loss-detail') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+
+                    <div class="rl-row" data-section="overview" data-tab="overview" data-id="expense-by-category" data-url="{{ route('reports.expense-by-category') }}" data-keywords="expense category breakdown spending type chart">
+                        <button class="rl-star" data-id="expense-by-category" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('reports.expense-by-category') }}" class="rl-name">Expenses by Category</a>
+                        <a href="{{ route('reports.expense-by-category') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+
+                    <div class="rl-row" data-section="overview" data-tab="overview" data-id="expense-trend" data-url="{{ route('reports.expense-trend') }}" data-keywords="expense trend monthly annual bar chart year">
+                        <button class="rl-star" data-id="expense-trend" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('reports.expense-trend') }}" class="rl-name">Expense Trend</a>
+                        <a href="{{ route('reports.expense-trend') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+
                 </div>
             </div>
 
@@ -189,7 +223,7 @@
                 <div class="rh-sec-head" onclick="toggleSection(this)">
                     <span class="rh-sec-icon pal-amber"><i class="fas fa-user-clock"></i></span>
                     <span class="rh-sec-title">Who Owes You</span>
-                    <span class="rh-sec-count">4 reports</span>
+                    <span class="rh-sec-count">6 reports</span>
                     <i class="fas fa-chevron-down rh-sec-chevron"></i>
                 </div>
                 <div class="rh-col-grid">
@@ -218,6 +252,18 @@
                         <a href="{{ route('reports.sales') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
                     </div>
 
+                    <div class="rl-row" data-section="owes" data-tab="owes" data-id="ar-ageing-detail" data-url="{{ route('reports.ar-ageing-detail') }}" data-keywords="accounts receivable ageing detail bucket 0-30 31-60 61-90 overdue">
+                        <button class="rl-star" data-id="ar-ageing-detail" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('reports.ar-ageing-detail') }}" class="rl-name">AR Ageing Detail</a>
+                        <a href="{{ route('reports.ar-ageing-detail') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+
+                    <div class="rl-row" data-section="owes" data-tab="owes" data-id="open-invoices" data-url="{{ route('reports.open-invoices') }}" data-keywords="open invoices unpaid partial outstanding due customers">
+                        <button class="rl-star" data-id="open-invoices" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('reports.open-invoices') }}" class="rl-name">Open Invoices</a>
+                        <a href="{{ route('reports.open-invoices') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+
                 </div>
             </div>
 
@@ -225,8 +271,8 @@
             <div class="rh-section" data-section="sales">
                 <div class="rh-sec-head" onclick="toggleSection(this)">
                     <span class="rh-sec-icon pal-teal"><i class="fas fa-shopping-bag"></i></span>
-                    <span class="rh-sec-title">Sales ;&amp; Purchases</span>
-                    <span class="rh-sec-count">7 reports</span>
+                    <span class="rh-sec-title">Sales &amp; Purchases</span>
+                    <span class="rh-sec-count">12 reports</span>
                     <i class="fas fa-chevron-down rh-sec-chevron"></i>
                 </div>
                 <div class="rh-col-grid">
@@ -283,6 +329,36 @@
                         <a href="{{ route('reports.tax-purchase') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
                     </div>
 
+                    <div class="rl-row" data-section="sales" data-tab="sales" data-id="sales-by-customer" data-url="{{ route('reports.sales-by-customer') }}" data-keywords="sales by customer revenue per customer breakdown">
+                        <button class="rl-star" data-id="sales-by-customer" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('reports.sales-by-customer') }}" class="rl-name">Sales by Customer</a>
+                        <a href="{{ route('reports.sales-by-customer') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+
+                    <div class="rl-row" data-section="sales" data-tab="sales" data-id="sales-by-product" data-url="{{ route('reports.sales-by-product') }}" data-keywords="sales by product item revenue qty sold breakdown">
+                        <button class="rl-star" data-id="sales-by-product" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('reports.sales-by-product') }}" class="rl-name">Sales by Product</a>
+                        <a href="{{ route('reports.sales-by-product') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+
+                    <div class="rl-row" data-section="sales" data-tab="sales" data-id="sales-summary" data-url="{{ route('reports.sales-summary') }}" data-keywords="sales summary totals kpi overview period status">
+                        <button class="rl-star" data-id="sales-summary" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('reports.sales-summary') }}" class="rl-name">Sales Summary</a>
+                        <a href="{{ route('reports.sales-summary') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+
+                    <div class="rl-row" data-section="sales" data-tab="sales" data-id="purchase-by-supplier" data-url="{{ route('reports.purchase-by-supplier') }}" data-keywords="purchases by supplier vendor breakdown orders">
+                        <button class="rl-star" data-id="purchase-by-supplier" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('reports.purchase-by-supplier') }}" class="rl-name">Purchases by Supplier</a>
+                        <a href="{{ route('reports.purchase-by-supplier') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+
+                    <div class="rl-row" data-section="sales" data-tab="sales" data-id="purchase-summary" data-url="{{ route('reports.purchase-summary') }}" data-keywords="purchase summary total orders average cost kpi">
+                        <button class="rl-star" data-id="purchase-summary" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('reports.purchase-summary') }}" class="rl-name">Purchase Summary</a>
+                        <a href="{{ route('reports.purchase-summary') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+
                 </div>
             </div>
 
@@ -291,7 +367,7 @@
                 <div class="rh-sec-head" onclick="toggleSection(this)">
                     <span class="rh-sec-icon pal-green"><i class="fas fa-boxes"></i></span>
                     <span class="rh-sec-title">Inventory</span>
-                    <span class="rh-sec-count">3 reports</span>
+                    <span class="rh-sec-count">5 reports</span>
                     <i class="fas fa-chevron-down rh-sec-chevron"></i>
                 </div>
                 <div class="rh-col-grid">
@@ -314,6 +390,18 @@
                         <a href="{{ route('pos.reports') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
                     </div>
 
+                    <div class="rl-row" data-section="inventory" data-tab="inventory" data-id="stock-valuation" data-url="{{ route('reports.stock-valuation') }}" data-keywords="stock valuation inventory value cost price total worth">
+                        <button class="rl-star" data-id="stock-valuation" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('reports.stock-valuation') }}" class="rl-name">Stock Valuation</a>
+                        <a href="{{ route('reports.stock-valuation') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+
+                    <div class="rl-row" data-section="inventory" data-tab="inventory" data-id="stock-by-category" data-url="{{ route('reports.stock-by-category') }}" data-keywords="stock by category inventory group product type">
+                        <button class="rl-star" data-id="stock-by-category" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('reports.stock-by-category') }}" class="rl-name">Stock by Category</a>
+                        <a href="{{ route('reports.stock-by-category') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+
                 </div>
             </div>
 
@@ -322,7 +410,7 @@
                 <div class="rh-sec-head" onclick="toggleSection(this)">
                     <span class="rh-sec-icon pal-purple"><i class="fas fa-university"></i></span>
                     <span class="rh-sec-title">Financial Statements</span>
-                    <span class="rh-sec-count">5 reports</span>
+                    <span class="rh-sec-count">8 reports</span>
                     <i class="fas fa-chevron-down rh-sec-chevron"></i>
                 </div>
                 <div class="rh-col-grid">
@@ -338,6 +426,24 @@
                         <button class="rl-star" data-id="bs-financial" title="Favourite"><i class="far fa-star"></i></button>
                         <a href="{{ route('balance-sheet') }}" class="rl-name">Balance Sheet</a>
                         <a href="{{ route('balance-sheet') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+
+                    <div class="rl-row" data-section="financial" data-tab="financial" data-id="bs-summary" data-url="{{ route('balance-sheet-summary') }}" data-keywords="balance sheet summary kpi totals net worth snapshot">
+                        <button class="rl-star" data-id="bs-summary" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('balance-sheet-summary') }}" class="rl-name">Balance Sheet Summary</a>
+                        <a href="{{ route('balance-sheet-summary') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+
+                    <div class="rl-row" data-section="financial" data-tab="financial" data-id="bs-comparison" data-url="{{ route('balance-sheet-comparison') }}" data-keywords="balance sheet comparison two dates period change variance">
+                        <button class="rl-star" data-id="bs-comparison" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('balance-sheet-comparison') }}" class="rl-name">Balance Sheet Comparison</a>
+                        <a href="{{ route('balance-sheet-comparison') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+
+                    <div class="rl-row" data-section="financial" data-tab="financial" data-id="tax-summary" data-url="{{ route('reports.tax-summary') }}" data-keywords="tax summary output input net liability vat gst">
+                        <button class="rl-star" data-id="tax-summary" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('reports.tax-summary') }}" class="rl-name">Tax Summary</a>
+                        <a href="{{ route('reports.tax-summary') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
                     </div>
 
                     <div class="rl-row" data-section="financial" data-tab="financial" data-id="cf-financial" data-url="{{ route('reports.cash-flow') }}" data-keywords="cash flow statement liquidity operating">
@@ -547,3 +653,10 @@
 })();
 </script>
 @endsection
+BLADE_EOF
+echo "Exit: $?"`, and this is the output of running that command instead:
+ParserError: 
+Line |
+   1 |  … or/Desktop/smat-book/resources/views/Reports/hub.blade.php" << 'BLADE …
+     |                                                                 ~
+     | Missing file specification after redirection operator.

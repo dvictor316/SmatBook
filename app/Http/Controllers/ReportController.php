@@ -2737,6 +2737,361 @@ public function destroy($id)
             return $this->renderReportView('tax-sales', compact('taxsales'));
         }
 
+        // ─── SUB-REPORT METHODS ──────────────────────────────────────────────
 
-        
+        /** P&L: Comparison (two periods) */
+        public function profitLossComparison(Request $request)
+        {
+            $fromA = $request->input('from_a') ?: now()->startOfYear()->toDateString();
+            $toA   = $request->input('to_a')   ?: now()->toDateString();
+            $fromB = $request->input('from_b') ?: now()->subYear()->startOfYear()->toDateString();
+            $toB   = $request->input('to_b')   ?: now()->subYear()->toDateString();
+
+            $fetch = function (string $start, string $end) {
+                $dateCol = Schema::hasColumn('sales', 'order_date') ? 'order_date'
+                    : (Schema::hasColumn('sales', 'date') ? 'date' : 'created_at');
+                $income  = (float) $this->scopedTable('sales')->whereBetween($dateCol, [$start.' 00:00:00', $end.' 23:59:59'])->sum('total');
+                $expense = 0.0;
+                if (Schema::hasTable('expenses')) {
+                    $expense = (float) $this->scopedTable('expenses')->whereBetween('created_at', [$start.' 00:00:00', $end.' 23:59:59'])->sum('amount');
+                }
+                return ['income' => $income, 'expense' => $expense, 'net' => $income - $expense];
+            };
+
+            $periodA = $fetch($fromA, $toA);
+            $periodB = $fetch($fromB, $toB);
+
+            return view('Reports.Reports.profit-loss-comparison', compact('periodA', 'periodB', 'fromA', 'toA', 'fromB', 'toB'));
+        }
+
+        /** P&L: Monthly Breakdown */
+        public function profitLossByMonth(Request $request)
+        {
+            $year = (int) ($request->input('year') ?: now()->year);
+            $dateCol = Schema::hasColumn('sales', 'order_date') ? 'order_date'
+                : (Schema::hasColumn('sales', 'date') ? 'date' : 'created_at');
+
+            $months = [];
+            for ($m = 1; $m <= 12; $m++) {
+                $start = sprintf('%04d-%02d-01 00:00:00', $year, $m);
+                $end   = sprintf('%04d-%02d-%02d 23:59:59', $year, $m, cal_days_in_month(CAL_GREGORIAN, $m, $year));
+                $income  = (float) $this->scopedTable('sales')->whereBetween($dateCol, [$start, $end])->sum('total');
+                $expense = 0.0;
+                if (Schema::hasTable('expenses')) {
+                    $expense = (float) $this->scopedTable('expenses')->whereBetween('created_at', [$start, $end])->sum('amount');
+                }
+                $months[$m] = ['income' => $income, 'expense' => $expense, 'net' => $income - $expense];
+            }
+
+            return view('Reports.Reports.profit-loss-by-month', compact('months', 'year'));
+        }
+
+        /** P&L: Detail (line-by-line transactions) */
+        public function profitLossDetail(Request $request)
+        {
+            $from = $request->input('from_date') ?: now()->startOfMonth()->toDateString();
+            $to   = $request->input('to_date')   ?: now()->toDateString();
+            $dateCol = Schema::hasColumn('sales', 'order_date') ? 'order_date'
+                : (Schema::hasColumn('sales', 'date') ? 'date' : 'created_at');
+
+            $salesQuery = $this->scopedTable('sales')
+                ->select(DB::raw("COALESCE(customer_name,'Unknown') as party"), DB::raw("total as amount"), DB::raw("'{$dateCol}' as date_col"), DB::raw($dateCol.' as txn_date'), DB::raw("'Income' as stream"), DB::raw("invoice_no as reference"))
+                ->whereBetween($dateCol, [$from.' 00:00:00', $to.' 23:59:59']);
+            $this->applySalesScope($salesQuery, 'sales');
+
+            $expenseRows = collect();
+            if (Schema::hasTable('expenses')) {
+                $expenseRows = $this->scopedTable('expenses')
+                    ->select(DB::raw("COALESCE(company_name,'N/A') as party"), DB::raw("amount"), DB::raw("created_at as txn_date"), DB::raw("'Expense' as stream"), DB::raw("COALESCE(reference,'—') as reference"))
+                    ->whereBetween('created_at', [$from.' 00:00:00', $to.' 23:59:59'])->get();
+            }
+
+            $salesRows   = $salesQuery->orderByDesc($dateCol)->get();
+            $totalIncome  = (float) $salesRows->sum('amount');
+            $totalExpense = (float) $expenseRows->sum('amount');
+            $netProfit    = $totalIncome - $totalExpense;
+
+            return view('Reports.Reports.profit-loss-detail', compact('salesRows', 'expenseRows', 'totalIncome', 'totalExpense', 'netProfit', 'from', 'to'));
+        }
+
+        /** AR: Ageing Detail (per invoice with bucket) */
+        public function accountsReceivableAgeingDetail(Request $request)
+        {
+            $asOf = $request->input('as_of') ?: now()->toDateString();
+            $dateCol = Schema::hasColumn('sales', 'order_date') ? 'order_date'
+                : (Schema::hasColumn('sales', 'date') ? 'date' : 'created_at');
+
+            $sales = $this->scopedTable('sales')
+                ->select('id', 'invoice_no', 'customer_name', 'total', 'amount_paid', 'balance', 'payment_status', DB::raw($dateCol.' as sale_date'))
+                ->where(function ($q) { $q->where('payment_status', '!=', 'paid')->orWhereNull('payment_status'); })
+                ->where($dateCol, '<=', $asOf.' 23:59:59')
+                ->orderByDesc($dateCol)
+                ->get();
+            $this->applySalesScope($this->scopedTable('sales'), 'sales');
+
+            $rows = $sales->map(function ($sale) use ($asOf) {
+                $balance = max(0, (float)($sale->balance ?? ($sale->total - ($sale->amount_paid ?? 0))));
+                $ageDays = (int) \Carbon\Carbon::parse($sale->sale_date)->diffInDays(\Carbon\Carbon::parse($asOf));
+                $bucket  = $ageDays <= 30 ? '0–30' : ($ageDays <= 60 ? '31–60' : ($ageDays <= 90 ? '61–90' : '90+'));
+                return (object) ['invoice_no' => $sale->invoice_no, 'customer' => $sale->customer_name ?? 'Walk-in', 'sale_date' => $sale->sale_date, 'total' => (float)$sale->total, 'paid' => (float)($sale->amount_paid ?? 0), 'balance' => $balance, 'age_days' => $ageDays, 'bucket' => $bucket];
+            });
+
+            $buckets = ['0–30' => 0.0, '31–60' => 0.0, '61–90' => 0.0, '90+' => 0.0];
+            foreach ($rows as $r) { $buckets[$r->bucket] += $r->balance; }
+            $totalDue = (float) $rows->sum('balance');
+
+            return view('Reports.Reports.accounts-receivable-ageing-detail', compact('rows', 'buckets', 'totalDue', 'asOf'));
+        }
+
+        /** Open Invoices Report */
+        public function openInvoicesReport(Request $request)
+        {
+            $from = $request->input('from_date') ?: now()->startOfMonth()->toDateString();
+            $to   = $request->input('to_date')   ?: now()->toDateString();
+            $dateCol = Schema::hasColumn('sales', 'order_date') ? 'order_date'
+                : (Schema::hasColumn('sales', 'date') ? 'date' : 'created_at');
+
+            $query = $this->scopedTable('sales')
+                ->select('id', 'invoice_no', 'customer_name', 'total', 'amount_paid', 'balance', 'payment_status', DB::raw($dateCol.' as sale_date'))
+                ->whereIn('payment_status', ['unpaid', 'partial', null])
+                ->whereBetween($dateCol, [$from.' 00:00:00', $to.' 23:59:59']);
+            $this->applySalesScope($query, 'sales');
+
+            $invoices   = $query->orderByDesc($dateCol)->paginate(25);
+            $totalOpen  = (float) (clone $query)->sum('balance') ?: (float) (clone $query)->selectRaw('SUM(total - COALESCE(amount_paid,0))')->value(DB::raw('SUM(total - COALESCE(amount_paid,0))'));
+            $totalCount = (clone $query)->count();
+
+            return view('Reports.Reports.open-invoices-report', compact('invoices', 'totalOpen', 'totalCount', 'from', 'to'));
+        }
+
+        /** Sales by Customer */
+        public function salesByCustomer(Request $request)
+        {
+            $from = $request->input('from_date') ?: now()->startOfMonth()->toDateString();
+            $to   = $request->input('to_date')   ?: now()->toDateString();
+            $dateCol = Schema::hasColumn('sales', 'order_date') ? 'order_date'
+                : (Schema::hasColumn('sales', 'date') ? 'date' : 'created_at');
+
+            $query = $this->scopedTable('sales')
+                ->select(DB::raw("COALESCE(customer_name,'Walk-in') as customer"), DB::raw('COUNT(*) as invoice_count'), DB::raw('SUM(total) as total_amount'), DB::raw('SUM(COALESCE(amount_paid,0)) as total_paid'), DB::raw('SUM(total - COALESCE(amount_paid,0)) as total_balance'))
+                ->whereBetween($dateCol, [$from.' 00:00:00', $to.' 23:59:59'])
+                ->groupBy(DB::raw("COALESCE(customer_name,'Walk-in')"))
+                ->orderByDesc(DB::raw('SUM(total)'));
+            $this->applySalesScope($query, 'sales');
+
+            $rows      = $query->get();
+            $grandTotal = (float) $rows->sum('total_amount');
+
+            return view('Reports.Reports.sales-by-customer', compact('rows', 'grandTotal', 'from', 'to'));
+        }
+
+        /** Sales by Product */
+        public function salesByProduct(Request $request)
+        {
+            $from = $request->input('from_date') ?: now()->startOfMonth()->toDateString();
+            $to   = $request->input('to_date')   ?: now()->toDateString();
+            $dateCol = Schema::hasColumn('sales', 'order_date') ? 'order_date'
+                : (Schema::hasColumn('sales', 'date') ? 'date' : 'created_at');
+
+            $rows = collect();
+            if (Schema::hasTable('sale_items') || Schema::hasTable('order_items') || Schema::hasTable('invoice_items')) {
+                $itemsTable = Schema::hasTable('sale_items') ? 'sale_items' : (Schema::hasTable('order_items') ? 'order_items' : 'invoice_items');
+                $salesJoinCol = Schema::hasColumn($itemsTable, 'sale_id') ? 'sale_id' : 'order_id';
+
+                $rows = DB::table($itemsTable)
+                    ->join('sales', "{$itemsTable}.{$salesJoinCol}", '=', 'sales.id')
+                    ->select(DB::raw("COALESCE({$itemsTable}.product_name, {$itemsTable}.name, 'Unknown') as product"), DB::raw("SUM({$itemsTable}.quantity) as qty_sold"), DB::raw("SUM({$itemsTable}.quantity * COALESCE({$itemsTable}.price, {$itemsTable}.unit_price, 0)) as revenue"))
+                    ->whereBetween("sales.{$dateCol}", [$from.' 00:00:00', $to.' 23:59:59'])
+                    ->groupBy(DB::raw("COALESCE({$itemsTable}.product_name, {$itemsTable}.name, 'Unknown')"))
+                    ->orderByDesc(DB::raw("SUM({$itemsTable}.quantity * COALESCE({$itemsTable}.price, {$itemsTable}.unit_price, 0))"))
+                    ->get();
+            }
+            $grandTotal = (float) $rows->sum('revenue');
+
+            return view('Reports.Reports.sales-by-product', compact('rows', 'grandTotal', 'from', 'to'));
+        }
+
+        /** Sales Summary */
+        public function salesSummary(Request $request)
+        {
+            $from = $request->input('from_date') ?: now()->startOfMonth()->toDateString();
+            $to   = $request->input('to_date')   ?: now()->toDateString();
+            $dateCol = Schema::hasColumn('sales', 'order_date') ? 'order_date'
+                : (Schema::hasColumn('sales', 'date') ? 'date' : 'created_at');
+
+            $query = $this->scopedTable('sales')->whereBetween($dateCol, [$from.' 00:00:00', $to.' 23:59:59']);
+            $this->applySalesScope($query, 'sales');
+
+            $totalSales   = (float) (clone $query)->sum('total');
+            $totalPaid    = (float) (clone $query)->sum(DB::raw('COALESCE(amount_paid,0)'));
+            $totalBalance = max(0, $totalSales - $totalPaid);
+            $totalCount   = (int)   (clone $query)->count();
+            $avgSale      = $totalCount > 0 ? $totalSales / $totalCount : 0;
+
+            $byStatus = (clone $query)->select('payment_status', DB::raw('COUNT(*) as cnt'), DB::raw('SUM(total) as amt'))->groupBy('payment_status')->get();
+
+            return view('Reports.Reports.sales-summary', compact('totalSales', 'totalPaid', 'totalBalance', 'totalCount', 'avgSale', 'byStatus', 'from', 'to'));
+        }
+
+        /** Purchase by Supplier */
+        public function purchaseBySupplier(Request $request)
+        {
+            $from = $request->input('from_date') ?: now()->startOfMonth()->toDateString();
+            $to   = $request->input('to_date')   ?: now()->toDateString();
+
+            $rows = collect();
+            if (Schema::hasTable('purchases')) {
+                $dateCol = Schema::hasColumn('purchases', 'purchase_date') ? 'purchase_date'
+                    : (Schema::hasColumn('purchases', 'date') ? 'date' : 'created_at');
+                $amtCol  = Schema::hasColumn('purchases', 'total_amount') ? 'total_amount'
+                    : (Schema::hasColumn('purchases', 'amount') ? 'amount' : null);
+                if ($amtCol) {
+                    $query = DB::table('purchases');
+                    if (Schema::hasTable('suppliers') && Schema::hasColumn('purchases', 'supplier_id')) {
+                        $sNameCol = Schema::hasColumn('suppliers', 'name') ? 'name' : (Schema::hasColumn('suppliers', 'supplier_name') ? 'supplier_name' : 'company_name');
+                        $query->leftJoin('suppliers', 'purchases.supplier_id', '=', 'suppliers.id')
+                              ->select(DB::raw("COALESCE(suppliers.{$sNameCol},'Unknown') as supplier"), DB::raw("COUNT(*) as order_count"), DB::raw("SUM(purchases.{$amtCol}) as total_amount"))
+                              ->groupBy(DB::raw("COALESCE(suppliers.{$sNameCol},'Unknown')"));
+                    } else {
+                        $query->select(DB::raw("'Unknown' as supplier"), DB::raw("COUNT(*) as order_count"), DB::raw("SUM({$amtCol}) as total_amount"));
+                    }
+                    $this->applyTenantScope($query, 'purchases');
+                    $rows = $query->whereBetween("purchases.{$dateCol}", [$from, $to])->orderByDesc(DB::raw("SUM(purchases.{$amtCol})"))->get();
+                }
+            }
+            $grandTotal = (float) $rows->sum('total_amount');
+
+            return view('Reports.Reports.purchase-by-supplier', compact('rows', 'grandTotal', 'from', 'to'));
+        }
+
+        /** Purchase Summary */
+        public function purchaseSummary(Request $request)
+        {
+            $from = $request->input('from_date') ?: now()->startOfMonth()->toDateString();
+            $to   = $request->input('to_date')   ?: now()->toDateString();
+
+            $totalAmount = 0.0; $totalCount = 0;
+            if (Schema::hasTable('purchases')) {
+                $dateCol = Schema::hasColumn('purchases', 'purchase_date') ? 'purchase_date'
+                    : (Schema::hasColumn('purchases', 'date') ? 'date' : 'created_at');
+                $amtCol  = Schema::hasColumn('purchases', 'total_amount') ? 'total_amount'
+                    : (Schema::hasColumn('purchases', 'amount') ? 'amount' : null);
+                if ($amtCol) {
+                    $query = $this->applyTenantScope(DB::table('purchases'), 'purchases')->whereBetween($dateCol, [$from, $to]);
+                    $totalAmount = (float) $query->sum($amtCol);
+                    $totalCount  = (int)   $query->count();
+                }
+            }
+            $avgPurchase = $totalCount > 0 ? $totalAmount / $totalCount : 0;
+
+            return view('Reports.Reports.purchase-summary', compact('totalAmount', 'totalCount', 'avgPurchase', 'from', 'to'));
+        }
+
+        /** Expense by Category */
+        public function expenseByCategory(Request $request)
+        {
+            $from = $request->input('from_date') ?: now()->startOfMonth()->toDateString();
+            $to   = $request->input('to_date')   ?: now()->toDateString();
+
+            $rows = $this->scopedTable('expenses')
+                ->select(DB::raw("COALESCE(category,'General') as category"), DB::raw('COUNT(*) as cnt'), DB::raw('SUM(amount) as total'))
+                ->whereBetween('created_at', [$from.' 00:00:00', $to.' 23:59:59'])
+                ->groupBy(DB::raw("COALESCE(category,'General')"))
+                ->orderByDesc(DB::raw('SUM(amount)'))
+                ->get();
+
+            $grandTotal = (float) $rows->sum('total');
+
+            return view('Reports.Reports.expense-by-category', compact('rows', 'grandTotal', 'from', 'to'));
+        }
+
+        /** Expense Trend (monthly) */
+        public function expenseTrend(Request $request)
+        {
+            $year = (int) ($request->input('year') ?: now()->year);
+            $months = [];
+            for ($m = 1; $m <= 12; $m++) {
+                $start = sprintf('%04d-%02d-01 00:00:00', $year, $m);
+                $end   = sprintf('%04d-%02d-%02d 23:59:59', $year, $m, cal_days_in_month(CAL_GREGORIAN, $m, $year));
+                $total = Schema::hasTable('expenses')
+                    ? (float) $this->scopedTable('expenses')->whereBetween('created_at', [$start, $end])->sum('amount')
+                    : 0.0;
+                $months[$m] = $total;
+            }
+            $grandTotal = array_sum($months);
+
+            return view('Reports.Reports.expense-trend', compact('months', 'year', 'grandTotal'));
+        }
+
+        /** Stock Valuation */
+        public function stockValuation(Request $request)
+        {
+            $rows = collect();
+            if (Schema::hasTable('products')) {
+                $qtyCol  = Schema::hasColumn('products', 'quantity') ? 'quantity' : (Schema::hasColumn('products', 'stock_quantity') ? 'stock_quantity' : null);
+                $costCol = Schema::hasColumn('products', 'purchase_price') ? 'purchase_price' : (Schema::hasColumn('products', 'cost_price') ? 'cost_price' : 'price');
+                if ($qtyCol) {
+                    $query = DB::table('products')
+                        ->select('name', 'sku', DB::raw("COALESCE(category,'Uncategorized') as category"), DB::raw("{$qtyCol} as qty"), DB::raw("{$costCol} as unit_cost"), DB::raw("{$qtyCol} * {$costCol} as total_value"))
+                        ->where($qtyCol, '>', 0)
+                        ->orderByDesc(DB::raw("{$qtyCol} * {$costCol}"));
+                    $this->applyTenantScope($query, 'products');
+                    $rows = $query->get();
+                }
+            }
+            $totalValue = (float) $rows->sum('total_value');
+            $totalQty   = (int)   $rows->sum('qty');
+
+            return view('Reports.Reports.stock-valuation', compact('rows', 'totalValue', 'totalQty'));
+        }
+
+        /** Stock by Category */
+        public function stockByCategory(Request $request)
+        {
+            $rows = collect();
+            if (Schema::hasTable('products')) {
+                $qtyCol  = Schema::hasColumn('products', 'quantity') ? 'quantity' : (Schema::hasColumn('products', 'stock_quantity') ? 'stock_quantity' : null);
+                $costCol = Schema::hasColumn('products', 'purchase_price') ? 'purchase_price' : (Schema::hasColumn('products', 'cost_price') ? 'cost_price' : 'price');
+                if ($qtyCol) {
+                    $query = DB::table('products')
+                        ->select(DB::raw("COALESCE(category,'Uncategorized') as category"), DB::raw("COUNT(*) as product_count"), DB::raw("SUM({$qtyCol}) as total_qty"), DB::raw("SUM({$qtyCol} * {$costCol}) as total_value"))
+                        ->groupBy(DB::raw("COALESCE(category,'Uncategorized')"))
+                        ->orderByDesc(DB::raw("SUM({$qtyCol} * {$costCol})"));
+                    $this->applyTenantScope($query, 'products');
+                    $rows = $query->get();
+                }
+            }
+            $grandValue = (float) $rows->sum('total_value');
+
+            return view('Reports.Reports.stock-by-category', compact('rows', 'grandValue'));
+        }
+
+        /** Tax Summary (combined) */
+        public function taxSummary(Request $request)
+        {
+            $from = $request->input('from_date') ?: now()->startOfMonth()->toDateString();
+            $to   = $request->input('to_date')   ?: now()->toDateString();
+
+            $salesDateExpression = 'created_at';
+            if (Schema::hasTable('sales')) {
+                $salesDateExpression = Schema::hasColumn('sales', 'order_date') ? 'order_date'
+                    : (Schema::hasColumn('sales', 'date') ? 'date' : 'created_at');
+            }
+
+            $taxOnSales = 0.0; $taxOnPurchases = 0.0;
+            if (Schema::hasTable('sales') && Schema::hasColumn('sales', 'tax')) {
+                $q = $this->scopedTable('sales')->whereBetween($salesDateExpression, [$from, $to]);
+                $this->applySalesScope($q, 'sales');
+                $taxOnSales = (float) $q->sum('tax');
+            }
+            if (Schema::hasTable('purchases') && Schema::hasColumn('purchases', 'tax')) {
+                $dateC = Schema::hasColumn('purchases', 'purchase_date') ? 'purchase_date' : 'created_at';
+                $q = $this->applyTenantScope(DB::table('purchases'), 'purchases')->whereBetween($dateC, [$from, $to]);
+                $taxOnPurchases = (float) $q->sum('tax');
+            }
+            $netTaxLiability = $taxOnSales - $taxOnPurchases;
+
+            return view('Reports.Reports.tax-summary', compact('taxOnSales', 'taxOnPurchases', 'netTaxLiability', 'from', 'to'));
+        }
+
     }
