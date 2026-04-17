@@ -12,6 +12,8 @@
 .ebc-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;}
 .ebc-bar-wrap{background:#f1f5f9;border-radius:4px;height:10px;overflow:hidden;min-width:60px;}
 .ebc-bar-fill{height:10px;border-radius:4px;}
+@media(max-width:768px){.content-page-header{flex-direction:column;align-items:flex-start;gap:.5rem;}.list-btn{width:100%;}.list-btn .filter-list{flex-wrap:wrap;}}
+@media(max-width:576px){.ebc-kpi{min-width:100%;}.ebc-table thead th,.ebc-table tbody td{font-size:.65rem;}}
 @media print{.no-print{display:none!important;}}
 </style>
 

@@ -115,7 +115,26 @@
     .btn-delete { background: #fff; color: #ef4444; border: 1px solid #fee2e2; }
     .btn-delete:hover { background: #fef2f2; }
 
+    /* Tier accent colours */
+    .plan-card.tier-basic  { border-top: 4px solid #3b82f6; }
+    .plan-card.tier-pro    { border-top: 4px solid #8b5cf6; position: relative; }
+    .plan-card.tier-enterprise { border-top: 4px solid #f59e0b; }
+    .plan-card.tier-pro .plan-header { background: linear-gradient(135deg,#faf5ff 0,#ede9fe 100%); }
+    .plan-card.tier-pro .plan-price  { color: #6d28d9; }
+
+    /* Most Popular ribbon */
+    .popular-ribbon {
+        position: absolute; top: -1px; right: 18px;
+        background: #8b5cf6; color: #fff;
+        font-size: 9px; font-weight: 800; text-transform: uppercase;
+        letter-spacing: .08em; padding: 4px 10px;
+        border-radius: 0 0 8px 8px;
+        box-shadow: 0 4px 10px rgba(139,92,246,.35);
+    }
+
     @media (max-width: 991.98px) { .page-wrapper { margin-left: 0 !important; } }
+    @media (max-width: 768px)    { .inst-header-bar { flex-direction: column; align-items: flex-start; gap: .75rem; } }
+    @media (max-width: 576px)    { .content-container { padding: 16px; } .plan-header { padding: 20px; } .feature-list { padding: 20px; } .card-actions { padding: 14px 20px; } }
 </style>
 
 <div class="page-wrapper">
@@ -163,9 +182,19 @@
         {{-- Forced 3-Column Grid --}}
         <div class="pricing-grid">
             @forelse ($plans as $plan)
+                @php
+                    $slug = strtolower($plan->name ?? '');
+                    $tierClass = str_contains($slug,'enterprise') ? 'tier-enterprise'
+                               : (str_contains($slug,'pro')        ? 'tier-pro'
+                               : 'tier-basic');
+                    $isPopular = str_contains($slug,'pro');
+                @endphp
                 <div class="plan-item">
-                    <div class="plan-card">
+                    <div class="plan-card {{ $tierClass }}">
                         <div class="plan-header">
+                            @if($isPopular)
+                                <div class="popular-ribbon">Most Popular</div>
+                            @endif
                             <span class="plan-badge {{ $plan->billing_cycle == 'yearly' ? 'badge-yearly' : 'badge-monthly' }}">
                                 {{ strtoupper($plan->billing_cycle ?? 'Monthly') }}
                             </span>
@@ -184,7 +213,43 @@
                             @forelse ($featuresList as $feature)
                                 <li><i class="fas fa-check-circle"></i> {{ $feature }}</li>
                             @empty
-                                <li class="text-muted italic">Standard infrastructure access.</li>
+                                @php
+                                    $planSlug = strtolower($plan->name ?? '');
+                                    if (str_contains($planSlug, 'enterprise')) {
+                                        $defaultFeatures = [
+                                            'Unlimited Users',
+                                            'Everything in Pro',
+                                            'General Ledger & Trial Balance',
+                                            'Advanced Tax & Compliance Reports',
+                                            'Custom Report Builder',
+                                            'Full API Access',
+                                            'Dedicated Account Manager',
+                                            '24/7 Priority Support',
+                                        ];
+                                    } elseif (str_contains($planSlug, 'pro')) {
+                                        $defaultFeatures = [
+                                            'Up to 15 Users',
+                                            'Everything in Basic',
+                                            'Full Profit & Loss Reports',
+                                            'Balance Sheet & Cash Flow',
+                                            'Payroll Management',
+                                            'Multi-branch Support',
+                                            'Priority Email & Chat Support',
+                                        ];
+                                    } else {
+                                        $defaultFeatures = [
+                                            'Up to 3 Users',
+                                            'Invoicing & Billing',
+                                            'Basic Inventory Management',
+                                            'Customer & Supplier Records',
+                                            'Sales & Purchase Reports',
+                                            'Email Support',
+                                        ];
+                                    }
+                                @endphp
+                                @foreach ($defaultFeatures as $f)
+                                    <li><i class="fas fa-check-circle"></i> {{ $f }}</li>
+                                @endforeach
                             @endforelse
                         </ul>
 

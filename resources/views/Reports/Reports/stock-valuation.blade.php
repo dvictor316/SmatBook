@@ -11,6 +11,8 @@
 .sv-kpi{flex:1;min-width:130px;background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:.75rem 1rem;text-align:center;}
 .sv-kpi-label{font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;margin-bottom:3px;}
 .sv-kpi-val{font-size:.9rem;font-weight:800;font-variant-numeric:tabular-nums;}
+@media(max-width:768px){.content-page-header{flex-direction:column;align-items:flex-start;gap:.5rem;}.list-btn{width:100%;}.list-btn .filter-list{flex-wrap:wrap;}}
+@media(max-width:576px){.sv-kpi{min-width:100%;}.sv-table thead th,.sv-table tbody td{font-size:.65rem;}}
 @media print{.no-print{display:none!important;}}
 </style>
 

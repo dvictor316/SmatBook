@@ -31,6 +31,8 @@
 .kpi-card.blue .kpi-value{color:#2563eb;}
 .kpi-card.teal .kpi-value{color:#0d9488;}
 .kpi-card.green .kpi-value{color:#16a34a;}
+@media(max-width:768px){.kpi-grid{grid-template-columns:1fr 1fr;}.content-page-header{flex-direction:column;align-items:flex-start;gap:.5rem;}.list-btn{width:100%;}.list-btn .filter-list{flex-wrap:wrap;}}
+@media(max-width:576px){.kpi-grid{grid-template-columns:1fr;}.bss-wrap{padding:0;}.bss-card{padding:1rem;border-radius:12px;}}
 @media print{.no-print{display:none!important;}.page-wrapper{margin:0;padding:0;background:#fff!important;}.bss-card{box-shadow:none!important;border:1px solid #ccc!important;}}
 </style>
 

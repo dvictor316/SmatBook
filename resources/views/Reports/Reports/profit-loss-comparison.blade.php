@@ -24,6 +24,8 @@
 .plc-up{color:#16a34a;font-size:.72rem;font-weight:700;}
 .plc-dn{color:#dc2626;font-size:.72rem;font-weight:700;}
 .plc-flat{color:#94a3b8;font-size:.72rem;}
+@media(max-width:768px){.content-page-header{flex-direction:column;align-items:flex-start;gap:.5rem;}.list-btn{width:100%;}.list-btn .filter-list{flex-wrap:wrap;}}
+@media(max-width:576px){.plc-card{padding:1rem;border-radius:12px;}}
 @media print{.no-print{display:none!important;}}
 </style>
 

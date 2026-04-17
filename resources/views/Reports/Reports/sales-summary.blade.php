@@ -14,6 +14,8 @@
 .ss-status-item{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:.5rem .9rem;display:flex;flex-direction:column;align-items:center;min-width:90px;}
 .ss-status-label{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#64748b;}
 .ss-status-val{font-size:.82rem;font-weight:800;}
+@media(max-width:768px){.content-page-header{flex-direction:column;align-items:flex-start;gap:.5rem;}.list-btn{width:100%;}.list-btn .filter-list{flex-wrap:wrap;}}
+@media(max-width:576px){.ss-kpi{min-width:100%;}.ss-table thead th,.ss-table tbody td{font-size:.65rem;}}
 @media print{.no-print{display:none!important;}}
 </style>
 

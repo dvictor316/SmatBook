@@ -22,6 +22,8 @@
 .plm-table tr.total-row td{font-weight:800;background:#f0f7ff;}
 .neg{color:#dc2626;}
 .pos{color:#16a34a;}
+@media(max-width:768px){.plm-card{padding:1rem;}.content-page-header{flex-direction:column;align-items:flex-start;gap:.5rem;}.list-btn{width:100%;}.list-btn .filter-list{flex-wrap:wrap;}}
+@media(max-width:576px){.plm-company{font-size:.95rem;}.plm-card{border-radius:12px;}}
 @media print{.no-print{display:none!important;}.plm-card{box-shadow:none!important;border:1px solid #ccc!important;}}
 </style>
 
@@ -41,7 +43,7 @@
 
     <div class="card shadow-none border mb-3 no-print">
         <div class="card-body p-2">
-            <form action="{{ url()->current() }}" method="GET" class="d-flex align-items-end gap-3">
+            <form action="{{ url()->current() }}" method="GET" class="d-flex align-items-end gap-3 flex-wrap">
                 <div>
                     <label class="form-label small fw-bold mb-1">Year</label>
                     <select name="year" class="form-control form-control-sm" style="width:120px;">

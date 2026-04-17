@@ -9,6 +9,8 @@
 .ps-kpi{flex:1;min-width:140px;background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:.8rem 1rem;text-align:center;}
 .ps-kpi-label{font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;margin-bottom:3px;}
 .ps-kpi-val{font-size:.9rem;font-weight:800;font-variant-numeric:tabular-nums;}
+@media(max-width:768px){.content-page-header{flex-direction:column;align-items:flex-start;gap:.5rem;}.list-btn{width:100%;}.list-btn .filter-list{flex-wrap:wrap;}}
+@media(max-width:576px){.ps-kpi{min-width:100%;}.ps-table thead th,.ps-table tbody td{font-size:.65rem;}}
 @media print{.no-print{display:none!important;}}
 </style>
 

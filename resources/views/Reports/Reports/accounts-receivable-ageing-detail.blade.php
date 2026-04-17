@@ -13,6 +13,7 @@
 .ar-bucket-val{font-size:.88rem;font-weight:800;font-variant-numeric:tabular-nums;}
 .ar-table thead th{font-size:.67rem;text-transform:uppercase;letter-spacing:.07em;background:#f8fafc;}
 .ar-table tbody td{font-size:.79rem;vertical-align:middle;}
+@media(max-width:768px){.content-page-header{flex-direction:column;align-items:flex-start;gap:.5rem;}.list-btn{width:100%;}.list-btn .filter-list{flex-wrap:wrap;}}
 @media print{.no-print{display:none!important;}}
 </style>
 

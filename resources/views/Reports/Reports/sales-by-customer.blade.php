@@ -9,6 +9,8 @@
 .sbc-table thead th{font-size:.67rem;text-transform:uppercase;letter-spacing:.07em;background:#f8fafc;}
 .sbc-table tbody td{font-size:.8rem;vertical-align:middle;}
 .sbc-bar{height:8px;border-radius:4px;background:#3b82f6;min-width:4px;transition:width .4s ease;}
+@media(max-width:768px){.content-page-header{flex-direction:column;align-items:flex-start;gap:.5rem;}.list-btn{width:100%;}.list-btn .filter-list{flex-wrap:wrap;}}
+@media(max-width:576px){.sbc-table thead th,.sbc-table tbody td{font-size:.65rem;}}
 @media print{.no-print{display:none!important;}}
 </style>
 

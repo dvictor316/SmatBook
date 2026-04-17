@@ -23,6 +23,8 @@
 .bsc-tag-dn{color:#dc2626;font-size:.72rem;font-weight:700;}
 .bsc-tag-flat{color:#94a3b8;font-size:.72rem;}
 .bsc-amount{font-variant-numeric:tabular-nums;}
+@media(max-width:768px){.bsc-card{max-width:100%;padding:1rem;}.content-page-header{flex-direction:column;align-items:flex-start;gap:.5rem;}.list-btn{width:100%;}.list-btn .filter-list{flex-wrap:wrap;}}
+@media(max-width:576px){.bsc-card{border-radius:12px;padding:.75rem;}.bsc-table th,.bsc-table td{font-size:.7rem;padding:.3rem .4rem;}}
 @media print{.no-print{display:none!important;}.page-wrapper{margin:0;padding:0;background:#fff!important;}}
 </style>
 
