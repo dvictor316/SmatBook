@@ -46,46 +46,47 @@
 .perm-panel.active{display:block;}
 .perm-search-active .perm-panel{display:block!important;}
 .perm-search-active .perm-tab-bar{display:none!important;}
-.perm-body{padding:16px 20px;background:#f1f4f9;}
+.perm-body{padding:14px 16px;background:#f1f4f9;}
 
-/* ─── Module section (like rh-section) ──────────────────────── */
-.perm-section{margin-bottom:8px;border:1px solid #e2e8f0;border-radius:8px;background:#fff;overflow:hidden;transition:box-shadow .12s;}
-.perm-section:hover{box-shadow:0 2px 10px rgba(0,0,0,.07);}
+/* ─── Module section — left/right Prokip-style layout ───────── */
+.perm-section{display:flex;flex-direction:row;align-items:stretch;background:#fff;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:6px;overflow:hidden;transition:box-shadow .12s;}
+.perm-section:hover{box-shadow:0 2px 8px rgba(0,0,0,.07);}
 .perm-section.perm-section--granted{border-color:#bbf7d0;}
 .perm-section.perm-sec--hidden{display:none!important;}
 .perm-section.collapsed .perm-col-grid{display:none!important;}
 
-/* Section header (like rh-sec-head) */
-.perm-sec-head{display:flex;align-items:center;gap:10px;padding:11px 16px;cursor:pointer;user-select:none;border-bottom:1px solid #f1f4f9;background:#fff;transition:background .12s;}
-.perm-sec-head:hover{background:#f8fafd;}
-.perm-section--granted .perm-sec-head{border-bottom-color:#dcfce7;}
-.perm-sec-icon{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;}
-.perm-sec-title{font-size:13px;font-weight:800;color:#0f172a;flex:1;}
+/* Left panel — icon, title, count, Select All */
+.perm-sec-head{width:215px;min-width:215px;padding:14px 14px 12px 14px;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:8px;border-right:1px solid #e8ecf2;border-bottom:none;background:#fafbfd;cursor:pointer;user-select:none;transition:background .12s;position:relative;}
+.perm-sec-head:hover{background:#f3f6fb;}
+.perm-section--granted .perm-sec-head{background:#f0fdf4;border-right-color:#bbf7d0;}
+.perm-sec-icon-row{display:flex;align-items:center;gap:8px;width:100%;}
+.perm-sec-icon{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+.perm-sec-title{font-size:13px;font-weight:800;color:#0f172a;line-height:1.3;flex:1;}
 .perm-section--granted .perm-sec-title{color:#15803d;}
-.perm-sec-count{font-size:11px;color:#94a3b8;font-weight:600;margin-right:4px;}
+.perm-sec-count{font-size:11px;color:#94a3b8;font-weight:600;}
 .perm-section--granted .perm-sec-count{color:#16a34a;font-weight:700;}
-.perm-select-all-wrap{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:#64748b;cursor:pointer;user-select:none;padding:3px 8px;border:1px solid #e2e8f0;border-radius:4px;transition:all .12s;}
+.perm-select-all-wrap{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#475569;cursor:pointer;user-select:none;padding:5px 10px;border:1px solid #d0d5de;border-radius:5px;background:#fff;transition:all .12s;width:100%;box-sizing:border-box;}
 .perm-select-all-wrap:hover{border-color:#93c5fd;color:#2563eb;background:#eff6ff;}
-.perm-select-all-wrap input{accent-color:#2563eb;cursor:pointer;width:12px;height:12px;margin:0;}
-.perm-sec-chevron{color:#94a3b8;font-size:11px;transition:transform .2s;flex-shrink:0;}
+.perm-select-all-wrap input{accent-color:#2563eb;cursor:pointer;width:13px;height:13px;margin:0;flex-shrink:0;}
+.perm-sec-chevron{position:absolute;top:12px;right:10px;color:#cbd5e1;font-size:10px;transition:transform .2s;}
 .perm-section.collapsed .perm-sec-chevron{transform:rotate(-90deg);}
 
-/* ─── Two-column permission grid (like rh-col-grid) ─────────── */
-.perm-col-grid{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #f0f3f8;}
-@media(max-width:700px){.perm-col-grid{grid-template-columns:1fr;}}
-
-/* Permission item row (like rl-row) */
-.perm-item{display:flex;align-items:center;gap:0;padding:0;border-bottom:1px solid #f0f3f8;min-height:40px;position:relative;cursor:pointer;}
-.perm-col-grid .perm-item:nth-child(odd){border-right:1px solid #f0f3f8;}
-.perm-item-chk{width:36px;height:40px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.perm-item-chk input[type=checkbox],.perm-item-chk input[type=radio]{width:14px;height:14px;accent-color:#2563eb;cursor:pointer;margin:0;}
-.perm-item-label{flex:1;font-size:12.5px;font-weight:500;color:#374151;padding:0 10px 0 0;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+/* Right panel — clean vertical permission list */
+.perm-col-grid{display:block;flex:1;border-top:none;}
+.perm-item{display:flex;align-items:center;padding:0 16px;border-bottom:1px solid #f3f4f8;min-height:43px;cursor:pointer;transition:background .1s;}
+.perm-item:hover{background:#f8f9ff;}
+.perm-item:last-child{border-bottom:none;}
+.perm-item:has(input:checked){background:#f0f5ff;}
+.perm-item-chk{width:36px;height:43px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.perm-item-chk input[type=checkbox],.perm-item-chk input[type=radio]{width:15px;height:15px;accent-color:#2563eb;cursor:pointer;margin:0;}
+.perm-item-label{flex:1;font-size:13px;font-weight:500;color:#374151;padding-right:8px;line-height:1.4;}
 .perm-item:has(input:checked) .perm-item-label{color:#1e40af;font-weight:600;}
 
-/* Sub-heading row (full-width span) */
-.perm-sub-row{grid-column:1/-1;display:flex;align-items:center;padding:4px 12px;background:#f8fafc;border-bottom:1px solid #f0f3f8;}
+/* Sub-heading row */
+.perm-sub-row{display:flex;align-items:center;padding:5px 16px;background:#f8fafc;border-bottom:1px solid #eef0f5;}
 .perm-sub-title{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:#94a3b8;}
-.perm-sep-row{grid-column:1/-1;border:none;border-top:1px dashed #e8edf5;margin:0;}
+.perm-sep-row{border:none;border-top:1px solid #eaecf2;margin:0;display:block;}
+@media(max-width:768px){.perm-section{flex-direction:column;}.perm-sec-head{width:100%;min-width:unset;flex-direction:row;flex-wrap:wrap;border-right:none;border-bottom:1px solid #e8ecf2;}.perm-sec-chevron{position:static;}}
 
 /* ─── Sticky save bar ────────────────────────────────────────── */
 .perm-action-bar{position:sticky;bottom:0;background:#fff;border-top:1px solid #e4e8f0;padding:12px 24px;display:flex;justify-content:flex-end;gap:10px;z-index:50;box-shadow:0 -4px 16px rgba(0,0,0,.06);}
@@ -517,19 +518,21 @@
                                  data-cat="{{ $slug }}">
 
                                 <div class="perm-sec-head" onclick="togglePermSection(this)">
-                                    <span class="perm-sec-icon {{ $palClass }}">
-                                        <i class="fas {{ $mod['icon'] }}"></i>
-                                    </span>
-                                    <span class="perm-sec-title">{{ $mod['group'] }}</span>
+                                    <div class="perm-sec-icon-row">
+                                        <span class="perm-sec-icon {{ $palClass }}">
+                                            <i class="fas {{ $mod['icon'] }}"></i>
+                                        </span>
+                                        <span class="perm-sec-title">{{ $mod['group'] }}</span>
+                                    </div>
                                     <span class="perm-sec-count" id="count-{{ $mod['section'] }}">{{ $granted }}/{{ $total }}</span>
                                     <label class="perm-select-all-wrap" onclick="event.stopPropagation()">
                                         <input type="checkbox"
                                                class="perm-select-all"
                                                data-section="{{ $mod['section'] }}"
                                                {{ $isFull ? 'checked' : '' }}>
-                                        All
+                                        Select All
                                     </label>
-                                    <i class="fas fa-chevron-down perm-sec-chevron"></i>
+                                    <i class="fas fa-chevron-up perm-sec-chevron"></i>
                                 </div>
 
                                 <div class="perm-col-grid">
