@@ -1367,6 +1367,12 @@
             'saas-login', 'saas-register', 'saas-register-initial',
         ]);
     @endphp
+    @php
+        // If tenant is set but branch is missing, try to auto-resolve before blocking content.
+        if ($needsTenantBranch && session('current_tenant_id') && !session('active_branch_id') && auth()->check()) {
+            app(\App\Support\ActiveBranchResolver::class)->ensureSession(auth()->user());
+        }
+    @endphp
     @if ($needsTenantBranch && (!session('current_tenant_id') || !session('active_branch_id')))
         <div class="alert alert-info my-5 text-center" style="font-size:1.2em;">
             <strong>No data available.</strong><br>
