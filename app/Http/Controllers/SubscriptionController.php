@@ -66,6 +66,18 @@ class SubscriptionController extends Controller
         $user = Auth::user();
 
         if (! $user) {
+            // Store plan selection in session so the registration flow picks it up automatically.
+            // Also store url.intended so after login the user lands directly on the upgrade page.
+            $guestPlan  = (string) $request->query('plan', '');
+            $guestCycle = (string) $request->query('cycle', 'monthly');
+            if ($guestPlan !== '') {
+                session([
+                    'selected_plan'  => $guestPlan,
+                    'selected_cycle' => $guestCycle,
+                    'reg_role'       => 'admin',
+                    'url.intended'   => $request->fullUrl(),
+                ]);
+            }
             return redirect()->route('saas-register-initial');
         }
 
