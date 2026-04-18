@@ -2185,9 +2185,12 @@ public function destroy($id)
 
             DB::beginTransaction();
             try {
+                $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+                $userId    = (int) (Auth::id() ?? 0);
+
                 $purchase = DB::table('purchases')->where('id', $request->purchase_id)->first();
-                
-                $returnId = DB::table('purchase_returns')->insertGetId([
+
+                $returnInsert = [
                     'purchase_id'  => $purchase->id,
                     'vendor_id'    => null,
                     'return_no'    => 'RET-' . time(),
@@ -2195,7 +2198,14 @@ public function destroy($id)
                     'reason'       => $request->reason,
                     'total_amount' => 0,
                     'created_at'   => now(),
-                ]);
+                ];
+                if ($companyId > 0 && Schema::hasColumn('purchase_returns', 'company_id')) {
+                    $returnInsert['company_id'] = $companyId;
+                }
+                if ($userId > 0 && Schema::hasColumn('purchase_returns', 'user_id')) {
+                    $returnInsert['user_id'] = $userId;
+                }
+                $returnId = DB::table('purchase_returns')->insertGetId($returnInsert);
 
                 $totalAmount = 0;
                 foreach ($request->items as $productId => $data) {
@@ -2203,13 +2213,20 @@ public function destroy($id)
                         $subtotal = $data['qty'] * $data['unit_price'];
                         $totalAmount += $subtotal;
 
-                        DB::table('purchase_return_items')->insert([
+                        $itemInsert = [
                             'purchase_return_id' => $returnId,
                             'product_id'         => $productId,
                             'qty'                => $data['qty'],
                             'unit_price'         => $data['unit_price'],
                             'subtotal'           => $subtotal,
-                        ]);
+                        ];
+                        if ($companyId > 0 && Schema::hasColumn('purchase_return_items', 'company_id')) {
+                            $itemInsert['company_id'] = $companyId;
+                        }
+                        if ($userId > 0 && Schema::hasColumn('purchase_return_items', 'user_id')) {
+                            $itemInsert['user_id'] = $userId;
+                        }
+                        DB::table('purchase_return_items')->insert($itemInsert);
                     }
                 }
 
@@ -2308,19 +2325,29 @@ public function destroy($id)
 
         DB::beginTransaction();
         try {
+            $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+            $userId    = (int) (Auth::id() ?? 0);
+
             $invoice = DB::table('invoices')->where('id', $request->invoice_id)->first();
-            
+
             // 1. Create the Credit Note Header
-            $creditNoteId = DB::table('credit_notes')->insertGetId([
+            $cnInsert = [
                 'invoice_id'     => $invoice->id,
                 'customer_id'    => $invoice->customer_id,
                 'credit_note_no' => 'CN-' . strtoupper(Str::random(8)),
                 'credit_date'    => $request->credit_date,
                 'status'         => 'approved',
-                'total_amount'   => 0, // Updated later
+                'total_amount'   => 0,
                 'created_at'     => now(),
                 'updated_at'     => now(),
-            ]);
+            ];
+            if ($companyId > 0 && Schema::hasColumn('credit_notes', 'company_id')) {
+                $cnInsert['company_id'] = $companyId;
+            }
+            if ($userId > 0 && Schema::hasColumn('credit_notes', 'user_id')) {
+                $cnInsert['user_id'] = $userId;
+            }
+            $creditNoteId = DB::table('credit_notes')->insertGetId($cnInsert);
 
             $totalAmount = 0;
 
@@ -2331,13 +2358,20 @@ public function destroy($id)
                     $totalAmount += $subtotal;
 
                     // Save item details
-                    DB::table('credit_note_items')->insert([
+                    $ciInsert = [
                         'credit_note_id' => $creditNoteId,
                         'product_id'     => $productId,
                         'qty'            => $data['qty'],
                         'unit_price'     => $data['unit_price'],
                         'subtotal'       => $subtotal,
-                    ]);
+                    ];
+                    if ($companyId > 0 && Schema::hasColumn('credit_note_items', 'company_id')) {
+                        $ciInsert['company_id'] = $companyId;
+                    }
+                    if ($userId > 0 && Schema::hasColumn('credit_note_items', 'user_id')) {
+                        $ciInsert['user_id'] = $userId;
+                    }
+                    DB::table('credit_note_items')->insert($ciInsert);
 
                     // 3. Update Inventory: Increment stock because goods are returned
                     DB::table('products')->where('id', $productId)->increment('stock', $data['qty']);
@@ -2931,7 +2965,7 @@ public function destroy($id)
                         ? "SUM({$itemsTable}.quantity * COALESCE({$priceCol}, 0))"
                         : "0";
 
-                    $rows = DB::table($itemsTable)
+                    $query = DB::table($itemsTable)
                         ->join('sales', "{$itemsTable}.{$salesJoinCol}", '=', 'sales.id')
                         ->select(
                             DB::raw("{$productExpr} as product"),
@@ -2940,8 +2974,12 @@ public function destroy($id)
                         )
                         ->whereBetween("sales.{$dateCol}", [$from.' 00:00:00', $to.' 23:59:59'])
                         ->groupBy(DB::raw($productExpr))
-                        ->orderByDesc(DB::raw($revenueExpr))
-                        ->get();
+                        ->orderByDesc(DB::raw($revenueExpr));
+
+                    // Scope via the sales table to prevent cross-tenant data leakage
+                    $this->applyTenantScope($query, 'sales');
+
+                    $rows = $query->get();
                 }
             }
             $grandTotal = (float) $rows->sum('revenue');
