@@ -57,32 +57,32 @@
 .perm-category-line { flex:1; height:1px; background:#e4e8f0; }
 
 /* Grid */
-.perm-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+.perm-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
 @media(max-width:1199px) { .perm-grid { grid-template-columns:repeat(2,1fr); } }
 @media(max-width:699px)  { .perm-grid { grid-template-columns:1fr; } }
 
 /* Cards */
-.perm-card { background:#fff; border:1px solid #e8edf5; border-radius:14px; overflow:hidden; transition:box-shadow .2s,border-color .2s; display:flex; flex-direction:column; }
-.perm-card:hover { box-shadow:0 6px 20px rgba(26,34,54,.08); border-color:#d0d9f0; }
+.perm-card { background:#fff; border:1px solid #e8edf5; border-radius:12px; overflow:hidden; transition:box-shadow .2s,border-color .2s; display:flex; flex-direction:column; }
+.perm-card:hover { box-shadow:0 4px 14px rgba(26,34,54,.08); border-color:#d0d9f0; }
 .perm-card.perm-card--hidden { display:none; }
-.perm-card-head { display:flex; align-items:center; gap:12px; padding:14px 16px 12px; border-bottom:1px solid #f1f4fb; background:#fafbff; }
-.perm-card-icon { width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0; }
-.perm-card-name { font-weight:700; font-size:.9rem; color:#1a2236; flex:1; line-height:1.3; }
-.perm-card-count { font-size:.72rem; color:#7a869a; background:#f1f4fb; border-radius:10px; padding:2px 9px; white-space:nowrap; }
-.perm-card-toggle { display:flex; align-items:center; gap:6px; cursor:pointer; flex-shrink:0; }
+.perm-card-head { display:flex; align-items:center; gap:8px; padding:10px 12px 9px; border-bottom:1px solid #f1f4fb; background:#fafbff; min-width:0; }
+.perm-card-icon { width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:.85rem; flex-shrink:0; }
+.perm-card-name { font-weight:700; font-size:.82rem; color:#1a2236; flex:1; line-height:1.25; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.perm-card-count { font-size:.68rem; color:#7a869a; background:#f1f4fb; border-radius:10px; padding:2px 7px; white-space:nowrap; flex-shrink:0; }
+.perm-card-toggle { display:flex; align-items:center; gap:4px; cursor:pointer; flex-shrink:0; }
 .perm-card-toggle input[type=checkbox] { display:none; }
-.perm-toggle-track { width:34px; height:19px; background:#d1d5db; border-radius:19px; position:relative; transition:background .2s; flex-shrink:0; }
-.perm-toggle-thumb { width:13px; height:13px; background:#fff; border-radius:50%; position:absolute; top:3px; left:3px; transition:transform .2s; box-shadow:0 1px 3px rgba(0,0,0,.2); }
+.perm-toggle-track { width:30px; height:17px; background:#d1d5db; border-radius:17px; position:relative; transition:background .2s; flex-shrink:0; }
+.perm-toggle-thumb { width:11px; height:11px; background:#fff; border-radius:50%; position:absolute; top:3px; left:3px; transition:transform .2s; box-shadow:0 1px 3px rgba(0,0,0,.2); }
 .perm-card-toggle input:checked ~ .perm-toggle-track { background:#d4a017; }
-.perm-card-toggle input:checked ~ .perm-toggle-track .perm-toggle-thumb { transform:translateX(15px); }
-.perm-toggle-label { font-size:.72rem; font-weight:600; color:#94a3b8; }
-.perm-card-body { padding:14px 16px 16px; flex:1; }
-.perm-item { display:flex; align-items:center; gap:9px; font-size:.84rem; color:#374151; cursor:pointer; padding:5px 6px; border-radius:7px; line-height:1.3; margin-bottom:1px; transition:background .15s; -webkit-user-select:none; user-select:none; }
+.perm-card-toggle input:checked ~ .perm-toggle-track .perm-toggle-thumb { transform:translateX(13px); }
+.perm-toggle-label { font-size:.68rem; font-weight:600; color:#94a3b8; }
+.perm-card-body { padding:10px 12px 12px; flex:1; }
+.perm-item { display:flex; align-items:center; gap:7px; font-size:.79rem; color:#374151; cursor:pointer; padding:4px 5px; border-radius:6px; line-height:1.25; margin-bottom:1px; transition:background .15s; -webkit-user-select:none; user-select:none; }
 .perm-item:hover { background:#f4f6fb; }
-.perm-item input[type=checkbox], .perm-item input[type=radio] { width:16px; height:16px; accent-color:#2d2a6e; flex-shrink:0; cursor:pointer; margin:0; }
+.perm-item input[type=checkbox], .perm-item input[type=radio] { width:14px; height:14px; accent-color:#2d2a6e; flex-shrink:0; cursor:pointer; margin:0; }
 .perm-item input:checked+span { color:#1a2236; font-weight:600; }
-.perm-sep { border:none; border-top:1px dashed #e8edf5; margin:8px 0; }
-.perm-sub-title { font-size:.69rem; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:#94a3b8; margin:8px 0 4px 4px; }
+.perm-sep { border:none; border-top:1px dashed #e8edf5; margin:6px 0; }
+.perm-sub-title { font-size:.65rem; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:#94a3b8; margin:6px 0 3px 3px; }
 
 /* Action bar */
 .perm-action-bar { position:sticky; bottom:0; background:#fff; border-top:2px solid #e4e8f0; padding:14px 24px; display:flex; justify-content:center; gap:12px; z-index:50; box-shadow:0 -4px 16px rgba(0,0,0,.07); }
