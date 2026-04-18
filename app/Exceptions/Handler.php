@@ -157,7 +157,13 @@ class Handler extends ExceptionHandler
         });
 
         $this->renderable(function (QueryException $e, $request) {
-            $message = $this->formatQueryExceptionMessage($e);
+            // Handle duplicate entry (unique constraint violation) gracefully
+            $errorCode = $e->errorInfo[1] ?? null;
+            if ($errorCode == 1062) {
+                $message = 'Duplicate entry detected. Please use a unique value.';
+            } else {
+                $message = $this->formatQueryExceptionMessage($e);
+            }
             Log::error('Database error', [
                 'message' => $e->getMessage(),
                 'code' => $e->getCode(),
