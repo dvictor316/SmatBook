@@ -26,20 +26,21 @@
 .perm-tab-cnt{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;border-radius:9px;background:#e8eef8;color:#2563eb;font-size:10px;font-weight:800;padding:0 4px;}
 .perm-tab.active .perm-tab-cnt{background:#2563eb;color:#fff;}
 
-/* ─── Toolbar ────────────────────────────────────────────────── */
-.perm-toolbar{background:#fff;border-bottom:1px solid #e4e8f0;padding:10px 24px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+
+/* ─── Toolbar (Reports Hub style) ───────────────────────────── */
+.perm-toolbar{background:#fff;border-bottom:1px solid #e4e8f0;padding:10px 24px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;box-shadow:0 2px 8px rgba(37,99,235,.03);}
 .perm-toolbar-left{display:flex;align-items:center;gap:10px;flex:1;flex-wrap:wrap;}
 .perm-toolbar-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-.perm-role-info{font-size:12.5px;font-weight:700;color:#1e293b;display:flex;align-items:center;gap:5px;}
+.perm-role-info{font-size:13px;font-weight:700;color:#1e293b;display:flex;align-items:center;gap:5px;}
 .perm-count-badge{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:20px;border-radius:10px;background:#e8eef8;color:#2563eb;font-size:11px;font-weight:800;padding:0 8px;}
 .perm-search-wrap{position:relative;}
 .perm-search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:12px;pointer-events:none;}
-.perm-search-box{padding:7px 12px 7px 32px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;color:#1e293b;background:#fff;outline:none;width:200px;transition:border-color .15s,box-shadow .15s;}
+.perm-search-box{padding:7px 12px 7px 32px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;color:#1e293b;background:#fff;outline:none;width:200px;transition:border-color .15s,box-shadow .15s;box-shadow:0 1px 2px rgba(37,99,235,.03);}
 .perm-search-box:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1);}
-.btn-grant-all{padding:6px 14px;font-size:12px;font-weight:700;color:#fff;background:#2563eb;border:none;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:background .15s;}
-.btn-grant-all:hover{background:#1d4ed8;}
-.btn-revoke-all{padding:6px 14px;font-size:12px;font-weight:600;color:#64748b;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:all .15s;}
-.btn-revoke-all:hover{background:#fef2f2;border-color:#fca5a5;color:#dc2626;}
+.btn-grant-all{padding:7px 18px;font-size:13px;font-weight:700;color:#fff;background:#2563eb;border:none;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background .15s,box-shadow .15s;box-shadow:0 2px 8px rgba(37,99,235,.10);}
+.btn-grant-all:hover{background:#1d4ed8;box-shadow:0 4px 16px rgba(37,99,235,.13);}
+.btn-revoke-all{padding:7px 18px;font-size:13px;font-weight:700;color:#2563eb;background:#f8fafc;border:1.5px solid #2563eb;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .15s,box-shadow .15s;box-shadow:0 2px 8px rgba(37,99,235,.04);}
+.btn-revoke-all:hover{background:#e0e7ff;color:#1d4ed8;border-color:#1d4ed8;}
 
 /* ─── Tab panels / body ──────────────────────────────────────── */
 .perm-panel{display:none;}
@@ -525,12 +526,13 @@
                                         <span class="perm-sec-title">{{ $mod['group'] }}</span>
                                     </div>
                                     <span class="perm-sec-count" id="count-{{ $mod['section'] }}">{{ $granted }}/{{ $total }}</span>
-                                    <label class="perm-select-all-wrap" onclick="event.stopPropagation()">
+                                    <label class="perm-select-all-wrap" onclick="event.stopPropagation()" style="margin-top:2px;">
                                         <input type="checkbox"
                                                class="perm-select-all"
                                                data-section="{{ $mod['section'] }}"
+                                               style="accent-color:#2563eb;border-radius:4px;width:16px;height:16px;box-shadow:0 1px 2px #2563eb22;"
                                                {{ $isFull ? 'checked' : '' }}>
-                                        Select All
+                                        <span style="font-weight:600;color:#2563eb;">Select All</span>
                                     </label>
                                     <i class="fas fa-chevron-up perm-sec-chevron"></i>
                                 </div>
@@ -582,8 +584,8 @@
         </div>
 
         <div class="perm-action-bar">
-            <a href="{{ route('roles.index') }}" class="btn-perm-cancel">Cancel</a>
-            <button type="submit" class="btn-perm-save">
+            <a href="{{ route('roles.index') }}" class="btn-perm-cancel" style="font-weight:700;font-size:13px;border-radius:6px;padding:9px 24px;">Cancel</a>
+            <button type="submit" class="btn-perm-save" style="background:#2563eb;color:#fff;font-weight:700;font-size:13px;border-radius:6px;padding:9px 32px;box-shadow:0 2px 8px rgba(37,99,235,.10);">
                 <i class="fa fa-save"></i> Save Permissions
             </button>
         </div>
