@@ -56,7 +56,7 @@ class SystemEventMailer
         self::send($recipients, $subject, 'Manager Approval', 'A deployment manager account has been approved.', $details);
     }
 
-    public static function sendMessage(array|string $recipients, string $subject, string $title, string $intro, array $details = []): bool
+    public static function sendMessage(array|string $recipients, string $subject, string $title, string $intro, array $details = [], ?int $companyId = null): bool
     {
         $recipientList = is_array($recipients) ? $recipients : [$recipients];
         $recipientList = self::uniqueEmails($recipientList);
@@ -65,7 +65,7 @@ class SystemEventMailer
             return false;
         }
 
-        return self::send($recipientList, $subject, $title, $intro, $details);
+        return self::send($recipientList, $subject, $title, $intro, $details, $companyId);
     }
 
     private static function adminInbox(): string
@@ -83,12 +83,12 @@ class SystemEventMailer
         return array_values($emails);
     }
 
-    private static function send(array $recipients, string $subject, string $title, string $intro, array $details = []): bool
+    private static function send(array $recipients, string $subject, string $title, string $intro, array $details = [], ?int $companyId = null): bool
     {
         $allSent = true;
 
         foreach ($recipients as $email) {
-            $auditId = self::createAudit($title, $email, $subject, $details);
+            $auditId = self::createAudit($title, $email, $subject, $details, $companyId);
             try {
                 AppMailer::sendView('emails.system-event', [
                     'title' => $title,
@@ -114,20 +114,27 @@ class SystemEventMailer
         return $allSent;
     }
 
-    private static function createAudit(string $eventType, string $recipient, string $subject, array $details): ?int
+    private static function createAudit(string $eventType, string $recipient, string $subject, array $details, ?int $companyId = null): ?int
     {
         if (!Schema::hasTable('email_audit_logs')) {
             return null;
         }
 
         try {
-            $row = EmailAuditLog::create([
+            $payload = [
                 'event_type' => $eventType,
-                'recipient' => $recipient,
-                'subject' => $subject,
-                'status' => 'queued',
-                'details' => $details,
-            ]);
+                'recipient'  => $recipient,
+                'subject'    => $subject,
+                'status'     => 'queued',
+                'details'    => $details,
+            ];
+
+            // Save company_id for tenant scoping (only if column exists)
+            if ($companyId > 0 && Schema::hasColumn('email_audit_logs', 'company_id')) {
+                $payload['company_id'] = $companyId;
+            }
+
+            $row = EmailAuditLog::create($payload);
 
             return (int) $row->id;
         } catch (\Throwable $e) {

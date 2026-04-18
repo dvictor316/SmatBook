@@ -359,7 +359,8 @@ class AuthController extends Controller
                     'IP Address' => $request->ip(),
                     'Time' => now()->toDateTimeString(),
                     'Device' => (string) $request->userAgent(),
-                ]
+                ],
+                (int) ($user->company_id ?? 0)
             );
         } catch (\Throwable $mailError) {
             Log::warning('Login alert email failed', ['error' => $mailError->getMessage()]);

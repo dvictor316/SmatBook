@@ -92,17 +92,36 @@ class SettingController extends Controller
 
         if (Schema::hasTable('email_audit_logs')) {
             $query = EmailAuditLog::query();
-            // Strict tenant and branch scoping (only filter if columns exist)
-            $tenantId = session('current_tenant_id');
+            $tenantId = (int) (session('current_tenant_id') ?? Auth::user()?->company_id ?? 0);
             $branchId = session('active_branch_id');
-            if ($tenantId && Schema::hasColumn('email_audit_logs', 'company_id')) {
-                $query->where('company_id', $tenantId);
+
+            if ($tenantId > 0) {
+                if (Schema::hasColumn('email_audit_logs', 'company_id')) {
+                    // Preferred: filter by company_id column (after migration)
+                    $query->where('company_id', $tenantId);
+                } else {
+                    // Fallback: filter by recipient matching this company's users
+                    $companyEmails = \App\Models\User::where('company_id', $tenantId)
+                        ->pluck('email')
+                        ->all();
+                    if (empty($companyEmails)) {
+                        $emailLogs = collect();
+                        goto renderSettings;
+                    }
+                    $query->whereIn('recipient', $companyEmails);
+                }
+            } else {
+                // No tenant identified — show nothing
+                $emailLogs = collect();
+                goto renderSettings;
             }
+
             if ($branchId && Schema::hasColumn('email_audit_logs', 'branch_id')) {
                 $query->where('branch_id', $branchId);
             }
             $emailLogs = $query->latest()->limit(15)->get();
         }
+        renderSettings:
 
         return view('Settings.settings', compact('settings', 'emailLogs'));
     }
