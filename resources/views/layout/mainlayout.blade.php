@@ -1252,6 +1252,7 @@
         .feather-arrow-left:before { content: "\f060"; }
         .feather-arrow-left-circle:before { content: "\f0a8"; }
     </style>
+    @stack('styles')
 </head>
 
 <body @if(!empty($bodyClasses)) class="{{ implode(' ', $bodyClasses) }}" @endif>
