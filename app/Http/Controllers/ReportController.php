@@ -2905,13 +2905,44 @@ public function destroy($id)
                 $itemsTable = Schema::hasTable('sale_items') ? 'sale_items' : (Schema::hasTable('order_items') ? 'order_items' : 'invoice_items');
                 $salesJoinCol = Schema::hasColumn($itemsTable, 'sale_id') ? 'sale_id' : 'order_id';
 
-                $rows = DB::table($itemsTable)
-                    ->join('sales', "{$itemsTable}.{$salesJoinCol}", '=', 'sales.id')
-                    ->select(DB::raw("COALESCE({$itemsTable}.product_name, {$itemsTable}.name, 'Unknown') as product"), DB::raw("SUM({$itemsTable}.quantity) as qty_sold"), DB::raw("SUM({$itemsTable}.quantity * COALESCE({$itemsTable}.price, {$itemsTable}.unit_price, 0)) as revenue"))
-                    ->whereBetween("sales.{$dateCol}", [$from.' 00:00:00', $to.' 23:59:59'])
-                    ->groupBy(DB::raw("COALESCE({$itemsTable}.product_name, {$itemsTable}.name, 'Unknown')"))
-                    ->orderByDesc(DB::raw("SUM({$itemsTable}.quantity * COALESCE({$itemsTable}.price, {$itemsTable}.unit_price, 0))"))
-                    ->get();
+                // Resolve product name column — only reference columns that actually exist
+                $nameCol = Schema::hasColumn($itemsTable, 'product_name')
+                    ? "{$itemsTable}.product_name"
+                    : (Schema::hasColumn($itemsTable, 'name')
+                        ? "{$itemsTable}.name"
+                        : (Schema::hasColumn($itemsTable, 'item_name')
+                            ? "{$itemsTable}.item_name"
+                            : null));
+
+                // Resolve price column
+                $priceCol = Schema::hasColumn($itemsTable, 'price')
+                    ? "{$itemsTable}.price"
+                    : (Schema::hasColumn($itemsTable, 'unit_price')
+                        ? "{$itemsTable}.unit_price"
+                        : (Schema::hasColumn($itemsTable, 'amount')
+                            ? "{$itemsTable}.amount"
+                            : null));
+
+                if (!$nameCol || !Schema::hasColumn($itemsTable, 'quantity')) {
+                    $rows = collect();
+                } else {
+                    $productExpr = "COALESCE({$nameCol}, 'Unknown')";
+                    $revenueExpr = $priceCol
+                        ? "SUM({$itemsTable}.quantity * COALESCE({$priceCol}, 0))"
+                        : "0";
+
+                    $rows = DB::table($itemsTable)
+                        ->join('sales', "{$itemsTable}.{$salesJoinCol}", '=', 'sales.id')
+                        ->select(
+                            DB::raw("{$productExpr} as product"),
+                            DB::raw("SUM({$itemsTable}.quantity) as qty_sold"),
+                            DB::raw("{$revenueExpr} as revenue")
+                        )
+                        ->whereBetween("sales.{$dateCol}", [$from.' 00:00:00', $to.' 23:59:59'])
+                        ->groupBy(DB::raw($productExpr))
+                        ->orderByDesc(DB::raw($revenueExpr))
+                        ->get();
+                }
             }
             $grandTotal = (float) $rows->sum('revenue');
 
