@@ -68,6 +68,7 @@
     @include('layout.partials.seo-meta')
     <meta name="author" content="Dreamguys - Bootstrap Admin Template">
 
+    {{-- CRITICAL: Prevent theme flickering on load --}}
     <script>
         (function() {
             const savedSettings = JSON.parse(localStorage.getItem('themeSettings')) || {};
@@ -87,8 +88,10 @@
     @include('layout.partials.design-system')
     @yield('style')
 
+    {{-- GLOBAL PRINT STYLES --}}
     <style>
 
+        {{-- FIX: Automatically remove sidebar margin if sidebar is hidden --}}
         @if($hideSidebar)
         .page-wrapper, .main-wrapper {
             margin-left: 0 !important;
@@ -1254,6 +1257,7 @@
 <body @if(!empty($bodyClasses)) class="{{ implode(' ', $bodyClasses) }}" @endif>
     </div>
 
+    {{-- MAIN WRAPPER --}}
     @if (!in_array($route, [
             'landing.index',
             'index-five',
@@ -1290,6 +1294,7 @@
         <div class="main-wrapper login-body">
     @endif
 
+    {{-- HEADER --}}
     @if (!$hideNavbar && !in_array($route, [
             'landing.index',
             'signature-preview-invoice',
@@ -1316,6 +1321,7 @@
         @include('layout.partials.header')
     @endif
 
+    {{-- SIDEBAR --}}
     @if (!$hideSidebar && !in_array($route, [
             'landing.index',
             'signature-preview-invoice',
@@ -1342,10 +1348,12 @@
         @include('layout.partials.sidebar')
     @endif
 
+    {{-- OPTIONAL TWO-COLUMN SIDEBAR --}}
     @if ($route === 'index-four')
         @include('layout.partials.two-col-sidebar')
     @endif
 
+    {{-- MAIN PAGE CONTENT --}}
     @include('layout.partials.flash-messages')
     @yield('content')
 
@@ -1372,12 +1380,13 @@
     @endphp
 
     @unless($skipGlobalModals)
-
+        {{-- Heavy global modals: load only where needed to reduce payload/render time --}}
         @component('components.add-modal-popup') @endcomponent
         @component('components.edit-modal-popup') @endcomponent
         @component('components.modal-popup') @endcomponent
     @endunless
 
+    {{-- CLOSE WRAPPER --}}
     @if (!in_array($route, [
             'mail-pay-invoice',
             'cashreceipt-1',
@@ -1395,6 +1404,7 @@
         </div>
     @endif
 
+    {{-- THEME SETTINGS --}}
     @if (
         !$hideSidebar
         && !in_array($route, [
@@ -1435,17 +1445,19 @@
         @include('layout.partials.ai-quick-agent')
     @endif
 
+    {{-- FOOTER SCRIPTS --}}
     @include('layout.partials.footer-scripts')
     @yield('script')
     @stack('scripts')
 
     @livewireScripts
 
+    {{-- THEME CUSTOMIZER LOGIC --}}
     <script>
     document.addEventListener('DOMContentLoaded', function () {
         const html = document.documentElement;
         const themeOffcanvas = document.getElementById('theme-settings-offcanvas');
-
+        
         if (!themeOffcanvas) return;
 
         const inputs = themeOffcanvas.querySelectorAll('input');
@@ -1560,8 +1572,6 @@
                     '.receipt-sheet:not(.hidden)',
                     '.invoice-content',
                     '.invoice-item',
-                    '.card-table',
-                    '.table-responsive table',
                 ];
 
                 for (const selector of selectors) {
@@ -1655,7 +1665,11 @@
 
                 printState.active = true;
                 printState.lastTriggeredAt = now;
-                activatePrintScope(target);
+
+                const scope = activatePrintScope(target);
+                if (!scope) {
+                    clearPrintScope();
+                }
 
                 if (!printState.afterPrintBound) {
                     window.addEventListener('afterprint', releasePrintLock);
@@ -1897,6 +1911,7 @@
         })();
     </script>
 
+    {{-- PREFERENCE SCRIPT: PRINTING (As requested in profile) --}}
     <script>
         window.onbeforeprint = function() {
             console.log("Preparing SmartProbook page for professional printing.");
