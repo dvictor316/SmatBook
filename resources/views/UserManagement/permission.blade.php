@@ -4,217 +4,241 @@
 @push('styles')
 <style>
 /* ═══════════════════════════════════════════════════════════════
-   ROLE PERMISSIONS UI  ―  Reports-hub style
+   ROLE PERMISSIONS UI  ―  Sleek Card Design
 ═══════════════════════════════════════════════════════════════ */
-.perm-shell { background: #f1f4fb; min-height: 100vh; padding-bottom: 100px; }
+.perm-shell { background: #e8ecf4; min-height: 100vh; padding-bottom: 90px; }
 
 /* ─── Hero ───────────────────────────────────────────────────── */
 .perm-hero {
     background: linear-gradient(135deg, #1a2236 0%, #2d3a57 100%);
-    padding: 28px 32px 24px; border-radius: 16px; color: #fff;
-    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
-    margin-bottom: 24px; box-shadow: 0 8px 32px rgba(26,34,54,0.18);
+    padding: 22px 28px 20px; border-radius: 14px; color: #fff;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;
+    margin-bottom: 14px; box-shadow: 0 8px 28px rgba(26,34,54,0.22);
 }
-.perm-hero-left { display: flex; align-items: center; gap: 18px; }
+.perm-hero-left { display: flex; align-items: center; gap: 16px; }
 .perm-hero-icon {
-    width: 52px; height: 52px; background: rgba(212,160,23,0.18);
-    border: 2px solid rgba(212,160,23,0.4); border-radius: 14px;
+    width: 46px; height: 46px; background: rgba(212,160,23,0.18);
+    border: 2px solid rgba(212,160,23,0.4); border-radius: 12px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 1.5rem; color: #d4a017; flex-shrink: 0;
+    font-size: 1.35rem; color: #d4a017; flex-shrink: 0;
 }
-.perm-hero-title { font-size: 1.45rem; font-weight: 700; color: #fff; margin-bottom: 3px; line-height: 1.2; }
-.perm-hero-sub   { font-size: 0.85rem; color: rgba(255,255,255,0.65); }
+.perm-hero-title { font-size: 1.25rem; font-weight: 700; color: #fff; margin-bottom: 2px; line-height: 1.2; }
+.perm-hero-sub   { font-size: 0.82rem; color: rgba(255,255,255,0.65); }
 .perm-role-badge {
-    display: inline-flex; align-items: center; gap: 6px;
+    display: inline-flex; align-items: center; gap: 5px;
     background: rgba(212,160,23,0.2); border: 1px solid rgba(212,160,23,0.5);
-    color: #f5c842; padding: 4px 12px; border-radius: 20px;
-    font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+    color: #f5c842; padding: 3px 10px; border-radius: 20px;
+    font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
 }
 .perm-hero-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .btn-perm-back {
     background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.25);
-    color: #fff; padding: 8px 18px; border-radius: 8px; font-size: 0.85rem; font-weight: 600;
+    color: #fff; padding: 7px 18px; border-radius: 20px; font-size: 0.82rem; font-weight: 600;
     text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: background 0.2s;
 }
 .btn-perm-back:hover { background: rgba(255,255,255,0.2); color: #fff; }
 
-/* ─── Main card ───────────────────────────────────────────────── */
+/* ─── Main shell card ─────────────────────────────────────────── */
 .perm-main-card {
-    border: 1px solid #dee2e9; border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0,0,0,.06); overflow: hidden;
-    background: #fff; margin-bottom: 20px;
+    border-radius: 14px; overflow: hidden;
+    box-shadow: 0 4px 18px rgba(0,0,0,.09);
+    border: 1px solid #d5dbe8; margin-bottom: 14px;
 }
 
-/* ─── Tab bar ─────────────────────────────────────────────────── */
+/* ─── Category tab bar ────────────────────────────────────────── */
 .perm-tab-bar {
-    display: flex; gap: 0; border-bottom: 2px solid #dee2e9;
-    background: #fff; padding: 0 20px; overflow-x: auto; scrollbar-width: none;
+    display: flex; gap: 4px; padding: 10px 12px 0;
+    background: #f2f5fb; border-bottom: 2px solid #d5dbe8;
+    overflow-x: auto; scrollbar-width: none;
 }
 .perm-tab-bar::-webkit-scrollbar { display: none; }
 .perm-tab {
-    padding: 12px 15px; font-size: 12.5px; font-weight: 600; color: #64748b;
-    cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px;
-    background: none; border-top: none; border-left: none; border-right: none;
-    white-space: nowrap; display: flex; align-items: center; gap: 6px;
-    flex-shrink: 0; transition: color .15s, border-color .15s;
+    padding: 7px 14px 9px; font-size: 11.5px; font-weight: 700; color: #7a8aad;
+    cursor: pointer; border-radius: 8px 8px 0 0; white-space: nowrap;
+    background: transparent; border: none; border-bottom: 3px solid transparent;
+    display: inline-flex; align-items: center; gap: 5px; margin-bottom: -2px;
+    transition: all .15s; flex-shrink: 0;
 }
-.perm-tab:hover { color: #1e3a5f; }
-.perm-tab.active { color: #2563eb; border-bottom-color: #2563eb; }
+.perm-tab:hover { color: #1a2236; background: #e8edf7; }
+.perm-tab.active {
+    color: #fff; background: linear-gradient(160deg, #1a2236 0%, #2d3a57 100%);
+    border-bottom-color: #d4a017; box-shadow: 0 -2px 8px rgba(26,34,54,0.12);
+}
 .perm-tab-cnt {
     display: inline-flex; align-items: center; justify-content: center;
-    min-width: 18px; height: 18px; border-radius: 9px;
-    background: #e8eef8; color: #2563eb; font-size: 10px; font-weight: 800; padding: 0 4px;
+    min-width: 16px; height: 16px; border-radius: 8px;
+    font-size: 9px; font-weight: 800; padding: 0 4px;
+    background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.85);
 }
-.perm-tab.active .perm-tab-cnt { background: #2563eb; color: #fff; }
+.perm-tab:not(.active) .perm-tab-cnt { background: #dde3f0; color: #5a6a8a; }
 
-/* ─── Toolbar ─────────────────────────────────────────────────── */
+/* ─── Dark Toolbar ────────────────────────────────────────────── */
 .perm-toolbar {
-    background: #fff; border-bottom: 1px solid #e4e8f0;
-    padding: 10px 20px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    background: linear-gradient(90deg, #1a2236 0%, #28364f 100%);
+    padding: 9px 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
 }
-.perm-toolbar-left  { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex: 1; }
-.perm-toolbar-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.perm-toolbar-left  { display: flex; align-items: center; gap: 8px; flex: 1; flex-wrap: wrap; }
+.perm-toolbar-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.perm-toolbar-title { font-weight: 700; font-size: 0.83rem; color: #e2e8f0; }
 .perm-count-badge {
-    background: #eef2ff; color: #2d2a6e; border-radius: 20px;
-    padding: 4px 14px; font-size: 0.8rem; font-weight: 700; border: 1px solid #dde3ff;
+    background: rgba(212,160,23,0.2); color: #fbbf24;
+    border: 1px solid rgba(212,160,23,0.35); border-radius: 20px;
+    padding: 2px 10px; font-size: 0.72rem; font-weight: 700;
 }
 .perm-search-wrap { position: relative; }
 .perm-search-icon {
-    position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
-    color: #94a3b8; font-size: 12px; pointer-events: none;
+    position: absolute; left: 9px; top: 50%; transform: translateY(-50%);
+    color: rgba(255,255,255,0.4); font-size: 11px; pointer-events: none;
 }
 .perm-search-box {
-    padding: 7px 12px 7px 30px; border: 1px solid #d1d5db; border-radius: 6px;
-    font-size: 13px; color: #1e293b; background: #fff; width: 220px;
-    transition: border-color .15s, box-shadow .15s; outline: none;
+    padding: 5px 10px 5px 26px; border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 20px; font-size: 11.5px; color: #fff;
+    background: rgba(255,255,255,0.08); width: 180px; outline: none; transition: all .15s;
 }
-.perm-search-box:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
+.perm-search-box::placeholder { color: rgba(255,255,255,0.35); }
+.perm-search-box:focus { border-color: rgba(212,160,23,0.7); background: rgba(255,255,255,0.12); }
 .btn-grant-all {
-    background: #d4a017; border: none; color: #fff; padding: 7px 16px; border-radius: 6px;
-    font-size: 12.5px; font-weight: 700; cursor: pointer;
-    display: inline-flex; align-items: center; gap: 6px; transition: background 0.2s;
+    background: #d4a017; border: none; color: #fff; padding: 5px 14px;
+    border-radius: 20px; font-size: 11px; font-weight: 700; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 5px; transition: background 0.2s;
+    box-shadow: 0 2px 8px rgba(212,160,23,0.3);
 }
 .btn-grant-all:hover { background: #b88b12; }
 .btn-revoke-all {
-    background: #fff; border: 1px solid #e4e8f0; color: #7a869a; padding: 7px 16px;
-    border-radius: 6px; font-size: 12.5px; font-weight: 600; cursor: pointer;
-    display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;
+    background: transparent; border: 1px solid rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.7); padding: 5px 14px; border-radius: 20px;
+    font-size: 11px; font-weight: 600; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s;
 }
-.btn-revoke-all:hover { background: #fff5f5; border-color: #f87171; color: #dc2626; }
+.btn-revoke-all:hover { border-color: #f87171; color: #fca5a5; background: rgba(239,68,68,0.12); }
 
 /* ─── Tab panels ──────────────────────────────────────────────── */
-.perm-panel { padding: 16px 20px 20px; display: none; }
+.perm-panel { display: none; padding: 10px; background: #e8ecf4; }
 .perm-panel.active { display: block; }
-/* Search mode: show all panels */
 .perm-search-active .perm-panel { display: block !important; }
 .perm-search-active .perm-tab-bar { display: none; }
 
-/* ─── Module section (collapsible) ───────────────────────────── */
+/* ─── Cards grid ──────────────────────────────────────────────── */
+.perm-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+@media (max-width: 1100px) { .perm-cards-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px)  { .perm-cards-grid { grid-template-columns: 1fr; } }
+
+/* ─── Module card ─────────────────────────────────────────────── */
 .perm-section {
-    margin-bottom: 8px; border: 1px solid #e2e8f0;
-    border-radius: 8px; overflow: hidden; background: #fff;
+    border-radius: 10px; overflow: hidden; background: #fff;
+    border: 1px solid #dde3ee; box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    transition: box-shadow .15s, transform .15s;
 }
-.perm-section.perm-section--granted { border-color: #bbd4ff; }
+.perm-section:hover { box-shadow: 0 4px 14px rgba(26,34,54,0.1); transform: translateY(-1px); }
+.perm-section.perm-section--granted { border-color: #60a5fa; }
 .perm-section.perm-sec--hidden { display: none !important; }
+
+/* Dark card header */
 .perm-sec-head {
-    display: flex; align-items: center; gap: 10px; padding: 11px 16px;
-    cursor: pointer; user-select: none; background: #fafbff;
-    transition: background .12s; border-bottom: 1px solid #f1f4f9;
+    display: flex; align-items: center; gap: 8px; padding: 9px 11px;
+    cursor: pointer; user-select: none;
+    background: linear-gradient(135deg, #1a2236 0%, #2d3a57 100%);
 }
-.perm-sec-head:hover { background: #f0f4ff; }
+.perm-section--granted .perm-sec-head {
+    background: linear-gradient(135deg, #0c4a6e 0%, #1e40af 100%);
+}
 .perm-sec-icon {
-    width: 34px; height: 34px; border-radius: 8px;
+    width: 28px; height: 28px; border-radius: 7px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 0.9rem; flex-shrink: 0;
+    font-size: 0.75rem; flex-shrink: 0;
+    background: rgba(255,255,255,0.12); color: #c7d2e8;
 }
-.perm-sec-name { font-size: 13px; font-weight: 700; color: #0f172a; flex: 1; line-height: 1.3; }
+.perm-sec-name { font-size: 11.5px; font-weight: 700; color: #fff; flex: 1; line-height: 1.3; }
 .perm-sec-count {
-    font-size: 11px; color: #7a869a; background: #f1f4fb;
-    border-radius: 8px; padding: 2px 9px; white-space: nowrap; flex-shrink: 0;
+    font-size: 10px; color: rgba(255,255,255,0.55);
+    background: rgba(255,255,255,0.08); border-radius: 8px;
+    padding: 1px 7px; white-space: nowrap; flex-shrink: 0;
 }
-.perm-sec-chevron { color: #94a3b8; font-size: 11px; transition: transform .2s; flex-shrink: 0; }
+.perm-section--granted .perm-sec-count { color: #86efac; background: rgba(22,163,74,0.2); }
+.perm-sec-chevron { color: rgba(255,255,255,0.45); font-size: 9px; transition: transform .2s; flex-shrink: 0; }
 .perm-section.collapsed .perm-sec-chevron { transform: rotate(-90deg); }
 .perm-section.collapsed .perm-sec-body { display: none; }
 
 /* Toggle switch */
-.perm-card-toggle { display: flex; align-items: center; gap: 5px; cursor: pointer; flex-shrink: 0; }
+.perm-card-toggle { display: flex; align-items: center; gap: 3px; cursor: pointer; flex-shrink: 0; }
 .perm-card-toggle input[type=checkbox] { display: none; }
 .perm-toggle-track {
-    width: 30px; height: 17px; background: #d1d5db; border-radius: 17px;
+    width: 24px; height: 13px; background: rgba(255,255,255,0.18); border-radius: 13px;
     position: relative; transition: background 0.2s; flex-shrink: 0;
 }
 .perm-toggle-thumb {
-    width: 11px; height: 11px; background: #fff; border-radius: 50%;
-    position: absolute; top: 3px; left: 3px; transition: transform 0.2s;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    width: 9px; height: 9px; background: rgba(255,255,255,0.55); border-radius: 50%;
+    position: absolute; top: 2px; left: 2px; transition: transform 0.2s;
 }
-.perm-card-toggle input:checked ~ .perm-toggle-track                    { background: #d4a017; }
-.perm-card-toggle input:checked ~ .perm-toggle-track .perm-toggle-thumb { transform: translateX(13px); }
-.perm-toggle-label { font-size: 11px; font-weight: 600; color: #94a3b8; }
+.perm-card-toggle input:checked ~ .perm-toggle-track { background: #d4a017; }
+.perm-card-toggle input:checked ~ .perm-toggle-track .perm-toggle-thumb { transform: translateX(11px); background: #fff; }
+.perm-toggle-label { font-size: 9.5px; font-weight: 700; color: rgba(255,255,255,0.55); }
 
-/* ─── Permissions flex grid (3-col) ──────────────────────────── */
-.perm-sec-body { padding: 10px 14px 14px; }
+/* Card body */
+.perm-sec-body { padding: 6px 8px 8px; }
 .perm-items-grid { display: flex; flex-wrap: wrap; }
 
-/* Full-width: separators & sub-headings */
 .perm-sub-title {
-    flex: 0 0 100%; font-size: 0.68rem; font-weight: 800; text-transform: uppercase;
-    letter-spacing: 0.06em; color: #94a3b8; padding: 7px 8px 3px; margin-top: 2px;
+    flex: 0 0 100%; font-size: 0.6rem; font-weight: 800; text-transform: uppercase;
+    letter-spacing: 0.07em; color: #94a3b8; padding: 4px 4px 2px; margin-top: 1px;
 }
-.perm-sep { flex: 0 0 100%; border: none; border-top: 1px dashed #e8edf5; margin: 6px 0; }
+.perm-sep { flex: 0 0 100%; border: none; border-top: 1px dashed #e8edf5; margin: 3px 0; }
 
-/* Checkbox / radio items — 3 columns */
+/* Permission items — 2 columns inside card */
 .perm-item {
-    flex: 0 0 33.333%; min-width: 150px;
-    display: flex; align-items: center; gap: 8px;
-    font-size: 12.5px; color: #374151; cursor: pointer;
-    padding: 5px 8px; border-radius: 6px; line-height: 1.3;
-    transition: background 0.12s; -webkit-user-select: none; user-select: none;
-    margin-bottom: 2px;
+    flex: 0 0 50%;
+    display: flex; align-items: center; gap: 5px;
+    font-size: 11px; color: #374151; cursor: pointer;
+    padding: 3px 4px; border-radius: 4px; line-height: 1.3;
+    transition: background 0.1s; -webkit-user-select: none; user-select: none;
 }
-.perm-item:hover { background: #f4f6fb; }
+.perm-item:hover { background: #f0f4ff; }
 .perm-item input[type=checkbox],
 .perm-item input[type=radio] {
-    width: 15px; height: 15px; accent-color: #2563eb;
-    flex-shrink: 0; cursor: pointer; margin: 0;
+    width: 12px; height: 12px; accent-color: #2563eb; flex-shrink: 0; cursor: pointer; margin: 0;
 }
 .perm-item input:checked + span { color: #1a2236; font-weight: 600; }
-
-@media (max-width: 991px) { .perm-item { flex: 0 0 50%; } }
-@media (max-width: 575px)  { .perm-item { flex: 0 0 100%; } }
+@media (max-width: 575px) { .perm-item { flex: 0 0 100%; } }
 
 /* ─── Sticky save bar ─────────────────────────────────────────── */
 .perm-action-bar {
-    position: sticky; bottom: 0; background: #fff; border-top: 2px solid #e4e8f0;
-    padding: 14px 24px; display: flex; justify-content: center; gap: 12px;
-    z-index: 50; box-shadow: 0 -4px 16px rgba(0,0,0,0.07);
+    position: sticky; bottom: 0;
+    background: linear-gradient(90deg, #1a2236 0%, #2d3a57 100%);
+    padding: 12px 20px; display: flex; justify-content: center; gap: 10px;
+    z-index: 50; box-shadow: 0 -4px 20px rgba(26,34,54,0.3);
 }
 .btn-perm-save {
-    background: #1a2236; border: none; color: #fff; padding: 11px 36px;
-    border-radius: 9px; font-size: 0.92rem; font-weight: 700;
-    display: inline-flex; align-items: center; gap: 8px; transition: background 0.2s; cursor: pointer;
+    background: #d4a017; border: none; color: #fff; padding: 10px 32px;
+    border-radius: 20px; font-size: 0.87rem; font-weight: 700;
+    display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+    transition: background 0.2s; box-shadow: 0 4px 12px rgba(212,160,23,0.35);
 }
-.btn-perm-save:hover { background: #0f1520; }
+.btn-perm-save:hover { background: #b88b12; }
 .btn-perm-cancel {
-    background: #fff; border: 1px solid #d1d5db; color: #6b7280; padding: 11px 26px;
-    border-radius: 9px; font-size: 0.92rem; font-weight: 600;
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.75); padding: 10px 22px; border-radius: 20px;
+    font-size: 0.87rem; font-weight: 600;
     text-decoration: none; display: inline-flex; align-items: center; transition: all 0.2s;
 }
-.btn-perm-cancel:hover { background: #f9fafb; border-color: #9ca3af; color: #374151; }
+.btn-perm-cancel:hover { background: rgba(255,255,255,0.18); color: #fff; }
 
-/* ─── Icon palettes ───────────────────────────────────────────── */
-.icon-blue   { background: #e0e8ff; color: #3b5bdb; }
-.icon-gold   { background: #fef3c7; color: #d97706; }
-.icon-green  { background: #dcfce7; color: #16a34a; }
-.icon-teal   { background: #ccfbf1; color: #0d9488; }
-.icon-purple { background: #f3e8ff; color: #7c3aed; }
-.icon-rose   { background: #ffe4e6; color: #e11d48; }
-.icon-indigo { background: #e0e7ff; color: #4338ca; }
-.icon-orange { background: #fff7ed; color: #ea580c; }
-.icon-sky    { background: #e0f2fe; color: #0284c7; }
-.icon-pink   { background: #fce7f3; color: #db2777; }
-.icon-lime   { background: #ecfccb; color: #65a30d; }
-.icon-slate  { background: #f1f5f9; color: #475569; }
+/* ─── Icon accent colors on dark header ───────────────────────── */
+.perm-sec-head .icon-blue   { color: #93c5fd; }
+.perm-sec-head .icon-gold   { color: #fcd34d; }
+.perm-sec-head .icon-green  { color: #86efac; }
+.perm-sec-head .icon-teal   { color: #5eead4; }
+.perm-sec-head .icon-purple { color: #d8b4fe; }
+.perm-sec-head .icon-rose   { color: #fda4af; }
+.perm-sec-head .icon-indigo { color: #a5b4fc; }
+.perm-sec-head .icon-orange { color: #fdba74; }
+.perm-sec-head .icon-sky    { color: #7dd3fc; }
+.perm-sec-head .icon-pink   { color: #f9a8d4; }
+.perm-sec-head .icon-lime   { color: #bef264; }
+.perm-sec-head .icon-slate  { color: #cbd5e1; }
 </style>
 @endpush
 
@@ -564,7 +588,7 @@
             {{-- Toolbar: count badge + search + bulk actions --}}
             <div class="perm-toolbar">
                 <div class="perm-toolbar-left">
-                    <span style="font-weight:700;font-size:0.9rem;color:#1a2236;">Module Permissions</span>
+                    <span class="perm-toolbar-title">Module Permissions</span>
                     <span class="perm-count-badge" id="grantedBadge">
                         {{ count(array_filter($assigned, fn($p) => $p)) }} granted
                     </span>
@@ -589,7 +613,7 @@
                 @php $slug = $catSlugs[$catName]; @endphp
                 <div class="perm-panel {{ $slug === $firstSlug ? 'active' : '' }}"
                      data-panel="{{ $slug }}">
-
+                    <div class="perm-cards-grid">
                     @foreach ($catModules as $mod)
                         @php
                             $granted = $countGranted($mod['items']);
@@ -663,7 +687,7 @@
 
                         </div>{{-- /.perm-section --}}
                     @endforeach
-
+                    </div>{{-- /.perm-cards-grid --}}
                 </div>{{-- /.perm-panel --}}
             @endforeach
 
