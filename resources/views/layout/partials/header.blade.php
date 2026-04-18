@@ -1679,7 +1679,8 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!sb || !sb.classList.contains('mobile-open')) return;
         const link = e.target.closest('a[href]');
         if (link && sb.contains(link) && link.getAttribute('href') !== '#'
-            && link.getAttribute('href') !== 'javascript:void(0);') {
+            && link.getAttribute('href') !== 'javascript:void(0);'
+            && !link.querySelector('.menu-arrow')) {
             // Small delay so the page starts navigating before sidebar closes
             setTimeout(closeMobileSidebar, 80);
         }

@@ -5,7 +5,7 @@
 @endphp
 
 <li class="submenu {{ $isReports ? 'active subdrop' : '' }}">
-    <a href="{{ route('reports.hub') }}">
+    <a href="#">
         <i class="fe fe-bar-chart-2"></i>
         <span>Reports</span>
         <span class="menu-arrow"></span>
