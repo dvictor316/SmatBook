@@ -4,7 +4,7 @@
 @push('styles')
 <style>
 /* ═══════════════════════════════════════════════════════════════
-   PROKIP-STYLE ROLE PERMISSIONS UI
+   ROLE PERMISSIONS UI  ―  Reports-hub style
 ═══════════════════════════════════════════════════════════════ */
 .perm-shell { background: #f1f4fb; min-height: 100vh; padding-bottom: 100px; }
 
@@ -38,109 +38,152 @@
 }
 .btn-perm-back:hover { background: rgba(255,255,255,0.2); color: #fff; }
 
+/* ─── Main card ───────────────────────────────────────────────── */
+.perm-main-card {
+    border: 1px solid #dee2e9; border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,.06); overflow: hidden;
+    background: #fff; margin-bottom: 20px;
+}
+
+/* ─── Tab bar ─────────────────────────────────────────────────── */
+.perm-tab-bar {
+    display: flex; gap: 0; border-bottom: 2px solid #dee2e9;
+    background: #fff; padding: 0 20px; overflow-x: auto; scrollbar-width: none;
+}
+.perm-tab-bar::-webkit-scrollbar { display: none; }
+.perm-tab {
+    padding: 12px 15px; font-size: 12.5px; font-weight: 600; color: #64748b;
+    cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px;
+    background: none; border-top: none; border-left: none; border-right: none;
+    white-space: nowrap; display: flex; align-items: center; gap: 6px;
+    flex-shrink: 0; transition: color .15s, border-color .15s;
+}
+.perm-tab:hover { color: #1e3a5f; }
+.perm-tab.active { color: #2563eb; border-bottom-color: #2563eb; }
+.perm-tab-cnt {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 18px; height: 18px; border-radius: 9px;
+    background: #e8eef8; color: #2563eb; font-size: 10px; font-weight: 800; padding: 0 4px;
+}
+.perm-tab.active .perm-tab-cnt { background: #2563eb; color: #fff; }
+
 /* ─── Toolbar ─────────────────────────────────────────────────── */
 .perm-toolbar {
-    background: #fff; border-radius: 12px; padding: 14px 20px; margin-bottom: 22px;
-    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #e8edf5;
+    background: #fff; border-bottom: 1px solid #e4e8f0;
+    padding: 10px 20px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
 }
-.perm-toolbar-left  { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.perm-toolbar-left  { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex: 1; }
 .perm-toolbar-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .perm-count-badge {
     background: #eef2ff; color: #2d2a6e; border-radius: 20px;
     padding: 4px 14px; font-size: 0.8rem; font-weight: 700; border: 1px solid #dde3ff;
 }
+.perm-search-wrap { position: relative; }
+.perm-search-icon {
+    position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+    color: #94a3b8; font-size: 12px; pointer-events: none;
+}
+.perm-search-box {
+    padding: 7px 12px 7px 30px; border: 1px solid #d1d5db; border-radius: 6px;
+    font-size: 13px; color: #1e293b; background: #fff; width: 220px;
+    transition: border-color .15s, box-shadow .15s; outline: none;
+}
+.perm-search-box:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
 .btn-grant-all {
-    background: #d4a017; border: none; color: #fff; padding: 8px 18px; border-radius: 8px;
-    font-size: 0.85rem; font-weight: 700; cursor: pointer;
+    background: #d4a017; border: none; color: #fff; padding: 7px 16px; border-radius: 6px;
+    font-size: 12.5px; font-weight: 700; cursor: pointer;
     display: inline-flex; align-items: center; gap: 6px; transition: background 0.2s;
 }
 .btn-grant-all:hover { background: #b88b12; }
 .btn-revoke-all {
-    background: #fff; border: 1px solid #e4e8f0; color: #7a869a; padding: 8px 18px;
-    border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+    background: #fff; border: 1px solid #e4e8f0; color: #7a869a; padding: 7px 16px;
+    border-radius: 6px; font-size: 12.5px; font-weight: 600; cursor: pointer;
     display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;
 }
 .btn-revoke-all:hover { background: #fff5f5; border-color: #f87171; color: #dc2626; }
-.perm-search-box {
-    border: 1px solid #e4e8f0; border-radius: 8px; padding: 8px 14px; font-size: 0.85rem;
-    color: #1a2236; outline: none; width: 220px; background: #f8fafc; transition: border-color 0.2s, box-shadow 0.2s;
-}
-.perm-search-box:focus { border-color: #2d2a6e; box-shadow: 0 0 0 3px rgba(45,42,110,0.08); background: #fff; }
 
-/* ─── Category header ─────────────────────────────────────────── */
-.perm-category-row { display: flex; align-items: center; gap: 12px; margin: 28px 0 14px; }
-.perm-category-label {
-    font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em;
-    text-transform: uppercase; color: #7a869a; white-space: nowrap;
-}
-.perm-category-line { flex: 1; height: 1px; background: #e4e8f0; }
+/* ─── Tab panels ──────────────────────────────────────────────── */
+.perm-panel { padding: 16px 20px 20px; display: none; }
+.perm-panel.active { display: block; }
+/* Search mode: show all panels */
+.perm-search-active .perm-panel { display: block !important; }
+.perm-search-active .perm-tab-bar { display: none; }
 
-/* ─── Cards grid ──────────────────────────────────────────────── */
-.perm-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-@media (max-width: 1199px) { .perm-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 699px)  { .perm-grid { grid-template-columns: 1fr; } }
-
-/* ─── Module card ─────────────────────────────────────────────── */
-.perm-card {
-    background: #fff; border: 1px solid #e8edf5; border-radius: 14px;
-    overflow: hidden; transition: box-shadow 0.2s, border-color 0.2s;
-    display: flex; flex-direction: column;
+/* ─── Module section (collapsible) ───────────────────────────── */
+.perm-section {
+    margin-bottom: 8px; border: 1px solid #e2e8f0;
+    border-radius: 8px; overflow: hidden; background: #fff;
 }
-.perm-card:hover { box-shadow: 0 6px 20px rgba(26,34,54,0.08); border-color: #d0d9f0; }
-.perm-card.perm-card--granted { border-color: #bbd4ff; box-shadow: 0 0 0 1.5px #bbd4ff; }
-.perm-card.perm-card--hidden  { display: none; }
-
-.perm-card-head {
-    display: flex; align-items: center; gap: 12px; padding: 14px 16px 12px;
-    border-bottom: 1px solid #f1f4fb; background: #fafbff;
+.perm-section.perm-section--granted { border-color: #bbd4ff; }
+.perm-section.perm-sec--hidden { display: none !important; }
+.perm-sec-head {
+    display: flex; align-items: center; gap: 10px; padding: 11px 16px;
+    cursor: pointer; user-select: none; background: #fafbff;
+    transition: background .12s; border-bottom: 1px solid #f1f4f9;
 }
-.perm-card-icon {
-    width: 38px; height: 38px; border-radius: 10px;
+.perm-sec-head:hover { background: #f0f4ff; }
+.perm-sec-icon {
+    width: 34px; height: 34px; border-radius: 8px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 1rem; flex-shrink: 0;
+    font-size: 0.9rem; flex-shrink: 0;
 }
-.perm-card-name { font-weight: 700; font-size: 0.9rem; color: #1a2236; flex: 1; line-height: 1.3; }
-.perm-card-count {
-    font-size: 0.72rem; color: #7a869a; background: #f1f4fb;
-    border-radius: 10px; padding: 2px 9px; white-space: nowrap;
+.perm-sec-name { font-size: 13px; font-weight: 700; color: #0f172a; flex: 1; line-height: 1.3; }
+.perm-sec-count {
+    font-size: 11px; color: #7a869a; background: #f1f4fb;
+    border-radius: 8px; padding: 2px 9px; white-space: nowrap; flex-shrink: 0;
 }
+.perm-sec-chevron { color: #94a3b8; font-size: 11px; transition: transform .2s; flex-shrink: 0; }
+.perm-section.collapsed .perm-sec-chevron { transform: rotate(-90deg); }
+.perm-section.collapsed .perm-sec-body { display: none; }
 
-/* Toggle */
-.perm-card-toggle { display: flex; align-items: center; gap: 6px; cursor: pointer; flex-shrink: 0; }
+/* Toggle switch */
+.perm-card-toggle { display: flex; align-items: center; gap: 5px; cursor: pointer; flex-shrink: 0; }
 .perm-card-toggle input[type=checkbox] { display: none; }
 .perm-toggle-track {
-    width: 34px; height: 19px; background: #d1d5db; border-radius: 19px;
+    width: 30px; height: 17px; background: #d1d5db; border-radius: 17px;
     position: relative; transition: background 0.2s; flex-shrink: 0;
 }
 .perm-toggle-thumb {
-    width: 13px; height: 13px; background: #fff; border-radius: 50%;
+    width: 11px; height: 11px; background: #fff; border-radius: 50%;
     position: absolute; top: 3px; left: 3px; transition: transform 0.2s;
     box-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
 .perm-card-toggle input:checked ~ .perm-toggle-track                    { background: #d4a017; }
-.perm-card-toggle input:checked ~ .perm-toggle-track .perm-toggle-thumb { transform: translateX(15px); }
-.perm-toggle-label { font-size: 0.72rem; font-weight: 600; color: #94a3b8; }
+.perm-card-toggle input:checked ~ .perm-toggle-track .perm-toggle-thumb { transform: translateX(13px); }
+.perm-toggle-label { font-size: 11px; font-weight: 600; color: #94a3b8; }
 
-.perm-card-body { padding: 14px 16px 16px; flex: 1; }
+/* ─── Permissions flex grid (3-col) ──────────────────────────── */
+.perm-sec-body { padding: 10px 14px 14px; }
+.perm-items-grid { display: flex; flex-wrap: wrap; }
 
-/* Permission item */
+/* Full-width: separators & sub-headings */
+.perm-sub-title {
+    flex: 0 0 100%; font-size: 0.68rem; font-weight: 800; text-transform: uppercase;
+    letter-spacing: 0.06em; color: #94a3b8; padding: 7px 8px 3px; margin-top: 2px;
+}
+.perm-sep { flex: 0 0 100%; border: none; border-top: 1px dashed #e8edf5; margin: 6px 0; }
+
+/* Checkbox / radio items — 3 columns */
 .perm-item {
-    display: flex; align-items: center; gap: 9px; font-size: 0.84rem; color: #374151;
-    cursor: pointer; padding: 5px 6px; border-radius: 7px; line-height: 1.3; margin-bottom: 1px;
-    transition: background 0.15s; -webkit-user-select: none; user-select: none;
+    flex: 0 0 33.333%; min-width: 150px;
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12.5px; color: #374151; cursor: pointer;
+    padding: 5px 8px; border-radius: 6px; line-height: 1.3;
+    transition: background 0.12s; -webkit-user-select: none; user-select: none;
+    margin-bottom: 2px;
 }
 .perm-item:hover { background: #f4f6fb; }
 .perm-item input[type=checkbox],
-.perm-item input[type=radio] { width: 16px; height: 16px; accent-color: #2d2a6e; flex-shrink: 0; cursor: pointer; margin: 0; }
-.perm-item input:checked + span { color: #1a2236; font-weight: 600; }
-.perm-sep { border: none; border-top: 1px dashed #e8edf5; margin: 8px 0; }
-.perm-sub-title {
-    font-size: 0.69rem; font-weight: 800; text-transform: uppercase;
-    letter-spacing: 0.06em; color: #94a3b8; margin: 8px 0 4px 4px;
+.perm-item input[type=radio] {
+    width: 15px; height: 15px; accent-color: #2563eb;
+    flex-shrink: 0; cursor: pointer; margin: 0;
 }
+.perm-item input:checked + span { color: #1a2236; font-weight: 600; }
 
-/* Sticky save bar */
+@media (max-width: 991px) { .perm-item { flex: 0 0 50%; } }
+@media (max-width: 575px)  { .perm-item { flex: 0 0 100%; } }
+
+/* ─── Sticky save bar ─────────────────────────────────────────── */
 .perm-action-bar {
     position: sticky; bottom: 0; background: #fff; border-top: 2px solid #e4e8f0;
     padding: 14px 24px; display: flex; justify-content: center; gap: 12px;
@@ -159,7 +202,7 @@
 }
 .btn-perm-cancel:hover { background: #f9fafb; border-color: #9ca3af; color: #374151; }
 
-/* Icon palettes */
+/* ─── Icon palettes ───────────────────────────────────────────── */
 .icon-blue   { background: #e0e8ff; color: #3b5bdb; }
 .icon-gold   { background: #fef3c7; color: #d97706; }
 .icon-green  { background: #dcfce7; color: #16a34a; }
@@ -494,101 +537,137 @@
 
             $categories = [];
             foreach ($modules as $m) { $categories[$m['cat']][] = $m; }
+
+            // Build URL-safe slugs for each category
+            $catSlugs = [];
+            foreach (array_keys($categories) as $cat) {
+                $catSlugs[$cat] = strtolower(preg_replace('/[^a-z0-9]+/i', '-', $cat));
+            }
+            $firstSlug = reset($catSlugs);
         @endphp
 
-        <div class="perm-toolbar">
-            <div class="perm-toolbar-left">
-                <span style="font-weight:700;font-size:0.9rem;color:#1a2236;">Module Permissions</span>
-                <span class="perm-count-badge" id="grantedBadge">
-                    {{ count(array_filter($assigned, fn($p) => $p)) }} granted
-                </span>
-            </div>
-            <div class="perm-toolbar-right">
-                <input type="text" class="perm-search-box" id="permSearch" placeholder="Search modules…" autocomplete="off">
-                <button type="button" class="btn-revoke-all" id="btnRevokeAll">
-                    <i class="fa fa-times-circle"></i> Revoke All
-                </button>
-                <button type="button" class="btn-grant-all" id="btnGrantAll">
-                    <i class="fa fa-check-circle"></i> Grant All
-                </button>
-            </div>
-        </div>
+        {{-- ── Main white card ─────────────────────────────── --}}
+        <div class="perm-main-card">
 
-        @foreach ($categories as $catName => $catModules)
-            <div class="perm-category-row">
-                <span class="perm-category-label">{{ $catName }}</span>
-                <div class="perm-category-line"></div>
-            </div>
-
-            <div class="perm-grid">
-                @foreach ($catModules as $mod)
-                    @php
-                        $granted = $countGranted($mod['items']);
-                        $total   = $countTotal($mod['items']);
-                        $isFull  = ($granted === $total && $total > 0);
-                    @endphp
-                    <div class="perm-card {{ $isFull ? 'perm-card--granted' : '' }}"
-                         data-module-name="{{ strtolower($mod['group']) }}"
-                         data-section="{{ $mod['section'] }}">
-
-                        <div class="perm-card-head">
-                            <div class="perm-card-icon {{ $mod['ic'] }}">
-                                <i class="fa {{ $mod['icon'] }}"></i>
-                            </div>
-                            <div class="perm-card-name">{{ $mod['group'] }}</div>
-                            <span class="perm-card-count" id="count-{{ $mod['section'] }}">
-                                {{ $granted }}/{{ $total }}
-                            </span>
-                            <label class="perm-card-toggle ms-1" title="Toggle all permissions">
-                                <input type="checkbox"
-                                       class="perm-select-all"
-                                       data-section="{{ $mod['section'] }}"
-                                       {{ $isFull ? 'checked' : '' }}>
-                                <span class="perm-toggle-track">
-                                    <span class="perm-toggle-thumb"></span>
-                                </span>
-                                <span class="perm-toggle-label">All</span>
-                            </label>
-                        </div>
-
-                        <div class="perm-card-body">
-                            @foreach ($mod['items'] as $item)
-                                @if ($item['t'] === 'sp')
-                                    <hr class="perm-sep">
-                                @elseif ($item['t'] === 'hd')
-                                    <div class="perm-sub-title">{{ $item['l'] }}</div>
-                                @elseif ($item['t'] === 'cb')
-                                    @php
-                                        $parts = explode('.', $item['p']);
-                                        $iname = "permissions[{$parts[0]}][{$parts[1]}][{$parts[2]}]";
-                                    @endphp
-                                    <label class="perm-item">
-                                        <input type="checkbox"
-                                               class="perm-input"
-                                               name="{{ $iname }}"
-                                               value="1"
-                                               data-section="{{ $mod['section'] }}"
-                                               {{ $permChecked($item['p']) ? 'checked' : '' }}>
-                                        <span>{{ $item['l'] }}</span>
-                                    </label>
-                                @elseif ($item['t'] === 'rd')
-                                    <label class="perm-item">
-                                        <input type="radio"
-                                               class="perm-input"
-                                               name="{{ $item['rn'] }}"
-                                               value="{{ $item['p'] }}"
-                                               data-section="{{ $mod['section'] }}"
-                                               {{ $permChecked($item['p']) ? 'checked' : '' }}>
-                                        <span>{{ $item['l'] }}</span>
-                                    </label>
-                                @endif
-                            @endforeach
-                        </div>
-
-                    </div>
+            {{-- Tab bar (one tab per category) --}}
+            <div class="perm-tab-bar">
+                @foreach ($categories as $catName => $catModules)
+                    @php $slug = $catSlugs[$catName]; @endphp
+                    <button type="button" class="perm-tab {{ $slug === $firstSlug ? 'active' : '' }}"
+                            data-cat="{{ $slug }}">
+                        {{ $catName }}
+                        <span class="perm-tab-cnt">{{ count($catModules) }}</span>
+                    </button>
                 @endforeach
             </div>
-        @endforeach
+
+            {{-- Toolbar: count badge + search + bulk actions --}}
+            <div class="perm-toolbar">
+                <div class="perm-toolbar-left">
+                    <span style="font-weight:700;font-size:0.9rem;color:#1a2236;">Module Permissions</span>
+                    <span class="perm-count-badge" id="grantedBadge">
+                        {{ count(array_filter($assigned, fn($p) => $p)) }} granted
+                    </span>
+                </div>
+                <div class="perm-toolbar-right">
+                    <div class="perm-search-wrap">
+                        <i class="fa fa-search perm-search-icon"></i>
+                        <input type="text" class="perm-search-box" id="permSearch"
+                               placeholder="Search modules…" autocomplete="off">
+                    </div>
+                    <button type="button" class="btn-revoke-all" id="btnRevokeAll">
+                        <i class="fa fa-times-circle"></i> Revoke All
+                    </button>
+                    <button type="button" class="btn-grant-all" id="btnGrantAll">
+                        <i class="fa fa-check-circle"></i> Grant All
+                    </button>
+                </div>
+            </div>
+
+            {{-- Tab panels --}}
+            @foreach ($categories as $catName => $catModules)
+                @php $slug = $catSlugs[$catName]; @endphp
+                <div class="perm-panel {{ $slug === $firstSlug ? 'active' : '' }}"
+                     data-panel="{{ $slug }}">
+
+                    @foreach ($catModules as $mod)
+                        @php
+                            $granted = $countGranted($mod['items']);
+                            $total   = $countTotal($mod['items']);
+                            $isFull  = ($granted === $total && $total > 0);
+                        @endphp
+                        <div class="perm-section {{ $isFull ? 'perm-section--granted' : '' }}"
+                             data-module-name="{{ strtolower($mod['group']) }}"
+                             data-section="{{ $mod['section'] }}"
+                             data-cat="{{ $slug }}">
+
+                            {{-- Section header (clickable to collapse) --}}
+                            <div class="perm-sec-head">
+                                <div class="perm-sec-icon {{ $mod['ic'] }}">
+                                    <i class="fa {{ $mod['icon'] }}"></i>
+                                </div>
+                                <div class="perm-sec-name">{{ $mod['group'] }}</div>
+                                <span class="perm-sec-count" id="count-{{ $mod['section'] }}">
+                                    {{ $granted }}/{{ $total }}
+                                </span>
+                                <label class="perm-card-toggle ms-2" title="Toggle all"
+                                       onclick="event.stopPropagation()">
+                                    <input type="checkbox"
+                                           class="perm-select-all"
+                                           data-section="{{ $mod['section'] }}"
+                                           {{ $isFull ? 'checked' : '' }}>
+                                    <span class="perm-toggle-track">
+                                        <span class="perm-toggle-thumb"></span>
+                                    </span>
+                                    <span class="perm-toggle-label">All</span>
+                                </label>
+                                <i class="fa fa-chevron-down perm-sec-chevron ms-2"></i>
+                            </div>
+
+                            {{-- Section body: permissions in flex 3-col grid --}}
+                            <div class="perm-sec-body">
+                                <div class="perm-items-grid">
+                                    @foreach ($mod['items'] as $item)
+                                        @if ($item['t'] === 'sp')
+                                            <hr class="perm-sep">
+                                        @elseif ($item['t'] === 'hd')
+                                            <div class="perm-sub-title">{{ $item['l'] }}</div>
+                                        @elseif ($item['t'] === 'cb')
+                                            @php
+                                                $parts = explode('.', $item['p']);
+                                                $iname = "permissions[{$parts[0]}][{$parts[1]}][{$parts[2]}]";
+                                            @endphp
+                                            <label class="perm-item">
+                                                <input type="checkbox"
+                                                       class="perm-input"
+                                                       name="{{ $iname }}"
+                                                       value="1"
+                                                       data-section="{{ $mod['section'] }}"
+                                                       {{ $permChecked($item['p']) ? 'checked' : '' }}>
+                                                <span>{{ $item['l'] }}</span>
+                                            </label>
+                                        @elseif ($item['t'] === 'rd')
+                                            <label class="perm-item">
+                                                <input type="radio"
+                                                       class="perm-input"
+                                                       name="{{ $item['rn'] }}"
+                                                       value="{{ $item['p'] }}"
+                                                       data-section="{{ $mod['section'] }}"
+                                                       {{ $permChecked($item['p']) ? 'checked' : '' }}>
+                                                <span>{{ $item['l'] }}</span>
+                                            </label>
+                                        @endif
+                                    @endforeach
+                                </div>
+                            </div>
+
+                        </div>{{-- /.perm-section --}}
+                    @endforeach
+
+                </div>{{-- /.perm-panel --}}
+            @endforeach
+
+        </div>{{-- /.perm-main-card --}}
 
         <div class="perm-action-bar">
             <a href="{{ route('roles.index') }}" class="btn-perm-cancel">Cancel</a>
@@ -605,6 +684,7 @@
 @push('scripts')
 <script>
 (function () {
+    /* ── Helpers ───────────────────────────────────────────────── */
     function inputs(s)    { return document.querySelectorAll('.perm-input[data-section="'+s+'"]'); }
     function selectAll(s) { return document.querySelector('.perm-select-all[data-section="'+s+'"]'); }
 
@@ -620,8 +700,8 @@
         Object.values(rg).forEach(function(v){ if(v) n++; });
         var el = document.getElementById('count-'+s);
         if (el) el.textContent = n+'/'+tot;
-        var card = document.querySelector('.perm-card[data-section="'+s+'"]');
-        if (card) card.classList.toggle('perm-card--granted', tot > 0 && n === tot);
+        var sec = document.querySelector('.perm-section[data-section="'+s+'"]');
+        if (sec) sec.classList.toggle('perm-section--granted', tot > 0 && n === tot);
     }
 
     function updateBadge() {
@@ -645,7 +725,31 @@
         sa.checked = ok && (Object.keys(rg).length === 0 || Object.values(rg).every(Boolean));
     }
 
-    /* Select-All toggles */
+    /* ── Tab switching ─────────────────────────────────────────── */
+    document.querySelectorAll('.perm-tab').forEach(function(tab) {
+        tab.addEventListener('click', function() {
+            // clear search when switching tabs
+            var searchEl = document.getElementById('permSearch');
+            if (searchEl && searchEl.value) {
+                searchEl.value = '';
+                exitSearchMode();
+            }
+            document.querySelectorAll('.perm-tab').forEach(function(t){ t.classList.remove('active'); });
+            document.querySelectorAll('.perm-panel').forEach(function(p){ p.classList.remove('active'); });
+            this.classList.add('active');
+            var panel = document.querySelector('.perm-panel[data-panel="'+this.dataset.cat+'"]');
+            if (panel) panel.classList.add('active');
+        });
+    });
+
+    /* ── Section collapse ──────────────────────────────────────── */
+    document.querySelectorAll('.perm-sec-head').forEach(function(head) {
+        head.addEventListener('click', function() {
+            this.closest('.perm-section').classList.toggle('collapsed');
+        });
+    });
+
+    /* ── Select-All toggles ────────────────────────────────────── */
     document.querySelectorAll('.perm-select-all').forEach(function(sa) {
         sa.addEventListener('change', function() {
             var s = this.dataset.section, on = this.checked, rg = {};
@@ -659,12 +763,16 @@
         });
     });
 
-    /* Individual inputs */
+    /* ── Individual inputs ─────────────────────────────────────── */
     document.querySelectorAll('.perm-input').forEach(function(i) {
-        i.addEventListener('change', function() { syncToggle(this.dataset.section); updateCount(this.dataset.section); updateBadge(); });
+        i.addEventListener('change', function() {
+            syncToggle(this.dataset.section);
+            updateCount(this.dataset.section);
+            updateBadge();
+        });
     });
 
-    /* Grant All */
+    /* ── Grant All ─────────────────────────────────────────────── */
     document.getElementById('btnGrantAll').addEventListener('click', function() {
         var rg = {};
         document.querySelectorAll('.perm-input').forEach(function(i) {
@@ -673,34 +781,68 @@
         });
         Object.values(rg).forEach(function(r){ r.checked = true; });
         document.querySelectorAll('.perm-select-all').forEach(function(sa){ sa.checked = true; });
-        document.querySelectorAll('.perm-card').forEach(function(c){ updateCount(c.dataset.section); });
+        document.querySelectorAll('.perm-section').forEach(function(c){ updateCount(c.dataset.section); });
         updateBadge();
     });
 
-    /* Revoke All */
+    /* ── Revoke All ────────────────────────────────────────────── */
     document.getElementById('btnRevokeAll').addEventListener('click', function() {
         document.querySelectorAll('.perm-input').forEach(function(i){ i.checked = false; });
         document.querySelectorAll('.perm-select-all').forEach(function(sa){ sa.checked = false; });
-        document.querySelectorAll('.perm-card').forEach(function(c){ updateCount(c.dataset.section); });
+        document.querySelectorAll('.perm-section').forEach(function(c){ updateCount(c.dataset.section); });
         updateBadge();
     });
 
-    /* Search */
+    /* ── Search (cross-tab) ────────────────────────────────────── */
+    function exitSearchMode() {
+        document.getElementById('permForm').classList.remove('perm-search-active');
+        // restore active tab panel only
+        var activeTab = document.querySelector('.perm-tab.active');
+        if (activeTab) {
+            document.querySelectorAll('.perm-panel').forEach(function(p){ p.classList.remove('active'); });
+            var panel = document.querySelector('.perm-panel[data-panel="'+activeTab.dataset.cat+'"]');
+            if (panel) panel.classList.add('active');
+        }
+        document.querySelectorAll('.perm-section').forEach(function(s){
+            s.classList.remove('perm-sec--hidden');
+        });
+        var tabBar = document.querySelector('.perm-tab-bar');
+        if (tabBar) tabBar.style.display = '';
+    }
+
     document.getElementById('permSearch').addEventListener('input', function() {
         var q = this.value.trim().toLowerCase();
-        document.querySelectorAll('.perm-card').forEach(function(card) {
-            card.classList.toggle('perm-card--hidden', q !== '' && !card.dataset.moduleName.includes(q));
+        var form = document.getElementById('permForm');
+        var tabBar = document.querySelector('.perm-tab-bar');
+
+        if (!q) {
+            exitSearchMode();
+            return;
+        }
+
+        // Show all panels while searching
+        form.classList.add('perm-search-active');
+        document.querySelectorAll('.perm-panel').forEach(function(p){ p.style.display = 'block'; });
+        if (tabBar) tabBar.style.display = 'none';
+
+        document.querySelectorAll('.perm-section').forEach(function(sec) {
+            var match = sec.dataset.moduleName && sec.dataset.moduleName.includes(q);
+            sec.classList.toggle('perm-sec--hidden', !match);
+            // auto-expand matching sections
+            if (match) sec.classList.remove('collapsed');
         });
-        document.querySelectorAll('.perm-grid').forEach(function(grid) {
-            var row = grid.previousElementSibling;
-            var any = Array.from(grid.querySelectorAll('.perm-card')).some(function(c){ return !c.classList.contains('perm-card--hidden'); });
-            if (row && row.classList.contains('perm-category-row')) row.style.display = any ? '' : 'none';
-            grid.style.display = any ? '' : 'none';
+
+        // Hide panels that have no visible sections
+        document.querySelectorAll('.perm-panel').forEach(function(panel) {
+            var any = Array.from(panel.querySelectorAll('.perm-section')).some(function(s){
+                return !s.classList.contains('perm-sec--hidden');
+            });
+            panel.style.display = any ? 'block' : 'none';
         });
     });
 
-    /* Init */
-    document.querySelectorAll('.perm-card').forEach(function(c){ updateCount(c.dataset.section); });
+    /* ── Init ──────────────────────────────────────────────────── */
+    document.querySelectorAll('.perm-section').forEach(function(c){ updateCount(c.dataset.section); });
     updateBadge();
 }());
 </script>
