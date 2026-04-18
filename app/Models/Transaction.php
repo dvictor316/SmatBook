@@ -137,15 +137,18 @@ class Transaction extends Model
         parent::boot();
 
         static::created(function ($transaction) {
-            $transaction->account->updateBalance();
+            $account = $transaction->account()->withoutGlobalScopes()->first();
+            $account?->updateBalance();
         });
 
         static::updated(function ($transaction) {
-            $transaction->account->updateBalance();
+            $account = $transaction->account()->withoutGlobalScopes()->first();
+            $account?->updateBalance();
         });
 
         static::deleted(function ($transaction) {
-            $transaction->account->updateBalance();
+            $account = $transaction->account()->withoutGlobalScopes()->first();
+            $account?->updateBalance();
         });
     }
 }
