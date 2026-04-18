@@ -4,182 +4,155 @@
 @push('styles')
 <style>
 /* ═══════════════════════════════════════════════════════════════
-   ROLE PERMISSIONS PAGE — Reports Hub Style
-═══════════════════════════════════════════════════════════════ */
 
-.perm-page { background:#f1f4f9; min-height:100vh; }
-
-/* ─── Role badge ─────────────────────────────────────────────── */
-.perm-role-badge {
-    display: inline-flex; align-items: center; gap: 5px;
-    background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;
-    padding: 2px 10px; border-radius: 20px;
-    font-size: 0.75rem; font-weight: 700; letter-spacing: 0.03em;
+@push('styles')
+<style>
+.permission-section {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(37,99,235,0.04);
+    margin-bottom: 24px;
+    padding: 0;
+    transition: box-shadow .15s;
 }
-
-/* ─── Tab bar (Reports Hub style) ───────────────────────────── */
-.perm-tab-bar{display:flex;gap:0;border-bottom:2px solid #dee2e9;background:#fff;padding:0 24px;overflow-x:auto;scrollbar-width:none;}
-.perm-tab-bar::-webkit-scrollbar{display:none;}
-.perm-tab{padding:13px 18px;font-size:12.5px;font-weight:600;color:#64748b;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;background:none;border-top:none;border-left:none;border-right:none;white-space:nowrap;display:flex;align-items:center;gap:6px;flex-shrink:0;transition:color .15s,border-color .15s;}
-.perm-tab:hover{color:#1e3a5f;}
-.perm-tab.active{color:#2563eb;border-bottom-color:#2563eb;}
-.perm-tab-cnt{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;border-radius:9px;background:#e8eef8;color:#2563eb;font-size:10px;font-weight:800;padding:0 4px;}
-.perm-tab.active .perm-tab-cnt{background:#2563eb;color:#fff;}
-
-
-/* ─── Toolbar (Reports Hub style) ───────────────────────────── */
-.perm-toolbar{background:#fff;border-bottom:1px solid #e4e8f0;padding:10px 24px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;box-shadow:0 2px 8px rgba(37,99,235,.03);}
-.perm-toolbar-left{display:flex;align-items:center;gap:10px;flex:1;flex-wrap:wrap;}
-.perm-toolbar-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-.perm-role-info{font-size:13px;font-weight:700;color:#1e293b;display:flex;align-items:center;gap:5px;}
-.perm-count-badge{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:20px;border-radius:10px;background:#e8eef8;color:#2563eb;font-size:11px;font-weight:800;padding:0 8px;}
-.perm-search-wrap{position:relative;}
-.perm-search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:12px;pointer-events:none;}
-.perm-search-box{padding:7px 12px 7px 32px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;color:#1e293b;background:#fff;outline:none;width:200px;transition:border-color .15s,box-shadow .15s;box-shadow:0 1px 2px rgba(37,99,235,.03);}
-.perm-search-box:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1);}
-.btn-grant-all{padding:7px 18px;font-size:13px;font-weight:700;color:#fff;background:#2563eb;border:none;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background .15s,box-shadow .15s;box-shadow:0 2px 8px rgba(37,99,235,.10);}
-.btn-grant-all:hover{background:#1d4ed8;box-shadow:0 4px 16px rgba(37,99,235,.13);}
-.btn-revoke-all{padding:7px 18px;font-size:13px;font-weight:700;color:#2563eb;background:#f8fafc;border:1.5px solid #2563eb;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .15s,box-shadow .15s;box-shadow:0 2px 8px rgba(37,99,235,.04);}
-.btn-revoke-all:hover{background:#e0e7ff;color:#1d4ed8;border-color:#1d4ed8;}
-
-/* ─── Tab panels / body ──────────────────────────────────────── */
-.perm-panel{display:none;}
-.perm-panel.active{display:block;}
-.perm-search-active .perm-panel{display:block!important;}
-.perm-search-active .perm-tab-bar{display:none!important;}
-.perm-body{padding:14px 16px;background:#f1f4f9;}
-
-/* ─── Module section — left/right Prokip-style layout ───────── */
-.perm-section{display:flex;flex-direction:row;align-items:stretch;background:#fff;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:6px;overflow:hidden;transition:box-shadow .12s;}
-.perm-section:hover{box-shadow:0 2px 8px rgba(0,0,0,.07);}
-.perm-section.perm-section--granted{border-color:#bbf7d0;}
-.perm-section.perm-sec--hidden{display:none!important;}
-.perm-section.collapsed .perm-col-grid{display:none!important;}
-
-/* Left panel — icon, title, count, Select All */
-.perm-sec-head{width:215px;min-width:215px;padding:14px 14px 12px 14px;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:8px;border-right:1px solid #e8ecf2;border-bottom:none;background:#fafbfd;cursor:pointer;user-select:none;transition:background .12s;position:relative;}
-.perm-sec-head:hover{background:#f3f6fb;}
-.perm-section--granted .perm-sec-head{background:#f0fdf4;border-right-color:#bbf7d0;}
-.perm-sec-icon-row{display:flex;align-items:center;gap:8px;width:100%;}
-.perm-sec-icon{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
-.perm-sec-title{font-size:13px;font-weight:800;color:#0f172a;line-height:1.3;flex:1;}
-.perm-section--granted .perm-sec-title{color:#15803d;}
-.perm-sec-count{font-size:11px;color:#94a3b8;font-weight:600;}
-.perm-section--granted .perm-sec-count{color:#16a34a;font-weight:700;}
-.perm-select-all-wrap{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#475569;cursor:pointer;user-select:none;padding:5px 10px;border:1px solid #d0d5de;border-radius:5px;background:#fff;transition:all .12s;width:100%;box-sizing:border-box;}
-.perm-select-all-wrap:hover{border-color:#93c5fd;color:#2563eb;background:#eff6ff;}
-.perm-select-all-wrap input{accent-color:#2563eb;cursor:pointer;width:13px;height:13px;margin:0;flex-shrink:0;}
-.perm-sec-chevron{position:absolute;top:12px;right:10px;color:#cbd5e1;font-size:10px;transition:transform .2s;}
-.perm-section.collapsed .perm-sec-chevron{transform:rotate(-90deg);}
-
-/* Right panel — clean vertical permission list */
-.perm-col-grid{display:block;flex:1;border-top:none;}
-.perm-item{display:flex;align-items:center;padding:0 16px;border-bottom:1px solid #f3f4f8;min-height:43px;cursor:pointer;transition:background .1s;}
-.perm-item:hover{background:#f8f9ff;}
-.perm-item:last-child{border-bottom:none;}
-.perm-item:has(input:checked){background:#f0f5ff;}
-.perm-item-chk{width:36px;height:43px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.perm-item-chk input[type=checkbox],.perm-item-chk input[type=radio]{width:15px;height:15px;accent-color:#2563eb;cursor:pointer;margin:0;}
-.perm-item-label{flex:1;font-size:13px;font-weight:500;color:#374151;padding-right:8px;line-height:1.4;}
-.perm-item:has(input:checked) .perm-item-label{color:#1e40af;font-weight:600;}
-
-/* Sub-heading row */
-.perm-sub-row{display:flex;align-items:center;padding:5px 16px;background:#f8fafc;border-bottom:1px solid #eef0f5;}
-.perm-sub-title{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:#94a3b8;}
-.perm-sep-row{border:none;border-top:1px solid #eaecf2;margin:0;display:block;}
-@media(max-width:768px){.perm-section{flex-direction:column;}.perm-sec-head{width:100%;min-width:unset;flex-direction:row;flex-wrap:wrap;border-right:none;border-bottom:1px solid #e8ecf2;}.perm-sec-chevron{position:static;}}
-
-/* ─── Sticky save bar ────────────────────────────────────────── */
-.perm-action-bar{position:sticky;bottom:0;background:#fff;border-top:1px solid #e4e8f0;padding:12px 24px;display:flex;justify-content:flex-end;gap:10px;z-index:50;box-shadow:0 -4px 16px rgba(0,0,0,.06);}
-.btn-perm-save{background:#2563eb;border:none;color:#fff;padding:9px 28px;border-radius:6px;font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:7px;cursor:pointer;transition:background .2s;}
-.btn-perm-save:hover{background:#1d4ed8;}
-.btn-perm-cancel{background:#fff;border:1px solid #d0d5e0;color:#6b7280;padding:9px 20px;border-radius:6px;font-size:13px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;transition:all .2s;}
-.btn-perm-cancel:hover{background:#f9fafb;color:#374151;}
-
-
-
-
-/* ─── Palette helpers (same as Reports Hub) ──────────────────── */
-.pal-blue{background:#eff6ff;color:#2563eb;}
-.pal-green{background:#f0fdf4;color:#16a34a;}
-.pal-orange{background:#fff7ed;color:#ea580c;}
-.pal-purple{background:#fdf4ff;color:#7c3aed;}
-.pal-red{background:#fef2f2;color:#dc2626;}
-.pal-teal{background:#f0fdfa;color:#0d9488;}
-.pal-amber{background:#fffbeb;color:#d97706;}
-.pal-slate{background:#f8fafc;color:#475569;}
-.pal-indigo{background:#eef2ff;color:#4f46e5;}
-.pal-sky{background:#f0f9ff;color:#0284c7;}
-.pal-lime{background:#f7fee7;color:#65a30d;}
-.pal-rose{background:#fff1f2;color:#e11d48;}
-.pal-pink{background:#fdf2f8;color:#db2777;}
+.permission-section:hover {
+    box-shadow: 0 4px 16px rgba(37,99,235,0.08);
+}
+.permission-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 24px 10px 24px;
+    border-bottom: 1px solid #f1f4f9;
+    background: #fafbfc;
+}
+.permission-section-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+.permission-select-all {
+    font-size: 0.98rem;
+    font-weight: 500;
+    color: #2563eb;
+}
+.permission-options {
+    padding: 18px 24px 10px 24px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px 40px;
+}
+.permission-group {
+    min-width: 220px;
+    margin-bottom: 12px;
+}
+.permission-radio-group label,
+.permission-checkbox-group label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1rem;
+    margin-bottom: 8px;
+    cursor: pointer;
+}
+.permission-radio-group input[type=radio],
+.permission-checkbox-group input[type=checkbox] {
+    accent-color: #2563eb;
+    width: 18px;
+    height: 18px;
+}
+@media (max-width: 768px) {
+    .permission-options { flex-direction: column; gap: 0; }
+    .permission-group { min-width: 100%; }
+}
 </style>
 @endpush
-
 @section('content')
-<div class="page-wrapper">
-<div class="content container-fluid">
-
-    <div class="page-header">
-        <div class="row align-items-center">
-            <div class="col">
-                <h3 class="page-title">Role Permissions</h3>
-                <ul class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{{ url('dashboard') }}">Dashboard</a></li>
-                    <li class="breadcrumb-item"><a href="{{ route('roles.index') }}">Roles</a></li>
-                    <li class="breadcrumb-item active">
-                        Permissions &mdash;
-                        <span class="perm-role-badge"><i class="fa fa-user-tag"></i> {{ $role->name }}</span>
-                    </li>
-                </ul>
-            </div>
-            <div class="col-auto">
-                <a href="{{ route('roles.index') }}" class="btn btn-secondary btn-sm rounded-pill px-3">
-                    <i class="fa fa-arrow-left me-1"></i> Back to Roles
-                </a>
-            </div>
-        </div>
-    </div>
-
-    @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
-            <i class="fa fa-check-circle me-2"></i>{{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    @endif
-
+<div class="container-fluid py-3" style="background:#f1f4f9;min-height:100vh;">
     <form action="{{ route('roles.permissions.update') }}" method="POST" id="permForm">
         @csrf
         <input type="hidden" name="role_id" value="{{ $role->id }}">
 
+        @foreach($modules as $mod)
         @php
-            $assigned    = $assignedPermissions ?? [];
-            $permChecked = fn (string $p) => in_array($p, $assigned, true);
+            $section = $mod['section'];
+            $isAllChecked = true;
+            foreach ($mod['items'] as $item) {
+                if (isset($item['p']) && !in_array($item['p'], $assigned ?? [], true)) $isAllChecked = false;
+            }
+        @endphp
+        <div class="permission-section" data-section="{{ $section }}">
+            <div class="permission-section-header">
+                <span class="permission-section-title">
+                    <i class="fas {{ $mod['icon'] }} me-2" style="color:#2563eb;"></i>
+                    {{ $mod['group'] }}
+                </span>
+                <label class="permission-select-all">
+                    <input type="checkbox" class="select-all" data-section="{{ $section }}" {{ $isAllChecked ? 'checked' : '' }}>
+                    Select All
+                </label>
+            </div>
+            <div class="permission-options">
+                @php
+                    // Group items by type for layout
+                    $radios = [];
+                    $checkboxes = [];
+                    $radioGroups = [];
+                    foreach ($mod['items'] as $item) {
+                        if ($item['t'] === 'rd') {
+                            $radioGroups[$item['rn']][] = $item;
+                        } elseif ($item['t'] === 'cb') {
+                            $checkboxes[] = $item;
+                        }
+                    }
+                @endphp
 
-            $modules = [
-                /* ── CORE ─────────────────────────────────────── */
-                ['group'=>'Dashboard',       'section'=>'dashboard',           'icon'=>'fa-tachometer-alt',    'ic'=>'icon-blue',  'cat'=>'Core',
-                 'items'=>[
-                     ['t'=>'cb','p'=>'dashboard.overview.view','l'=>'View Dashboard'],
-                 ]],
-                ['group'=>'User Management', 'section'=>'user_mgmt',           'icon'=>'fa-users',             'ic'=>'icon-indigo','cat'=>'Core',
-                 'items'=>[
-                     ['t'=>'cb','p'=>'user_management.users.view',  'l'=>'View Users'],
-                     ['t'=>'cb','p'=>'user_management.users.create','l'=>'Add User'],
-                     ['t'=>'cb','p'=>'user_management.users.edit',  'l'=>'Edit User'],
-                     ['t'=>'cb','p'=>'user_management.users.delete','l'=>'Delete User'],
-                 ]],
-                ['group'=>'Roles',           'section'=>'roles',               'icon'=>'fa-user-shield',       'ic'=>'icon-purple','cat'=>'Core',
-                 'items'=>[
-                     ['t'=>'cb','p'=>'roles.roles.view',  'l'=>'View Roles'],
-                     ['t'=>'cb','p'=>'roles.roles.create','l'=>'Add Role'],
-                     ['t'=>'cb','p'=>'roles.roles.edit',  'l'=>'Edit Role'],
-                     ['t'=>'cb','p'=>'roles.roles.delete','l'=>'Delete Role'],
-                 ]],
+                {{-- Render radio groups --}}
+                @foreach($radioGroups as $groupName => $groupItems)
+                <div class="permission-group permission-radio-group">
+                    @foreach($groupItems as $item)
+                        <label>
+                            <input type="radio"
+                                name="{{ $item['rn'] }}"
+                                value="{{ $item['p'] }}"
+                                class="perm-input"
+                                data-section="{{ $section }}"
+                                {{ in_array($item['p'], $assigned ?? [], true) ? 'checked' : '' }}>
+                            {{ $item['l'] }}
+                        </label>
+                    @endforeach
+                </div>
+                @endforeach
 
-                /* ── SALES & CRM ──────────────────────────────── */
-                ['group'=>'Customer',        'section'=>'customer',            'icon'=>'fa-address-book',      'ic'=>'icon-teal',  'cat'=>'Sales & CRM',
-                 'items'=>[
+                {{-- Render checkboxes --}}
+                @if(count($checkboxes))
+                <div class="permission-group permission-checkbox-group">
+                    @foreach($checkboxes as $item)
+                        <label>
+                            <input type="checkbox"
+                                name="permissions[{{ implode('][', explode('.', $item['p'])) }}]"
+                                value="1"
+                                class="perm-input"
+                                data-section="{{ $section }}"
+                                {{ in_array($item['p'], $assigned ?? [], true) ? 'checked' : '' }}>
+                            {{ $item['l'] }}
+                        </label>
+                    @endforeach
+                </div>
+                @endif
+            </div>
+        </div>
+        @endforeach
+
+        <div class="d-flex justify-content-end gap-3 mt-4">
+            <a href="{{ route('roles.index') }}" class="btn btn-light border">Cancel</a>
+            <button type="submit" class="btn btn-primary px-4">
+                <i class="fa fa-save me-1"></i> Save Permissions
+            </button>
+        </div>
+    </form>
+</div>
                      ['t'=>'hd','l'=>'View Access'],
                      ['t'=>'rd','rn'=>'perm_radio[customers_view]','p'=>'customers.customers.view_all','l'=>'View All Customers'],
                      ['t'=>'rd','rn'=>'perm_radio[customers_view]','p'=>'customers.customers.view_own','l'=>'View Own Customers'],
@@ -597,150 +570,24 @@
 
 @push('scripts')
 <script>
-    window.togglePermSection = function(head) {
-        head.closest('.perm-section').classList.toggle('collapsed');
-    };
-
-(function () {
-    /* ── Helpers ─────────────────────────────────── */
-    function inputs(s)    { return document.querySelectorAll('.perm-input[data-section="'+s+'"]'); }
-    function selectAll(s) { return document.querySelector('.perm-select-all[data-section="'+s+'"]'); }
-
-    function updateCount(s) {
-        var ins = inputs(s), n = 0, tot = 0, rg = {};
-        ins.forEach(function(i) {
-            if (i.type === 'checkbox') { tot++; if (i.checked) n++; }
-            else if (i.type === 'radio') {
-                if (!rg[i.name]) { rg[i.name] = false; tot++; }
-                if (i.checked) rg[i.name] = true;
+document.querySelectorAll('.select-all').forEach(function(selectAll) {
+    selectAll.addEventListener('change', function() {
+        var section = this.dataset.section;
+        var checked = this.checked;
+        document.querySelectorAll('.permission-section[data-section="' + section + '"] .perm-input').forEach(function(input) {
+            if (input.type === 'checkbox') {
+                input.checked = checked;
+            } else if (input.type === 'radio' && checked) {
+                // Only check the first radio in the group if selecting all
+                var group = input.name;
+                if (!document.querySelector('.permission-section[data-section="' + section + '"] .perm-input[name="' + group + '"]:checked')) {
+                    input.checked = true;
+                }
+            } else if (input.type === 'radio' && !checked) {
+                input.checked = false;
             }
         });
-        Object.values(rg).forEach(function(v){ if(v) n++; });
-        var el = document.getElementById('count-'+s);
-        if (el) el.textContent = n+'/'+tot;
-        var sec = document.querySelector('.perm-section[data-section="'+s+'"]');
-        if (sec) sec.classList.toggle('perm-section--granted', tot > 0 && n === tot);
-    }
-
-    function updateBadge() {
-        var n = 0, rg = {};
-        document.querySelectorAll('.perm-input').forEach(function(i) {
-            if (i.type === 'checkbox' && i.checked) n++;
-            if (i.type === 'radio') rg[i.name] = rg[i.name] || i.checked;
-        });
-        Object.values(rg).forEach(function(v){ if(v) n++; });
-        var el = document.getElementById('grantedBadge');
-        if (el) el.textContent = n+' granted';
-    }
-
-    function syncToggle(s) {
-        var ins = inputs(s), sa = selectAll(s); if (!sa) return;
-        var ok = true, rg = {};
-        ins.forEach(function(i) {
-            if (i.type === 'checkbox' && !i.checked) ok = false;
-            if (i.type === 'radio') rg[i.name] = rg[i.name] || i.checked;
-        });
-        sa.checked = ok && (Object.keys(rg).length === 0 || Object.values(rg).every(Boolean));
-    }
-
-    /* ── Tab switching ─────────────────────────────────────────── */
-    document.querySelectorAll('.perm-tab').forEach(function(tab) {
-        tab.addEventListener('click', function() {
-            // clear search when switching tabs
-            var searchEl = document.getElementById('permSearch');
-            if (searchEl && searchEl.value) {
-                searchEl.value = '';
-                exitSearchMode();
-            }
-            document.querySelectorAll('.perm-tab').forEach(function(t){ t.classList.remove('active'); });
-            document.querySelectorAll('.perm-panel').forEach(function(p){ p.classList.remove('active'); });
-            this.classList.add('active');
-            var panel = document.querySelector('.perm-panel[data-panel="'+this.dataset.cat+'"]');
-            if (panel) panel.classList.add('active');
-        });
     });
-
-    /* ── Select-All toggles ─────────────────────────────────── */
-    document.querySelectorAll('.perm-select-all').forEach(function(sa) {
-        sa.addEventListener('change', function() {
-            var s = this.dataset.section, on = this.checked, rg = {};
-            inputs(s).forEach(function(i) {
-                if (i.type === 'checkbox') i.checked = on;
-                else if (on && i.type === 'radio' && !rg[i.name]) { rg[i.name] = i; }
-                else if (!on && i.type === 'radio') i.checked = false;
-            });
-            if (on) Object.values(rg).forEach(function(r){ r.checked = true; });
-            updateCount(s); updateBadge();
-        });
-    });
-
-    /* ── Individual inputs ─────────────────────────────────────── */
-    document.querySelectorAll('.perm-input').forEach(function(i) {
-        i.addEventListener('change', function() {
-            syncToggle(this.dataset.section);
-            updateCount(this.dataset.section);
-            updateBadge();
-        });
-    });
-
-    /* ── Grant All ─────────────────────────────────────────────── */
-    document.getElementById('btnGrantAll').addEventListener('click', function() {
-        var rg = {};
-        document.querySelectorAll('.perm-input').forEach(function(i) {
-            if (i.type === 'checkbox') i.checked = true;
-            if (i.type === 'radio' && !rg[i.name]) rg[i.name] = i;
-        });
-        Object.values(rg).forEach(function(r){ r.checked = true; });
-        document.querySelectorAll('.perm-select-all').forEach(function(sa){ sa.checked = true; });
-        document.querySelectorAll('.perm-section').forEach(function(c){ updateCount(c.dataset.section); });
-        updateBadge();
-    });
-
-    /* ── Revoke All ────────────────────────────────────────────── */
-    document.getElementById('btnRevokeAll').addEventListener('click', function() {
-        document.querySelectorAll('.perm-input').forEach(function(i){ i.checked = false; });
-        document.querySelectorAll('.perm-select-all').forEach(function(sa){ sa.checked = false; });
-        document.querySelectorAll('.perm-section').forEach(function(c){ updateCount(c.dataset.section); });
-        updateBadge();
-    });
-
-    /* ── Search ──────────────────────────────────────────────── */
-    function exitSearchMode() {
-        document.getElementById('permForm').classList.remove('perm-search-active');
-        var activeTab = document.querySelector('.perm-tab.active');
-        if (activeTab) {
-            document.querySelectorAll('.perm-panel').forEach(function(p){ p.classList.remove('active'); });
-            var panel = document.querySelector('.perm-panel[data-panel="'+activeTab.dataset.cat+'"]');
-            if (panel) panel.classList.add('active');
-        }
-        document.querySelectorAll('.perm-section').forEach(function(s){ s.classList.remove('perm-sec--hidden'); });
-        var tabBar = document.querySelector('.perm-tab-bar');
-        if (tabBar) tabBar.style.display = '';
-    }
-
-    document.getElementById('permSearch').addEventListener('input', function() {
-        var q = this.value.trim().toLowerCase();
-        var form = document.getElementById('permForm');
-        var tabBar = document.querySelector('.perm-tab-bar');
-        if (!q) { exitSearchMode(); return; }
-        form.classList.add('perm-search-active');
-        document.querySelectorAll('.perm-panel').forEach(function(p){ p.style.display = 'block'; });
-        if (tabBar) tabBar.style.display = 'none';
-        document.querySelectorAll('.perm-section').forEach(function(sec) {
-            var match = sec.dataset.moduleName && sec.dataset.moduleName.includes(q);
-            sec.classList.toggle('perm-sec--hidden', !match);
-        });
-        document.querySelectorAll('.perm-panel').forEach(function(panel) {
-            var any = Array.from(panel.querySelectorAll('.perm-section')).some(function(s){
-                return !s.classList.contains('perm-sec--hidden');
-            });
-            panel.style.display = any ? 'block' : 'none';
-        });
-    });
-
-    /* ── Init ──────────────────────────────────────────────────── */
-    document.querySelectorAll('.perm-section').forEach(function(c){ updateCount(c.dataset.section); });
-    updateBadge();
-}());
+});
 </script>
 @endpush
