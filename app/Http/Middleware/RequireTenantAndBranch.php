@@ -20,15 +20,23 @@ class RequireTenantAndBranch
             return $next($request);
         }
 
+        // If session is missing tenant/branch but user is authenticated,
+        // restore from the user model before blocking access.
+        if (Auth::check()) {
+            $user = Auth::user();
+
+            if (!session('current_tenant_id') && !empty($user->company_id)) {
+                session(['current_tenant_id' => $user->company_id]);
+            }
+
+            if (!session('active_branch_id')) {
+                app(ActiveBranchResolver::class)->ensureSession($user);
+            }
+        }
+
         $tenant = session('current_tenant_id');
         if (!$tenant) {
             return redirect()->route('onboarding')->with('info', 'Please complete setup to begin.');
-        }
-
-        // If branch is not set, try to auto-select the default branch
-        $branch = session('active_branch_id');
-        if (!$branch && Auth::check()) {
-            app(ActiveBranchResolver::class)->ensureSession(Auth::user());
         }
 
         return $next($request);

@@ -1368,9 +1368,15 @@
         ]);
     @endphp
     @php
-        // If tenant is set but branch is missing, try to auto-resolve before blocking content.
-        if ($needsTenantBranch && session('current_tenant_id') && !session('active_branch_id') && auth()->check()) {
-            app(\App\Support\ActiveBranchResolver::class)->ensureSession(auth()->user());
+        // If session lost tenant/branch (common on mobile), restore from the user model.
+        if ($needsTenantBranch && auth()->check()) {
+            $__user = auth()->user();
+            if (!session('current_tenant_id') && !empty($__user->company_id)) {
+                session(['current_tenant_id' => $__user->company_id]);
+            }
+            if (!session('active_branch_id')) {
+                app(\App\Support\ActiveBranchResolver::class)->ensureSession($__user);
+            }
         }
     @endphp
     @if ($needsTenantBranch && (!session('current_tenant_id') || !session('active_branch_id')))
