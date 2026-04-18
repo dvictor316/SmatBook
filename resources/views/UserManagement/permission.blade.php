@@ -351,7 +351,8 @@
      *  $role                → Role model
      *  $assignedPermissions → flat array of granted permission name strings
      * ─────────────────────────────────────────────────────────────── */
-    $assignedPermissions = $assignedPermissions ?? [];
+    $assignedPermissions = $assignedPermissions ?? $assigned ?? [];
+    $assigned = $assignedPermissions; // backward-compat alias
     $permChecked = fn($p) => in_array($p, $assignedPermissions, true);
 
     /* ─── Full module / permission catalogue ─────────────────────── */
@@ -1406,7 +1407,8 @@
      *  $role                → Role model
      *  $assignedPermissions → array of permission name strings
      * ─────────────────────────────────────────────────────────────── */
-    $assignedPermissions = $assignedPermissions ?? [];
+    $assignedPermissions = $assignedPermissions ?? $assigned ?? [];
+    $assigned = $assignedPermissions; // backward-compat alias
     $permChecked = fn($p) => in_array($p, $assignedPermissions, true);
 
     /* ─── Full module / permission catalogue ──────────────────────── */
