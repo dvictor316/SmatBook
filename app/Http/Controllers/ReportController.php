@@ -174,11 +174,8 @@ use App\Support\InventoryQuantity;
 
         private function applyTenantScope($query, string $table)
         {
-            // Super admin bypasses all tenant filtering — sees data across all companies.
-            if ($this->isSuperAdmin()) {
-                return $query;
-            }
-
+            // Every user — including super_admin — is scoped to their own company.
+            // No role or plan bypasses this. Data must never leak between tenants.
             $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
             $userId = (int) (Auth::id() ?? 0);
 
@@ -195,10 +192,10 @@ use App\Support\InventoryQuantity;
 
         private function getActiveBranchContext(): array
         {
-            // Super admin sees all branches across all tenants.
-            if ($this->isSuperAdmin()) {
-                return ['id' => null, 'name' => null, 'scope' => 'all'];
-            }
+            // Branch isolation is enforced for ALL roles and ALL plans.
+            // Every branch only sees its own data. No super_admin or plan tier
+            // bypasses this. The only way to get cross-branch data is an explicit
+            // all_branches=1 or branch_scope=all query parameter.
 
             $branchScope = (string) request()->get('branch_scope', '');
             $requestBranchId = (string) request()->get('branch_id', '');
@@ -212,12 +209,6 @@ use App\Support\InventoryQuantity;
                     'name' => null,
                     'scope' => 'all',
                 ];
-            }
-
-            // Enterprise plan users see all branches by default.
-            // An explicit branch_id param still allows drill-down to a specific branch.
-            if ($requestBranchId === '' && $this->getCurrentPlanTier() === 'enterprise') {
-                return ['id' => null, 'name' => null, 'scope' => 'all'];
             }
 
             $branchId = session('active_branch_id') ? (string) session('active_branch_id') : null;
