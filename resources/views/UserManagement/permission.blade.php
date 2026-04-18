@@ -4,13 +4,154 @@
 @push('styles')
 <style>
 /* ═══════════════════════════════════════════════════════════════
-   ROLE PERMISSIONS UI  ―  Sleek Card Design
+   ROLE PERMISSIONS PAGE  ―  Prokip App Style
 ═══════════════════════════════════════════════════════════════ */
-.perm-shell { background: #e8ecf4; min-height: 100vh; padding-bottom: 90px; }
 
-/* ─── Hero ───────────────────────────────────────────────────── */
-.perm-hero {
-    background: linear-gradient(135deg, #1a2236 0%, #2d3a57 100%);
+/* ─── Role badge in breadcrumb ───────────────────────────────── */
+.perm-role-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: #fef3c7; color: #92400e; border: 1px solid #fde68a;
+    padding: 2px 10px; border-radius: 20px;
+    font-size: 0.75rem; font-weight: 700; letter-spacing: 0.03em;
+}
+
+/* ─── Tab bar (matches prokip-tabs from users.blade.php) ─────── */
+.perm-tab-bar {
+    display: flex; gap: 0; border-bottom: 2px solid #e8eaf0;
+    overflow-x: auto; scrollbar-width: none;
+}
+.perm-tab-bar::-webkit-scrollbar { display: none; }
+.perm-tab {
+    padding: 13px 22px; font-weight: 600; font-size: 0.9rem; color: #7a869a;
+    cursor: pointer; border: none; background: none;
+    border-bottom: 3px solid transparent; margin-bottom: -2px;
+    white-space: nowrap; display: inline-flex; align-items: center; gap: 6px;
+    transition: color .15s, border-color .15s; flex-shrink: 0;
+}
+.perm-tab:hover { color: #1a2236; }
+.perm-tab.active { color: #1a2236; border-bottom-color: #d4a017; }
+.perm-tab-cnt {
+    background: #f0f2f8; color: #94a3b8;
+    border-radius: 10px; font-size: 10px; font-weight: 700; padding: 1px 7px;
+}
+.perm-tab.active .perm-tab-cnt { background: #fef3c7; color: #d4a017; }
+
+/* ─── Toolbar ─────────────────────────────────────────────────── */
+.perm-toolbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 20px; border-bottom: 1px solid #e8eaf0;
+    flex-wrap: wrap; gap: 8px;
+}
+.perm-toolbar-left  { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.perm-toolbar-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.perm-role-info { font-weight: 700; color: #1a2236; font-size: 0.88rem; }
+.perm-count-badge {
+    background: #fef3c7; color: #92400e; border: 1px solid #fde68a;
+    border-radius: 20px; padding: 2px 10px; font-size: 0.75rem; font-weight: 700;
+}
+.perm-search-wrap { position: relative; }
+.perm-search-icon {
+    position: absolute; left: 9px; top: 50%; transform: translateY(-50%);
+    color: #94a3b8; font-size: 12px; pointer-events: none;
+}
+.perm-search-box {
+    padding: 6px 12px 6px 28px; border: 1px solid #d0d5e0;
+    border-radius: 8px; font-size: 0.85rem; width: 200px;
+    outline: none; transition: border-color .15s;
+}
+.perm-search-box:focus { border-color: #d4a017; }
+.btn-grant-all {
+    background: #d4a017; border: none; color: #fff; padding: 7px 16px;
+    border-radius: 8px; font-size: 0.82rem; font-weight: 700; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 5px; transition: background 0.2s;
+}
+.btn-grant-all:hover { background: #b88b12; }
+.btn-revoke-all {
+    background: #fff; border: 1px solid #e2e8f0; color: #64748b;
+    padding: 7px 16px; border-radius: 8px; font-size: 0.82rem; font-weight: 600;
+    cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s;
+}
+.btn-revoke-all:hover { border-color: #fca5a5; color: #dc2626; background: #fff5f5; }
+
+/* ─── Tab panels ──────────────────────────────────────────────── */
+.perm-panel { display: none; }
+.perm-panel.active { display: block; }
+.perm-search-active .perm-panel { display: block !important; }
+.perm-search-active .perm-tab-bar { display: none !important; }
+
+/* ─── Module section row ──────────────────────────────────────── */
+.perm-section { padding: 18px 24px; }
+.perm-section.perm-sec--hidden { display: none !important; }
+.perm-module-sep { border: none; border-top: 1px solid #e8eaf0; margin: 0; }
+
+/* Two-column layout */
+.perm-row { display: flex; gap: 28px; }
+.perm-row-left { width: 190px; flex-shrink: 0; }
+.perm-row-right { flex: 1; display: flex; flex-wrap: wrap; align-content: flex-start; }
+
+/* Module name */
+.perm-mod-name { font-weight: 700; color: #1a2236; font-size: 0.92rem; margin-bottom: 8px; }
+.perm-section--granted .perm-mod-name { color: #15803d; }
+
+/* Select All checkbox */
+.perm-select-all-wrap {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 0.82rem; color: #555; cursor: pointer;
+    user-select: none; margin-bottom: 5px;
+}
+.perm-select-all-wrap input { accent-color: #d4a017; cursor: pointer; width: 14px; height: 14px; }
+
+/* Count */
+.perm-sec-count { font-size: 0.75rem; color: #94a3b8; }
+.perm-section--granted .perm-sec-count { color: #16a34a; font-weight: 700; }
+
+/* Permission items — 2 per row */
+.perm-item {
+    flex: 0 0 50%; display: flex; align-items: center; gap: 7px;
+    padding: 4px 0; font-size: 0.88rem; color: #374151;
+    cursor: pointer; user-select: none;
+}
+.perm-item input[type=checkbox],
+.perm-item input[type=radio] {
+    accent-color: #2563eb; cursor: pointer; flex-shrink: 0;
+    width: 14px; height: 14px;
+}
+.perm-item input:checked + span { color: #1a2236; font-weight: 600; }
+
+/* Sub-headings and separators */
+.perm-sub-title {
+    flex: 0 0 100%; font-size: 0.7rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    color: #94a3b8; padding: 6px 0 2px;
+}
+.perm-sep { flex: 0 0 100%; border: none; border-top: 1px dashed #e8eaf0; margin: 4px 0; }
+
+/* ─── Sticky save bar ─────────────────────────────────────────── */
+.perm-action-bar {
+    position: sticky; bottom: 0; background: #fff;
+    border-top: 1px solid #e8eaf0; padding: 14px 24px;
+    display: flex; justify-content: flex-end; gap: 10px;
+    z-index: 50; box-shadow: 0 -4px 16px rgba(0,0,0,.06);
+}
+.btn-perm-save {
+    background: #d4a017; border: none; color: #fff; padding: 10px 30px;
+    border-radius: 8px; font-size: 0.9rem; font-weight: 700;
+    display: inline-flex; align-items: center; gap: 7px;
+    cursor: pointer; transition: background 0.2s;
+}
+.btn-perm-save:hover { background: #b88b12; }
+.btn-perm-cancel {
+    background: #fff; border: 1px solid #d0d5e0; color: #6b7280;
+    padding: 10px 24px; border-radius: 8px; font-size: 0.9rem; font-weight: 600;
+    text-decoration: none; display: inline-flex; align-items: center; transition: all 0.2s;
+}
+.btn-perm-cancel:hover { background: #f9fafb; color: #374151; }
+
+@media (max-width: 768px) {
+    .perm-row { flex-direction: column; gap: 10px; }
+    .perm-row-left { width: 100%; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .perm-item { flex: 0 0 100%; }
+}
     padding: 22px 28px 20px; border-radius: 14px; color: #fff;
     display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;
     margin-bottom: 14px; box-shadow: 0 8px 28px rgba(26,34,54,0.22);
@@ -243,25 +384,27 @@
 @endpush
 
 @section('content')
-<div class="page-wrapper perm-shell">
+<div class="page-wrapper">
 <div class="content container-fluid">
 
-    <div class="perm-hero">
-        <div class="perm-hero-left">
-            <div class="perm-hero-icon"><i class="fa fa-shield-alt"></i></div>
-            <div>
-                <div class="perm-hero-title">Role Permissions</div>
-                <div class="perm-hero-sub">
-                    Configure what the
-                    <span class="perm-role-badge"><i class="fa fa-user-tag"></i> {{ $role->name }}</span>
-                    role can access and do.
-                </div>
+    <div class="page-header">
+        <div class="row align-items-center">
+            <div class="col">
+                <h3 class="page-title">Role Permissions</h3>
+                <ul class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url('dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ route('roles.index') }}">Roles</a></li>
+                    <li class="breadcrumb-item active">
+                        Permissions &mdash;
+                        <span class="perm-role-badge"><i class="fa fa-user-tag"></i> {{ $role->name }}</span>
+                    </li>
+                </ul>
             </div>
-        </div>
-        <div class="perm-hero-actions">
-            <a href="{{ route('roles.index') }}" class="btn-perm-back">
-                <i class="fa fa-arrow-left"></i> Back to Roles
-            </a>
+            <div class="col-auto">
+                <a href="{{ route('roles.index') }}" class="btn btn-secondary btn-sm rounded-pill px-3">
+                    <i class="fa fa-arrow-left me-1"></i> Back to Roles
+                </a>
+            </div>
         </div>
     </div>
 
@@ -570,128 +713,127 @@
             $firstSlug = reset($catSlugs);
         @endphp
 
-        {{-- ── Main white card ─────────────────────────────── --}}
-        <div class="perm-main-card">
+        <div class="card mb-4">
+            <div class="card-body p-0">
 
-            {{-- Tab bar (one tab per category) --}}
-            <div class="perm-tab-bar">
+                {{-- Tab bar (one tab per category) --}}
+                <div class="perm-tab-bar">
+                    @foreach ($categories as $catName => $catModules)
+                        @php $slug = $catSlugs[$catName]; @endphp
+                        <button type="button" class="perm-tab {{ $slug === $firstSlug ? 'active' : '' }}"
+                                data-cat="{{ $slug }}">
+                            {{ $catName }}
+                            <span class="perm-tab-cnt">{{ count($catModules) }}</span>
+                        </button>
+                    @endforeach
+                </div>
+
+                {{-- Toolbar --}}
+                <div class="perm-toolbar">
+                    <div class="perm-toolbar-left">
+                        <span class="perm-role-info">
+                            <i class="fa fa-user-tag me-1" style="color:#d4a017;"></i>
+                            {{ $role->name }}
+                        </span>
+                        <span class="perm-count-badge" id="grantedBadge">
+                            {{ count(array_filter($assigned, fn($p) => $p)) }} granted
+                        </span>
+                    </div>
+                    <div class="perm-toolbar-right">
+                        <div class="perm-search-wrap">
+                            <i class="fa fa-search perm-search-icon"></i>
+                            <input type="text" class="perm-search-box" id="permSearch"
+                                   placeholder="Search modules…" autocomplete="off">
+                        </div>
+                        <button type="button" class="btn-revoke-all" id="btnRevokeAll">
+                            <i class="fa fa-times-circle"></i> Revoke All
+                        </button>
+                        <button type="button" class="btn-grant-all" id="btnGrantAll">
+                            <i class="fa fa-check-circle"></i> Grant All
+                        </button>
+                    </div>
+                </div>
+
+                {{-- Tab panels --}}
                 @foreach ($categories as $catName => $catModules)
                     @php $slug = $catSlugs[$catName]; @endphp
-                    <button type="button" class="perm-tab {{ $slug === $firstSlug ? 'active' : '' }}"
-                            data-cat="{{ $slug }}">
-                        {{ $catName }}
-                        <span class="perm-tab-cnt">{{ count($catModules) }}</span>
-                    </button>
+                    <div class="perm-panel {{ $slug === $firstSlug ? 'active' : '' }}"
+                         data-panel="{{ $slug }}">
+
+                        @foreach ($catModules as $mod)
+                            @php
+                                $granted = $countGranted($mod['items']);
+                                $total   = $countTotal($mod['items']);
+                                $isFull  = ($granted === $total && $total > 0);
+                            @endphp
+
+                            @if (!$loop->first)<hr class="perm-module-sep">@endif
+
+                            <div class="perm-section {{ $isFull ? 'perm-section--granted' : '' }}"
+                                 data-module-name="{{ strtolower($mod['group']) }}"
+                                 data-section="{{ $mod['section'] }}"
+                                 data-cat="{{ $slug }}">
+                                <div class="perm-row">
+
+                                    {{-- Left: module name + select all --}}
+                                    <div class="perm-row-left">
+                                        <div class="perm-mod-name">{{ $mod['group'] }}</div>
+                                        <label class="perm-select-all-wrap">
+                                            <input type="checkbox"
+                                                   class="perm-select-all"
+                                                   data-section="{{ $mod['section'] }}"
+                                                   {{ $isFull ? 'checked' : '' }}>
+                                            Select All
+                                        </label>
+                                        <div class="perm-sec-count" id="count-{{ $mod['section'] }}">
+                                            {{ $granted }}/{{ $total }}
+                                        </div>
+                                    </div>
+
+                                    {{-- Right: permissions list --}}
+                                    <div class="perm-row-right">
+                                        @foreach ($mod['items'] as $item)
+                                            @if ($item['t'] === 'sp')
+                                                <hr class="perm-sep">
+                                            @elseif ($item['t'] === 'hd')
+                                                <div class="perm-sub-title">{{ $item['l'] }}</div>
+                                            @elseif ($item['t'] === 'cb')
+                                                @php
+                                                    $parts = explode('.', $item['p']);
+                                                    $iname = "permissions[{$parts[0]}][{$parts[1]}][{$parts[2]}]";
+                                                @endphp
+                                                <label class="perm-item">
+                                                    <input type="checkbox"
+                                                           class="perm-input"
+                                                           name="{{ $iname }}"
+                                                           value="1"
+                                                           data-section="{{ $mod['section'] }}"
+                                                           {{ $permChecked($item['p']) ? 'checked' : '' }}>
+                                                    <span>{{ $item['l'] }}</span>
+                                                </label>
+                                            @elseif ($item['t'] === 'rd')
+                                                <label class="perm-item">
+                                                    <input type="radio"
+                                                           class="perm-input"
+                                                           name="{{ $item['rn'] }}"
+                                                           value="{{ $item['p'] }}"
+                                                           data-section="{{ $mod['section'] }}"
+                                                           {{ $permChecked($item['p']) ? 'checked' : '' }}>
+                                                    <span>{{ $item['l'] }}</span>
+                                                </label>
+                                            @endif
+                                        @endforeach
+                                    </div>
+
+                                </div>
+                            </div>{{-- /.perm-section --}}
+                        @endforeach
+
+                    </div>{{-- /.perm-panel --}}
                 @endforeach
+
             </div>
-
-            {{-- Toolbar: count badge + search + bulk actions --}}
-            <div class="perm-toolbar">
-                <div class="perm-toolbar-left">
-                    <span class="perm-toolbar-title">Module Permissions</span>
-                    <span class="perm-count-badge" id="grantedBadge">
-                        {{ count(array_filter($assigned, fn($p) => $p)) }} granted
-                    </span>
-                </div>
-                <div class="perm-toolbar-right">
-                    <div class="perm-search-wrap">
-                        <i class="fa fa-search perm-search-icon"></i>
-                        <input type="text" class="perm-search-box" id="permSearch"
-                               placeholder="Search modules…" autocomplete="off">
-                    </div>
-                    <button type="button" class="btn-revoke-all" id="btnRevokeAll">
-                        <i class="fa fa-times-circle"></i> Revoke All
-                    </button>
-                    <button type="button" class="btn-grant-all" id="btnGrantAll">
-                        <i class="fa fa-check-circle"></i> Grant All
-                    </button>
-                </div>
-            </div>
-
-            {{-- Tab panels --}}
-            @foreach ($categories as $catName => $catModules)
-                @php $slug = $catSlugs[$catName]; @endphp
-                <div class="perm-panel {{ $slug === $firstSlug ? 'active' : '' }}"
-                     data-panel="{{ $slug }}">
-                    <div class="perm-cards-grid">
-                    @foreach ($catModules as $mod)
-                        @php
-                            $granted = $countGranted($mod['items']);
-                            $total   = $countTotal($mod['items']);
-                            $isFull  = ($granted === $total && $total > 0);
-                        @endphp
-                        <div class="perm-section {{ $isFull ? 'perm-section--granted' : '' }}"
-                             data-module-name="{{ strtolower($mod['group']) }}"
-                             data-section="{{ $mod['section'] }}"
-                             data-cat="{{ $slug }}">
-
-                            {{-- Section header (clickable to collapse) --}}
-                            <div class="perm-sec-head">
-                                <div class="perm-sec-icon {{ $mod['ic'] }}">
-                                    <i class="fa {{ $mod['icon'] }}"></i>
-                                </div>
-                                <div class="perm-sec-name">{{ $mod['group'] }}</div>
-                                <span class="perm-sec-count" id="count-{{ $mod['section'] }}">
-                                    {{ $granted }}/{{ $total }}
-                                </span>
-                                <label class="perm-card-toggle ms-2" title="Toggle all"
-                                       onclick="event.stopPropagation()">
-                                    <input type="checkbox"
-                                           class="perm-select-all"
-                                           data-section="{{ $mod['section'] }}"
-                                           {{ $isFull ? 'checked' : '' }}>
-                                    <span class="perm-toggle-track">
-                                        <span class="perm-toggle-thumb"></span>
-                                    </span>
-                                    <span class="perm-toggle-label">All</span>
-                                </label>
-                                <i class="fa fa-chevron-down perm-sec-chevron ms-2"></i>
-                            </div>
-
-                            {{-- Section body: permissions in flex 3-col grid --}}
-                            <div class="perm-sec-body">
-                                <div class="perm-items-grid">
-                                    @foreach ($mod['items'] as $item)
-                                        @if ($item['t'] === 'sp')
-                                            <hr class="perm-sep">
-                                        @elseif ($item['t'] === 'hd')
-                                            <div class="perm-sub-title">{{ $item['l'] }}</div>
-                                        @elseif ($item['t'] === 'cb')
-                                            @php
-                                                $parts = explode('.', $item['p']);
-                                                $iname = "permissions[{$parts[0]}][{$parts[1]}][{$parts[2]}]";
-                                            @endphp
-                                            <label class="perm-item">
-                                                <input type="checkbox"
-                                                       class="perm-input"
-                                                       name="{{ $iname }}"
-                                                       value="1"
-                                                       data-section="{{ $mod['section'] }}"
-                                                       {{ $permChecked($item['p']) ? 'checked' : '' }}>
-                                                <span>{{ $item['l'] }}</span>
-                                            </label>
-                                        @elseif ($item['t'] === 'rd')
-                                            <label class="perm-item">
-                                                <input type="radio"
-                                                       class="perm-input"
-                                                       name="{{ $item['rn'] }}"
-                                                       value="{{ $item['p'] }}"
-                                                       data-section="{{ $mod['section'] }}"
-                                                       {{ $permChecked($item['p']) ? 'checked' : '' }}>
-                                                <span>{{ $item['l'] }}</span>
-                                            </label>
-                                        @endif
-                                    @endforeach
-                                </div>
-                            </div>
-
-                        </div>{{-- /.perm-section --}}
-                    @endforeach
-                    </div>{{-- /.perm-cards-grid --}}
-                </div>{{-- /.perm-panel --}}
-            @endforeach
-
-        </div>{{-- /.perm-main-card --}}
+        </div>
 
         <div class="perm-action-bar">
             <a href="{{ route('roles.index') }}" class="btn-perm-cancel">Cancel</a>
@@ -708,7 +850,7 @@
 @push('scripts')
 <script>
 (function () {
-    /* ── Helpers ───────────────────────────────────────────────── */
+    /* ── Helpers ─────────────────────────────────── */
     function inputs(s)    { return document.querySelectorAll('.perm-input[data-section="'+s+'"]'); }
     function selectAll(s) { return document.querySelector('.perm-select-all[data-section="'+s+'"]'); }
 
@@ -766,14 +908,7 @@
         });
     });
 
-    /* ── Section collapse ──────────────────────────────────────── */
-    document.querySelectorAll('.perm-sec-head').forEach(function(head) {
-        head.addEventListener('click', function() {
-            this.closest('.perm-section').classList.toggle('collapsed');
-        });
-    });
-
-    /* ── Select-All toggles ────────────────────────────────────── */
+    /* ── Select-All toggles ─────────────────────────────────── */
     document.querySelectorAll('.perm-select-all').forEach(function(sa) {
         sa.addEventListener('change', function() {
             var s = this.dataset.section, on = this.checked, rg = {};
@@ -817,19 +952,17 @@
         updateBadge();
     });
 
-    /* ── Search (cross-tab) ────────────────────────────────────── */
+    /* ── Search ──────────────────────────────────────────────── */
     function exitSearchMode() {
         document.getElementById('permForm').classList.remove('perm-search-active');
-        // restore active tab panel only
         var activeTab = document.querySelector('.perm-tab.active');
         if (activeTab) {
             document.querySelectorAll('.perm-panel').forEach(function(p){ p.classList.remove('active'); });
             var panel = document.querySelector('.perm-panel[data-panel="'+activeTab.dataset.cat+'"]');
             if (panel) panel.classList.add('active');
         }
-        document.querySelectorAll('.perm-section').forEach(function(s){
-            s.classList.remove('perm-sec--hidden');
-        });
+        document.querySelectorAll('.perm-section').forEach(function(s){ s.classList.remove('perm-sec--hidden'); });
+        document.querySelectorAll('.perm-module-sep').forEach(function(hr){ hr.style.display = ''; });
         var tabBar = document.querySelector('.perm-tab-bar');
         if (tabBar) tabBar.style.display = '';
     }
@@ -838,25 +971,14 @@
         var q = this.value.trim().toLowerCase();
         var form = document.getElementById('permForm');
         var tabBar = document.querySelector('.perm-tab-bar');
-
-        if (!q) {
-            exitSearchMode();
-            return;
-        }
-
-        // Show all panels while searching
+        if (!q) { exitSearchMode(); return; }
         form.classList.add('perm-search-active');
         document.querySelectorAll('.perm-panel').forEach(function(p){ p.style.display = 'block'; });
         if (tabBar) tabBar.style.display = 'none';
-
         document.querySelectorAll('.perm-section').forEach(function(sec) {
             var match = sec.dataset.moduleName && sec.dataset.moduleName.includes(q);
             sec.classList.toggle('perm-sec--hidden', !match);
-            // auto-expand matching sections
-            if (match) sec.classList.remove('collapsed');
         });
-
-        // Hide panels that have no visible sections
         document.querySelectorAll('.perm-panel').forEach(function(panel) {
             var any = Array.from(panel.querySelectorAll('.perm-section')).some(function(s){
                 return !s.classList.contains('perm-sec--hidden');
