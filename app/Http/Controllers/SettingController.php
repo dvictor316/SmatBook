@@ -1003,8 +1003,20 @@ class SettingController extends Controller
 
     private function resolveReconciliationSuspenseAccount(): Account
     {
+        $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+
+        // Use a tenant-specific code so multiple tenants don't collide on the unique constraint
+        $code = $companyId > 0
+            ? 'EQT-RECON-SUSPENSE-' . $companyId
+            : 'EQT-RECON-SUSPENSE';
+
+        $attributes = ['code' => $code];
+        if ($companyId > 0 && Schema::hasColumn('accounts', 'company_id')) {
+            $attributes['company_id'] = $companyId;
+        }
+
         return Account::query()->firstOrCreate(
-            ['code' => 'EQT-RECON-SUSPENSE'],
+            $attributes,
             [
                 'name' => 'Bank Reconciliation Suspense',
                 'type' => Account::TYPE_EQUITY,
