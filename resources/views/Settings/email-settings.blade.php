@@ -147,9 +147,10 @@
                                     <div class="bg-light p-3 rounded-3 mb-4">
                                         <label class="form-label fw-bold text-primary small">SEND TEST EMAIL</label>
                                         <div class="input-group">
-                                            <input type="text" class="form-control" name="mail_test_address" value="{{ $settings['mail_test_address'] ?? '' }}" placeholder="Enter email address to test">
-                                            <button class="btn btn-outline-primary" type="button">Send Test</button>
+                                            <input type="text" class="form-control" id="mail_test_address_input" placeholder="Enter email address to test">
+                                            <button class="btn btn-outline-primary" type="button" id="sendTestEmailBtn">Send Test</button>
                                         </div>
+                                        <div id="testEmailResult" class="mt-2 small d-none"></div>
                                     </div>
                                 </div>
 
@@ -171,4 +172,160 @@
         .bg-soft-primary { background-color: rgba(3, 105, 161, 0.1); }
         .bg-soft-info { background-color: rgba(14, 165, 233, 0.1); }
     </style>
+
+{{-- ===================== SMTP CONFIG MODAL ===================== --}}
+<div class="modal fade" id="smtp_config" tabindex="-1" aria-labelledby="smtpConfigLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form action="{{ route('settings.update') }}" method="POST" id="smtpConfigForm">
+            @csrf
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="smtpConfigLabel"><i class="fas fa-server me-2"></i>SMTP Configuration</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info py-2 small mb-3">
+                        <i class="fas fa-info-circle me-1"></i>
+                        For Gmail, use <strong>smtp.gmail.com</strong>, port <strong>587</strong>, TLS encryption, and a <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener noreferrer">16-character App Password</a>.
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-8">
+                            <label class="form-label fw-semibold">SMTP Host</label>
+                            <input type="text" class="form-control" name="mail_smtp_host"
+                                value="{{ $settings['mail_smtp_host'] ?? $settings['mail_host'] ?? '' }}"
+                                placeholder="smtp.gmail.com">
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label fw-semibold">Port</label>
+                            <input type="number" class="form-control" name="mail_smtp_port"
+                                value="{{ $settings['mail_smtp_port'] ?? $settings['mail_port'] ?? '587' }}"
+                                placeholder="587">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Username (Email)</label>
+                            <input type="email" class="form-control" name="mail_smtp_username"
+                                value="{{ $settings['mail_smtp_username'] ?? $settings['mail_username'] ?? '' }}"
+                                placeholder="you@gmail.com">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">App Password</label>
+                            <input type="password" class="form-control" name="mail_smtp_password"
+                                placeholder="Leave blank to keep current password" autocomplete="new-password">
+                            @if(!empty($settings['mail_smtp_password']))
+                                <div class="form-text text-success"><i class="fas fa-check-circle me-1"></i>Password is saved. Enter a new one to change it.</div>
+                            @else
+                                <div class="form-text text-muted">No password saved yet.</div>
+                            @endif
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Encryption</label>
+                            <select class="form-select" name="mail_smtp_encryption">
+                                @foreach(['tls' => 'TLS (Recommended)', 'ssl' => 'SSL', '' => 'None'] as $val => $label)
+                                    <option value="{{ $val }}" {{ ($settings['mail_smtp_encryption'] ?? $settings['mail_encryption'] ?? 'tls') == $val ? 'selected' : '' }}>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Enable SMTP</label>
+                            <div class="form-check form-switch mt-1">
+                                <input class="form-check-input" type="checkbox" name="mail_smtp_enabled" value="1" id="smtpEnabledModal"
+                                    {{ !empty($settings['mail_smtp_enabled']) ? 'checked' : '' }}>
+                                <label class="form-check-label" for="smtpEnabledModal">Use SMTP for outgoing email</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Save SMTP Config</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{-- =================== PHP MAIL CONFIG MODAL =================== --}}
+<div class="modal fade" id="php_mail_config" tabindex="-1" aria-labelledby="phpMailConfigLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form action="{{ route('settings.update') }}" method="POST">
+            @csrf
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="phpMailConfigLabel"><i class="fab fa-php me-2 text-primary"></i>PHP Mail Configuration</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning py-2 small mb-3">
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        PHP Mail uses your server's sendmail. For most production apps, SMTP is more reliable.
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Enable PHP Mail</label>
+                            <div class="form-check form-switch mt-1">
+                                <input class="form-check-input" type="checkbox" name="mail_php_enabled" value="1" id="phpMailEnabledModal"
+                                    {{ !empty($settings['mail_php_enabled']) ? 'checked' : '' }}>
+                                <label class="form-check-label" for="phpMailEnabledModal">Use PHP sendmail for outgoing email</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Save</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const btn = document.getElementById('sendTestEmailBtn');
+    if (!btn) return;
+
+    btn.addEventListener('click', function () {
+        const input = document.getElementById('mail_test_address_input');
+        const resultDiv = document.getElementById('testEmailResult');
+        const email = input ? input.value.trim() : '';
+
+        if (!email) {
+            resultDiv.className = 'mt-2 small text-danger';
+            resultDiv.textContent = 'Please enter an email address.';
+            resultDiv.classList.remove('d-none');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = 'Sending…';
+
+        fetch('{{ route("settings.send-test-email") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({ mail_test_address: email }),
+        })
+        .then(r => r.json())
+        .then(data => {
+            resultDiv.className = 'mt-2 small ' + (data.success ? 'text-success' : 'text-danger');
+            resultDiv.textContent = data.message;
+            resultDiv.classList.remove('d-none');
+        })
+        .catch(() => {
+            resultDiv.className = 'mt-2 small text-danger';
+            resultDiv.textContent = 'An unexpected error occurred.';
+            resultDiv.classList.remove('d-none');
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.textContent = 'Send Test';
+        });
+    });
+});
+</script>
+@endpush
 @endsection

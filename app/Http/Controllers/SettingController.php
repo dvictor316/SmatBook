@@ -13,11 +13,9 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Illuminate\Database\QueryException;
 use Illuminate\Validation\Rule;
 
 class SettingController extends Controller
@@ -81,18 +79,6 @@ class SettingController extends Controller
     private function setCompanyScopedJsonSettingArray(string $baseKey, array $value): void
     {
         $this->setJsonSettingArray($this->companyScopedSettingKey($baseKey), $value);
-    }
-
-    private function buildSuggestedBankCode(?string $bankName, ?string $branchName, ?string $accountNumber): ?string
-    {
-        $bankSeed = strtoupper(Str::padRight(Str::substr(preg_replace('/[^A-Za-z0-9]/', '', (string) $bankName), 0, 4), 4, 'X'));
-        $branchSeed = strtoupper(Str::padRight(Str::substr(preg_replace('/[^A-Za-z0-9]/', '', (string) $branchName), 0, 3), 3, 'X'));
-        $accountSeed = preg_replace('/\D/', '', (string) $accountNumber);
-        $accountSeed = $accountSeed !== '' ? Str::padLeft(Str::substr($accountSeed, -4), 4, '0') : '0000';
-
-        $code = trim("{$bankSeed}-{$branchSeed}-{$accountSeed}", '-');
-
-        return $code !== '' ? $code : null;
     }
 
     /**
@@ -183,6 +169,7 @@ class SettingController extends Controller
             'flutterwave_secret',
             'paypal_secret',
             'razorpay_secret',
+            'mail_smtp_password',
         ];
 
         foreach ($sensitiveFields as $sensitiveField) {
@@ -214,26 +201,7 @@ class SettingController extends Controller
     {
         $bankAccounts = collect();
         if (Schema::hasTable('banks')) {
-            $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
-            $branchId = (string) session('active_branch_id', '');
-            $branchName = (string) session('active_branch_name', '');
-
-            $bankAccounts = Bank::query()
-                ->when($companyId > 0 && Schema::hasColumn('banks', 'company_id'), function ($query) use ($companyId) {
-                    $query->where('company_id', $companyId);
-                })
-                ->when($branchId !== '' || $branchName !== '', function ($query) use ($branchId, $branchName) {
-                    $query->where(function ($sub) use ($branchId, $branchName) {
-                        if ($branchId !== '' && Schema::hasColumn('banks', 'branch_id')) {
-                            $sub->where('branch_id', $branchId);
-                        }
-                        if ($branchName !== '' && Schema::hasColumn('banks', 'branch_name')) {
-                            $sub->orWhere('branch_name', $branchName);
-                        }
-                    });
-                })
-                ->latest()
-                ->get();
+            $bankAccounts = Bank::query()->latest()->get();
         }
 
         return view('Settings.bank-account', [
@@ -244,6 +212,32 @@ class SettingController extends Controller
     public function company_settings() { return view('Settings.company-settings', ['settings' => $this->getSettings()]); }
     public function email_settings()   { return view('Settings.email-settings', ['settings' => $this->getSettings()]); }
     public function invoice_settings() { return view('Settings.invoice-settings', ['settings' => $this->getSettings()]); }
+
+    public function sendTestEmail(Request $request)
+    {
+        $request->validate(['mail_test_address' => 'required|email']);
+        $recipient = $request->input('mail_test_address');
+
+        try {
+            \App\Support\AppMailer::sendView('emails.system-event', [
+                'title'   => 'Test Email',
+                'intro'   => 'Your email configuration is working correctly.',
+                'details' => [
+                    'Sent To'  => $recipient,
+                    'Sent At'  => now()->toDateTimeString(),
+                    'Mailer'   => \App\Support\AppMailer::preferredMailer(),
+                ],
+            ], function ($message) use ($recipient) {
+                $message->from(\App\Models\Setting::mailFromAddress(), \App\Models\Setting::mailFromName())
+                    ->to($recipient)
+                    ->subject('Test Email — ' . config('app.name'));
+            });
+
+            return response()->json(['success' => true, 'message' => "Test email sent to {$recipient} successfully."]);
+        } catch (\Throwable $e) {
+            return response()->json(['success' => false, 'message' => 'Failed: ' . $e->getMessage()], 500);
+        }
+    }
     public function payment_settings()
     {
         $settings = $this->getSettings();
@@ -794,7 +788,7 @@ class SettingController extends Controller
     {
         $validated = $request->validate([
             'branch_id' => 'required|string',
-            'redirect_to' => 'nullable|string|max:2000',
+            'redirect_to' => 'nullable|string',
         ]);
 
         $branches = collect($this->getCompanyScopedJsonSettingArray('branches_json'));
@@ -809,67 +803,33 @@ class SettingController extends Controller
             'active_branch_name' => $branch['name'],
         ]);
 
-        return redirect()
-            ->to($this->resolveBranchActivationRedirect($validated['redirect_to'] ?? null))
-            ->with('success', 'Active branch changed to ' . $branch['name'] . '.');
-    }
-
-    private function resolveBranchActivationRedirect(?string $redirectTo): string
-    {
-        $fallback = route('home');
-        $redirectTo = trim((string) $redirectTo);
-
-        if ($redirectTo === '') {
-            return $fallback;
-        }
-
-        $path = '/' . ltrim((string) parse_url($redirectTo, PHP_URL_PATH), '/');
-
-        if ($path === '/' || $path === '') {
-            return $fallback;
-        }
-
-        if (str_starts_with($path, '/reports/customer-statement/')) {
-            return route('reports.accounts-receivable');
-        }
-
-        if (str_starts_with($path, '/customers/') && !str_ends_with($path, '/receive-payment')) {
-            return route('customers.index');
-        }
-
-        if (str_starts_with($path, '/customers/') && str_ends_with($path, '/receive-payment')) {
-            return route('customers.index');
-        }
-
-        // Record-specific pages are often branch-sensitive. After changing branch,
-        // send users to the nearest stable listing page instead of a stale detail URL.
-        $resourceFallbacks = [
-            '/suppliers/' => Route::has('suppliers.index') ? route('suppliers.index') : $fallback,
-            '/customers/' => Route::has('customers.index') ? route('customers.index') : $fallback,
-            '/vendors/' => Route::has('vendors.index') ? route('vendors.index') : $fallback,
-            '/purchases/' => Route::has('purchases.index') ? route('purchases.index') : $fallback,
-            '/purchase-orders/' => Route::has('purchase-orders') ? route('purchase-orders') : $fallback,
-            '/products/' => Route::has('products.index') ? route('products.index') : $fallback,
-            '/invoices/' => Route::has('invoice.index') ? route('invoice.index') : $fallback,
-            '/sales/' => Route::has('sales.index') ? route('sales.index') : $fallback,
-            '/expenses/' => Route::has('expenses.index') ? route('expenses.index') : $fallback,
-            '/quotations/' => Route::has('quotations.index') ? route('quotations.index') : $fallback,
-            '/chat/' => Route::has('chat.index') ? route('chat.index') : $fallback,
-            '/messages/' => Route::has('messages.index') ? route('messages.index') : $fallback,
-        ];
-
-        foreach ($resourceFallbacks as $prefix => $target) {
-            if (str_starts_with($path, $prefix)) {
-                return $target;
+        $redirectUrl = $request->input('redirect_to') ?: url()->previous();
+        if ($redirectUrl && str_starts_with($redirectUrl, url('/'))) {
+            // Check if the URL is for a resource that might not exist in the new branch
+            if (str_contains($redirectUrl, '/customers/')) {
+                return redirect()->route('customers.index')->with('success', 'Active branch changed to ' . $branch['name'] . '.');
+            } elseif (str_contains($redirectUrl, '/sales/') || str_contains($redirectUrl, '/invoices/')) {
+                return redirect()->route('sales.index')->with('success', 'Active branch changed to ' . $branch['name'] . '.');
+            } elseif (str_contains($redirectUrl, '/suppliers/')) {
+                return redirect()->route('suppliers.index')->with('success', 'Active branch changed to ' . $branch['name'] . '.');
+            } elseif (str_contains($redirectUrl, '/purchases/')) {
+                return redirect()->route('purchases.index')->with('success', 'Active branch changed to ' . $branch['name'] . '.');
+            } elseif (str_contains($redirectUrl, '/products/') || str_contains($redirectUrl, '/inventory/')) {
+                return redirect()->route('inventory.Products')->with('success', 'Active branch changed to ' . $branch['name'] . '.');
+            } elseif (str_contains($redirectUrl, '/expenses/')) {
+                return redirect()->route('expenses.index')->with('success', 'Active branch changed to ' . $branch['name'] . '.');
+            } elseif (str_contains($redirectUrl, '/estimates/')) {
+                return redirect()->route('estimates.index')->with('success', 'Active branch changed to ' . $branch['name'] . '.');
+            } elseif (str_contains($redirectUrl, '/payments/')) {
+                return redirect()->route('payments.index')->with('success', 'Active branch changed to ' . $branch['name'] . '.');
+            } elseif (str_contains($redirectUrl, '/categories/')) {
+                return redirect()->route('categories.index')->with('success', 'Active branch changed to ' . $branch['name'] . '.');
             }
+            return redirect()->to($redirectUrl)->with('success', 'Active branch changed to ' . $branch['name'] . '.');
         }
 
-        $segments = array_values(array_filter(explode('/', trim($path, '/'))));
-        if (count($segments) >= 2 && is_numeric($segments[1])) {
-            return $fallback;
-        }
-
-        return $redirectTo;
+        // Fallback to branches index if redirect_to is not safe
+        return redirect()->route('branches.index')->with('success', 'Active branch changed to ' . $branch['name'] . '.');
     }
 
     public function storeManualJournal(Request $request)
@@ -970,152 +930,69 @@ class SettingController extends Controller
         $bankAccount = Account::query()->findOrFail($validated['account_id']);
         $suspenseAccount = $this->resolveReconciliationSuspenseAccount();
 
-        $referenceBase = 'BREC-' . now()->format('Ymd-His') . '-' . $bank->id . '-' . strtoupper(Str::random(6));
+        $reference = 'BREC-' . now()->format('Ymd-His') . '-' . $bank->id;
         $memo = trim((string) ($validated['memo'] ?? ''));
         $description = $memo !== ''
             ? $memo
             : 'Bank reconciliation adjustment for ' . ($bank->name ?: 'Bank Account');
 
-        try {
-            DB::transaction(function () use ($validated, $difference, $bankAccount, $suspenseAccount, $referenceBase, $description, $request) {
-                $debitToBank = $difference > 0 ? abs($difference) : 0;
-                $creditToBank = $difference < 0 ? abs($difference) : 0;
-                $companyId = (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0);
-                $branchId = session('active_branch_id');
-                $branchName = session('active_branch_name');
+        DB::transaction(function () use ($validated, $difference, $bankAccount, $suspenseAccount, $reference, $description, $request) {
+            $debitToBank = $difference > 0 ? abs($difference) : 0;
+            $creditToBank = $difference < 0 ? abs($difference) : 0;
 
-                $bankEntry = [
-                    'account_id' => $bankAccount->id,
-                    'transaction_date' => $validated['transaction_date'],
-                    'reference' => $referenceBase . '-BANK',
-                    'description' => $description,
-                    'debit' => $debitToBank,
-                    'credit' => $creditToBank,
-                    'balance' => 0,
-                    'transaction_type' => Transaction::TYPE_ADJUSTMENT,
-                    'related_id' => null,
-                    'related_type' => null,
-                    'user_id' => $request->user()?->id,
-                ];
-
-                $suspenseEntry = [
-                    'account_id' => $suspenseAccount->id,
-                    'transaction_date' => $validated['transaction_date'],
-                    'reference' => $referenceBase . '-SUSPENSE',
-                    'description' => $description,
-                    'debit' => $creditToBank,
-                    'credit' => $debitToBank,
-                    'balance' => 0,
-                    'transaction_type' => Transaction::TYPE_ADJUSTMENT,
-                    'related_id' => null,
-                    'related_type' => null,
-                    'user_id' => $request->user()?->id,
-                ];
-
-                if (Schema::hasColumn('transactions', 'company_id') && $companyId > 0) {
-                    $bankEntry['company_id'] = $companyId;
-                    $suspenseEntry['company_id'] = $companyId;
-                }
-                if (Schema::hasColumn('transactions', 'branch_id') && !empty($branchId)) {
-                    $bankEntry['branch_id'] = (string) $branchId;
-                    $suspenseEntry['branch_id'] = (string) $branchId;
-                }
-                if (Schema::hasColumn('transactions', 'branch_name') && !empty($branchName)) {
-                    $bankEntry['branch_name'] = (string) $branchName;
-                    $suspenseEntry['branch_name'] = (string) $branchName;
-                }
-
-                Transaction::create($bankEntry);
-                Transaction::create($suspenseEntry);
-            });
-        } catch (QueryException $e) {
-            Log::error('Bank reconciliation adjustment failed', [
-                'bank_id' => $validated['bank_id'],
-                'account_id' => $validated['account_id'],
-                'reference_base' => $referenceBase,
-                'error' => $e->getMessage(),
-                'sql_state' => $e->errorInfo[0] ?? null,
-                'driver_code' => $e->errorInfo[1] ?? null,
+            Transaction::create([
+                'account_id' => $bankAccount->id,
+                'transaction_date' => $validated['transaction_date'],
+                'reference' => $reference,
+                'description' => $description,
+                'debit' => $debitToBank,
+                'credit' => $creditToBank,
+                'balance' => 0,
+                'transaction_type' => Transaction::TYPE_ADJUSTMENT,
+                'related_id' => null,
+                'related_type' => null,
                 'user_id' => $request->user()?->id,
             ]);
 
-            return redirect()->route('bank-reconciliation')
-                ->with('error', 'Bank reconciliation adjustment failed. Please try again once; if it persists, the exact duplicate details are now logged.');
-        }
+            Transaction::create([
+                'account_id' => $suspenseAccount->id,
+                'transaction_date' => $validated['transaction_date'],
+                'reference' => $reference,
+                'description' => $description,
+                'debit' => $creditToBank,
+                'credit' => $debitToBank,
+                'balance' => 0,
+                'transaction_type' => Transaction::TYPE_ADJUSTMENT,
+                'related_id' => null,
+                'related_type' => null,
+                'user_id' => $request->user()?->id,
+            ]);
+        });
 
         return redirect()->route('bank-reconciliation')->with('success', 'Reconciliation adjustment posted successfully.');
     }
 
     private function resolveReconciliationSuspenseAccount(): Account
     {
-        $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
-        $branchId = (string) session('active_branch_id', '');
-        $branchName = (string) session('active_branch_name', '');
-        $code = $companyId > 0 ? 'EQT-RECON-SUSPENSE-' . $companyId : 'EQT-RECON-SUSPENSE';
-
-        $attributes = ['code' => $code];
-        $values = [
-            'name' => 'Bank Reconciliation Suspense',
-            'type' => Account::TYPE_EQUITY,
-            'sub_type' => 'Reconciliation Reserve',
-            'description' => 'Temporary balancing account used for bank reconciliation adjustments.',
-            'opening_balance' => 0,
-            'current_balance' => 0,
-            'is_active' => true,
-        ];
-        if (Schema::hasColumn('accounts', 'company_id') && $companyId > 0) {
-            $values['company_id'] = $companyId;
-        }
-        if (Schema::hasColumn('accounts', 'user_id') && auth()->id()) {
-            $values['user_id'] = auth()->id();
-        }
-        if (Schema::hasColumn('accounts', 'branch_id') && $branchId !== '') {
-            $values['branch_id'] = $branchId;
-        }
-        if (Schema::hasColumn('accounts', 'branch_name') && $branchName !== '') {
-            $values['branch_name'] = $branchName;
-        }
-
-        if (method_exists(Account::class, 'withTrashed')) {
-            $account = Account::withoutGlobalScopes()->withTrashed()->where($attributes)->first();
-            if ($account) {
-                if (method_exists($account, 'trashed') && $account->trashed()) {
-                    $account->restore();
-                }
-
-                $account->fill($values);
-                $account->save();
-
-                return $account;
-            }
-        }
-
-        return Account::withoutGlobalScopes()->firstOrCreate($attributes, $values);
+        return Account::query()->firstOrCreate(
+            ['code' => 'EQT-RECON-SUSPENSE'],
+            [
+                'name' => 'Bank Reconciliation Suspense',
+                'type' => Account::TYPE_EQUITY,
+                'sub_type' => 'Reconciliation Reserve',
+                'description' => 'Temporary balancing account used for bank reconciliation adjustments.',
+                'opening_balance' => 0,
+                'current_balance' => 0,
+                'is_active' => true,
+            ]
+        );
     }
 
     public function storeBankAccount(Request $request)
     {
-        $companyId = (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0);
-        $branchId = (string) session('active_branch_id', '');
-        $branchName = (string) session('active_branch_name', '');
-
         $validated = $request->validate([
             'bank_name' => 'required|string|max:191',
-            'account_number' => [
-                'required',
-                'string',
-                'max:100',
-                Rule::unique('banks', 'account_number')->where(function ($query) use ($companyId, $branchId, $branchName) {
-                    if ($companyId > 0 && Schema::hasColumn('banks', 'company_id')) {
-                        $query->where('company_id', $companyId);
-                    }
-                    if ($branchId !== '' && Schema::hasColumn('banks', 'branch_id')) {
-                        $query->where('branch_id', $branchId);
-                    } elseif ($branchName !== '' && Schema::hasColumn('banks', 'branch_name')) {
-                        $query->where('branch_name', $branchName);
-                    }
-                }),
-            ],
+            'account_number' => 'required|string|max:100|unique:banks,account_number',
             'account_holder_name' => 'nullable|string|max:191',
             'branch' => 'nullable|string|max:191',
             'ifsc_code' => 'nullable|string|max:100',
@@ -1129,23 +1006,14 @@ class SettingController extends Controller
             'balance' => (float) ($validated['opening_balance'] ?? 0),
         ];
 
-        $routingCode = trim((string) ($validated['ifsc_code'] ?? ''));
-        if ($routingCode === '') {
-            $routingCode = (string) $this->buildSuggestedBankCode(
-                $validated['bank_name'] ?? null,
-                $validated['branch'] ?? null,
-                $validated['account_number'] ?? null
-            );
-        }
-
         if (Schema::hasColumn('banks', 'account_holder_name')) {
             $payload['account_holder_name'] = $validated['account_holder_name'] ?? null;
         }
         if (Schema::hasColumn('banks', 'ifsc_code')) {
-            $payload['ifsc_code'] = $routingCode !== '' ? $routingCode : null;
+            $payload['ifsc_code'] = $validated['ifsc_code'] ?? null;
         }
         if (Schema::hasColumn('banks', 'swift_code')) {
-            $payload['swift_code'] = $routingCode !== '' ? $routingCode : null;
+            $payload['swift_code'] = $validated['ifsc_code'] ?? null;
         }
         if (Schema::hasColumn('banks', 'company_id')) {
             $payload['company_id'] = $request->user()?->company_id;
@@ -1167,28 +1035,13 @@ class SettingController extends Controller
 
     public function updateBankAccount(Request $request, Bank $bank)
     {
-        $companyId = (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0);
-        $branchId = (string) session('active_branch_id', '');
-        $branchName = (string) session('active_branch_name', '');
-
         $validated = $request->validate([
             'bank_name' => 'required|string|max:191',
             'account_number' => [
                 'required',
                 'string',
                 'max:100',
-                Rule::unique('banks', 'account_number')
-                    ->ignore($bank->id)
-                    ->where(function ($query) use ($companyId, $branchId, $branchName) {
-                        if ($companyId > 0 && Schema::hasColumn('banks', 'company_id')) {
-                            $query->where('company_id', $companyId);
-                        }
-                        if ($branchId !== '' && Schema::hasColumn('banks', 'branch_id')) {
-                            $query->where('branch_id', $branchId);
-                        } elseif ($branchName !== '' && Schema::hasColumn('banks', 'branch_name')) {
-                            $query->where('branch_name', $branchName);
-                        }
-                    }),
+                Rule::unique('banks', 'account_number')->ignore($bank->id),
             ],
             'account_holder_name' => 'nullable|string|max:191',
             'branch' => 'nullable|string|max:191',
@@ -1203,23 +1056,14 @@ class SettingController extends Controller
             'balance' => (float) ($validated['opening_balance'] ?? 0),
         ];
 
-        $routingCode = trim((string) ($validated['ifsc_code'] ?? ''));
-        if ($routingCode === '') {
-            $routingCode = (string) $this->buildSuggestedBankCode(
-                $validated['bank_name'] ?? null,
-                $validated['branch'] ?? null,
-                $validated['account_number'] ?? null
-            );
-        }
-
         if (Schema::hasColumn('banks', 'account_holder_name')) {
             $payload['account_holder_name'] = $validated['account_holder_name'] ?? null;
         }
         if (Schema::hasColumn('banks', 'ifsc_code')) {
-            $payload['ifsc_code'] = $routingCode !== '' ? $routingCode : null;
+            $payload['ifsc_code'] = $validated['ifsc_code'] ?? null;
         }
         if (Schema::hasColumn('banks', 'swift_code')) {
-            $payload['swift_code'] = $routingCode !== '' ? $routingCode : null;
+            $payload['swift_code'] = $validated['ifsc_code'] ?? null;
         }
 
         $bank->update($payload);

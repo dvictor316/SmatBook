@@ -962,6 +962,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
     
     // Settings
     Route::controller(SettingController::class)->group(function () {
+        Route::post('/settings/send-test-email', 'sendTestEmail')->name('settings.send-test-email');
         Route::get('/settings', 'index')->name('settings.index');
         Route::post('/settings', 'update')->name('settings.update');
         Route::post('/settings/ledger-backfill', 'ledger_backfill')->name('settings.ledger-backfill');
