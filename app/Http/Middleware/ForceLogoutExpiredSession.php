@@ -28,6 +28,24 @@ class ForceLogoutExpiredSession
             $expiresAfter = $lifetimeMinutes * 60;
 
             if (($now - $lastActivity) >= $expiresAfter) {
+                // Check if the route requires authentication.
+                // For public routes (e.g. /membership-plans), silently clear the expired
+                // auth state and let the request continue as a guest instead of forcing
+                // a login redirect — which would block plan discovery for returning users.
+                $routeMiddleware = $request->route()?->gatherMiddleware() ?? [];
+                $requiresAuth = collect($routeMiddleware)->contains(
+                    fn ($m) => $m === 'auth' || str_starts_with((string) $m, 'auth:')
+                );
+
+                if (!$requiresAuth) {
+                    $this->deviceSessionManager->forgetCurrentSession($request);
+                    Auth::logout();
+                    $request->session()->flush();
+                    $request->session()->invalidate();
+                    $request->session()->regenerateToken();
+                    return $next($request);
+                }
+
                 return $this->logoutExpiredSession($request);
             }
         }

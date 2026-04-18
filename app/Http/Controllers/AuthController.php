@@ -129,7 +129,7 @@ class AuthController extends Controller
         }
 
         try {
-            return DB::transaction(function () use ($validated, $request, $resolvedEmail, $normalizedPhone) {
+            $registrationResult = DB::transaction(function () use ($validated, $request, $resolvedEmail, $normalizedPhone) {
                 $role = $request->role ?? session('reg_role', 'admin');
 
                 $user = User::create($this->filterPayloadForTable('users', [
@@ -150,8 +150,6 @@ class AuthController extends Controller
                     $user->save();
                 }
 
-                Auth::login($user);
-
                 if ($role === 'deployment_manager') {
                     DeploymentManager::create([
                         'user_id'             => $user->id,
@@ -162,9 +160,7 @@ class AuthController extends Controller
                     DB::afterCommit(function () use ($user) {
                         SystemEventMailer::notifyRegistration($user, 'deployment_manager');
                     });
-                    $this->clearRegistrationSession();
-                    return redirect()->route('manager.verification.form')
-                        ->with('success', 'Registration successful. Complete your verification profile to continue.');
+                    return ['user' => $user, 'role' => $role, 'subscription' => null];
                 }
 
                 $requestedPlan = strtolower((string) ($request->plan ?? session('selected_plan', 'pro')));
@@ -206,10 +202,23 @@ class AuthController extends Controller
                     ]);
                 });
 
-                $this->clearRegistrationSession();
-                return redirect()->route('saas.setup', ['id' => $subscription->id])
-                    ->with('success', 'Registration successful. Set up your workspace to continue.');
+                return ['user' => $user, 'role' => $role, 'subscription' => $subscription];
             });
+
+            // Login AFTER the transaction commits to ensure the user record exists in the DB.
+            // This prevents stale session state if the transaction were to roll back.
+            Auth::login($registrationResult['user']);
+            $request->session()->regenerate();
+            $this->clearRegistrationSession();
+
+            if ($registrationResult['role'] === 'deployment_manager') {
+                return redirect()->route('manager.verification.form')
+                    ->with('success', 'Registration successful. Complete your verification profile to continue.');
+            }
+
+            return redirect()->route('saas.setup', ['id' => $registrationResult['subscription']->id])
+                ->with('success', 'Registration successful. Set up your workspace to continue.');
+
         } catch (\Throwable $e) {
             Log::error('Registration failed', [
                 'email' => $resolvedEmail,
@@ -506,9 +515,10 @@ class AuthController extends Controller
             return $this->handleDeploymentManagerRedirect($user);
         }
 
-        // Regular users - redirect to /home
-        // HomeController@index will handle the rest
-        return redirect()->route('home');
+        // Regular users - honour any intended URL (e.g. checkout page the user was trying
+        // to reach before session expiry), then fall back to /home.
+        // HomeController@index handles all role-based routing from /home.
+        return redirect()->intended(route('home'));
     }
 
     /*
