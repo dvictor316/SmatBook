@@ -1005,28 +1005,37 @@ class SettingController extends Controller
     {
         $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
 
-        // Use a tenant-specific code so multiple tenants don't collide on the unique constraint
+        // Use a tenant-specific code so multiple tenants don't collide on the global unique constraint
         $code = $companyId > 0
             ? 'EQT-RECON-SUSPENSE-' . $companyId
             : 'EQT-RECON-SUSPENSE';
 
-        $attributes = ['code' => $code];
-        if ($companyId > 0 && Schema::hasColumn('accounts', 'company_id')) {
-            $attributes['company_id'] = $companyId;
+        // IMPORTANT: bypass TenantScoped global scope.
+        // TenantScoped appends WHERE company_id = ? AND branch_id = ? to every query.
+        // The suspense account may have been created without a matching branch_id (NULL),
+        // so the scoped SELECT would find nothing → attempt INSERT → 1062 duplicate on code.
+        // withoutGlobalScopes() ensures we search by code alone, reliably finding the existing row.
+        $existing = Account::withoutGlobalScopes()->where('code', $code)->first();
+        if ($existing) {
+            return $existing;
         }
 
-        return Account::query()->firstOrCreate(
-            $attributes,
-            [
-                'name' => 'Bank Reconciliation Suspense',
-                'type' => Account::TYPE_EQUITY,
-                'sub_type' => 'Reconciliation Reserve',
-                'description' => 'Temporary balancing account used for bank reconciliation adjustments.',
-                'opening_balance' => 0,
-                'current_balance' => 0,
-                'is_active' => true,
-            ]
-        );
+        $data = [
+            'code' => $code,
+            'name' => 'Bank Reconciliation Suspense',
+            'type' => Account::TYPE_EQUITY,
+            'sub_type' => 'Reconciliation Reserve',
+            'description' => 'Temporary balancing account used for bank reconciliation adjustments.',
+            'opening_balance' => 0,
+            'current_balance' => 0,
+            'is_active' => true,
+        ];
+
+        if ($companyId > 0 && Schema::hasColumn('accounts', 'company_id')) {
+            $data['company_id'] = $companyId;
+        }
+
+        return Account::forceCreate($data);
     }
 
     public function storeBankAccount(Request $request)
