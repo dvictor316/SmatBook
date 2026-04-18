@@ -74,6 +74,33 @@
         @csrf
         <input type="hidden" name="role_id" value="{{ $role->id }}">
 
+        @php
+        // Restore $modules definition if not passed from controller
+        if (!isset($modules)) {
+            $modules = [
+                // ── CORE ───────────────────────────────────────
+                ['group'=>'Dashboard',       'section'=>'dashboard',           'icon'=>'fa-tachometer-alt',    'ic'=>'icon-blue',  'cat'=>'Core',
+                 'items'=>[
+                     ['t'=>'cb','p'=>'dashboard.overview.view','l'=>'View Dashboard'],
+                 ]],
+                ['group'=>'User Management', 'section'=>'user_mgmt',           'icon'=>'fa-users',             'ic'=>'icon-indigo','cat'=>'Core',
+                 'items'=>[
+                     ['t'=>'cb','p'=>'user_management.users.view',  'l'=>'View Users'],
+                     ['t'=>'cb','p'=>'user_management.users.create','l'=>'Add User'],
+                     ['t'=>'cb','p'=>'user_management.users.edit',  'l'=>'Edit User'],
+                     ['t'=>'cb','p'=>'user_management.users.delete','l'=>'Delete User'],
+                 ]],
+                ['group'=>'Roles',           'section'=>'roles',               'icon'=>'fa-user-shield',       'ic'=>'icon-purple','cat'=>'Core',
+                 'items'=>[
+                     ['t'=>'cb','p'=>'roles.roles.view',  'l'=>'View Roles'],
+                     ['t'=>'cb','p'=>'roles.roles.create','l'=>'Add Role'],
+                     ['t'=>'cb','p'=>'roles.roles.edit',  'l'=>'Edit Role'],
+                     ['t'=>'cb','p'=>'roles.roles.delete','l'=>'Delete Role'],
+                 ]],
+                // ... Add other modules as needed ...
+            ];
+        }
+        @endphp
         @foreach($modules as $mod)
         @php
             $section = $mod['section'];
