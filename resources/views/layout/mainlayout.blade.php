@@ -1452,7 +1452,87 @@
 
     @livewireScripts
 
-    {{-- THEME CUSTOMIZER LOGIC --}}
+    {{-- GLOBAL SESSION EXPIRY HANDLER --}}
+    {{-- Catches 401/419 from ALL requests (jQuery, fetch, Livewire) and redirects to login --}}
+    @php
+        $__host      = request()->getHost();
+        $__main      = ltrim(config('app.domain') ?: (parse_url(config('app.url'), PHP_URL_HOST) ?: 'smartprobook.com'), '.');
+        $__loginUrl  = ($__host !== $__main && str_contains($__host, $__main))
+                        ? route('login')
+                        : route('saas-login');
+    @endphp
+    <script>
+    (function () {
+        var loginUrl = '{{ $__loginUrl }}';
+        var redirecting = false;
+
+        function goToLogin() {
+            if (redirecting) return;
+            redirecting = true;
+            window.location.href = loginUrl;
+        }
+
+        function isAuthError(status) {
+            return status === 401 || status === 419;
+        }
+
+        // ── jQuery AJAX global error handler ─────────────────────────────
+        if (window.jQuery) {
+            jQuery(document).ajaxError(function (event, xhr) {
+                if (isAuthError(xhr.status)) {
+                    goToLogin();
+                }
+            });
+        } else {
+            document.addEventListener('DOMContentLoaded', function () {
+                if (window.jQuery) {
+                    jQuery(document).ajaxError(function (event, xhr) {
+                        if (isAuthError(xhr.status)) {
+                            goToLogin();
+                        }
+                    });
+                }
+            });
+        }
+
+        // ── Fetch interceptor ─────────────────────────────────────────────
+        var _nativeFetch = window.fetch;
+        window.fetch = function () {
+            return _nativeFetch.apply(this, arguments).then(function (response) {
+                if (isAuthError(response.status)) {
+                    goToLogin();
+                }
+                return response;
+            });
+        };
+
+        // ── Livewire v2 hook ──────────────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', function () {
+            if (window.Livewire) {
+                try {
+                    // Livewire v3
+                    Livewire.hook('request', function ({ fail }) {
+                        fail(function ({ status }) {
+                            if (isAuthError(status)) goToLogin();
+                        });
+                    });
+                } catch (e) {
+                    try {
+                        // Livewire v2
+                        Livewire.onError(function (statusCode) {
+                            if (isAuthError(statusCode)) {
+                                goToLogin();
+                                return false;
+                            }
+                        });
+                    } catch (e2) {}
+                }
+            }
+        });
+    })();
+    </script>
+
+
     <script>
     document.addEventListener('DOMContentLoaded', function () {
         const html = document.documentElement;
