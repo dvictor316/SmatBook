@@ -3,12 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Traits\TenantScoped;
 
 class EmailAuditLog extends Model
 {
-    use TenantScoped;
     protected $fillable = [
+        'company_id',
+        'branch_id',
         'event_type',
         'recipient',
         'subject',

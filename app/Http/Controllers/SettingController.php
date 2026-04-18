@@ -92,10 +92,10 @@ class SettingController extends Controller
 
         if (Schema::hasTable('email_audit_logs')) {
             $query = EmailAuditLog::query();
-            // Strict tenant and branch scoping
+            // Strict tenant and branch scoping (only filter if columns exist)
             $tenantId = session('current_tenant_id');
             $branchId = session('active_branch_id');
-            if ($tenantId) {
+            if ($tenantId && Schema::hasColumn('email_audit_logs', 'company_id')) {
                 $query->where('company_id', $tenantId);
             }
             if ($branchId && Schema::hasColumn('email_audit_logs', 'branch_id')) {
