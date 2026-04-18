@@ -24,6 +24,7 @@ use App\Models\PurchaseReturn;
 use App\Models\Customer;
 use App\Models\Sale;
 use App\Models\Setting;
+use App\Models\Plan;
 use App\Support\LedgerService;
 use App\Support\AppMailer;
 use App\Support\InventoryQuantity;
@@ -140,8 +141,44 @@ use App\Support\InventoryQuantity;
         }
 
         // ... rest of the code
+        private function isSuperAdmin(): bool
+        {
+            $role = strtolower((string) (Auth::user()?->role ?? ''));
+            return in_array($role, ['super_admin', 'superadmin'], true);
+        }
+
+        private function getCurrentPlanTier(): string
+        {
+            $user = Auth::user();
+            if (!$user) {
+                return 'basic';
+            }
+            $companyId = (int) ($user->company_id ?? session('current_tenant_id') ?? 0);
+            if ($companyId > 0 && Schema::hasTable('subscriptions')) {
+                $sub = DB::table('subscriptions')
+                    ->where('company_id', $companyId)
+                    ->orderByDesc('id')
+                    ->first();
+                if ($sub) {
+                    return Plan::normalizeTier($sub->plan_name ?? $sub->plan ?? null);
+                }
+            }
+            if ($companyId > 0 && Schema::hasTable('companies')) {
+                $companyPlan = DB::table('companies')->where('id', $companyId)->value('plan');
+                if ($companyPlan) {
+                    return Plan::normalizeTier((string) $companyPlan);
+                }
+            }
+            return 'basic';
+        }
+
         private function applyTenantScope($query, string $table)
         {
+            // Super admin bypasses all tenant filtering — sees data across all companies.
+            if ($this->isSuperAdmin()) {
+                return $query;
+            }
+
             $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
             $userId = (int) (Auth::id() ?? 0);
 
@@ -158,6 +195,11 @@ use App\Support\InventoryQuantity;
 
         private function getActiveBranchContext(): array
         {
+            // Super admin sees all branches across all tenants.
+            if ($this->isSuperAdmin()) {
+                return ['id' => null, 'name' => null, 'scope' => 'all'];
+            }
+
             $branchScope = (string) request()->get('branch_scope', '');
             $requestBranchId = (string) request()->get('branch_id', '');
             $allBranches = request()->boolean('all_branches')
@@ -170,6 +212,12 @@ use App\Support\InventoryQuantity;
                     'name' => null,
                     'scope' => 'all',
                 ];
+            }
+
+            // Enterprise plan users see all branches by default.
+            // An explicit branch_id param still allows drill-down to a specific branch.
+            if ($requestBranchId === '' && $this->getCurrentPlanTier() === 'enterprise') {
+                return ['id' => null, 'name' => null, 'scope' => 'all'];
             }
 
             $branchId = session('active_branch_id') ? (string) session('active_branch_id') : null;
