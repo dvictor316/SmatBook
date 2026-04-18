@@ -1357,9 +1357,24 @@
         @include('layout.partials.two-col-sidebar')
     @endif
 
+
     {{-- MAIN PAGE CONTENT --}}
     @include('layout.partials.flash-messages')
-    @yield('content')
+    @php
+        $needsTenantBranch = !in_array($route, [
+            'landing.index', 'index-five', 'mail-pay-invoice', 'cashreceipt-1', 'cashreceipt-2', 'cashreceipt-3', 'cashreceipt-4',
+            'invoice-four-a', 'invoice-one-a', 'invoice-three', 'invoice-two', 'forgot-password', 'lock-screen', 'login', 'register',
+            'saas-login', 'saas-register', 'saas-register-initial',
+        ]);
+    @endphp
+    @if ($needsTenantBranch && (!session('current_tenant_id') || !session('active_branch_id')))
+        <div class="alert alert-info my-5 text-center" style="font-size:1.2em;">
+            <strong>No data available.</strong><br>
+            Please complete setup and select a branch to begin using your workspace.
+        </div>
+    @else
+        @yield('content')
+    @endif
 
     @php
         $skipGlobalModals = in_array($route, [

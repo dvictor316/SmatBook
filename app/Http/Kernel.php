@@ -100,6 +100,8 @@ class Kernel extends HttpKernel
             
             // Tenant Session Verification
             \App\Http\Middleware\VerifyTenantSession::class,
+            // Enforce tenant and branch required for all tenant routes
+            \App\Http\Middleware\RequireTenantAndBranch::class,
         ],
 
         /*
@@ -178,6 +180,7 @@ class Kernel extends HttpKernel
         'plan.access' => \App\Http\Middleware\CheckPlanAccess::class,
         'branch.required' => \App\Http\Middleware\RequireActiveBranch::class,
         'device.limit' => \App\Http\Middleware\EnforceDeviceSessionLimit::class,
+        'tenant.branch.required' => \App\Http\Middleware\RequireTenantAndBranch::class,
         // Add any other custom middleware aliases here
     ];
 

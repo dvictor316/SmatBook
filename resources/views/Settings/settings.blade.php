@@ -166,12 +166,12 @@
                         </div>
                         </form>
 
+                        <hr class="my-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="mb-0">Email Notification Audit</h6>
+                            <small class="text-muted">Latest 15 events</small>
+                        </div>
                         @if(isset($emailLogs) && $emailLogs->count())
-                            <hr class="my-4">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <h6 class="mb-0">Email Notification Audit</h6>
-                                <small class="text-muted">Latest 15 events</small>
-                            </div>
                             <div class="table-responsive">
                                 <table class="table table-sm align-middle">
                                     <thead>
@@ -201,6 +201,10 @@
                                         @endforeach
                                     </tbody>
                                 </table>
+                            </div>
+                        @else
+                            <div class="alert alert-info text-center my-4">
+                                No email activity yet for this branch.
                             </div>
                         @endif
                     </div>

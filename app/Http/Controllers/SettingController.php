@@ -91,7 +91,17 @@ class SettingController extends Controller
         $emailLogs = collect();
 
         if (Schema::hasTable('email_audit_logs')) {
-            $emailLogs = EmailAuditLog::query()->latest()->limit(15)->get();
+            $query = EmailAuditLog::query();
+            // Strict tenant and branch scoping
+            $tenantId = session('current_tenant_id');
+            $branchId = session('active_branch_id');
+            if ($tenantId) {
+                $query->where('company_id', $tenantId);
+            }
+            if ($branchId && Schema::hasColumn('email_audit_logs', 'branch_id')) {
+                $query->where('branch_id', $branchId);
+            }
+            $emailLogs = $query->latest()->limit(15)->get();
         }
 
         return view('Settings.settings', compact('settings', 'emailLogs'));
