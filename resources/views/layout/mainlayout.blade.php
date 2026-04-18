@@ -1277,6 +1277,7 @@
             'register',
             'saas-login',
             'saas-register',
+            'saas-register-initial',
         ]))
         <div class="main-wrapper">
     @elseif ($route === 'landing.index')
@@ -1291,7 +1292,7 @@
         <div class="main-wrapper invoice-two">
     @elseif ($route === 'index-five')
         <div class="main-wrapper container">
-    @elseif (in_array($route, ['forgot-password', 'lock-screen', 'login', 'register', 'saas-login', 'saas-register']))
+    @elseif (in_array($route, ['forgot-password', 'lock-screen', 'login', 'register', 'saas-login', 'saas-register', 'saas-register-initial']))
         <div class="main-wrapper login-body">
     @endif
 
@@ -1306,6 +1307,7 @@
             'saas-login',
             'invoice-subscription',
             'saas-register',
+            'saas-register-initial',
             'forgot-password',
             'lock-screen',
             'error-404',
@@ -1333,6 +1335,7 @@
             'saas-login',
             'invoice-subscription',
             'saas-register',
+            'saas-register-initial',
             'forgot-password',
             'lock-screen',
             'error-404',
@@ -1369,6 +1372,7 @@
             'register',
             'saas-login',
             'saas-register',
+            'saas-register-initial',
             'forgot-password',
             'lock-screen',
             'error-404',
@@ -1401,6 +1405,7 @@
             'register',
             'saas-login',
             'saas-register',
+            'saas-register-initial',
         ]))
         </div>
     @endif
@@ -1422,6 +1427,7 @@
             'saas-login',
             'invoice-subscription',
             'saas-register',
+            'saas-register-initial',
             'forgot-password',
             'reset-password',
             'password.request',
