@@ -344,6 +344,7 @@
 @endpush
 
 @section('content')
+<div class="page-wrapper">
 <div class="perm-page py-4 px-3 px-md-4">
 
 @php
@@ -897,6 +898,7 @@
     </form>
 
 </div>{{-- /.perm-page --}}
+</div>{{-- /.page-wrapper --}}
 @endsection
 
 @push('scripts')
