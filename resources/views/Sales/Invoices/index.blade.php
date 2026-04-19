@@ -429,12 +429,15 @@
         /* Print Styles */
         @media print {
             @page {
-                /* No fixed size — browser uses whatever paper the user picks */
-                margin: 8mm 10mm;
+                size: auto;
+                margin: 6mm;
             }
 
             html, body {
-                width: 100%;
+                width: auto !important;
+                min-width: 0 !important;
+                max-width: none !important;
+                overflow: visible !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
                 color-adjust: exact !important;
@@ -446,16 +449,18 @@
 
             body {
                 background: white;
-                padding: 0;
+                padding: 0 !important;
                 margin: 0;
                 font-size: 10px;
             }
 
             .invoice-wrapper {
-                width: 100% !important;
+                display: block !important;
+                width: auto !important;
+                min-width: 0 !important;
                 max-width: 100% !important;
                 margin: 0 !important;
-                padding: 0 !important;
+                padding: 3mm 2mm !important;
                 border: none !important;
                 box-shadow: none !important;
                 border-radius: 0 !important;
@@ -557,6 +562,55 @@
             }
         }
 
+        @media print and (orientation: landscape) {
+            @page {
+                size: landscape;
+                margin: 5mm;
+            }
+
+            body {
+                font-size: 11px;
+            }
+
+            .invoice-wrapper {
+                width: 100% !important;
+                max-width: none !important;
+                padding: 4mm 3mm !important;
+            }
+
+            .invoice-header {
+                margin-bottom: 10px;
+                padding-bottom: 8px;
+            }
+
+            .customer-section {
+                padding: 10px 12px;
+            }
+
+            .table-custom {
+                font-size: 10.5px;
+            }
+
+            .table-custom th,
+            .table-custom td {
+                padding: 6px 7px;
+            }
+
+            .invoice-footer {
+                gap: 16px;
+            }
+
+            .footer-left {
+                flex: 1 1 48%;
+                max-width: 48%;
+            }
+
+            .summary-box {
+                min-width: 280px;
+                width: 100%;
+            }
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .invoice-wrapper {
@@ -616,7 +670,7 @@
                 ?? null);
     @endphp
 
-    <div class="invoice-wrapper" id="invoice_content">
+    <div class="invoice-wrapper" id="invoice_content" data-print-scope>
         @php
             $paymentDetails = $sale->payment_details;
             if (is_string($paymentDetails)) {
@@ -930,10 +984,72 @@
 
 <script>
     const autoPrintReceipt = {{ request()->boolean('autoprint') ? 'true' : 'false' }};
+    let activePrintJob = null;
 
-    // Print Function — no JS zoom (it causes a blank first page in Chromium)
-    function printInvoice() {
-        window.print();
+    function nextFrame() {
+        return new Promise((resolve) => {
+            requestAnimationFrame(() => requestAnimationFrame(resolve));
+        });
+    }
+
+    function waitForImages() {
+        const pendingImages = Array.from(document.images).filter((img) => !img.complete);
+        if (!pendingImages.length) {
+            return Promise.resolve();
+        }
+
+        return Promise.allSettled(
+            pendingImages.map((img) => new Promise((resolve) => {
+                const done = () => resolve();
+                img.addEventListener('load', done, { once: true });
+                img.addEventListener('error', done, { once: true });
+            }))
+        );
+    }
+
+    async function waitForPrintReady() {
+        if (document.fonts && typeof document.fonts.ready === 'object') {
+            await Promise.race([
+                document.fonts.ready.catch(() => undefined),
+                new Promise((resolve) => setTimeout(resolve, 1200)),
+            ]);
+        }
+
+        await Promise.race([
+            waitForImages(),
+            new Promise((resolve) => setTimeout(resolve, 1200)),
+        ]);
+
+        await nextFrame();
+    }
+
+    async function printInvoice() {
+        if (activePrintJob) {
+            return activePrintJob;
+        }
+
+        activePrintJob = (async () => {
+            const printTarget = document.getElementById('invoice_content');
+
+            await waitForPrintReady();
+            window.focus();
+
+            if (typeof window.smartProbookTriggerPrint === 'function') {
+                window.smartProbookTriggerPrint(printTarget);
+            } else {
+                window.print();
+            }
+        })();
+
+        try {
+            await activePrintJob;
+        } finally {
+            window.setTimeout(() => {
+                activePrintJob = null;
+            }, 1200);
+        }
+
+        return activePrintJob;
     }
 
     // Export to PDF
@@ -1026,10 +1142,23 @@
         }
     }
 
+    window.addEventListener('afterprint', () => {
+        activePrintJob = null;
+    });
+
     if (autoPrintReceipt) {
-        window.addEventListener('load', () => {
-            setTimeout(() => { window.focus(); window.print(); }, 300);
-        });
+        const autoTriggerPrint = () => {
+            window.setTimeout(() => {
+                printInvoice();
+            }, 180);
+        };
+
+        window.addEventListener('load', autoTriggerPrint, { once: true });
+        window.addEventListener('pageshow', (event) => {
+            if (event.persisted) {
+                autoTriggerPrint();
+            }
+        }, { once: true });
     }
 </script>
 </body>
