@@ -34,7 +34,7 @@
         }
 
         .compact-invoice-shell {
-            max-width: 960px;
+            max-width: 780px;
             margin: 0 auto;
         }
 
@@ -43,15 +43,15 @@
             border: 1px solid #e5e7eb;
             border-radius: 12px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            padding: 40px !important;
+            padding: 26px !important;
         }
 
         .compact-invoice-brand {
-            font-size: 24px;
+            font-size: 20px;
             font-weight: 800;
             color: var(--deep-blue);
             line-height: 1.15;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
         }
 
         .compact-status {
@@ -67,25 +67,25 @@
         }
 
         .compact-invoice-heading {
-            font-size: 28px;
+            font-size: 22px;
             font-weight: 300;
-            letter-spacing: 3px;
+            letter-spacing: 2px;
             color: var(--text-gold);
-            margin-top: 10px;
+            margin-top: 8px;
             line-height: 1;
         }
 
         .compact-invoice-number {
-            font-size: 14px;
+            font-size: 12px;
             font-weight: 700;
             color: var(--gray-900);
-            margin-top: 8px;
+            margin-top: 6px;
         }
 
         .compact-panel {
             border: 1px solid #e5e7eb;
             border-radius: 10px;
-            padding: 18px 20px;
+            padding: 12px 14px;
             background: #fff;
             height: 100%;
         }
@@ -104,14 +104,14 @@
         }
 
         .compact-invoice-meta-value {
-            font-size: 18px;
+            font-size: 15px;
             font-weight: 700;
             color: var(--deep-blue);
             line-height: 1.25;
         }
 
         .compact-summary-title {
-            font-size: 24px;
+            font-size: 18px;
             font-weight: 800;
             color: var(--gray-900);
         }
@@ -120,36 +120,36 @@
             width: 100%;
             margin: 0;
             border-collapse: collapse;
-            font-size: 13px;
+            font-size: 12px;
         }
 
         .compact-items-table thead th {
             background: linear-gradient(135deg, var(--soft-blue) 0%, #e0f2fe 100%);
             color: var(--deep-blue);
-            font-size: 11px;
+            font-size: 10px;
             text-transform: uppercase;
             letter-spacing: 0.04em;
             border-bottom: 2px solid #0ea5e9;
-            padding: 14px 12px;
+            padding: 9px 8px;
             font-weight: 800;
         }
 
         .compact-items-table tbody td {
-            padding: 12px;
+            padding: 8px 8px;
             border-bottom: 1px solid var(--gray-100);
             vertical-align: top;
-            font-size: 13px;
+            font-size: 12px;
         }
 
         .compact-item-name {
-            font-size: 13px;
-            line-height: 1.25;
+            font-size: 12px;
+            line-height: 1.2;
             font-weight: 600;
             color: var(--gray-900);
         }
 
         .compact-item-meta {
-            font-size: 11px;
+            font-size: 10px;
             line-height: 1.2;
             color: var(--gray-600);
         }
@@ -160,8 +160,8 @@
         }
 
         .compact-total-table td {
-            padding: 10px 0;
-            font-size: 14px;
+            padding: 6px 0;
+            font-size: 12px;
             border-bottom: 1px dashed var(--border-gold);
         }
 
@@ -170,21 +170,21 @@
         }
 
         .compact-total-table .total-row td {
-            padding-top: 14px;
+            padding-top: 10px;
             border-top: 2px solid var(--text-gold);
             border-bottom: 2px solid var(--text-gold);
-            font-size: 20px;
+            font-size: 16px;
             font-weight: 800;
             color: var(--deep-blue);
         }
 
         .compact-note {
             border-top: 2px dashed var(--border-gold);
-            padding-top: 18px;
+            padding-top: 12px;
             color: var(--text-gold);
-            font-size: 13px;
+            font-size: 11px;
             font-weight: 700;
-            letter-spacing: 0.06em;
+            letter-spacing: 0.04em;
             text-align: center;
         }
 
@@ -193,7 +193,7 @@
             justify-content: center;
             gap: 10px;
             flex-wrap: wrap;
-            margin-bottom: 30px;
+            margin-bottom: 18px;
         }
 
         .compact-controls .btn {
@@ -237,15 +237,15 @@
             }
 
             .compact-invoice-brand {
-                font-size: 20px !important;
+                font-size: 17px !important;
             }
 
             .compact-invoice-heading {
-                font-size: 22px !important;
+                font-size: 18px !important;
             }
 
             .compact-panel {
-                padding: 12px 14px !important;
+                padding: 9px 10px !important;
             }
 
             .compact-items-table thead th {
@@ -268,19 +268,19 @@
             }
 
             .compact-summary-title {
-                font-size: 18px !important;
+                font-size: 16px !important;
             }
         }
 
         @media (max-width: 767.98px) {
             .compact-invoice-card {
                 border-radius: 6px;
-                padding: 22px !important;
+                padding: 18px !important;
             }
 
             .compact-invoice-heading {
-                font-size: 22px;
-                letter-spacing: 2px;
+                font-size: 18px;
+                letter-spacing: 1.5px;
             }
         }
     </style>
@@ -341,7 +341,7 @@
             </div>
 
             <div class="compact-invoice-card p-3 p-lg-4">
-                <div class="row align-items-start gy-4">
+                <div class="row align-items-start gy-3">
                     <div class="col-md-7">
                         <div class="compact-invoice-brand">{{ $brandName }}</div>
                         <div class="text-muted small">{{ $brandAddress }}</div>
@@ -360,7 +360,7 @@
                     </div>
                 </div>
 
-                <div class="row gy-3 mt-3">
+                <div class="row gy-2 mt-2">
                     <div class="col-md-4">
                         <div class="compact-panel compact-panel-muted">
                             <div class="compact-invoice-meta-label">Issue Date</div>
@@ -383,10 +383,10 @@
 
                 @if(!empty($splitLines))
                     <div class="compact-panel mt-3">
-                        <div class="row gy-3">
+                        <div class="row gy-2">
                             <div class="col-md-7">
                                 <div class="compact-invoice-meta-label">Payment Breakdown</div>
-                                <div class="fw-bold fs-5">Channels used for this receipt</div>
+                                <div class="fw-bold" style="font-size: 15px;">Channels used for this receipt</div>
                             </div>
                             <div class="col-md-5 text-md-end">
                                 <div class="compact-invoice-meta-label">Total Applied</div>
@@ -394,7 +394,7 @@
                             </div>
                         </div>
 
-                        <div class="row gy-3 mt-1">
+                        <div class="row gy-2 mt-1">
                             @foreach($splitLines as $line)
                                 <div class="col-md-4">
                                     <div class="compact-panel compact-panel-muted">
@@ -410,7 +410,7 @@
                     </div>
                 @endif
 
-                <div class="table-responsive mt-4">
+                <div class="table-responsive mt-3">
                     <table class="table compact-items-table">
                         <thead>
                             <tr>
@@ -477,22 +477,28 @@
                                         <td class="text-end fw-bold">₦{{ number_format($tax, 2) }}</td>
                                     </tr>
                                 @endif
-                                <tr>
-                                    <td class="text-muted">Tendered</td>
-                                    <td class="text-end fw-bold">₦{{ number_format($tenderedAmount, 2) }}</td>
-                                </tr>
+                                @if(abs($tenderedAmount - $appliedAmount) > 0.00001)
+                                    <tr>
+                                        <td class="text-muted">Tendered</td>
+                                        <td class="text-end fw-bold">₦{{ number_format($tenderedAmount, 2) }}</td>
+                                    </tr>
+                                @endif
                                 <tr>
                                     <td class="text-muted">Applied</td>
                                     <td class="text-end fw-bold">₦{{ number_format($appliedAmount, 2) }}</td>
                                 </tr>
-                                <tr>
-                                    <td class="text-muted">Change</td>
-                                    <td class="text-end fw-bold">₦{{ number_format($changeAmount, 2) }}</td>
-                                </tr>
-                                <tr>
-                                    <td class="text-muted">Balance Due</td>
-                                    <td class="text-end fw-bold {{ $balanceDue > 0 ? 'text-danger' : 'text-success' }}">₦{{ number_format($balanceDue, 2) }}</td>
-                                </tr>
+                                @if(abs($changeAmount) > 0.00001)
+                                    <tr>
+                                        <td class="text-muted">Change</td>
+                                        <td class="text-end fw-bold">₦{{ number_format($changeAmount, 2) }}</td>
+                                    </tr>
+                                @endif
+                                @if(abs($balanceDue) > 0.00001)
+                                    <tr>
+                                        <td class="text-muted">Balance Due</td>
+                                        <td class="text-end fw-bold text-danger">₦{{ number_format($balanceDue, 2) }}</td>
+                                    </tr>
+                                @endif
                                 <tr class="total-row">
                                     <td>Total</td>
                                     <td class="text-end">₦{{ number_format((float) ($sale->total ?? 0), 2) }}</td>
