@@ -1,8 +1,112 @@
 <?php $page = 'purchases-orders'; ?>
 @extends('layout.mainlayout')
 @section('content')
+    <style>
+        .purchase-orders-page .card-table {
+            border: 1px solid #e8eef8;
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.05);
+            background: #fff;
+        }
+
+        .purchase-orders-page .card-body {
+            padding: 0.9rem !important;
+        }
+
+        .purchase-orders-page .table {
+            margin-bottom: 0;
+        }
+
+        .purchase-orders-page .table thead th {
+            font-size: 0.72rem !important;
+            font-weight: 800 !important;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: #64748b;
+            padding: 0.9rem 0.8rem !important;
+            white-space: nowrap;
+        }
+
+        .purchase-orders-page .table tbody td {
+            font-size: 0.82rem !important;
+            color: #243b63;
+            padding: 0.95rem 0.8rem !important;
+            vertical-align: middle;
+        }
+
+        .purchase-orders-page .table-avatar {
+            margin: 0;
+            font-size: 0.92rem !important;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+
+        .purchase-orders-page .table-avatar a {
+            font-size: inherit !important;
+            color: #334155;
+        }
+
+        .purchase-orders-page .table-avatar span {
+            display: block;
+            margin-top: 0.18rem;
+            font-size: 0.78rem !important;
+            line-height: 1.2;
+            color: #7c8799;
+            font-weight: 500;
+        }
+
+        .purchase-orders-page .btn-action-icon {
+            font-size: 0.85rem !important;
+        }
+
+        .purchase-orders-page .dropdown-menu .dropdown-item {
+            font-size: 0.82rem !important;
+        }
+
+        .purchase-orders-page .badge,
+        .purchase-orders-page span.badge,
+        .purchase-orders-page [class*="badge bg-"] {
+            font-size: 0.7rem !important;
+            font-weight: 700;
+            padding: 0.38rem 0.58rem;
+        }
+
+        .purchase-orders-page .dataTables_length label,
+        .purchase-orders-page .dataTables_filter label,
+        .purchase-orders-page .dataTables_info,
+        .purchase-orders-page .pagination {
+            font-size: 0.82rem !important;
+        }
+
+        .purchase-orders-page .dataTables_length select,
+        .purchase-orders-page .dataTables_filter input {
+            font-size: 0.82rem !important;
+            min-height: 38px;
+        }
+
+        @media (max-width: 767.98px) {
+            .purchase-orders-page .table thead th {
+                font-size: 0.66rem !important;
+                padding: 0.75rem 0.65rem !important;
+            }
+
+            .purchase-orders-page .table tbody td {
+                font-size: 0.76rem !important;
+                padding: 0.8rem 0.65rem !important;
+            }
+
+            .purchase-orders-page .table-avatar {
+                font-size: 0.84rem !important;
+            }
+
+            .purchase-orders-page .table-avatar span {
+                font-size: 0.72rem !important;
+            }
+        }
+    </style>
     <div class="page-wrapper">
-        <div class="content container-fluid">
+        <div class="content container-fluid purchase-orders-page">
 
             @component('components.page-header')
                 @slot('title')
