@@ -2273,7 +2273,7 @@ $(document).ready(function() {
                 }
             },
             success: function(res) {
-                const invoiceUrl = "{{ route('sales.invoice.print', ':id') }}".replace(':id', res.sale_id) + '?autoprint=1';
+                const invoiceUrl = "{{ url('/sales/invoice') }}/" + res.sale_id + "/print?autoprint=1";
                 const balanceDue = Math.max(0, total - paid);
                 window.open(invoiceUrl, '_blank');
 
@@ -2399,7 +2399,7 @@ window.POS_ENABLE_FALLBACK = function () {
         return alertFallback(options?.text || options?.title || 'Action required');
     };
     const saleStoreUrl = @json(route('sales.store'));
-    const invoiceRouteTemplate = @json(route('sales.invoice.print', ':id'));
+    const invoicePrintBaseUrl = @json(url('/sales/invoice'));
     const csrfToken = @json(csrf_token());
     let splitAutoSync = false;
     const customerOptionsSnapshot = customerSelect
@@ -3084,7 +3084,7 @@ window.POS_ENABLE_FALLBACK = function () {
             }
 
             if (result.sale_id) {
-                const invoiceUrl = invoiceRouteTemplate.replace(':id', result.sale_id) + '?autoprint=1';
+                const invoiceUrl = `${invoicePrintBaseUrl}/${result.sale_id}/print?autoprint=1`;
                 window.open(invoiceUrl, '_blank');
             }
 
