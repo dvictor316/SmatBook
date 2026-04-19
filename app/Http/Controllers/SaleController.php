@@ -949,7 +949,7 @@ $sale = Sale::create([
 
     public function printInvoice($id)
     {
-        $sale = Sale::with(['items.product', 'customer'])->findOrFail($id);
+        $sale = Sale::with(['items.product', 'customer', 'user'])->findOrFail($id);
 
         return view('Sales.Invoices.print', [
             'sale' => $sale,

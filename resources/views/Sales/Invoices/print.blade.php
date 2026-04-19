@@ -190,6 +190,33 @@
             color: var(--gray-600);
         }
 
+        .compact-contact-line {
+            font-size: 11px;
+            color: var(--gray-600);
+            line-height: 1.35;
+        }
+
+        .compact-extra-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.2fr) minmax(220px, 0.8fr);
+            gap: 14px;
+            margin-top: 14px;
+            align-items: stretch;
+        }
+
+        .compact-words-box {
+            border-top: 1px dashed var(--border-gold);
+            padding-top: 10px;
+        }
+
+        .compact-words-value {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-gold);
+            line-height: 1.45;
+            font-style: italic;
+        }
+
         .compact-totals-panel {
             background: linear-gradient(135deg, var(--light-gold) 0%, #fef9e7 100%);
             border: 2px solid var(--border-gold);
@@ -289,6 +316,12 @@
                 gap: 10px !important;
             }
 
+            .compact-extra-grid {
+                grid-template-columns: minmax(0, 1.1fr) minmax(180px, 0.9fr) !important;
+                gap: 10px !important;
+                margin-top: 10px !important;
+            }
+
             .compact-info-grid {
                 gap: 8px !important;
                 margin-top: 8px !important;
@@ -326,7 +359,8 @@
         @media (max-width: 767.98px) {
             .compact-main-grid,
             .compact-info-grid,
-            .compact-split-grid {
+            .compact-split-grid,
+            .compact-extra-grid {
                 grid-template-columns: 1fr;
             }
 
@@ -363,6 +397,8 @@
         $changeAmount = (float) ($sale->change_amount ?? 0);
         $tenderedAmount = $appliedAmount + max(0, $changeAmount);
         $balanceDue = (float) ($sale->effective_balance ?? max(0, (float) ($sale->total ?? 0) - $appliedAmount));
+        $cashierName = $sale->cashier_name ?? $sale->user?->name ?? 'System';
+        $amountInWords = $sale->amount_in_words_display ?? 'Zero Naira Only';
         $subtotal = (float) ($sale->items->sum('subtotal'));
         $tax = (float) ($sale->tax ?? 0);
         $discount = (float) ($sale->discount ?? 0);
@@ -401,10 +437,18 @@
                 <div class="row align-items-start gy-3">
                     <div class="col-md-7">
                         <div class="compact-invoice-brand">{{ $brandName }}</div>
-                        <div class="text-muted small">{{ $brandAddress }}</div>
+                        <div class="compact-contact-line">{{ $brandAddress }}</div>
                         @if($brandPhone || $brandEmail)
-                            <div class="text-muted small mt-1">
-                                {{ $brandPhone }}{{ $brandPhone && $brandEmail ? ' | ' : '' }}{{ $brandEmail }}
+                            <div class="compact-contact-line mt-1">
+                                @if($brandPhone)
+                                    <strong>Phone:</strong> {{ $brandPhone }}
+                                @endif
+                                @if($brandPhone && $brandEmail)
+                                    <span> | </span>
+                                @endif
+                                @if($brandEmail)
+                                    <strong>Email:</strong> {{ $brandEmail }}
+                                @endif
                             </div>
                         @endif
                     </div>
@@ -557,6 +601,20 @@
                             @endforelse
                         </tbody>
                     </table>
+                </div>
+
+                <div class="compact-extra-grid">
+                    <div class="compact-panel compact-panel-muted">
+                        <div class="compact-invoice-meta-label">Amount in Words</div>
+                        <div class="compact-words-box">
+                            <div class="compact-words-value">{{ $amountInWords }}</div>
+                        </div>
+                    </div>
+
+                    <div class="compact-panel compact-panel-muted">
+                        <div class="compact-invoice-meta-label">Cashier</div>
+                        <div class="compact-invoice-meta-value">{{ $cashierName }}</div>
+                    </div>
                 </div>
 
                 <div class="compact-note mt-4">
