@@ -79,13 +79,135 @@
     <script>
         function printInvoice() {
             const target = document.getElementById('printableArea');
-
-            if (typeof window.smartProbookTriggerPrint === 'function') {
-                window.smartProbookTriggerPrint(target);
+            if (!target) {
+                window.print();
                 return;
             }
 
-            window.print();
+            const printWindow = window.open('', '_blank', 'noopener,noreferrer,width=1280,height=900');
+            if (!printWindow) {
+                window.print();
+                return;
+            }
+
+            const bootstrapHref = @json(URL::asset('/assets/css/bootstrap.min.css'));
+            const title = @json('Invoice #' . ($sale->invoice_no ?? $sale->id));
+            const content = target.innerHTML;
+
+            printWindow.document.open();
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>${title}</title>
+                    <link rel="stylesheet" href="${bootstrapHref}">
+                    <style>
+                        html, body {
+                            margin: 0;
+                            padding: 0;
+                            background: #ffffff;
+                            color: #111827;
+                            -webkit-print-color-adjust: exact;
+                            print-color-adjust: exact;
+                        }
+
+                        body {
+                            padding: 24px;
+                            font-family: Arial, Helvetica, sans-serif;
+                        }
+
+                        .invoice-print-root {
+                            width: 100%;
+                            max-width: 1180px;
+                            margin: 0 auto;
+                        }
+
+                        .invoice-print-root .invoice-card,
+                        .invoice-print-root .invoice-print-shell,
+                        .invoice-print-root .card {
+                            border: 0 !important;
+                            box-shadow: none !important;
+                            background: #fff !important;
+                        }
+
+                        .invoice-print-root .card-body {
+                            padding: 0 !important;
+                        }
+
+                        .invoice-print-root .bg-light-soft {
+                            background-color: #f5f5f5 !important;
+                        }
+
+                        .invoice-print-root .invoice-total-card {
+                            border: 1px solid #ddd !important;
+                            box-shadow: none !important;
+                        }
+
+                        .invoice-print-root .text-primary {
+                            color: #4b308b !important;
+                        }
+
+                        .invoice-print-root thead tr th {
+                            background-color: #f8f9fa !important;
+                            color: #4b308b !important;
+                        }
+
+                        .invoice-print-root tbody tr {
+                            background-color: #fcfcfc !important;
+                        }
+
+                        .invoice-print-root .border-start.border-primary {
+                            border-left-color: #4b308b !important;
+                        }
+
+                        @page {
+                            size: auto;
+                            margin: 8mm;
+                        }
+
+                        @media print {
+                            html, body {
+                                overflow: visible !important;
+                            }
+
+                            body {
+                                padding: 0;
+                            }
+
+                            .invoice-print-root {
+                                max-width: none;
+                            }
+                        }
+
+                        @media print and (orientation: landscape) {
+                            @page {
+                                size: landscape;
+                                margin: 6mm;
+                            }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="invoice-print-root">${content}</div>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+
+            const triggerPrint = () => {
+                printWindow.focus();
+                printWindow.print();
+            };
+
+            if (printWindow.document.fonts && typeof printWindow.document.fonts.ready === 'object') {
+                printWindow.document.fonts.ready.finally(() => {
+                    setTimeout(triggerPrint, 120);
+                });
+            } else {
+                setTimeout(triggerPrint, 200);
+            }
         }
     </script>
 
