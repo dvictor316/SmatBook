@@ -94,6 +94,34 @@
             background: var(--gray-50);
         }
 
+        .compact-main-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.65fr) minmax(260px, 0.95fr);
+            gap: 14px;
+            align-items: stretch;
+        }
+
+        .compact-info-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .compact-split-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .compact-split-pill {
+            border: 1px solid #dbe4f0;
+            border-radius: 8px;
+            padding: 8px 10px;
+            background: #fff;
+        }
+
         .compact-invoice-meta-label {
             font-size: 10px;
             font-weight: 700;
@@ -114,6 +142,14 @@
             font-size: 18px;
             font-weight: 800;
             color: var(--gray-900);
+        }
+
+        .compact-summary-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 8px;
         }
 
         .compact-items-table {
@@ -248,6 +284,21 @@
                 padding: 9px 10px !important;
             }
 
+            .compact-main-grid {
+                grid-template-columns: minmax(0, 1.55fr) minmax(220px, 0.9fr) !important;
+                gap: 10px !important;
+            }
+
+            .compact-info-grid {
+                gap: 8px !important;
+                margin-top: 8px !important;
+            }
+
+            .compact-split-grid {
+                gap: 6px !important;
+                margin-top: 8px !important;
+            }
+
             .compact-items-table thead th {
                 padding: 8px 7px !important;
                 font-size: 9px !important;
@@ -273,6 +324,12 @@
         }
 
         @media (max-width: 767.98px) {
+            .compact-main-grid,
+            .compact-info-grid,
+            .compact-split-grid {
+                grid-template-columns: 1fr;
+            }
+
             .compact-invoice-card {
                 border-radius: 6px;
                 padding: 18px !important;
@@ -360,55 +417,100 @@
                     </div>
                 </div>
 
-                <div class="row gy-2 mt-2">
-                    <div class="col-md-4">
-                        <div class="compact-panel compact-panel-muted">
-                            <div class="compact-invoice-meta-label">Issue Date</div>
-                            <div class="compact-invoice-meta-value">{{ optional($sale->created_at)->format('d M Y') }}</div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="compact-panel compact-panel-muted">
-                            <div class="compact-invoice-meta-label">Reference</div>
-                            <div class="compact-invoice-meta-value">{{ $sale->order_number ?? 'N/A' }}</div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="compact-panel compact-panel-muted">
-                            <div class="compact-invoice-meta-label">Customer</div>
-                            <div class="compact-invoice-meta-value">{{ $sale->display_customer_name }}</div>
-                        </div>
-                    </div>
-                </div>
+                <div class="compact-main-grid mt-3">
+                    <div class="compact-panel compact-panel-muted">
+                        <div class="compact-invoice-meta-label">Invoice Details</div>
 
-                @if(!empty($splitLines))
-                    <div class="compact-panel mt-3">
-                        <div class="row gy-2">
-                            <div class="col-md-7">
-                                <div class="compact-invoice-meta-label">Payment Breakdown</div>
-                                <div class="fw-bold" style="font-size: 15px;">Channels used for this receipt</div>
+                        <div class="compact-info-grid">
+                            <div class="compact-panel">
+                                <div class="compact-invoice-meta-label">Issue Date</div>
+                                <div class="compact-invoice-meta-value">{{ optional($sale->created_at)->format('d M Y') }}</div>
                             </div>
-                            <div class="col-md-5 text-md-end">
-                                <div class="compact-invoice-meta-label">Total Applied</div>
-                                <div class="compact-summary-title">₦{{ number_format($appliedAmount, 2) }}</div>
+
+                            <div class="compact-panel">
+                                <div class="compact-invoice-meta-label">Reference</div>
+                                <div class="compact-invoice-meta-value">{{ $sale->order_number ?? 'N/A' }}</div>
+                            </div>
+
+                            <div class="compact-panel">
+                                <div class="compact-invoice-meta-label">Customer</div>
+                                <div class="compact-invoice-meta-value">{{ $sale->display_customer_name }}</div>
                             </div>
                         </div>
 
-                        <div class="row gy-2 mt-1">
-                            @foreach($splitLines as $line)
-                                <div class="col-md-4">
-                                    <div class="compact-panel compact-panel-muted">
+                        @if(!empty($splitLines))
+                            <div class="compact-invoice-meta-label mt-3">Payment Breakdown</div>
+                            <div class="compact-split-grid">
+                                @foreach($splitLines as $line)
+                                    <div class="compact-split-pill">
                                         <div class="compact-invoice-meta-label">{{ $line['label'] }}</div>
-                                        <div class="compact-invoice-meta-value">₦{{ number_format($line['amount'], 2) }}</div>
+                                        <div class="compact-item-name">₦{{ number_format($line['amount'], 2) }}</div>
                                         @if($line['account'])
-                                            <div class="text-muted small mt-1">{{ $line['account'] }}</div>
+                                            <div class="compact-item-meta mt-1">{{ $line['account'] }}</div>
                                         @endif
                                     </div>
-                                </div>
-                            @endforeach
-                        </div>
+                                @endforeach
+                            </div>
+                        @endif
                     </div>
-                @endif
+
+                    <div class="compact-panel compact-totals-panel">
+                        <div class="compact-summary-top">
+                            <div>
+                                <div class="compact-invoice-meta-label">Summary</div>
+                                <div class="compact-summary-title">₦{{ number_format((float) ($sale->total ?? 0), 2) }}</div>
+                            </div>
+                            <div class="compact-status {{ $displayStatus === 'paid' ? 'text-success' : ($displayStatus === 'partial' ? 'text-info' : 'text-danger') }}">
+                                {{ strtoupper($displayStatus) }}
+                            </div>
+                        </div>
+
+                        <table class="w-100 compact-total-table">
+                            <tr>
+                                <td class="text-muted">Subtotal</td>
+                                <td class="text-end fw-bold">₦{{ number_format($subtotal, 2) }}</td>
+                            </tr>
+                            @if(abs($discount) > 0.00001)
+                                <tr>
+                                    <td class="text-muted">Discount</td>
+                                    <td class="text-end fw-bold">₦{{ number_format($discount, 2) }}</td>
+                                </tr>
+                            @endif
+                            @if(abs($tax) > 0.00001)
+                                <tr>
+                                    <td class="text-muted">Tax</td>
+                                    <td class="text-end fw-bold">₦{{ number_format($tax, 2) }}</td>
+                                </tr>
+                            @endif
+                            @if(abs($tenderedAmount - $appliedAmount) > 0.00001)
+                                <tr>
+                                    <td class="text-muted">Tendered</td>
+                                    <td class="text-end fw-bold">₦{{ number_format($tenderedAmount, 2) }}</td>
+                                </tr>
+                            @endif
+                            <tr>
+                                <td class="text-muted">Applied</td>
+                                <td class="text-end fw-bold">₦{{ number_format($appliedAmount, 2) }}</td>
+                            </tr>
+                            @if(abs($changeAmount) > 0.00001)
+                                <tr>
+                                    <td class="text-muted">Change</td>
+                                    <td class="text-end fw-bold">₦{{ number_format($changeAmount, 2) }}</td>
+                                </tr>
+                            @endif
+                            @if(abs($balanceDue) > 0.00001)
+                                <tr>
+                                    <td class="text-muted">Balance Due</td>
+                                    <td class="text-end fw-bold text-danger">₦{{ number_format($balanceDue, 2) }}</td>
+                                </tr>
+                            @endif
+                            <tr class="total-row">
+                                <td>Total</td>
+                                <td class="text-end">₦{{ number_format((float) ($sale->total ?? 0), 2) }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
 
                 <div class="table-responsive mt-3">
                     <table class="table compact-items-table">
@@ -455,57 +557,6 @@
                             @endforelse
                         </tbody>
                     </table>
-                </div>
-
-                <div class="row justify-content-end mt-3">
-                    <div class="col-md-5">
-                        <div class="compact-panel compact-totals-panel">
-                            <table class="w-100 compact-total-table">
-                                <tr>
-                                    <td class="text-muted">Subtotal</td>
-                                    <td class="text-end fw-bold">₦{{ number_format($subtotal, 2) }}</td>
-                                </tr>
-                                @if(abs($discount) > 0.00001)
-                                    <tr>
-                                        <td class="text-muted">Discount</td>
-                                        <td class="text-end fw-bold">₦{{ number_format($discount, 2) }}</td>
-                                    </tr>
-                                @endif
-                                @if(abs($tax) > 0.00001)
-                                    <tr>
-                                        <td class="text-muted">Tax</td>
-                                        <td class="text-end fw-bold">₦{{ number_format($tax, 2) }}</td>
-                                    </tr>
-                                @endif
-                                @if(abs($tenderedAmount - $appliedAmount) > 0.00001)
-                                    <tr>
-                                        <td class="text-muted">Tendered</td>
-                                        <td class="text-end fw-bold">₦{{ number_format($tenderedAmount, 2) }}</td>
-                                    </tr>
-                                @endif
-                                <tr>
-                                    <td class="text-muted">Applied</td>
-                                    <td class="text-end fw-bold">₦{{ number_format($appliedAmount, 2) }}</td>
-                                </tr>
-                                @if(abs($changeAmount) > 0.00001)
-                                    <tr>
-                                        <td class="text-muted">Change</td>
-                                        <td class="text-end fw-bold">₦{{ number_format($changeAmount, 2) }}</td>
-                                    </tr>
-                                @endif
-                                @if(abs($balanceDue) > 0.00001)
-                                    <tr>
-                                        <td class="text-muted">Balance Due</td>
-                                        <td class="text-end fw-bold text-danger">₦{{ number_format($balanceDue, 2) }}</td>
-                                    </tr>
-                                @endif
-                                <tr class="total-row">
-                                    <td>Total</td>
-                                    <td class="text-end">₦{{ number_format((float) ($sale->total ?? 0), 2) }}</td>
-                                </tr>
-                            </table>
-                        </div>
-                    </div>
                 </div>
 
                 <div class="compact-note mt-4">
