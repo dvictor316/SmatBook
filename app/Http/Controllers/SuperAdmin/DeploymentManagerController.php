@@ -223,36 +223,35 @@ class DeploymentManagerController extends Controller
 
         return redirect()->route('deployment.dashboard')
             ->with('success', 'Profile verified and activated after thorough ID validation.');
-        /**
-         * Real identity verification for BVN, NIN, Driver's License, Passport, CAC.
-         * Returns true if valid, or error message string if not.
-         * Replace stubs with real API calls as needed.
-         */
-        private function verifyIdentityNumber(string $idType, string $idNumber)
-        {
-            switch (strtoupper($idType)) {
-                case 'BVN':
-                    // TODO: Integrate with real BVN API (e.g., verifyme, smileID, NIBSS, etc.)
-                    // Example: $result = $this->callBvnApi($idNumber);
-                    // if (!$result['valid']) return 'BVN could not be verified.';
-                    return 'BVN verification is not yet integrated. Please contact admin.';
-                case 'NIN':
-                    // TODO: Integrate with real NIN API
-                    return 'NIN verification is not yet integrated. Please contact admin.';
-                case 'DRIVERS LICENSE':
-                case 'DRIVER\'S LICENSE':
-                case 'DRIVER LICENSE':
-                    // TODO: Integrate with real Driver License API
-                    return 'Driver\'s License verification is not yet integrated. Please contact admin.';
-                case 'PASSPORT':
-                    // TODO: Integrate with real Passport API if available
-                    return 'Passport verification is not yet integrated. Please contact admin.';
-                case 'CAC':
-                    // TODO: Integrate with real CAC API if available
-                    return 'CAC verification is not yet integrated. Please contact admin.';
-                default:
-                    return 'Unknown ID type for verification.';
-            }
+    }
+
+    /**
+     * Real identity verification for BVN, NIN, Driver's License, Passport, CAC.
+     * Returns true if valid, or error message string if not.
+     * Replace stubs with real API calls as needed.
+     */
+    private function verifyIdentityNumber(string $idType, string $idNumber)
+    {
+        switch (strtoupper($idType)) {
+            case 'BVN':
+                // TODO: Integrate with real BVN API (e.g., verifyme, smileID, NIBSS, etc.)
+                return 'BVN verification is not yet integrated. Please contact admin.';
+            case 'NIN':
+                // TODO: Integrate with real NIN API
+                return 'NIN verification is not yet integrated. Please contact admin.';
+            case 'DRIVERS LICENSE':
+            case 'DRIVER\'S LICENSE':
+            case 'DRIVER LICENSE':
+                // TODO: Integrate with real Driver License API
+                return 'Driver\'s License verification is not yet integrated. Please contact admin.';
+            case 'PASSPORT':
+                // TODO: Integrate with real Passport API if available
+                return 'Passport verification is not yet integrated. Please contact admin.';
+            case 'CAC':
+                // TODO: Integrate with real CAC API if available
+                return 'CAC verification is not yet integrated. Please contact admin.';
+            default:
+                return 'Unknown ID type for verification.';
         }
     }
 
