@@ -989,73 +989,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <script>
-    const autoPrintReceipt = {{ request()->boolean('autoprint') ? 'true' : 'false' }};
-    let activePrintJob = null;
-
-    function nextFrame() {
-        return new Promise((resolve) => {
-            requestAnimationFrame(() => requestAnimationFrame(resolve));
-        });
-    }
-
-    function waitForImages() {
-        const pendingImages = Array.from(document.images).filter((img) => !img.complete);
-        if (!pendingImages.length) {
-            return Promise.resolve();
-        }
-
-        return Promise.allSettled(
-            pendingImages.map((img) => new Promise((resolve) => {
-                const done = () => resolve();
-                img.addEventListener('load', done, { once: true });
-                img.addEventListener('error', done, { once: true });
-            }))
-        );
-    }
-
-    async function waitForPrintReady() {
-        if (document.fonts && typeof document.fonts.ready === 'object') {
-            await Promise.race([
-                document.fonts.ready.catch(() => undefined),
-                new Promise((resolve) => setTimeout(resolve, 1200)),
-            ]);
-        }
-
-        await Promise.race([
-            waitForImages(),
-            new Promise((resolve) => setTimeout(resolve, 1200)),
-        ]);
-
-        await nextFrame();
-    }
-
-    async function printInvoice() {
-        if (activePrintJob) {
-            return activePrintJob;
-        }
-
-        activePrintJob = (async () => {
-            const printTarget = document.getElementById('invoice_content');
-
-            await waitForPrintReady();
-            window.focus();
-
-            if (typeof window.smartProbookTriggerPrint === 'function') {
-                window.smartProbookTriggerPrint(printTarget);
-            } else {
-                window.print();
-            }
-        })();
-
-        try {
-            await activePrintJob;
-        } finally {
-            window.setTimeout(() => {
-                activePrintJob = null;
-            }, 1200);
-        }
-
-        return activePrintJob;
+    function printInvoice() {
+        window.focus();
+        window.print();
     }
 
     // Export to PDF
@@ -1148,18 +1084,6 @@
         }
     }
 
-    window.addEventListener('afterprint', () => {
-        activePrintJob = null;
-    });
-
-    if (autoPrintReceipt) {
-        // Simple, fast autoprint after page fully loads
-        if (document.readyState === 'complete') {
-            setTimeout(window.print, 300);
-        } else {
-            window.addEventListener('load', () => setTimeout(window.print, 300), { once: true });
-        }
-    }
 </script>
 </body>
 </html>

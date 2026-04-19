@@ -2273,7 +2273,7 @@ $(document).ready(function() {
                 }
             },
             success: function(res) {
-                const invoiceUrl = "{{ route('sales.invoice.show', ':id') }}".replace(':id', res.sale_id) + '?autoprint=1';
+                const invoiceUrl = "{{ route('sales.invoice.show', ':id') }}".replace(':id', res.sale_id);
                 const balanceDue = Math.max(0, total - paid);
                 window.open(invoiceUrl, '_blank');
 
@@ -3015,7 +3015,6 @@ window.POS_ENABLE_FALLBACK = function () {
 
     processBtn?.addEventListener('click', async function (e) {
         e.preventDefault();
-        let printWindow = null;
 
         if (!cart.length) {
             alertFallback('Cart is empty.');
@@ -3045,9 +3044,6 @@ window.POS_ENABLE_FALLBACK = function () {
                 return;
             }
         }
-
-        // Open window now (while user gesture is active) to avoid popup blocker
-        printWindow = window.open('', '_blank');
 
         processBtn.disabled = true;
         processBtn.classList.add('processing');
@@ -3088,12 +3084,8 @@ window.POS_ENABLE_FALLBACK = function () {
             }
 
             if (result.sale_id) {
-                const invoiceUrl = invoiceRouteTemplate.replace(':id', result.sale_id) + '?autoprint=1';
-                if (printWindow && !printWindow.closed) {
-                    printWindow.location.href = invoiceUrl;
-                } else {
-                    window.open(invoiceUrl, '_blank');
-                }
+                const invoiceUrl = invoiceRouteTemplate.replace(':id', result.sale_id);
+                window.open(invoiceUrl, '_blank');
             }
 
             cart.length = 0;
@@ -3110,9 +3102,6 @@ window.POS_ENABLE_FALLBACK = function () {
             if (productSearch) productSearch.value = '';
             applyVanillaSelection({ dataset: {} });
         } catch (error) {
-            if (printWindow && !printWindow.closed) {
-                printWindow.close();
-            }
             alertFallback(error.message || 'Failed to process sale.');
         } finally {
             processBtn.disabled = false;
