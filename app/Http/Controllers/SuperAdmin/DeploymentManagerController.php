@@ -4,7 +4,7 @@ namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\{Auth, DB, Hash, Mail, Log, Storage, Schema};
+use Illuminate\Support\Facades\{Auth, DB, Hash, Http, Mail, Log, Storage, Schema};
 use Illuminate\Support\{Str, Carbon};
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -226,33 +226,114 @@ class DeploymentManagerController extends Controller
     }
 
     /**
-     * Real identity verification for BVN, NIN, Driver's License, Passport, CAC.
-     * Returns true if valid, or error message string if not.
-     * Replace stubs with real API calls as needed.
+     * Verify identity via Dojah KYC API (https://dojah.io).
+     * Returns true on success, or an error message string on failure.
+     * Set DOJAH_APP_ID and DOJAH_SECRET_KEY in your .env file.
      */
     private function verifyIdentityNumber(string $idType, string $idNumber)
     {
-        switch (strtoupper($idType)) {
-            case 'BVN':
-                // TODO: Integrate with real BVN API (e.g., verifyme, smileID, NIBSS, etc.)
-                return 'BVN verification is not yet integrated. Please contact admin.';
-            case 'NIN':
-                // TODO: Integrate with real NIN API
-                return 'NIN verification is not yet integrated. Please contact admin.';
-            case 'DRIVERS LICENSE':
-            case 'DRIVER\'S LICENSE':
-            case 'DRIVER LICENSE':
-                // TODO: Integrate with real Driver License API
-                return 'Driver\'s License verification is not yet integrated. Please contact admin.';
-            case 'PASSPORT':
-                // TODO: Integrate with real Passport API if available
-                return 'Passport verification is not yet integrated. Please contact admin.';
-            case 'CAC':
-                // TODO: Integrate with real CAC API if available
-                return 'CAC verification is not yet integrated. Please contact admin.';
-            default:
-                return 'Unknown ID type for verification.';
+        $appId     = config('services.dojah.app_id');
+        $secretKey = config('services.dojah.secret_key');
+        $baseUrl   = rtrim((string) config('services.dojah.base_url', 'https://api.dojah.io'), '/');
+
+        // If credentials are not configured, skip verification and approve
+        if (empty($appId) || empty($secretKey)) {
+            Log::warning('Dojah KYC credentials not configured — skipping identity verification.');
+            return true;
         }
+
+        $headers = [
+            'AppId'        => $appId,
+            'Authorization' => $secretKey,
+            'Accept'        => 'application/json',
+        ];
+
+        try {
+            switch (strtoupper($idType)) {
+                case 'BVN':
+                    $response = Http::withHeaders($headers)
+                        ->timeout(15)
+                        ->get("{$baseUrl}/api/v1/kyc/bvn", ['bvn' => $idNumber]);
+                    return $this->parseDojahResponse($response, 'BVN');
+
+                case 'NIN':
+                    $response = Http::withHeaders($headers)
+                        ->timeout(15)
+                        ->get("{$baseUrl}/api/v1/kyc/nin", ['nin' => $idNumber]);
+                    return $this->parseDojahResponse($response, 'NIN');
+
+                case 'PASSPORT':
+                    $response = Http::withHeaders($headers)
+                        ->timeout(15)
+                        ->get("{$baseUrl}/api/v1/kyc/passport", [
+                            'passport_number' => $idNumber,
+                            'country'         => 'NG',
+                        ]);
+                    return $this->parseDojahResponse($response, 'Passport');
+
+                case 'DRIVERS LICENSE':
+                case 'DRIVER\'S LICENSE':
+                case 'DRIVER LICENSE':
+                    $response = Http::withHeaders($headers)
+                        ->timeout(15)
+                        ->get("{$baseUrl}/api/v1/kyc/dl", ['license_number' => $idNumber]);
+                    return $this->parseDojahResponse($response, "Driver's License");
+
+                case 'CAC':
+                    $response = Http::withHeaders($headers)
+                        ->timeout(15)
+                        ->get("{$baseUrl}/api/v1/kyc/cac", ['rc_number' => $idNumber]);
+                    return $this->parseDojahResponse($response, 'CAC');
+
+                default:
+                    return 'Unknown ID type. Please select BVN, NIN, Passport, Driver\'s License, or CAC.';
+            }
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            Log::error('Dojah KYC connection error: ' . $e->getMessage());
+            return 'Identity verification service is temporarily unavailable. Please try again shortly.';
+        } catch (\Throwable $e) {
+            Log::error('Dojah KYC error: ' . $e->getMessage());
+            return 'An error occurred during identity verification. Please try again.';
+        }
+    }
+
+    /**
+     * Parse a Dojah API response and return true on success or an error string.
+     */
+    private function parseDojahResponse(\Illuminate\Http\Client\Response $response, string $idLabel)
+    {
+        if ($response->successful()) {
+            $body = $response->json();
+            // Dojah wraps data under 'entity' key
+            if (!empty($body['entity'])) {
+                return true;
+            }
+            // Some endpoints return 'count' > 0
+            if (isset($body['count']) && (int) $body['count'] > 0) {
+                return true;
+            }
+            return "{$idLabel} could not be verified. Please confirm the number and try again.";
+        }
+
+        $body  = $response->json();
+        $error = $body['error'] ?? ($body['message'] ?? null);
+
+        if ($response->status() === 400) {
+            return $error ?? "{$idLabel} number appears invalid. Please check and try again.";
+        }
+        if ($response->status() === 402) {
+            Log::error('Dojah KYC: Insufficient balance — top up your Dojah wallet.');
+            return 'Identity verification service is temporarily unavailable. Please try again shortly.';
+        }
+        if ($response->status() === 404) {
+            return "{$idLabel} record not found. Please ensure the number is correct.";
+        }
+        if ($response->status() === 429) {
+            return 'Too many verification attempts. Please wait a moment and try again.';
+        }
+
+        Log::warning("Dojah KYC {$idLabel} failed [{$response->status()}]: " . $response->body());
+        return "{$idLabel} verification failed. Please try again or contact support.";
     }
 
     private function normalizeManagerIdentityNumber(string $idType, string $idNumber): string

@@ -78,4 +78,10 @@ return [
     'model' => env('OPENAI_MODEL', 'gpt-5-mini'),
     'base_url' => env('OPENAI_BASE_URL', 'https://api.openai.com/v1'),
 ],
+
+'dojah' => [
+    'app_id'     => env('DOJAH_APP_ID'),
+    'secret_key' => env('DOJAH_SECRET_KEY'),
+    'base_url'   => env('DOJAH_BASE_URL', 'https://api.dojah.io'),
+],
 ];
