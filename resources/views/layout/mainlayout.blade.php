@@ -1266,12 +1266,26 @@
                 background: #fff !important;
                 overflow: visible !important;
                 height: auto !important;
+                min-height: 0 !important;
+                padding: 0 !important;
+                margin: 0 !important;
             }
-            .page-wrapper, .main-wrapper {
+            .main-wrapper {
+                min-height: 0 !important;
+                height: auto !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                width: 100% !important;
+                position: static !important;
+                overflow: visible !important;
+            }
+            .page-wrapper {
                 margin: 0 !important;
                 padding: 0 !important;
                 width: 100% !important;
                 max-width: 100% !important;
+                min-height: 0 !important;
+                height: auto !important;
                 position: static !important;
                 overflow: visible !important;
                 background: #fff !important;
