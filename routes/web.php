@@ -711,7 +711,9 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::put('/invoices/update/{id}', 'update')->name('invoices.update');
         Route::delete('/invoices/delete/{id}', 'destroy')->name('invoices.destroy');
         Route::get('/invoice-details/{id}', 'invoice_details')->name('invoice-details');
+        Route::get('/invoice-details/{id}/print', 'invoice_details_print')->name('invoice-details.print');
         Route::get('/invoice-details-admin/{id}', 'invoice_details_admin')->name('invoice-details-admin');
+        Route::get('/invoice-details-admin/{id}/print', 'invoice_details_admin_print')->name('invoice-details-admin.print');
         Route::get('/invoices-paid', 'invoices_paid')->name('invoices-paid');
         Route::get('/invoices-unpaid', 'invoices_unpaid')->name('invoices-unpaid');
         Route::get('/invoices-cancelled', 'invoices_cancelled')->name('invoices-cancelled');

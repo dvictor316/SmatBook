@@ -52,15 +52,4 @@
     </div>
 </div>
 
-<script>
-    function printInvoice() {
-        const target = document.getElementById('printableArea');
-        if (typeof window.smartProbookTriggerPrint === 'function') {
-            window.smartProbookTriggerPrint(target);
-            return;
-        }
-
-        window.print();
-    }
-</script>
 @endsection

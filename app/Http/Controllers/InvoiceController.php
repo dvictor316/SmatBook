@@ -972,6 +972,26 @@ class InvoiceController extends Controller
         return $this->show($id);
     }
 
+    public function invoice_details_admin_print($id)
+    {
+        $sale = $this->applyTenantScope(
+            Sale::with([
+                'customer',
+                'items.product',
+                'payments' => function ($paymentQuery) {
+                    $paymentQuery->select('id', 'sale_id', 'amount', 'status');
+                },
+            ]),
+            'sales'
+        )->findOrFail($id);
+        $sale = $this->applyComputedInvoiceState($sale);
+
+        return view('Sales.Invoices.print', [
+            'sale' => $sale,
+            'backUrl' => route('invoice-details-admin', $sale->id),
+        ]);
+    }
+
     public function invoice_details($id)
     {
         $sale = $this->applyTenantScope(
@@ -986,6 +1006,26 @@ class InvoiceController extends Controller
         )->findOrFail($id);
         $sale = $this->applyComputedInvoiceState($sale);
         return view('Sales.Invoices.invoice-details', compact('sale'));
+    }
+
+    public function invoice_details_print($id)
+    {
+        $sale = $this->applyTenantScope(
+            Sale::with([
+                'customer',
+                'items.product',
+                'payments' => function ($paymentQuery) {
+                    $paymentQuery->select('id', 'sale_id', 'amount', 'status');
+                },
+            ]),
+            'sales'
+        )->findOrFail($id);
+        $sale = $this->applyComputedInvoiceState($sale);
+
+        return view('Sales.Invoices.print', [
+            'sale' => $sale,
+            'backUrl' => route('invoice-details', $sale->id),
+        ]);
     }
 
     /**
