@@ -437,6 +437,8 @@
                 width: auto !important;
                 min-width: 0 !important;
                 max-width: none !important;
+                min-height: 0 !important;
+                height: auto !important;
                 overflow: visible !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
@@ -445,6 +447,10 @@
 
             .no-print-controls {
                 display: none !important;
+                height: 0 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                overflow: hidden !important;
             }
 
             body {
@@ -1147,18 +1153,12 @@
     });
 
     if (autoPrintReceipt) {
-        const autoTriggerPrint = () => {
-            window.setTimeout(() => {
-                printInvoice();
-            }, 180);
-        };
-
-        window.addEventListener('load', autoTriggerPrint, { once: true });
-        window.addEventListener('pageshow', (event) => {
-            if (event.persisted) {
-                autoTriggerPrint();
-            }
-        }, { once: true });
+        // Simple, fast autoprint after page fully loads
+        if (document.readyState === 'complete') {
+            setTimeout(window.print, 300);
+        } else {
+            window.addEventListener('load', () => setTimeout(window.print, 300), { once: true });
+        }
     }
 </script>
 </body>

@@ -3046,11 +3046,8 @@ window.POS_ENABLE_FALLBACK = function () {
             }
         }
 
+        // Open window now (while user gesture is active) to avoid popup blocker
         printWindow = window.open('', '_blank');
-        if (printWindow) {
-            printWindow.document.write('<!doctype html><html><head><title>Preparing receipt...</title></head><body style="font-family: Arial, sans-serif; padding: 24px;">Preparing receipt...</body></html>');
-            printWindow.document.close();
-        }
 
         processBtn.disabled = true;
         processBtn.classList.add('processing');
