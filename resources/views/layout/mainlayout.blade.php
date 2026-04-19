@@ -125,6 +125,10 @@
             .no-print,
             .d-print-none {
                 display: none !important;
+                height: 0 !important;
+                min-height: 0 !important;
+                overflow: hidden !important;
+                position: absolute !important;
             }
             html,
             body {
@@ -1261,6 +1265,11 @@
             .offcanvas, .dropdown-menu, .tooltip, .popover,
             .ai-agent-launcher, .settings-icon, .no-print {
                 display: none !important;
+                height: 0 !important;
+                min-height: 0 !important;
+                overflow: hidden !important;
+                visibility: hidden !important;
+                position: absolute !important;
             }
             html, body {
                 background: #fff !important;
