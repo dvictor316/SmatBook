@@ -28,6 +28,11 @@
             margin-bottom: 20px;
         }
 
+        .print-toolbar .btn[disabled] {
+            opacity: 0.65;
+            pointer-events: none;
+        }
+
         .invoice-print-root {
             width: 100%;
             max-width: 1180px;
@@ -102,7 +107,7 @@
 <body>
     <div class="print-toolbar">
         <a href="{{ $backUrl ?? url()->previous() }}" class="btn btn-outline-secondary">Back</a>
-        <button type="button" class="btn btn-primary" onclick="window.print()">Print</button>
+        <button type="button" class="btn btn-primary" id="printButton">Print</button>
     </div>
 
     <div class="invoice-print-root">
@@ -110,9 +115,48 @@
     </div>
 
     <script>
+        let printInProgress = false;
+        const printButton = document.getElementById('printButton');
+        const shouldAutoPrint = new URLSearchParams(window.location.search).get('autoprint') === '1';
+
+        function resetPrintState() {
+            printInProgress = false;
+            if (printButton) {
+                printButton.disabled = false;
+            }
+        }
+
+        function triggerPrint() {
+            if (printInProgress) {
+                return;
+            }
+
+            printInProgress = true;
+            if (printButton) {
+                printButton.disabled = true;
+            }
+
+            window.focus();
+            window.print();
+
+            window.setTimeout(resetPrintState, 1500);
+        }
+
+        window.addEventListener('afterprint', resetPrintState);
+
+        if (printButton) {
+            printButton.addEventListener('click', function () {
+                triggerPrint();
+            });
+        }
+
         window.addEventListener('load', function () {
-            setTimeout(function () {
-                window.print();
+            if (!shouldAutoPrint) {
+                return;
+            }
+
+            window.setTimeout(function () {
+                triggerPrint();
             }, 250);
         }, { once: true });
     </script>

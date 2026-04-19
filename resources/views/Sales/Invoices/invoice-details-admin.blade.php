@@ -10,7 +10,7 @@
                     <div class="list-btn">
                         <ul class="filter-list">
                             <li>
-                                <a href="{{ route('invoice-details-admin.print', $sale->id) }}" target="_blank" rel="noopener" class="btn btn-primary">
+                                <a href="{{ route('invoice-details-admin.print', ['id' => $sale->id, 'autoprint' => 1]) }}" target="_blank" rel="noopener" class="btn btn-primary">
                                     <i class="fa fa-print me-2"></i> Print Invoice
                                 </a>
                             </li>
