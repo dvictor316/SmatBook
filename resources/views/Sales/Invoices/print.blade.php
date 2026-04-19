@@ -378,4 +378,33 @@
         </div>
     </div>
 </body>
+<script>
+    const autoPrintReceipt = {{ request()->boolean('autoprint') ? 'true' : 'false' }};
+    let compactPrintLocked = false;
+
+    function releaseCompactPrintLock() {
+        compactPrintLocked = false;
+    }
+
+    function printCompactInvoice() {
+        if (compactPrintLocked) {
+            return;
+        }
+
+        compactPrintLocked = true;
+        window.focus();
+        window.setTimeout(() => window.print(), 120);
+        window.setTimeout(releaseCompactPrintLock, 2500);
+    }
+
+    window.addEventListener('afterprint', releaseCompactPrintLock);
+
+    if (autoPrintReceipt) {
+        if (document.readyState === 'complete') {
+            window.setTimeout(printCompactInvoice, 300);
+        } else {
+            window.addEventListener('load', () => window.setTimeout(printCompactInvoice, 300), { once: true });
+        }
+    }
+</script>
 </html>

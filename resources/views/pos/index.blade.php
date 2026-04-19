@@ -2273,7 +2273,7 @@ $(document).ready(function() {
                 }
             },
             success: function(res) {
-                const invoiceUrl = "{{ route('sales.invoice.show', ':id') }}".replace(':id', res.sale_id) + '?autoprint=1';
+                const invoiceUrl = "{{ route('sales.invoice.print', ':id') }}".replace(':id', res.sale_id) + '?autoprint=1';
                 const balanceDue = Math.max(0, total - paid);
                 window.open(invoiceUrl, '_blank');
 
@@ -2399,7 +2399,7 @@ window.POS_ENABLE_FALLBACK = function () {
         return alertFallback(options?.text || options?.title || 'Action required');
     };
     const saleStoreUrl = @json(route('sales.store'));
-    const invoiceRouteTemplate = @json(route('sales.invoice.show', ':id'));
+    const invoiceRouteTemplate = @json(route('sales.invoice.print', ':id'));
     const csrfToken = @json(csrf_token());
     let splitAutoSync = false;
     const customerOptionsSnapshot = customerSelect

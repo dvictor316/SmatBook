@@ -947,6 +947,16 @@ $sale = Sale::create([
         return view('Sales.Invoices.index', compact('sale', 'company', 'currencySymbol', 'activeBranch'));
     }
 
+    public function printInvoice($id)
+    {
+        $sale = Sale::with(['items.product', 'customer'])->findOrFail($id);
+
+        return view('Sales.Invoices.print', [
+            'sale' => $sale,
+            'backUrl' => route('sales.invoice.show', $sale->id),
+        ]);
+    }
+
     private function resolveStockUnitsForSale(Product $product, array $itemData, float $qty): float
     {
         return InventoryQuantity::resolveSaleStockUnits(

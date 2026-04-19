@@ -169,6 +169,7 @@ use App\Http\Controllers\{
         Route::get('/sales/{sale}/edit', 'edit')->name('sales.edit');
         Route::put('/sales/{sale}', 'update')->name('sales.update');
         Route::get('/sales/invoice/{id}', 'showInvoice')->name('sales.invoice.show');
+        Route::get('/sales/invoice/{id}/print', 'printInvoice')->name('sales.invoice.print');
         Route::get('/sales/chart-data', 'getChartData')->name('sales.chart-data');
       Route::get('/sales/return-to-pos', [SaleController::class, 'returnToPos'])->name('sales.returnToPos');
 
