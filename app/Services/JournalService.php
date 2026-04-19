@@ -1,0 +1,163 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\Account;
+use App\Models\Sale;
+use App\Models\Transaction;
+use Illuminate\Support\Facades\Auth;
+
+class JournalService
+{
+    /**
+     * Post journal entries when an invoice is created (non-draft).
+     *
+     * DR Accounts Receivable  (asset ↑)
+     * CR Sales Revenue        (revenue ↑)
+     *
+     * If the invoice is already paid/partial on creation, also clears AR:
+     * DR Cash/Bank/POS        (asset ↑)
+     * CR Accounts Receivable  (asset ↓)
+     */
+    public function postInvoiceCreated(Sale $sale): void
+    {
+        $totalAmount = (float) ($sale->total ?? 0);
+        if ($totalAmount <= 0) {
+            return;
+        }
+
+        $ref  = $sale->invoice_no ?? ('INV-' . $sale->id);
+        $date = $sale->order_date ?? today();
+
+        $arAccount      = $this->getOrCreateAccount($sale, 'Accounts Receivable', '1100', Account::TYPE_ASSET, Account::SUBTYPE_CURRENT_ASSET);
+        $revenueAccount = $this->getOrCreateAccount($sale, 'Sales Revenue',       '4001', Account::TYPE_REVENUE);
+
+        // DR Accounts Receivable — customer now owes us
+        $this->postLine($sale, $arAccount,      $totalAmount, 0,            $ref, "Invoice {$ref} – Accounts Receivable", $date);
+        // CR Sales Revenue — revenue recognised
+        $this->postLine($sale, $revenueAccount, 0,            $totalAmount, $ref, "Invoice {$ref} – Sales Revenue",        $date);
+
+        // If already fully/partially paid at creation, clear the AR leg
+        $paidAmount = (float) ($sale->amount_paid ?? 0);
+        if ($paidAmount > 0) {
+            $method = strtolower((string) ($sale->payment_method ?? 'cash'));
+            if (!in_array($method, ['cash', 'transfer', 'pos'])) {
+                $method = 'cash';
+            }
+            $this->postPaymentJournal($sale, $paidAmount, $method, $date);
+        }
+    }
+
+    /**
+     * Post journal entries when a payment is recorded against an invoice.
+     *
+     * DR Cash / Bank / POS   (asset ↑)
+     * CR Accounts Receivable (asset ↓)
+     */
+    public function postPaymentJournal(Sale $sale, float $amount, string $paymentMethod, $date = null): void
+    {
+        if ($amount <= 0) {
+            return;
+        }
+
+        $date = $date ?? today();
+        $ref  = $sale->invoice_no ?? ('INV-' . $sale->id);
+
+        $paymentAccount = $this->resolvePaymentChannelAccount($sale, $paymentMethod);
+        $arAccount      = $this->getOrCreateAccount($sale, 'Accounts Receivable', '1100', Account::TYPE_ASSET, Account::SUBTYPE_CURRENT_ASSET);
+
+        // DR: payment channel account increases
+        $this->postLine($sale, $paymentAccount, $amount, 0,      $ref, "Payment received – {$ref} ({$paymentMethod})", $date);
+        // CR: accounts receivable decreases
+        $this->postLine($sale, $arAccount,      0,      $amount, $ref, "Payment received – {$ref} (AR cleared)",        $date);
+    }
+
+    // -------------------------------------------------------------------------
+    // Private helpers
+    // -------------------------------------------------------------------------
+
+    private function resolvePaymentChannelAccount(Sale $sale, string $paymentMethod): Account
+    {
+        return match (strtolower($paymentMethod)) {
+            'transfer' => $this->getOrCreateAccount($sale, 'Main Bank Account', '1001', Account::TYPE_ASSET, Account::SUBTYPE_CURRENT_ASSET),
+            'pos'      => $this->getOrCreateAccount($sale, 'POS Account',       '1004', Account::TYPE_ASSET, Account::SUBTYPE_CURRENT_ASSET),
+            default    => $this->getOrCreateAccount($sale, 'Petty Cash',        '1002', Account::TYPE_ASSET, Account::SUBTYPE_CURRENT_ASSET),
+        };
+    }
+
+    /**
+     * Find the account by code (per company), then by name, then auto-create it.
+     */
+    private function getOrCreateAccount(
+        Sale   $sale,
+        string $name,
+        string $code,
+        string $type,
+        string $subType = ''
+    ): Account {
+        $companyId = (int) ($sale->company_id ?? 0);
+
+        // 1. Match by code within this company
+        $account = Account::withoutGlobalScopes()
+            ->where('company_id', $companyId)
+            ->where('code', $code)
+            ->first();
+
+        // 2. Fall back to name match (handles manually-renamed accounts)
+        if (!$account) {
+            $account = Account::withoutGlobalScopes()
+                ->where('company_id', $companyId)
+                ->where('name', $name)
+                ->first();
+        }
+
+        // 3. Auto-create a system account so journals always have a home
+        if (!$account) {
+            $account = Account::create([
+                'name'            => $name,
+                'code'            => $code,
+                'type'            => $type,
+                'sub_type'        => $subType,
+                'company_id'      => $companyId,
+                'user_id'         => (int) (Auth::id() ?? $sale->user_id ?? 0),
+                'branch_id'       => (string) ($sale->branch_id ?? ''),
+                'branch_name'     => (string) ($sale->branch_name ?? ''),
+                'opening_balance' => 0,
+                'current_balance' => 0,
+                'is_active'       => true,
+            ]);
+        }
+
+        return $account;
+    }
+
+    /**
+     * Insert a single debit or credit line into the transactions table.
+     */
+    private function postLine(
+        Sale    $sale,
+        Account $account,
+        float   $debit,
+        float   $credit,
+        string  $reference,
+        string  $description,
+                $date
+    ): void {
+        Transaction::create([
+            'account_id'       => $account->id,
+            'transaction_date' => $date,
+            'reference'        => $reference,
+            'description'      => $description,
+            'debit'            => $debit,
+            'credit'           => $credit,
+            'balance'          => 0, // recalculated by Transaction::boot() via account->updateBalance()
+            'transaction_type' => Transaction::TYPE_JOURNAL,
+            'related_id'       => $sale->id,
+            'related_type'     => Sale::class,
+            'user_id'          => (int) (Auth::id() ?? $sale->user_id ?? 0),
+            'company_id'       => (int) ($sale->company_id ?? 0),
+            'branch_id'        => (string) ($sale->branch_id ?? ''),
+            'branch_name'      => (string) ($sale->branch_name ?? ''),
+        ]);
+    }
+}

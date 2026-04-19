@@ -8,6 +8,7 @@ use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\Signature;
 use App\Models\Product;
+use App\Services\JournalService;
 use App\Support\BranchInventoryService;
 use App\Support\GeoCurrency;
 use App\Support\InventoryQuantity;
@@ -19,8 +20,10 @@ use Carbon\Carbon;
 
 class InvoiceController extends Controller
 {
-    public function __construct(private readonly BranchInventoryService $branchInventory)
-    {
+    public function __construct(
+        private readonly BranchInventoryService $branchInventory,
+        private readonly JournalService $journalService,
+    ) {
     }
 
     private function decrementSellableStock(Product $product, float $quantity): void
@@ -551,6 +554,11 @@ class InvoiceController extends Controller
                         $companyId > 0 ? $companyId : (int) ($product->company_id ?? 0)
                     );
                 }
+            }
+
+            // Post double-entry journal entries (skip draft invoices)
+            if (!$isDraft) {
+                $this->journalService->postInvoiceCreated($sale);
             }
 
             DB::commit();
@@ -1107,6 +1115,9 @@ class InvoiceController extends Controller
             'payment_status' => $status,
             'payment_method' => $request->payment_method,
         ]);
+
+        // Post double-entry journal: DR Cash/Bank/POS, CR Accounts Receivable
+        $this->journalService->postPaymentJournal($invoice, $amount, $request->payment_method);
 
         return redirect()
             ->route('pay-online', ['id' => $id])
