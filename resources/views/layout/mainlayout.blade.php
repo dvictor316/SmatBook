@@ -1365,7 +1365,8 @@
             'landing.index', 'index-five', 'mail-pay-invoice', 'cashreceipt-1', 'cashreceipt-2', 'cashreceipt-3', 'cashreceipt-4',
             'invoice-four-a', 'invoice-one-a', 'invoice-three', 'invoice-two', 'forgot-password', 'lock-screen', 'login', 'register',
             'saas-login', 'saas-register', 'saas-register-initial',
-        ]);
+            'manager.verification.form', 'manager.pending.notice', 'submit.verification', 'manager.submit.verification',
+        ]) && !str_starts_with((string) $route, 'deployment.');
     @endphp
     @php
         // If session lost tenant/branch (common on mobile), restore from the user model.
