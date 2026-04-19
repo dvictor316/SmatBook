@@ -6,115 +6,200 @@
     <title>Invoice #{{ $sale->invoice_no ?? $sale->id }}</title>
     <link rel="stylesheet" href="{{ URL::asset('/assets/css/bootstrap.min.css') }}">
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+        :root {
+            --light-gold: #fdfaf0;
+            --border-gold: #e6d5a7;
+            --text-gold: #b39b5d;
+            --soft-blue: #f0f9ff;
+            --deep-blue: #0369a1;
+            --success-green: #10b981;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-900: #111827;
+        }
+
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+
         body {
-            background: #f8f9fb;
-            font-family: Arial, Helvetica, sans-serif;
-            color: #1f2937;
+            background: #fcfcfc;
+            margin: 0;
+            padding: 20px;
+            color: var(--gray-700);
         }
 
         .compact-invoice-shell {
-            max-width: 680px;
+            max-width: 960px;
             margin: 0 auto;
         }
 
         .compact-invoice-card {
             background: #fff;
             border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            padding: 40px !important;
         }
 
         .compact-invoice-brand {
-            font-size: 20px;
+            font-size: 24px;
             font-weight: 800;
-            color: #4b308b;
+            color: var(--deep-blue);
             line-height: 1.15;
-            margin-bottom: 8px;
-        }
-
-        .compact-invoice-meta-label {
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: #6b7280;
-            margin-bottom: 4px;
-        }
-
-        .compact-invoice-meta-value {
-            font-size: 15px;
-            font-weight: 700;
-            color: #111827;
+            margin-bottom: 6px;
         }
 
         .compact-status {
-            font-size: 13px;
-            font-weight: 800;
+            display: inline-block;
+            padding: 4px 12px;
+            background: var(--soft-blue);
+            color: var(--deep-blue);
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.08em;
+            letter-spacing: 0.04em;
+        }
+
+        .compact-invoice-heading {
+            font-size: 28px;
+            font-weight: 300;
+            letter-spacing: 3px;
+            color: var(--text-gold);
+            margin-top: 10px;
+            line-height: 1;
+        }
+
+        .compact-invoice-number {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-top: 8px;
         }
 
         .compact-panel {
             border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            padding: 12px 14px;
+            border-radius: 10px;
+            padding: 18px 20px;
             background: #fff;
             height: 100%;
         }
 
         .compact-panel-muted {
-            background: #f9fafb;
+            background: var(--gray-50);
+        }
+
+        .compact-invoice-meta-label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--gray-600);
+            margin-bottom: 6px;
+        }
+
+        .compact-invoice-meta-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--deep-blue);
+            line-height: 1.25;
+        }
+
+        .compact-summary-title {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--gray-900);
         }
 
         .compact-items-table {
             width: 100%;
             margin: 0;
+            border-collapse: collapse;
+            font-size: 13px;
         }
 
         .compact-items-table thead th {
-            background: #f5f3ff;
-            color: #4b308b;
-            font-size: 10px;
+            background: linear-gradient(135deg, var(--soft-blue) 0%, #e0f2fe 100%);
+            color: var(--deep-blue);
+            font-size: 11px;
             text-transform: uppercase;
-            letter-spacing: 0.08em;
-            border-bottom: 1px solid #ddd;
-            padding: 9px 8px;
+            letter-spacing: 0.04em;
+            border-bottom: 2px solid #0ea5e9;
+            padding: 14px 12px;
+            font-weight: 800;
         }
 
         .compact-items-table tbody td {
-            padding: 8px 8px;
-            border-color: #eceff4;
+            padding: 12px;
+            border-bottom: 1px solid var(--gray-100);
             vertical-align: top;
-            font-size: 13px;
-        }
-
-        .compact-total-table td {
-            padding: 6px 0;
-            font-size: 13px;
-        }
-
-        .compact-total-table .total-row td {
-            padding-top: 10px;
-            border-top: 1px solid #d1d5db;
-            font-size: 16px;
-            font-weight: 800;
-            color: #4b308b;
-        }
-
-        .compact-note {
-            border-top: 1px dashed #d1d5db;
-            padding-top: 14px;
-            color: #6b7280;
             font-size: 13px;
         }
 
         .compact-item-name {
             font-size: 13px;
             line-height: 1.25;
+            font-weight: 600;
+            color: var(--gray-900);
         }
 
         .compact-item-meta {
             font-size: 11px;
             line-height: 1.2;
+            color: var(--gray-600);
+        }
+
+        .compact-totals-panel {
+            background: linear-gradient(135deg, var(--light-gold) 0%, #fef9e7 100%);
+            border: 2px solid var(--border-gold);
+        }
+
+        .compact-total-table td {
+            padding: 10px 0;
+            font-size: 14px;
+            border-bottom: 1px dashed var(--border-gold);
+        }
+
+        .compact-total-table tr:last-child td {
+            border-bottom: 0;
+        }
+
+        .compact-total-table .total-row td {
+            padding-top: 14px;
+            border-top: 2px solid var(--text-gold);
+            border-bottom: 2px solid var(--text-gold);
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--deep-blue);
+        }
+
+        .compact-note {
+            border-top: 2px dashed var(--border-gold);
+            padding-top: 18px;
+            color: var(--text-gold);
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-align: center;
+        }
+
+        .compact-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+
+        .compact-controls .btn {
+            border-radius: 8px;
+            font-weight: 600;
+            padding: 10px 20px;
         }
 
         @media print {
@@ -133,23 +218,69 @@
                 display: none !important;
             }
 
+            .compact-invoice-card {
+                border: 0 !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+            }
+
             .compact-invoice-shell {
                 max-width: none !important;
             }
 
-            .compact-invoice-card {
-                border: 0 !important;
-                box-shadow: none !important;
+            .compact-controls {
+                display: none !important;
+            }
+
+            body {
+                padding: 0 !important;
+            }
+
+            .compact-invoice-brand {
+                font-size: 20px !important;
+            }
+
+            .compact-invoice-heading {
+                font-size: 22px !important;
+            }
+
+            .compact-panel {
+                padding: 12px 14px !important;
+            }
+
+            .compact-items-table thead th {
+                padding: 8px 7px !important;
+                font-size: 9px !important;
+            }
+
+            .compact-items-table tbody td {
+                padding: 7px 7px !important;
+                font-size: 11px !important;
+            }
+
+            .compact-total-table td {
+                padding: 6px 0 !important;
+                font-size: 12px !important;
+            }
+
+            .compact-total-table .total-row td {
+                font-size: 15px !important;
+            }
+
+            .compact-summary-title {
+                font-size: 18px !important;
             }
         }
 
         @media (max-width: 767.98px) {
-            .compact-invoice-shell {
-                max-width: 100%;
-            }
-
             .compact-invoice-card {
                 border-radius: 6px;
+                padding: 22px !important;
+            }
+
+            .compact-invoice-heading {
+                font-size: 22px;
+                letter-spacing: 2px;
             }
         }
     </style>
@@ -204,7 +335,7 @@
 
     <div class="container py-4 py-lg-5">
         <div class="compact-invoice-shell">
-            <div class="d-flex justify-content-end gap-2 mb-3 no-print">
+            <div class="compact-controls no-print">
                 <a href="{{ $backUrl ?? url()->previous() }}" class="btn btn-outline-secondary">Back</a>
                 <button type="button" class="btn btn-primary" onclick="window.print()">Print</button>
             </div>
@@ -224,8 +355,8 @@
                         <div class="compact-status {{ $displayStatus === 'paid' ? 'text-success' : ($displayStatus === 'partial' ? 'text-info' : 'text-danger') }}">
                             {{ strtoupper($displayStatus) }}
                         </div>
-                        <div class="fs-4 fw-bold mt-2">Invoice</div>
-                        <div class="text-muted">#{{ $sale->invoice_no ?? $sale->id }}</div>
+                        <div class="compact-invoice-heading">INVOICE</div>
+                        <div class="compact-invoice-number">#{{ $sale->invoice_no ?? $sale->id }}</div>
                     </div>
                 </div>
 
@@ -259,7 +390,7 @@
                             </div>
                             <div class="col-md-5 text-md-end">
                                 <div class="compact-invoice-meta-label">Total Applied</div>
-                                <div class="fs-3 fw-bold">₦{{ number_format($appliedAmount, 2) }}</div>
+                                <div class="compact-summary-title">₦{{ number_format($appliedAmount, 2) }}</div>
                             </div>
                         </div>
 
@@ -328,7 +459,7 @@
 
                 <div class="row justify-content-end mt-3">
                     <div class="col-md-5">
-                        <div class="compact-panel">
+                        <div class="compact-panel compact-totals-panel">
                             <table class="w-100 compact-total-table">
                                 <tr>
                                     <td class="text-muted">Subtotal</td>
