@@ -144,39 +144,7 @@
 
     <script>
         function printInvoice() {
-            const printContents = document.getElementById('printableArea').innerHTML;
-            const originalContents = document.body.innerHTML;
-
-            document.body.innerHTML = `
-                <html>
-                    <head>
-                        <title>Print Invoice #{{ $sale->invoice_no ?? $sale->id }}</title>
-                        <link rel="stylesheet" href="{{ asset('assets/css/bootstrap.min.css') }}">
-                        <style>
-                            body { background: white !important; padding: 40px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
-                            .card { border: none !important; }
-                            .table { width: 100%; margin-top: 20px; }
-                            /* Ensure purple headers print */
-                            .table thead tr th { 
-                                background-color: #f8f9fa !important; 
-                                color: #4b308b !important; 
-                                -webkit-print-color-adjust: exact; 
-                                border-bottom: 2px solid #eee;
-                            }
-                            /* Ensure row shading prints */
-                            .table tbody tr { 
-                                background-color: #fcfcfc !important; 
-                                -webkit-print-color-adjust: exact; 
-                            }
-                            .text-primary { color: #4b308b !important; }
-                        </style>
-                    </head>
-                    <body>${printContents}</body>
-                </html>`;
-
             window.print();
-            document.body.innerHTML = originalContents;
-            window.location.reload(); 
         }
     </script>
 

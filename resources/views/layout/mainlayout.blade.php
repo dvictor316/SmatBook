@@ -1251,6 +1251,52 @@
         .feather-grid:before { content: "\f00a"; }
         .feather-arrow-left:before { content: "\f060"; }
         .feather-arrow-left-circle:before { content: "\f0a8"; }
+
+        /* ── PRINT OVERRIDE (must be last to win over sidebar margin rules) ── */
+        @media print {
+            :root { --sb-sidebar-w: 0px !important; }
+            .sidebar, .header, .two-col-bar, .footer,
+            .page-header, .list-btn, .btn, .d-print-none,
+            #sidebar-overlay, .modal, .modal-backdrop,
+            .offcanvas, .dropdown-menu, .tooltip, .popover,
+            .ai-agent-launcher, .settings-icon, .no-print {
+                display: none !important;
+            }
+            html, body {
+                background: #fff !important;
+                overflow: visible !important;
+                height: auto !important;
+            }
+            .page-wrapper, .main-wrapper {
+                margin: 0 !important;
+                padding: 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                position: static !important;
+                overflow: visible !important;
+                background: #fff !important;
+            }
+            .content, .container-fluid, .container {
+                margin: 0 !important;
+                padding: 8px !important;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+            .card {
+                border: none !important;
+                box-shadow: none !important;
+                border-radius: 0 !important;
+            }
+            .col-lg-4, .col-lg-8, .col-xl-8 {
+                flex: 0 0 100% !important;
+                max-width: 100% !important;
+                width: 100% !important;
+            }
+            table { page-break-inside: avoid; }
+            thead { display: table-header-group; }
+            tr, td, th { page-break-inside: avoid; }
+            * { print-color-adjust: exact !important; -webkit-print-color-adjust: exact !important; }
+        }
     </style>
     @stack('styles')
 </head>

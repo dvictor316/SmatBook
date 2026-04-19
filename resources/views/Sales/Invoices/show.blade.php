@@ -93,29 +93,7 @@
 
 <script>
     function printInvoice() {
-        const printContents = document.getElementById('printableArea').innerHTML;
-        const originalContents = document.body.innerHTML;
-
-        document.body.innerHTML = `
-            <html>
-                <head>
-                    <title>Invoice_{{ $invoice->invoice_no }}</title>
-                    <link rel="stylesheet" href="{{ asset('assets/css/bootstrap.min.css') }}">
-                    <style>
-                        body { background: white !important; padding: 40px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
-                        .invoice-info-custom { border: none !important; }
-                        .text-primary { color: #4b308b !important; }
-                        .table th { background-color: #f8f9fa !important; -webkit-print-color-adjust: exact; }
-                        .d-print-none { display: none !important; }
-                        .card { border: none !important; }
-                    </style>
-                </head>
-                <body>${printContents}</body>
-            </html>`;
-
         window.print();
-        document.body.innerHTML = originalContents;
-        window.location.reload(); 
     }
 </script>
 @endsection

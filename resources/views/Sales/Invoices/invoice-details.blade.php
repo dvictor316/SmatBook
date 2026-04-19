@@ -273,15 +273,13 @@
         .bg-light-soft { background-color: #fbfbfb; }
 
         @media print {
-            .page-header, .sidebar, .header, .btn, .list-btn, .footer, .d-print-none {
-                display: none !important;
-            }
-            .page-wrapper { margin: 0 !important; padding: 0 !important; width: 100% !important; margin-left: 0 !important; }
-            .card { border: none !important; box-shadow: none !important; }
-            .content { padding: 0 !important; }
-            body { background-color: #fff !important; }
-            thead tr th { background-color: #f8f9fa !important; -webkit-print-color-adjust: exact; }
-            .bg-light-soft { background-color: #fbfbfb !important; -webkit-print-color-adjust: exact; }
+            .invoice-total-card { border: 1px solid #ddd !important; }
+            .invoice-item-date.bg-light-soft { background-color: #f5f5f5 !important; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+            .text-primary { color: #4b308b !important; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+            thead tr th { background-color: #f8f9fa !important; color: #4b308b !important; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+            tbody tr { background-color: #fcfcfc !important; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+            .border-start.border-primary { border-left-color: #4b308b !important; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+            .col-lg-5, .col-lg-7 { flex: 0 0 auto; }
         }
     </style>
 @endsection
