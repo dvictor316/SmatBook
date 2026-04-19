@@ -2534,9 +2534,12 @@ public function destroy($id)
         $user = Auth::user();
         $companyId = (int) ($user?->company_id ?? 0);
 
-        $salesDateColumn = Schema::hasColumn('sales', 'order_date')
-            ? 'order_date'
-            : (Schema::hasColumn('sales', 'date') ? 'date' : 'created_at');
+        // Use COALESCE so POS sales (where order_date is NULL) fall back to created_at
+        $salesDateExpr = Schema::hasColumn('sales', 'order_date')
+            ? 'COALESCE(sales.order_date, sales.created_at)'
+            : (Schema::hasColumn('sales', 'date') ? 'sales.date' : 'sales.created_at');
+        $salesDateColumn = 'order_date'; // kept for whereBetween alias but we use $salesDateExpr in queries
+
         $salesAmountColumn = Schema::hasColumn('sales', 'total')
             ? 'total'
             : (Schema::hasColumn('sales', 'total_amount') ? 'total_amount' : null);
@@ -2565,18 +2568,18 @@ public function destroy($id)
         // Base Sales Query (Income)
         $salesQuery = $this->scopedTable('sales')
             ->select([
-                DB::raw("DATE(sales.{$salesDateColumn}) as report_date"),
+                DB::raw("DATE({$salesDateExpr}) as report_date"),
                 DB::raw('SUM(COALESCE(sales.' . ($salesAmountColumn ?? 'total') . ', 0)) as income'),
                 DB::raw('0 as operating_expense'),
                 DB::raw('0 as purchase_expense'),
             ])
             ->when(
                 $start_date && $end_date,
-                fn($q) => $q->whereBetween(DB::raw("DATE(sales.{$salesDateColumn})"), [$start_date, $end_date])
+                fn($q) => $q->whereBetween(DB::raw("DATE({$salesDateExpr})"), [$start_date, $end_date])
             )
             ->tap(fn($q) => $applyTenantScope($q, 'sales'))
             ->tap(fn($q) => $this->applySaleBranchFilter($q, 'sales'))
-            ->groupBy(DB::raw("DATE(sales.{$salesDateColumn})"));
+            ->groupBy(DB::raw("DATE({$salesDateExpr})"));
 
         // Base Expenses Query (Operational Expense)
         $expensesQuery = $this->scopedTable('expenses')
