@@ -1366,7 +1366,8 @@
             'invoice-four-a', 'invoice-one-a', 'invoice-three', 'invoice-two', 'forgot-password', 'lock-screen', 'login', 'register',
             'saas-login', 'saas-register', 'saas-register-initial',
             'manager.verification.form', 'manager.pending.notice', 'submit.verification', 'manager.submit.verification',
-        ]) && !str_starts_with((string) $route, 'deployment.');
+        ]) && !str_starts_with((string) $route, 'deployment.')
+           && !str_starts_with((string) $route, 'saas.');
     @endphp
     @php
         // If session lost tenant/branch (common on mobile), restore from the user model.
