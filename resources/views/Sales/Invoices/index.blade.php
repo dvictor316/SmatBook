@@ -989,9 +989,53 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <script>
-    function printInvoice() {
-        window.focus();
+    const autoPrintReceipt = {{ request()->boolean('autoprint') ? 'true' : 'false' }};
+    const nativeInvoicePrint = (() => {
+        const protoPrint = Object.getPrototypeOf(window)?.print;
+        if (typeof protoPrint === 'function' && protoPrint !== window.print) {
+            return protoPrint.bind(window);
+        }
+
+        const fallbackProtoPrint = typeof Window !== 'undefined' && typeof Window.prototype?.print === 'function'
+            ? Window.prototype.print
+            : null;
+
+        if (typeof fallbackProtoPrint === 'function' && fallbackProtoPrint !== window.print) {
+            return fallbackProtoPrint.bind(window);
+        }
+
+        return null;
+    })();
+
+    let invoicePrintLocked = false;
+
+    function releaseInvoicePrintLock() {
+        invoicePrintLocked = false;
+    }
+
+    function runNativeInvoicePrint() {
+        if (nativeInvoicePrint) {
+            nativeInvoicePrint();
+            return;
+        }
+
+        if (typeof window.smartProbookTriggerPrint === 'function') {
+            window.smartProbookTriggerPrint(document.getElementById('invoice_content'));
+            return;
+        }
+
         window.print();
+    }
+
+    function printInvoice() {
+        if (invoicePrintLocked) {
+            return;
+        }
+
+        invoicePrintLocked = true;
+        window.focus();
+        window.setTimeout(runNativeInvoicePrint, 120);
+        window.setTimeout(releaseInvoicePrintLock, 2500);
     }
 
     // Export to PDF
@@ -1081,6 +1125,18 @@
                 sendButton.disabled = false;
                 sendButton.classList.remove('loading');
             }
+        }
+    }
+
+    window.addEventListener('afterprint', releaseInvoicePrintLock);
+
+    if (autoPrintReceipt) {
+        const triggerAutoPrint = () => window.setTimeout(printInvoice, 350);
+
+        if (document.readyState === 'complete') {
+            triggerAutoPrint();
+        } else {
+            window.addEventListener('load', triggerAutoPrint, { once: true });
         }
     }
 

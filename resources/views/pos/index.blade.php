@@ -2273,7 +2273,7 @@ $(document).ready(function() {
                 }
             },
             success: function(res) {
-                const invoiceUrl = "{{ route('sales.invoice.show', ':id') }}".replace(':id', res.sale_id);
+                const invoiceUrl = "{{ route('sales.invoice.show', ':id') }}".replace(':id', res.sale_id) + '?autoprint=1';
                 const balanceDue = Math.max(0, total - paid);
                 window.open(invoiceUrl, '_blank');
 
@@ -3084,7 +3084,7 @@ window.POS_ENABLE_FALLBACK = function () {
             }
 
             if (result.sale_id) {
-                const invoiceUrl = invoiceRouteTemplate.replace(':id', result.sale_id);
+                const invoiceUrl = invoiceRouteTemplate.replace(':id', result.sale_id) + '?autoprint=1';
                 window.open(invoiceUrl, '_blank');
             }
 
