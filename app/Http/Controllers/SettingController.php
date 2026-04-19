@@ -411,7 +411,7 @@ class SettingController extends Controller
 
         if (Schema::hasTable('accounts')) {
             $accounts = Account::query()
-                ->when(Schema::hasTable('transactions'), fn ($query) => $query->withCount('transactions'))
+                ->when(Schema::hasTable('transactions'), fn ($query) => $query->withCount(['transactions' => fn ($q) => $q->withoutGlobalScopes()]))
                 ->orderByRaw("FIELD(type, 'Asset', 'Liability', 'Equity', 'Revenue', 'Expense')")
                 ->orderBy('code')
                 ->get()
@@ -658,12 +658,17 @@ class SettingController extends Controller
             return redirect()->back()->with('error', 'Accounts table is not available in this installation.');
         }
 
+        $companyId = (int) (Auth::user()->company_id ?? session('current_tenant_id') ?? 0);
+        $userId    = (int) Auth::id();
+        $branchId  = (string) session('active_branch_id', '');
+        $branchName = (string) session('active_branch_name', '');
+
         $validated = $request->validate([
             'code' => [
                 'required',
                 'string',
                 'max:50',
-                Rule::unique('accounts', 'code'),
+                Rule::unique('accounts', 'code')->where('company_id', $companyId ?: null),
             ],
             'name' => 'required|string|max:191',
             'type' => ['required', Rule::in([
@@ -680,14 +685,18 @@ class SettingController extends Controller
         ]);
 
         Account::create([
-            'code' => $validated['code'],
-            'name' => $validated['name'],
-            'type' => $validated['type'],
-            'sub_type' => $validated['sub_type'] ?? null,
+            'code'            => $validated['code'],
+            'name'            => $validated['name'],
+            'type'            => $validated['type'],
+            'sub_type'        => $validated['sub_type'] ?? null,
             'opening_balance' => (float) ($validated['opening_balance'] ?? 0),
             'current_balance' => (float) ($validated['opening_balance'] ?? 0),
-            'description' => $validated['description'] ?? null,
-            'is_active' => (bool) ($validated['is_active'] ?? true),
+            'description'     => $validated['description'] ?? null,
+            'is_active'       => (bool) ($validated['is_active'] ?? true),
+            'company_id'      => $companyId ?: null,
+            'user_id'         => $userId ?: null,
+            'branch_id'       => $branchId !== '' ? $branchId : null,
+            'branch_name'     => $branchName !== '' ? $branchName : null,
         ]);
 
         return redirect()->route('chart-of-accounts')->with('success', 'Account added to chart of accounts.');
