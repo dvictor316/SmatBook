@@ -28,198 +28,63 @@
 
 @section('style')
 <style>
-    .pl-report-shell {
-        color: #17315f;
-    }
-    .pl-page-header .page-title {
-        font-size: 1.45rem;
-        font-weight: 800;
-        letter-spacing: -0.03em;
-        margin-bottom: 0.15rem;
-    }
-    .pl-page-header .breadcrumb {
-        font-size: 0.74rem !important;
-        margin-bottom: 0;
-    }
-    .pl-page-header .btn {
-        font-size: 0.76rem !important;
-        padding: 0.55rem 0.95rem !important;
-    }
-    .pl-summary-card {
-        border: 1px solid rgba(191, 219, 254, 0.82) !important;
-        border-radius: 18px !important;
-        box-shadow: 0 14px 34px rgba(37, 99, 235, 0.08) !important;
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(246, 250, 255, 0.96)) !important;
-    }
-    .pl-summary-card .card-body {
-        padding: 1.1rem 1.15rem !important;
-    }
-    .pl-summary-label {
-        font-size: 0.68rem !important;
+    #profitLossTable { font-size: 12.5px !important; }
+    #profitLossTable thead th {
+        font-size: 0.75rem !important;
+        text-transform: uppercase;
         letter-spacing: 0.08em;
-        line-height: 1.3;
-        margin-bottom: 0.4rem !important;
-    }
-    .pl-summary-card h3 {
-        font-size: 1.05rem !important;
-        line-height: 1.15;
-        margin-bottom: 0;
-    }
-    .pl-summary-card .money-sm,
-    .pl-summary-card h3.money-sm,
-    .pl-summary-card .card-body h3.money-sm {
-        font-size: 1.1rem !important;
-        line-height: 1.18 !important;
-        font-weight: 800 !important;
-        letter-spacing: -0.02em;
-        word-break: normal;
-        overflow-wrap: anywhere;
-    }
-    .pl-summary-meta {
-        font-size: 0.72rem;
-        line-height: 1.3;
-    }
-    .pl-filter-card {
-        border: 1px solid rgba(191, 219, 254, 0.82) !important;
-        border-radius: 20px !important;
-        box-shadow: 0 16px 36px rgba(37, 99, 235, 0.08) !important;
-    }
-    .pl-filter-card .card-body {
-        padding: 1rem 1.1rem !important;
-    }
-    .pl-filter-card .form-label {
-        font-size: 0.68rem !important;
-        letter-spacing: 0.08em;
-        margin-bottom: 0.38rem;
-    }
-    .pl-filter-card .form-control {
-        font-size: 0.83rem !important;
-        min-height: 40px;
-    }
-    .pl-table-card {
-        border: 1px solid rgba(191, 219, 254, 0.82) !important;
-        border-radius: 22px !important;
-        box-shadow: 0 18px 42px rgba(37, 99, 235, 0.08) !important;
-        overflow: hidden;
-    }
-    .pl-table-card .card-body {
-        padding: 0.95rem !important;
-    }
-    #profitLossTable {
-        font-size: 11.5px !important;
-        border-collapse: separate;
-        border-spacing: 0;
-        margin-bottom: 0 !important;
-    }
-    #profitLossTable thead th { 
-        font-size: 0.68rem !important; 
-        text-transform: uppercase; 
-        letter-spacing: 0.08em; 
-        background-color: #f1f5f9; 
+        background-color: #f1f5f9;
         color: #102a5a;
         border-bottom: 1px solid #dbe7f5;
-        padding-top: 0.8rem !important;
-        padding-bottom: 0.8rem !important;
     }
     #profitLossTable tbody td,
     #profitLossTable tfoot td {
-        font-size: 0.78rem !important;
-        padding-top: 0.82rem !important;
-        padding-bottom: 0.82rem !important;
         vertical-align: middle;
     }
-    #profitLossTable tbody tr:hover {
-        background: rgba(59, 130, 246, 0.03);
+    .card-body h3 {
+        font-size: clamp(0.9rem, 1.7vw, 1.02rem);
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        line-height: 1.2;
+        font-variant-numeric: tabular-nums;
+        overflow-wrap: anywhere;
+        word-break: break-word;
     }
-    #profitLossTable tfoot {
-        background: #f8fbff !important;
-    }
-    .badge { font-size: 0.66rem; padding: 0.36rem 0.62rem; letter-spacing: 0.04em; }
-    .money-sm { font-size: 1.1rem !important; font-variant-numeric: tabular-nums; }
-    .table-money { font-size: 0.78rem; font-variant-numeric: tabular-nums; }
-    .report-metric-title { letter-spacing: 0.08em; }
-    .pl-date-cell {
-        font-size: 0.76rem;
-        color: #5f7395 !important;
-    }
-    .pl-pagination {
-        font-size: 0.8rem;
-    }
-
     .dt-buttons { margin-bottom: 15px; gap: 5px; display: flex; }
-    .dt-button { 
+    .dt-button {
         border: 1px solid #d1d5db !important;
         background: #fff !important;
-        font-size: 0.72rem !important;
+        font-size: 0.76rem !important;
         font-weight: 600 !important;
         border-radius: 999px !important;
-        padding: 0.46rem 0.82rem !important;
-        color: #102a5a !important;
+        padding: 0.5rem 0.9rem !important;
+        color: #374151 !important;
     }
-    .dt-button:hover { background: #f9fafb !important; }
-    div.dataTables_wrapper div.dataTables_filter input {
-        font-size: 0.8rem !important;
-        min-height: 36px;
-    }
-    div.dataTables_wrapper div.dataTables_filter label {
-        font-size: 0.76rem !important;
-    }
-
     @media print {
         .no-print, .filter-card, .dataTables_filter, .dt-buttons, .pagination-wrapper { display: none !important; }
-        .page-wrapper { margin: 0; padding: 0; background: white !important; }
-        .card { border: 1px solid #eee !important; box-shadow: none !important; margin-bottom: 10px !important; }
-        .table { width: 100% !important; }
-    }
-
-    @media (max-width: 991.98px) {
-        .pl-page-header .page-title {
-            font-size: 1.2rem;
-        }
-        .pl-summary-label {
-            font-size: 0.6rem !important;
-        }
-        .pl-summary-card .money-sm,
-        .pl-summary-card h3.money-sm,
-        .pl-summary-card .card-body h3.money-sm {
-            font-size: 0.92rem !important;
-        }
-        .pl-summary-card .card-body,
-        .pl-filter-card .card-body,
-        .pl-table-card .card-body {
-            padding: 0.9rem !important;
-        }
-        #profitLossTable {
-            font-size: 11px !important;
-        }
-        #profitLossTable thead th,
-        #profitLossTable tbody td,
-        #profitLossTable tfoot td {
-            white-space: nowrap;
-        }
+        .page-wrapper { margin: 0; padding: 0; background: white; }
+        .card { border: 1px solid #eee !important; box-shadow: none !important; }
     }
 </style>
 @endsection
 
 @section('content')
 <div class="page-wrapper">
-    <div class="content container-fluid pl-report-shell">
+    <div class="content container-fluid">
 
-        <div class="page-header mb-4 pl-page-header">
+        <div class="page-header mb-3">
             <div class="row align-items-center">
                 <div class="col">
-                    <h3 class="page-title">{{ __('Financial Statement (P&L)') }}</h3>
-                    <ul class="breadcrumb">
-                        <li class="breadcrumb-item"><a href="{{ route('home', $routeParams) }}">Dashboard</a></li>
-                        <li class="breadcrumb-item active">Profit & Loss</li>
-                    </ul>
+                    @component('components.page-header')
+                        @slot('title') {{ __('Financial Statement (P&L)') }} @endslot
+                    @endcomponent
                 </div>
                 <div class="col-auto d-flex gap-2 no-print">
                     <button onclick="window.print()" class="btn btn-white btn-sm border shadow-sm">
-                        <i class="fas fa-print"></i> {{ __('Print Report') }}
+                        <i class="feather-printer"></i> {{ __('Print Report') }}
                     </button>
                     <button id="emailReportBtn" class="btn btn-primary btn-sm shadow-sm">
-                        <i class="fas fa-envelope"></i> {{ __('Email Summary') }}
+                        <i class="feather-mail"></i> {{ __('Email Summary') }}
                     </button>
                 </div>
             </div>
@@ -233,41 +98,41 @@
 
         <div class="row mb-4">
             <div class="col-md-3">
-                <div class="card pl-summary-card">
-                    <div class="card-body">
-                        <h6 class="text-success text-uppercase fw-bold report-metric-title pl-summary-label">{{ __('Overall Revenue') }}</h6>
-                        <h3 class="mb-0 text-success money-sm">{{ \App\Support\GeoCurrency::format($grandIncome, 'NGN', $currencyCode, $currencyLocale) }}</h3>
+                <div class="card shadow-sm border-0 bg-success-light">
+                    <div class="card-body p-3">
+                        <p class="small fw-bold text-uppercase text-success mb-1">{{ __('Overall Revenue') }}</p>
+                        <h3 class="mb-0 text-success">{{ \App\Support\GeoCurrency::format($grandIncome, 'NGN', $currencyCode, $currencyLocale) }}</h3>
                     </div>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card pl-summary-card">
-                    <div class="card-body">
-                        <h6 class="text-info text-uppercase fw-bold report-metric-title pl-summary-label">{{ __('Purchase Cost') }}</h6>
-                        <h3 class="mb-0 text-info money-sm">{{ \App\Support\GeoCurrency::format($grandPurchaseExpense, 'NGN', $currencyCode, $currencyLocale) }}</h3>
+                <div class="card shadow-sm border-0">
+                    <div class="card-body p-3">
+                        <p class="small fw-bold text-uppercase text-muted mb-1">{{ __('Purchase Cost') }}</p>
+                        <h3 class="mb-0">{{ \App\Support\GeoCurrency::format($grandPurchaseExpense, 'NGN', $currencyCode, $currencyLocale) }}</h3>
                     </div>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card pl-summary-card">
-                    <div class="card-body">
-                        <h6 class="text-danger text-uppercase fw-bold report-metric-title pl-summary-label">{{ __('Total Expenses') }}</h6>
-                        <div class="text-muted mb-1 pl-summary-meta">OpEx: {{ \App\Support\GeoCurrency::format($grandOperatingExpense, 'NGN', $currencyCode, $currencyLocale) }}</div>
-                        <h3 class="mb-0 text-danger money-sm">{{ \App\Support\GeoCurrency::format($grandExpense, 'NGN', $currencyCode, $currencyLocale) }}</h3>
+                <div class="card shadow-sm border-0 bg-danger-light">
+                    <div class="card-body p-3">
+                        <p class="small fw-bold text-uppercase text-danger mb-1">{{ __('Total Expenses') }}</p>
+                        <p class="small text-muted mb-1">OpEx: {{ \App\Support\GeoCurrency::format($grandOperatingExpense, 'NGN', $currencyCode, $currencyLocale) }}</p>
+                        <h3 class="mb-0 text-danger">{{ \App\Support\GeoCurrency::format($grandExpense, 'NGN', $currencyCode, $currencyLocale) }}</h3>
                     </div>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card pl-summary-card">
-                    <div class="card-body">
-                        <h6 class="{{ $grandNet >= 0 ? 'text-primary' : 'text-warning' }} text-uppercase fw-bold report-metric-title pl-summary-label">{{ __('Net Profit/Loss') }}</h6>
-                        <h3 class="mb-0 {{ $grandNet >= 0 ? 'text-primary' : 'text-warning' }} money-sm">{{ \App\Support\GeoCurrency::format($grandNet, 'NGN', $currencyCode, $currencyLocale) }}</h3>
+                <div class="card shadow-sm border-0 {{ $grandNet >= 0 ? 'bg-primary-light' : 'bg-warning-light' }}">
+                    <div class="card-body p-3">
+                        <p class="small fw-bold text-uppercase {{ $grandNet >= 0 ? 'text-primary' : 'text-warning' }} mb-1">{{ __('Net Profit/Loss') }}</p>
+                        <h3 class="mb-0 {{ $grandNet >= 0 ? 'text-primary' : 'text-warning' }}">{{ \App\Support\GeoCurrency::format($grandNet, 'NGN', $currencyCode, $currencyLocale) }}</h3>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="card mb-4 filter-card no-print pl-filter-card">
+        <div class="card mb-4 filter-card no-print">
             <div class="card-body">
 
                 <form method="GET" action="{{ route('reports.profit-loss', $routeParams) }}">
@@ -294,7 +159,7 @@
             </div>
         </div>
 
-        <div class="card mb-4 pl-table-card">
+        <div class="card mb-4">
             <div class="card-body p-3">
                 <div class="table-responsive">
                     <table id="profitLossTable" class="table table-hover">
@@ -313,21 +178,21 @@
                             @foreach($profitLossData as $item)
                                 @php $dailyProfit = $item->income - $item->expense; @endphp
                                 <tr>
-                                    <td class="fw-bold pl-date-cell">{{ \Carbon\Carbon::parse($item->report_date)->format('D, d M Y') }}</td>
-                                    <td class="text-success fw-semibold table-money">+{{ number_format($item->income, 2) }}</td>
-                                    <td class="text-info table-money">-{{ number_format($item->purchase_expense ?? 0, 2) }}</td>
-                                    <td class="text-secondary table-money">-{{ number_format($item->operating_expense ?? 0, 2) }}</td>
-                                    <td class="text-danger table-money">-{{ number_format($item->expense, 2) }}</td>
-                                    <td class="fw-bold table-money {{ $dailyProfit >= 0 ? 'text-primary' : 'text-warning' }}">
+                                    <td class="fw-semibold" data-order="{{ $item->report_date }}">{{ \Carbon\Carbon::parse($item->report_date)->format('D, d M Y') }}</td>
+                                    <td class="text-success">+{{ number_format($item->income, 2) }}</td>
+                                    <td class="text-muted">-{{ number_format($item->purchase_expense ?? 0, 2) }}</td>
+                                    <td class="text-muted">-{{ number_format($item->operating_expense ?? 0, 2) }}</td>
+                                    <td class="text-danger">-{{ number_format($item->expense, 2) }}</td>
+                                    <td class="fw-semibold {{ $dailyProfit >= 0 ? 'text-success' : 'text-danger' }}">
                                         {{ number_format($dailyProfit, 2) }}
                                     </td>
                                     <td class="text-center">
                                         @if($dailyProfit > 0)
-                                            <span class="badge bg-success-light text-success">PROFIT</span>
+                                            <span class="badge bg-success-light text-success">Profit</span>
                                         @elseif($dailyProfit < 0)
-                                            <span class="badge bg-danger-light text-danger">LOSS</span>
+                                            <span class="badge bg-danger-light text-danger">Loss</span>
                                         @else
-                                            <span class="badge bg-light text-muted">ZERO</span>
+                                            <span class="badge bg-light text-muted">Breakeven</span>
                                         @endif
                                     </td>
                                 </tr>
@@ -337,17 +202,17 @@
                             <tr>
                                 <td>PAGE TOTALS</td>
                                 <td class="text-success">₦{{ number_format($pageIncome, 2) }}</td>
-                                <td class="text-info">₦{{ number_format($pagePurchaseExpense, 2) }}</td>
-                                <td class="text-secondary">₦{{ number_format($pageOperatingExpense, 2) }}</td>
+                                <td class="text-muted">₦{{ number_format($pagePurchaseExpense, 2) }}</td>
+                                <td class="text-muted">₦{{ number_format($pageOperatingExpense, 2) }}</td>
                                 <td class="text-danger">₦{{ number_format($pageExpense, 2) }}</td>
-                                <td colspan="2" class="{{ $pageNet >= 0 ? 'text-primary' : 'text-warning' }}">
+                                <td colspan="2" class="{{ $pageNet >= 0 ? 'text-success' : 'text-danger' }}">
                                     ₦{{ number_format($pageNet, 2) }}
                                 </td>
                             </tr>
                         </tfoot>
                     </table>
                 </div>
-                <div class="mt-3 pagination-wrapper no-print pl-pagination">
+                <div class="mt-3 pagination-wrapper no-print">
                     {{ $profitLossData->appends(request()->query())->links() }}
                 </div>
             </div>
