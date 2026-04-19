@@ -37,20 +37,17 @@
 
         .purchase-orders-page .table-avatar {
             margin: 0;
-            font-size: 0.92rem !important;
             line-height: 1.2;
-            font-weight: 700;
         }
 
         .purchase-orders-page .table-avatar a {
-            font-size: inherit !important;
             color: #334155;
         }
 
         .purchase-orders-page .table-avatar span {
             display: block;
             margin-top: 0.18rem;
-            font-size: 0.78rem !important;
+            font-size: 12px !important;
             line-height: 1.2;
             color: #7c8799;
             font-weight: 500;

@@ -91,6 +91,18 @@
     {{-- GLOBAL PRINT STYLES --}}
     <style>
 
+        {{-- Global fix: h2.table-avatar inherits h2 browser default font size; reset it --}}
+        h2.table-avatar {
+            font-size: 14px !important;
+            font-weight: 500 !important;
+            margin: 0;
+            padding: 0;
+        }
+        h2.table-avatar a {
+            font-size: 14px !important;
+            font-weight: 500 !important;
+        }
+
         {{-- FIX: Automatically remove sidebar margin if sidebar is hidden --}}
         @if($hideSidebar)
         .page-wrapper, .main-wrapper {
