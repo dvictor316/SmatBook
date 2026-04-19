@@ -13,7 +13,7 @@
         }
 
         .compact-invoice-shell {
-            max-width: 820px;
+            max-width: 680px;
             margin: 0 auto;
         }
 
@@ -56,7 +56,7 @@
         .compact-panel {
             border: 1px solid #e5e7eb;
             border-radius: 8px;
-            padding: 14px 16px;
+            padding: 12px 14px;
             background: #fff;
             height: 100%;
         }
@@ -73,29 +73,29 @@
         .compact-items-table thead th {
             background: #f5f3ff;
             color: #4b308b;
-            font-size: 11px;
+            font-size: 10px;
             text-transform: uppercase;
             letter-spacing: 0.08em;
             border-bottom: 1px solid #ddd;
-            padding: 12px 10px;
+            padding: 9px 8px;
         }
 
         .compact-items-table tbody td {
-            padding: 12px 10px;
+            padding: 8px 8px;
             border-color: #eceff4;
             vertical-align: top;
-            font-size: 14px;
+            font-size: 13px;
         }
 
         .compact-total-table td {
-            padding: 8px 0;
-            font-size: 14px;
+            padding: 6px 0;
+            font-size: 13px;
         }
 
         .compact-total-table .total-row td {
-            padding-top: 12px;
+            padding-top: 10px;
             border-top: 1px solid #d1d5db;
-            font-size: 17px;
+            font-size: 16px;
             font-weight: 800;
             color: #4b308b;
         }
@@ -107,10 +107,20 @@
             font-size: 13px;
         }
 
+        .compact-item-name {
+            font-size: 13px;
+            line-height: 1.25;
+        }
+
+        .compact-item-meta {
+            font-size: 11px;
+            line-height: 1.2;
+        }
+
         @media print {
             @page {
                 size: portrait;
-                margin: 10mm;
+                margin: 8mm;
             }
 
             body {
@@ -130,6 +140,16 @@
             .compact-invoice-card {
                 border: 0 !important;
                 box-shadow: none !important;
+            }
+        }
+
+        @media (max-width: 767.98px) {
+            .compact-invoice-shell {
+                max-width: 100%;
+            }
+
+            .compact-invoice-card {
+                border-radius: 6px;
             }
         }
     </style>
@@ -189,7 +209,7 @@
                 <button type="button" class="btn btn-primary" onclick="window.print()">Print</button>
             </div>
 
-            <div class="compact-invoice-card p-4 p-lg-5">
+            <div class="compact-invoice-card p-3 p-lg-4">
                 <div class="row align-items-start gy-4">
                     <div class="col-md-7">
                         <div class="compact-invoice-brand">{{ $brandName }}</div>
@@ -285,11 +305,13 @@
                                 @endphp
                                 <tr>
                                     <td>
-                                        <div class="fw-bold">{{ $item->product->name ?? $item->product_name ?? 'Item' }}</div>
+                                        <div class="fw-bold compact-item-name">{{ $item->product->name ?? $item->product_name ?? 'Item' }}</div>
                                     </td>
                                     <td class="text-center">
-                                        {{ $soldQuantity }}
-                                        <span class="text-muted small text-uppercase">{{ $soldUnitLabel }}</span>
+                                        <span class="compact-item-meta">
+                                            {{ $soldQuantity }}
+                                            <span class="text-muted text-uppercase">{{ $soldUnitLabel }}</span>
+                                        </span>
                                     </td>
                                     <td class="text-end">₦{{ number_format((float) ($item->unit_price ?? 0), 2) }}</td>
                                     <td class="text-end">{{ number_format((float) ($item->discount ?? 0), 2) }}%</td>
@@ -312,14 +334,18 @@
                                     <td class="text-muted">Subtotal</td>
                                     <td class="text-end fw-bold">₦{{ number_format($subtotal, 2) }}</td>
                                 </tr>
-                                <tr>
-                                    <td class="text-muted">Discount</td>
-                                    <td class="text-end fw-bold">₦{{ number_format($discount, 2) }}</td>
-                                </tr>
-                                <tr>
-                                    <td class="text-muted">Tax</td>
-                                    <td class="text-end fw-bold">₦{{ number_format($tax, 2) }}</td>
-                                </tr>
+                                @if(abs($discount) > 0.00001)
+                                    <tr>
+                                        <td class="text-muted">Discount</td>
+                                        <td class="text-end fw-bold">₦{{ number_format($discount, 2) }}</td>
+                                    </tr>
+                                @endif
+                                @if(abs($tax) > 0.00001)
+                                    <tr>
+                                        <td class="text-muted">Tax</td>
+                                        <td class="text-end fw-bold">₦{{ number_format($tax, 2) }}</td>
+                                    </tr>
+                                @endif
                                 <tr>
                                     <td class="text-muted">Tendered</td>
                                     <td class="text-end fw-bold">₦{{ number_format($tenderedAmount, 2) }}</td>

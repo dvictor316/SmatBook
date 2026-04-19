@@ -411,7 +411,7 @@ class SettingController extends Controller
 
         if (Schema::hasTable('accounts')) {
             $accounts = Account::query()
-                ->when(Schema::hasTable('transactions'), fn ($query) => $query->withCount(['transactions' => fn ($q) => $q->withoutGlobalScopes()]))
+                ->when(Schema::hasTable('transactions'), fn ($query) => $query->withCount('transactions'))
                 ->orderByRaw("FIELD(type, 'Asset', 'Liability', 'Equity', 'Revenue', 'Expense')")
                 ->orderBy('code')
                 ->get()
