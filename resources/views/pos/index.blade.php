@@ -2215,6 +2215,7 @@ $(document).ready(function() {
         lastSelectedProductId = null;
 
         $('#customer-select').val(null).trigger('change');
+        $('#customer-search-input').val('');
         $('#payment-method').val('Cash');
         $('#amount-paid').prop('readonly', false).val('0.00');
         $('#transfer-amount').val('0.00');
@@ -2338,6 +2339,7 @@ window.POS_ENABLE_FALLBACK = function () {
     const categoryToggle = document.getElementById('category-toggle');
     const categoryPillsWrap = document.getElementById('category-pills');
     const quickSearch = document.getElementById('quick-search');
+    const barcodeInput = document.getElementById('barcode-input');
     const productSelect = document.getElementById('product-select');
     const productSearch = document.getElementById('product-search');
     const unitTypeInputs = document.querySelectorAll('input[name="unit_type"]');
@@ -2757,6 +2759,58 @@ window.POS_ENABLE_FALLBACK = function () {
         updateChange();
     }
 
+    function resetVanillaPosWorkspace() {
+        cart.length = 0;
+        currentProductId = '';
+
+        renderCart();
+
+        if (customerSelect) {
+            customerSelect.value = '';
+        }
+        if (customerSearchInput) {
+            customerSearchInput.value = '';
+        }
+        filterCustomerOptions('');
+
+        if (paymentMethod) paymentMethod.value = 'Cash';
+        if (amountPaid) amountPaid.value = '0.00';
+        if (transferAmount) transferAmount.value = '0.00';
+        if (transferAccount) transferAccount.value = '';
+        if (cardAmount) cardAmount.value = '0.00';
+        if (cardAccount) cardAccount.value = '';
+
+        if (productSelect) productSelect.value = '';
+        if (productSearch) productSearch.value = '';
+        if (quickSearch) quickSearch.value = '';
+        if (barcodeInput) barcodeInput.value = '';
+
+        if (qtyInput) qtyInput.value = '1';
+        if (discountInput) discountInput.value = '0';
+        if (taxInput) taxInput.value = '0';
+        if (discountTypeInput) discountTypeInput.value = 'percent';
+        if (priceTierInput) priceTierInput.value = 'retail';
+        if (priceInput) priceInput.value = '';
+
+        const unitTypeUnit = document.getElementById('unit-type-unit');
+        if (unitTypeUnit) {
+            unitTypeUnit.checked = true;
+        }
+
+        applyVanillaSelection({ dataset: {} });
+        filterProductCards();
+        toggleSplitFields();
+        updateItemTotal();
+
+        window.setTimeout(() => {
+            if (barcodeInput) {
+                barcodeInput.focus();
+            } else if (quickSearch) {
+                quickSearch.focus();
+            }
+        }, 50);
+    }
+
     function renderCart() {
         if (!cartBody) return;
         let html = '';
@@ -3088,19 +3142,7 @@ window.POS_ENABLE_FALLBACK = function () {
                 window.open(invoiceUrl, '_blank');
             }
 
-            cart.length = 0;
-            renderCart();
-            if (customerSelect) customerSelect.value = '';
-            if (paymentMethod) paymentMethod.value = 'Cash';
-            if (amountPaid) amountPaid.value = '0.00';
-            if (transferAmount) transferAmount.value = '0.00';
-            if (cardAmount) cardAmount.value = '0.00';
-            if (transferAccount) transferAccount.value = '';
-            if (cardAccount) cardAccount.value = '';
-            toggleSplitFields();
-            if (productSelect) productSelect.value = '';
-            if (productSearch) productSearch.value = '';
-            applyVanillaSelection({ dataset: {} });
+            resetVanillaPosWorkspace();
         } catch (error) {
             alertFallback(error.message || 'Failed to process sale.');
         } finally {
