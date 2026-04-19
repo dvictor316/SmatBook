@@ -77,7 +77,13 @@
     </div>
 
     <script>
+        let invoicePrintInProgress = false;
+
         function printInvoice() {
+            if (invoicePrintInProgress) {
+                return;
+            }
+
             const target = document.getElementById('printableArea');
             if (!target) {
                 window.print();
@@ -93,6 +99,7 @@
             const bootstrapHref = @json(URL::asset('/assets/css/bootstrap.min.css'));
             const title = @json('Invoice #' . ($sale->invoice_no ?? $sale->id));
             const content = target.innerHTML;
+            invoicePrintInProgress = true;
 
             printWindow.document.open();
             printWindow.document.write(`
@@ -191,23 +198,29 @@
                 </head>
                 <body>
                     <div class="invoice-print-root">${content}</div>
+                    <script>
+                        window.addEventListener('load', function () {
+                            setTimeout(function () {
+                                window.focus();
+                                window.print();
+                            }, 180);
+                        }, { once: true });
+
+                        window.addEventListener('afterprint', function () {
+                            window.close();
+                        }, { once: true });
+                    <\/script>
                 </body>
                 </html>
             `);
             printWindow.document.close();
+            printWindow.addEventListener('beforeunload', function () {
+                invoicePrintInProgress = false;
+            }, { once: true });
 
-            const triggerPrint = () => {
-                printWindow.focus();
-                printWindow.print();
-            };
-
-            if (printWindow.document.fonts && typeof printWindow.document.fonts.ready === 'object') {
-                printWindow.document.fonts.ready.finally(() => {
-                    setTimeout(triggerPrint, 120);
-                });
-            } else {
-                setTimeout(triggerPrint, 200);
-            }
+            setTimeout(function () {
+                invoicePrintInProgress = false;
+            }, 5000);
         }
     </script>
 
