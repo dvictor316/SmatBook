@@ -692,6 +692,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::delete('/{id}', 'destroy')->name('destroy');
         Route::get('/{id}/pdf', 'downloadPDF')->name('pdf');
         Route::get('/invoice/{id}', 'showInvoice')->name('invoice.show');
+        Route::get('/invoice/{id}/print', 'printInvoice')->name('invoice.print');
         Route::get('/chart-data', 'getChartData')->name('chart-data');
         Route::get('/return-to-pos', 'returnToPos')->name('returnToPos');
         Route::get('/reports', 'report')->name('reports');
