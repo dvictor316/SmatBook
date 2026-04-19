@@ -125,42 +125,20 @@
                                 </div>
 
                                 <div class="mb-3">
-                                    <label class="form-label fw-semibold">Payment Method <span class="text-danger">*</span></label>
-                                    <select name="payment_method" id="paymentMethodSelect" class="form-select @error('payment_method') is-invalid @enderror" onchange="toggleBankDetails(this.value)">
-                                        <option value="">-- Select Method --</option>
-                                        <option value="cash"     {{ old('payment_method') === 'cash'     ? 'selected' : '' }}>Cash</option>
-                                        <option value="transfer" {{ old('payment_method') === 'transfer' ? 'selected' : '' }}>Bank Transfer</option>
-                                        <option value="pos"      {{ old('payment_method') === 'pos'      ? 'selected' : '' }}>POS / Card</option>
+                                    <label class="form-label fw-semibold">Deposit To <span class="text-danger">*</span></label>
+                                    <select name="account_id" class="form-select @error('account_id') is-invalid @enderror">
+                                        <option value="">-- Select Account --</option>
+                                        @foreach($accounts as $acct)
+                                            <option value="{{ $acct->id }}" {{ old('account_id') == $acct->id ? 'selected' : '' }}>
+                                                {{ $acct->name }}
+                                                @if($acct->code) ({{ $acct->code }}) @endif
+                                            </option>
+                                        @endforeach
                                     </select>
-                                    @error('payment_method')
+                                    @error('account_id')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
-                                </div>
-
-                                @php $hasBanks = isset($banks) && $banks->count() > 0; @endphp
-                                <div id="bankDetailsSection" style="display:none;" class="mb-3">
-                                    <div class="alert alert-info border-0 py-3 px-3" style="background:#f0f7ff;">
-                                        <div class="fw-semibold mb-2" style="color:#0369a1;">
-                                            <i class="fa fa-university me-1"></i> Transfer to any of our bank accounts below:
-                                        </div>
-                                        @if($hasBanks)
-                                            @foreach($banks as $bank)
-                                                <div class="mb-2 p-2 rounded" style="background:white; border:1px solid #bfdbfe;">
-                                                    <div class="fw-bold text-dark">{{ $bank->name }}</div>
-                                                    @if($bank->account_holder_name)
-                                                        <div class="small text-muted">Acct Name: <strong>{{ $bank->account_holder_name }}</strong></div>
-                                                    @endif
-                                                    <div class="small text-muted">Acct No: <strong style="font-size:1.05em; color:#111;">{{ $bank->account_number }}</strong></div>
-                                                    @if($bank->branch)
-                                                        <div class="small text-muted">Branch: {{ $bank->branch }}</div>
-                                                    @endif
-                                                </div>
-                                            @endforeach
-                                        @else
-                                            <div class="small text-muted">No bank account configured. Please contact us for payment details.</div>
-                                        @endif
-                                        <div class="small mt-2 text-muted">Use the invoice number <strong>{{ $invoice->invoice_no ?? '' }}</strong> as payment reference.</div>
-                                    </div>
+                                    <small class="text-muted">Choose which account in your Chart of Accounts this payment deposits into.</small>
                                 </div>
 
                                 <div class="mb-4">
@@ -191,16 +169,5 @@
     </div>
 </div>
 
-<script>
-function toggleBankDetails(val) {
-    var el = document.getElementById('bankDetailsSection');
-    if (el) el.style.display = (val === 'transfer') ? 'block' : 'none';
-}
-// Run on page load to handle old() value after form validation failure
-document.addEventListener('DOMContentLoaded', function() {
-    var sel = document.getElementById('paymentMethodSelect');
-    if (sel) toggleBankDetails(sel.value);
-});
-</script>
 @endsection
 

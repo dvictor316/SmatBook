@@ -40,21 +40,20 @@ class JournalService
         // If already fully/partially paid at creation, clear the AR leg
         $paidAmount = (float) ($sale->amount_paid ?? 0);
         if ($paidAmount > 0) {
-            $method = strtolower((string) ($sale->payment_method ?? 'cash'));
-            if (!in_array($method, ['cash', 'transfer', 'pos'])) {
-                $method = 'cash';
-            }
-            $this->postPaymentJournal($sale, $paidAmount, $method, $date);
+            // Default to Petty Cash as the deposit account for invoices created as paid
+            $depositAccount = $this->getOrCreateAccount($sale, 'Petty Cash', '1002', Account::TYPE_ASSET, Account::SUBTYPE_CURRENT_ASSET);
+            $this->postPaymentJournal($sale, $paidAmount, $depositAccount, $date);
         }
     }
 
     /**
      * Post journal entries when a payment is recorded against an invoice.
+     * The caller passes the Chart of Accounts deposit account directly.
      *
-     * DR Cash / Bank / POS   (asset ↑)
+     * DR $depositAccount   (asset ↑)
      * CR Accounts Receivable (asset ↓)
      */
-    public function postPaymentJournal(Sale $sale, float $amount, string $paymentMethod, $date = null): void
+    public function postPaymentJournal(Sale $sale, float $amount, Account $depositAccount, $date = null): void
     {
         if ($amount <= 0) {
             return;
@@ -63,27 +62,17 @@ class JournalService
         $date = $date ?? today();
         $ref  = $sale->invoice_no ?? ('INV-' . $sale->id);
 
-        $paymentAccount = $this->resolvePaymentChannelAccount($sale, $paymentMethod);
-        $arAccount      = $this->getOrCreateAccount($sale, 'Accounts Receivable', '1100', Account::TYPE_ASSET, Account::SUBTYPE_CURRENT_ASSET);
+        $arAccount = $this->getOrCreateAccount($sale, 'Accounts Receivable', '1100', Account::TYPE_ASSET, Account::SUBTYPE_CURRENT_ASSET);
 
-        // DR: payment channel account increases
-        $this->postLine($sale, $paymentAccount, $amount, 0,      $ref, "Payment received – {$ref} ({$paymentMethod})", $date);
+        // DR: chosen deposit account increases (cash/bank/etc.)
+        $this->postLine($sale, $depositAccount, $amount, 0,      $ref, "Payment received – {$ref} – {$depositAccount->name}", $date);
         // CR: accounts receivable decreases
-        $this->postLine($sale, $arAccount,      0,      $amount, $ref, "Payment received – {$ref} (AR cleared)",        $date);
+        $this->postLine($sale, $arAccount,      0,      $amount, $ref, "Payment received – {$ref} (AR cleared)",               $date);
     }
 
     // -------------------------------------------------------------------------
     // Private helpers
     // -------------------------------------------------------------------------
-
-    private function resolvePaymentChannelAccount(Sale $sale, string $paymentMethod): Account
-    {
-        return match (strtolower($paymentMethod)) {
-            'transfer' => $this->getOrCreateAccount($sale, 'Main Bank Account', '1001', Account::TYPE_ASSET, Account::SUBTYPE_CURRENT_ASSET),
-            'pos'      => $this->getOrCreateAccount($sale, 'POS Account',       '1004', Account::TYPE_ASSET, Account::SUBTYPE_CURRENT_ASSET),
-            default    => $this->getOrCreateAccount($sale, 'Petty Cash',        '1002', Account::TYPE_ASSET, Account::SUBTYPE_CURRENT_ASSET),
-        };
-    }
 
     /**
      * Find the account by code (per company), then by name, then auto-create it.

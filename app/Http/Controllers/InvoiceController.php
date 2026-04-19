@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Sale;
+use App\Models\Account;
 use App\Models\Bank;
 use App\Models\Customer;
 use App\Models\Invoice;
@@ -1089,8 +1090,17 @@ class InvoiceController extends Controller
         if ($id) {
             $invoice = $this->applyTenantScope(Sale::with(['items.product', 'customer']), 'sales')->find($id);
         }
-        $banks = $this->applyTenantScope(Bank::query(), 'banks')->orderBy('name')->get();
-        return view('Sales.Invoices.pay-online', compact('invoice', 'banks'));
+
+        $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $accounts  = Account::withoutGlobalScopes()
+            ->where('company_id', $companyId)
+            ->where('type', Account::TYPE_ASSET)
+            ->where('is_active', true)
+            ->where('code', '!=', '1100')  // exclude Accounts Receivable — it's the clearing account
+            ->orderBy('name')
+            ->get();
+
+        return view('Sales.Invoices.pay-online', compact('invoice', 'accounts'));
     }
 
     public function processPayment(Request $request, $id)
@@ -1098,26 +1108,29 @@ class InvoiceController extends Controller
         $invoice = $this->applyTenantScope(Sale::query(), 'sales')->findOrFail($id);
 
         $request->validate([
-            'amount'         => 'required|numeric|min:0.01',
-            'payment_method' => 'required|in:cash,transfer,pos',
-            'notes'          => 'nullable|string|max:500',
+            'amount'     => 'required|numeric|min:0.01',
+            'account_id' => 'required|integer|exists:accounts,id',
+            'notes'      => 'nullable|string|max:500',
         ]);
 
-        $amount = (float) $request->amount;
+        $amount  = (float) $request->amount;
         $newPaid = (float) ($invoice->amount_paid ?? 0) + $amount;
         $total   = (float) ($invoice->total ?? 0);
         $balance = max(0, $total - $newPaid);
         $status  = $balance <= 0 ? 'paid' : 'partial';
 
+        /** @var \App\Models\Account $depositAccount */
+        $depositAccount = Account::withoutGlobalScopes()->findOrFail((int) $request->account_id);
+
         $invoice->update([
             'amount_paid'    => $newPaid,
             'balance'        => $balance,
             'payment_status' => $status,
-            'payment_method' => $request->payment_method,
+            'payment_method' => $depositAccount->name,
         ]);
 
-        // Post double-entry journal: DR Cash/Bank/POS, CR Accounts Receivable
-        $this->journalService->postPaymentJournal($invoice, $amount, $request->payment_method);
+        // Post double-entry journal: DR chosen account, CR Accounts Receivable
+        $this->journalService->postPaymentJournal($invoice, $amount, $depositAccount);
 
         return redirect()
             ->route('pay-online', ['id' => $id])
