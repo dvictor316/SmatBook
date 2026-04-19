@@ -2,9 +2,8 @@
 @extends('layout.mainlayout')
 
 @section('content')
-    <div class="page-wrapper">
+    <div class="page-wrapper invoice-admin-page">
         <div class="content container-fluid">
-
             <div class="page-header d-print-none">
                 <div class="content-invoice-header">
                     <h5>Invoice Management: #{{ $sale->invoice_no ?? $sale->id }}</h5>
@@ -25,81 +24,16 @@
                 </div>
             </div>
 
-            <div class="row">
-
-                <div class="col-lg-8" id="printableArea">
-                    <div class="card shadow-sm border-0">
-                        <div class="card-body p-0">
-
-                            <div class="p-4 bg-white rounded-top border-bottom">
-                                <div class="row">
-                                    <div class="col-sm-6">
-                                        <h6 class="text-muted text-uppercase small fw-bold">Customer</h6>
-                                        <p class="h5 text-dark mb-1">{{ $sale->customer_name }}</p>
-                                        <p class="text-muted small mb-0">{{ $sale->customer_email ?? 'No email provided' }}</p>
-                                    </div>
-                                    <div class="col-sm-6 text-sm-end mt-3 mt-sm-0">
-                                        <h6 class="text-muted text-uppercase small fw-bold">Invoice Details</h6>
-                                        <p class="mb-1 text-dark">Date: <strong>{{ $sale->created_at->format('d M Y') }}</strong></p>
-
-                                        <p class="mb-0 text-dark">Status: <strong class="text-uppercase">{{ $sale->effective_payment_status ?? $sale->payment_status }}</strong></p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            @include('Sales.Invoices.invoice-details')
-
-                            <div class="p-4 bg-white border-top">
-                                <div class="row justify-content-end">
-                                    <div class="col-sm-5">
-                                        <div class="d-flex justify-content-between mb-2">
-                                            <span class="text-muted">Subtotal:</span>
-
-                                            <span class="fw-bold text-dark">{{ number_format($sale->items->sum('subtotal'), 2) }}</span>
-                                        </div>
-                                        <div class="d-flex justify-content-between mb-2">
-                                            <span class="text-muted">Tax:</span>
-                                            <span class="fw-bold text-dark">{{ number_format($sale->tax ?? 0, 2) }}</span>
-                                        </div>
-                                        <div class="d-flex justify-content-between mb-2">
-                                            <span class="text-muted">Paid:</span>
-                                            <span class="fw-bold text-dark">{{ number_format($sale->effective_paid ?? $sale->amount_paid ?? 0, 2) }}</span>
-                                        </div>
-                                        <div class="d-flex justify-content-between mb-2">
-                                            <span class="text-muted">Due:</span>
-                                            <span class="fw-bold {{ (($sale->effective_balance ?? $sale->balance ?? 0) > 0) ? 'text-danger' : 'text-success' }}">{{ number_format($sale->effective_balance ?? $sale->balance ?? 0, 2) }}</span>
-                                        </div>
-                                        <div class="d-flex justify-content-between border-top pt-2">
-                                            <span class="h5 mb-0">Total:</span>
-                                            <span class="h5 mb-0 text-primary">{{ number_format($sale->effective_total ?? $sale->total, 2) }}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="p-4 border-top bg-white rounded-bottom">
-                                <div class="row align-items-center">
-                                    <div class="col-sm-6">
-                                        <div class="invoice-terms">
-                                            <h6 class="fw-bold text-dark">Notes/Terms</h6>
-                                            <p class="mb-0 text-muted small" style="max-width: 90%;">
-                                                {{ $sale->notes ?? 'Thank you for your business.' }}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div class="col-sm-6 text-sm-end mt-3 mt-sm-0">
-                                        <div class="invoice-signature">
-                                            <p class="mb-2 text-muted">Authorised Signature</p>
-                                            <div class="mt-2 mx-auto ms-sm-auto" style="border-bottom: 2px solid #eee; width: 180px;"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+            <div class="row g-4 align-items-start">
+                <div class="col-xl-8 col-lg-8" id="printableArea" data-print-scope>
+                    <div class="card shadow-sm border-0 invoice-print-shell">
+                        <div class="card-body p-4 p-lg-5">
+                            @include('Sales.Invoices.partials.invoice-detail-content')
                         </div>
                     </div>
                 </div>
 
-                <div class="col-lg-4 d-print-none">
+                <div class="col-xl-4 col-lg-4 d-print-none">
                     <div class="card timeline-card border-0 shadow-sm">
                         <div class="card-header bg-white">
                             <h6 class="card-title mb-0">Admin Controls</h6>
@@ -144,6 +78,13 @@
 
     <script>
         function printInvoice() {
+            const target = document.getElementById('printableArea');
+
+            if (typeof window.smartProbookTriggerPrint === 'function') {
+                window.smartProbookTriggerPrint(target);
+                return;
+            }
+
             window.print();
         }
     </script>
@@ -160,12 +101,91 @@
             border-radius: 50%;
         }
 
+        .bg-light-soft {
+            background-color: #fbfbfb;
+        }
+
         @media print {
-            .page-header, .sidebar, .header, .btn, .d-print-none, .timeline-card { 
-                display: none !important; 
+            @page {
+                size: auto;
+                margin: 8mm;
             }
-            .page-wrapper { margin: 0 !important; padding: 0 !important; }
-            .col-lg-8 { width: 100% !important; flex: 0 0 100% !important; max-width: 100% !important; }
+
+            html,
+            body {
+                width: auto !important;
+                min-width: 0 !important;
+                max-width: none !important;
+                overflow: visible !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            .page-header,
+            .sidebar,
+            .header,
+            .btn,
+            .d-print-none,
+            .timeline-card,
+            .main-wrapper > .sidebar,
+            .main-wrapper > .header {
+                display: none !important;
+            }
+
+            body,
+            .page-wrapper,
+            .content,
+            .container-fluid,
+            .row,
+            #printableArea,
+            .invoice-print-shell,
+            .invoice-print-shell .card-body {
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            .page-wrapper {
+                margin-left: 0 !important;
+            }
+
+            .row {
+                display: block !important;
+            }
+
+            #printableArea {
+                display: block !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                flex: none !important;
+            }
+
+            .invoice-print-shell {
+                box-shadow: none !important;
+                border: 0 !important;
+                background: #fff !important;
+            }
+
+            .invoice-total-card { border: 1px solid #ddd !important; }
+            .invoice-item-date.bg-light-soft { background-color: #f5f5f5 !important; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+            .text-primary { color: #4b308b !important; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+            thead tr th { background-color: #f8f9fa !important; color: #4b308b !important; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+            tbody tr { background-color: #fcfcfc !important; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+            .border-start.border-primary { border-left-color: #4b308b !important; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+            .col-lg-5,
+            .col-lg-7 {
+                flex: 0 0 auto;
+            }
+        }
+
+        @media print and (orientation: landscape) {
+            @page {
+                size: landscape;
+                margin: 6mm;
+            }
+
+            .invoice-print-shell .card-body {
+                padding: 2mm !important;
+            }
         }
     </style>
 @endsection

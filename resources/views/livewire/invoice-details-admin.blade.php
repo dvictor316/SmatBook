@@ -5,8 +5,8 @@
     <div class="content container-fluid">
         <div class="row">
 
-            <div class="col-lg-9">
-                @include('Sales.Invoices.invoice-details') 
+            <div class="col-lg-9" id="printableArea" data-print-scope>
+                @include('Sales.Invoices.partials.invoice-detail-content')
             </div>
 
             <div class="col-lg-3 d-print-none">
@@ -54,6 +54,12 @@
 
 <script>
     function printInvoice() {
+        const target = document.getElementById('printableArea');
+        if (typeof window.smartProbookTriggerPrint === 'function') {
+            window.smartProbookTriggerPrint(target);
+            return;
+        }
+
         window.print();
     }
 </script>
