@@ -150,6 +150,44 @@
     .rh-pl-card{min-height:auto;}
 }
 
+/* Custom reports builder */
+.rh-custom-builder{
+    border-top:1px solid #eef2f7;
+    padding:16px;
+    background:#fbfcfe;
+}
+.rh-custom-shell{
+    border:1px solid #dbe7ff;
+    border-radius:12px;
+    background:#fff;
+    padding:16px;
+    box-shadow:0 10px 24px rgba(15,23,42,.05);
+}
+.rh-custom-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:14px;}
+.rh-custom-title{font-size:14px;font-weight:800;color:#0f172a;margin:0;}
+.rh-custom-copy{font-size:12px;color:#64748b;margin:4px 0 0;}
+.rh-form-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}
+.rh-form-field label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#64748b;margin-bottom:6px;}
+.rh-form-input,.rh-form-select{
+    width:100%;
+    border:1px solid #dbe2ea;
+    border-radius:8px;
+    padding:9px 11px;
+    font-size:13px;
+    color:#0f172a;
+    background:#fff;
+}
+.rh-form-input:focus,.rh-form-select:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1);}
+.rh-custom-actions{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:14px;}
+.rh-custom-note{font-size:11.5px;color:#64748b;}
+.rh-custom-submit{display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border:none;border-radius:8px;background:#2563eb;color:#fff;font-size:12px;font-weight:700;cursor:pointer;}
+.rh-custom-submit:hover{background:#1d4ed8;}
+.rl-inline-form{margin:0;}
+.rl-run.rl-delete{background:#fff;color:#dc2626;border:1px solid #fecaca;box-shadow:none;}
+.rl-run.rl-delete:hover{background:#fef2f2;color:#b91c1c;}
+@media(max-width:900px){.rh-form-grid{grid-template-columns:1fr 1fr;}}
+@media(max-width:700px){.rh-form-grid{grid-template-columns:1fr;}.rh-custom-builder{padding:12px;}}
+
 /* Individual report row */
 .rl-row{display:flex;align-items:center;gap:0;padding:0;border-bottom:1px solid #f0f3f8;min-height:44px;position:relative;}
 .rl-row:last-child{border-bottom:none;}
@@ -620,6 +658,77 @@
                         <button class="rl-star" data-id="my-favourites" title="Favourite"><i class="far fa-star"></i></button>
                         <a href="#" onclick="document.getElementById('rh-fav-toggle').click(); return false;" class="rl-name">My Favourites</a>
                         <a href="#" onclick="document.getElementById('rh-fav-toggle').click(); return false;" class="rl-run"><i class="fas fa-play"></i> View</a>
+                    </div>
+                    @foreach(($customReportTemplates ?? collect()) as $template)
+                    <div class="rl-row" data-section="custom" data-id="custom-template-{{ $template['id'] }}" data-keywords="custom report template {{ strtolower($template['name']) }} {{ strtolower($template['report_label']) }} {{ strtolower($template['branch_scope']) }}">
+                        <button class="rl-star" data-id="custom-template-{{ $template['id'] }}" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('reports.custom.run', $template['id']) }}" class="rl-name">{{ $template['name'] }} <span style="color:#94a3b8;font-weight:500;">• {{ $template['report_label'] }}</span></a>
+                        <a href="{{ route('reports.custom.run', $template['id']) }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                        <form method="POST" action="{{ route('reports.custom.destroy', $template['id']) }}" class="rl-inline-form">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="rl-run rl-delete"><i class="fas fa-trash-alt"></i> Delete</button>
+                        </form>
+                    </div>
+                    @endforeach
+                </div>
+                <div class="rh-custom-builder">
+                    <div class="rh-custom-shell">
+                        <div class="rh-custom-head">
+                            <div>
+                                <p class="rh-custom-title">Save a reusable report template</p>
+                                <p class="rh-custom-copy">Pick a report, set the date logic, choose branch scope, and launch it any time from this tab.</p>
+                            </div>
+                        </div>
+                        <form method="POST" action="{{ route('reports.custom.store') }}">
+                            @csrf
+                            <div class="rh-form-grid">
+                                <div class="rh-form-field">
+                                    <label>Template Name</label>
+                                    <input type="text" name="name" class="rh-form-input" value="{{ old('name') }}" placeholder="Monthly performance pack" required>
+                                </div>
+                                <div class="rh-form-field">
+                                    <label>Report Type</label>
+                                    <select name="report_key" class="rh-form-select" required>
+                                        <option value="">Select report...</option>
+                                        @foreach(($customReportCatalog ?? []) as $reportKey => $definition)
+                                            <option value="{{ $reportKey }}" {{ old('report_key') === $reportKey ? 'selected' : '' }}>{{ $definition['label'] }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="rh-form-field">
+                                    <label>Branch Scope</label>
+                                    <select name="branch_scope" class="rh-form-select" required>
+                                        <option value="current" {{ old('branch_scope', 'current') === 'current' ? 'selected' : '' }}>Current branch only</option>
+                                        <option value="all" {{ old('branch_scope') === 'all' ? 'selected' : '' }}>All branches</option>
+                                    </select>
+                                </div>
+                                <div class="rh-form-field">
+                                    <label>Date Preset</label>
+                                    <select name="date_preset" class="rh-form-select" required>
+                                        <option value="current_month" {{ old('date_preset', 'current_month') === 'current_month' ? 'selected' : '' }}>Current month</option>
+                                        <option value="today" {{ old('date_preset') === 'today' ? 'selected' : '' }}>Today</option>
+                                        <option value="last_7_days" {{ old('date_preset') === 'last_7_days' ? 'selected' : '' }}>Last 7 days</option>
+                                        <option value="last_30_days" {{ old('date_preset') === 'last_30_days' ? 'selected' : '' }}>Last 30 days</option>
+                                        <option value="last_month" {{ old('date_preset') === 'last_month' ? 'selected' : '' }}>Last month</option>
+                                        <option value="current_year" {{ old('date_preset') === 'current_year' ? 'selected' : '' }}>Current year</option>
+                                        <option value="custom" {{ old('date_preset') === 'custom' ? 'selected' : '' }}>Custom range</option>
+                                    </select>
+                                </div>
+                                <div class="rh-form-field">
+                                    <label>Custom Start</label>
+                                    <input type="date" name="custom_from_date" class="rh-form-input" value="{{ old('custom_from_date') }}">
+                                </div>
+                                <div class="rh-form-field">
+                                    <label>Custom End</label>
+                                    <input type="date" name="custom_to_date" class="rh-form-input" value="{{ old('custom_to_date') }}">
+                                </div>
+                            </div>
+                            <div class="rh-custom-actions">
+                                <div class="rh-custom-note">Use custom dates only when the preset is set to custom. Snapshot reports will use the end date as the “as of” date.</div>
+                                <button type="submit" class="rh-custom-submit"><i class="fas fa-save"></i> Save Template</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>

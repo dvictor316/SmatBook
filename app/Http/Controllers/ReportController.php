@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 // 2. Third Party Packages
@@ -48,7 +49,249 @@ use App\Support\InventoryQuantity;
 
         public function reportsHub()
         {
-            return view('Reports.hub');
+            $customReportCatalog = $this->customReportCatalog();
+            $customReportTemplates = $this->getCustomReportTemplates();
+
+            return view('Reports.hub', compact('customReportCatalog', 'customReportTemplates'));
+        }
+
+        private function customReportCatalog(): array
+        {
+            return [
+                'profit_loss' => [
+                    'label' => 'Profit & Loss',
+                    'route' => 'reports.profit-loss',
+                    'description' => 'Core profit and loss statement for a selected date range.',
+                    'filter' => 'date_range',
+                    'from_param' => 'start_date',
+                    'to_param' => 'end_date',
+                ],
+                'profit_loss_detail' => [
+                    'label' => 'Profit & Loss Detail',
+                    'route' => 'reports.profit-loss-detail',
+                    'description' => 'Detailed income and expense lines for a selected period.',
+                    'filter' => 'date_range',
+                    'from_param' => 'from_date',
+                    'to_param' => 'to_date',
+                ],
+                'cash_flow' => [
+                    'label' => 'Cash Flow',
+                    'route' => 'reports.cash-flow',
+                    'description' => 'Cash inflows and outflows across the selected period.',
+                    'filter' => 'date_range',
+                    'from_param' => 'start_date',
+                    'to_param' => 'end_date',
+                ],
+                'sales_summary' => [
+                    'label' => 'Sales Summary',
+                    'route' => 'reports.sales-summary',
+                    'description' => 'Sales totals, paid amounts, and outstanding balances.',
+                    'filter' => 'date_range',
+                    'from_param' => 'from_date',
+                    'to_param' => 'to_date',
+                ],
+                'purchase_summary' => [
+                    'label' => 'Purchase Summary',
+                    'route' => 'reports.purchase-summary',
+                    'description' => 'Purchase totals and average buying activity by period.',
+                    'filter' => 'date_range',
+                    'from_param' => 'from_date',
+                    'to_param' => 'to_date',
+                ],
+                'expense_by_category' => [
+                    'label' => 'Expense by Category',
+                    'route' => 'reports.expense-by-category',
+                    'description' => 'Spend grouped by category over a selected period.',
+                    'filter' => 'date_range',
+                    'from_param' => 'from_date',
+                    'to_param' => 'to_date',
+                ],
+                'open_invoices' => [
+                    'label' => 'Open Invoices',
+                    'route' => 'reports.open-invoices',
+                    'description' => 'Outstanding invoices filtered by date range.',
+                    'filter' => 'date_range',
+                    'from_param' => 'from_date',
+                    'to_param' => 'to_date',
+                ],
+                'tax_summary' => [
+                    'label' => 'Tax Summary',
+                    'route' => 'reports.tax-summary',
+                    'description' => 'Sales tax, purchase tax, and net liability by period.',
+                    'filter' => 'date_range',
+                    'from_param' => 'from_date',
+                    'to_param' => 'to_date',
+                ],
+                'balance_sheet' => [
+                    'label' => 'Balance Sheet',
+                    'route' => 'balance-sheet',
+                    'description' => 'Balance sheet snapshot as of a chosen date.',
+                    'filter' => 'as_of',
+                    'date_param' => 'date',
+                ],
+                'trial_balance' => [
+                    'label' => 'Trial Balance',
+                    'route' => 'trial-balance',
+                    'description' => 'Trial balance snapshot as of a chosen date.',
+                    'filter' => 'as_of',
+                    'date_param' => 'date',
+                ],
+                'ar_ageing_detail' => [
+                    'label' => 'AR Ageing Detail',
+                    'route' => 'reports.ar-ageing-detail',
+                    'description' => 'Outstanding receivables bucketed by age.',
+                    'filter' => 'as_of',
+                    'date_param' => 'as_of',
+                ],
+            ];
+        }
+
+        private function customReportsSettingKey(): string
+        {
+            $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+
+            return $companyId > 0 ? 'custom_reports_company_' . $companyId : 'custom_reports';
+        }
+
+        private function getCustomReportTemplates()
+        {
+            $raw = Setting::where('key', $this->customReportsSettingKey())->value('value');
+            $catalog = $this->customReportCatalog();
+
+            return collect(json_decode((string) $raw, true) ?: [])
+                ->map(function ($template) use ($catalog) {
+                    $reportKey = (string) ($template['report_key'] ?? '');
+                    $definition = $catalog[$reportKey] ?? null;
+
+                    return [
+                        'id' => (string) ($template['id'] ?? ''),
+                        'name' => (string) ($template['name'] ?? ''),
+                        'report_key' => $reportKey,
+                        'report_label' => (string) ($definition['label'] ?? $reportKey),
+                        'report_description' => (string) ($definition['description'] ?? ''),
+                        'date_preset' => (string) ($template['date_preset'] ?? 'current_month'),
+                        'custom_from_date' => (string) ($template['custom_from_date'] ?? ''),
+                        'custom_to_date' => (string) ($template['custom_to_date'] ?? ''),
+                        'branch_scope' => (string) ($template['branch_scope'] ?? 'current'),
+                        'created_at' => (string) ($template['created_at'] ?? ''),
+                    ];
+                })
+                ->filter(fn ($template) => $template['id'] !== '' && $template['name'] !== '' && isset($catalog[$template['report_key']]))
+                ->values();
+        }
+
+        private function persistCustomReportTemplates($templates): void
+        {
+            $payload = collect($templates)->values()->all();
+
+            Setting::updateOrCreate(
+                ['key' => $this->customReportsSettingKey()],
+                ['value' => json_encode($payload)]
+            );
+        }
+
+        private function resolveTemplateDateRange(string $preset, ?string $customFrom = null, ?string $customTo = null): array
+        {
+            return match ($preset) {
+                'today' => [now()->toDateString(), now()->toDateString()],
+                'last_7_days' => [now()->subDays(6)->toDateString(), now()->toDateString()],
+                'last_30_days' => [now()->subDays(29)->toDateString(), now()->toDateString()],
+                'last_month' => [now()->subMonth()->startOfMonth()->toDateString(), now()->subMonth()->endOfMonth()->toDateString()],
+                'current_year' => [now()->startOfYear()->toDateString(), now()->toDateString()],
+                'custom' => [
+                    $customFrom ?: now()->startOfMonth()->toDateString(),
+                    $customTo ?: now()->toDateString(),
+                ],
+                default => [now()->startOfMonth()->toDateString(), now()->toDateString()],
+            };
+        }
+
+        public function storeCustomReportTemplate(Request $request)
+        {
+            $catalog = $this->customReportCatalog();
+
+            $validated = $request->validate([
+                'name' => 'required|string|max:120',
+                'report_key' => ['required', 'string', Rule::in(array_keys($catalog))],
+                'date_preset' => ['required', 'string', Rule::in(['today', 'last_7_days', 'last_30_days', 'current_month', 'last_month', 'current_year', 'custom'])],
+                'custom_from_date' => 'nullable|date',
+                'custom_to_date' => 'nullable|date|after_or_equal:custom_from_date',
+                'branch_scope' => ['required', 'string', Rule::in(['current', 'all'])],
+            ]);
+
+            if ($validated['date_preset'] === 'custom' && (!$request->filled('custom_from_date') || !$request->filled('custom_to_date'))) {
+                return redirect()->back()->withInput()->withErrors([
+                    'custom_from_date' => 'Choose both custom start and end dates.',
+                ]);
+            }
+
+            $templates = $this->getCustomReportTemplates();
+            $templates->push([
+                'id' => (string) Str::uuid(),
+                'name' => trim((string) $validated['name']),
+                'report_key' => $validated['report_key'],
+                'date_preset' => $validated['date_preset'],
+                'custom_from_date' => (string) ($validated['custom_from_date'] ?? ''),
+                'custom_to_date' => (string) ($validated['custom_to_date'] ?? ''),
+                'branch_scope' => $validated['branch_scope'],
+                'created_at' => now()->toDateTimeString(),
+            ]);
+
+            $this->persistCustomReportTemplates($templates);
+
+            return redirect()->route('reports.hub', ['tab' => 'custom'])->with('success', 'Custom report template saved.');
+        }
+
+        public function runCustomReportTemplate(string $templateId)
+        {
+            $catalog = $this->customReportCatalog();
+            $template = $this->getCustomReportTemplates()->firstWhere('id', $templateId);
+
+            abort_unless($template, 404);
+
+            $definition = $catalog[$template['report_key']] ?? null;
+            abort_unless($definition, 404);
+
+            $params = [];
+
+            if (($definition['filter'] ?? '') === 'date_range') {
+                [$from, $to] = $this->resolveTemplateDateRange(
+                    (string) $template['date_preset'],
+                    $template['custom_from_date'] ?? null,
+                    $template['custom_to_date'] ?? null
+                );
+
+                $params[$definition['from_param']] = $from;
+                $params[$definition['to_param']] = $to;
+            }
+
+            if (($definition['filter'] ?? '') === 'as_of') {
+                [, $to] = $this->resolveTemplateDateRange(
+                    (string) $template['date_preset'],
+                    $template['custom_from_date'] ?? null,
+                    $template['custom_to_date'] ?? null
+                );
+
+                $params[$definition['date_param']] = $to;
+            }
+
+            if (($template['branch_scope'] ?? 'current') === 'all') {
+                $params['all_branches'] = 1;
+                $params['branch_scope'] = 'all';
+            }
+
+            return redirect()->route($definition['route'], $params);
+        }
+
+        public function destroyCustomReportTemplate(string $templateId)
+        {
+            $templates = $this->getCustomReportTemplates()
+                ->reject(fn ($template) => (string) ($template['id'] ?? '') === $templateId)
+                ->values();
+
+            $this->persistCustomReportTemplates($templates);
+
+            return redirect()->route('reports.hub', ['tab' => 'custom'])->with('success', 'Custom report template removed.');
         }
 
         private function ignoredAppliedPaymentStatuses(): array
