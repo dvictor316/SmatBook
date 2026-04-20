@@ -517,15 +517,15 @@
 
         .sidebar .sidebar-menu .menu-title,
         .deployment-sidebar .sidebar-menu .menu-title {
-            margin-top: 12px;
-            margin-bottom: 6px;
-            padding: 0 20px;
+            margin-top: 10px;
+            margin-bottom: 4px;
+            padding: 0 18px;
         }
 
         .sidebar .sidebar-menu .menu-title span,
         .deployment-sidebar .sidebar-menu .menu-title span {
             color: var(--spb-sidebar-muted) !important;
-            font-size: 0.74rem;
+            font-size: 0.68rem;
             font-weight: 800;
             letter-spacing: 0.04em;
             text-transform: none;
@@ -561,8 +561,9 @@
             color: var(--spb-sidebar-text) !important;
             border-radius: 16px !important;
             margin: 4px 12px;
-            padding: 12px 14px !important;
+            padding: 10px 12px !important;
             font-weight: 700;
+            font-size: 0.92rem;
             letter-spacing: -0.01em;
             transition: background 0.22s ease, color 0.22s ease, transform 0.22s ease, box-shadow 0.22s ease;
             position: relative;
@@ -582,6 +583,7 @@
         .deployment-sidebar .sidebar-menu ul li > a span,
         .deployment-sidebar .dm-menu-text {
             color: inherit !important;
+            font-size: inherit !important;
         }
 
         .sidebar .sidebar-menu ul li > a:hover,
@@ -603,10 +605,11 @@
         .deployment-sidebar .dm-submenu a {
             margin-left: 22px;
             margin-right: 12px;
-            padding-top: 10px !important;
-            padding-bottom: 10px !important;
+            padding-top: 8px !important;
+            padding-bottom: 8px !important;
             color: #3c527f !important;
             font-weight: 600;
+            font-size: 0.86rem !important;
             border-radius: 14px !important;
             background: rgba(255, 255, 255, 0.34);
         }
