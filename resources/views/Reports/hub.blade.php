@@ -524,7 +524,7 @@
                         <a href="#" onclick="document.getElementById('rh-fav-toggle').click(); return false;" class="rl-run"><i class="fas fa-play"></i> View</a>
                     </div>
                     @foreach(($customReportTemplates ?? collect()) as $template)
-                    <div class="rl-row" data-section="custom" data-id="custom-template-{{ $template['id'] }}" data-keywords="custom report template {{ strtolower($template['name']) }} {{ strtolower($template['report_label']) }} {{ strtolower($template['branch_scope']) }}">
+                    <div class="rl-row" data-section="custom" data-id="custom-template-{{ $template['id'] }}" data-keywords="custom report template {{ strtolower($template['name']) }} {{ strtolower($template['report_label']) }} {{ strtolower($template['branch_filter'] ?? 'current') }}">
                         <button class="rl-star" data-id="custom-template-{{ $template['id'] }}" title="Favourite"><i class="far fa-star"></i></button>
                         <a href="{{ route('reports.custom.run', $template['id']) }}" class="rl-name">{{ $template['name'] }} <span style="color:#94a3b8;font-weight:500;">• {{ $template['report_label'] }}</span></a>
                         <a href="{{ route('reports.custom.run', $template['id']) }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
@@ -570,10 +570,13 @@
                                     </select>
                                 </div>
                                 <div class="rh-form-field">
-                                    <label>Branch Scope</label>
-                                    <select name="branch_scope" class="rh-form-select" required>
-                                        <option value="current" {{ old('branch_scope', $editingTemplate['branch_scope'] ?? 'current') === 'current' ? 'selected' : '' }}>Current branch only</option>
-                                        <option value="all" {{ old('branch_scope', $editingTemplate['branch_scope'] ?? 'current') === 'all' ? 'selected' : '' }}>All branches</option>
+                                    <label>Branch</label>
+                                    <select name="branch_filter" class="rh-form-select" required>
+                                        <option value="current" {{ old('branch_filter', $editingTemplate['branch_filter'] ?? 'current') === 'current' ? 'selected' : '' }}>Current active branch</option>
+                                        <option value="all" {{ old('branch_filter', $editingTemplate['branch_filter'] ?? 'current') === 'all' ? 'selected' : '' }}>All branches</option>
+                                        @foreach(($availableBranches ?? collect()) as $branch)
+                                            <option value="{{ $branch['id'] }}" {{ old('branch_filter', $editingTemplate['branch_filter'] ?? 'current') === $branch['id'] ? 'selected' : '' }}>{{ $branch['name'] }}</option>
+                                        @endforeach
                                     </select>
                                 </div>
                                 <div class="rh-form-field">

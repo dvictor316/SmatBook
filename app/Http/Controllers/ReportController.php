@@ -50,6 +50,7 @@ use App\Support\InventoryQuantity;
         public function reportsHub()
         {
             $customReportCatalog = $this->customReportCatalog();
+            $availableBranches = $this->availableCustomReportBranches();
             $customReportTemplates = $this->getCustomReportTemplates();
             $editingTemplate = null;
             $editTemplateId = trim((string) request()->query('edit_template', ''));
@@ -58,7 +59,7 @@ use App\Support\InventoryQuantity;
                 $editingTemplate = $customReportTemplates->firstWhere('id', $editTemplateId);
             }
 
-            return view('Reports.hub', compact('customReportCatalog', 'customReportTemplates', 'editingTemplate'));
+            return view('Reports.hub', compact('customReportCatalog', 'customReportTemplates', 'editingTemplate', 'availableBranches'));
         }
 
         private function customReportCatalog(): array
@@ -159,6 +160,24 @@ use App\Support\InventoryQuantity;
             return $companyId > 0 ? 'custom_reports_company_' . $companyId : 'custom_reports';
         }
 
+        private function availableCustomReportBranches()
+        {
+            $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+            if ($companyId <= 0) {
+                return collect();
+            }
+
+            $raw = Setting::where('key', 'branches_json_company_' . $companyId)->value('value');
+
+            return collect(json_decode((string) $raw, true) ?: [])
+                ->map(fn ($branch) => [
+                    'id' => (string) ($branch['id'] ?? ''),
+                    'name' => (string) ($branch['name'] ?? ''),
+                ])
+                ->filter(fn ($branch) => $branch['id'] !== '' && $branch['name'] !== '')
+                ->values();
+        }
+
         private function getCustomReportTemplates()
         {
             $raw = Setting::where('key', $this->customReportsSettingKey())->value('value');
@@ -178,7 +197,7 @@ use App\Support\InventoryQuantity;
                         'date_preset' => (string) ($template['date_preset'] ?? 'current_month'),
                         'custom_from_date' => (string) ($template['custom_from_date'] ?? ''),
                         'custom_to_date' => (string) ($template['custom_to_date'] ?? ''),
-                        'branch_scope' => (string) ($template['branch_scope'] ?? 'current'),
+                        'branch_filter' => (string) ($template['branch_filter'] ?? ($template['branch_scope'] ?? 'current')),
                         'created_at' => (string) ($template['created_at'] ?? ''),
                     ];
                 })
@@ -215,6 +234,8 @@ use App\Support\InventoryQuantity;
         public function storeCustomReportTemplate(Request $request)
         {
             $catalog = $this->customReportCatalog();
+            $availableBranches = $this->availableCustomReportBranches();
+            $allowedBranchFilters = array_merge(['current', 'all'], $availableBranches->pluck('id')->all());
 
             $validated = $request->validate([
                 'edit_id' => 'nullable|string',
@@ -223,7 +244,7 @@ use App\Support\InventoryQuantity;
                 'date_preset' => ['required', 'string', Rule::in(['today', 'last_7_days', 'last_30_days', 'current_month', 'last_month', 'current_year', 'custom'])],
                 'custom_from_date' => 'nullable|date',
                 'custom_to_date' => 'nullable|date|after_or_equal:custom_from_date',
-                'branch_scope' => ['required', 'string', Rule::in(['current', 'all'])],
+                'branch_filter' => ['required', 'string', Rule::in($allowedBranchFilters)],
             ]);
 
             if ($validated['date_preset'] === 'custom' && (!$request->filled('custom_from_date') || !$request->filled('custom_to_date'))) {
@@ -240,7 +261,7 @@ use App\Support\InventoryQuantity;
                 'date_preset' => $validated['date_preset'],
                 'custom_from_date' => (string) ($validated['custom_from_date'] ?? ''),
                 'custom_to_date' => (string) ($validated['custom_to_date'] ?? ''),
-                'branch_scope' => $validated['branch_scope'],
+                'branch_filter' => $validated['branch_filter'],
                 'created_at' => now()->toDateTimeString(),
             ];
 
@@ -296,9 +317,13 @@ use App\Support\InventoryQuantity;
                 $params[$definition['date_param']] = $to;
             }
 
-            if (($template['branch_scope'] ?? 'current') === 'all') {
+            $branchFilter = (string) ($template['branch_filter'] ?? 'current');
+
+            if ($branchFilter === 'all') {
                 $params['all_branches'] = 1;
                 $params['branch_scope'] = 'all';
+            } elseif ($branchFilter !== 'current') {
+                $params['branch_id'] = $branchFilter;
             }
 
             return redirect()->route($definition['route'], $params);
@@ -329,7 +354,7 @@ use App\Support\InventoryQuantity;
                 'date_preset' => $template['date_preset'],
                 'custom_from_date' => (string) ($template['custom_from_date'] ?? ''),
                 'custom_to_date' => (string) ($template['custom_to_date'] ?? ''),
-                'branch_scope' => $template['branch_scope'],
+                'branch_filter' => (string) ($template['branch_filter'] ?? 'current'),
                 'created_at' => now()->toDateTimeString(),
             ]);
 
