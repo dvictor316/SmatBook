@@ -513,7 +513,16 @@
                                     <div style="margin-bottom:10px;">
                                         <label class="coa-field-label">Sub Type</label>
                                         <select name="sub_type" id="accountSubTypeSelect" class="coa-input">
-                                            <option value="">Select type first…</option>
+                                            <option value="">Select sub type…</option>
+                                            @foreach($formSubtypeMap as $parentType => $subtypes)
+                                                <optgroup label="{{ $parentType }}">
+                                                    @foreach($subtypes as $subtype)
+                                                        <option value="{{ $subtype }}" data-parent-type="{{ $parentType }}" {{ old('sub_type') === $subtype ? 'selected' : '' }}>
+                                                            {{ $subtype }}
+                                                        </option>
+                                                    @endforeach
+                                                </optgroup>
+                                            @endforeach
                                         </select>
                                         @error('sub_type')<small style="color:#ef4444;font-size:.72rem;">{{ $message }}</small>@enderror
                                     </div>
@@ -562,24 +571,37 @@ document.addEventListener('DOMContentLoaded', function () {
     var typeSelect    = document.getElementById('accountTypeSelect');
     var subTypeSelect = document.getElementById('accountSubTypeSelect');
     var oldSubType    = @json(old('sub_type'));
+    var allSubtypeMarkup = subTypeSelect ? subTypeSelect.innerHTML : '';
 
     window.updateAccountSubtypeOptions = function (selectedType, preselect) {
+        if (!subTypeSelect) {
+            return;
+        }
+
+        subTypeSelect.innerHTML = allSubtypeMarkup;
+
         var options = subtypeMap[selectedType] || [];
-        subTypeSelect.innerHTML = '';
+        var placeholder = subTypeSelect.querySelector('option[value=""]');
+        var groups = Array.from(subTypeSelect.querySelectorAll('optgroup'));
 
-        var ph = document.createElement('option');
-        ph.value = '';
-        ph.textContent = selectedType ? (options.length ? 'Select sub type…' : 'No sub types available') : 'Select type first…';
-        subTypeSelect.appendChild(ph);
-        subTypeSelect.disabled = options.length === 0;
-
-        options.forEach(function (val) {
-            var opt = document.createElement('option');
-            opt.value = val;
-            opt.textContent = val;
-            if (preselect && val === preselect) { opt.selected = true; }
-            subTypeSelect.appendChild(opt);
+        groups.forEach(function (group) {
+            var groupType = group.getAttribute('label');
+            var showGroup = !selectedType || groupType === selectedType;
+            group.disabled = !showGroup;
+            group.hidden = !showGroup;
         });
+
+        if (placeholder) {
+            placeholder.textContent = selectedType ? (options.length ? 'Select sub type…' : 'No sub types available') : 'Select sub type…';
+        }
+
+        if (preselect) {
+            subTypeSelect.value = preselect;
+        } else if (selectedType && options.length === 1) {
+            subTypeSelect.value = options[0];
+        } else {
+            subTypeSelect.value = '';
+        }
     };
 
     if (typeSelect && subTypeSelect) {
@@ -588,6 +610,12 @@ document.addEventListener('DOMContentLoaded', function () {
             window.updateAccountSubtypeOptions(this.value, '');
         });
     }
+
+    window.setTimeout(function () {
+        if (typeSelect && subTypeSelect) {
+            window.updateAccountSubtypeOptions(typeSelect.value, subTypeSelect.value || oldSubType);
+        }
+    }, 0);
 
     /* ── Live search + filter ── */
     var searchInput  = document.getElementById('coaSearch');
