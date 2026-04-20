@@ -491,12 +491,10 @@
                                         </div>
                                         <div>
                                             <label class="coa-field-label">Type <span style="color:#ef4444">*</span></label>
-                                            <select name="type" id="accountTypeSelect" class="coa-input {{ $errors->has('type') ? 'is-invalid' : '' }}" required>
+                                            <select name="type" id="accountTypeSelect" class="coa-input {{ $errors->has('type') ? 'is-invalid' : '' }}" onchange="window.updateAccountSubtypeOptions && window.updateAccountSubtypeOptions(this.value, '');" required>
                                                 <option value="">Select…</option>
                                                 @foreach($formAccountTypes as $t)
-                                                    <option value="{{ $t }}"
-                                                        data-subtypes="{{ implode('||', $formSubtypeMap[$t] ?? []) }}"
-                                                        {{ old('type') === $t ? 'selected' : '' }}>{{ $t }}</option>
+                                                    <option value="{{ $t }}" {{ old('type') === $t ? 'selected' : '' }}>{{ $t }}</option>
                                                 @endforeach
                                             </select>
                                             @error('type')<small style="color:#ef4444;font-size:.72rem;">{{ $message }}</small>@enderror
@@ -558,24 +556,23 @@
         </div>{{-- /.row --}}
     </div>
 </div>
-@endsection
-
-@push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    var subtypeMap    = @json($formSubtypeMap);
     var typeSelect    = document.getElementById('accountTypeSelect');
     var subTypeSelect = document.getElementById('accountSubTypeSelect');
-    var oldSubType    = '{{ addslashes(old('sub_type', '')) }}';
+    var oldSubType    = @json(old('sub_type'));
 
-    function buildSubtypeOptions(selectedOption, preselect) {
-        var raw = selectedOption ? (selectedOption.getAttribute('data-subtypes') || '') : '';
-        var options = raw.length ? raw.split('||') : [];
+    window.updateAccountSubtypeOptions = function (selectedType, preselect) {
+        var options = subtypeMap[selectedType] || [];
         subTypeSelect.innerHTML = '';
+
         var ph = document.createElement('option');
         ph.value = '';
-        ph.textContent = options.length ? 'Select sub type…' : 'Select type first…';
+        ph.textContent = selectedType ? (options.length ? 'Select sub type…' : 'No sub types available') : 'Select type first…';
         subTypeSelect.appendChild(ph);
         subTypeSelect.disabled = options.length === 0;
+
         options.forEach(function (val) {
             var opt = document.createElement('option');
             opt.value = val;
@@ -583,12 +580,12 @@ document.addEventListener('DOMContentLoaded', function () {
             if (preselect && val === preselect) { opt.selected = true; }
             subTypeSelect.appendChild(opt);
         });
-    }
+    };
 
     if (typeSelect && subTypeSelect) {
-        buildSubtypeOptions(typeSelect.options[typeSelect.selectedIndex], oldSubType);
+        window.updateAccountSubtypeOptions(typeSelect.value, oldSubType);
         typeSelect.addEventListener('change', function () {
-            buildSubtypeOptions(this.options[this.selectedIndex], '');
+            window.updateAccountSubtypeOptions(this.value, '');
         });
     }
 
@@ -622,4 +619,4 @@ document.addEventListener('DOMContentLoaded', function () {
     if (statusFilter) statusFilter.addEventListener('change', applyFilters);
 });
 </script>
-@endpush
+@endsection
