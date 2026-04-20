@@ -489,5 +489,13 @@
         document.getElementById('display-grandtotal').innerText = '₦' + grandTotal.toLocaleString();
         document.getElementById('hidden-total-amount').value = grandTotal.toFixed(2);
     }
+
+    // Prevent double-submit (double-click or back+resubmit)
+    document.getElementById('invoice-form').addEventListener('submit', function () {
+        this.querySelectorAll('[type="submit"]').forEach(function (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving...';
+        });
+    });
 </script>
 @endsection
