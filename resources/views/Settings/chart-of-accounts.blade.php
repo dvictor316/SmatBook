@@ -307,6 +307,16 @@
     .coa-empty p { margin: 0; font-size: 0.82rem; }
 </style>
 
+@php
+    // Safe fallback: always have account type options available even if controller didn't pass them
+    $formAccountTypes = (isset($accountTypes) && is_array($accountTypes) && count($accountTypes) > 0)
+        ? $accountTypes
+        : [\App\Models\Account::TYPE_ASSET, \App\Models\Account::TYPE_LIABILITY, \App\Models\Account::TYPE_EQUITY, \App\Models\Account::TYPE_REVENUE, \App\Models\Account::TYPE_EXPENSE];
+    $formSubtypeMap = (isset($subtypeOptionsByType) && is_array($subtypeOptionsByType) && count($subtypeOptionsByType) > 0)
+        ? $subtypeOptionsByType
+        : \App\Models\Account::subtypeOptionsByType();
+@endphp
+
 <div class="page-wrapper">
     <div class="content container-fluid">
         <div class="row">
@@ -369,7 +379,7 @@
                             </div>
                             <select id="coaTypeFilter" class="coa-filter-select">
                                 <option value="">All Types</option>
-                                @foreach($accountTypes as $t)
+                                @foreach($formAccountTypes as $t)
                                     <option value="{{ $t }}">{{ $t }}</option>
                                 @endforeach
                             </select>
@@ -483,9 +493,9 @@
                                             <label class="coa-field-label">Type <span style="color:#ef4444">*</span></label>
                                             <select name="type" id="accountTypeSelect" class="coa-input {{ $errors->has('type') ? 'is-invalid' : '' }}" required>
                                                 <option value="">Select…</option>
-                                                @foreach($accountTypes as $t)
+                                                @foreach($formAccountTypes as $t)
                                                     <option value="{{ $t }}"
-                                                        data-subtypes="{{ implode('||', $subtypeOptionsByType[$t] ?? []) }}"
+                                                        data-subtypes="{{ implode('||', $formSubtypeMap[$t] ?? []) }}"
                                                         {{ old('type') === $t ? 'selected' : '' }}>{{ $t }}</option>
                                                 @endforeach
                                             </select>
