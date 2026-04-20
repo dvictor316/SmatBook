@@ -47,9 +47,20 @@ class Handler extends ExceptionHandler
 
             app(\App\Http\Controllers\AuthController::class)->clearClientAuthState($request);
 
+            $sessionCookieName = (string) config('session.cookie');
+            $xsrfCookieName    = 'XSRF-TOKEN';
+
+            // Explicitly expire both cookies in the redirect response so that
+            // mobile browsers (which may ignore queued CookieJar deletions on
+            // redirect) actually receive Max-Age=0 and clear them immediately.
+            $expiredSession = \Illuminate\Support\Facades\Cookie::forget($sessionCookieName);
+            $expiredXsrf    = \Illuminate\Support\Facades\Cookie::forget($xsrfCookieName);
+
             return redirect()
                 ->guest($this->resolveLoginRedirect($request, ['expired' => 1, 'flush' => 1]))
-                ->withErrors(['login' => $message]);
+                ->withErrors(['login' => $message])
+                ->withCookie($expiredSession)
+                ->withCookie($expiredXsrf);
         });
 
         $this->renderable(function (AuthenticationException $e, $request) {
@@ -63,9 +74,15 @@ class Handler extends ExceptionHandler
                 app(\App\Http\Controllers\AuthController::class)->clearClientAuthState($request);
             }
 
+            $sessionCookieName = (string) config('session.cookie');
+            $expiredSession = \Illuminate\Support\Facades\Cookie::forget($sessionCookieName);
+            $expiredXsrf    = \Illuminate\Support\Facades\Cookie::forget('XSRF-TOKEN');
+
             return redirect()
                 ->guest($this->resolveLoginRedirect($request, ['expired' => 1, 'flush' => 1]))
-                ->withErrors(['login' => $message]);
+                ->withErrors(['login' => $message])
+                ->withCookie($expiredSession)
+                ->withCookie($expiredXsrf);
         });
 
         $this->renderable(function (ValidationException $e, $request) {
