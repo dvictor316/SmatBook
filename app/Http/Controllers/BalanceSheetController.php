@@ -228,6 +228,13 @@ class BalanceSheetController extends Controller
                 $branchId = trim((string) ($activeBranch['id'] ?? ''));
                 $branchName = trim((string) ($activeBranch['name'] ?? ''));
 
+                // No branch resolved → show all accounts (same as transaction query).
+                // Without this guard the query degrades to WHERE (branch_id IS NULL OR branch_id = '')
+                // which silently excludes every COA account that has a branch assigned.
+                if ($branchId === '' && $branchName === '') {
+                    return;
+                }
+
                 return $query->where(function ($sub) use ($branchId, $branchName) {
                     if ($branchId !== '') {
                         $sub->where('branch_id', $branchId);
@@ -235,8 +242,8 @@ class BalanceSheetController extends Controller
                     if ($branchName !== '') {
                         $sub->orWhere('branch_name', $branchName);
                     }
-                    // Also include global accounts with no branch assignment
-                    // (system accounts like Accounts Receivable, Sales Revenue, Petty Cash)
+                    // Always include global/system accounts with no branch assignment
+                    // (Accounts Receivable, Sales Revenue, Petty Cash, etc.)
                     $sub->orWhereNull('branch_id')
                         ->orWhere('branch_id', '');
                 });
