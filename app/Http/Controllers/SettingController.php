@@ -449,14 +449,30 @@ class SettingController extends Controller
                 ->when(Schema::hasTable('transactions'), fn ($query) => $query->withCount('transactions'))
                 ->orderByRaw("FIELD(type, 'Asset', 'Liability', 'Equity', 'Revenue', 'Expense')")
                 ->orderBy('code')
-                ->get()
-                ->map(function (Account $account) {
-                    if (is_null($account->current_balance) && Schema::hasTable('transactions')) {
-                        $account->current_balance = $account->calculateBalance();
-                    }
+                ->get();
 
+            // Compute balances from transactions in a single aggregate query so
+            // the COA stats always agree with the Balance Sheet (which also computes
+            // from transactions). The stored current_balance column can become stale
+            // because LedgerService doesn't update it after every posting.
+            if (Schema::hasTable('transactions')) {
+                $txnTotals = \App\Models\Transaction::query()
+                    ->selectRaw('account_id, SUM(debit) as total_debit, SUM(credit) as total_credit')
+                    ->groupBy('account_id')
+                    ->get()
+                    ->keyBy('account_id');
+
+                $accounts = $accounts->map(function (Account $account) use ($txnTotals) {
+                    $t   = $txnTotals->get($account->id);
+                    $dr  = (float) ($t->total_debit  ?? 0);
+                    $cr  = (float) ($t->total_credit ?? 0);
+                    $ob  = (float) ($account->opening_balance ?? 0);
+                    $isDebit = in_array($account->type, [Account::TYPE_ASSET, Account::TYPE_EXPENSE]);
+                    // In-memory only — does NOT write to DB
+                    $account->current_balance = $isDebit ? ($ob + $dr) - $cr : ($ob + $cr) - $dr;
                     return $account;
                 });
+            }
 
             $accountGroups = $accounts->groupBy('type');
 
