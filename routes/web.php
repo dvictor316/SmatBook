@@ -105,6 +105,14 @@ Route::get('/session/ping', function () {
     ]);
 })->name('session.ping');
 
+Route::get('/session/csrf-token', function (\Illuminate\Http\Request $request) {
+    $request->session()->regenerateToken();
+
+    return response()->json([
+        'token' => csrf_token(),
+    ])->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+})->name('session.csrf-token');
+
 Route::get('/workspace-not-found', function () {
     return response()->view('errors.workspace-not-found', [], 404);
 })->name('workspace.not.found');

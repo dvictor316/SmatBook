@@ -47,6 +47,54 @@
     })();
 </script>
 
+<script>
+    (function () {
+        const form = document.querySelector('form[action="{{ route('saas-login.post') }}"]');
+
+        if (!form) {
+            return;
+        }
+
+        let isRefreshingToken = false;
+
+        form.addEventListener('submit', async function (event) {
+            if (isRefreshingToken) {
+                return;
+            }
+
+            event.preventDefault();
+            isRefreshingToken = true;
+
+            try {
+                const response = await fetch('{{ route('session.csrf-token') }}', {
+                    method: 'GET',
+                    credentials: 'same-origin',
+                    cache: 'no-store',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                });
+
+                if (!response.ok) {
+                    throw new Error('Unable to refresh CSRF token.');
+                }
+
+                const data = await response.json();
+                const tokenInput = form.querySelector('input[name="_token"]');
+
+                if (tokenInput && data.token) {
+                    tokenInput.value = data.token;
+                }
+            } catch (error) {
+                console.warn('CSRF refresh failed before login submit.', error);
+            }
+
+            form.submit();
+        });
+    })();
+</script>
+
 <div class="login-wrapper">
     <div class="container">
 
