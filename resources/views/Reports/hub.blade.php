@@ -185,6 +185,8 @@
 .rl-inline-form{margin:0;}
 .rl-run.rl-delete{background:#fff;color:#dc2626;border:1px solid #fecaca;box-shadow:none;}
 .rl-run.rl-delete:hover{background:#fef2f2;color:#b91c1c;}
+.rl-run.rl-secondary{background:#fff;color:#1d4ed8;border:1px solid #bfdbfe;box-shadow:none;}
+.rl-run.rl-secondary:hover{background:#eff6ff;color:#1d4ed8;}
 @media(max-width:900px){.rh-form-grid{grid-template-columns:1fr 1fr;}}
 @media(max-width:700px){.rh-form-grid{grid-template-columns:1fr;}.rh-custom-builder{padding:12px;}}
 
@@ -664,6 +666,11 @@
                         <button class="rl-star" data-id="custom-template-{{ $template['id'] }}" title="Favourite"><i class="far fa-star"></i></button>
                         <a href="{{ route('reports.custom.run', $template['id']) }}" class="rl-name">{{ $template['name'] }} <span style="color:#94a3b8;font-weight:500;">• {{ $template['report_label'] }}</span></a>
                         <a href="{{ route('reports.custom.run', $template['id']) }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                        <a href="{{ route('reports.hub', ['tab' => 'custom', 'edit_template' => $template['id']]) }}" class="rl-run rl-secondary"><i class="fas fa-pen"></i> Edit</a>
+                        <form method="POST" action="{{ route('reports.custom.duplicate', $template['id']) }}" class="rl-inline-form">
+                            @csrf
+                            <button type="submit" class="rl-run rl-secondary"><i class="fas fa-copy"></i> Duplicate</button>
+                        </form>
                         <form method="POST" action="{{ route('reports.custom.destroy', $template['id']) }}" class="rl-inline-form">
                             @csrf
                             @method('DELETE')
@@ -676,57 +683,61 @@
                     <div class="rh-custom-shell">
                         <div class="rh-custom-head">
                             <div>
-                                <p class="rh-custom-title">Save a reusable report template</p>
-                                <p class="rh-custom-copy">Pick a report, set the date logic, choose branch scope, and launch it any time from this tab.</p>
+                                <p class="rh-custom-title">{{ !empty($editingTemplate) ? 'Edit saved report template' : 'Save a reusable report template' }}</p>
+                                <p class="rh-custom-copy">{{ !empty($editingTemplate) ? 'Update this template and keep using it from the custom reports list.' : 'Pick a report, set the date logic, choose branch scope, and launch it any time from this tab.' }}</p>
                             </div>
+                            @if(!empty($editingTemplate))
+                                <a href="{{ route('reports.hub', ['tab' => 'custom']) }}" class="rl-run rl-secondary"><i class="fas fa-times"></i> Cancel Edit</a>
+                            @endif
                         </div>
                         <form method="POST" action="{{ route('reports.custom.store') }}">
                             @csrf
+                            <input type="hidden" name="edit_id" value="{{ $editingTemplate['id'] ?? '' }}">
                             <div class="rh-form-grid">
                                 <div class="rh-form-field">
                                     <label>Template Name</label>
-                                    <input type="text" name="name" class="rh-form-input" value="{{ old('name') }}" placeholder="Monthly performance pack" required>
+                                    <input type="text" name="name" class="rh-form-input" value="{{ old('name', $editingTemplate['name'] ?? '') }}" placeholder="Monthly performance pack" required>
                                 </div>
                                 <div class="rh-form-field">
                                     <label>Report Type</label>
                                     <select name="report_key" class="rh-form-select" required>
                                         <option value="">Select report...</option>
                                         @foreach(($customReportCatalog ?? []) as $reportKey => $definition)
-                                            <option value="{{ $reportKey }}" {{ old('report_key') === $reportKey ? 'selected' : '' }}>{{ $definition['label'] }}</option>
+                                            <option value="{{ $reportKey }}" {{ old('report_key', $editingTemplate['report_key'] ?? '') === $reportKey ? 'selected' : '' }}>{{ $definition['label'] }}</option>
                                         @endforeach
                                     </select>
                                 </div>
                                 <div class="rh-form-field">
                                     <label>Branch Scope</label>
                                     <select name="branch_scope" class="rh-form-select" required>
-                                        <option value="current" {{ old('branch_scope', 'current') === 'current' ? 'selected' : '' }}>Current branch only</option>
-                                        <option value="all" {{ old('branch_scope') === 'all' ? 'selected' : '' }}>All branches</option>
+                                        <option value="current" {{ old('branch_scope', $editingTemplate['branch_scope'] ?? 'current') === 'current' ? 'selected' : '' }}>Current branch only</option>
+                                        <option value="all" {{ old('branch_scope', $editingTemplate['branch_scope'] ?? 'current') === 'all' ? 'selected' : '' }}>All branches</option>
                                     </select>
                                 </div>
                                 <div class="rh-form-field">
                                     <label>Date Preset</label>
                                     <select name="date_preset" class="rh-form-select" required>
-                                        <option value="current_month" {{ old('date_preset', 'current_month') === 'current_month' ? 'selected' : '' }}>Current month</option>
-                                        <option value="today" {{ old('date_preset') === 'today' ? 'selected' : '' }}>Today</option>
-                                        <option value="last_7_days" {{ old('date_preset') === 'last_7_days' ? 'selected' : '' }}>Last 7 days</option>
-                                        <option value="last_30_days" {{ old('date_preset') === 'last_30_days' ? 'selected' : '' }}>Last 30 days</option>
-                                        <option value="last_month" {{ old('date_preset') === 'last_month' ? 'selected' : '' }}>Last month</option>
-                                        <option value="current_year" {{ old('date_preset') === 'current_year' ? 'selected' : '' }}>Current year</option>
-                                        <option value="custom" {{ old('date_preset') === 'custom' ? 'selected' : '' }}>Custom range</option>
+                                        <option value="current_month" {{ old('date_preset', $editingTemplate['date_preset'] ?? 'current_month') === 'current_month' ? 'selected' : '' }}>Current month</option>
+                                        <option value="today" {{ old('date_preset', $editingTemplate['date_preset'] ?? 'current_month') === 'today' ? 'selected' : '' }}>Today</option>
+                                        <option value="last_7_days" {{ old('date_preset', $editingTemplate['date_preset'] ?? 'current_month') === 'last_7_days' ? 'selected' : '' }}>Last 7 days</option>
+                                        <option value="last_30_days" {{ old('date_preset', $editingTemplate['date_preset'] ?? 'current_month') === 'last_30_days' ? 'selected' : '' }}>Last 30 days</option>
+                                        <option value="last_month" {{ old('date_preset', $editingTemplate['date_preset'] ?? 'current_month') === 'last_month' ? 'selected' : '' }}>Last month</option>
+                                        <option value="current_year" {{ old('date_preset', $editingTemplate['date_preset'] ?? 'current_month') === 'current_year' ? 'selected' : '' }}>Current year</option>
+                                        <option value="custom" {{ old('date_preset', $editingTemplate['date_preset'] ?? 'current_month') === 'custom' ? 'selected' : '' }}>Custom range</option>
                                     </select>
                                 </div>
                                 <div class="rh-form-field">
                                     <label>Custom Start</label>
-                                    <input type="date" name="custom_from_date" class="rh-form-input" value="{{ old('custom_from_date') }}">
+                                    <input type="date" name="custom_from_date" class="rh-form-input" value="{{ old('custom_from_date', $editingTemplate['custom_from_date'] ?? '') }}">
                                 </div>
                                 <div class="rh-form-field">
                                     <label>Custom End</label>
-                                    <input type="date" name="custom_to_date" class="rh-form-input" value="{{ old('custom_to_date') }}">
+                                    <input type="date" name="custom_to_date" class="rh-form-input" value="{{ old('custom_to_date', $editingTemplate['custom_to_date'] ?? '') }}">
                                 </div>
                             </div>
                             <div class="rh-custom-actions">
                                 <div class="rh-custom-note">Use custom dates only when the preset is set to custom. Snapshot reports will use the end date as the “as of” date.</div>
-                                <button type="submit" class="rh-custom-submit"><i class="fas fa-save"></i> Save Template</button>
+                                <button type="submit" class="rh-custom-submit"><i class="fas fa-save"></i> {{ !empty($editingTemplate) ? 'Update Template' : 'Save Template' }}</button>
                             </div>
                         </form>
                     </div>

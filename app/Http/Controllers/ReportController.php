@@ -51,8 +51,14 @@ use App\Support\InventoryQuantity;
         {
             $customReportCatalog = $this->customReportCatalog();
             $customReportTemplates = $this->getCustomReportTemplates();
+            $editingTemplate = null;
+            $editTemplateId = trim((string) request()->query('edit_template', ''));
 
-            return view('Reports.hub', compact('customReportCatalog', 'customReportTemplates'));
+            if ($editTemplateId !== '') {
+                $editingTemplate = $customReportTemplates->firstWhere('id', $editTemplateId);
+            }
+
+            return view('Reports.hub', compact('customReportCatalog', 'customReportTemplates', 'editingTemplate'));
         }
 
         private function customReportCatalog(): array
@@ -211,6 +217,7 @@ use App\Support\InventoryQuantity;
             $catalog = $this->customReportCatalog();
 
             $validated = $request->validate([
+                'edit_id' => 'nullable|string',
                 'name' => 'required|string|max:120',
                 'report_key' => ['required', 'string', Rule::in(array_keys($catalog))],
                 'date_preset' => ['required', 'string', Rule::in(['today', 'last_7_days', 'last_30_days', 'current_month', 'last_month', 'current_year', 'custom'])],
@@ -226,8 +233,8 @@ use App\Support\InventoryQuantity;
             }
 
             $templates = $this->getCustomReportTemplates();
-            $templates->push([
-                'id' => (string) Str::uuid(),
+            $payload = [
+                'id' => trim((string) ($validated['edit_id'] ?? '')) !== '' ? trim((string) $validated['edit_id']) : (string) Str::uuid(),
                 'name' => trim((string) $validated['name']),
                 'report_key' => $validated['report_key'],
                 'date_preset' => $validated['date_preset'],
@@ -235,11 +242,25 @@ use App\Support\InventoryQuantity;
                 'custom_to_date' => (string) ($validated['custom_to_date'] ?? ''),
                 'branch_scope' => $validated['branch_scope'],
                 'created_at' => now()->toDateTimeString(),
-            ]);
+            ];
+
+            $editId = trim((string) ($validated['edit_id'] ?? ''));
+            if ($editId !== '') {
+                $existing = $templates->firstWhere('id', $editId);
+                if ($existing) {
+                    $payload['created_at'] = (string) ($existing['created_at'] ?? $payload['created_at']);
+                }
+
+                $templates = $templates
+                    ->map(fn ($template) => (string) ($template['id'] ?? '') === $editId ? $payload : $template)
+                    ->values();
+            } else {
+                $templates->push($payload);
+            }
 
             $this->persistCustomReportTemplates($templates);
 
-            return redirect()->route('reports.hub', ['tab' => 'custom'])->with('success', 'Custom report template saved.');
+            return redirect()->route('reports.hub', ['tab' => 'custom'])->with('success', $editId !== '' ? 'Custom report template updated.' : 'Custom report template saved.');
         }
 
         public function runCustomReportTemplate(string $templateId)
@@ -292,6 +313,29 @@ use App\Support\InventoryQuantity;
             $this->persistCustomReportTemplates($templates);
 
             return redirect()->route('reports.hub', ['tab' => 'custom'])->with('success', 'Custom report template removed.');
+        }
+
+        public function duplicateCustomReportTemplate(string $templateId)
+        {
+            $template = $this->getCustomReportTemplates()->firstWhere('id', $templateId);
+
+            abort_unless($template, 404);
+
+            $templates = $this->getCustomReportTemplates();
+            $templates->push([
+                'id' => (string) Str::uuid(),
+                'name' => $template['name'] . ' Copy',
+                'report_key' => $template['report_key'],
+                'date_preset' => $template['date_preset'],
+                'custom_from_date' => (string) ($template['custom_from_date'] ?? ''),
+                'custom_to_date' => (string) ($template['custom_to_date'] ?? ''),
+                'branch_scope' => $template['branch_scope'],
+                'created_at' => now()->toDateTimeString(),
+            ]);
+
+            $this->persistCustomReportTemplates($templates);
+
+            return redirect()->route('reports.hub', ['tab' => 'custom'])->with('success', 'Custom report template duplicated.');
         }
 
         private function ignoredAppliedPaymentStatuses(): array

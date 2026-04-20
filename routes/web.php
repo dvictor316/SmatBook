@@ -548,6 +548,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/reports', [ReportController::class, 'reportsHub'])->name('reports.hub');
     Route::post('/reports/custom-templates', [ReportController::class, 'storeCustomReportTemplate'])->name('reports.custom.store');
     Route::get('/reports/custom-templates/{templateId}/run', [ReportController::class, 'runCustomReportTemplate'])->name('reports.custom.run');
+    Route::post('/reports/custom-templates/{templateId}/duplicate', [ReportController::class, 'duplicateCustomReportTemplate'])->name('reports.custom.duplicate');
     Route::delete('/reports/custom-templates/{templateId}', [ReportController::class, 'destroyCustomReportTemplate'])->name('reports.custom.destroy');
 });
 
