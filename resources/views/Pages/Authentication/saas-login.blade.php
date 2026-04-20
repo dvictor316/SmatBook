@@ -522,6 +522,47 @@
     }
 </style>
 
+<script>
+    (function () {
+        const params = new URLSearchParams(window.location.search);
+        const shouldFlush = params.has('flush') || params.has('expired') || params.has('logout');
+        const navEntry = performance.getEntriesByType ? performance.getEntriesByType('navigation')[0] : null;
+        const navType = navEntry && navEntry.type ? navEntry.type : '';
+        const pageRestoreKey = 'smat-login-bfcache-refresh';
+
+        const clearClientState = function () {
+            try {
+                window.localStorage.clear();
+            } catch (error) {}
+
+            try {
+                window.sessionStorage.clear();
+            } catch (error) {}
+        };
+
+        if (shouldFlush) {
+            clearClientState();
+        }
+
+        window.addEventListener('pageshow', function (event) {
+            const restoredFromCache = event.persisted || navType === 'back_forward';
+
+            if (!restoredFromCache) {
+                return;
+            }
+
+            if (window.sessionStorage.getItem(pageRestoreKey)) {
+                window.sessionStorage.removeItem(pageRestoreKey);
+                return;
+            }
+
+            clearClientState();
+            window.sessionStorage.setItem(pageRestoreKey, '1');
+            window.location.replace(window.location.pathname + '?refresh=' + Date.now());
+        });
+    })();
+</script>
+
 <div class="smat-viewport">
 
     

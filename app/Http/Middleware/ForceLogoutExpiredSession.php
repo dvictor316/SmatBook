@@ -57,12 +57,7 @@ class ForceLogoutExpiredSession
 
     private function logoutExpiredSession(Request $request)
     {
-        $this->deviceSessionManager->forgetCurrentSession($request);
-
-        Auth::logout();
-        $request->session()->flush();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        app(\App\Http\Controllers\AuthController::class)->clearClientAuthState($request);
 
         $message = 'Your session expired. Please login again to continue.';
 
@@ -71,20 +66,20 @@ class ForceLogoutExpiredSession
         }
 
         return redirect()
-            ->guest($this->resolveLoginRedirect($request))
+            ->guest($this->resolveLoginRedirect($request, ['expired' => 1, 'flush' => 1]))
             ->withErrors(['login' => $message]);
     }
 
-    private function resolveLoginRedirect(Request $request): string
+    private function resolveLoginRedirect(Request $request, array $query = []): string
     {
         $host = (string) $request->getHost();
         $mainDomain = ltrim((string) (config('app.domain') ?: parse_url((string) config('app.url'), PHP_URL_HOST) ?: 'smartprobook.com'), '.');
 
         if ($host !== $mainDomain && str_contains($host, $mainDomain)) {
-            return route('login');
+            return route('login', $query);
         }
 
-        return route('saas-login');
+        return route('saas-login', $query);
     }
 
     private function shouldReturnJson(Request $request): bool

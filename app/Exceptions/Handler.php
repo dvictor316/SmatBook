@@ -45,12 +45,10 @@ class Handler extends ExceptionHandler
                 return response()->json(['message' => $message], 419);
             }
 
-            Auth::logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
+            app(\App\Http\Controllers\AuthController::class)->clearClientAuthState($request);
 
             return redirect()
-                ->guest($this->resolveLoginRedirect($request))
+                ->guest($this->resolveLoginRedirect($request, ['expired' => 1, 'flush' => 1]))
                 ->withErrors(['login' => $message]);
         });
 
@@ -61,15 +59,12 @@ class Handler extends ExceptionHandler
                 return response()->json(['message' => $message], 401);
             }
 
-            $loginUrl = $this->resolveLoginRedirect($request);
-
             if ($request->hasSession()) {
-                $request->session()->invalidate();
-                $request->session()->regenerateToken();
+                app(\App\Http\Controllers\AuthController::class)->clearClientAuthState($request);
             }
 
             return redirect()
-                ->guest($loginUrl)
+                ->guest($this->resolveLoginRedirect($request, ['expired' => 1, 'flush' => 1]))
                 ->withErrors(['login' => $message]);
         });
 
@@ -230,16 +225,16 @@ class Handler extends ExceptionHandler
         return 'Database error occurred. Please contact support if it persists.';
     }
 
-    private function resolveLoginRedirect($request): string
+    private function resolveLoginRedirect($request, array $query = []): string
     {
         $host = (string) $request->getHost();
         $mainDomain = ltrim((string) (config('app.domain') ?: parse_url((string) config('app.url'), PHP_URL_HOST) ?: 'smartprobook.com'), '.');
 
         if ($host !== $mainDomain && str_contains($host, $mainDomain)) {
-            return route('login');
+            return route('login', $query);
         }
 
-        return route('saas-login');
+        return route('saas-login', $query);
     }
 
     protected function shouldReturnJson($request, Throwable $e = null): bool

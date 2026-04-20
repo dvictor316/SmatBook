@@ -6,6 +6,7 @@ use App\Models\{User, Company, Subscription, Plan, DeploymentManager};
 use App\Support\ActiveBranchResolver;
 use App\Support\DeviceSessionManager;
 use App\Support\SystemEventMailer;
+use Illuminate\Cookie\CookieJar;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\{Auth, DB, Hash, Log, Password, RateLimiter, Schema, Session, Storage};
@@ -267,13 +268,17 @@ class AuthController extends Controller
             return $this->handlePostLoginRedirect();
         }
 
+        if ($request->boolean('flush')) {
+            $this->clearClientAuthState($request);
+        }
+
         $request->session()->regenerateToken();
 
-        return response()
+        return $this->applyNoStoreHeaders(response()
             ->view('Pages.Authentication.saas-login', ['company' => $this->getTenantDetails()])
             ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
             ->header('Pragma', 'no-cache')
-            ->header('Expires', 'Sat, 01 Jan 2000 00:00:00 GMT');
+            ->header('Expires', 'Sat, 01 Jan 2000 00:00:00 GMT'));
     }
 
     /**
@@ -393,8 +398,19 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
+        $this->clearClientAuthState($request);
+
+        return $this->applyNoStoreHeaders(
+            redirect()->route('login', ['logout' => 1, 'flush' => 1])
+                ->with('success', 'Logged out successfully. You can now sign in with another account.')
+        );
+    }
+
+    public function clearClientAuthState(Request $request): void
+    {
         app(DeviceSessionManager::class)->forgetCurrentSession($request);
         Auth::logout();
+
         $request->session()->forget([
             'url.intended',
             'current_tenant_id',
@@ -418,11 +434,27 @@ class AuthController extends Controller
             'deployment_plan_name',
             'impersonator_user_id',
             'is_impersonating',
+            'social_auth_context',
+            'last_activity',
         ]);
+
         Session::flush();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        return redirect()->to('/login')->with('success', 'Logged out successfully. You can now sign in with another account.');
+
+        /** @var CookieJar $cookies */
+        $cookies = app(CookieJar::class);
+        $cookies->queue($cookies->forget((string) config('session.cookie')));
+        $cookies->queue($cookies->forget('XSRF-TOKEN'));
+    }
+
+    private function applyNoStoreHeaders($response)
+    {
+        return $response
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0, private')
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', 'Sat, 01 Jan 2000 00:00:00 GMT')
+            ->header('Clear-Site-Data', '"cache", "cookies", "storage"');
     }
 
     /**
