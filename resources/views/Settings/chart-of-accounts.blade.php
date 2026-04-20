@@ -22,8 +22,51 @@
 
     @media (max-width: 991px) {
         .coa-wrap  { flex-direction: column-reverse; }
-        .coa-right { width: 100%; position: static; }
+        .coa-right { width: 100%; position: static; margin-bottom: 18px; }
+        .coa-left { width: 100%; }
     }
+
+    @media (max-width: 767px) {
+        .coa-stats {
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+        .coa-stat {
+            padding: 12px 10px;
+            font-size: 1rem;
+        }
+        .coa-toolbar {
+            flex-direction: column;
+            gap: 8px;
+            padding: 8px 6px;
+        }
+        .coa-block-head, .coa-panel-head {
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 10px 8px;
+        }
+        .coa-block-title { font-size: 1rem; }
+        .coa-type-chip, .coa-count-badge { font-size: 0.8rem; padding: 4px 10px; }
+        .coa-panel-body { padding: 12px 8px; }
+        .coa-input, .coa-search-input, .coa-filter-select { font-size: 1rem; padding: 10px 12px; }
+        .coa-submit-btn { font-size: 1rem; padding: 12px; }
+        .coa-table thead { display: none; }
+        .coa-table, .coa-table tbody, .coa-table tr, .coa-table td { display: block; width: 100%; }
+        .coa-table tr { margin-bottom: 12px; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.03); background: #fff; }
+        .coa-table td { padding: 8px 10px; border: none; border-bottom: 1px solid #f1f5f9; font-size: 0.98rem; }
+        .coa-table td:last-child { border-bottom: none; }
+        .coa-code, .coa-subtype, .coa-balance, .coa-txn { font-size: 0.95rem; }
+    }
+
+    @media (max-width: 480px) {
+        .coa-stats { gap: 6px; }
+        .coa-stat { font-size: 1.1rem; padding: 10px 6px; }
+        .coa-panel, .coa-block { border-radius: 8px; }
+        .coa-panel-body, .coa-block-head { padding: 8px 4px; }
+        .coa-input, .coa-search-input, .coa-filter-select { font-size: 1.08rem; padding: 12px 8px; }
+        .coa-submit-btn { font-size: 1.08rem; padding: 14px; }
+    }
+
 
     /* ── Stat cards ───────────────────────────────────────── */
     .coa-stats {
@@ -484,18 +527,19 @@
                                     {{-- Row: Code + Type --}}
                                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
                                         <div>
-                                            <label class="coa-field-label">Code</label>
-                                            <input type="text" name="code" id="accountCodeInput" class="coa-input {{ $errors->has('code') ? 'is-invalid' : '' }}"
-                                                   value="{{ old('code') }}" placeholder="Auto generated">
-                                            <small style="display:block;margin-top:4px;color:#94a3b8;font-size:.7rem;">Auto-fills from account type. You can still edit it.</small>
+                                            <label class="coa-field-label">Code <span style="color:#ef4444">*</span></label>
+                                            <input type="text" name="code" class="coa-input {{ $errors->has('code') ? 'is-invalid' : '' }}"
+                                                   value="{{ old('code') }}" placeholder="e.g. 1000" required>
                                             @error('code')<small style="color:#ef4444;font-size:.72rem;">{{ $message }}</small>@enderror
                                         </div>
                                         <div>
                                             <label class="coa-field-label">Type <span style="color:#ef4444">*</span></label>
-                                            <select name="type" id="accountTypeSelect" class="coa-input {{ $errors->has('type') ? 'is-invalid' : '' }}" onchange="window.updateAccountSubtypeOptions && window.updateAccountSubtypeOptions(this.value, ''); window.syncGeneratedAccountCode && window.syncGeneratedAccountCode(this.value);" required>
+                                            <select name="type" id="accountTypeSelect" class="coa-input {{ $errors->has('type') ? 'is-invalid' : '' }}" required>
                                                 <option value="">Select…</option>
                                                 @foreach($formAccountTypes as $t)
-                                                    <option value="{{ $t }}" {{ old('type') === $t ? 'selected' : '' }}>{{ $t }}</option>
+                                                    <option value="{{ $t }}"
+                                                        data-subtypes="{{ implode('||', $formSubtypeMap[$t] ?? []) }}"
+                                                        {{ old('type') === $t ? 'selected' : '' }}>{{ $t }}</option>
                                                 @endforeach
                                             </select>
                                             @error('type')<small style="color:#ef4444;font-size:.72rem;">{{ $message }}</small>@enderror
@@ -514,16 +558,7 @@
                                     <div style="margin-bottom:10px;">
                                         <label class="coa-field-label">Sub Type</label>
                                         <select name="sub_type" id="accountSubTypeSelect" class="coa-input">
-                                            <option value="">Select sub type…</option>
-                                            @foreach($formSubtypeMap as $parentType => $subtypes)
-                                                <optgroup label="{{ $parentType }}">
-                                                    @foreach($subtypes as $subtype)
-                                                        <option value="{{ $subtype }}" data-parent-type="{{ $parentType }}" {{ old('sub_type') === $subtype ? 'selected' : '' }}>
-                                                            {{ $subtype }}
-                                                        </option>
-                                                    @endforeach
-                                                </optgroup>
-                                            @endforeach
+                                            <option value="">Select type first…</option>
                                         </select>
                                         @error('sub_type')<small style="color:#ef4444;font-size:.72rem;">{{ $message }}</small>@enderror
                                     </div>
@@ -566,97 +601,39 @@
         </div>{{-- /.row --}}
     </div>
 </div>
+@endsection
+
+@push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    var subtypeMap    = @json($formSubtypeMap);
     var typeSelect    = document.getElementById('accountTypeSelect');
     var subTypeSelect = document.getElementById('accountSubTypeSelect');
-    var codeInput     = document.getElementById('accountCodeInput');
-    var oldSubType    = @json(old('sub_type'));
-    var allSubtypeMarkup = subTypeSelect ? subTypeSelect.innerHTML : '';
-    var codePrefixes = {
-        Asset: 'AST',
-        Liability: 'LIB',
-        Equity: 'EQT',
-        Revenue: 'REV',
-        Expense: 'EXP'
-    };
-    var codeTouchedManually = !!(codeInput && codeInput.value.trim() !== '');
+    var oldSubType    = '{{ addslashes(old('sub_type', '')) }}';
 
-    function buildGeneratedAccountCode(selectedType) {
-        var prefix = codePrefixes[selectedType] || 'ACC';
-        var suffix = String(Math.floor(Math.random() * 90000) + 10000);
-        return prefix + '-' + suffix;
-    }
-
-    window.updateAccountSubtypeOptions = function (selectedType, preselect) {
-        if (!subTypeSelect) {
-            return;
-        }
-
-        subTypeSelect.innerHTML = allSubtypeMarkup;
-
-        var options = subtypeMap[selectedType] || [];
-        var placeholder = subTypeSelect.querySelector('option[value=""]');
-        var groups = Array.from(subTypeSelect.querySelectorAll('optgroup'));
-
-        groups.forEach(function (group) {
-            var groupType = group.getAttribute('label');
-            var showGroup = !selectedType || groupType === selectedType;
-            group.disabled = !showGroup;
-            group.hidden = !showGroup;
+    function buildSubtypeOptions(selectedOption, preselect) {
+        var raw = selectedOption ? (selectedOption.getAttribute('data-subtypes') || '') : '';
+        var options = raw.length ? raw.split('||') : [];
+        subTypeSelect.innerHTML = '';
+        var ph = document.createElement('option');
+        ph.value = '';
+        ph.textContent = options.length ? 'Select sub type…' : 'Select type first…';
+        subTypeSelect.appendChild(ph);
+        subTypeSelect.disabled = options.length === 0;
+        options.forEach(function (val) {
+            var opt = document.createElement('option');
+            opt.value = val;
+            opt.textContent = val;
+            if (preselect && val === preselect) { opt.selected = true; }
+            subTypeSelect.appendChild(opt);
         });
-
-        if (placeholder) {
-            placeholder.textContent = selectedType ? (options.length ? 'Select sub type…' : 'No sub types available') : 'Select sub type…';
-        }
-
-        if (preselect) {
-            subTypeSelect.value = preselect;
-        } else if (selectedType && options.length === 1) {
-            subTypeSelect.value = options[0];
-        } else {
-            subTypeSelect.value = '';
-        }
-    };
-
-    window.syncGeneratedAccountCode = function (selectedType) {
-        if (!codeInput) {
-            return;
-        }
-
-        if (!selectedType) {
-            if (!codeTouchedManually) {
-                codeInput.value = '';
-            }
-            return;
-        }
-
-        if (!codeTouchedManually) {
-            codeInput.value = buildGeneratedAccountCode(selectedType);
-        }
-    };
+    }
 
     if (typeSelect && subTypeSelect) {
-        window.updateAccountSubtypeOptions(typeSelect.value, oldSubType);
-        window.syncGeneratedAccountCode(typeSelect.value);
+        buildSubtypeOptions(typeSelect.options[typeSelect.selectedIndex], oldSubType);
         typeSelect.addEventListener('change', function () {
-            window.updateAccountSubtypeOptions(this.value, '');
-            window.syncGeneratedAccountCode(this.value);
+            buildSubtypeOptions(this.options[this.selectedIndex], '');
         });
     }
-
-    if (codeInput) {
-        codeInput.addEventListener('input', function () {
-            codeTouchedManually = this.value.trim() !== '';
-        });
-    }
-
-    window.setTimeout(function () {
-        if (typeSelect && subTypeSelect) {
-            window.updateAccountSubtypeOptions(typeSelect.value, subTypeSelect.value || oldSubType);
-        }
-    }, 0);
 
     /* ── Live search + filter ── */
     var searchInput  = document.getElementById('coaSearch');
@@ -688,4 +665,4 @@ document.addEventListener('DOMContentLoaded', function () {
     if (statusFilter) statusFilter.addEventListener('change', applyFilters);
 });
 </script>
-@endsection
+@endpush
