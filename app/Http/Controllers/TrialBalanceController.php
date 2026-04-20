@@ -199,7 +199,10 @@ class TrialBalanceController extends Controller
             ->get();
 
         $accountIds = $txnTotals->keys()->all();
-        $accountsQuery = Account::query()
+        // Use withoutGlobalScopes() to bypass TenantScoped's strict branch filter.
+        // System-created accounts (AR, Revenue, Petty Cash) may have branch_id = ''
+        // and would otherwise be excluded. We include them as global accounts.
+        $accountsQuery = Account::withoutGlobalScopes()
             ->where(function ($query) use ($accountIds) {
                 if (!empty($accountIds)) {
                     $query->whereIn('id', $accountIds);
@@ -217,6 +220,9 @@ class TrialBalanceController extends Controller
                     if ($branchName !== '') {
                         $sub->orWhere('branch_name', $branchName);
                     }
+                    // Include global accounts with no branch assignment
+                    $sub->orWhereNull('branch_id')
+                        ->orWhere('branch_id', '');
                 });
             });
         $this->applyAccountScope($accountsQuery, $request);

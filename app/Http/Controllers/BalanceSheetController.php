@@ -213,7 +213,11 @@ class BalanceSheetController extends Controller
             ->get();
 
         $accountIds = $txnTotals->keys()->all();
-        $accountsQuery = Account::query()
+        // Use withoutGlobalScopes() to bypass TenantScoped's branch filter.
+        // TenantScoped excludes accounts with empty/null branch_id, which misses
+        // system-generated accounts (AR, Revenue, Cash) created without a branch.
+        // We apply our own branch filter below that also includes those global accounts.
+        $accountsQuery = Account::withoutGlobalScopes()
             ->where(function ($query) use ($accountIds) {
                 if (!empty($accountIds)) {
                     $query->whereIn('id', $accountIds);
@@ -231,6 +235,10 @@ class BalanceSheetController extends Controller
                     if ($branchName !== '') {
                         $sub->orWhere('branch_name', $branchName);
                     }
+                    // Also include global accounts with no branch assignment
+                    // (system accounts like Accounts Receivable, Sales Revenue, Petty Cash)
+                    $sub->orWhereNull('branch_id')
+                        ->orWhere('branch_id', '');
                 });
             });
 
@@ -465,7 +473,7 @@ class BalanceSheetController extends Controller
             ->tap(fn ($q) => $this->applyTransactionScope($q, $request))
             ->groupBy('account_id')->get()->keyBy('account_id');
 
-        $accounts = Account::query()
+        $accounts = Account::withoutGlobalScopes()
             ->where(fn ($q) => !$txnTotals->isEmpty() ? $q->whereIn('id', $txnTotals->keys()->all())->orWhere('opening_balance', '!=', 0) : $q->where('opening_balance', '!=', 0))
             ->tap(fn ($q) => $this->applyAccountScope($q, $request))->get()
             ->transform(function ($a) use ($txnTotals) {
@@ -508,7 +516,7 @@ class BalanceSheetController extends Controller
                 ->tap(fn ($q) => $this->applyTransactionScope($q, $request))
                 ->groupBy('account_id')->get()->keyBy('account_id');
 
-            $accounts = Account::query()
+            $accounts = Account::withoutGlobalScopes()
                 ->tap(fn ($q) => $this->applyAccountScope($q, $request))->get()
                 ->transform(function ($a) use ($txnTotals) {
                     $t = $txnTotals->get($a->id);
