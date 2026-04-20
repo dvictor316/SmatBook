@@ -272,7 +272,12 @@ class AuthController extends Controller
             $this->clearClientAuthState($request);
         }
 
-        $request->session()->regenerateToken();
+        // Keep the existing CSRF token for plain form renders. Regenerating it on
+        // every GET can leave a freshly-opened auth page with a token that becomes
+        // stale after redirects, multiple tabs, or other auth page hops.
+        if (!$request->session()->has('_token')) {
+            $request->session()->regenerateToken();
+        }
 
         return $this->applyNoStoreHeaders(response()
             ->view('Pages.Authentication.saas-login', ['company' => $this->getTenantDetails()])

@@ -36,7 +36,9 @@ class CustomAuthController extends Controller
             return redirect()->route('home');
         }
 
-        $request->session()->regenerateToken();
+        if (!$request->session()->has('_token')) {
+            $request->session()->regenerateToken();
+        }
 
         return response()
             ->view('Pages.Authentication.login')
