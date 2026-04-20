@@ -105,6 +105,10 @@ Route::get('/session/ping', function () {
     ]);
 })->name('session.ping');
 
+Route::get('/workspace-not-found', function () {
+    return response()->view('errors.workspace-not-found', [], 404);
+})->name('workspace.not.found');
+
 // Public upgrade redirect — guests are handled inside the controller (redirected to register with plan stored in session)
 Route::get('/membership-plans/upgrade', [SubscriptionController::class, 'redirectToUpgradeCheckout'])->name('subscription.upgrade.redirect');
 

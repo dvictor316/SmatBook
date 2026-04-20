@@ -16,6 +16,11 @@ class IdentifyTenant
      */
     public function handle(Request $request, Closure $next)
     {
+        // Never apply tenant logic to the workspace-not-found page — prevents redirect loops
+        if ($request->is('workspace-not-found')) {
+            return $next($request);
+        }
+
         $host = $request->getHost();
         $parts = explode('.', $host);
         

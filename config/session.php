@@ -2,48 +2,29 @@
 
 use Illuminate\Support\Str;
 
-$appHost = strtolower((string) parse_url((string) env('APP_URL', ''), PHP_URL_HOST));
-$requestHost = strtolower((string) ($_SERVER['HTTP_HOST'] ?? ''));
-$requestHost = explode(':', $requestHost)[0]; // strip :port for localhost:8000
 $appEnv = strtolower((string) env('APP_ENV', 'production'));
+$isLocalHost = in_array($appEnv, ['local', 'development', 'testing'], true);
 
-$isLocalHost = in_array($appHost, ['localhost', '127.0.0.1'], true)
-    || in_array($requestHost, ['localhost', '127.0.0.1'], true)
-    || in_array($appEnv, ['local', 'development', 'testing'], true);
-
+// Use SESSION_DOMAIN from .env directly — safe for config:cache.
+// Strip leading dot so we can re-add it consistently.
 $explicitSessionDomain = ltrim(trim((string) env('SESSION_DOMAIN', '')), '.');
-$effectiveHost = $requestHost !== '' ? $requestHost : $appHost;
-$hostSegments = array_values(array_filter(explode('.', $effectiveHost)));
-$derivedSessionDomain = null;
 
-if (!$isLocalHost && $effectiveHost !== '' && filter_var($effectiveHost, FILTER_VALIDATE_IP) === false && count($hostSegments) >= 2) {
-    $derivedSessionDomain = '.' . implode('.', array_slice($hostSegments, -2));
-}
-
-$explicitDomainIsUsable = $explicitSessionDomain !== ''
-    && $effectiveHost !== ''
-    && (
-        $effectiveHost === $explicitSessionDomain
-        || str_ends_with($effectiveHost, '.' . $explicitSessionDomain)
-    );
-
-$sessionDomain = $isLocalHost
-    ? null
-    : ($explicitDomainIsUsable ? $explicitSessionDomain : $derivedSessionDomain);
-
-if (filled($sessionDomain) && !str_starts_with($sessionDomain, '.')) {
-    $sessionDomain = '.' . $sessionDomain;
+if ($isLocalHost) {
+    $sessionDomain = null;
+} elseif ($explicitSessionDomain !== '') {
+    $sessionDomain = '.' . $explicitSessionDomain;
+} else {
+    // Fall back: derive from APP_URL (static — works after config:cache).
+    $appHost = strtolower((string) parse_url((string) env('APP_URL', ''), PHP_URL_HOST));
+    $hostSegments = array_values(array_filter(explode('.', $appHost)));
+    $sessionDomain = (count($hostSegments) >= 2)
+        ? '.' . implode('.', array_slice($hostSegments, -2))
+        : null;
 }
 
 $sessionSecure = $isLocalHost
     ? false
-    : filter_var(env('SESSION_SECURE_COOKIE', null), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
-
-if ($sessionSecure === null) {
-    $forwardedProto = strtolower((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? ''));
-    $https = strtolower((string) ($_SERVER['HTTPS'] ?? ''));
-    $sessionSecure = $forwardedProto === 'https' || in_array($https, ['on', '1'], true);
-}
+    : filter_var(env('SESSION_SECURE_COOKIE', true), FILTER_VALIDATE_BOOLEAN);
 
 return [
 
