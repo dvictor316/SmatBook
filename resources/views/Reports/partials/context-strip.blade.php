@@ -6,8 +6,21 @@
         ?? 'SmartProbook';
     $activeBranch = $activeBranch ?? [];
     $stripBranchName = data_get($activeBranch, 'name') ?? session('active_branch_name') ?? null;
+    $stripActiveBranchScope = (string)(data_get($activeBranch, 'scope') ?? 'branch');
+    $stripActiveBranchId   = (string)(data_get($activeBranch, 'id') ?? '');
     $stripReportLabel = $reportLabel ?? 'Business Report';
     $stripPeriodLabel = $periodLabel ?? null;
+
+    // Load all branches for this company so we can show the switcher
+    $stripCompanyId = (int)(auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+    $stripAvailableBranches = [];
+    if ($stripCompanyId > 0 && \Illuminate\Support\Facades\Schema::hasTable('settings')) {
+        $stripBranchRaw = (string)(\Illuminate\Support\Facades\DB::table('settings')
+            ->where('key', 'branches_json_company_' . $stripCompanyId)
+            ->value('value') ?? '');
+        $stripAvailableBranches = json_decode($stripBranchRaw, true) ?: [];
+    }
+    $stripMultiBranch = count($stripAvailableBranches) > 1;
 @endphp
 
 <div class="report-context-strip mb-3">
@@ -16,11 +29,68 @@
         <h6 class="report-context-company mb-0">{{ $stripCompanyName }}</h6>
     </div>
     <div class="report-context-meta">
-        @if($stripBranchName)
+
+        {{-- Branch pill / switcher --}}
+        @if($stripMultiBranch)
+            {{-- Multi-branch: show dropdown switcher --}}
+            <div class="dropdown d-print-none">
+                <button class="report-context-pill report-context-pill--branch dropdown-toggle border-0"
+                        type="button" data-bs-toggle="dropdown" aria-expanded="false"
+                        title="Switch branch scope">
+                    @if($stripActiveBranchScope === 'all')
+                        <i class="fas fa-layer-group me-2"></i>All Branches
+                    @else
+                        <i class="fas fa-code-branch me-2"></i>{{ $stripBranchName ?? 'Select Branch' }}
+                    @endif
+                    <i class="fas fa-chevron-down ms-2" style="font-size:0.62rem;opacity:.75;"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end report-branch-menu shadow border-0">
+                    <li class="report-branch-menu-header px-3 py-2">
+                        <span class="small fw-bold text-uppercase text-muted" style="letter-spacing:.08em;">Branch Scope</span>
+                    </li>
+                    <li>
+                        <a class="dropdown-item report-branch-item {{ $stripActiveBranchScope === 'all' ? 'active' : '' }}"
+                           href="javascript:void(0)"
+                           onclick="reportSwitchBranch('all')">
+                            <i class="fas fa-layer-group me-2 text-primary"></i>
+                            <span>All Branches Combined</span>
+                            @if($stripActiveBranchScope === 'all')
+                                <i class="fas fa-check ms-auto text-primary"></i>
+                            @endif
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider my-1"></li>
+                    @foreach($stripAvailableBranches as $stripBranch)
+                        @php $isCurrent = ($stripActiveBranchScope !== 'all') && ($stripActiveBranchId === (string)($stripBranch['id'] ?? '')); @endphp
+                        <li>
+                            <a class="dropdown-item report-branch-item {{ $isCurrent ? 'active' : '' }}"
+                               href="javascript:void(0)"
+                               onclick="reportSwitchBranch('{{ addslashes($stripBranch['id'] ?? '') }}')">
+                                <i class="fas fa-code-branch me-2 text-info"></i>
+                                <span>{{ $stripBranch['name'] ?? 'Branch' }}</span>
+                                @if($isCurrent)
+                                    <i class="fas fa-check ms-auto text-primary"></i>
+                                @endif
+                            </a>
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+            {{-- Also show a print-only label (no dropdown for print) --}}
+            <span class="d-none d-print-inline-flex report-context-pill">
+                <i class="fas fa-code-branch me-2"></i>
+                {{ $stripActiveBranchScope === 'all' ? 'All Branches' : ($stripBranchName ?? 'Branch') }}
+            </span>
+        @elseif($stripActiveBranchScope === 'all')
             <span class="report-context-pill">
-                <i class="fas fa-code-branch me-2"></i>Branch: {{ $stripBranchName }}
+                <i class="fas fa-layer-group me-2"></i>All Branches
+            </span>
+        @elseif($stripBranchName)
+            <span class="report-context-pill">
+                <i class="fas fa-code-branch me-2"></i>{{ $stripBranchName }}
             </span>
         @endif
+
         @if($stripPeriodLabel)
             <span class="report-context-pill report-context-pill--light">{{ $stripPeriodLabel }}</span>
         @endif
@@ -95,6 +165,47 @@
     .report-context-pill--email:hover {
         background: linear-gradient(135deg, #047857 0%, #065f46 100%);
     }
+    /* Branch switcher dropdown */
+    .report-context-pill--branch {
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        cursor: pointer;
+        box-shadow: 0 10px 18px rgba(37, 99, 235, 0.15);
+    }
+    .report-context-pill--branch:hover,
+    .report-context-pill--branch:focus {
+        background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+    }
+    .report-branch-menu {
+        min-width: 220px;
+        border-radius: 16px;
+        padding: 0.4rem 0;
+        overflow: hidden;
+    }
+    .report-branch-menu-header {
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .report-branch-item {
+        display: flex;
+        align-items: center;
+        gap: 0.2rem;
+        padding: 0.6rem 1rem;
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: #334155;
+        transition: background .15s;
+    }
+    .report-branch-item:hover {
+        background: #eff6ff;
+        color: #1d4ed8;
+    }
+    .report-branch-item.active {
+        background: #eff6ff;
+        color: #1d4ed8;
+    }
+    .report-branch-item .fa-check {
+        font-size: 0.7rem;
+    }
     @media (max-width: 767.98px) {
         .report-context-strip {
             flex-direction: column;
@@ -144,6 +255,18 @@
 </div>
 
 <script>
+// Branch scope switcher — appends/replaces branch_id in the current URL
+function reportSwitchBranch(branchId) {
+    try {
+        const url = new URL(window.location.href);
+        url.searchParams.set('branch_id', branchId);
+        url.searchParams.delete('page'); // reset pagination when switching branch
+        window.location.href = url.toString();
+    } catch (e) {
+        window.location.href = window.location.pathname + '?branch_id=' + encodeURIComponent(branchId);
+    }
+}
+
 (function () {
     function initEmailReportModal() {
         const modal = document.getElementById('emailReportModal');

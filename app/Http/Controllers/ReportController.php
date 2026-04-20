@@ -500,6 +500,11 @@ use App\Support\InventoryQuantity;
          */
         private function renderReportView($viewName, $data = [])
         {
+            // Always inject activeBranch so context-strip can show the branch switcher
+            if (!array_key_exists('activeBranch', $data)) {
+                $data['activeBranch'] = $this->getActiveBranchContext();
+            }
+
             $fullView = 'Reports.Reports.' . trim((string) $viewName, '.');
             if (view()->exists($fullView)) {
                 return view($fullView, $data);
