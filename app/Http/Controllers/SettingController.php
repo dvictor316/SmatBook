@@ -668,7 +668,7 @@ class SettingController extends Controller
 
         $validated = $request->validate([
             'code' => [
-                'required',
+                'nullable',
                 'string',
                 'max:50',
                 Rule::unique('accounts', 'code')->where('company_id', $companyId ?: null),
@@ -684,6 +684,11 @@ class SettingController extends Controller
         $validated['sub_type'] = trim((string) ($validated['sub_type'] ?? ''));
         if ($validated['sub_type'] === '') {
             $validated['sub_type'] = null;
+        }
+
+        $validated['code'] = trim((string) ($validated['code'] ?? ''));
+        if ($validated['code'] === '') {
+            $validated['code'] = $this->generateChartAccountCode($validated['type'], $companyId);
         }
 
         $allowedSubtypes = Account::subtypeOptionsFor($validated['type']);
@@ -712,6 +717,31 @@ class SettingController extends Controller
         ]);
 
         return redirect()->route('chart-of-accounts')->with('success', 'Account added to chart of accounts.');
+    }
+
+    private function generateChartAccountCode(string $type, int $companyId = 0): string
+    {
+        $prefix = match ($type) {
+            Account::TYPE_ASSET => 'AST',
+            Account::TYPE_LIABILITY => 'LIB',
+            Account::TYPE_EQUITY => 'EQT',
+            Account::TYPE_REVENUE => 'REV',
+            Account::TYPE_EXPENSE => 'EXP',
+            default => 'ACC',
+        };
+
+        do {
+            $code = $prefix . '-' . str_pad((string) random_int(1, 99999), 5, '0', STR_PAD_LEFT);
+
+            $exists = Account::withoutGlobalScopes()
+                ->where('code', $code)
+                ->when($companyId > 0 && Schema::hasColumn('accounts', 'company_id'), function ($query) use ($companyId) {
+                    $query->where('company_id', $companyId);
+                })
+                ->exists();
+        } while ($exists);
+
+        return $code;
     }
 
     public function storeBranch(Request $request)

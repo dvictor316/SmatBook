@@ -472,9 +472,11 @@
                                     {{-- Row: Code + Type --}}
                                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
                                         <div>
-                                            <label class="coa-field-label">Code <span style="color:#ef4444">*</span></label>
+                                            <label class="coa-field-label">Code</label>
                                             <input type="text" name="code" class="coa-input {{ $errors->has('code') ? 'is-invalid' : '' }}"
-                                                   value="{{ old('code') }}" placeholder="e.g. 1000" required>
+                                                   id="accountCodeInput"
+                                                   value="{{ old('code') }}" placeholder="Auto generated">
+                                            <small style="color:#94a3b8;font-size:.72rem;">Auto-fills from account type. You can still edit it.</small>
                                             @error('code')<small style="color:#ef4444;font-size:.72rem;">{{ $message }}</small>@enderror
                                         </div>
                                         <div>
@@ -561,8 +563,23 @@
 document.addEventListener('DOMContentLoaded', function () {
     var typeSelect = document.getElementById('accountTypeSelect');
     var subTypeSelect = document.getElementById('accountSubTypeSelect');
+    var codeInput = document.getElementById('accountCodeInput');
     var originalMarkup = subTypeSelect ? subTypeSelect.innerHTML : '';
     var oldSubType = @json(old('sub_type'));
+    var codeWasManuallyEdited = !!(codeInput && codeInput.value);
+    var typePrefixes = {
+        'Asset': 'AST',
+        'Liability': 'LIB',
+        'Equity': 'EQT',
+        'Revenue': 'REV',
+        'Expense': 'EXP'
+    };
+
+    function generateDraftCode(selectedType) {
+        var prefix = typePrefixes[selectedType] || 'ACC';
+        var randomPart = String(Math.floor(Math.random() * 99999) + 1).padStart(5, '0');
+        return prefix + '-' + randomPart;
+    }
 
     window.updateAccountSubtypeOptions = function (selectedType, selectedSubType) {
         if (!subTypeSelect) {
@@ -604,6 +621,16 @@ document.addEventListener('DOMContentLoaded', function () {
         typeSelect.addEventListener('change', function () {
             window.updateAccountSubtypeOptions(this.value, '');
             subTypeSelect.value = '';
+
+            if (codeInput && !codeWasManuallyEdited) {
+                codeInput.value = this.value ? generateDraftCode(this.value) : '';
+            }
+        });
+    }
+
+    if (codeInput) {
+        codeInput.addEventListener('input', function () {
+            codeWasManuallyEdited = this.value.trim() !== '';
         });
     }
 
