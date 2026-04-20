@@ -199,7 +199,7 @@ class SubscriptionController extends Controller
             'plan'           => strtolower($planModel->name ?? 'Standard'),
             'cycle'          => strtolower($subscription->billing_cycle),
             'selectedPrice'  => $subscription->amount,
-            'session_domain' => env('SESSION_DOMAIN', 'smatprobook.com'),
+            'session_domain' => trim((string) config('session.domain', parse_url((string) config('app.url'), PHP_URL_HOST) ?: 'smartprobook.com'), '.'),
         ]);
     }
 
@@ -2079,7 +2079,7 @@ class SubscriptionController extends Controller
     {
         if (!$user?->email) return;
         try {
-            $domain = env('SESSION_DOMAIN', 'smatprobook.com');
+            $domain = trim((string) config('session.domain', parse_url((string) config('app.url'), PHP_URL_HOST) ?: 'smartprobook.com'), '.');
             $prefix = $company?->domain_prefix ?? $subscription->domain_prefix;
             $url    = $prefix ? 'https://' . $prefix . '.' . $domain : 'https://' . $domain;
             AppMailer::sendView('emails.welcome', [
@@ -2098,7 +2098,7 @@ class SubscriptionController extends Controller
     {
         if (!$user?->email) return;
         try {
-            $domain = env('SESSION_DOMAIN', 'smatprobook.com');
+            $domain = trim((string) config('session.domain', parse_url((string) config('app.url'), PHP_URL_HOST) ?: 'smartprobook.com'), '.');
             $prefix = $company?->domain_prefix;
             $url    = $prefix ? 'https://' . $prefix . '.' . $domain : 'https://' . $domain;
             AppMailer::sendView('emails.customer-welcome', [

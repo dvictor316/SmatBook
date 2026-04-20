@@ -135,11 +135,11 @@ class Subscription extends Model
     }
 
     /**
-     * Generates workspace URL: {prefix}.{SESSION_DOMAIN}
+     * Generates workspace URL using the resolved cookie/root domain.
      */
     public function getWorkspaceUrlAttribute(): string
     {
-        $base = env('SESSION_DOMAIN', 'smartprobook.com');
+        $base = trim((string) config('session.domain', parse_url((string) config('app.url'), PHP_URL_HOST) ?: 'smartprobook.com'), '.');
         $prefix = $this->domain_prefix ?? ($this->company ? $this->company->subdomain : null);
         
         return $prefix ? "https://{$prefix}." . ltrim($base, '.') : '#';
