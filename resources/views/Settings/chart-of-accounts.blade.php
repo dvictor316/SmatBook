@@ -501,7 +501,19 @@
                                     <div style="margin-bottom:10px;">
                                         <label class="coa-field-label">Sub Type</label>
                                         <select name="sub_type" id="accountSubTypeSelect" class="coa-input">
-                                            <option value="">Select type first…</option>
+                                            <option value="">Select sub type…</option>
+                                            @foreach($subtypeOptionsByType as $parentType => $subtypes)
+                                                <optgroup label="{{ $parentType }}">
+                                                    @foreach($subtypes as $subtype)
+                                                        <option
+                                                            value="{{ $subtype }}"
+                                                            data-type="{{ $parentType }}"
+                                                            {{ old('sub_type') === $subtype ? 'selected' : '' }}>
+                                                            {{ $subtype }}
+                                                        </option>
+                                                    @endforeach
+                                                </optgroup>
+                                            @endforeach
                                         </select>
                                         @error('sub_type')<small style="color:#ef4444;font-size:.72rem;">{{ $message }}</small>@enderror
                                     </div>
@@ -547,41 +559,51 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    var subtypeOptionsByType = @json($subtypeOptionsByType);
     var typeSelect = document.getElementById('accountTypeSelect');
     var subTypeSelect = document.getElementById('accountSubTypeSelect');
+    var originalMarkup = subTypeSelect ? subTypeSelect.innerHTML : '';
     var oldSubType = @json(old('sub_type'));
 
-    function rebuildSubtypeOptions(selectedType, selectedSubType) {
+    window.updateAccountSubtypeOptions = function (selectedType, selectedSubType) {
         if (!subTypeSelect) {
             return;
         }
 
-        var options = subtypeOptionsByType[selectedType] || [];
-        subTypeSelect.innerHTML = '';
+        subTypeSelect.innerHTML = originalMarkup;
 
-        var placeholder = document.createElement('option');
-        placeholder.value = '';
-        placeholder.textContent = options.length ? 'Select sub type…' : 'Select type first…';
-        subTypeSelect.appendChild(placeholder);
-        subTypeSelect.disabled = options.length === 0;
+        var optionGroups = Array.from(subTypeSelect.querySelectorAll('optgroup'));
+        var matchingOptions = 0;
 
-        options.forEach(function (value) {
-            var option = document.createElement('option');
-            option.value = value;
-            option.textContent = value;
-            if (selectedSubType && selectedSubType === value) {
-                option.selected = true;
+        optionGroups.forEach(function (group) {
+            var groupType = group.getAttribute('label');
+            var showGroup = !selectedType || groupType === selectedType;
+
+            Array.from(group.querySelectorAll('option')).forEach(function (option) {
+                if (selectedSubType && option.value === selectedSubType) {
+                    option.selected = true;
+                }
+            });
+
+            group.disabled = !showGroup;
+            group.hidden = !showGroup;
+
+            if (showGroup) {
+                matchingOptions += group.querySelectorAll('option').length;
             }
-            subTypeSelect.appendChild(option);
         });
-    }
+
+        var placeholder = subTypeSelect.querySelector('option[value=""]');
+        if (placeholder) {
+            placeholder.textContent = matchingOptions ? 'Select sub type…' : 'No sub types available';
+        }
+    };
 
     if (typeSelect && subTypeSelect) {
-        rebuildSubtypeOptions(typeSelect.value, oldSubType);
+        window.updateAccountSubtypeOptions(typeSelect.value, oldSubType);
 
         typeSelect.addEventListener('change', function () {
-            rebuildSubtypeOptions(this.value, '');
+            window.updateAccountSubtypeOptions(this.value, '');
+            subTypeSelect.value = '';
         });
     }
 
