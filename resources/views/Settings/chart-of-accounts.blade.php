@@ -484,14 +484,15 @@
                                     {{-- Row: Code + Type --}}
                                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
                                         <div>
-                                            <label class="coa-field-label">Code <span style="color:#ef4444">*</span></label>
-                                            <input type="text" name="code" class="coa-input {{ $errors->has('code') ? 'is-invalid' : '' }}"
-                                                   value="{{ old('code') }}" placeholder="e.g. 1000" required>
+                                            <label class="coa-field-label">Code</label>
+                                            <input type="text" name="code" id="accountCodeInput" class="coa-input {{ $errors->has('code') ? 'is-invalid' : '' }}"
+                                                   value="{{ old('code') }}" placeholder="Auto generated">
+                                            <small style="display:block;margin-top:4px;color:#94a3b8;font-size:.7rem;">Auto-fills from account type. You can still edit it.</small>
                                             @error('code')<small style="color:#ef4444;font-size:.72rem;">{{ $message }}</small>@enderror
                                         </div>
                                         <div>
                                             <label class="coa-field-label">Type <span style="color:#ef4444">*</span></label>
-                                            <select name="type" id="accountTypeSelect" class="coa-input {{ $errors->has('type') ? 'is-invalid' : '' }}" onchange="window.updateAccountSubtypeOptions && window.updateAccountSubtypeOptions(this.value, '');" required>
+                                            <select name="type" id="accountTypeSelect" class="coa-input {{ $errors->has('type') ? 'is-invalid' : '' }}" onchange="window.updateAccountSubtypeOptions && window.updateAccountSubtypeOptions(this.value, ''); window.syncGeneratedAccountCode && window.syncGeneratedAccountCode(this.value);" required>
                                                 <option value="">Select…</option>
                                                 @foreach($formAccountTypes as $t)
                                                     <option value="{{ $t }}" {{ old('type') === $t ? 'selected' : '' }}>{{ $t }}</option>
@@ -570,8 +571,23 @@ document.addEventListener('DOMContentLoaded', function () {
     var subtypeMap    = @json($formSubtypeMap);
     var typeSelect    = document.getElementById('accountTypeSelect');
     var subTypeSelect = document.getElementById('accountSubTypeSelect');
+    var codeInput     = document.getElementById('accountCodeInput');
     var oldSubType    = @json(old('sub_type'));
     var allSubtypeMarkup = subTypeSelect ? subTypeSelect.innerHTML : '';
+    var codePrefixes = {
+        Asset: 'AST',
+        Liability: 'LIB',
+        Equity: 'EQT',
+        Revenue: 'REV',
+        Expense: 'EXP'
+    };
+    var codeTouchedManually = !!(codeInput && codeInput.value.trim() !== '');
+
+    function buildGeneratedAccountCode(selectedType) {
+        var prefix = codePrefixes[selectedType] || 'ACC';
+        var suffix = String(Math.floor(Math.random() * 90000) + 10000);
+        return prefix + '-' + suffix;
+    }
 
     window.updateAccountSubtypeOptions = function (selectedType, preselect) {
         if (!subTypeSelect) {
@@ -604,10 +620,35 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     };
 
+    window.syncGeneratedAccountCode = function (selectedType) {
+        if (!codeInput) {
+            return;
+        }
+
+        if (!selectedType) {
+            if (!codeTouchedManually) {
+                codeInput.value = '';
+            }
+            return;
+        }
+
+        if (!codeTouchedManually) {
+            codeInput.value = buildGeneratedAccountCode(selectedType);
+        }
+    };
+
     if (typeSelect && subTypeSelect) {
         window.updateAccountSubtypeOptions(typeSelect.value, oldSubType);
+        window.syncGeneratedAccountCode(typeSelect.value);
         typeSelect.addEventListener('change', function () {
             window.updateAccountSubtypeOptions(this.value, '');
+            window.syncGeneratedAccountCode(this.value);
+        });
+    }
+
+    if (codeInput) {
+        codeInput.addEventListener('input', function () {
+            codeTouchedManually = this.value.trim() !== '';
         });
     }
 
