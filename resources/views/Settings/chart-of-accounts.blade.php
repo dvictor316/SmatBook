@@ -482,9 +482,7 @@
                                             <select name="type" id="accountTypeSelect" class="coa-input {{ $errors->has('type') ? 'is-invalid' : '' }}" required>
                                                 <option value="">Select…</option>
                                                 @foreach($accountTypes as $t)
-                                                    <option value="{{ $t }}"
-                                                        data-subtypes="{{ implode('||', $subtypeOptionsByType[$t] ?? []) }}"
-                                                        {{ old('type') === $t ? 'selected' : '' }}>{{ $t }}</option>
+                                                    <option value="{{ $t }}" {{ old('type') === $t ? 'selected' : '' }}>{{ $t }}</option>
                                                 @endforeach
                                             </select>
                                             @error('type')<small style="color:#ef4444;font-size:.72rem;">{{ $message }}</small>@enderror
@@ -546,68 +544,84 @@
         </div>{{-- /.row --}}
     </div>
 </div>
-@endsection
 
-@push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    var typeSelect    = document.getElementById('accountTypeSelect');
+    var subtypeOptionsByType = @json($subtypeOptionsByType);
+    var typeSelect = document.getElementById('accountTypeSelect');
     var subTypeSelect = document.getElementById('accountSubTypeSelect');
-    var oldSubType    = '{{ addslashes(old('sub_type', '')) }}';
+    var oldSubType = @json(old('sub_type'));
 
-    function buildSubtypeOptions(selectedOption, preselect) {
-        var raw = selectedOption ? (selectedOption.getAttribute('data-subtypes') || '') : '';
-        var options = raw.length ? raw.split('||') : [];
+    function rebuildSubtypeOptions(selectedType, selectedSubType) {
+        if (!subTypeSelect) {
+            return;
+        }
+
+        var options = subtypeOptionsByType[selectedType] || [];
         subTypeSelect.innerHTML = '';
-        var ph = document.createElement('option');
-        ph.value = '';
-        ph.textContent = options.length ? 'Select sub type…' : 'Select type first…';
-        subTypeSelect.appendChild(ph);
+
+        var placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = options.length ? 'Select sub type…' : 'Select type first…';
+        subTypeSelect.appendChild(placeholder);
         subTypeSelect.disabled = options.length === 0;
-        options.forEach(function (val) {
-            var opt = document.createElement('option');
-            opt.value = val;
-            opt.textContent = val;
-            if (preselect && val === preselect) { opt.selected = true; }
-            subTypeSelect.appendChild(opt);
+
+        options.forEach(function (value) {
+            var option = document.createElement('option');
+            option.value = value;
+            option.textContent = value;
+            if (selectedSubType && selectedSubType === value) {
+                option.selected = true;
+            }
+            subTypeSelect.appendChild(option);
         });
     }
 
     if (typeSelect && subTypeSelect) {
-        buildSubtypeOptions(typeSelect.options[typeSelect.selectedIndex], oldSubType);
+        rebuildSubtypeOptions(typeSelect.value, oldSubType);
+
         typeSelect.addEventListener('change', function () {
-            buildSubtypeOptions(this.options[this.selectedIndex], '');
+            rebuildSubtypeOptions(this.value, '');
         });
     }
 
-    /* ── Live search + filter ── */
-    var searchInput  = document.getElementById('coaSearch');
-    var typeFilter   = document.getElementById('coaTypeFilter');
+    var searchInput = document.getElementById('coaSearch');
+    var typeFilter = document.getElementById('coaTypeFilter');
     var statusFilter = document.getElementById('coaStatusFilter');
 
     function applyFilters() {
-        var q      = (searchInput ? searchInput.value : '').toLowerCase().trim();
-        var type   = (typeFilter ? typeFilter.value : '').toLowerCase();
+        var q = (searchInput ? searchInput.value : '').toLowerCase().trim();
+        var type = (typeFilter ? typeFilter.value : '').toLowerCase();
         var status = (statusFilter ? statusFilter.value : '').toLowerCase();
 
         document.querySelectorAll('.coa-block').forEach(function (block) {
             var blockType = (block.dataset.type || '').toLowerCase();
             var typeMatch = !type || blockType === type;
             var anyVisible = false;
+
             block.querySelectorAll('.coa-row').forEach(function (row) {
-                var nameMatch   = !q || row.dataset.name.indexOf(q) !== -1 || row.dataset.code.indexOf(q) !== -1;
+                var nameMatch = !q || row.dataset.name.indexOf(q) !== -1 || row.dataset.code.indexOf(q) !== -1;
                 var statusMatch = !status || row.dataset.status === status;
-                var visible     = typeMatch && nameMatch && statusMatch;
+                var visible = typeMatch && nameMatch && statusMatch;
                 row.style.display = visible ? '' : 'none';
-                if (visible) anyVisible = true;
+                if (visible) {
+                    anyVisible = true;
+                }
             });
+
             block.style.display = (typeMatch && anyVisible) ? '' : 'none';
         });
     }
 
-    if (searchInput)  searchInput.addEventListener('input', applyFilters);
-    if (typeFilter)   typeFilter.addEventListener('change', applyFilters);
-    if (statusFilter) statusFilter.addEventListener('change', applyFilters);
+    if (searchInput) {
+        searchInput.addEventListener('input', applyFilters);
+    }
+    if (typeFilter) {
+        typeFilter.addEventListener('change', applyFilters);
+    }
+    if (statusFilter) {
+        statusFilter.addEventListener('change', applyFilters);
+    }
 });
 </script>
-@endpush
+@endsection

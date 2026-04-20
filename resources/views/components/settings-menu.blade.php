@@ -16,21 +16,22 @@
         display: flex;
         align-items: center;
         gap: 12px;
-        padding: 12px 14px;
+        padding: 10px 12px;
         border-radius: 16px;
         color: #243a63;
         font-weight: 700;
+        font-size: 0.92rem;
         background: rgba(248, 251, 255, 0.9);
         border: 1px solid rgba(191, 219, 254, 0.65);
         transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
     }
 
     .settings-menu .nav-link i {
-        width: 18px;
-        min-width: 18px;
+        width: 16px;
+        min-width: 16px;
         text-align: center;
         color: #2563eb;
-        font-size: 0.95rem;
+        font-size: 0.82rem;
     }
 
     .settings-menu .nav-link span {
@@ -43,7 +44,7 @@
         color: #5b3df5;
         background: linear-gradient(135deg, rgba(238, 242, 255, 0.95) 0%, rgba(248, 250, 252, 0.98) 100%);
         border-color: rgba(167, 139, 250, 0.32);
-        box-shadow: 0 12px 24px rgba(91, 61, 245, 0.10);
+        box-shadow: 0 10px 20px rgba(91, 61, 245, 0.08);
         transform: translateX(1px);
     }
 }
