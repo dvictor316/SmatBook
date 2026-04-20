@@ -18,6 +18,13 @@ class LedgerService
     private static ?array $transactionColumns = null;
     private static ?array $accountColumns = null;
 
+    /**
+     * Company context used by resolveAccount/resolveCashAccount.
+     * Set at the start of each post* method so helpers work in
+     * both web (Auth user) and artisan (no session) contexts.
+     */
+    private static ?int $currentCompanyId = null;
+
     public static function postSale(Sale $sale, ?int $depositAccountId = null): void
     {
         if (!self::isReady()) {
@@ -28,6 +35,11 @@ class LedgerService
         if ($total <= 0) {
             return;
         }
+
+        self::$currentCompanyId = (int) ($sale->company_id
+            ?? Auth::user()?->company_id
+            ?? session('current_tenant_id')
+            ?? 0) ?: null;
 
         $reference = $sale->invoice_no ?: ('SALE-' . $sale->id);
         $date = self::resolveDate($sale->order_date ?? $sale->created_at);
@@ -96,6 +108,11 @@ class LedgerService
         if ($total <= 0) {
             return;
         }
+
+        self::$currentCompanyId = (int) ($purchase->company_id
+            ?? Auth::user()?->company_id
+            ?? session('current_tenant_id')
+            ?? 0) ?: null;
 
         $reference = $purchase->purchase_no ?: ($purchase->purchase_id ?? ('PUR-' . $purchase->id));
         $date = self::resolveDate($purchase->purchase_date ?? $purchase->created_at);
@@ -499,23 +516,33 @@ class LedgerService
 
     private static function resolveCashAccount(?string $paymentMethod = null): Account
     {
-        $query = Account::query()->where('type', 'Asset')->where('is_active', 1);
+        $cid = self::$currentCompanyId;
+        $base = Account::withoutGlobalScopes()->where('type', 'Asset')->where('is_active', 1);
+        if ($cid) {
+            $base->where('company_id', $cid);
+        }
 
         if ($paymentMethod && stripos($paymentMethod, 'cash') !== false) {
-            $cash = (clone $query)->whereRaw('LOWER(name) LIKE ?', ['%cash%'])->first();
+            $cash = (clone $base)->whereRaw('LOWER(name) LIKE ?', ['%cash%'])->first();
             if ($cash) {
                 return $cash;
             }
         }
 
-        $bank = (clone $query)->whereRaw('LOWER(name) LIKE ?', ['%bank%'])->first();
+        $bank = (clone $base)->whereRaw('LOWER(name) LIKE ?', ['%bank%'])->first();
         if ($bank) {
             return $bank;
         }
 
-        $cash = (clone $query)->whereRaw('LOWER(name) LIKE ?', ['%cash%'])->first();
+        $cash = (clone $base)->whereRaw('LOWER(name) LIKE ?', ['%cash%'])->first();
         if ($cash) {
             return $cash;
+        }
+
+        // Last resort: any active asset account for this company
+        $any = (clone $base)->first();
+        if ($any) {
+            return $any;
         }
 
         return self::resolveAccount('Main Bank Account', 'Asset', ['bank', 'cash'], 'AUTO-AST-CASH');
@@ -523,14 +550,20 @@ class LedgerService
 
     private static function resolveAccount(string $name, string $type, array $keywords, string $autoCodePrefix): Account
     {
-        $account = Account::query()->where('type', $type)->where('name', $name)->first();
+        $cid = self::$currentCompanyId;
+
+        $base = Account::withoutGlobalScopes()->where('type', $type);
+        if ($cid) {
+            $base->where('company_id', $cid);
+        }
+
+        $account = (clone $base)->where('name', $name)->first();
         if ($account) {
             return $account;
         }
 
         foreach ($keywords as $keyword) {
-            $account = Account::query()
-                ->where('type', $type)
+            $account = (clone $base)
                 ->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($keyword) . '%'])
                 ->first();
             if ($account) {
@@ -538,7 +571,7 @@ class LedgerService
             }
         }
 
-        $account = Account::query()->where('type', $type)->where('is_active', 1)->first();
+        $account = (clone $base)->where('is_active', 1)->first();
         if ($account) {
             return $account;
         }
