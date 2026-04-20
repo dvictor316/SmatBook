@@ -407,7 +407,8 @@ class AuthController extends Controller
 
         return $this->applyNoStoreHeaders(
             redirect()->route('login', ['logout' => 1, 'flush' => 1])
-                ->with('success', 'Logged out successfully. You can now sign in with another account.')
+                ->with('success', 'Logged out successfully. You can now sign in with another account.'),
+            true
         );
     }
 
@@ -453,13 +454,18 @@ class AuthController extends Controller
         $cookies->queue($cookies->forget('XSRF-TOKEN'));
     }
 
-    private function applyNoStoreHeaders($response)
+    private function applyNoStoreHeaders($response, bool $clearSiteData = false)
     {
-        return $response
+        $response = $response
             ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0, private')
             ->header('Pragma', 'no-cache')
-            ->header('Expires', 'Sat, 01 Jan 2000 00:00:00 GMT')
-            ->header('Clear-Site-Data', '"cache", "cookies", "storage"');
+            ->header('Expires', 'Sat, 01 Jan 2000 00:00:00 GMT');
+
+        if ($clearSiteData) {
+            $response->header('Clear-Site-Data', '"cache", "cookies", "storage"');
+        }
+
+        return $response;
     }
 
     /**
