@@ -544,14 +544,17 @@
         </div>{{-- /.row --}}
     </div>
 </div>
+@endsection
 
+@push('scripts')
 <script>
 (function () {
     /* ── Sub type dynamic options ── */
     const subtypeOptionsByType = @json($subtypeOptionsByType);
+    const oldSubType = @json(old('sub_type'));
+
     const typeSelect    = document.getElementById('accountTypeSelect');
     const subTypeSelect = document.getElementById('accountSubTypeSelect');
-    const oldSubType    = @json(old('sub_type'));
 
     function buildSubtypeOptions(selectedType, selectedSubType) {
         const options = subtypeOptionsByType[selectedType] || [];
@@ -565,7 +568,7 @@
             const opt = document.createElement('option');
             opt.value = val;
             opt.textContent = val;
-            opt.selected = (selectedSubType === val);
+            opt.selected = (val === selectedSubType);
             subTypeSelect.appendChild(opt);
         });
     }
@@ -573,7 +576,7 @@
     if (typeSelect && subTypeSelect) {
         buildSubtypeOptions(typeSelect.value, oldSubType);
         typeSelect.addEventListener('change', function () {
-            buildSubtypeOptions(typeSelect.value, '');
+            buildSubtypeOptions(this.value, '');
         });
     }
 
@@ -583,9 +586,9 @@
     const statusFilter = document.getElementById('coaStatusFilter');
 
     function applyFilters() {
-        const q      = (searchInput.value || '').toLowerCase().trim();
-        const type   = (typeFilter.value || '').toLowerCase();
-        const status = (statusFilter.value || '').toLowerCase();
+        const q      = (searchInput ? searchInput.value : '').toLowerCase().trim();
+        const type   = (typeFilter ? typeFilter.value : '').toLowerCase();
+        const status = (statusFilter ? statusFilter.value : '').toLowerCase();
 
         document.querySelectorAll('.coa-block').forEach(function (block) {
             const blockType = (block.dataset.type || '').toLowerCase();
@@ -609,4 +612,4 @@
     if (statusFilter) statusFilter.addEventListener('change', applyFilters);
 })();
 </script>
-@endsection
+@endpush
