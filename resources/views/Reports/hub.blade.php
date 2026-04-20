@@ -40,115 +40,10 @@
 .rh-sec-chevron{color:#94a3b8;font-size:11px;transition:transform .2s;}
 .rh-section.collapsed .rh-sec-chevron{transform:rotate(-90deg);}
 .rh-section.collapsed .rh-col-grid{display:none;}
-.rh-section.collapsed .rh-pl-grid{display:none;}
 
 /* Two-column grid for rows */
 .rh-col-grid{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #f0f3f8;}
 @media(max-width:700px){.rh-col-grid{grid-template-columns:1fr;}}
-
-/* Profit & Loss card grid */
-.rh-pl-grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-    gap:14px;
-    padding:16px;
-    background:linear-gradient(180deg,#fbfdff 0%,#f7faff 100%);
-}
-.rh-pl-card{
-    display:flex;
-    flex-direction:column;
-    align-items:flex-start;
-    gap:10px;
-    min-height:196px;
-    padding:18px 18px 16px;
-    border:1px solid #dbe7ff;
-    border-radius:14px;
-    background:#fff;
-    box-shadow:0 10px 26px rgba(37,99,235,.08);
-    position:relative;
-    overflow:hidden;
-}
-.rh-pl-card::before{
-    content:"";
-    position:absolute;
-    inset:0 auto auto 0;
-    width:100%;
-    height:4px;
-    background:linear-gradient(90deg,#2563eb 0%,#60a5fa 100%);
-}
-.rh-pl-card .rl-star{
-    position:absolute;
-    top:12px;
-    right:12px;
-    width:30px;
-    height:30px;
-    border-radius:999px;
-    background:#f8fbff;
-    border:1px solid #e2e8f0;
-}
-.rh-pl-icon{
-    width:42px;
-    height:42px;
-    border-radius:10px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:16px;
-}
-.rh-pl-kicker{
-    font-size:10px;
-    font-weight:800;
-    text-transform:uppercase;
-    letter-spacing:.08em;
-    color:#64748b;
-}
-.rh-pl-title{
-    display:block;
-    padding-right:30px;
-    font-size:16px;
-    font-weight:800;
-    color:#0f172a;
-    line-height:1.25;
-    text-decoration:none;
-}
-.rh-pl-title:hover{color:#1d4ed8;text-decoration:none;}
-.rh-pl-copy{
-    font-size:12.5px;
-    line-height:1.55;
-    color:#64748b;
-    margin:0;
-}
-.rh-pl-meta{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    flex-wrap:wrap;
-    margin-top:auto;
-}
-.rh-pl-action{
-    display:inline-flex;
-    align-items:center;
-    gap:6px;
-    padding:8px 12px;
-    border-radius:8px;
-    background:#2563eb;
-    color:#fff;
-    text-decoration:none;
-    font-size:12px;
-    font-weight:700;
-    box-shadow:0 8px 18px rgba(37,99,235,.2);
-}
-.rh-pl-action:hover{background:#1d4ed8;color:#fff;text-decoration:none;}
-.rh-pl-card.is-comparison::before{background:linear-gradient(90deg,#7c3aed 0%,#a78bfa 100%);}
-.rh-pl-card.is-monthly::before{background:linear-gradient(90deg,#0d9488 0%,#2dd4bf 100%);}
-.rh-pl-card.is-detail::before{background:linear-gradient(90deg,#ea580c 0%,#fb923c 100%);}
-.rh-pl-card.is-comparison{border-color:#e9d5ff;box-shadow:0 10px 26px rgba(124,58,237,.08);}
-.rh-pl-card.is-monthly{border-color:#ccfbf1;box-shadow:0 10px 26px rgba(13,148,136,.08);}
-.rh-pl-card.is-detail{border-color:#fed7aa;box-shadow:0 10px 26px rgba(234,88,12,.08);}
-@media(max-width:700px){
-    .rh-pl-grid{grid-template-columns:1fr;padding:12px;}
-    .rh-pl-card{min-height:auto;}
-}
 
 /* Custom reports builder */
 .rh-custom-builder{
@@ -285,76 +180,22 @@
                 </div>
             </div>
 
-            {{-- ══ 1. PROFIT & LOSS ════════════════════════════════════ --}}
-            <div class="rh-section" data-section="profit-loss">
-                <div class="rh-sec-head" onclick="toggleSection(this)">
-                    <span class="rh-sec-icon pal-indigo"><i class="fas fa-chart-line"></i></span>
-                    <span class="rh-sec-title">Profit &amp; Loss</span>
-                    <span class="rh-sec-count">4 reports</span>
-                    <i class="fas fa-chevron-down rh-sec-chevron"></i>
-                </div>
-                <div class="rh-pl-grid">
-
-                    <div class="rl-row rh-pl-card" data-section="profit-loss" data-tab="overview" data-id="profit-loss" data-url="{{ route('reports.profit-loss') }}" data-keywords="profit loss p&l income statement net earnings main statement">
-                        <button class="rl-star" data-id="profit-loss" title="Favourite"><i class="far fa-star"></i></button>
-                        <span class="rh-pl-icon pal-blue"><i class="fas fa-file-invoice-dollar"></i></span>
-                        <span class="rh-pl-kicker">Core Statement</span>
-                        <a href="{{ route('reports.profit-loss') }}" class="rl-name rh-pl-title">Profit &amp; Loss</a>
-                        <p class="rh-pl-copy">See revenue, expenses, and net profit in one clean statement for the selected period.</p>
-                        <div class="rh-pl-meta">
-                            <span class="rl-badge rl-badge-pro"><i class="fas fa-star" style="font-size:7px;"></i> Pro</span>
-                            <a href="{{ route('reports.profit-loss') }}" class="rh-pl-action"><i class="fas fa-play"></i> Run Report</a>
-                        </div>
-                    </div>
-
-                    <div class="rl-row rh-pl-card is-comparison" data-section="profit-loss" data-tab="overview" data-id="pl-comparison" data-url="{{ route('reports.profit-loss-comparison') }}" data-keywords="profit loss comparison two periods compare p&l variance change">
-                        <button class="rl-star" data-id="pl-comparison" title="Favourite"><i class="far fa-star"></i></button>
-                        <span class="rh-pl-icon pal-purple"><i class="fas fa-code-compare"></i></span>
-                        <span class="rh-pl-kicker">Period Analysis</span>
-                        <a href="{{ route('reports.profit-loss-comparison') }}" class="rl-name rh-pl-title">P&amp;L Comparison</a>
-                        <p class="rh-pl-copy">Compare two periods side by side to spot profit swings, margin pressure, and trend changes fast.</p>
-                        <div class="rh-pl-meta">
-                            <span class="rl-badge rl-badge-pro"><i class="fas fa-star" style="font-size:7px;"></i> Pro</span>
-                            <a href="{{ route('reports.profit-loss-comparison') }}" class="rh-pl-action"><i class="fas fa-play"></i> Run Report</a>
-                        </div>
-                    </div>
-
-                    <div class="rl-row rh-pl-card is-monthly" data-section="profit-loss" data-tab="overview" data-id="pl-by-month" data-url="{{ route('reports.profit-loss-by-month') }}" data-keywords="profit loss monthly breakdown month by month 12 months p&l trend movement">
-                        <button class="rl-star" data-id="pl-by-month" title="Favourite"><i class="far fa-star"></i></button>
-                        <span class="rh-pl-icon pal-teal"><i class="fas fa-calendar-alt"></i></span>
-                        <span class="rh-pl-kicker">Trend View</span>
-                        <a href="{{ route('reports.profit-loss-by-month') }}" class="rl-name rh-pl-title">P&amp;L by Month</a>
-                        <p class="rh-pl-copy">Track profit performance month by month and quickly read seasonal patterns across the year.</p>
-                        <div class="rh-pl-meta">
-                            <span class="rl-badge rl-badge-pro"><i class="fas fa-star" style="font-size:7px;"></i> Pro</span>
-                            <a href="{{ route('reports.profit-loss-by-month') }}" class="rh-pl-action"><i class="fas fa-play"></i> Run Report</a>
-                        </div>
-                    </div>
-
-                    <div class="rl-row rh-pl-card is-detail" data-section="profit-loss" data-tab="overview" data-id="pl-detail" data-url="{{ route('reports.profit-loss-detail') }}" data-keywords="profit loss detail line items transactions income expense detailed breakdown">
-                        <button class="rl-star" data-id="pl-detail" title="Favourite"><i class="far fa-star"></i></button>
-                        <span class="rh-pl-icon pal-orange"><i class="fas fa-list-ul"></i></span>
-                        <span class="rh-pl-kicker">Line Items</span>
-                        <a href="{{ route('reports.profit-loss-detail') }}" class="rl-name rh-pl-title">P&amp;L Detail</a>
-                        <p class="rh-pl-copy">Drill into the underlying income and expense lines when you need the story behind the totals.</p>
-                        <div class="rh-pl-meta">
-                            <span class="rl-badge rl-badge-pro"><i class="fas fa-star" style="font-size:7px;"></i> Pro</span>
-                            <a href="{{ route('reports.profit-loss-detail') }}" class="rh-pl-action"><i class="fas fa-play"></i> Run Report</a>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-
-            {{-- ══ 2. BUSINESS OVERVIEW ════════════════════════════════════ --}}
+            {{-- ══ 1. BUSINESS OVERVIEW ════════════════════════════════════ --}}
             <div class="rh-section" data-section="overview">
                 <div class="rh-sec-head" onclick="toggleSection(this)">
                     <span class="rh-sec-icon pal-blue"><i class="fas fa-tachometer-alt"></i></span>
                     <span class="rh-sec-title">Business Overview</span>
-                    <span class="rh-sec-count">6 reports</span>
+                    <span class="rh-sec-count">10 reports</span>
                     <i class="fas fa-chevron-down rh-sec-chevron"></i>
                 </div>
                 <div class="rh-col-grid">
+
+                    <div class="rl-row" data-section="overview" data-tab="overview" data-id="profit-loss" data-url="{{ route('reports.profit-loss') }}" data-keywords="profit loss p&l income statement net earnings">
+                        <button class="rl-star" data-id="profit-loss" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('reports.profit-loss') }}" class="rl-name">Profit &amp; Loss</a>
+                        <span class="rl-badge rl-badge-pro"><i class="fas fa-star" style="font-size:7px;"></i> Pro</span>
+                        <a href="{{ route('reports.profit-loss') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
 
                     <div class="rl-row" data-section="overview" data-tab="overview" data-id="balance-sheet" data-url="{{ route('balance-sheet') }}" data-keywords="balance sheet assets liabilities equity net worth">
                         <button class="rl-star" data-id="balance-sheet" title="Favourite"><i class="far fa-star"></i></button>
@@ -378,6 +219,27 @@
                         <button class="rl-star" data-id="expense-report" title="Favourite"><i class="far fa-star"></i></button>
                         <a href="{{ route('reports.expense') }}" class="rl-name">Expense Report</a>
                         <a href="{{ route('reports.expense') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+
+                    <div class="rl-row" data-section="overview" data-tab="overview" data-id="pl-comparison" data-url="{{ route('reports.profit-loss-comparison') }}" data-keywords="profit loss comparison two periods compare p&l">
+                        <button class="rl-star" data-id="pl-comparison" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('reports.profit-loss-comparison') }}" class="rl-name">P&amp;L Comparison</a>
+                        <span class="rl-badge rl-badge-pro"><i class="fas fa-star" style="font-size:7px;"></i> Pro</span>
+                        <a href="{{ route('reports.profit-loss-comparison') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+
+                    <div class="rl-row" data-section="overview" data-tab="overview" data-id="pl-by-month" data-url="{{ route('reports.profit-loss-by-month') }}" data-keywords="profit loss monthly breakdown month by month 12 months p&l trend">
+                        <button class="rl-star" data-id="pl-by-month" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('reports.profit-loss-by-month') }}" class="rl-name">P&amp;L by Month</a>
+                        <span class="rl-badge rl-badge-pro"><i class="fas fa-star" style="font-size:7px;"></i> Pro</span>
+                        <a href="{{ route('reports.profit-loss-by-month') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+
+                    <div class="rl-row" data-section="overview" data-tab="overview" data-id="pl-detail" data-url="{{ route('reports.profit-loss-detail') }}" data-keywords="profit loss detail line items transactions income expense detailed">
+                        <button class="rl-star" data-id="pl-detail" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('reports.profit-loss-detail') }}" class="rl-name">P&amp;L Detail</a>
+                        <span class="rl-badge rl-badge-pro"><i class="fas fa-star" style="font-size:7px;"></i> Pro</span>
+                        <a href="{{ route('reports.profit-loss-detail') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
                     </div>
 
                     <div class="rl-row" data-section="overview" data-tab="overview" data-id="expense-by-category" data-url="{{ route('reports.expense-by-category') }}" data-keywords="expense category breakdown spending type chart">
@@ -760,7 +622,7 @@
 (function () {
     /* ── Tab → section mapping ── */
     const TAB_SECTIONS = {
-        standard:   ['profit-loss', 'overview', 'owes', 'sales', 'inventory'],
+        standard:   ['overview', 'owes', 'sales', 'inventory'],
         management: ['financial'],
         custom:     ['custom'],
     };
