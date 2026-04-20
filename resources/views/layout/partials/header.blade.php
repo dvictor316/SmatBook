@@ -1126,7 +1126,7 @@
     <div class="header-actions">
         @if($isWorkspaceSwitcherVisible)
             <div class="workspace-switcher">
-                <a href="{{ route('workspace.platform') }}" class="{{ !$isBusinessWorkspace ? 'is-active' : '' }}">Partnership</a>
+                <a href="{{ route('workspace.platform') }}" class="{{ !$isBusinessWorkspace ? 'is-active' : '' }}">Platform</a>
                 <a href="{{ Route::has('workspace.business.dashboard') ? route('workspace.business.dashboard') : route('workspace.business') }}" class="{{ $isBusinessWorkspace ? 'is-active' : '' }}">Business</a>
             </div>
         @endif
