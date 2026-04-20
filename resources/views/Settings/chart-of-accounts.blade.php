@@ -184,7 +184,9 @@
         padding: 10px 14px;
         vertical-align: middle;
         border-bottom: 1px solid #f8fafc;
-        color: #334155;
+        color: #64748b;
+        font-weight: 400;
+        font-size: 0.82rem;
     }
     .coa-table tbody tr:last-child td { border-bottom: none; }
     .coa-table tbody tr:hover td { background: #fafbff; }
@@ -192,14 +194,14 @@
     .coa-code {
         font-family: 'Courier New', monospace;
         font-size: 0.78rem;
-        font-weight: 700;
-        color: #475569;
+        font-weight: 400;
+        color: #64748b;
         background: #f1f5f9;
         padding: 2px 8px;
         border-radius: 6px;
         white-space: nowrap;
     }
-    .coa-acc-name { font-weight: 700; color: #0f172a; font-size: 0.84rem; }
+    .coa-acc-name { font-weight: 500; color: #475569; font-size: 0.82rem; }
     .coa-acc-desc { font-size: 0.73rem; color: #94a3b8; margin-top: 2px; }
 
     .coa-subtype {
@@ -210,7 +212,7 @@
         border-radius: 6px;
         white-space: nowrap;
     }
-    .coa-balance { font-weight: 700; font-size: 0.82rem; color: #0f172a; white-space: nowrap; }
+    .coa-balance { font-weight: 400; font-size: 0.82rem; color: #64748b; white-space: nowrap; }
     .coa-txn {
         font-size: 0.75rem;
         font-weight: 600;
