@@ -6,6 +6,7 @@ use App\Models\Setting;
 use App\Models\EmailAuditLog;
 use App\Models\Bank;
 use App\Models\Account;
+use App\Models\Plan;
 use App\Models\Transaction;
 use App\Models\Subscription;
 use Illuminate\Http\Request;
@@ -79,6 +80,38 @@ class SettingController extends Controller
     private function setCompanyScopedJsonSettingArray(string $baseKey, array $value): void
     {
         $this->setJsonSettingArray($this->companyScopedSettingKey($baseKey), $value);
+    }
+
+    private function resolveCurrentSubscription(): ?Subscription
+    {
+        if (!Auth::check() || !Schema::hasTable('subscriptions')) {
+            return null;
+        }
+
+        return Subscription::resolveCurrentForUser(Auth::user())
+            ?? Subscription::where('user_id', Auth::id())->latest()->first();
+    }
+
+    private function resolveBranchLimitContext(): array
+    {
+        $subscription = $this->resolveCurrentSubscription();
+        $planLabel = trim((string) session('user_plan'));
+
+        if ($planLabel === '' && $subscription) {
+            $planLabel = $subscription->planLabel();
+        }
+
+        if ($planLabel === '') {
+            $planLabel = 'Basic';
+        }
+
+        $branchLimit = $subscription?->resolvedBranchLimit() ?? Plan::defaultBranchLimitForName($planLabel);
+
+        return [
+            'subscription' => $subscription,
+            'planLabel' => $planLabel,
+            'branchLimit' => $branchLimit,
+        ];
     }
 
     /**
@@ -469,6 +502,10 @@ class SettingController extends Controller
 
         $activeBranchId = (string) session('active_branch_id', '');
         $activeBranch = $branches->firstWhere('id', $activeBranchId) ?: $branches->first();
+        $branchContext = $this->resolveBranchLimitContext();
+        $branchLimit = $branchContext['branchLimit'];
+        $planLabel = $branchContext['planLabel'];
+        $branchSlotsRemaining = $branchLimit === null ? null : max($branchLimit - $branches->count(), 0);
 
         if ($activeBranch && $activeBranchId === '') {
             session([
@@ -477,7 +514,14 @@ class SettingController extends Controller
             ]);
         }
 
-        return view('Settings.branches', compact('settings', 'branches', 'activeBranch'));
+        return view('Settings.branches', compact(
+            'settings',
+            'branches',
+            'activeBranch',
+            'branchLimit',
+            'planLabel',
+            'branchSlotsRemaining'
+        ));
     }
     public function bank_reconciliation()
     {
@@ -756,16 +800,16 @@ class SettingController extends Controller
         ]);
 
         $branches = collect($this->getCompanyScopedJsonSettingArray('branches_json'));
+        $branchContext = $this->resolveBranchLimitContext();
+        $branchLimit = $branchContext['branchLimit'];
+        $planLabel = ucfirst(trim((string) $branchContext['planLabel']));
 
-        $currentPlan = strtolower((string) session('user_plan'));
-        if ($currentPlan === '' && Auth::check() && Schema::hasTable('subscriptions')) {
-            $subscription = Subscription::resolveCurrentForUser(Auth::user())
-                ?? Subscription::where('user_id', Auth::id())->latest()->first();
-            $currentPlan = strtolower((string) ($subscription?->plan ?? $subscription?->plan_name ?? ''));
-        }
-
-        if (str_contains($currentPlan, 'basic') && $branches->count() >= 1) {
-            return redirect()->back()->withInput()->with('error', 'Basic plan supports a single branch only.');
+        if ($branchLimit !== null && $branches->count() >= $branchLimit) {
+            $branchLabel = $branchLimit === 1 ? 'branch' : 'branches';
+            return redirect()->back()->withInput()->with(
+                'error',
+                $planLabel . ' plan allows up to ' . $branchLimit . ' ' . $branchLabel . '. Upgrade the plan to add more branches.'
+            );
         }
 
         $name = trim((string) $validated['name']);

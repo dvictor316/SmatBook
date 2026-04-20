@@ -21,6 +21,12 @@ class Plan extends Model
         'enterprise' => 3,
     ];
 
+    public const DEFAULT_BRANCH_LIMITS = [
+        'basic' => 2,
+        'professional' => 5,
+        'enterprise' => 8,
+    ];
+
     protected $table = 'plans';
 
     protected $fillable = [
@@ -73,6 +79,11 @@ class Plan extends Model
         }
 
         return static::DEFAULT_USER_LIMITS[static::normalizeTier($planName)] ?? null;
+    }
+
+    public static function defaultBranchLimitForName(?string $planName): ?int
+    {
+        return static::DEFAULT_BRANCH_LIMITS[static::normalizeTier($planName)] ?? 1;
     }
 
     public static function userSeatLabel(?int $limit): string
@@ -129,6 +140,31 @@ class Plan extends Model
         }
 
         return static::defaultUserLimitForName($this->name);
+    }
+
+    public function resolvedBranchLimit(): ?int
+    {
+        $features = strtolower((string) ($this->features ?? ''));
+
+        if ($features !== '') {
+            if (str_contains($features, 'unlimited branch')) {
+                return null;
+            }
+
+            if (str_contains($features, 'single branch')) {
+                return 1;
+            }
+
+            if (preg_match('/up to\s+(\d+)\s+branches?/', $features, $matches)) {
+                return (int) $matches[1];
+            }
+
+            if (preg_match('/(\d+)\s+branches?/', $features, $matches)) {
+                return (int) $matches[1];
+            }
+        }
+
+        return static::defaultBranchLimitForName($this->name);
     }
 
     public static function findByCatalogName(string $planName, string $billingCycle): ?self

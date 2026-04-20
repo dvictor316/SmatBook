@@ -13,7 +13,7 @@
     .branch-card .card-body { padding: 22px; }
     .branch-summary {
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 16px;
     }
     .branch-tile {
@@ -90,13 +90,26 @@
                                     <small>Current Workspace</small>
                                     <strong>{{ $activeBranch['code'] ?? 'N/A' }}</strong>
                                 </div>
+                                <div class="branch-tile">
+                                    <small>{{ strtoupper((string) ($planLabel ?? 'Basic')) }} Allowance</small>
+                                    <strong>{{ $branchLimit === null ? 'Unlimited' : $branchLimit }}</strong>
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     <div class="card branch-card">
                         <div class="card-body">
-                            <h5 class="mb-3">Create Branch</h5>
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                                <h5 class="mb-0">Create Branch</h5>
+                                <span class="badge {{ ($branchLimit !== null && ($branchSlotsRemaining ?? 0) === 0) ? 'bg-danger' : 'bg-info' }} text-white px-3 py-2">
+                                    @if($branchLimit === null)
+                                        Unlimited branches on this plan
+                                    @else
+                                        {{ $branchSlotsRemaining }} of {{ $branchLimit }} slots left
+                                    @endif
+                                </span>
+                            </div>
                             <form method="POST" action="{{ route('settings.branches.store') }}">
                                 @csrf
                                 <div class="row g-3">

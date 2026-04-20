@@ -221,6 +221,19 @@ class Subscription extends Model
         return Plan::defaultUserLimitForName($this->planLabel());
     }
 
+    public function resolvedBranchLimit(): ?int
+    {
+        if ($this->relationLoaded('plan_relationship') && $this->plan_relationship) {
+            return $this->plan_relationship->resolvedBranchLimit();
+        }
+
+        if ($this->plan_id && $plan = Plan::find($this->plan_id)) {
+            return $plan->resolvedBranchLimit();
+        }
+
+        return Plan::defaultBranchLimitForName($this->planLabel());
+    }
+
     public function expiryMessage(): string
     {
         if (in_array(strtolower($this->status), ['pending', 'awaiting payment'])) {
