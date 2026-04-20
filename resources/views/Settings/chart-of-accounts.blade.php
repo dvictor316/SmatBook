@@ -16,13 +16,72 @@
 
 <style>
     /* ── Layout ───────────────────────────────────────────── */
-    .coa-wrap { display: flex; gap: 20px; align-items: flex-start; }
-    .coa-left  { flex: 1 1 0; min-width: 0; }
-    .coa-right { width: 340px; flex-shrink: 0; position: sticky; top: 80px; }
+    .coa-page {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+    }
+    .coa-content-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+    .coa-settings-card {
+        border: 1px solid #e8edf5;
+        border-radius: 18px;
+        background: #fff;
+        box-shadow: 0 4px 16px rgba(15,23,42,.05);
+        padding: 18px 20px;
+    }
+    .coa-settings-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 14px;
+    }
+    .coa-settings-title {
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 800;
+        color: #0f172a;
+    }
+    .coa-settings-copy {
+        margin: 4px 0 0;
+        font-size: 0.8rem;
+        color: #94a3b8;
+    }
+    .coa-settings-shell .settings-menu ul {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 10px;
+    }
+    .coa-settings-shell .settings-menu .nav-link {
+        min-height: 56px;
+        border-radius: 12px;
+        padding: 10px 12px;
+    }
+    .coa-main-card {
+        border: 1px solid #e8edf5;
+        border-radius: 18px;
+        background: #fff;
+        box-shadow: 0 4px 16px rgba(15,23,42,.05);
+        padding: 18px;
+    }
+    .coa-form-shell {
+        width: 100%;
+        max-width: 860px;
+    }
 
     @media (max-width: 991px) {
-        .coa-wrap  { flex-direction: column-reverse; }
-        .coa-right { width: 100%; position: static; }
+        .coa-settings-card,
+        .coa-main-card {
+            padding: 16px;
+        }
+
+        .coa-settings-shell .settings-menu ul {
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        }
     }
 
     /* ── Stat cards ───────────────────────────────────────── */
@@ -319,25 +378,22 @@
 
 <div class="page-wrapper">
     <div class="content container-fluid">
-        <div class="row">
-
-            {{-- Settings sidebar --}}
-            <div class="col-xl-3 col-md-4 mb-3">
-                <div class="card">
-                    <div class="card-body">
-                        <div class="page-header">
-                            <div class="content-page-header">
-                                <h5>Settings</h5>
-                            </div>
-                        </div>
-                        @component('components.settings-menu')
-                        @endcomponent
+        <div class="coa-page">
+            <div class="coa-settings-card">
+                <div class="coa-settings-head">
+                    <div>
+                        <h5 class="coa-settings-title">Settings</h5>
+                        <p class="coa-settings-copy">Move between accounting and company setup without crowding the ledger workspace.</p>
                     </div>
+                </div>
+                <div class="coa-settings-shell">
+                    @component('components.settings-menu')
+                    @endcomponent
                 </div>
             </div>
 
-            {{-- Main content --}}
-            <div class="col-xl-9 col-md-8">
+            <div class="coa-content-stack">
+                <div class="coa-main-card">
 
                 {{-- Page header --}}
                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
@@ -365,102 +421,94 @@
                     @endforeach
                 </div>
 
-                {{-- Two-column layout --}}
-                <div class="coa-wrap">
+                {{-- Toolbar --}}
+                <div class="coa-toolbar">
+                    <div class="coa-search-wrap">
+                        <i class="fe fe-search"></i>
+                        <input type="text" id="coaSearch" class="coa-search-input" placeholder="Search accounts…">
+                    </div>
+                    <select id="coaTypeFilter" class="coa-filter-select">
+                        <option value="">All Types</option>
+                        @foreach($formAccountTypes as $t)
+                            <option value="{{ $t }}">{{ $t }}</option>
+                        @endforeach
+                    </select>
+                    <select id="coaStatusFilter" class="coa-filter-select">
+                        <option value="">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
 
-                    {{-- LEFT: account list --}}
-                    <div class="coa-left">
-
-                        {{-- Toolbar --}}
-                        <div class="coa-toolbar">
-                            <div class="coa-search-wrap">
-                                <i class="fe fe-search"></i>
-                                <input type="text" id="coaSearch" class="coa-search-input" placeholder="Search accounts…">
+                {{-- Account groups --}}
+                @forelse($accountGroups as $type => $group)
+                    @php $tc = $typeColors[$type] ?? ['bg'=>'#f1f5f9','text'=>'#475569','dot'=>'#94a3b8']; @endphp
+                    <div class="coa-block" data-type="{{ strtolower($type) }}">
+                        <div class="coa-block-head" style="background:{{ $tc['bg'] }}1a;">
+                            <div class="coa-block-left">
+                                <span class="coa-type-dot" style="background:{{ $tc['dot'] }}"></span>
+                                <h5 class="coa-block-title">{{ $type }}</h5>
+                                <span class="coa-type-chip" style="background:{{ $tc['bg'] }};color:{{ $tc['text'] }};">
+                                    {{ $type }}
+                                </span>
                             </div>
-                            <select id="coaTypeFilter" class="coa-filter-select">
-                                <option value="">All Types</option>
-                                @foreach($formAccountTypes as $t)
-                                    <option value="{{ $t }}">{{ $t }}</option>
-                                @endforeach
-                            </select>
-                            <select id="coaStatusFilter" class="coa-filter-select">
-                                <option value="">All Status</option>
-                                <option value="active">Active</option>
-                                <option value="inactive">Inactive</option>
-                            </select>
+                            <span class="coa-count-badge">{{ $group->count() }} acct{{ $group->count() != 1 ? 's' : '' }}</span>
                         </div>
+                        <div class="table-responsive">
+                            <table class="table coa-table">
+                                <thead>
+                                    <tr>
+                                        <th>Code</th>
+                                        <th>Account Name</th>
+                                        <th>Sub Type</th>
+                                        <th>Opening Bal.</th>
+                                        <th>Current Bal.</th>
+                                        <th>Txns</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($group as $account)
+                                        <tr class="coa-row"
+                                            data-name="{{ strtolower($account->name) }}"
+                                            data-code="{{ strtolower($account->code) }}"
+                                            data-status="{{ $account->is_active ? 'active' : 'inactive' }}">
+                                            <td><span class="coa-code">{{ $account->code }}</span></td>
+                                            <td>
+                                                <div class="coa-acc-name">{{ $account->name }}</div>
+                                                @if(!empty($account->description))
+                                                    <div class="coa-acc-desc">{{ $account->description }}</div>
+                                                @endif
+                                            </td>
+                                            <td><span class="coa-subtype">{{ $account->sub_type ?: 'General' }}</span></td>
+                                            <td class="coa-balance">{{ number_format((float)($account->opening_balance ?? 0), 2) }}</td>
+                                            <td class="coa-balance">{{ number_format((float)($account->current_balance ?? 0), 2) }}</td>
+                                            <td><span class="coa-txn">{{ $account->transactions_count ?? 0 }}</span></td>
+                                            <td>
+                                                @if($account->is_active)
+                                                    <span class="badge-active">Active</span>
+                                                @else
+                                                    <span class="badge-inactive">Inactive</span>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                @empty
+                    <div class="coa-block">
+                        <div class="coa-empty">
+                            <i class="fe fe-inbox"></i>
+                            <p>No accounts yet. Add your first account using the form below.</p>
+                        </div>
+                    </div>
+                @endforelse
+                </div>
 
-                        {{-- Account groups --}}
-                        @forelse($accountGroups as $type => $group)
-                            @php $tc = $typeColors[$type] ?? ['bg'=>'#f1f5f9','text'=>'#475569','dot'=>'#94a3b8']; @endphp
-                            <div class="coa-block" data-type="{{ strtolower($type) }}">
-                                <div class="coa-block-head" style="background:{{ $tc['bg'] }}1a;">
-                                    <div class="coa-block-left">
-                                        <span class="coa-type-dot" style="background:{{ $tc['dot'] }}"></span>
-                                        <h5 class="coa-block-title">{{ $type }}</h5>
-                                        <span class="coa-type-chip" style="background:{{ $tc['bg'] }};color:{{ $tc['text'] }};">
-                                            {{ $type }}
-                                        </span>
-                                    </div>
-                                    <span class="coa-count-badge">{{ $group->count() }} acct{{ $group->count() != 1 ? 's' : '' }}</span>
-                                </div>
-                                <div class="table-responsive">
-                                    <table class="table coa-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Code</th>
-                                                <th>Account Name</th>
-                                                <th>Sub Type</th>
-                                                <th>Opening Bal.</th>
-                                                <th>Current Bal.</th>
-                                                <th>Txns</th>
-                                                <th>Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach($group as $account)
-                                                <tr class="coa-row"
-                                                    data-name="{{ strtolower($account->name) }}"
-                                                    data-code="{{ strtolower($account->code) }}"
-                                                    data-status="{{ $account->is_active ? 'active' : 'inactive' }}">
-                                                    <td><span class="coa-code">{{ $account->code }}</span></td>
-                                                    <td>
-                                                        <div class="coa-acc-name">{{ $account->name }}</div>
-                                                        @if(!empty($account->description))
-                                                            <div class="coa-acc-desc">{{ $account->description }}</div>
-                                                        @endif
-                                                    </td>
-                                                    <td><span class="coa-subtype">{{ $account->sub_type ?: 'General' }}</span></td>
-                                                    <td class="coa-balance">{{ number_format((float)($account->opening_balance ?? 0), 2) }}</td>
-                                                    <td class="coa-balance">{{ number_format((float)($account->current_balance ?? 0), 2) }}</td>
-                                                    <td><span class="coa-txn">{{ $account->transactions_count ?? 0 }}</span></td>
-                                                    <td>
-                                                        @if($account->is_active)
-                                                            <span class="badge-active">Active</span>
-                                                        @else
-                                                            <span class="badge-inactive">Inactive</span>
-                                                        @endif
-                                                    </td>
-                                                </tr>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        @empty
-                            <div class="coa-block">
-                                <div class="coa-empty">
-                                    <i class="fe fe-inbox"></i>
-                                    <p>No accounts yet. Add your first account using the form →</p>
-                                </div>
-                            </div>
-                        @endforelse
-
-                    </div>{{-- /.coa-left --}}
-
-                    {{-- RIGHT: Add Account panel --}}
-                    <div class="coa-right">
-                        <div class="coa-panel">
+                <div class="coa-form-shell">
+                    <div class="coa-panel">
                             <div class="coa-panel-head">
                                 <p class="coa-panel-title"><i class="fe fe-plus-circle me-1"></i> New Account</p>
                                 <p class="coa-panel-sub">Add a ledger account to your chart</p>
@@ -559,11 +607,10 @@
                                 </form>
                             </div>
                         </div>
-                    </div>{{-- /.coa-right --}}
-
-                </div>{{-- /.coa-wrap --}}
-            </div>{{-- /.col-xl-9 --}}
-        </div>{{-- /.row --}}
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 <script>
