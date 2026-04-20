@@ -22,6 +22,20 @@
     $pagePurchaseExpense = $profitLossData->sum('purchase_expense');
     $pageExpense = $profitLossData->sum('expense');
     $pageNet = $pageIncome - $pageExpense;
+
+    $currentUser = auth()->user();
+    $currentPlanLabel = strtolower((string) (
+        optional($currentUser?->subscription)->plan_name
+        ?: optional($currentUser?->subscription)->plan
+        ?: optional($currentUser?->company)->plan
+        ?: 'basic'
+    ));
+    $currentRole = strtolower((string) (optional($currentUser)->role ?? ''));
+    $isProfessionalReportView = str_contains($currentPlanLabel, 'professional')
+        || str_contains($currentPlanLabel, 'pro')
+        || str_contains($currentPlanLabel, 'enterprise')
+        || str_contains($currentPlanLabel, 'custom')
+        || in_array($currentRole, ['super_admin', 'superadmin'], true);
 @endphp
 
 @extends('layout.mainlayout')
@@ -60,8 +74,110 @@
         padding: 0.5rem 0.9rem !important;
         color: #374151 !important;
     }
+    .pl-detail-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+    }
+    .pl-detail-card {
+        border: 1px solid #dbe7f5;
+        border-radius: 18px;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+        padding: 1rem;
+    }
+    .pl-detail-card.is-profit {
+        border-top: 4px solid #22c55e;
+    }
+    .pl-detail-card.is-loss {
+        border-top: 4px solid #ef4444;
+    }
+    .pl-detail-card.is-breakeven {
+        border-top: 4px solid #94a3b8;
+    }
+    .pl-detail-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 0.8rem;
+        margin-bottom: 0.9rem;
+    }
+    .pl-detail-kicker {
+        display: block;
+        font-size: 0.7rem;
+        font-weight: 800;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 0.2rem;
+    }
+    .pl-detail-date {
+        display: block;
+        font-size: 1rem;
+        line-height: 1.25;
+        font-weight: 800;
+        color: #102a5a;
+    }
+    .pl-detail-badge {
+        white-space: nowrap;
+        border-radius: 999px;
+        padding: 0.35rem 0.7rem;
+        font-size: 0.76rem;
+        font-weight: 700;
+    }
+    .pl-detail-metrics {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.75rem;
+    }
+    .pl-detail-metric {
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        background: #fff;
+        padding: 0.75rem 0.85rem;
+        min-width: 0;
+    }
+    .pl-detail-label {
+        display: block;
+        font-size: 0.7rem;
+        font-weight: 800;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 0.2rem;
+    }
+    .pl-detail-value {
+        display: block;
+        font-size: 0.92rem;
+        font-weight: 800;
+        color: #102a5a;
+        line-height: 1.3;
+        font-variant-numeric: tabular-nums;
+        overflow-wrap: anywhere;
+    }
+    .pl-detail-value.is-income,
+    .pl-detail-value.is-net-positive {
+        color: #16a34a;
+    }
+    .pl-detail-value.is-expense,
+    .pl-detail-value.is-net-negative {
+        color: #dc2626;
+    }
+    .pl-detail-table-heading {
+        font-size: 0.85rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #64748b;
+        margin-bottom: 0.85rem;
+    }
+    @media (max-width: 767.98px) {
+        .pl-detail-metrics {
+            grid-template-columns: 1fr;
+        }
+    }
     @media print {
-        .no-print, .filter-card, .dataTables_filter, .dt-buttons, .pagination-wrapper { display: none !important; }
+        .no-print, .filter-card, .dataTables_filter, .dt-buttons, .pagination-wrapper, .pl-detail-grid { display: none !important; }
         .page-wrapper { margin: 0; padding: 0; background: white; }
         .card { border: 1px solid #eee !important; box-shadow: none !important; }
     }
@@ -159,8 +275,64 @@
             </div>
         </div>
 
+        @if($isProfessionalReportView)
+            <div class="pl-detail-grid mb-4">
+                @forelse($profitLossData as $item)
+                    @php
+                        $dailyProfit = $item->income - $item->expense;
+                        $cardState = $dailyProfit > 0 ? 'profit' : ($dailyProfit < 0 ? 'loss' : 'breakeven');
+                    @endphp
+                    <div class="pl-detail-card is-{{ $cardState }}">
+                        <div class="pl-detail-head">
+                            <div>
+                                <span class="pl-detail-kicker">{{ __('Transaction Date') }}</span>
+                                <span class="pl-detail-date">{{ \Carbon\Carbon::parse($item->report_date)->format('D, d M Y') }}</span>
+                            </div>
+                            @if($dailyProfit > 0)
+                                <span class="pl-detail-badge bg-success-light text-success">{{ __('Profit') }}</span>
+                            @elseif($dailyProfit < 0)
+                                <span class="pl-detail-badge bg-danger-light text-danger">{{ __('Loss') }}</span>
+                            @else
+                                <span class="pl-detail-badge bg-light text-muted">{{ __('Breakeven') }}</span>
+                            @endif
+                        </div>
+
+                        <div class="pl-detail-metrics">
+                            <div class="pl-detail-metric">
+                                <span class="pl-detail-label">{{ __('Income') }}</span>
+                                <span class="pl-detail-value is-income">{{ \App\Support\GeoCurrency::format($item->income, 'NGN', $currencyCode, $currencyLocale) }}</span>
+                            </div>
+                            <div class="pl-detail-metric">
+                                <span class="pl-detail-label">{{ __('Purchases') }}</span>
+                                <span class="pl-detail-value">{{ \App\Support\GeoCurrency::format($item->purchase_expense ?? 0, 'NGN', $currencyCode, $currencyLocale) }}</span>
+                            </div>
+                            <div class="pl-detail-metric">
+                                <span class="pl-detail-label">{{ __('OpEx') }}</span>
+                                <span class="pl-detail-value">{{ \App\Support\GeoCurrency::format($item->operating_expense ?? 0, 'NGN', $currencyCode, $currencyLocale) }}</span>
+                            </div>
+                            <div class="pl-detail-metric">
+                                <span class="pl-detail-label">{{ __('Expenses') }}</span>
+                                <span class="pl-detail-value is-expense">{{ \App\Support\GeoCurrency::format($item->expense, 'NGN', $currencyCode, $currencyLocale) }}</span>
+                            </div>
+                            <div class="pl-detail-metric" style="grid-column: 1 / -1;">
+                                <span class="pl-detail-label">{{ __('Net Result') }}</span>
+                                <span class="pl-detail-value {{ $dailyProfit >= 0 ? 'is-net-positive' : 'is-net-negative' }}">{{ \App\Support\GeoCurrency::format($dailyProfit, 'NGN', $currencyCode, $currencyLocale) }}</span>
+                            </div>
+                        </div>
+                    </div>
+                @empty
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body text-muted">{{ __('No profit and loss data found for the selected period.') }}</div>
+                    </div>
+                @endforelse
+            </div>
+        @endif
+
         <div class="card mb-4">
             <div class="card-body p-3">
+                @if($isProfessionalReportView)
+                    <div class="pl-detail-table-heading">{{ __('Detailed Statement Table') }}</div>
+                @endif
                 <div class="table-responsive">
                     <table id="profitLossTable" class="table table-hover">
                         <thead>
