@@ -9,6 +9,7 @@ use Illuminate\Support\Str;
 use App\Models\Customer;
 use App\Models\Company;
 use App\Models\Payment;
+use App\Models\Account;
 use App\Models\Bank;
 use App\Models\Setting;
 use App\Models\Transaction;
@@ -103,6 +104,7 @@ class SaleController extends Controller
             'sales' => collect(),
             'activeBranch' => $activeBranch,
             'bankAccounts' => collect(),
+            'depositAccounts' => collect(),
         ]);
     }
 
@@ -563,7 +565,22 @@ public function customerDetails($id = null)
                 $bankAccounts = $bankQuery->get();
             }
 
-            return view('pos.index', compact('products', 'customers', 'sales', 'activeBranch', 'bankAccounts'));
+            // Active Asset accounts from Chart of Accounts — used as deposit/collection accounts
+            // These drive journal entries (Moniepoint, First Bank, Petty Cash, etc.)
+            $depositAccounts = collect();
+            if (Schema::hasTable('accounts')) {
+                $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+                $depositQuery = Account::withoutGlobalScopes()
+                    ->where('type', Account::TYPE_ASSET)
+                    ->where('is_active', true)
+                    ->orderBy('name');
+                if ($companyId > 0) {
+                    $depositQuery->where('company_id', $companyId);
+                }
+                $depositAccounts = $depositQuery->get();
+            }
+
+            return view('pos.index', compact('products', 'customers', 'sales', 'activeBranch', 'bankAccounts', 'depositAccounts'));
         } catch (\Throwable $e) {
             Log::error('POS page failed', [
                 'error' => $e->getMessage(),
@@ -680,9 +697,10 @@ public function customerDetails($id = null)
         'items.*.unitType' => 'nullable|in:unit,roll,carton',
         'items.*.stockUnits' => 'nullable|numeric|gt:0',
         'items.*.priceLevel' => 'nullable|in:retail,wholesale,special',
-        'payment_account_id' => 'nullable|exists:banks,id',
-        'split_details.card_account_id' => 'nullable|exists:banks,id',
-        'split_details.transfer_account_id' => 'nullable|exists:banks,id',
+        'deposit_account_id' => 'nullable|exists:accounts,id',
+        'payment_account_id' => 'nullable|exists:accounts,id',
+        'split_details.card_account_id' => 'nullable|exists:accounts,id',
+        'split_details.transfer_account_id' => 'nullable|exists:accounts,id',
     ]);
 
     $paidAmount = (float) $request->paid;
@@ -732,9 +750,17 @@ public function customerDetails($id = null)
 
         $activeBranch = $this->getActiveBranchContext();
         $splitDetails = $this->normalizeSplitDetails($request->input('split_details', []));
-        $paymentAccount = null;
-        $cardSplitAccount = null;
-        $transferSplitAccount = null;
+        // Resolve deposit/collection accounts from Chart of Accounts
+        $depositAccountId = (int) ($request->deposit_account_id ?? $request->payment_account_id ?? 0);
+        $paymentAccount = $depositAccountId > 0
+            ? Account::withoutGlobalScopes()->find($depositAccountId)
+            : null;
+        $cardSplitAccount = !empty($splitDetails['card_account_id'])
+            ? Account::withoutGlobalScopes()->find((int) $splitDetails['card_account_id'])
+            : null;
+        $transferSplitAccount = !empty($splitDetails['transfer_account_id'])
+            ? Account::withoutGlobalScopes()->find((int) $splitDetails['transfer_account_id'])
+            : null;
 
         // --- 2. CREATE THE SALE RECORD ---
 $sale = Sale::create([
@@ -914,7 +940,9 @@ $sale = Sale::create([
             Payment::create($paymentPayload);
         }
 
-        LedgerService::postSale($sale->fresh());
+        // Use the explicitly selected deposit account for journal entries
+        $primaryDepositAccount = $paymentAccount ?? $transferSplitAccount ?? $cardSplitAccount;
+        LedgerService::postSale($sale->fresh(), $primaryDepositAccount?->id);
 
         // Broadcast Real-time event
         broadcast(new NewSaleRegistered($sale))->toOthers();

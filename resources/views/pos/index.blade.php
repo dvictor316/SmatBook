@@ -1483,12 +1483,29 @@ label {
                     
                     <div class="row g-3 border-top pt-3">
                         <div class="col-md-6">
-                            <label>Payment Method</label>
+                            <label>Payment Channel</label>
                             <select id="payment-method" class="form-select fw-bold">
                                 <option value="Cash">Cash</option>
                                 <option value="Split">Split (Cash + Transfer + POS)</option>
                             </select>
-                            <small class="text-muted">POS accepts cash or split (cash + transfer + POS). Transfer and POS transactions</small>
+                            <small class="text-muted">Label only — does not affect accounting entries.</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="fw-semibold">Deposit Account <span class="text-danger">*</span></label>
+                            <select id="deposit-account" class="form-select">
+                                <option value="">-- Select Account --</option>
+                                @foreach($depositAccounts as $acct)
+                                    <option value="{{ $acct->id }}">{{ $acct->name }}@if($acct->code) ({{ $acct->code }})@endif</option>
+                                @endforeach
+                            </select>
+                            @if($depositAccounts->isEmpty())
+                                <small class="text-danger d-block mt-1">
+                                    No active asset accounts found.
+                                    <a href="{{ route('chart-of-accounts') }}" class="fw-bold">Add one in Chart of Accounts</a>
+                                </small>
+                            @else
+                                <small class="text-muted">This COA account will be debited in the journal entry.</small>
+                            @endif
                         </div>
                         <div class="col-md-6">
                             <label>Cash Amount</label>
@@ -1499,17 +1516,17 @@ label {
                             <input type="number" id="transfer-amount" class="form-control form-control-lg fw-bold text-end tabular-nums" style="font-size: 1rem; color: var(--primary-600);">
                         </div>
                         <div class="col-md-6 d-none" id="split-transfer-account-wrap">
-                            <label>Business Transfer Account</label>
+                            <label>Transfer Account (COA)</label>
                             <select id="transfer-account" class="form-select">
-                                <option value="">-- Choose Business Bank --</option>
-                                @foreach($bankAccounts as $bank)
-                                    <option value="{{ $bank->id }}">{{ $bank->name }}</option>
+                                <option value="">-- Select Account --</option>
+                                @foreach($depositAccounts as $acct)
+                                    <option value="{{ $acct->id }}">{{ $acct->name }}@if($acct->code) ({{ $acct->code }})@endif</option>
                                 @endforeach
                             </select>
-                            @if($bankAccounts->isEmpty())
+                            @if($depositAccounts->isEmpty())
                                 <small class="text-muted d-block mt-2">
-                                    No business bank details yet.
-                                    <a href="{{ route('bank-account') }}" class="fw-bold text-primary">Create bank details</a>
+                                    No asset accounts yet.
+                                    <a href="{{ route('chart-of-accounts') }}" class="fw-bold text-primary">Add in Chart of Accounts</a>
                                 </small>
                             @endif
                         </div>
@@ -1518,17 +1535,17 @@ label {
                             <input type="number" id="card-amount" class="form-control form-control-lg fw-bold text-end tabular-nums" style="font-size: 1rem; color: var(--primary-600);">
                         </div>
                         <div class="col-md-6 d-none" id="split-card-account-wrap">
-                            <label>Business POS Account</label>
+                            <label>POS Account (COA)</label>
                             <select id="card-account" class="form-select">
-                                <option value="">-- Choose Business Bank --</option>
-                                @foreach($bankAccounts as $bank)
-                                    <option value="{{ $bank->id }}">{{ $bank->name }}</option>
+                                <option value="">-- Select Account --</option>
+                                @foreach($depositAccounts as $acct)
+                                    <option value="{{ $acct->id }}">{{ $acct->name }}@if($acct->code) ({{ $acct->code }})@endif</option>
                                 @endforeach
                             </select>
-                            @if($bankAccounts->isEmpty())
+                            @if($depositAccounts->isEmpty())
                                 <small class="text-muted d-block mt-2">
-                                    No business bank details yet.
-                                    <a href="{{ route('bank-account') }}" class="fw-bold text-primary">Create bank details</a>
+                                    No asset accounts yet.
+                                    <a href="{{ route('chart-of-accounts') }}" class="fw-bold text-primary">Add in Chart of Accounts</a>
                                 </small>
                             @endif
                         </div>
@@ -2222,6 +2239,7 @@ $(document).ready(function() {
         $('#transfer-account').val('');
         $('#card-amount').val('0.00');
         $('#card-account').val('');
+        $('#deposit-account').val('');
         $('#split-transfer-wrap').addClass('d-none');
         $('#split-transfer-account-wrap').addClass('d-none');
         $('#split-card-wrap').addClass('d-none');
@@ -2259,6 +2277,7 @@ $(document).ready(function() {
                 _token: "{{ csrf_token() }}",
                 customer_id: $('#customer-select').val(),
                 payment_method: $('#payment-method').val(),
+                deposit_account_id: $('#deposit-account').val() || null,
                 items: cart,
                 subtotal: cart.reduce((s, i) => s + i.sub, 0),
                 tax: cart.reduce((s, i) => s + i.taxVal, 0),

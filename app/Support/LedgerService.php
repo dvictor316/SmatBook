@@ -18,7 +18,7 @@ class LedgerService
     private static ?array $transactionColumns = null;
     private static ?array $accountColumns = null;
 
-    public static function postSale(Sale $sale): void
+    public static function postSale(Sale $sale, ?int $depositAccountId = null): void
     {
         if (!self::isReady()) {
             return;
@@ -61,7 +61,13 @@ class LedgerService
 
         $paid = (float) ($sale->paid ?? $sale->amount_paid ?? 0);
         if ($paid > 0) {
-            $cashAccount = self::resolveCashAccount($sale->payment_method ?? null);
+            // Prefer explicitly selected COA deposit account over payment-method guessing
+            if ($depositAccountId) {
+                $cashAccount = Account::withoutGlobalScopes()->find($depositAccountId)
+                    ?? self::resolveCashAccount($sale->payment_method ?? null);
+            } else {
+                $cashAccount = self::resolveCashAccount($sale->payment_method ?? null);
+            }
 
             self::postDoubleEntry(
                 debitAccountId: $cashAccount->id,
