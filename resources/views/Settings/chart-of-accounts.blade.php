@@ -482,7 +482,9 @@
                                             <select name="type" id="accountTypeSelect" class="coa-input {{ $errors->has('type') ? 'is-invalid' : '' }}" required>
                                                 <option value="">Select…</option>
                                                 @foreach($accountTypes as $t)
-                                                    <option value="{{ $t }}" {{ old('type') === $t ? 'selected' : '' }}>{{ $t }}</option>
+                                                    <option value="{{ $t }}"
+                                                        data-subtypes="{{ implode('||', $subtypeOptionsByType[$t] ?? []) }}"
+                                                        {{ old('type') === $t ? 'selected' : '' }}>{{ $t }}</option>
                                                 @endforeach
                                             </select>
                                             @error('type')<small style="color:#ef4444;font-size:.72rem;">{{ $message }}</small>@enderror
@@ -548,61 +550,57 @@
 
 @push('scripts')
 <script>
-(function () {
-    /* ── Sub type dynamic options ── */
-    const subtypeOptionsByType = @json($subtypeOptionsByType);
-    const oldSubType = @json(old('sub_type'));
+document.addEventListener('DOMContentLoaded', function () {
+    var typeSelect    = document.getElementById('accountTypeSelect');
+    var subTypeSelect = document.getElementById('accountSubTypeSelect');
+    var oldSubType    = '{{ addslashes(old('sub_type', '')) }}';
 
-    const typeSelect    = document.getElementById('accountTypeSelect');
-    const subTypeSelect = document.getElementById('accountSubTypeSelect');
-
-    function buildSubtypeOptions(selectedType, selectedSubType) {
-        const options = subtypeOptionsByType[selectedType] || [];
+    function buildSubtypeOptions(selectedOption, preselect) {
+        var raw = selectedOption ? (selectedOption.getAttribute('data-subtypes') || '') : '';
+        var options = raw.length ? raw.split('||') : [];
         subTypeSelect.innerHTML = '';
-        const ph = document.createElement('option');
+        var ph = document.createElement('option');
         ph.value = '';
         ph.textContent = options.length ? 'Select sub type…' : 'Select type first…';
         subTypeSelect.appendChild(ph);
         subTypeSelect.disabled = options.length === 0;
         options.forEach(function (val) {
-            const opt = document.createElement('option');
+            var opt = document.createElement('option');
             opt.value = val;
             opt.textContent = val;
-            opt.selected = (val === selectedSubType);
+            if (preselect && val === preselect) { opt.selected = true; }
             subTypeSelect.appendChild(opt);
         });
     }
 
     if (typeSelect && subTypeSelect) {
-        buildSubtypeOptions(typeSelect.value, oldSubType);
+        buildSubtypeOptions(typeSelect.options[typeSelect.selectedIndex], oldSubType);
         typeSelect.addEventListener('change', function () {
-            buildSubtypeOptions(this.value, '');
+            buildSubtypeOptions(this.options[this.selectedIndex], '');
         });
     }
 
     /* ── Live search + filter ── */
-    const searchInput  = document.getElementById('coaSearch');
-    const typeFilter   = document.getElementById('coaTypeFilter');
-    const statusFilter = document.getElementById('coaStatusFilter');
+    var searchInput  = document.getElementById('coaSearch');
+    var typeFilter   = document.getElementById('coaTypeFilter');
+    var statusFilter = document.getElementById('coaStatusFilter');
 
     function applyFilters() {
-        const q      = (searchInput ? searchInput.value : '').toLowerCase().trim();
-        const type   = (typeFilter ? typeFilter.value : '').toLowerCase();
-        const status = (statusFilter ? statusFilter.value : '').toLowerCase();
+        var q      = (searchInput ? searchInput.value : '').toLowerCase().trim();
+        var type   = (typeFilter ? typeFilter.value : '').toLowerCase();
+        var status = (statusFilter ? statusFilter.value : '').toLowerCase();
 
         document.querySelectorAll('.coa-block').forEach(function (block) {
-            const blockType = (block.dataset.type || '').toLowerCase();
-            const typeMatch = !type || blockType === type;
-
-            let anyVisible = false;
+            var blockType = (block.dataset.type || '').toLowerCase();
+            var typeMatch = !type || blockType === type;
+            var anyVisible = false;
             block.querySelectorAll('.coa-row').forEach(function (row) {
-                const nameMatch   = !q || row.dataset.name.includes(q) || row.dataset.code.includes(q);
-                const statusMatch = !status || row.dataset.status === status;
-                const visible     = typeMatch && nameMatch && statusMatch;
+                var nameMatch   = !q || row.dataset.name.indexOf(q) !== -1 || row.dataset.code.indexOf(q) !== -1;
+                var statusMatch = !status || row.dataset.status === status;
+                var visible     = typeMatch && nameMatch && statusMatch;
                 row.style.display = visible ? '' : 'none';
                 if (visible) anyVisible = true;
             });
-
             block.style.display = (typeMatch && anyVisible) ? '' : 'none';
         });
     }
@@ -610,6 +608,6 @@
     if (searchInput)  searchInput.addEventListener('input', applyFilters);
     if (typeFilter)   typeFilter.addEventListener('change', applyFilters);
     if (statusFilter) statusFilter.addEventListener('change', applyFilters);
-})();
+});
 </script>
 @endpush
