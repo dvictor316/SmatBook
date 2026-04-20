@@ -152,7 +152,7 @@
                             </div>
                         </div>
 
-                        <form method="POST" action="{{ route('settings.chart-of-accounts.store') }}">
+                        <form method="POST" action="{{ route('settings.chart-of-accounts.store') }}" id="chartAccountForm">
                             @csrf
                             <div class="row g-3">
                                 <div class="col-md-3">
@@ -165,16 +165,21 @@
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label">Type</label>
-                                    <select name="type" class="form-select" required>
+                                    <select name="type" id="accountTypeSelect" class="form-select" required>
                                         <option value="">Select type</option>
-                                        @foreach([\App\Models\Account::TYPE_ASSET, \App\Models\Account::TYPE_LIABILITY, \App\Models\Account::TYPE_EQUITY, \App\Models\Account::TYPE_REVENUE, \App\Models\Account::TYPE_EXPENSE] as $type)
+                                        @foreach($accountTypes as $type)
                                             <option value="{{ $type }}" {{ old('type') === $type ? 'selected' : '' }}>{{ $type }}</option>
                                         @endforeach
                                     </select>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label">Sub Type</label>
-                                    <input type="text" name="sub_type" class="form-control" value="{{ old('sub_type') }}" placeholder="Current Asset">
+                                    <select name="sub_type" id="accountSubTypeSelect" class="form-select">
+                                        <option value="">Select sub type</option>
+                                    </select>
+                                    @error('sub_type')
+                                        <small class="text-danger d-block mt-1">{{ $message }}</small>
+                                    @enderror
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label">Opening Balance ({{ $currency }})</label>
@@ -256,4 +261,41 @@
         </div>
     </div>
 </div>
+<script>
+    (function () {
+        const subtypeOptionsByType = @json($subtypeOptionsByType);
+        const typeSelect = document.getElementById('accountTypeSelect');
+        const subTypeSelect = document.getElementById('accountSubTypeSelect');
+        const oldSubType = @json(old('sub_type'));
+
+        if (!typeSelect || !subTypeSelect) {
+            return;
+        }
+
+        const buildOptions = function (selectedType, selectedSubType) {
+            const options = subtypeOptionsByType[selectedType] || [];
+            const placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = options.length ? 'Select sub type' : 'Select type first';
+
+            subTypeSelect.innerHTML = '';
+            subTypeSelect.appendChild(placeholder);
+            subTypeSelect.disabled = options.length === 0;
+
+            options.forEach(function (optionValue) {
+                const option = document.createElement('option');
+                option.value = optionValue;
+                option.textContent = optionValue;
+                option.selected = selectedSubType === optionValue;
+                subTypeSelect.appendChild(option);
+            });
+        };
+
+        buildOptions(typeSelect.value, oldSubType);
+
+        typeSelect.addEventListener('change', function () {
+            buildOptions(typeSelect.value, '');
+        });
+    })();
+</script>
 @endsection

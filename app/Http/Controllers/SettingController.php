@@ -408,6 +408,8 @@ class SettingController extends Controller
         $accounts = collect();
         $accountGroups = collect();
         $accountSummary = collect();
+        $accountTypes = Account::typeOptions();
+        $subtypeOptionsByType = Account::subtypeOptionsByType();
 
         if (Schema::hasTable('accounts')) {
             $accounts = Account::query()
@@ -425,13 +427,7 @@ class SettingController extends Controller
 
             $accountGroups = $accounts->groupBy('type');
 
-            $typeOrder = [
-                Account::TYPE_ASSET,
-                Account::TYPE_LIABILITY,
-                Account::TYPE_EQUITY,
-                Account::TYPE_REVENUE,
-                Account::TYPE_EXPENSE,
-            ];
+            $typeOrder = $accountTypes;
 
             $accountSummary = collect($typeOrder)->map(function ($type) use ($accountGroups) {
                 $group = $accountGroups->get($type, collect());
@@ -444,7 +440,14 @@ class SettingController extends Controller
             });
         }
 
-        return view('Settings.chart-of-accounts', compact('settings', 'accounts', 'accountGroups', 'accountSummary'));
+        return view('Settings.chart-of-accounts', compact(
+            'settings',
+            'accounts',
+            'accountGroups',
+            'accountSummary',
+            'accountTypes',
+            'subtypeOptionsByType'
+        ));
     }
     public function branches()
     {
@@ -671,18 +674,27 @@ class SettingController extends Controller
                 Rule::unique('accounts', 'code')->where('company_id', $companyId ?: null),
             ],
             'name' => 'required|string|max:191',
-            'type' => ['required', Rule::in([
-                Account::TYPE_ASSET,
-                Account::TYPE_LIABILITY,
-                Account::TYPE_EQUITY,
-                Account::TYPE_REVENUE,
-                Account::TYPE_EXPENSE,
-            ])],
+            'type' => ['required', Rule::in(Account::typeOptions())],
             'sub_type' => 'nullable|string|max:191',
             'opening_balance' => 'nullable|numeric',
             'description' => 'nullable|string|max:1000',
             'is_active' => 'nullable|boolean',
         ]);
+
+        $validated['sub_type'] = trim((string) ($validated['sub_type'] ?? ''));
+        if ($validated['sub_type'] === '') {
+            $validated['sub_type'] = null;
+        }
+
+        $allowedSubtypes = Account::subtypeOptionsFor($validated['type']);
+        if ($validated['sub_type'] !== null && !in_array($validated['sub_type'], $allowedSubtypes, true)) {
+            return redirect()
+                ->back()
+                ->withInput()
+                ->withErrors([
+                    'sub_type' => 'Please select a valid sub type for the chosen account type.',
+                ]);
+        }
 
         Account::create([
             'code'            => $validated['code'],

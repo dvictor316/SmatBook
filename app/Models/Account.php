@@ -57,6 +57,71 @@ class Account extends Model
     const SUBTYPE_CURRENT_LIABILITY = 'Current Liability';
     const SUBTYPE_LONG_TERM_LIABILITY = 'Long-term Liability';
 
+    public static function typeOptions(): array
+    {
+        return [
+            self::TYPE_ASSET,
+            self::TYPE_LIABILITY,
+            self::TYPE_EQUITY,
+            self::TYPE_REVENUE,
+            self::TYPE_EXPENSE,
+        ];
+    }
+
+    public static function subtypeOptionsByType(): array
+    {
+        return [
+            self::TYPE_ASSET => [
+                self::SUBTYPE_CURRENT_ASSET,
+                'Cash & Bank',
+                'Accounts Receivable',
+                'Inventory',
+                self::SUBTYPE_FIXED_ASSET,
+                self::SUBTYPE_INTANGIBLE_ASSET,
+                'Other Asset',
+            ],
+            self::TYPE_LIABILITY => [
+                self::SUBTYPE_CURRENT_LIABILITY,
+                'Accounts Payable',
+                'Tax Payable',
+                'Accrued Liability',
+                self::SUBTYPE_LONG_TERM_LIABILITY,
+                'Other Liability',
+            ],
+            self::TYPE_EQUITY => [
+                'Owner\'s Equity',
+                'Partner\'s Equity',
+                'Share Capital',
+                'Retained Earnings',
+                'Drawings',
+                'Opening Balance Equity',
+                'Reconciliation Reserve',
+            ],
+            self::TYPE_REVENUE => [
+                'Sales Revenue',
+                'Service Revenue',
+                'Other Income',
+                'Contra Revenue',
+            ],
+            self::TYPE_EXPENSE => [
+                'Cost of Sales',
+                'Operating Expense',
+                'Administrative Expense',
+                'Selling & Distribution Expense',
+                'Payroll Expense',
+                'Finance Cost',
+                'Tax Expense',
+                'Depreciation Expense',
+                'Other Expense',
+            ],
+        ];
+    }
+
+    public static function subtypeOptionsFor(?string $type): array
+    {
+        return self::subtypeOptionsByType()[$type] ?? [];
+    }
+
     /**
      * Get all transactions for this account
      */
