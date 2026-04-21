@@ -751,7 +751,9 @@ class SettingController extends Controller
                 'nullable',
                 'string',
                 'max:50',
-                Rule::unique('accounts', 'code')->where('company_id', $companyId ?: null),
+                Rule::unique('accounts', 'code')
+                    ->where('company_id', $companyId ?: null)
+                    ->whereNull('deleted_at'),
             ],
             'name' => 'required|string|max:191',
             'type' => ['required', Rule::in(Account::typeOptions())],
