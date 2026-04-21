@@ -222,10 +222,10 @@ class BalanceSheetController extends Controller
                 if (!empty($accountIds)) {
                     $query->whereIn('id', $accountIds);
                 }
-                // Also include accounts that have a stored balance from before the
-                // transaction-ledger correction (legacy current_balance backfill).
-                $query->orWhere('opening_balance', '!=', 0)
-                      ->orWhere('current_balance', '!=', 0);
+                // Include accounts with an opening balance (set at account creation).
+                // Do NOT use current_balance here — it is a stale denormalized cache
+                // that does not reset when transactions are deleted.
+                $query->orWhere('opening_balance', '!=', 0);
             })
             ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
                 $branchId = trim((string) ($activeBranch['id'] ?? ''));
@@ -269,9 +269,9 @@ class BalanceSheetController extends Controller
         $accounts->transform(function ($account) use (&$openingTotals) {
             $dr = ($account->total_debit ?? 0);
             $cr = ($account->total_credit ?? 0);
-            // Use current_balance as fallback opening for accounts created before the
-            // transaction-ledger correction (where opening_balance was left at 0).
-            $opening = (float) ($account->opening_balance ?: ($account->current_balance ?? 0));
+            // Balance = opening_balance + live transaction movement.
+            // current_balance (DB column) is a stale cache — never used here.
+            $opening = (float) ($account->opening_balance ?? 0);
             $type = $this->normalizeAccountType($account->type ?? null);
             $isDebitNormal = in_array($type, ['asset', 'expense'], true);
 
@@ -490,8 +490,7 @@ class BalanceSheetController extends Controller
                 if (!$txnTotals->isEmpty()) {
                     $q->whereIn('id', $txnTotals->keys()->all());
                 }
-                $q->orWhere('opening_balance', '!=', 0)
-                  ->orWhere('current_balance', '!=', 0);
+                $q->orWhere('opening_balance', '!=', 0);
             })
             ->tap(fn ($q) => $this->applyAccountScope($q, $request))->get()
             ->transform(function ($a) use ($txnTotals) {
@@ -500,7 +499,7 @@ class BalanceSheetController extends Controller
                 $a->total_credit = (float)($t->total_credit ?? 0);
                 $type = $this->normalizeAccountType($a->type ?? null);
                 $isDebit = in_array($type, ['asset', 'expense'], true);
-                $ob = (float)($a->opening_balance ?: ($a->current_balance ?? 0));
+                $ob = (float)($a->opening_balance ?? 0);
                 $a->balance = $isDebit
                     ? ($ob + $a->total_debit) - $a->total_credit
                     : ($ob + $a->total_credit) - $a->total_debit;
@@ -542,7 +541,7 @@ class BalanceSheetController extends Controller
                     $type    = $this->normalizeAccountType($a->type ?? null);
                     $isDebit = in_array($type, ['asset', 'expense'], true);
                     $dr = (float)($t->td ?? 0); $cr = (float)($t->tc ?? 0);
-                    $ob = (float)($a->opening_balance ?: ($a->current_balance ?? 0));
+                    $ob = (float)($a->opening_balance ?? 0);
                     $a->balance = $isDebit ? ($ob + $dr) - $cr : ($ob + $cr) - $dr;
                     return $a;
                 });
