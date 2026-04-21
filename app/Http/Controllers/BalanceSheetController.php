@@ -218,6 +218,7 @@ class BalanceSheetController extends Controller
         // system-generated accounts (AR, Revenue, Cash) created without a branch.
         // We apply our own branch filter below that also includes those global accounts.
         $accountsQuery = Account::withoutGlobalScopes()
+            ->whereNull('deleted_at')
             ->where(function ($query) use ($accountIds) {
                 if (!empty($accountIds)) {
                     $query->whereIn('id', $accountIds);
@@ -486,6 +487,7 @@ class BalanceSheetController extends Controller
             ->groupBy('account_id')->get()->keyBy('account_id');
 
         $accounts = Account::withoutGlobalScopes()
+            ->whereNull('deleted_at')
             ->where(function ($q) use ($txnTotals) {
                 if (!$txnTotals->isEmpty()) {
                     $q->whereIn('id', $txnTotals->keys()->all());
@@ -535,6 +537,7 @@ class BalanceSheetController extends Controller
                 ->groupBy('account_id')->get()->keyBy('account_id');
 
             $accounts = Account::withoutGlobalScopes()
+                ->whereNull('deleted_at')
                 ->tap(fn ($q) => $this->applyAccountScope($q, $request))->get()
                 ->transform(function ($a) use ($txnTotals) {
                     $t = $txnTotals->get($a->id);
