@@ -596,6 +596,27 @@
                                     </div>
                                 @endif
 
+<script>
+window._coaSubtypeMap = @json($formSubtypeMap);
+function coaBuildSubtypes(typeValue, selectId, preselect) {
+    var sel = document.getElementById(selectId || 'accountSubTypeSelect');
+    if (!sel) return;
+    var opts = (window._coaSubtypeMap || {})[typeValue] || [];
+    sel.innerHTML = '';
+    var ph = document.createElement('option');
+    ph.value = '';
+    ph.textContent = opts.length ? 'Select sub type…' : 'Select type first…';
+    sel.appendChild(ph);
+    sel.disabled = opts.length === 0;
+    opts.forEach(function(v) {
+        var o = document.createElement('option');
+        o.value = v; o.textContent = v;
+        if (preselect && v === preselect) o.selected = true;
+        sel.appendChild(o);
+    });
+}
+</script>
+
                                 <form method="POST" action="{{ route('settings.chart-of-accounts.store') }}" id="chartAccountForm">
                                     @csrf
 
@@ -609,7 +630,8 @@
                                         </div>
                                         <div>
                                             <label class="coa-field-label">Type <span style="color:#ef4444">*</span></label>
-                                            <select name="type" id="accountTypeSelect" class="coa-input {{ $errors->has('type') ? 'is-invalid' : '' }}" required>
+                                            <select name="type" id="accountTypeSelect" class="coa-input {{ $errors->has('type') ? 'is-invalid' : '' }}" required
+                                                onchange="coaBuildSubtypes(this.value,'accountSubTypeSelect','')">
                                                 <option value="">Select…</option>
                                                 @foreach($formAccountTypes as $t)
                                                     <option value="{{ $t }}"
@@ -802,36 +824,18 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    var typeSelect    = document.getElementById('accountTypeSelect');
-    var subTypeSelect = document.getElementById('accountSubTypeSelect');
-    var oldSubType    = '{{ addslashes(old('sub_type', '')) }}';
+    /* Subtype map is global (window._coaSubtypeMap) and coaBuildSubtypes() is a global function.
+       Both are inlined before the form so they work immediately without DOMContentLoaded. */
+    var subtypeMap = window._coaSubtypeMap || {};
 
-    /* ── Subtype map from server (used by both Add form and Edit modal) ── */
-    var subtypeMap = @json($formSubtypeMap);
-
-    function buildSubtypeOptions(typeValue, preselect) {
-        var options = subtypeMap[typeValue] || [];
-        subTypeSelect.innerHTML = '';
-        var ph = document.createElement('option');
-        ph.value = '';
-        ph.textContent = options.length ? 'Select sub type…' : 'Select type first…';
-        subTypeSelect.appendChild(ph);
-        subTypeSelect.disabled = options.length === 0;
-        options.forEach(function (val) {
-            var opt = document.createElement('option');
-            opt.value = val;
-            opt.textContent = val;
-            if (preselect && val === preselect) { opt.selected = true; }
-            subTypeSelect.appendChild(opt);
-        });
-    }
-
-    if (typeSelect && subTypeSelect) {
-        buildSubtypeOptions(typeSelect.value, oldSubType);
-        typeSelect.addEventListener('change', function () {
-            buildSubtypeOptions(this.value, '');
-        });
-    }
+    /* Restore sub_type on validation error */
+    (function() {
+        var oldSubType = '{{ addslashes(old('sub_type', '')) }}';
+        var typeEl = document.getElementById('accountTypeSelect');
+        if (typeEl && typeEl.value && oldSubType) {
+            coaBuildSubtypes(typeEl.value, 'accountSubTypeSelect', oldSubType);
+        }
+    })();
 
     /* ── Live search + filter ── */
     var searchInput  = document.getElementById('coaSearch');
@@ -874,15 +878,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var editCancelBtn = document.getElementById('coaEditCancelBtn');
 
     function buildEditSubtypeOptions(type, current) {
-        var opts = subtypeMap[type] || [];
-        editSubType.innerHTML = '<option value="">General / None</option>';
-        opts.forEach(function(v) {
-            var o = document.createElement('option');
-            o.value = v; o.textContent = v;
-            if (v === current) o.selected = true;
-            editSubType.appendChild(o);
-        });
-        editSubType.disabled = opts.length === 0;
+        coaBuildSubtypes(type, 'editSubType', current);
     }
 
     document.querySelectorAll('.coa-edit-btn').forEach(function(btn) {
