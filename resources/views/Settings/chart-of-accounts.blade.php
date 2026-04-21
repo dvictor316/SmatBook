@@ -630,8 +630,7 @@ function coaBuildSubtypes(typeValue, selectId, preselect) {
                                         </div>
                                         <div>
                                             <label class="coa-field-label">Type <span style="color:#ef4444">*</span></label>
-                                            <select name="type" id="accountTypeSelect" class="coa-input {{ $errors->has('type') ? 'is-invalid' : '' }}" required
-                                                onchange="coaBuildSubtypes(this.value,'accountSubTypeSelect','')">
+                                            <select name="type" id="accountTypeSelect" class="coa-input {{ $errors->has('type') ? 'is-invalid' : '' }}" required>
                                                 <option value="">Select…</option>
                                                 @foreach($formAccountTypes as $t)
                                                     <option value="{{ $t }}"
@@ -654,7 +653,14 @@ function coaBuildSubtypes(typeValue, selectId, preselect) {
                                     <div style="margin-bottom:10px;">
                                         <label class="coa-field-label">Sub Type</label>
                                         <select name="sub_type" id="accountSubTypeSelect" class="coa-input">
-                                            <option value="">Select type first…</option>
+                                            <option value="">-- Select sub type --</option>
+                                            @foreach($formSubtypeMap as $typeName => $subtypes)
+                                                <optgroup label="{{ $typeName }}">
+                                                    @foreach($subtypes as $sub)
+                                                        <option value="{{ $sub }}" {{ old('sub_type') === $sub ? 'selected' : '' }}>{{ $sub }}</option>
+                                                    @endforeach
+                                                </optgroup>
+                                            @endforeach
                                         </select>
                                         @error('sub_type')<small style="color:#ef4444;font-size:.72rem;">{{ $message }}</small>@enderror
                                     </div>
@@ -717,7 +723,16 @@ function coaBuildSubtypes(typeValue, selectId, preselect) {
                 {{-- Sub Type --}}
                 <div style="margin-bottom:12px;">
                     <label class="coa-field-label">Sub Type</label>
-                    <select name="sub_type" id="editSubType" class="coa-input"></select>
+                    <select name="sub_type" id="editSubType" class="coa-input">
+                        <option value="">-- Select sub type --</option>
+                        @foreach($formSubtypeMap as $typeName => $subtypes)
+                            <optgroup label="{{ $typeName }}">
+                                @foreach($subtypes as $sub)
+                                    <option value="{{ $sub }}">{{ $sub }}</option>
+                                @endforeach
+                            </optgroup>
+                        @endforeach
+                    </select>
                 </div>
 
                 {{-- Opening Balance + Status --}}
@@ -878,7 +893,9 @@ document.addEventListener('DOMContentLoaded', function () {
     var editCancelBtn = document.getElementById('coaEditCancelBtn');
 
     function buildEditSubtypeOptions(type, current) {
-        coaBuildSubtypes(type, 'editSubType', current);
+        var sel = document.getElementById('editSubType');
+        if (!sel) return;
+        sel.value = current || '';
     }
 
     document.querySelectorAll('.coa-edit-btn').forEach(function(btn) {
