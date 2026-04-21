@@ -734,6 +734,37 @@
     </div>
 </div>
 
+{{-- ── Deactivate Account Modal ──────────────────────────────── --}}
+<div class="coa-modal-overlay" id="coaDeactivateOverlay">
+    <div class="coa-modal" style="width:min(94vw,400px);">
+        <div class="coa-modal-head">
+            <p class="coa-modal-title" style="color:#d97706;"><i class="fe fe-slash me-1"></i> Deactivate Account</p>
+            <button type="button" class="coa-modal-close" id="coaDeactivateClose"><i class="fe fe-x"></i></button>
+        </div>
+        <div class="coa-modal-body">
+            <p style="font-size:.86rem;color:#475569;margin-bottom:6px;">
+                <strong id="deactivateAccountName"></strong> has transactions and cannot be deleted.
+            </p>
+            <p style="font-size:.82rem;color:#64748b;margin-bottom:18px;">
+                Would you like to deactivate it instead? It will be hidden from dropdowns but its history is preserved.
+            </p>
+            <form method="POST" id="coaDeactivateForm">
+                @csrf
+                <div style="display:flex;gap:10px;">
+                    <button type="submit"
+                        style="flex:1;padding:10px;background:linear-gradient(135deg,#d97706,#b45309);color:#fff;border:none;border-radius:10px;font-size:.85rem;font-weight:700;cursor:pointer;">
+                        <i class="fe fe-slash me-1"></i> Yes, Deactivate
+                    </button>
+                    <button type="button" id="coaDeactivateCancelBtn"
+                        style="flex:0 0 auto;padding:10px 18px;border:1.5px solid #e2e8f0;border-radius:10px;background:#f8fafc;color:#64748b;font-size:.85rem;font-weight:700;cursor:pointer;">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 {{-- ── Delete Account Modal ────────────────────────────────── --}}
 <div class="coa-modal-overlay" id="coaDeleteOverlay">
     <div class="coa-modal" style="width:min(94vw,400px);">
@@ -883,13 +914,26 @@ document.addEventListener('DOMContentLoaded', function () {
     var deleteClose     = document.getElementById('coaDeleteClose');
     var deleteCancelBtn = document.getElementById('coaDeleteCancelBtn');
 
+    var deactivateOverlay   = document.getElementById('coaDeactivateOverlay');
+    var deactivateForm      = document.getElementById('coaDeactivateForm');
+    var deactivateNameEl    = document.getElementById('deactivateAccountName');
+    var deactivateClose     = document.getElementById('coaDeactivateClose');
+    var deactivateCancelBtn = document.getElementById('coaDeactivateCancelBtn');
+
+    function closeDeactivateModal() { deactivateOverlay.classList.remove('active'); }
+    if (deactivateClose)     deactivateClose.addEventListener('click', closeDeactivateModal);
+    if (deactivateCancelBtn) deactivateCancelBtn.addEventListener('click', closeDeactivateModal);
+    deactivateOverlay && deactivateOverlay.addEventListener('click', function(e) { if (e.target === deactivateOverlay) closeDeactivateModal(); });
+
     document.querySelectorAll('.coa-delete-btn').forEach(function(btn) {
         btn.addEventListener('click', function() {
             var id   = btn.dataset.id;
             var name = btn.dataset.name;
             var txns = parseInt(btn.dataset.txns || '0', 10);
             if (txns > 0) {
-                alert('Cannot delete "' + name + '" — it has ' + txns + ' transaction(s). Deactivate it instead.');
+                deactivateForm.action = '{{ url("settings/chart-of-accounts") }}/' + id + '/deactivate';
+                deactivateNameEl.textContent = name;
+                deactivateOverlay.classList.add('active');
                 return;
             }
             deleteForm.action  = '{{ url("settings/chart-of-accounts") }}/' + id;

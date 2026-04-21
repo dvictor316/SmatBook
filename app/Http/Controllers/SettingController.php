@@ -840,6 +840,24 @@ class SettingController extends Controller
         return redirect()->route('chart-of-accounts')->with('success', 'Account updated successfully.');
     }
 
+    public function deactivateChartAccount($id)
+    {
+        if (!Schema::hasTable('accounts')) {
+            return redirect()->back()->with('error', 'Accounts table is not available in this installation.');
+        }
+
+        $companyId = (int) (Auth::user()->company_id ?? session('current_tenant_id') ?? 0);
+
+        $account = Account::withoutGlobalScopes()
+            ->when($companyId > 0, fn($q) => $q->where('company_id', $companyId))
+            ->findOrFail($id);
+
+        $account->is_active = false;
+        $account->save();
+
+        return redirect()->route('chart-of-accounts')->with('success', "Account \"{$account->name}\" has been deactivated.");
+    }
+
     public function destroyChartAccount($id)
     {
         if (!Schema::hasTable('accounts')) {
