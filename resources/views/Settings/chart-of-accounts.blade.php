@@ -613,7 +613,6 @@
                                                 <option value="">Select…</option>
                                                 @foreach($formAccountTypes as $t)
                                                     <option value="{{ $t }}"
-                                                        data-subtypes="{{ implode('||', $formSubtypeMap[$t] ?? []) }}"
                                                         {{ old('type') === $t ? 'selected' : '' }}>{{ $t }}</option>
                                                 @endforeach
                                             </select>
@@ -807,9 +806,11 @@ document.addEventListener('DOMContentLoaded', function () {
     var subTypeSelect = document.getElementById('accountSubTypeSelect');
     var oldSubType    = '{{ addslashes(old('sub_type', '')) }}';
 
-    function buildSubtypeOptions(selectedOption, preselect) {
-        var raw = selectedOption ? (selectedOption.getAttribute('data-subtypes') || '') : '';
-        var options = raw.length ? raw.split('||') : [];
+    /* ── Subtype map from server (used by both Add form and Edit modal) ── */
+    var subtypeMap = @json($formSubtypeMap);
+
+    function buildSubtypeOptions(typeValue, preselect) {
+        var options = subtypeMap[typeValue] || [];
         subTypeSelect.innerHTML = '';
         var ph = document.createElement('option');
         ph.value = '';
@@ -826,9 +827,9 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     if (typeSelect && subTypeSelect) {
-        buildSubtypeOptions(typeSelect.options[typeSelect.selectedIndex], oldSubType);
+        buildSubtypeOptions(typeSelect.value, oldSubType);
         typeSelect.addEventListener('change', function () {
-            buildSubtypeOptions(this.options[this.selectedIndex], '');
+            buildSubtypeOptions(this.value, '');
         });
     }
 
@@ -860,9 +861,6 @@ document.addEventListener('DOMContentLoaded', function () {
     if (searchInput)  searchInput.addEventListener('input', applyFilters);
     if (typeFilter)   typeFilter.addEventListener('change', applyFilters);
     if (statusFilter) statusFilter.addEventListener('change', applyFilters);
-
-    /* ── Subtype map from server ── */
-    var subtypeMap = @json($formSubtypeMap);
 
     /* ── Edit modal ── */
     var editOverlay  = document.getElementById('coaEditOverlay');
