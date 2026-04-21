@@ -555,6 +555,7 @@
                                                             title="Delete account"
                                                             data-id="{{ $account->id }}"
                                                             data-name="{{ $account->name }}"
+                                                            data-active="{{ $account->is_active ? '1' : '0' }}"
                                                             data-txns="{{ $account->transactions_count ?? 0 }}">
                                                             <i class="fe fe-trash-2"></i>
                                                         </button>
@@ -938,15 +939,24 @@ document.addEventListener('DOMContentLoaded', function () {
 
     document.querySelectorAll('.coa-delete-btn').forEach(function(btn) {
         btn.addEventListener('click', function() {
-            var id   = btn.dataset.id;
-            var name = btn.dataset.name;
-            var txns = parseInt(btn.dataset.txns || '0', 10);
-            if (txns > 0) {
+            var id     = btn.dataset.id;
+            var name   = btn.dataset.name;
+            var txns   = parseInt(btn.dataset.txns || '0', 10);
+            var active = btn.dataset.active; // '1' = active, '0' = inactive/deactivated
+
+            if (txns > 0 && active === '1') {
+                // Active account with transactions → offer to deactivate instead
                 deactivateForm.action = '{{ url("settings/chart-of-accounts") }}/' + id + '/deactivate';
                 deactivateNameEl.textContent = name;
                 deactivateOverlay.classList.add('active');
                 return;
             }
+            if (txns > 0 && active === '0') {
+                // Deactivated account but still has transactions → cannot delete
+                alert('"' + name + '" is deactivated but still has ' + txns + ' transaction(s) linked to it.\n\nTo permanently delete this account, first remove its transactions from the ledger/journal, then try again.');
+                return;
+            }
+            // No transactions → confirm delete
             deleteForm.action  = '{{ url("settings/chart-of-accounts") }}/' + id;
             deleteNameEl.textContent = name;
             deleteOverlay.classList.add('active');
