@@ -98,7 +98,11 @@ class LandingController extends Controller
         $demoPrefix = 'demo-hq';
 
         try {
-            $user = DB::transaction(function () use ($demoEmail, $demoCompanyName, $demoPrefix) {
+            // Step 1: create/restore the demo user, company and subscription inside a
+            // transaction so they are atomic. Seeding (products, sales, etc.) runs
+            // OUTSIDE the transaction so a non-critical seeding failure never blocks
+            // the visitor from entering the demo workspace.
+            [$user, $company] = DB::transaction(function () use ($demoEmail, $demoCompanyName, $demoPrefix) {
                 $user = User::withTrashed()->firstOrNew(['email' => $demoEmail]);
 
                 if (method_exists($user, 'trashed') && $user->trashed()) {
@@ -121,8 +125,14 @@ class LandingController extends Controller
                 }
                 $user->save();
 
+                // Match by email so we never accidentally overwrite another company.
+                $companyMatch = $this->onlyExistingColumns('companies', ['email' => $demoEmail]);
+                if (empty($companyMatch)) {
+                    $companyMatch = $this->onlyExistingColumns('companies', ['user_id' => $user->id]);
+                }
+
                 $company = Company::updateOrCreate(
-                    $this->onlyExistingColumns('companies', ['user_id' => $user->id]),
+                    $companyMatch,
                     $this->onlyExistingColumns('companies', [
                         'user_id' => $user->id,
                         'owner_id' => $user->id,
@@ -157,48 +167,66 @@ class LandingController extends Controller
                         ->value('id');
                 }
 
-                Subscription::updateOrCreate(
-                    $this->onlyExistingColumns('subscriptions', ['user_id' => $user->id]),
-                    $this->onlyExistingColumns('subscriptions', [
-                        'user_id' => $user->id,
-                        'company_id' => $company->id,
-                        'plan_id' => $professionalPlanId,
-                        'plan' => 'Professional',
-                        'plan_name' => 'Professional',
-                        'subscriber_name' => $demoCompanyName,
-                        'domain_prefix' => $demoPrefix,
-                        'employee_size' => '25-50',
-                        'amount' => 19500,
-                        'billing_cycle' => 'Monthly',
-                        'start_date' => now()->subDays(7),
-                        'end_date' => now()->addDays(30),
-                        'status' => 'Active',
-                        'payment_status' => 'paid',
-                        'payment_gateway' => 'demo',
-                        'payment_reference' => 'demo-workspace',
-                        'transaction_reference' => 'demo-workspace',
-                        'activated_at' => now()->subDays(7),
-                        'initialized_at' => now()->subDays(7),
-                        'paid_at' => now()->subDays(7),
-                        'payment_date' => now()->subDays(7),
-                    ])
-                );
+                $subMatch = $this->onlyExistingColumns('subscriptions', ['user_id' => $user->id]);
+                if (!empty($subMatch)) {
+                    Subscription::updateOrCreate(
+                        $subMatch,
+                        $this->onlyExistingColumns('subscriptions', [
+                            'user_id' => $user->id,
+                            'company_id' => $company->id,
+                            'plan_id' => $professionalPlanId,
+                            'plan' => 'Professional',
+                            'plan_name' => 'Professional',
+                            'subscriber_name' => $demoCompanyName,
+                            'domain_prefix' => $demoPrefix,
+                            'employee_size' => '25-50',
+                            'amount' => 19500,
+                            'billing_cycle' => 'Monthly',
+                            'start_date' => now()->subDays(7),
+                            'end_date' => now()->addDays(30),
+                            'status' => 'Active',
+                            'payment_status' => 'paid',
+                            'payment_gateway' => 'demo',
+                            'payment_reference' => 'demo-workspace',
+                            'transaction_reference' => 'demo-workspace',
+                            'activated_at' => now()->subDays(7),
+                            'initialized_at' => now()->subDays(7),
+                            'paid_at' => now()->subDays(7),
+                            'payment_date' => now()->subDays(7),
+                        ])
+                    );
+                }
 
-                $this->seedDemoWorkspace($user, $company);
-
-                return $user->fresh();
+                return [$user->fresh(), $company];
             });
 
+            // Step 2: log in the demo user immediately — even if seeding fails below,
+            // the visitor still enters the app (just with less sample data).
             Auth::logout();
             Auth::login($user, true);
             $request->session()->regenerate();
             $request->session()->put('user_plan', 'professional');
             $request->session()->put('is_demo_workspace', true);
 
+            // Step 3: seed sample data outside the transaction so a non-critical
+            // failure never prevents the demo from launching.
+            try {
+                $this->seedDemoWorkspace($user, $company);
+            } catch (\Throwable $seedEx) {
+                Log::warning('Demo seeding partial failure (demo still accessible)', [
+                    'error' => $seedEx->getMessage(),
+                    'trace' => $seedEx->getTraceAsString(),
+                ]);
+            }
+
             return redirect()->route('user.dashboard')
                 ->with('success', 'Demo workspace is ready. Explore the app freely.');
+
         } catch (\Throwable $e) {
-            Log::error('Demo launch failed', ['error' => $e->getMessage()]);
+            Log::error('Demo launch failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
 
             return redirect()->route('landing.contact')
                 ->with('error', 'The live demo could not be launched right now. Please try again shortly.');
