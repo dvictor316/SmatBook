@@ -448,10 +448,25 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
+        // Forget cookies with the exact domain/secure/samesite the session cookie
+        // was originally set with — otherwise Safari ignores the Max-Age=0 header
+        // because the attributes don't match the stored cookie.
+        $domain   = (string) config('session.domain', '');
+        $secure   = (bool)   config('session.secure', false);
+        $sameSite = (string) config('session.same_site', 'lax');
+
+        $makeExpired = function (string $name) use ($domain, $secure, $sameSite): \Symfony\Component\HttpFoundation\Cookie {
+            return \Symfony\Component\HttpFoundation\Cookie::create(
+                $name, '', 1, '/',
+                $domain !== '' ? $domain : null,
+                $secure, true, false, $sameSite ?: 'lax'
+            );
+        };
+
         /** @var CookieJar $cookies */
         $cookies = app(CookieJar::class);
-        $cookies->queue($cookies->forget((string) config('session.cookie')));
-        $cookies->queue($cookies->forget('XSRF-TOKEN'));
+        $cookies->queue($makeExpired((string) config('session.cookie')));
+        $cookies->queue($makeExpired('XSRF-TOKEN'));
     }
 
     private function applyNoStoreHeaders($response, bool $clearSiteData = false)

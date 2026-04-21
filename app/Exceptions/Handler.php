@@ -47,20 +47,11 @@ class Handler extends ExceptionHandler
 
             app(\App\Http\Controllers\AuthController::class)->clearClientAuthState($request);
 
-            $sessionCookieName = (string) config('session.cookie');
-            $xsrfCookieName    = 'XSRF-TOKEN';
-
-            // Explicitly expire both cookies in the redirect response so that
-            // mobile browsers (which may ignore queued CookieJar deletions on
-            // redirect) actually receive Max-Age=0 and clear them immediately.
-            $expiredSession = \Illuminate\Support\Facades\Cookie::forget($sessionCookieName);
-            $expiredXsrf    = \Illuminate\Support\Facades\Cookie::forget($xsrfCookieName);
-
             return redirect()
                 ->guest($this->resolveLoginRedirect($request, ['expired' => 1, 'flush' => 1]))
                 ->withErrors(['login' => $message])
-                ->withCookie($expiredSession)
-                ->withCookie($expiredXsrf);
+                ->withCookie($this->makeExpiredCookie((string) config('session.cookie')))
+                ->withCookie($this->makeExpiredCookie('XSRF-TOKEN'));
         });
 
         $this->renderable(function (AuthenticationException $e, $request) {
@@ -74,15 +65,11 @@ class Handler extends ExceptionHandler
                 app(\App\Http\Controllers\AuthController::class)->clearClientAuthState($request);
             }
 
-            $sessionCookieName = (string) config('session.cookie');
-            $expiredSession = \Illuminate\Support\Facades\Cookie::forget($sessionCookieName);
-            $expiredXsrf    = \Illuminate\Support\Facades\Cookie::forget('XSRF-TOKEN');
-
             return redirect()
                 ->guest($this->resolveLoginRedirect($request, ['expired' => 1, 'flush' => 1]))
                 ->withErrors(['login' => $message])
-                ->withCookie($expiredSession)
-                ->withCookie($expiredXsrf);
+                ->withCookie($this->makeExpiredCookie((string) config('session.cookie')))
+                ->withCookie($this->makeExpiredCookie('XSRF-TOKEN'));
         });
 
         $this->renderable(function (ValidationException $e, $request) {
@@ -266,5 +253,34 @@ class Handler extends ExceptionHandler
         $path = trim((string) $request->path(), '/');
 
         return $path === 'inventory/products/category' || $path === 'categories' || $path === 'categories/store';
+    }
+
+    /**
+     * Build a properly-attributed expired cookie so that Safari and other
+     * mobile browsers actually delete the named cookie.
+     *
+     * Cookie::forget() uses domain=null by default, which does NOT match a
+     * cookie that was originally set with Domain=.smartprobook.com — meaning
+     * the browser keeps the old cookie alive and the 419 loop persists.
+     * We must mirror the original session.domain, session.secure, and
+     * session.same_site values so the attributes match exactly.
+     */
+    private function makeExpiredCookie(string $name): \Symfony\Component\HttpFoundation\Cookie
+    {
+        $domain   = (string) config('session.domain', '');
+        $secure   = (bool)   config('session.secure', false);
+        $sameSite = (string) config('session.same_site', 'lax');
+
+        return \Symfony\Component\HttpFoundation\Cookie::create(
+            $name,
+            '',
+            1,           // expires in the past
+            '/',
+            $domain !== '' ? $domain : null,
+            $secure,
+            true,        // httpOnly
+            false,       // raw
+            $sameSite ?: 'lax'
+        );
     }
 }
