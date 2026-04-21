@@ -987,6 +987,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::get('/settings', 'index')->name('settings.index');
         Route::post('/settings', 'update')->name('settings.update');
         Route::post('/settings/ledger-backfill', 'ledger_backfill')->name('settings.ledger-backfill');
+        Route::post('/settings/opening-balance-backfill', 'openingBalanceBackfill')->name('settings.opening-balance-backfill');
         Route::post('/settings/bank-account', 'storeBankAccount')->name('settings.bank-account.store');
         Route::put('/settings/bank-account/{bank}', 'updateBankAccount')->name('settings.bank-account.update');
         Route::delete('/settings/bank-account/{bank}', 'destroyBankAccount')->name('settings.bank-account.destroy');

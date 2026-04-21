@@ -715,6 +715,26 @@ class SettingController extends Controller
         }
     }
 
+    public function openingBalanceBackfill(Request $request)
+    {
+        $user = Auth::user();
+        $role = strtolower((string) ($user->role ?? ''));
+        if (!in_array($role, ['super_admin', 'superadmin', 'administrator', 'admin'], true)) {
+            return redirect()->back()->with('error', 'Unauthorized: only super admin can run opening-balance backfill.');
+        }
+
+        try {
+            Artisan::call('accounts:backfill-opening-balance');
+
+            $output = trim((string) Artisan::output());
+            $message = $output !== '' ? $output : 'Opening balance backfill completed.';
+
+            return redirect()->back()->with('success', $message);
+        } catch (\Throwable $e) {
+            return redirect()->back()->with('error', 'Opening balance backfill failed: ' . $e->getMessage());
+        }
+    }
+
     public function storeChartAccount(Request $request)
     {
         if (!Schema::hasTable('accounts')) {
