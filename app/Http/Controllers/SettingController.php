@@ -779,6 +779,71 @@ class SettingController extends Controller
         return redirect()->route('chart-of-accounts')->with('success', 'Account added to chart of accounts.');
     }
 
+    public function updateChartAccount(Request $request, $id)
+    {
+        if (!Schema::hasTable('accounts')) {
+            return redirect()->back()->with('error', 'Accounts table is not available in this installation.');
+        }
+
+        $companyId = (int) (Auth::user()->company_id ?? session('current_tenant_id') ?? 0);
+
+        $account = Account::withoutGlobalScopes()
+            ->when($companyId > 0, fn($q) => $q->where('company_id', $companyId))
+            ->findOrFail($id);
+
+        $validated = $request->validate([
+            'name'            => 'required|string|max:191',
+            'sub_type'        => 'nullable|string|max:191',
+            'opening_balance' => 'nullable|numeric',
+            'description'     => 'nullable|string|max:1000',
+            'is_active'       => 'nullable|boolean',
+        ]);
+
+        $validated['sub_type'] = trim((string) ($validated['sub_type'] ?? ''));
+        if ($validated['sub_type'] === '') {
+            $validated['sub_type'] = null;
+        }
+
+        // Recompute current_balance: new opening_balance + existing transaction movement
+        $newOpening = (float) ($validated['opening_balance'] ?? 0);
+        $oldOpening = (float) $account->opening_balance;
+
+        $account->update([
+            'name'            => $validated['name'],
+            'sub_type'        => $validated['sub_type'],
+            'opening_balance' => $newOpening,
+            'current_balance' => $account->current_balance - $oldOpening + $newOpening,
+            'description'     => $validated['description'] ?? null,
+            'is_active'       => (bool) ($validated['is_active'] ?? true),
+        ]);
+
+        return redirect()->route('chart-of-accounts')->with('success', 'Account updated successfully.');
+    }
+
+    public function destroyChartAccount($id)
+    {
+        if (!Schema::hasTable('accounts')) {
+            return redirect()->back()->with('error', 'Accounts table is not available in this installation.');
+        }
+
+        $companyId = (int) (Auth::user()->company_id ?? session('current_tenant_id') ?? 0);
+
+        $account = Account::withoutGlobalScopes()
+            ->when($companyId > 0, fn($q) => $q->where('company_id', $companyId))
+            ->findOrFail($id);
+
+        // Block deletion if account has any ledger transactions
+        $txnCount = $account->transactions()->count();
+        if ($txnCount > 0) {
+            return redirect()->route('chart-of-accounts')
+                ->with('error', "Cannot delete \"{$account->name}\" — it has {$txnCount} transaction(s) posted against it. Deactivate it instead.");
+        }
+
+        $account->delete();
+
+        return redirect()->route('chart-of-accounts')->with('success', "Account \"{$account->name}\" deleted successfully.");
+    }
+
     private function generateChartAccountCode(string $type, int $companyId = 0): string
     {
         $prefix = match ($type) {

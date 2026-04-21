@@ -1004,6 +1004,8 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::delete('/settings/branches/{branchId}', 'destroyBranch')->name('settings.branches.destroy');
         Route::post('/settings/branches/activate', 'activateBranch')->name('settings.branches.activate');
         Route::post('/settings/chart-of-accounts', 'storeChartAccount')->name('settings.chart-of-accounts.store');
+        Route::put('/settings/chart-of-accounts/{id}', 'updateChartAccount')->name('settings.chart-of-accounts.update');
+        Route::delete('/settings/chart-of-accounts/{id}', 'destroyChartAccount')->name('settings.chart-of-accounts.destroy');
         Route::post('/settings/bank-reconciliation/adjustment', 'storeBankReconciliationAdjustment')->name('settings.bank-reconciliation.adjustment');
         Route::post('/settings/manual-journal', 'storeManualJournal')->name('settings.manual-journal.store');
         Route::prefix('settings')->group(function () {

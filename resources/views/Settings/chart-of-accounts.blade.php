@@ -348,7 +348,60 @@
     }
     .coa-empty i { font-size: 2rem; margin-bottom: 10px; display: block; }
     .coa-empty p { margin: 0; font-size: 0.82rem; }
-</style>
+    /* ── Row action buttons ───────────────────────────────────── */
+    .coa-action-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px; height: 28px;
+        border: none;
+        border-radius: 7px;
+        cursor: pointer;
+        font-size: 0.8rem;
+        transition: background .15s, color .15s;
+        background: #f1f5f9;
+        color: #64748b;
+        margin-right: 4px;
+    }
+    .coa-edit-btn:hover   { background: #eef2ff; color: #4f46e5; }
+    .coa-delete-btn:hover { background: #fef2f2; color: #dc2626; }
+
+    /* ── Modals ───────────────────────────────────────────────── */
+    .coa-modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(15,23,42,.45);
+        z-index: 9990;
+        align-items: center;
+        justify-content: center;
+    }
+    .coa-modal-overlay.active { display: flex; }
+    .coa-modal {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(15,23,42,.18);
+        width: min(94vw, 480px);
+        max-height: 92vh;
+        overflow-y: auto;
+        padding: 0;
+    }
+    .coa-modal-head {
+        padding: 18px 22px 14px;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .coa-modal-title { font-size: 0.92rem; font-weight: 800; color: #0f172a; margin: 0; }
+    .coa-modal-close {
+        background: #f1f5f9; border: none; border-radius: 7px;
+        width: 28px; height: 28px; cursor: pointer;
+        font-size: 0.9rem; color: #64748b;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .coa-modal-close:hover { background: #fee2e2; color: #dc2626; }
+    .coa-modal-body { padding: 18px 22px 22px; }</style>
 
 @php
     // Safe fallback: always have account type options available even if controller didn't pass them
@@ -458,6 +511,7 @@
                                                 <th>Current Bal.</th>
                                                 <th>Txns</th>
                                                 <th>Status</th>
+                                                <th>Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -483,6 +537,27 @@
                                                         @else
                                                             <span class="badge-inactive">Inactive</span>
                                                         @endif
+                                                    </td>
+                                                    <td style="white-space:nowrap;">
+                                                        <button type="button" class="coa-action-btn coa-edit-btn"
+                                                            title="Edit account"
+                                                            data-id="{{ $account->id }}"
+                                                            data-name="{{ $account->name }}"
+                                                            data-sub-type="{{ $account->sub_type }}"
+                                                            data-opening="{{ number_format((float)($account->opening_balance ?? 0), 2, '.', '') }}"
+                                                            data-description="{{ $account->description }}"
+                                                            data-active="{{ $account->is_active ? '1' : '0' }}"
+                                                            data-type="{{ $account->type }}"
+                                                            data-txns="{{ $account->transactions_count ?? 0 }}">
+                                                            <i class="fe fe-edit-2"></i>
+                                                        </button>
+                                                        <button type="button" class="coa-action-btn coa-delete-btn"
+                                                            title="Delete account"
+                                                            data-id="{{ $account->id }}"
+                                                            data-name="{{ $account->name }}"
+                                                            data-txns="{{ $account->transactions_count ?? 0 }}">
+                                                            <i class="fe fe-trash-2"></i>
+                                                        </button>
                                                     </td>
                                                 </tr>
                                             @endforeach
@@ -600,6 +675,97 @@
             </div>{{-- /.col-xl-9 --}}
         </div>{{-- /.row --}}
     </div>
+{{-- ── Edit Account Modal ─────────────────────────────────── --}}
+<div class="coa-modal-overlay" id="coaEditOverlay">
+    <div class="coa-modal">
+        <div class="coa-modal-head">
+            <p class="coa-modal-title"><i class="fe fe-edit-2 me-1"></i> Edit Account</p>
+            <button type="button" class="coa-modal-close" id="coaEditClose"><i class="fe fe-x"></i></button>
+        </div>
+        <div class="coa-modal-body">
+            <form method="POST" id="coaEditForm">
+                @csrf
+                @method('PUT')
+
+                {{-- Account name --}}
+                <div style="margin-bottom:12px;">
+                    <label class="coa-field-label">Account Name <span style="color:#ef4444">*</span></label>
+                    <input type="text" name="name" id="editName" class="coa-input" required>
+                </div>
+
+                {{-- Sub Type --}}
+                <div style="margin-bottom:12px;">
+                    <label class="coa-field-label">Sub Type</label>
+                    <select name="sub_type" id="editSubType" class="coa-input"></select>
+                </div>
+
+                {{-- Opening Balance + Status --}}
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+                    <div>
+                        <label class="coa-field-label">Opening Bal. ({{ $currency }}) <span style="color:#ef4444">*</span></label>
+                        <input type="number" step="0.01" name="opening_balance" id="editOpeningBalance" class="coa-input" required>
+                    </div>
+                    <div>
+                        <label class="coa-field-label">Status</label>
+                        <select name="is_active" id="editIsActive" class="coa-input">
+                            <option value="1">Active</option>
+                            <option value="0">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+
+                {{-- Description --}}
+                <div style="margin-bottom:16px;">
+                    <label class="coa-field-label">Description <span style="color:#94a3b8;font-weight:400;text-transform:none;">(optional)</span></label>
+                    <textarea name="description" id="editDescription" rows="3" class="coa-input" style="resize:vertical;"></textarea>
+                </div>
+
+                <div style="display:flex;gap:10px;">
+                    <button type="submit" class="coa-submit-btn" style="flex:1;">
+                        <i class="fe fe-save me-1"></i> Save Changes
+                    </button>
+                    <button type="button" id="coaEditCancelBtn"
+                        style="flex:0 0 auto;padding:10px 18px;border:1.5px solid #e2e8f0;border-radius:10px;background:#f8fafc;color:#64748b;font-size:.85rem;font-weight:700;cursor:pointer;">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{-- ── Delete Account Modal ────────────────────────────────── --}}
+<div class="coa-modal-overlay" id="coaDeleteOverlay">
+    <div class="coa-modal" style="width:min(94vw,400px);">
+        <div class="coa-modal-head">
+            <p class="coa-modal-title" style="color:#dc2626;"><i class="fe fe-trash-2 me-1"></i> Delete Account</p>
+            <button type="button" class="coa-modal-close" id="coaDeleteClose"><i class="fe fe-x"></i></button>
+        </div>
+        <div class="coa-modal-body">
+            <p style="font-size:.86rem;color:#475569;margin-bottom:6px;">
+                Are you sure you want to delete <strong id="deleteAccountName"></strong>?
+            </p>
+            <p style="font-size:.78rem;color:#94a3b8;margin-bottom:18px;">
+                This action cannot be undone. Accounts with transactions cannot be deleted.
+            </p>
+            <form method="POST" id="coaDeleteForm">
+                @csrf
+                @method('DELETE')
+                <div style="display:flex;gap:10px;">
+                    <button type="submit"
+                        style="flex:1;padding:10px;background:linear-gradient(135deg,#dc2626,#b91c1c);color:#fff;border:none;border-radius:10px;font-size:.85rem;font-weight:700;cursor:pointer;">
+                        <i class="fe fe-trash-2 me-1"></i> Yes, Delete
+                    </button>
+                    <button type="button" id="coaDeleteCancelBtn"
+                        style="flex:0 0 auto;padding:10px 18px;border:1.5px solid #e2e8f0;border-radius:10px;background:#f8fafc;color:#64748b;font-size:.85rem;font-weight:700;cursor:pointer;">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 </div>
 @endsection
 
@@ -663,6 +829,79 @@ document.addEventListener('DOMContentLoaded', function () {
     if (searchInput)  searchInput.addEventListener('input', applyFilters);
     if (typeFilter)   typeFilter.addEventListener('change', applyFilters);
     if (statusFilter) statusFilter.addEventListener('change', applyFilters);
+
+    /* ── Subtype map from server ── */
+    var subtypeMap = @json($formSubtypeMap);
+
+    /* ── Edit modal ── */
+    var editOverlay  = document.getElementById('coaEditOverlay');
+    var editForm     = document.getElementById('coaEditForm');
+    var editName     = document.getElementById('editName');
+    var editSubType  = document.getElementById('editSubType');
+    var editOpening  = document.getElementById('editOpeningBalance');
+    var editActive   = document.getElementById('editIsActive');
+    var editDesc     = document.getElementById('editDescription');
+    var editClose    = document.getElementById('coaEditClose');
+    var editCancelBtn = document.getElementById('coaEditCancelBtn');
+
+    function buildEditSubtypeOptions(type, current) {
+        var opts = subtypeMap[type] || [];
+        editSubType.innerHTML = '<option value="">General / None</option>';
+        opts.forEach(function(v) {
+            var o = document.createElement('option');
+            o.value = v; o.textContent = v;
+            if (v === current) o.selected = true;
+            editSubType.appendChild(o);
+        });
+        editSubType.disabled = opts.length === 0;
+    }
+
+    document.querySelectorAll('.coa-edit-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var id          = btn.dataset.id;
+            var type        = btn.dataset.type;
+            editForm.action = '{{ url("settings/chart-of-accounts") }}/' + id;
+            editName.value  = btn.dataset.name;
+            editOpening.value = btn.dataset.opening;
+            editActive.value  = btn.dataset.active;
+            editDesc.value    = btn.dataset.description || '';
+            buildEditSubtypeOptions(type, btn.dataset.subType);
+            editOverlay.classList.add('active');
+            editName.focus();
+        });
+    });
+
+    function closeEditModal() { editOverlay.classList.remove('active'); }
+    if (editClose)    editClose.addEventListener('click', closeEditModal);
+    if (editCancelBtn) editCancelBtn.addEventListener('click', closeEditModal);
+    editOverlay && editOverlay.addEventListener('click', function(e) { if (e.target === editOverlay) closeEditModal(); });
+
+    /* ── Delete modal ── */
+    var deleteOverlay   = document.getElementById('coaDeleteOverlay');
+    var deleteForm      = document.getElementById('coaDeleteForm');
+    var deleteNameEl    = document.getElementById('deleteAccountName');
+    var deleteClose     = document.getElementById('coaDeleteClose');
+    var deleteCancelBtn = document.getElementById('coaDeleteCancelBtn');
+
+    document.querySelectorAll('.coa-delete-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var id   = btn.dataset.id;
+            var name = btn.dataset.name;
+            var txns = parseInt(btn.dataset.txns || '0', 10);
+            if (txns > 0) {
+                alert('Cannot delete "' + name + '" — it has ' + txns + ' transaction(s). Deactivate it instead.');
+                return;
+            }
+            deleteForm.action  = '{{ url("settings/chart-of-accounts") }}/' + id;
+            deleteNameEl.textContent = name;
+            deleteOverlay.classList.add('active');
+        });
+    });
+
+    function closeDeleteModal() { deleteOverlay.classList.remove('active'); }
+    if (deleteClose)     deleteClose.addEventListener('click', closeDeleteModal);
+    if (deleteCancelBtn) deleteCancelBtn.addEventListener('click', closeDeleteModal);
+    deleteOverlay && deleteOverlay.addEventListener('click', function(e) { if (e.target === deleteOverlay) closeDeleteModal(); });
 });
 </script>
 @endpush
