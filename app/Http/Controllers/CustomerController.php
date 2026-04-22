@@ -1263,6 +1263,11 @@ class CustomerController extends Controller
             $header = null;
 
             foreach ($this->spreadsheetRowIterator($file) as $row) {
+                // Skip blank rows (xlsx files sometimes have an empty title row first)
+                $nonEmpty = array_filter($row, fn ($v) => trim((string) $v) !== '');
+                if (empty($nonEmpty)) {
+                    continue;
+                }
                 $header = $row;
                 break;
             }
@@ -1423,8 +1428,12 @@ class CustomerController extends Controller
 
     private function normalizeImportHeaderCell($value): string
     {
-        $header = strtolower(trim((string) $value));
-        $header = preg_replace('/^\x{FEFF}/u', '', $header) ?? $header;
+        $header = (string) $value;
+        // Strip UTF-8 BOM, non-breaking spaces, and control characters
+        $header = str_replace("\xEF\xBB\xBF", '', $header);
+        $header = str_replace("\xC2\xA0", ' ', $header);
+        $header = preg_replace('/[\x00-\x1F\x7F]/', '', $header) ?? $header;
+        $header = strtolower(trim($header));
         // Normalise whitespace/dashes to underscore
         $header = preg_replace('/[\s\-]+/', '_', $header) ?? $header;
 
@@ -1511,7 +1520,8 @@ class CustomerController extends Controller
                 $cellIterator->setIterateOnlyExistingCells(false);
 
                 foreach ($cellIterator as $cell) {
-                    $cells[] = $cell?->getFormattedValue();
+                    // Use getValue() for raw text — avoids number-format side-effects on headers
+                    $cells[] = $cell !== null ? $cell->getValue() : null;
                 }
 
                 yield $cells;
