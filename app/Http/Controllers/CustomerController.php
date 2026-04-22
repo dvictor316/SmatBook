@@ -1323,6 +1323,7 @@ class CustomerController extends Controller
                     }
                     $customer = $customer ?: new Customer();
 
+                    $activeBranch = $this->getActiveBranchContext();
                     $payload = $this->sanitizeForCustomerColumns([
                         'customer_name' => $rowData['customer_name'],
                         'email' => $lookupEmail !== '' ? $lookupEmail : null,
@@ -1336,6 +1337,8 @@ class CustomerController extends Controller
                         'notes' => $rowData['notes'] ?? null,
                         'company_id' => $companyId > 0 ? $companyId : null,
                         'user_id' => $userId > 0 ? $userId : null,
+                        'branch_id' => $activeBranch['id'] ?? null,
+                        'branch_name' => $activeBranch['name'] ?? null,
                     ]);
 
                     $customer->fill($payload);
