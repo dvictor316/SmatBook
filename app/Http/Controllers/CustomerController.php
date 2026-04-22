@@ -1424,7 +1424,43 @@ class CustomerController extends Controller
     private function normalizeImportHeaderCell($value): string
     {
         $header = strtolower(trim((string) $value));
-        return preg_replace('/^\x{FEFF}/u', '', $header) ?? $header;
+        $header = preg_replace('/^\x{FEFF}/u', '', $header) ?? $header;
+        // Normalise whitespace/dashes to underscore
+        $header = preg_replace('/[\s\-]+/', '_', $header) ?? $header;
+
+        // Common column aliases → canonical names
+        $aliases = [
+            'name'              => 'customer_name',
+            'full_name'         => 'customer_name',
+            'customer'          => 'customer_name',
+            'company'           => 'customer_name',
+            'company_name'      => 'customer_name',
+            'contact_name'      => 'customer_name',
+            'mobile'            => 'phone',
+            'mobile_number'     => 'phone',
+            'phone_number'      => 'phone',
+            'telephone'         => 'phone',
+            'tel'               => 'phone',
+            'email_address'     => 'email',
+            'e_mail'            => 'email',
+            'addr'              => 'address',
+            'street'            => 'address',
+            'opening_bal'       => 'balance',
+            'opening_balance'   => 'balance',
+            'ob'                => 'balance',
+            'credit'            => 'credit_limit',
+            'credit_line'       => 'credit_limit',
+            'max_credit'        => 'credit_limit',
+            'remark'            => 'notes',
+            'remarks'           => 'notes',
+            'comment'           => 'notes',
+            'comments'          => 'notes',
+            'description'       => 'notes',
+            'branch'            => 'branch_name',
+            'branch_id'         => 'branch_name',
+        ];
+
+        return $aliases[$header] ?? $header;
     }
 
     private function spreadsheetRowIterator(\Illuminate\Http\UploadedFile $file): \Generator
