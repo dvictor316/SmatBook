@@ -554,36 +554,39 @@
         calculateTotalPieces();
         // Automatic Calculation Logic
         function calculateCartonContent() {
-            let unitTotal = parseFloat($('#unit_total_per_carton').val()) || 0;
-            let unitsPerRoll = parseFloat($('#upr').val()) || 0;
+            const unitTotal = parseFloat($('#unit_total_per_carton').val()) || 0;
+            const unitsPerRoll = parseFloat($('#upr').val()) || 0;
             let cartonContent = unitsPerRoll > 0 ? (unitTotal / unitsPerRoll) : unitTotal;
-
-            if (!Number.isFinite(cartonContent)) {
-                cartonContent = 0;
-            }
-
+            if (!Number.isFinite(cartonContent) || cartonContent < 0) { cartonContent = 0; }
             $('#upc').val(cartonContent);
-            $('#units_per_carton_preview').text(unitTotal.toLocaleString() + " Units");
+            $('#units_per_carton_preview').text(unitTotal.toLocaleString() + ' Units');
         }
 
         function calculateTotalPieces() {
-            let cartons = parseFloat($('#stock_cartons').val()) || 0;
-            let rolls = parseFloat($('#stock_rolls').val()) || 0;
-            let units = parseFloat($('#stock_units').val()) || 0;
-            let rollsPerCarton = parseFloat($('#upc').val()) || 0;
-            let unitsPerRoll = parseFloat($('#upr').val()) || 0;
+            // Read source fields directly — never depend on the derived #upc value
+            const unitTotal = parseFloat($('#unit_total_per_carton').val()) || 0;
+            const unitsPerRoll = parseFloat($('#upr').val()) || 0;
+            const cartons = parseFloat($('#stock_cartons').val()) || 0;
+            const rolls = parseFloat($('#stock_rolls').val()) || 0;
+            const units = parseFloat($('#stock_units').val()) || 0;
 
-            let fromCartons = unitsPerRoll > 0 ? (cartons * rollsPerCarton * unitsPerRoll) : (cartons * rollsPerCarton);
-            let fromRolls = unitsPerRoll > 0 ? (rolls * unitsPerRoll) : rolls;
-            let total = units + fromRolls + fromCartons;
-            $('#total_pieces_preview').text(total.toLocaleString() + " Units");
+            const fromCartons = cartons * unitTotal;
+            const fromRolls = unitsPerRoll > 0 ? (rolls * unitsPerRoll) : 0;
+            const total = fromCartons + fromRolls + units;
+
+            $('#total_pieces_preview').text(total.toLocaleString() + ' Units');
             $('#final_stock_input').val(total);
         }
 
-        $('#stock_cartons, #stock_rolls, #stock_units, #upc, #upr, #unit_total_per_carton').on('input', function() {
-            if (this.id === 'upr' || this.id === 'unit_total_per_carton') {
-                calculateCartonContent();
-            }
+        // Bind to both 'input' and 'change' so spinner arrows, paste, and autofill all trigger recalc
+        $('#upr, #unit_total_per_carton').on('input change', function() {
+            calculateCartonContent();
+            calculateTotalPieces();
+        });
+        $('#stock_cartons, #stock_rolls, #stock_units').on('input change', function() {
+            calculateTotalPieces();
+        });
+        $('#upc').on('input change', function() {
             calculateTotalPieces();
         });
 
