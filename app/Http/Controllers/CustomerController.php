@@ -63,7 +63,8 @@ class CustomerController extends Controller
      */
     public function create()
     {
-        return view('Customers.add-customer'); 
+        $availableBranches = $this->getAvailableBranches();
+        return view('Customers.add-customer', compact('availableBranches'));
     }
 
     /**
@@ -116,11 +117,16 @@ class CustomerController extends Controller
         if (Schema::hasColumn('customers', 'user_id')) {
             $data['user_id'] = auth()->id();
         }
+        $selectedBranchId = trim((string) $request->input('branch_id', ''));
+        $branchMatch = $selectedBranchId !== ''
+            ? collect($this->getAvailableBranches())->firstWhere('id', $selectedBranchId)
+            : null;
+        $resolvedBranch = $branchMatch ?? $this->getActiveBranchContext();
         if (Schema::hasColumn('customers', 'branch_id')) {
-            $data['branch_id'] = $this->getActiveBranchContext()['id'];
+            $data['branch_id'] = $resolvedBranch['id'] ?? null;
         }
         if (Schema::hasColumn('customers', 'branch_name')) {
-            $data['branch_name'] = $this->getActiveBranchContext()['name'];
+            $data['branch_name'] = $resolvedBranch['name'] ?? null;
         }
 
         Customer::create($data);
@@ -423,6 +429,22 @@ class CustomerController extends Controller
             'id' => $branchId,
             'name' => $branchName,
         ];
+    }
+
+    private function getAvailableBranches(): array
+    {
+        $companyId = (int) (auth()->user()?->company_id ?? 0);
+        if ($companyId <= 0) {
+            return [];
+        }
+        $key = 'branches_json_company_' . $companyId;
+        $raw = (string) (DB::table('settings')->where('key', $key)->value('value') ?? '');
+        $decoded = json_decode($raw, true);
+
+        return collect(is_array($decoded) ? $decoded : [])
+            ->filter(fn ($branch) => !empty($branch['id']) && !empty($branch['name']))
+            ->values()
+            ->all();
     }
 
     private function applySaleBranchFilter($query, string $salesTable = 'sales')
@@ -1202,10 +1224,10 @@ class CustomerController extends Controller
 
     public function downloadImportTemplate()
     {
-        $headers = ['customer_name', 'email', 'phone', 'address', 'balance', 'credit_limit', 'status', 'notes'];
+        $headers = ['customer_name', 'email', 'phone', 'address', 'balance', 'credit_limit', 'status', 'notes', 'branch_name'];
         $rows = [
-            ['Adebayo Stores', 'accounts@adebayo.example', '08030000000', '12 Market Road', '25000', '100000', 'active', 'Opening credit balance'],
-            ['Walk-in Customer', '', '', '', '0', '0', 'active', 'General retail customer'],
+            ['Adebayo Stores', 'accounts@adebayo.example', '08030000000', '12 Market Road', '25000', '100000', 'active', 'Opening credit balance', ''],
+            ['Walk-in Customer', '', '', '', '0', '0', 'active', 'General retail customer', ''],
         ];
 
         $content = implode(',', $headers) . "\n";
@@ -1266,6 +1288,8 @@ class CustomerController extends Controller
             $companyId = (int) (auth()->user()?->company_id ?? 0);
             $userId = (int) (auth()->id() ?? 0);
             $updateExisting = $request->boolean('update_existing');
+            $availableBranches = collect($this->getAvailableBranches());
+            $activeBranch = $this->getActiveBranchContext();
 
             foreach ($this->spreadsheetRowIterator($file) as $rowNumber => $row) {
                 if ($rowNumber === 0) {
@@ -1323,7 +1347,12 @@ class CustomerController extends Controller
                     }
                     $customer = $customer ?: new Customer();
 
-                    $activeBranch = $this->getActiveBranchContext();
+                    $csvBranchName = trim((string) ($rowData['branch_name'] ?? ''));
+                    $branchMatch = $csvBranchName !== ''
+                        ? $availableBranches->first(fn ($b) => strtolower(trim((string) ($b['name'] ?? ''))) === strtolower($csvBranchName))
+                        : null;
+                    $rowBranchId = $branchMatch ? ($branchMatch['id'] ?? null) : ($activeBranch['id'] ?? null);
+                    $rowBranchName = $branchMatch ? ($branchMatch['name'] ?? null) : ($activeBranch['name'] ?? null);
                     $payload = $this->sanitizeForCustomerColumns([
                         'customer_name' => $rowData['customer_name'],
                         'email' => $lookupEmail !== '' ? $lookupEmail : null,
@@ -1337,8 +1366,8 @@ class CustomerController extends Controller
                         'notes' => $rowData['notes'] ?? null,
                         'company_id' => $companyId > 0 ? $companyId : null,
                         'user_id' => $userId > 0 ? $userId : null,
-                        'branch_id' => $activeBranch['id'] ?? null,
-                        'branch_name' => $activeBranch['name'] ?? null,
+                        'branch_id' => $rowBranchId,
+                        'branch_name' => $rowBranchName,
                     ]);
 
                     $customer->fill($payload);

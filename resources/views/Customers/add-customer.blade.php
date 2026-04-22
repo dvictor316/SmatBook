@@ -114,6 +114,20 @@
                                             @error('credit_limit') <div class="invalid-feedback">{{ $message }}</div> @enderror
                                         </div>
                                     </div>
+                                    @if(!empty($availableBranches))
+                                    <div class="col-lg-4 col-md-6 col-sm-12">
+                                        <div class="input-block mb-3">
+                                            <label>Branch</label>
+                                            <select name="branch_id" class="form-control @error('branch_id') is-invalid @enderror">
+                                                <option value="">Use Active Branch</option>
+                                                @foreach($availableBranches as $branch)
+                                                    <option value="{{ $branch['id'] }}" @selected((string) old('branch_id') === (string) ($branch['id'] ?? ''))>{{ $branch['name'] }}</option>
+                                                @endforeach
+                                            </select>
+                                            @error('branch_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                        </div>
+                                    </div>
+                                    @endif
                                 </div>
                             </div>
 
