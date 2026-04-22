@@ -1433,8 +1433,6 @@ class CustomerController extends Controller
             'name'              => 'customer_name',
             'full_name'         => 'customer_name',
             'customer'          => 'customer_name',
-            'company'           => 'customer_name',
-            'company_name'      => 'customer_name',
             'contact_name'      => 'customer_name',
             'mobile'            => 'phone',
             'mobile_number'     => 'phone',
