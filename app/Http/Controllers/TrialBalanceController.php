@@ -275,6 +275,38 @@ class TrialBalanceController extends Controller
             ]);
         }
 
+        // Inject unposted customer opening balances (customers created before the journal-entry workflow)
+        $customerOBUnposted = $this->getUnpostedCustomerOpeningBalanceSum($request, $end);
+        if ($customerOBUnposted > 0.01) {
+            // Find existing AR account or create a virtual one (DR side)
+            $arEntry = $accounts->first(
+                fn ($a) => str_contains(strtolower((string) ($a->name ?? '')), 'receivable')
+            );
+            if ($arEntry) {
+                $arEntry->debit_balance = (float) ($arEntry->debit_balance ?? 0) + $customerOBUnposted;
+            } else {
+                $accounts->push((object) [
+                    'id'             => null,
+                    'code'           => 'SYS-CUST-AR',
+                    'name'           => 'Accounts Receivable',
+                    'type'           => 'Asset',
+                    'debit_balance'  => $customerOBUnposted,
+                    'credit_balance' => 0.0,
+                    'has_activity'   => true,
+                ]);
+            }
+            // Balancing credit entry (Opening Balance Equity - Customers)
+            $accounts->push((object) [
+                'id'             => null,
+                'code'           => 'SYS-CUST-OBE',
+                'name'           => 'Opening Balance Equity (Customers)',
+                'type'           => 'Equity',
+                'debit_balance'  => 0.0,
+                'credit_balance' => $customerOBUnposted,
+                'has_activity'   => true,
+            ]);
+        }
+
         $accounts = $accounts->sortBy('code')->values();
 
         // 5. Final variables exactly as requested by your Blade View
@@ -331,6 +363,54 @@ class TrialBalanceController extends Controller
 
 
 
+
+    /**
+     * Sum customer opening balances (customers.balance > 0) that do NOT yet
+     * have a journal entry posted (reference CUST-OB-*). Mirrors the same
+     * method in BalanceSheetController for consistency.
+     */
+    private function getUnpostedCustomerOpeningBalanceSum(Request $request, $reportDate): float
+    {
+        if (!Schema::hasTable('customers') || !Schema::hasColumn('customers', 'balance')) {
+            return 0.0;
+        }
+
+        $companyId = (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $userId    = (int) ($request->user()?->id ?? 0);
+
+        $postedCustomerIds = [];
+        if (Schema::hasTable('transactions') && Schema::hasColumn('transactions', 'reference')) {
+            $postedQuery = Transaction::withoutGlobalScopes()
+                ->where('transaction_type', Transaction::TYPE_OPENING_BALANCE)
+                ->where('reference', 'like', 'CUST-OB-%')
+                ->where('debit', '>', 0);
+            if ($companyId > 0) {
+                $postedQuery->where('company_id', $companyId);
+            } elseif ($userId > 0) {
+                $postedQuery->where('user_id', $userId);
+            }
+            $postedCustomerIds = $postedQuery->distinct()->pluck('related_id')->filter()->toArray();
+        }
+
+        $customerQuery = DB::table('customers')
+            ->where('balance', '>', 0)
+            ->where(function ($q) use ($reportDate) {
+                $q->whereNull('opening_balance_date')
+                  ->orWhere('opening_balance_date', '<=', $reportDate->toDateString());
+            });
+
+        if ($companyId > 0 && Schema::hasColumn('customers', 'company_id')) {
+            $customerQuery->where('company_id', $companyId);
+        } elseif ($userId > 0 && Schema::hasColumn('customers', 'user_id')) {
+            $customerQuery->where('user_id', $userId);
+        }
+
+        if (!empty($postedCustomerIds)) {
+            $customerQuery->whereNotIn('id', $postedCustomerIds);
+        }
+
+        return (float) $customerQuery->sum('balance');
+    }
 
     /**
      * Get trial balance data using a robust aggregation
