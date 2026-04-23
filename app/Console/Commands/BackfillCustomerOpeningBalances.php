@@ -45,7 +45,7 @@ class BackfillCustomerOpeningBalances extends Command
 
         // 2. Find customers with balance > 0 that have NOT been journalised
         $customerQuery = Customer::withoutGlobalScopes()
-            ->whereNull('deleted_at')
+            ->when(Schema::hasColumn('customers', 'deleted_at'), fn ($q) => $q->whereNull('deleted_at'))
             ->where('balance', '>', 0);
 
         if ($companyId !== null) {
