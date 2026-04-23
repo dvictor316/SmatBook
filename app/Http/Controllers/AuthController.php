@@ -264,12 +264,12 @@ class AuthController extends Controller
             $request->session()->regenerateToken();
         }
 
-        if (Auth::check()) {
-            return $this->handlePostLoginRedirect();
+        if ($request->boolean('flush') || $request->boolean('expired') || $request->boolean('logout')) {
+            $this->clearClientAuthState($request);
         }
 
-        if ($request->boolean('flush')) {
-            $this->clearClientAuthState($request);
+        if (Auth::check()) {
+            return $this->handlePostLoginRedirect();
         }
 
         // Keep the existing CSRF token for plain form renders. Regenerating it on

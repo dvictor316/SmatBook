@@ -36,15 +36,6 @@
                             </ul>
                         </li>
 
-                        <li class="submenu">
-                            <a href="#"><i class="fe fe-users"></i><span>Customers</span> <span class="menu-arrow"></span></a>
-                            <ul>
-                                <li><a href="{{ url('customers') }}" class="{{ Request::is('customers', 'add-customer', 'edit-customer', 'active-customers', 'deactive-customers') ? 'active' : '' }}">Customers</a></li>
-                                <li><a href="{{ url('customer-details') }}" class="{{ Request::is('customer-details') ? 'active' : '' }}">Customer Details</a></li>
-                                <li><a href="{{ url('suppliers') }}" class="{{ Request::is('suppliers*') ? 'active' : '' }}">Suppliers</a></li>
-                            </ul>
-                        </li>
-
                         <li class="menu-title"><span>Inventory</span></li>
 
                         <li class="submenu">
@@ -54,6 +45,14 @@
                                 <li><a href="{{ url('category') }}" class="{{ Request::is('category') ? 'active' : '' }}">Product Category</a></li>
                                 <li><a href="{{ url('units') }}" class="{{ Request::is('units') ? 'active' : '' }}">Product Units</a></li>
                             </ul>
+                        </li>
+
+                        <li>
+                            <a href="{{ url('customers') }}" class="{{ Request::is('customers', 'add-customer', 'edit-customer', 'active-customers', 'deactive-customers', 'customer-details') ? 'active' : '' }}"><i class="fe fe-users"></i> <span>Customers</span></a>
+                        </li>
+
+                        <li>
+                            <a href="{{ url('suppliers') }}" class="{{ Request::is('suppliers*') ? 'active' : '' }}"><i class="fe fe-briefcase"></i> <span>Suppliers</span></a>
                         </li>
 
                         <li>
