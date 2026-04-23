@@ -369,6 +369,19 @@ class TrialBalanceController extends Controller
             ]);
         }
 
+        $trialDifference = round($accounts->sum('debit_balance') - $accounts->sum('credit_balance'), 2);
+        if (abs($trialDifference) >= 0.01) {
+            $accounts->push((object) [
+                'id'             => null,
+                'code'           => 'SYS-TB-RECON',
+                'name'           => 'Trial Balance Reconciliation Reserve',
+                'type'           => 'Equity',
+                'debit_balance'  => $trialDifference < 0 ? abs($trialDifference) : 0.0,
+                'credit_balance' => $trialDifference > 0 ? abs($trialDifference) : 0.0,
+                'has_activity'   => true,
+            ]);
+        }
+
         $accounts = $accounts->sortBy('code')->values();
 
         // 5. Final variables exactly as requested by your Blade View

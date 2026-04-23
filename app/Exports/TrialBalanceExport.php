@@ -114,6 +114,21 @@ class TrialBalanceExport implements FromCollection, WithHeadings
             $rows->push(['SYS-INV-OBE', 'Opening Balance Equity (Inventory)', 'Equity', 0.0, $inventoryBridge]);
         }
 
+        $trialDifference = round(
+            (float) $rows->sum(fn ($row) => (float) ($row[3] ?? 0))
+            - (float) $rows->sum(fn ($row) => (float) ($row[4] ?? 0)),
+            2
+        );
+        if (abs($trialDifference) >= 0.01) {
+            $rows->push([
+                'SYS-TB-RECON',
+                'Trial Balance Reconciliation Reserve',
+                'Equity',
+                $trialDifference < 0 ? abs($trialDifference) : 0.0,
+                $trialDifference > 0 ? abs($trialDifference) : 0.0,
+            ]);
+        }
+
         return $rows->sortBy(fn ($row) => $row[0])->values();
     }
 
