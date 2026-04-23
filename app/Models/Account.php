@@ -90,6 +90,9 @@ class Account extends Model
             ],
             self::TYPE_EQUITY => [
                 'Owner\'s Equity',
+                'Owner\'s Contribution',
+                'Capital',
+                'Owner\'s Capital',
                 'Partner\'s Equity',
                 'Share Capital',
                 'Retained Earnings',

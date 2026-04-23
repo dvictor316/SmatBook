@@ -559,8 +559,6 @@ $(document).ready(function () {
         var fromRolls = pcsPerRoll > 0 ? rolls * pcsPerRoll : rolls;
         var total = fromCartons + fromRolls + pieces;
 
-        if (total <= 0 && pcsPerCtn > 0) total = pcsPerCtn;
-
         var stockValue = total * purchasePrice;
         $('#quick_stock_preview_text').text(total.toLocaleString() + ' pcs');
         $('#quick_stock_value_preview').text(stockValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));

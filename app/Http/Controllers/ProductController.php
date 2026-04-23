@@ -394,21 +394,6 @@ class ProductController extends Controller
             return $calculatedStock;
         }
 
-        $unitsPerCarton = max((int) ($validated['units_per_carton'] ?? 0), 0);
-        $unitsPerRoll = max((int) ($validated['units_per_roll'] ?? 0), 0);
-
-        if ($unitsPerRoll > 0 && $unitsPerCarton > 0) {
-            return (int) round($unitsPerCarton * $unitsPerRoll);
-        }
-
-        if ($unitsPerCarton > 0) {
-            return $unitsPerCarton;
-        }
-
-        if ($unitsPerRoll > 0) {
-            return $unitsPerRoll;
-        }
-
         return 0;
     }
 

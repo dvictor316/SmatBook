@@ -1109,12 +1109,6 @@
             const fromRolls = piecesPerRoll > 0 ? rolls * piecesPerRoll : rolls;
             let total = fromCartons + fromRolls + pieces;
 
-            // If the user defined pack size but left opening stock empty,
-            // treat the entered carton piece count as the starting quantity.
-            if (total <= 0 && piecesPerCarton > 0) {
-                total = piecesPerCarton;
-            }
-
             const stockValue = total * purchasePrice;
 
             $('#quick_stock_preview_text').text(total.toLocaleString() + ' pcs');
