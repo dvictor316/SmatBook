@@ -15,6 +15,10 @@ class VendorLedgerTransaction extends Model
         'reference',
         'mode',
         'amount',
+        'company_id',
+        'user_id',
+        'branch_id',
+        'branch_name',
     ];
 
     // Define the relationship back to the Vendor model

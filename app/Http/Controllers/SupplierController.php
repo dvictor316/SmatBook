@@ -888,6 +888,13 @@ class SupplierController extends Controller
                         'email' => $lookupEmail !== '' ? $lookupEmail : null,
                         'phone' => $lookupPhone !== '' ? $lookupPhone : null,
                         'address' => $rowData['address'] ?? null,
+                        'opening_balance' => is_numeric($rowData['opening_balance'] ?? ($rowData['balance'] ?? null))
+                            ? (float) ($rowData['opening_balance'] ?? $rowData['balance'])
+                            : 0,
+                        'opening_balance_date' => is_numeric($rowData['opening_balance'] ?? ($rowData['balance'] ?? null))
+                            && (float) ($rowData['opening_balance'] ?? $rowData['balance']) > 0
+                                ? ($rowData['opening_balance_date'] ?? now()->toDateString())
+                                : null,
                         'company_id' => $companyId > 0 ? $companyId : null,
                         'user_id' => $userId > 0 ? $userId : null,
                     ]);
@@ -1042,7 +1049,25 @@ class SupplierController extends Controller
     private function normalizeImportHeaderCell($value): string
     {
         $header = strtolower(trim((string) $value));
-        return preg_replace('/^\x{FEFF}/u', '', $header) ?? $header;
+        $header = preg_replace('/^\x{FEFF}/u', '', $header) ?? $header;
+
+        $aliases = [
+            'supplier' => 'name',
+            'supplier_name' => 'name',
+            'vendor' => 'name',
+            'vendor_name' => 'name',
+            'mobile' => 'phone',
+            'phone_number' => 'phone',
+            'email_address' => 'email',
+            'opening_bal' => 'opening_balance',
+            'opening_balance' => 'opening_balance',
+            'balance' => 'opening_balance',
+            'ob' => 'opening_balance',
+            'opening_balance_date' => 'opening_balance_date',
+            'opening_date' => 'opening_balance_date',
+        ];
+
+        return $aliases[$header] ?? $header;
     }
 
     private function spreadsheetRowIterator(\Illuminate\Http\UploadedFile $file): \Generator

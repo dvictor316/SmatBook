@@ -1387,6 +1387,9 @@ class CustomerController extends Controller
                         'phone' => $lookupPhone !== '' ? $lookupPhone : null,
                         'address' => $rowData['address'] ?? null,
                         'balance' => is_numeric($rowData['balance'] ?? null) ? (float) $rowData['balance'] : 0,
+                        'opening_balance_date' => is_numeric($rowData['balance'] ?? null) && (float) $rowData['balance'] > 0
+                            ? ($rowData['opening_balance_date'] ?? now()->toDateString())
+                            : null,
                         'credit_limit' => is_numeric($rowData['credit_limit'] ?? null) ? (float) $rowData['credit_limit'] : 0,
                         'status' => in_array(strtolower((string) ($rowData['status'] ?? 'active')), ['active', 'deactive'], true)
                             ? strtolower((string) $rowData['status'])

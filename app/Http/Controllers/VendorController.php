@@ -16,6 +16,12 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class VendorController extends Controller
 {
+    private function vendorLedgerQuery(int $vendorId)
+    {
+        $query = VendorLedgerTransaction::query()->where('vendor_id', $vendorId);
+        return $this->applyTenantScope($query, 'vendor_ledger_transactions');
+    }
+
     private function applyTenantScope($query, string $table = 'vendors')
     {
         $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
@@ -91,7 +97,7 @@ class VendorController extends Controller
 
         // Loop through vendors and calculate their actual current balance dynamically
         foreach ($vendors as $vendor) {
-            $vendor->current_balance = VendorLedgerTransaction::where('vendor_id', $vendor->id)->sum('amount');
+            $vendor->current_balance = $this->vendorLedgerQuery((int) $vendor->id)->sum('amount');
         }
 
         return view('Customers.vendors', compact('vendors'));
@@ -148,6 +154,12 @@ class VendorController extends Controller
             'reference' => 'SYS-INIT',
             'mode' => 'System',
             'amount' => $initialAmount,
+            'company_id' => Schema::hasColumn('vendor_ledger_transactions', 'company_id')
+                ? (auth()->user()?->company_id ?? session('current_tenant_id'))
+                : null,
+            'user_id' => Schema::hasColumn('vendor_ledger_transactions', 'user_id') ? auth()->id() : null,
+            'branch_id' => Schema::hasColumn('vendor_ledger_transactions', 'branch_id') ? ($this->getActiveBranchContext()['id'] ?? null) : null,
+            'branch_name' => Schema::hasColumn('vendor_ledger_transactions', 'branch_name') ? ($this->getActiveBranchContext()['name'] ?? null) : null,
         ]);
 
         return redirect()->route('vendors.index')->with('success', 'Vendor added successfully!');
@@ -168,9 +180,9 @@ class VendorController extends Controller
     {
         $vendor = $this->applyTenantScope(Vendor::query())->findOrFail($id);
         
-        $transactions = VendorLedgerTransaction::where('vendor_id', $vendor->id)
-                                ->orderBy('created_at', 'asc')
-                                ->get();
+        $transactions = $this->vendorLedgerQuery((int) $vendor->id)
+            ->orderBy('created_at', 'asc')
+            ->get();
 
         $closingBalance = $transactions->sum('amount');
 
@@ -209,6 +221,18 @@ class VendorController extends Controller
         ]);
         
         $validated['vendor_id'] = $vendor->id;
+        if (Schema::hasColumn('vendor_ledger_transactions', 'company_id')) {
+            $validated['company_id'] = auth()->user()?->company_id ?? session('current_tenant_id');
+        }
+        if (Schema::hasColumn('vendor_ledger_transactions', 'user_id')) {
+            $validated['user_id'] = auth()->id();
+        }
+        if (Schema::hasColumn('vendor_ledger_transactions', 'branch_id')) {
+            $validated['branch_id'] = $this->getActiveBranchContext()['id'] ?? null;
+        }
+        if (Schema::hasColumn('vendor_ledger_transactions', 'branch_name')) {
+            $validated['branch_name'] = $this->getActiveBranchContext()['name'] ?? null;
+        }
 
         VendorLedgerTransaction::create($validated);
 
@@ -245,7 +269,7 @@ class VendorController extends Controller
     public function updateTransaction(Request $request, $id, $transactionId): RedirectResponse
     {
         $vendor = $this->applyTenantScope(Vendor::query())->findOrFail($id);
-        $transaction = VendorLedgerTransaction::where('vendor_id', $vendor->id)->findOrFail($transactionId);
+        $transaction = $this->vendorLedgerQuery((int) $vendor->id)->findOrFail($transactionId);
 
         $validated = $request->validate([
             'name' => 'required|string|max:191',
@@ -264,7 +288,7 @@ class VendorController extends Controller
     public function destroyTransaction($id, $transactionId): RedirectResponse
     {
         $vendor = $this->applyTenantScope(Vendor::query())->findOrFail($id);
-        $transaction = VendorLedgerTransaction::where('vendor_id', $vendor->id)->findOrFail($transactionId);
+        $transaction = $this->vendorLedgerQuery((int) $vendor->id)->findOrFail($transactionId);
         $transaction->delete();
 
         return redirect()
@@ -279,7 +303,7 @@ class VendorController extends Controller
     {
         $vendor = $this->applyTenantScope(Vendor::query())->findOrFail($id);
         // Calculate current balance here to display it in the edit view
-        $vendor->current_balance = VendorLedgerTransaction::where('vendor_id', $vendor->id)->sum('amount');
+        $vendor->current_balance = $this->vendorLedgerQuery((int) $vendor->id)->sum('amount');
 
         return view('Customers.edit', compact('vendor'));
     }
@@ -332,8 +356,8 @@ class VendorController extends Controller
     public function show($id): View
     {
         $vendor = $this->applyTenantScope(Vendor::query())->findOrFail($id);
-        $vendor->current_balance = VendorLedgerTransaction::where('vendor_id', $vendor->id)->sum('amount');
-        $transactions = VendorLedgerTransaction::where('vendor_id', $vendor->id)
+        $vendor->current_balance = $this->vendorLedgerQuery((int) $vendor->id)->sum('amount');
+        $transactions = $this->vendorLedgerQuery((int) $vendor->id)
             ->latest()
             ->limit(15)
             ->get();
@@ -490,6 +514,18 @@ class VendorController extends Controller
                             'reference' => 'SYS-IMPORT',
                             'mode' => 'System',
                             'amount' => $initialAmount,
+                            'company_id' => Schema::hasColumn('vendor_ledger_transactions', 'company_id')
+                                ? ($companyId > 0 ? $companyId : null)
+                                : null,
+                            'user_id' => Schema::hasColumn('vendor_ledger_transactions', 'user_id')
+                                ? ($userId > 0 ? $userId : null)
+                                : null,
+                            'branch_id' => Schema::hasColumn('vendor_ledger_transactions', 'branch_id')
+                                ? ($this->getActiveBranchContext()['id'] ?? null)
+                                : null,
+                            'branch_name' => Schema::hasColumn('vendor_ledger_transactions', 'branch_name')
+                                ? ($this->getActiveBranchContext()['name'] ?? null)
+                                : null,
                         ]);
                         $created++;
                     } else {

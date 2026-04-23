@@ -30,7 +30,11 @@ class Vendor extends Model
         'email',
         'phone',
         'address',
-        'balance'
+        'balance',
+        'company_id',
+        'user_id',
+        'branch_id',
+        'branch_name',
     ];
 
     /**
