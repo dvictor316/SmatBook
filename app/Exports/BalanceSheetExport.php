@@ -55,6 +55,51 @@ class BalanceSheetExport implements FromArray, WithHeadings
             $currentAssets = $accounts->filter(fn ($account) => $this->normalizeAccountType($account->type ?? null) === 'asset');
         }
 
+        $customerOB = $this->customerOpeningBalance();
+        if ($customerOB > 0.01) {
+            $currentAssets = $currentAssets->concat([(object) [
+                'name' => 'Accounts Receivable',
+                'type' => 'Asset',
+                'sub_type' => 'Current Asset',
+                'balance' => $customerOB,
+            ]]);
+            $equity = $equity->concat([(object) [
+                'name' => 'Opening Balance Equity (Customers)',
+                'type' => 'Equity',
+                'balance' => $customerOB,
+            ]]);
+        }
+
+        $supplierOB = $this->supplierOpeningBalance();
+        if ($supplierOB > 0.01) {
+            $currentLiabilities = $currentLiabilities->concat([(object) [
+                'name' => 'Accounts Payable',
+                'type' => 'Liability',
+                'sub_type' => 'Current Liability',
+                'balance' => $supplierOB,
+            ]]);
+            $equity = $equity->concat([(object) [
+                'name' => 'Opening Balance Equity (Suppliers)',
+                'type' => 'Equity',
+                'balance' => -1 * $supplierOB,
+            ]]);
+        }
+
+        $inventoryBridge = $this->inventoryBridge($accounts);
+        if ($inventoryBridge > 0.01) {
+            $currentAssets = $currentAssets->concat([(object) [
+                'name' => 'Inventory',
+                'type' => 'Asset',
+                'sub_type' => 'Current Asset',
+                'balance' => $inventoryBridge,
+            ]]);
+            $equity = $equity->concat([(object) [
+                'name' => 'Opening Balance Equity (Inventory)',
+                'type' => 'Equity',
+                'balance' => $inventoryBridge,
+            ]]);
+        }
+
         // Prepare data rows
         $rows = [];
 
@@ -123,6 +168,7 @@ class BalanceSheetExport implements FromArray, WithHeadings
             ->selectRaw('account_id, SUM(debit) as total_debit, SUM(credit) as total_credit')
             ->where('transaction_date', '<=', $date)
             ->groupBy('account_id');
+        $this->applyCompanyScope($txnQuery, 'transactions');
 
         if ($this->branchScope !== 'all') {
             $branchId = trim((string) ($this->branchId ?? ''));
@@ -140,29 +186,32 @@ class BalanceSheetExport implements FromArray, WithHeadings
         $txnTotals = $txnQuery->get()->keyBy('account_id');
         $accountIds = $txnTotals->keys()->all();
 
-        if (empty($accountIds)) {
-            return collect([]);
-        }
-
-        $accounts = Account::withoutGlobalScope('tenant')
-            ->whereIn('id', $accountIds)
-            ->get();
+        $accountsQuery = Account::withoutGlobalScope('tenant')
+            ->where(function ($query) use ($accountIds) {
+                if (!empty($accountIds)) {
+                    $query->whereIn('id', $accountIds);
+                }
+                $query->orWhere('opening_balance', '!=', 0);
+            });
+        $this->applyCompanyScope($accountsQuery, 'accounts');
+        $accounts = $accountsQuery->get();
 
         return $accounts->map(function($account) use ($txnTotals) {
             $totals = $txnTotals->get($account->id);
             $debits = (float) ($totals->total_debit ?? 0);
             $credits = (float) ($totals->total_credit ?? 0);
+            $opening = (float) ($account->opening_balance ?? 0);
 
             $type = $this->normalizeAccountType($account->type ?? null);
             if (in_array($type, ['asset', 'expense'], true)) {
-                $balance = $debits - $credits;
+                $balance = $opening + $debits - $credits;
             } else {
-                $balance = $credits - $debits;
+                $balance = $opening + $credits - $debits;
             }
 
-            $account->balance = abs($balance);
+            $account->balance = $balance;
             return $account;
-        })->where('balance', '>', 0);
+        })->filter(fn ($account) => abs((float) $account->balance) > 0.01);
     }
 
     private function calculateRetainedEarnings($date)
@@ -175,6 +224,7 @@ class BalanceSheetExport implements FromArray, WithHeadings
             ->selectRaw('account_id, SUM(debit) as total_debit, SUM(credit) as total_credit')
             ->where('transaction_date', '<=', $date)
             ->groupBy('account_id');
+        $this->applyCompanyScope($txnQuery, 'transactions');
 
         if ($this->branchScope !== 'all') {
             $branchId = trim((string) ($this->branchId ?? ''));
@@ -246,5 +296,113 @@ class BalanceSheetExport implements FromArray, WithHeadings
         }
 
         return $value;
+    }
+
+    private function applyCompanyScope($target, string $table): void
+    {
+        if ($this->companyId > 0 && \Schema::hasColumn($table, 'company_id')) {
+            $target->where('company_id', $this->companyId);
+        } elseif ($this->userId > 0 && \Schema::hasColumn($table, 'user_id')) {
+            $target->where('user_id', $this->userId);
+        }
+    }
+
+    private function scopedTable(string $table)
+    {
+        $query = DB::table($table);
+        if ($this->companyId > 0 && \Schema::hasColumn($table, 'company_id')) {
+            $query->where('company_id', $this->companyId);
+        } elseif ($this->userId > 0 && \Schema::hasColumn($table, 'user_id')) {
+            $query->where('user_id', $this->userId);
+        }
+
+        return $query;
+    }
+
+    private function customerOpeningBalance(): float
+    {
+        if (!\Schema::hasTable('customers') || !\Schema::hasColumn('customers', 'balance')) {
+            return 0.0;
+        }
+
+        $query = $this->scopedTable('customers')
+            ->where('balance', '>', 0)
+            ->when(\Schema::hasColumn('customers', 'opening_balance_date'), function ($query) {
+                $query->where(function ($sub) {
+                    $sub->whereNull('opening_balance_date')
+                        ->orWhere('opening_balance_date', '<=', $this->reportDate->toDateString());
+                });
+            });
+
+        $postedIds = $this->postedOpeningBalanceIds('CUST-OB-%', 'debit');
+        if (!empty($postedIds)) {
+            $query->whereNotIn('id', $postedIds);
+        }
+
+        return (float) $query->sum('balance');
+    }
+
+    private function supplierOpeningBalance(): float
+    {
+        if (!\Schema::hasTable('suppliers') || !\Schema::hasColumn('suppliers', 'opening_balance')) {
+            return 0.0;
+        }
+
+        $query = $this->scopedTable('suppliers')
+            ->where('opening_balance', '>', 0)
+            ->when(\Schema::hasColumn('suppliers', 'opening_balance_date'), function ($query) {
+                $query->where(function ($sub) {
+                    $sub->whereNull('opening_balance_date')
+                        ->orWhere('opening_balance_date', '<=', $this->reportDate->toDateString());
+                });
+            });
+
+        $postedIds = $this->postedOpeningBalanceIds('SUPP-OB-%', 'credit');
+        if (!empty($postedIds)) {
+            $query->whereNotIn('id', $postedIds);
+        }
+
+        return (float) $query->sum('opening_balance');
+    }
+
+    private function postedOpeningBalanceIds(string $referencePattern, string $side): array
+    {
+        if (!\Schema::hasTable('transactions') || !\Schema::hasColumn('transactions', 'reference')) {
+            return [];
+        }
+
+        $query = \App\Models\Transaction::withoutGlobalScopes()
+            ->where('transaction_type', \App\Models\Transaction::TYPE_OPENING_BALANCE)
+            ->where('reference', 'like', $referencePattern)
+            ->where($side, '>', 0);
+        $this->applyCompanyScope($query, 'transactions');
+
+        return $query->distinct()->pluck('related_id')->filter()->map(fn ($v) => (int) $v)->all();
+    }
+
+    private function inventoryBridge($accounts): float
+    {
+        if (!\Schema::hasTable('products') || !\Schema::hasColumn('products', 'stock')) {
+            return 0.0;
+        }
+
+        $priceColumn = \Schema::hasColumn('products', 'purchase_price')
+            ? 'purchase_price'
+            : (\Schema::hasColumn('products', 'price') ? 'price' : null);
+        if ($priceColumn === null) {
+            return 0.0;
+        }
+
+        $inventoryValue = (float) $this->scopedTable('products')
+            ->where('stock', '>', 0)
+            ->selectRaw("SUM(COALESCE(stock, 0) * COALESCE({$priceColumn}, 0)) as inventory_value")
+            ->value('inventory_value');
+
+        $ledgerInventory = (float) $accounts
+            ->filter(fn ($account) => str_contains(strtolower((string) ($account->name ?? '')), 'inventory')
+                || str_contains(strtolower((string) ($account->name ?? '')), 'stock'))
+            ->sum('balance');
+
+        return max(0.0, round($inventoryValue - max(0.0, $ledgerInventory), 2));
     }
 }

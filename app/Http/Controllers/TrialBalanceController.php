@@ -308,6 +308,67 @@ class TrialBalanceController extends Controller
             ]);
         }
 
+        $supplierOBUnposted = $this->getUnpostedSupplierOpeningBalanceSum($request, $end);
+        if ($supplierOBUnposted > 0.01) {
+            $apEntry = $accounts->first(
+                fn ($a) => str_contains(strtolower((string) ($a->name ?? '')), 'payable')
+            );
+            if ($apEntry) {
+                $apEntry->credit_balance = (float) ($apEntry->credit_balance ?? 0) + $supplierOBUnposted;
+            } else {
+                $accounts->push((object) [
+                    'id'             => null,
+                    'code'           => 'SYS-SUPP-AP',
+                    'name'           => 'Accounts Payable',
+                    'type'           => 'Liability',
+                    'debit_balance'  => 0.0,
+                    'credit_balance' => $supplierOBUnposted,
+                    'has_activity'   => true,
+                ]);
+            }
+
+            $accounts->push((object) [
+                'id'             => null,
+                'code'           => 'SYS-SUPP-OBE',
+                'name'           => 'Opening Balance Equity (Suppliers)',
+                'type'           => 'Equity',
+                'debit_balance'  => $supplierOBUnposted,
+                'credit_balance' => 0.0,
+                'has_activity'   => true,
+            ]);
+        }
+
+        $inventoryBridge = $this->getLegacyInventoryBridgeAmount($request, $end, $accounts);
+        if ($inventoryBridge > 0.01) {
+            $inventoryEntry = $accounts->first(
+                fn ($a) => str_contains(strtolower((string) ($a->name ?? '')), 'inventory')
+                    || str_contains(strtolower((string) ($a->name ?? '')), 'stock')
+            );
+            if ($inventoryEntry) {
+                $inventoryEntry->debit_balance = (float) ($inventoryEntry->debit_balance ?? 0) + $inventoryBridge;
+            } else {
+                $accounts->push((object) [
+                    'id'             => null,
+                    'code'           => 'SYS-INV',
+                    'name'           => 'Inventory',
+                    'type'           => 'Asset',
+                    'debit_balance'  => $inventoryBridge,
+                    'credit_balance' => 0.0,
+                    'has_activity'   => true,
+                ]);
+            }
+
+            $accounts->push((object) [
+                'id'             => null,
+                'code'           => 'SYS-INV-OBE',
+                'name'           => 'Opening Balance Equity (Inventory)',
+                'type'           => 'Equity',
+                'debit_balance'  => 0.0,
+                'credit_balance' => $inventoryBridge,
+                'has_activity'   => true,
+            ]);
+        }
+
         $accounts = $accounts->sortBy('code')->values();
 
         // 5. Final variables exactly as requested by your Blade View
@@ -419,6 +480,86 @@ class TrialBalanceController extends Controller
         }
 
         return (float) $customerQuery->sum('balance');
+    }
+
+    private function getUnpostedSupplierOpeningBalanceSum(Request $request, $reportDate): float
+    {
+        if (!Schema::hasTable('suppliers') || !Schema::hasColumn('suppliers', 'opening_balance')) {
+            return 0.0;
+        }
+
+        $companyId = (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $userId = (int) ($request->user()?->id ?? 0);
+
+        $postedSupplierIds = [];
+        if (Schema::hasTable('transactions') && Schema::hasColumn('transactions', 'reference')) {
+            $postedQuery = Transaction::withoutGlobalScopes()
+                ->where('transaction_type', Transaction::TYPE_OPENING_BALANCE)
+                ->where('reference', 'like', 'SUPP-OB-%')
+                ->where('credit', '>', 0);
+            if ($companyId > 0 && Schema::hasColumn('transactions', 'company_id')) {
+                $postedQuery->where('company_id', $companyId);
+            } elseif ($userId > 0 && Schema::hasColumn('transactions', 'user_id')) {
+                $postedQuery->where('user_id', $userId);
+            }
+            $postedSupplierIds = $postedQuery->distinct()->pluck('related_id')->filter()->map(fn ($v) => (int) $v)->all();
+        }
+
+        $supplierQuery = DB::table('suppliers')->where('opening_balance', '>', 0);
+        if (Schema::hasColumn('suppliers', 'opening_balance_date')) {
+            $supplierQuery->where(function ($q) use ($reportDate) {
+                $q->whereNull('opening_balance_date')
+                    ->orWhere('opening_balance_date', '<=', $reportDate->toDateString());
+            });
+        }
+        if ($companyId > 0 && Schema::hasColumn('suppliers', 'company_id')) {
+            $supplierQuery->where('company_id', $companyId);
+        } elseif ($userId > 0 && Schema::hasColumn('suppliers', 'user_id')) {
+            $supplierQuery->where('user_id', $userId);
+        }
+        if (!empty($postedSupplierIds)) {
+            $supplierQuery->whereNotIn('id', $postedSupplierIds);
+        }
+
+        return (float) $supplierQuery->sum('opening_balance');
+    }
+
+    private function getLegacyInventoryBridgeAmount(Request $request, $reportDate, $accounts): float
+    {
+        if (!Schema::hasTable('products') || !Schema::hasColumn('products', 'stock')) {
+            return 0.0;
+        }
+
+        $priceColumn = Schema::hasColumn('products', 'purchase_price')
+            ? 'purchase_price'
+            : (Schema::hasColumn('products', 'price') ? 'price' : null);
+        if ($priceColumn === null) {
+            return 0.0;
+        }
+
+        $companyId = (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $userId = (int) ($request->user()?->id ?? 0);
+        $productQuery = DB::table('products')
+            ->where('stock', '>', 0)
+            ->selectRaw("SUM(COALESCE(stock, 0) * COALESCE({$priceColumn}, 0)) as inventory_value");
+
+        if ($companyId > 0 && Schema::hasColumn('products', 'company_id')) {
+            $productQuery->where('company_id', $companyId);
+        } elseif ($userId > 0 && Schema::hasColumn('products', 'user_id')) {
+            $productQuery->where('user_id', $userId);
+        }
+
+        $inventoryValue = (float) ($productQuery->value('inventory_value') ?? 0);
+        if ($inventoryValue <= 0.01) {
+            return 0.0;
+        }
+
+        $ledgerInventory = (float) $accounts
+            ->filter(fn ($a) => str_contains(strtolower((string) ($a->name ?? '')), 'inventory')
+                || str_contains(strtolower((string) ($a->name ?? '')), 'stock'))
+            ->sum(fn ($a) => (float) ($a->debit_balance ?? 0) - (float) ($a->credit_balance ?? 0));
+
+        return max(0.0, round($inventoryValue - max(0.0, $ledgerInventory), 2));
     }
 
     /**

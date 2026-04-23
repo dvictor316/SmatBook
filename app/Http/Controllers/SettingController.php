@@ -1131,9 +1131,15 @@ class SettingController extends Controller
             $reference = 'JRNL-' . now()->format('Ymd-His');
         }
 
-        DB::transaction(function () use ($validated, $lines, $reference, $request) {
+        $companyId = (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $branchId = trim((string) session('active_branch_id', ''));
+        $branchName = trim((string) session('active_branch_name', ''));
+
+        DB::transaction(function () use ($validated, $lines, $reference, $request, $companyId, $branchId, $branchName) {
+            $transactionColumns = Schema::getColumnListing('transactions');
+
             foreach ($lines as $line) {
-                Transaction::create([
+                $payload = [
                     'account_id' => $line['account_id'],
                     'transaction_date' => $validated['transaction_date'],
                     'reference' => $reference,
@@ -1145,7 +1151,12 @@ class SettingController extends Controller
                     'related_id' => null,
                     'related_type' => null,
                     'user_id' => $request->user()?->id,
-                ]);
+                    'company_id' => $companyId ?: null,
+                    'branch_id' => $branchId !== '' ? $branchId : null,
+                    'branch_name' => $branchName !== '' ? $branchName : null,
+                ];
+
+                Transaction::create(array_intersect_key($payload, array_flip($transactionColumns)));
             }
         });
 
