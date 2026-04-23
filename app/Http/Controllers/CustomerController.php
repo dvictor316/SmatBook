@@ -7,6 +7,7 @@ use App\Models\Bank;
 use App\Models\Customer;
 use App\Models\Payment;
 use App\Models\Sale;
+use App\Models\Transaction;
 use App\Support\LedgerService;
 use App\Traits\HasUniqueReceiptNumber;
 use Carbon\Carbon;
@@ -129,7 +130,13 @@ class CustomerController extends Controller
             $data['branch_name'] = $resolvedBranch['name'] ?? null;
         }
 
-        Customer::create($data);
+        $customer = Customer::create($data);
+
+        // Post opening balance journal entry so it reflects on the balance sheet
+        $openingBalance = (float) ($data['balance'] ?? 0);
+        if ($openingBalance > 0) {
+            $this->postCustomerOpeningBalanceJournal($customer, $openingBalance);
+        }
 
         return redirect()->route('customers.index')->with('success', 'Customer added successfully.');
     }
@@ -221,6 +228,13 @@ class CustomerController extends Controller
         $data = $this->sanitizeForCustomerColumns($data);
 
         $customer->update($data);
+
+        // Sync opening balance journal entries so the balance sheet always stays current
+        $this->reverseCustomerOpeningBalanceJournal($customer->id);
+        $freshBalance = (float) ($customer->fresh()->balance ?? 0);
+        if ($freshBalance > 0) {
+            $this->postCustomerOpeningBalanceJournal($customer->fresh(), $freshBalance);
+        }
 
         // CHANGE THIS LINE: 
         // From: return redirect()->route('customers.show', $customer->id)
@@ -1424,6 +1438,109 @@ class CustomerController extends Controller
     {
         $allowed = array_flip(Schema::getColumnListing('customers'));
         return array_intersect_key($data, $allowed);
+    }
+
+    /**
+     * Post double-entry journal for a customer opening balance.
+     * DR Accounts Receivable  (customer owes us → asset increases)
+     * CR Opening Balance Equity (balancing equity entry)
+     */
+    private function postCustomerOpeningBalanceJournal(Customer $customer, float $balance): void
+    {
+        if ($balance <= 0 || !Schema::hasTable('accounts') || !Schema::hasTable('transactions')) {
+            return;
+        }
+
+        $companyId   = (int) ($customer->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $userId      = (int) ($customer->user_id ?? auth()->id() ?? 0);
+        $reference   = 'CUST-OB-' . $customer->id;
+        $txnDate     = $customer->opening_balance_date
+            ? Carbon::parse($customer->opening_balance_date)->toDateString()
+            : today()->toDateString();
+        $description = 'Opening balance: ' . ($customer->customer_name ?? 'Customer #' . $customer->id);
+
+        $arAccount  = $this->getOrCreateChartAccountForCustomer(
+            'Accounts Receivable', '1100', Account::TYPE_ASSET, Account::SUBTYPE_CURRENT_ASSET,
+            $companyId, $userId
+        );
+        $obeAccount = $this->getOrCreateChartAccountForCustomer(
+            'Opening Balance Equity', 'OBE-001', Account::TYPE_EQUITY, 'Opening Balance Equity',
+            $companyId, $userId
+        );
+
+        $txnColumns = Schema::getColumnListing('transactions');
+        $base = array_intersect_key([
+            'transaction_date' => $txnDate,
+            'reference'        => $reference,
+            'description'      => $description,
+            'transaction_type' => Transaction::TYPE_OPENING_BALANCE,
+            'related_id'       => $customer->id,
+            'related_type'     => Customer::class,
+            'balance'          => 0,
+            'company_id'       => $companyId ?: null,
+            'user_id'          => $userId ?: null,
+            'branch_id'        => $customer->branch_id ?? null,
+            'branch_name'      => $customer->branch_name ?? null,
+        ], array_flip($txnColumns));
+
+        // DR Accounts Receivable — customer owes us
+        Transaction::create(array_merge($base, ['account_id' => $arAccount->id, 'debit' => $balance, 'credit' => 0]));
+        // CR Opening Balance Equity — balancing entry
+        Transaction::create(array_merge($base, ['account_id' => $obeAccount->id, 'debit' => 0, 'credit' => $balance]));
+    }
+
+    /**
+     * Delete any existing CUST-OB-* journal entries for a customer.
+     * Called before re-posting so balance-sheet figures always stay in sync.
+     */
+    private function reverseCustomerOpeningBalanceJournal(int $customerId): void
+    {
+        if (!Schema::hasTable('transactions')) {
+            return;
+        }
+
+        Transaction::withoutGlobalScopes()
+            ->where('reference', 'CUST-OB-' . $customerId)
+            ->where('transaction_type', Transaction::TYPE_OPENING_BALANCE)
+            ->where('related_id', $customerId)
+            ->where('related_type', Customer::class)
+            ->delete();
+    }
+
+    /**
+     * Find or create a Chart of Accounts entry needed for opening-balance journals.
+     */
+    private function getOrCreateChartAccountForCustomer(
+        string $name, string $code, string $type, string $subType,
+        int $companyId, int $userId
+    ): Account {
+        $account = Account::withoutGlobalScopes()
+            ->whereNull('deleted_at')
+            ->where('company_id', $companyId)
+            ->where(function ($q) use ($code, $name) {
+                $q->where('code', $code)->orWhere('name', $name);
+            })
+            ->first();
+
+        if (!$account) {
+            $columns = Schema::getColumnListing('accounts');
+            $payload = array_intersect_key([
+                'name'            => $name,
+                'code'            => $code,
+                'type'            => $type,
+                'sub_type'        => $subType,
+                'company_id'      => $companyId ?: null,
+                'user_id'         => $userId ?: null,
+                'branch_id'       => null,
+                'branch_name'     => null,
+                'opening_balance' => 0,
+                'current_balance' => 0,
+                'is_active'       => true,
+            ], array_flip($columns));
+            $account = Account::create($payload);
+        }
+
+        return $account;
     }
 
     private function normalizeImportHeaderCell($value): string

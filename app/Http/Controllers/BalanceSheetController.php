@@ -329,6 +329,37 @@ class BalanceSheetController extends Controller
             ]);
         }
 
+        // Include customer opening balances not yet posted as journal entries.
+        // This covers all existing customers (pre-dating the journal workflow) AND
+        // ensures every future record with a balance reflects on the balance sheet.
+        $customerOBUnposted = $this->getUnpostedCustomerOpeningBalanceSum($request, $reportDate);
+        if ($customerOBUnposted > 0.01) {
+            // Add to Accounts Receivable (current assets side)
+            $arInCurrentAssets = $currentAssets->first(
+                fn ($a) => str_contains(strtolower((string) ($a->name ?? '')), 'receivable')
+            );
+            if ($arInCurrentAssets) {
+                $arInCurrentAssets->balance = (float) ($arInCurrentAssets->balance ?? 0) + $customerOBUnposted;
+            } else {
+                $currentAssets = $currentAssets->concat([(object) [
+                    'id'       => null,
+                    'code'     => 'SYS-CUST-AR',
+                    'name'     => 'Accounts Receivable',
+                    'type'     => 'Asset',
+                    'sub_type' => 'Current Asset',
+                    'balance'  => $customerOBUnposted,
+                ]]);
+            }
+            // Balance the equity side
+            $equity = $equity->concat([(object) [
+                'id'      => null,
+                'code'    => 'SYS-CUST-OBE',
+                'name'    => 'Opening Balance Equity (Customers)',
+                'type'    => 'Equity',
+                'balance' => $customerOBUnposted,
+            ]]);
+        }
+
         // 5. Final Totals
         $totalCurrentAssets = $currentAssets->sum('balance');
         $totalFixedAssets = $fixedAssets->sum('balance');
@@ -436,8 +467,54 @@ class BalanceSheetController extends Controller
     }
 
     /**
-     * Get account balances up to a specific date
+     * Sum customer opening balances (customers.balance > 0) that do NOT yet
+     * have a journal entry in the transactions table (reference CUST-OB-*).
+     * This bridges existing customers who pre-date the journal-entry workflow.
      */
+    private function getUnpostedCustomerOpeningBalanceSum(Request $request, $reportDate): float
+    {
+        if (!Schema::hasTable('customers') || !Schema::hasColumn('customers', 'balance')) {
+            return 0.0;
+        }
+
+        $companyId = (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $userId    = (int) ($request->user()?->id ?? 0);
+
+        // Find customer IDs that already have journal entries posted (DR leg only)
+        $postedCustomerIds = [];
+        if (Schema::hasTable('transactions') && Schema::hasColumn('transactions', 'reference')) {
+            $postedQuery = Transaction::withoutGlobalScopes()
+                ->where('transaction_type', Transaction::TYPE_OPENING_BALANCE)
+                ->where('reference', 'like', 'CUST-OB-%')
+                ->where('debit', '>', 0);
+            if ($companyId > 0) {
+                $postedQuery->where('company_id', $companyId);
+            } elseif ($userId > 0) {
+                $postedQuery->where('user_id', $userId);
+            }
+            $postedCustomerIds = $postedQuery->distinct()->pluck('related_id')->filter()->toArray();
+        }
+
+        $customerQuery = DB::table('customers')
+            ->where('balance', '>', 0)
+            ->where(function ($q) use ($reportDate) {
+                $q->whereNull('opening_balance_date')
+                  ->orWhere('opening_balance_date', '<=', $reportDate->toDateString());
+            });
+
+        if ($companyId > 0 && Schema::hasColumn('customers', 'company_id')) {
+            $customerQuery->where('company_id', $companyId);
+        } elseif ($userId > 0 && Schema::hasColumn('customers', 'user_id')) {
+            $customerQuery->where('user_id', $userId);
+        }
+
+        if (!empty($postedCustomerIds)) {
+            $customerQuery->whereNotIn('id', $postedCustomerIds);
+        }
+
+        return (float) $customerQuery->sum('balance');
+    }
+
     private function getAccountBalances($date)
     {
         // Check if accounts and transactions tables exist
