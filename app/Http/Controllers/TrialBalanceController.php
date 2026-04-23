@@ -389,7 +389,15 @@ class TrialBalanceController extends Controller
             } elseif ($userId > 0) {
                 $postedQuery->where('user_id', $userId);
             }
-            $postedCustomerIds = $postedQuery->distinct()->pluck('related_id')->filter()->toArray();
+            $rawPostedIds = $postedQuery->distinct()->pluck('related_id')->filter()->map(fn ($v) => (int) $v)->all();
+            // Only exclude IDs that still exist as customers — orphaned entries from deleted customers
+            // must not prevent real customers from appearing in the report.
+            if (!empty($rawPostedIds)) {
+                $postedCustomerIds = DB::table('customers')
+                    ->whereIn('id', $rawPostedIds)
+                    ->pluck('id')
+                    ->all();
+            }
         }
 
         $customerQuery = DB::table('customers')

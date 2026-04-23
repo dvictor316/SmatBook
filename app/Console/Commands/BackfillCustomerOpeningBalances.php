@@ -155,29 +155,45 @@ class BackfillCustomerOpeningBalances extends Command
         string $name, string $code, string $type, string $subType,
         int $companyId, int $userId
     ): Account {
-        // accounts.code has a global unique index — look up without company_id scope
-        $account = Account::withoutGlobalScopes()
-            ->where('code', $code)
+        // 1. Look up by company + name + type (semantic match — most reliable)
+        $lookup = Account::withoutGlobalScopes()
+            ->when($companyId > 0, fn ($q) => $q->where('company_id', $companyId))
+            ->where('name', $name)
+            ->where('type', $type)
             ->first();
 
-        if (!$account) {
-            $columns = Schema::getColumnListing('accounts');
-            $payload = array_intersect_key([
-                'name'            => $name,
-                'code'            => $code,
-                'type'            => $type,
-                'sub_type'        => $subType,
-                'company_id'      => $companyId ?: null,
-                'user_id'         => $userId ?: null,
-                'branch_id'       => null,
-                'branch_name'     => null,
-                'opening_balance' => 0,
-                'current_balance' => 0,
-                'is_active'       => true,
-            ], array_flip($columns));
-            $account = Account::create($payload);
+        if ($lookup) {
+            return $lookup;
         }
 
-        return $account;
+        // 2. Determine a unique code for this company.
+        //    accounts.code has a GLOBAL unique index, so we suffix per-company
+        //    if the standard code is already taken by another company.
+        $finalCode = $code;
+        if (Account::withoutGlobalScopes()->where('code', $code)->exists()) {
+            $finalCode = $companyId > 0 ? $code . '-C' . $companyId : $code . '-X';
+            // Safety: keep suffixing if even that clashes (extremely rare)
+            $attempt = 0;
+            while (Account::withoutGlobalScopes()->where('code', $finalCode)->exists()) {
+                $finalCode = $code . '-C' . $companyId . '-' . (++$attempt);
+            }
+        }
+
+        $columns = Schema::getColumnListing('accounts');
+        $payload = array_intersect_key([
+            'name'            => $name,
+            'code'            => $finalCode,
+            'type'            => $type,
+            'sub_type'        => $subType,
+            'company_id'      => $companyId ?: null,
+            'user_id'         => $userId ?: null,
+            'branch_id'       => null,
+            'branch_name'     => null,
+            'opening_balance' => 0,
+            'current_balance' => 0,
+            'is_active'       => true,
+        ], array_flip($columns));
+
+        return Account::create($payload);
     }
 }

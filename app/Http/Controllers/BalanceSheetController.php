@@ -480,7 +480,9 @@ class BalanceSheetController extends Controller
         $companyId = (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0);
         $userId    = (int) ($request->user()?->id ?? 0);
 
-        // Find customer IDs that already have journal entries posted (DR leg only)
+        // Find customer IDs that already have journal entries posted (DR leg only).
+        // Only exclude IDs that still exist as active customers — orphaned CUST-OB-*
+        // transactions from deleted customers must not block real customers from showing.
         $postedCustomerIds = [];
         if (Schema::hasTable('transactions') && Schema::hasColumn('transactions', 'reference')) {
             $postedQuery = Transaction::withoutGlobalScopes()
@@ -492,7 +494,14 @@ class BalanceSheetController extends Controller
             } elseif ($userId > 0) {
                 $postedQuery->where('user_id', $userId);
             }
-            $postedCustomerIds = $postedQuery->distinct()->pluck('related_id')->filter()->toArray();
+            $rawPostedIds = $postedQuery->distinct()->pluck('related_id')->filter()->map(fn ($v) => (int) $v)->all();
+            // Cross-check: keep only IDs that still exist in customers table
+            if (!empty($rawPostedIds)) {
+                $postedCustomerIds = DB::table('customers')
+                    ->whereIn('id', $rawPostedIds)
+                    ->pluck('id')
+                    ->all();
+            }
         }
 
         $customerQuery = DB::table('customers')
