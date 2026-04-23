@@ -1279,15 +1279,20 @@ class CustomerController extends Controller
         try {
             $file = $request->file('import_file');
             $header = null;
+            $headerRowNumber = null;
 
-            foreach ($this->spreadsheetRowIterator($file) as $row) {
-                // Skip blank rows (xlsx files sometimes have an empty title row first)
+            foreach ($this->spreadsheetRowIterator($file) as $rowNumber => $row) {
                 $nonEmpty = array_filter($row, fn ($v) => trim((string) $v) !== '');
                 if (empty($nonEmpty)) {
                     continue;
                 }
-                $header = $row;
-                break;
+
+                $normalizedRow = array_map(fn ($value) => $this->normalizeImportHeaderCell($value), $row);
+                if ($this->looksLikeCustomerImportHeader($normalizedRow)) {
+                    $header = $row;
+                    $headerRowNumber = $rowNumber;
+                    break;
+                }
             }
 
             if (!$header) {
@@ -1315,7 +1320,7 @@ class CustomerController extends Controller
             $activeBranch = $this->getActiveBranchContext();
 
             foreach ($this->spreadsheetRowIterator($file) as $rowNumber => $row) {
-                if ($rowNumber === 0) {
+                if ($rowNumber <= (int) $headerRowNumber) {
                     continue;
                 }
 
@@ -1603,6 +1608,37 @@ class CustomerController extends Controller
         return $aliases[$header] ?? $header;
     }
 
+    private function looksLikeCustomerImportHeader(array $normalizedRow): bool
+    {
+        $normalizedRow = collect($normalizedRow)
+            ->map(fn ($value) => trim((string) $value))
+            ->filter()
+            ->values()
+            ->all();
+
+        if (empty($normalizedRow)) {
+            return false;
+        }
+
+        if (in_array('customer_name', $normalizedRow, true)) {
+            return true;
+        }
+
+        $knownColumns = [
+            'customer_name',
+            'email',
+            'phone',
+            'address',
+            'balance',
+            'credit_limit',
+            'status',
+            'notes',
+            'branch_name',
+        ];
+
+        return count(array_intersect($knownColumns, $normalizedRow)) >= 2;
+    }
+
     private function spreadsheetRowIterator(\Illuminate\Http\UploadedFile $file): \Generator
     {
         $extension = strtolower((string) $file->getClientOriginalExtension());
@@ -1647,14 +1683,19 @@ class CustomerController extends Controller
         $spreadsheet = $reader->load($file->getRealPath());
 
         try {
-            foreach ($spreadsheet->getActiveSheet()->getRowIterator() as $row) {
-                $cells = [];
-                $cellIterator = $row->getCellIterator();
-                $cellIterator->setIterateOnlyExistingCells(false);
+            $sheet = $spreadsheet->getActiveSheet();
+            $highestRow = (int) $sheet->getHighestDataRow();
+            $highestColumn = $sheet->getHighestDataColumn();
 
-                foreach ($cellIterator as $cell) {
-                    // Use getValue() for raw text — avoids number-format side-effects on headers
-                    $cells[] = $cell !== null ? $cell->getValue() : null;
+            if ($highestRow <= 0 || $highestColumn === '') {
+                return;
+            }
+
+            foreach ($sheet->rangeToArray("A1:{$highestColumn}{$highestRow}", null, true, false, false) as $cells) {
+                $cells = array_map(fn ($value) => is_scalar($value) ? trim((string) $value) : $value, $cells);
+                $hasValue = collect($cells)->contains(fn ($value) => trim((string) $value) !== '');
+                if (!$hasValue) {
+                    continue;
                 }
 
                 yield $cells;

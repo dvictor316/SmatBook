@@ -1089,13 +1089,19 @@ class SupplierController extends Controller
         $spreadsheet = $reader->load($file->getRealPath());
 
         try {
-            foreach ($spreadsheet->getActiveSheet()->getRowIterator() as $row) {
-                $cells = [];
-                $cellIterator = $row->getCellIterator();
-                $cellIterator->setIterateOnlyExistingCells(false);
+            $sheet = $spreadsheet->getActiveSheet();
+            $highestRow = (int) $sheet->getHighestDataRow();
+            $highestColumn = $sheet->getHighestDataColumn();
 
-                foreach ($cellIterator as $cell) {
-                    $cells[] = $cell?->getFormattedValue();
+            if ($highestRow <= 0 || $highestColumn === '') {
+                return;
+            }
+
+            foreach ($sheet->rangeToArray("A1:{$highestColumn}{$highestRow}", null, true, false, false) as $cells) {
+                $cells = array_map(fn ($value) => is_scalar($value) ? trim((string) $value) : $value, $cells);
+                $hasValue = collect($cells)->contains(fn ($value) => trim((string) $value) !== '');
+                if (!$hasValue) {
+                    continue;
                 }
 
                 yield $cells;
