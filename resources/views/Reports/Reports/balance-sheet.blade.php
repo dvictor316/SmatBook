@@ -5,579 +5,464 @@
 @php
     $currencyCode = $geoCurrency ?? \App\Support\GeoCurrency::currentCurrency();
     $currencyLocale = $geoCurrencyLocale ?? \App\Support\GeoCurrency::currentLocale();
+    $reportCompany = auth()->user()?->company;
+    $reportCompanyName = $reportCompany?->company_name
+        ?? $reportCompany?->name
+        ?? \App\Models\Setting::where('key', 'company_name')->value('value')
+        ?? 'SmartProbook';
+    $activeBranchName = trim((string) ($activeBranch['name'] ?? ''));
+    $fmt = fn ($amount) => \App\Support\GeoCurrency::format((float) $amount, 'NGN', $currencyCode, $currencyLocale);
+    $plain = fn ($amount) => number_format((float) $amount, 2);
+
+    $currentAssetsCollection = collect($currentAssets ?? []);
+    $fixedAssetsCollection = collect($fixedAssets ?? []);
+    $liabilitiesCollection = collect($currentLiabilities ?? []);
+    $equityCollection = collect($equity ?? []);
+
+    $isCurrentLiability = function ($account) {
+        $subType = strtolower(trim((string) ($account->sub_type ?? '')));
+        if ($subType === '') {
+            return true;
+        }
+
+        return str_contains($subType, 'current')
+            || str_contains($subType, 'payable')
+            || str_contains($subType, 'accrued')
+            || str_contains($subType, 'tax')
+            || str_contains($subType, 'short');
+    };
+
+    $currentLiabilityLines = $liabilitiesCollection->filter($isCurrentLiability)->values();
+    $nonCurrentLiabilityLines = $liabilitiesCollection->reject($isCurrentLiability)->values();
+
+    $groupLines = function ($items, string $fallback) {
+        return collect($items)
+            ->groupBy(function ($item) use ($fallback) {
+                $label = trim((string) ($item->sub_type ?? ''));
+                return $label !== '' ? $label : $fallback;
+            })
+            ->map(fn ($group, $label) => [
+                'label' => (string) $label,
+                'items' => collect($group)->values(),
+                'total' => collect($group)->sum(fn ($item) => (float) ($item->balance ?? 0)),
+            ])
+            ->values();
+    };
+
+    $currentAssetGroups = $groupLines($currentAssetsCollection, 'Current Assets');
+    $fixedAssetGroups = $groupLines($fixedAssetsCollection, 'Fixed Assets');
+    $currentLiabilityGroups = $groupLines($currentLiabilityLines, 'Current Liabilities');
+    $nonCurrentLiabilityGroups = $groupLines($nonCurrentLiabilityLines, 'Non-current Liabilities');
+
+    $totalCurrentLiabilities = $currentLiabilityLines->sum(fn ($item) => (float) ($item->balance ?? 0));
+    $totalNonCurrentLiabilities = $nonCurrentLiabilityLines->sum(fn ($item) => (float) ($item->balance ?? 0));
+    $totalLiabilitiesAndEquity = (float) ($totalLiabilities ?? 0) + (float) ($totalEquity ?? 0);
+    $difference = abs((float) ($totalAssets ?? 0) - $totalLiabilitiesAndEquity);
 @endphp
+
 <style>
-    :root {
-        --text-dark: #1e293b;
-        --text-light: #94a3b8;
-        --brand-blue: #2563eb;
-        --bg-alice: #f8fafc; /* Extremely faint blue-grey tint */
-        --border-faint: #f1f5f9; /* The faint line color */
-        --border-blue: #e0f2fe;
+    .bs-page {
+        max-width: 980px;
+        margin: 0 auto 24px;
     }
 
-    .report-container {
-        max-width: 1280px;
-        margin: 0 auto 24px auto;
+    .bs-toolbar {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+
+    .bs-btn {
+        border: 1px solid #cbd5e1;
         background: #fff;
-        border: 1px solid #e2e8f0;
-        border-radius: 22px;
-        box-shadow: 0 16px 34px rgba(15, 23, 42, 0.06);
-        padding: 1.5rem;
-    }
-
-    .report-header {
-        border-bottom: 1px solid #dbe7f5;
-        padding-bottom: 1rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .company-name {
-        font-size: 1.35rem;
-        font-weight: 800;
-        text-transform: none;
-        letter-spacing: -0.02em;
-        margin: 0;
-        color: #102a5a;
-    }
-
-    .report-title {
-        font-size: 0.74rem;
-        font-weight: 800;
-        color: var(--brand-blue);
-        text-transform: uppercase;
-        letter-spacing: 0.12em;
-    }
-
-    .summary-grid {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 1rem;
-        margin-bottom: 1.75rem;
-    }
-
-    .summary-card {
-        padding: 1rem 1.1rem;
-        border-radius: 18px;
-        background: #ffffff;
-        border: 1px solid #dbe7f5;
-        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
-        min-width: 0;
-    }
-
-    .summary-label {
-        font-size: 0.72rem;
-        font-weight: 700;
-        color: var(--text-light);
-        text-transform: uppercase;
-        margin-bottom: 2px;
-        display: block;
-        letter-spacing: 0.08em;
-    }
-
-    .summary-amount {
-        font-size: clamp(0.86rem, 1.4vw, 1rem);
-        font-weight: 800;
-        line-height: 1.2;
-        font-variant-numeric: tabular-nums;
-        overflow-wrap: anywhere;
-        word-break: break-word;
-    }
-
-    /* Grid Structure */
-    .balance-sheet-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1.5rem;
-        align-items: start;
-    }
-
-    .statement-panel {
-        min-width: 0;
-        height: 100%;
-        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
-        border: 1px solid #dbe7f5;
-        border-radius: 18px;
-        padding: 1.25rem 1.1rem;
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
-    }
-
-    .statement-panel--assets {
-        border-top: 4px solid #2563eb;
-    }
-
-    .statement-panel--liabilities {
-        border-top: 4px solid #0f766e;
-    }
-
-    .section-card {
-        background: #fff;
-        border: 1px solid #e2e8f0;
-        border-radius: 14px;
-        padding: 0.9rem 1rem;
-        box-shadow: 0 4px 10px rgba(15, 23, 42, 0.04);
-    }
-
-    .section-card + .section-card {
-        margin-top: 1rem;
-    }
-
-    .ledger-section-title {
-        font-size: 0.78rem;
-        font-weight: 800;
-        text-transform: uppercase;
         color: #0f172a;
-        background: linear-gradient(135deg, #dbeafe, #eff6ff);
-        border: 1px solid #bfdbfe;
         border-radius: 999px;
-        padding: 0.45rem 0.8rem;
-        margin-bottom: 1rem;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.45rem;
-    }
-
-    .group-label {
-        font-size: 0.68rem;
-        font-weight: 800;
-        color: var(--brand-blue);
-        padding: 12px 0 4px 0;
-        text-transform: uppercase;
-    }
-
-    /* Faint lines between items */
-    .account-row {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        gap: 0.75rem;
-        align-items: start;
-        padding: 6px 0;
-        font-size: 0.72rem;
-        border-bottom: 1px solid var(--border-faint); /* Faint separating line */
-    }
-
-    .account-row:last-of-type {
-        border-bottom: none;
-    }
-
-    .account-name {
-        font-weight: 500;
-        color: #334155;
-        min-width: 0;
-        overflow-wrap: anywhere;
-    }
-
-    .account-val {
-        font-weight: 600;
-        font-variant-numeric: tabular-nums;
-        font-size: 0.7rem;
-        text-align: right;
-        overflow-wrap: anywhere;
-        word-break: break-word;
-    }
-
-    .txn-list {
-        margin: 6px 0 10px 0;
-        border: 1px dashed #e2e8f0;
-        border-radius: 8px;
-        background: #f8fafc;
-        overflow: hidden;
-        max-height: 220px;
-        overflow-y: auto;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-    }
-
-    .txn-item {
-        display: grid;
-        grid-template-columns: 74px 80px 1fr 88px 88px;
-        gap: 6px;
-        align-items: center;
-        padding: 5px 8px;
-        font-size: 0.64rem;
-        border-bottom: 1px solid #eef2f7;
-        min-width: 560px;
-    }
-
-    .txn-item:last-child { border-bottom: none; }
-    .txn-head { font-weight: 700; color: #64748b; background: #f1f5f9; }
-    .txn-mono { font-variant-numeric: tabular-nums; }
-    .txn-desc { color: #475569; }
-
-    /* Accounting Totals */
-    .subtotal-row {
-        display: flex;
-        justify-content: space-between;
-        padding: 8px 0;
-        margin-top: 2px;
-        font-weight: 700;
-        font-size: 0.72rem;
-        border-top: 1px solid var(--text-dark);
-        color: var(--text-dark);
-        gap: 0.75rem;
-    }
-
-    .grand-total-row {
-        display: flex;
-        justify-content: space-between;
-        padding: 10px 0;
-        margin-top: 15px;
-        font-weight: 800;
-        font-size: 0.78rem;
-        border-top: 1.5px solid var(--text-dark);
-        border-bottom: 3.5px double var(--text-dark);
-        gap: 0.75rem;
-    }
-
-    /* Verification strip */
-    .status-strip {
-        grid-column: span 2;
-        margin-top: 1rem;
-        padding: 0.75rem 0.9rem;
-        font-size: 0.68rem;
-        font-weight: 800;
-        text-align: center;
-        border-radius: 12px;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-    }
-
-    .is-balanced { background: #f0fdf4; color: #166534; border: 1px solid #dcfce7; }
-    .not-balanced { background: #fef2f2; color: #991b1b; border: 1px solid #fee2e2; }
-
-    .btn-mini {
-        font-size: 0.76rem;
-        padding: 0.65rem 1rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        border-radius: 999px;
-    }
-
-    .empty-state-row {
-        padding: 0.8rem 0;
-        color: #94a3b8;
+        padding: 10px 16px;
         font-size: 0.74rem;
-        border-bottom: 1px solid var(--border-faint);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
     }
 
-    @media (max-width: 991.98px) {
-        .summary-grid {
-            grid-template-columns: 1fr;
-        }
+    .bs-sheet {
+        background: #fff;
+        border: 1px solid #dbe2ea;
+        padding: 30px 34px 26px;
+        box-shadow: 0 16px 38px rgba(15, 23, 42, 0.06);
+    }
 
-        .balance-sheet-grid {
-            grid-template-columns: 1fr;
-        }
+    .bs-header {
+        text-align: center;
+        margin-bottom: 18px;
+    }
 
-        .status-strip {
-            grid-column: span 1;
-        }
+    .bs-title {
+        font-size: 1.55rem;
+        font-weight: 500;
+        color: #111827;
+        margin: 0 0 10px;
+    }
+
+    .bs-company {
+        font-size: 1.15rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        color: #111827;
+        margin: 0;
+    }
+
+    .bs-date,
+    .bs-branch {
+        margin-top: 6px;
+        color: #475569;
+        font-size: 0.92rem;
+    }
+
+    .bs-statement {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.92rem;
+        color: #111827;
+    }
+
+    .bs-statement col:first-child { width: 74%; }
+    .bs-statement col:last-child { width: 26%; }
+
+    .bs-statement td {
+        padding: 3px 0;
+        vertical-align: top;
+    }
+
+    .bs-head-row td {
+        border-top: 2px solid #111827;
+        border-bottom: 1px solid #111827;
+        padding-top: 6px;
+        padding-bottom: 6px;
+        font-size: 0.76rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .bs-head-row td:last-child,
+    .bs-amount {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    .bs-section td {
+        padding-top: 12px;
+        font-weight: 500;
+    }
+
+    .bs-subsection td {
+        padding-top: 4px;
+        font-weight: 500;
+    }
+
+    .bs-group td:first-child {
+        padding-left: 16px;
+    }
+
+    .bs-line td:first-child {
+        padding-left: 32px;
+    }
+
+    .bs-total td {
+        font-weight: 700;
+        border-top: 1px solid #cbd5e1;
+        padding-top: 4px;
+    }
+
+    .bs-grand td {
+        font-weight: 700;
+        border-top: 3px double #111827;
+        padding-top: 5px;
+    }
+
+    .bs-spacer td {
+        padding: 4px 0;
+    }
+
+    .bs-note {
+        margin-top: 16px;
+        padding: 10px 14px;
+        border: 1px solid #e2e8f0;
+        background: #f8fafc;
+        color: #475569;
+        font-size: 0.82rem;
+    }
+
+    .bs-alert {
+        margin-top: 14px;
+        padding: 10px 14px;
+        border: 1px solid #fecaca;
+        background: #fef2f2;
+        color: #991b1b;
+        font-size: 0.82rem;
+    }
+
+    .bs-empty td:first-child {
+        padding-left: 16px;
+        color: #64748b;
+        font-style: italic;
     }
 
     @media (max-width: 767.98px) {
-        .report-container {
-            padding: 1rem;
-            border-radius: 18px;
+        .bs-sheet {
+            padding: 20px 16px;
         }
 
-        .company-name {
-            font-size: 1.15rem;
+        .bs-title {
+            font-size: 1.3rem;
         }
 
-        .summary-amount {
-            font-size: 0.82rem;
-        }
-
-        .account-row,
-        .subtotal-row,
-        .grand-total-row {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 0.28rem;
-        }
-
-        .account-val,
-        .subtotal-row span:last-child,
-        .grand-total-row span:last-child {
-            text-align: left;
+        .bs-company {
+            font-size: 1rem;
         }
     }
 
     @media print {
-        .no-print { display: none !important; }
-        .page-wrapper { padding-top: 0; }
-        .balance-sheet-grid { gap: 2.5rem; }
-        .account-row { border-bottom-color: #f1f1f1 !important; }
-
-        /* Expand all scrollable transaction lists so nothing is clipped */
-        .txn-scroll {
-            max-height: none !important;
-            overflow: visible !important;
-            overflow-y: visible !important;
-            overflow-x: visible !important;
-            height: auto !important;
+        .no-print {
+            display: none !important;
         }
 
-        /* Ensure transaction items wrap instead of overflow on narrow paper */
-        .txn-item {
-            min-width: 0 !important;
-            grid-template-columns: 74px 80px 1fr 88px 88px !important;
+        .bs-page {
+            max-width: none;
+            margin: 0;
         }
 
-        /* Avoid page breaks inside an account block */
-        .account-block {
-            break-inside: avoid;
-            page-break-inside: avoid;
-        }
-
-        /* Keep cards readable when printed */
-        .report-container {
-            box-shadow: none !important;
-            border: 1px solid #ccc !important;
-        }
-
-        .summary-card {
-            box-shadow: none !important;
-            border: 1px solid #ccc !important;
+        .bs-sheet {
+            box-shadow: none;
+            border: none;
+            padding: 0;
         }
     }
 </style>
 
 <div class="page-wrapper">
     <div class="content container-fluid">
-        @php
-            $reportCompany = auth()->user()?->company;
-            $reportCompanyName = $reportCompany?->company_name
-                ?? $reportCompany?->name
-                ?? \App\Models\Setting::where('key', 'company_name')->value('value')
-                ?? 'SmartProbook';
-        @endphp
-        <div class="page-header">
+        <div class="page-header no-print">
             <div class="content-page-header">
                 <h5>Balance Sheet</h5>
             </div>
         </div>
+
         @include('Reports.partials.context-strip', [
             'reportLabel' => 'Balance Sheet Report',
             'periodLabel' => 'As at ' . \Carbon\Carbon::parse($reportDate ?? now())->format('d M Y'),
         ])
-        <div class="report-container">
 
-        <div class="report-header d-flex justify-content-between align-items-end">
-            <div>
-                <div class="report-title">Statement of Financial Position</div>
-                <h1 class="company-name">{{ $reportCompanyName }}</h1>
-                <div class="text-muted" style="font-size: 0.82rem;">Date: {{ \Carbon\Carbon::parse($reportDate ?? now())->format('d F Y') }}</div>
+        <div class="bs-page">
+            <div class="bs-toolbar no-print">
+                <button type="button" onclick="window.print()" class="bs-btn">Print</button>
+                <button type="button" onclick="exportToPDF()" class="bs-btn">PDF</button>
+                <button type="button" onclick="exportToExcel()" class="bs-btn">Excel</button>
             </div>
-            <div class="d-flex gap-1 no-print">
-                <button onclick="window.print()" class="btn btn-light border btn-mini">Print</button>
-                <button onclick="exportToPDF()" class="btn btn-light border btn-mini text-danger">PDF</button>
-                <button onclick="exportToExcel()" class="btn btn-light border btn-mini text-success">Excel</button>
-            </div>
-        </div>
 
-        <div class="summary-grid">
-            <div class="summary-card">
-                <span class="summary-label">Total Assets</span>
-                <span class="summary-amount">{{ \App\Support\GeoCurrency::format($totalAssets ?? 0, 'NGN', $currencyCode, $currencyLocale) }}</span>
-            </div>
-            <div class="summary-card">
-                <span class="summary-label">Total Liabilities</span>
-                <span class="summary-amount">{{ \App\Support\GeoCurrency::format($totalLiabilities ?? 0, 'NGN', $currencyCode, $currencyLocale) }}</span>
-            </div>
-            <div class="summary-card">
-                <span class="summary-label">Equity</span>
-                <span class="summary-amount">{{ \App\Support\GeoCurrency::format($totalEquity ?? 0, 'NGN', $currencyCode, $currencyLocale) }}</span>
-            </div>
-        </div>
+            <div class="bs-sheet">
+                <div class="bs-header">
+                    <h1 class="bs-title">Balance Sheet</h1>
+                    <div class="bs-company">{{ $reportCompanyName }}</div>
+                    <div class="bs-date">As of {{ \Carbon\Carbon::parse($reportDate ?? now())->format('d M, Y') }}</div>
+                    @if($activeBranchName !== '')
+                        <div class="bs-branch">Branch: {{ $activeBranchName }}</div>
+                    @endif
+                </div>
 
-        @if (abs(($ledgerDifference ?? 0)) >= 0.01)
-            <div class="alert alert-danger mb-3">
-                <div class="fw-semibold mb-1">Ledger imbalance detected</div>
-                <div>Debits: {{ \App\Support\GeoCurrency::format($ledgerDebits ?? 0, 'NGN', $currencyCode, $currencyLocale) }} · Credits: {{ \App\Support\GeoCurrency::format($ledgerCredits ?? 0, 'NGN', $currencyCode, $currencyLocale) }} · Difference: {{ \App\Support\GeoCurrency::format(abs($ledgerDifference ?? 0), 'NGN', $currencyCode, $currencyLocale) }}</div>
-                @if (!empty($imbalancedEntries) && $imbalancedEntries->isNotEmpty())
-                    <div class="mt-2 small">Top unbalanced entries:</div>
-                    <ul class="mb-0 ps-3 small">
-                        @foreach ($imbalancedEntries as $entry)
-                            <li>
-                                {{ $entry->transaction_type ?? 'Entry' }}
-                                · Ref: {{ $entry->reference ?: 'N/A' }}
-                                · Related: {{ $entry->related_type ?: 'N/A' }} #{{ $entry->related_id ?: 'N/A' }}
-                                · Δ {{ \App\Support\GeoCurrency::format(abs(((float) $entry->total_debit) - ((float) $entry->total_credit)), 'NGN', $currencyCode, $currencyLocale) }}
-                            </li>
-                        @endforeach
-                    </ul>
+                <table class="bs-statement">
+                    <colgroup>
+                        <col>
+                        <col>
+                    </colgroup>
+                    <tbody>
+                        <tr class="bs-head-row">
+                            <td></td>
+                            <td>Total</td>
+                        </tr>
+
+                        <tr class="bs-section">
+                            <td>Assets</td>
+                            <td></td>
+                        </tr>
+
+                        <tr class="bs-subsection">
+                            <td>Current Assets</td>
+                            <td></td>
+                        </tr>
+                        @forelse($currentAssetGroups as $group)
+                            <tr class="bs-group">
+                                <td>{{ $group['label'] }}</td>
+                                <td></td>
+                            </tr>
+                            @foreach($group['items'] as $account)
+                                <tr class="bs-line">
+                                    <td>{{ $account->name }}</td>
+                                    <td class="bs-amount">{{ $fmt($account->balance ?? 0) }}</td>
+                                </tr>
+                            @endforeach
+                            <tr class="bs-total">
+                                <td>Total for {{ $group['label'] }}</td>
+                                <td class="bs-amount">{{ $fmt($group['total']) }}</td>
+                            </tr>
+                        @empty
+                            <tr class="bs-empty">
+                                <td>No current asset accounts found for the selected date.</td>
+                                <td></td>
+                            </tr>
+                        @endforelse
+                        <tr class="bs-total">
+                            <td>Total for Current Assets</td>
+                            <td class="bs-amount">{{ $fmt($totalCurrentAssets ?? 0) }}</td>
+                        </tr>
+
+                        @if($fixedAssetsCollection->isNotEmpty())
+                            <tr class="bs-subsection">
+                                <td>Fixed Assets</td>
+                                <td></td>
+                            </tr>
+                            @foreach($fixedAssetGroups as $group)
+                                <tr class="bs-group">
+                                    <td>{{ $group['label'] }}</td>
+                                    <td></td>
+                                </tr>
+                                @foreach($group['items'] as $account)
+                                    <tr class="bs-line">
+                                        <td>{{ $account->name }}</td>
+                                        <td class="bs-amount">{{ $fmt($account->balance ?? 0) }}</td>
+                                    </tr>
+                                @endforeach
+                                <tr class="bs-total">
+                                    <td>Total for {{ $group['label'] }}</td>
+                                    <td class="bs-amount">{{ $fmt($group['total']) }}</td>
+                                </tr>
+                            @endforeach
+                            <tr class="bs-total">
+                                <td>Total for Fixed Assets</td>
+                                <td class="bs-amount">{{ $fmt($totalFixedAssets ?? 0) }}</td>
+                            </tr>
+                        @endif
+
+                        <tr class="bs-grand">
+                            <td>Total for Assets</td>
+                            <td class="bs-amount">{{ $fmt($totalAssets ?? 0) }}</td>
+                        </tr>
+
+                        <tr class="bs-spacer"><td colspan="2"></td></tr>
+
+                        <tr class="bs-section">
+                            <td>Liabilities and Shareholder's Equity</td>
+                            <td></td>
+                        </tr>
+
+                        <tr class="bs-subsection">
+                            <td>Current Liabilities</td>
+                            <td></td>
+                        </tr>
+                        @forelse($currentLiabilityGroups as $group)
+                            <tr class="bs-group">
+                                <td>{{ $group['label'] }}</td>
+                                <td></td>
+                            </tr>
+                            @foreach($group['items'] as $account)
+                                <tr class="bs-line">
+                                    <td>{{ $account->name }}</td>
+                                    <td class="bs-amount">{{ $fmt($account->balance ?? 0) }}</td>
+                                </tr>
+                            @endforeach
+                            <tr class="bs-total">
+                                <td>Total for {{ $group['label'] }}</td>
+                                <td class="bs-amount">{{ $fmt($group['total']) }}</td>
+                            </tr>
+                        @empty
+                            <tr class="bs-empty">
+                                <td>No current liability accounts found for the selected date.</td>
+                                <td></td>
+                            </tr>
+                        @endforelse
+                        <tr class="bs-total">
+                            <td>Total for Current Liabilities</td>
+                            <td class="bs-amount">{{ $fmt($totalCurrentLiabilities) }}</td>
+                        </tr>
+
+                        <tr class="bs-subsection">
+                            <td>Non-current Liabilities</td>
+                            <td></td>
+                        </tr>
+                        @forelse($nonCurrentLiabilityGroups as $group)
+                            <tr class="bs-group">
+                                <td>{{ $group['label'] }}</td>
+                                <td></td>
+                            </tr>
+                            @foreach($group['items'] as $account)
+                                <tr class="bs-line">
+                                    <td>{{ $account->name }}</td>
+                                    <td class="bs-amount">{{ $fmt($account->balance ?? 0) }}</td>
+                                </tr>
+                            @endforeach
+                            <tr class="bs-total">
+                                <td>Total for {{ $group['label'] }}</td>
+                                <td class="bs-amount">{{ $fmt($group['total']) }}</td>
+                            </tr>
+                        @empty
+                            <tr class="bs-empty">
+                                <td>No non-current liability accounts found for the selected date.</td>
+                                <td></td>
+                            </tr>
+                        @endforelse
+                        <tr class="bs-total">
+                            <td>Total for Non-current Liabilities</td>
+                            <td class="bs-amount">{{ $fmt($totalNonCurrentLiabilities) }}</td>
+                        </tr>
+
+                        <tr class="bs-subsection">
+                            <td>Shareholders' Equity</td>
+                            <td></td>
+                        </tr>
+                        @forelse($equityCollection as $account)
+                            <tr class="bs-line">
+                                <td>{{ $account->name }}</td>
+                                <td class="bs-amount">{{ $fmt($account->balance ?? 0) }}</td>
+                            </tr>
+                        @empty
+                            <tr class="bs-empty">
+                                <td>No equity accounts found for the selected date.</td>
+                                <td></td>
+                            </tr>
+                        @endforelse
+                        <tr class="bs-line">
+                            <td>Retained Earnings</td>
+                            <td class="bs-amount">{{ $fmt($retainedEarnings ?? 0) }}</td>
+                        </tr>
+                        <tr class="bs-total">
+                            <td>Total for Shareholders' Equity</td>
+                            <td class="bs-amount">{{ $fmt($totalEquity ?? 0) }}</td>
+                        </tr>
+
+                        <tr class="bs-grand">
+                            <td>Total for Liabilities and Shareholder's Equity</td>
+                            <td class="bs-amount">{{ $fmt($totalLiabilitiesAndEquity) }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                @if (abs(($ledgerDifference ?? 0)) >= 0.01)
+                    <div class="bs-alert no-print">
+                        Ledger imbalance detected. Debits {{ $fmt($ledgerDebits ?? 0) }}, Credits {{ $fmt($ledgerCredits ?? 0) }}, Difference {{ $fmt(abs($ledgerDifference ?? 0)) }}.
+                    </div>
                 @endif
-            </div>
-        @endif
 
-        <div class="balance-sheet-grid">
-
-            <div class="statement-panel statement-panel--assets">
-                <div class="ledger-section-title">01 Assets</div>
-                <div class="section-card">
-                <div class="group-label">Current Assets</div>
-                @forelse($currentAssets ?? [] as $asset)
-                <div class="account-row">
-                    <span class="account-name">{{ $asset->name }}</span>
-                    <span class="account-val">{{ number_format($asset->balance, 2) }}</span>
-                </div>
-                @if(($asset->transactions ?? collect())->isNotEmpty())
-                <div class="txn-list">
-                    <div class="txn-item txn-head">
-                        <span>Date</span><span>Ref</span><span>Description</span><span>Debit</span><span>Credit</span>
-                    </div>
-                    @foreach($asset->transactions as $txn)
-                    <div class="txn-item">
-                        <span class="txn-mono">{{ \Carbon\Carbon::parse($txn->transaction_date)->format('d M y') }}</span>
-                        <span>{{ $txn->reference ?: '-' }}</span>
-                        <span class="txn-desc">{{ $txn->description ?: ($txn->transaction_type ?: 'Entry') }}</span>
-                        <span class="txn-mono">{{ number_format((float) $txn->debit, 2) }}</span>
-                        <span class="txn-mono">{{ number_format((float) $txn->credit, 2) }}</span>
-                    </div>
-                    @endforeach
-                </div>
-                @endif
-                @empty
-                <div class="empty-state-row">No current asset accounts found for the selected date.</div>
-                @endforelse
-                <div class="subtotal-row">
-                    <span>Total Current Assets</span>
-                    <span>{{ number_format($totalCurrentAssets ?? 0, 2) }}</span>
-                </div>
-                </div>
-
-                <div class="section-card">
-                <div class="group-label">Fixed Assets</div>
-                @forelse($fixedAssets ?? [] as $asset)
-                <div class="account-row">
-                    <span class="account-name">{{ $asset->name }}</span>
-                    <span class="account-val">{{ number_format($asset->balance, 2) }}</span>
-                </div>
-                @if(($asset->transactions ?? collect())->isNotEmpty())
-                <div class="txn-list">
-                    <div class="txn-item txn-head">
-                        <span>Date</span><span>Ref</span><span>Description</span><span>Debit</span><span>Credit</span>
-                    </div>
-                    @foreach($asset->transactions as $txn)
-                    <div class="txn-item">
-                        <span class="txn-mono">{{ \Carbon\Carbon::parse($txn->transaction_date)->format('d M y') }}</span>
-                        <span>{{ $txn->reference ?: '-' }}</span>
-                        <span class="txn-desc">{{ $txn->description ?: ($txn->transaction_type ?: 'Entry') }}</span>
-                        <span class="txn-mono">{{ number_format((float) $txn->debit, 2) }}</span>
-                        <span class="txn-mono">{{ number_format((float) $txn->credit, 2) }}</span>
-                    </div>
-                    @endforeach
-                </div>
-                @endif
-                @empty
-                <div class="empty-state-row">No fixed asset accounts found for the selected date.</div>
-                @endforelse
-                <div class="subtotal-row">
-                    <span>Total Fixed Assets</span>
-                    <span>{{ number_format($totalFixedAssets ?? 0, 2) }}</span>
-                </div>
-                </div>
-
-                <div class="grand-total-row">
-                    <span>TOTAL ASSETS</span>
-                    <span>{{ \App\Support\GeoCurrency::format($totalAssets ?? 0, 'NGN', $currencyCode, $currencyLocale) }}</span>
+                <div class="bs-note">
+                    {{ $difference < 0.01 ? 'Statement is in balance.' : 'Statement difference: ' . $fmt($difference) . '.' }}
                 </div>
             </div>
-
-            <div class="statement-panel statement-panel--liabilities">
-                <div class="ledger-section-title">02 Liabilities & Equity</div>
-                <div class="section-card">
-                <div class="group-label">Liabilities</div>
-                @forelse($currentLiabilities ?? [] as $liability)
-                <div class="account-row">
-                    <span class="account-name">{{ $liability->name }}</span>
-                    <span class="account-val">{{ number_format($liability->balance, 2) }}</span>
-                </div>
-                @if(($liability->transactions ?? collect())->isNotEmpty())
-                <div class="txn-list">
-                    <div class="txn-item txn-head">
-                        <span>Date</span><span>Ref</span><span>Description</span><span>Debit</span><span>Credit</span>
-                    </div>
-                    @foreach($liability->transactions as $txn)
-                    <div class="txn-item">
-                        <span class="txn-mono">{{ \Carbon\Carbon::parse($txn->transaction_date)->format('d M y') }}</span>
-                        <span>{{ $txn->reference ?: '-' }}</span>
-                        <span class="txn-desc">{{ $txn->description ?: ($txn->transaction_type ?: 'Entry') }}</span>
-                        <span class="txn-mono">{{ number_format((float) $txn->debit, 2) }}</span>
-                        <span class="txn-mono">{{ number_format((float) $txn->credit, 2) }}</span>
-                    </div>
-                    @endforeach
-                </div>
-                @endif
-                @empty
-                <div class="empty-state-row">No liability accounts found for the selected date.</div>
-                @endforelse
-                <div class="subtotal-row">
-                    <span>Total Liabilities</span>
-                    <span>{{ number_format($totalLiabilities ?? 0, 2) }}</span>
-                </div>
-                </div>
-
-                <div class="section-card">
-                <div class="group-label">Capital & Equity</div>
-                @forelse($equity ?? [] as $eq)
-                <div class="account-row">
-                    <span class="account-name">{{ $eq->name }}</span>
-                    <span class="account-val">{{ number_format($eq->balance, 2) }}</span>
-                </div>
-                @if(($eq->transactions ?? collect())->isNotEmpty())
-                <div class="txn-list">
-                    <div class="txn-item txn-head">
-                        <span>Date</span><span>Ref</span><span>Description</span><span>Debit</span><span>Credit</span>
-                    </div>
-                    @foreach($eq->transactions as $txn)
-                    <div class="txn-item">
-                        <span class="txn-mono">{{ \Carbon\Carbon::parse($txn->transaction_date)->format('d M y') }}</span>
-                        <span>{{ $txn->reference ?: '-' }}</span>
-                        <span class="txn-desc">{{ $txn->description ?: ($txn->transaction_type ?: 'Entry') }}</span>
-                        <span class="txn-mono">{{ number_format((float) $txn->debit, 2) }}</span>
-                        <span class="txn-mono">{{ number_format((float) $txn->credit, 2) }}</span>
-                    </div>
-                    @endforeach
-                </div>
-                @endif
-                @empty
-                <div class="empty-state-row">No equity accounts found for the selected date.</div>
-                @endforelse
-                <div class="account-row">
-                    <span class="account-name">Retained Earnings</span>
-                    <span class="account-val">{{ number_format($retainedEarnings ?? 0, 2) }}</span>
-                </div>
-                <div class="subtotal-row">
-                    <span>Total Equity</span>
-                    <span>{{ number_format($totalEquity ?? 0, 2) }}</span>
-                </div>
-                </div>
-
-                <div class="grand-total-row">
-                    <span>TOTAL LIABILITIES & EQUITY</span>
-                    <span>{{ \App\Support\GeoCurrency::format(($totalLiabilities ?? 0) + ($totalEquity ?? 0), 'NGN', $currencyCode, $currencyLocale) }}</span>
-                </div>
-            </div>
-
-            @php
-                $diff = abs(($totalAssets ?? 0) - (($totalLiabilities ?? 0) + ($totalEquity ?? 0)));
-                $isBalanced = $diff < 0.01;
-            @endphp
-            <div class="status-strip {{ $isBalanced ? 'is-balanced' : 'not-balanced' }}">
-                {{ $isBalanced ? 'Verification: Statement is in Balance' : 'Discrepancy: ' . \App\Support\GeoCurrency::format($diff, 'NGN', $currencyCode, $currencyLocale) }}
-            </div>
-        </div>
         </div>
     </div>
 </div>
 
 <script>
-function generateReport() {
-    const date = document.getElementById('reportDate').value;
-    window.location.href = `?date=${date}`;
-}
 function exportToPDF() { window.print(); }
 function exportToExcel() {
     window.location.href = `{{ route("balance-sheet.export") }}?date={{ \Carbon\Carbon::parse($reportDate ?? now())->toDateString() }}`;
