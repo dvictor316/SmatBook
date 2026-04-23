@@ -58,6 +58,7 @@
     $totalNonCurrentLiabilities = $nonCurrentLiabilityLines->sum(fn ($item) => (float) ($item->balance ?? 0));
     $totalLiabilitiesAndEquity = (float) ($totalLiabilities ?? 0) + (float) ($totalEquity ?? 0);
     $difference = abs((float) ($totalAssets ?? 0) - $totalLiabilitiesAndEquity);
+    $displayNetIncome = (float) ($netIncome ?? $retainedEarnings ?? 0);
 @endphp
 
 <style>
@@ -433,8 +434,8 @@
                             </tr>
                         @endforelse
                         <tr class="bs-line">
-                            <td>Retained Earnings</td>
-                            <td class="bs-amount">{{ $fmt($retainedEarnings ?? 0) }}</td>
+                            <td>Net Income</td>
+                            <td class="bs-amount">{{ $fmt($displayNetIncome) }}</td>
                         </tr>
                         <tr class="bs-total">
                             <td>Total for Shareholders' Equity</td>

@@ -292,7 +292,8 @@ class BalanceSheetController extends Controller
         // 3. Calculate Retained Earnings (Revenue - Expenses)
         $totalRevenue = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type ?? null) === 'revenue')->sum('balance');
         $totalExpenses = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type ?? null) === 'expense')->sum('balance');
-        $retainedEarnings = $totalRevenue - $totalExpenses; // View expects $retainedEarnings
+        $retainedEarnings = $totalRevenue - $totalExpenses;
+        $netIncome = $retainedEarnings;
 
         // 4. Group Accounts specifically for your View variables
         $assetAccounts = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type ?? null) === 'asset');
@@ -350,14 +351,7 @@ class BalanceSheetController extends Controller
                     'balance'  => $customerOBUnposted,
                 ]]);
             }
-            // Balance the equity side
-            $equity = $equity->concat([(object) [
-                'id'      => null,
-                'code'    => 'SYS-CUST-OBE',
-                'name'    => 'Opening Balance Equity (Customers)',
-                'type'    => 'Equity',
-                'balance' => $customerOBUnposted,
-            ]]);
+            $netIncome += $customerOBUnposted;
         }
 
         $supplierOBUnposted = $this->getUnpostedSupplierOpeningBalanceSum($request, $reportDate);
@@ -377,14 +371,7 @@ class BalanceSheetController extends Controller
                     'balance'  => $supplierOBUnposted,
                 ]]);
             }
-
-            $equity = $equity->concat([(object) [
-                'id'      => null,
-                'code'    => 'SYS-SUPP-OBE',
-                'name'    => 'Opening Balance Equity (Suppliers)',
-                'type'    => 'Equity',
-                'balance' => -1 * $supplierOBUnposted,
-            ]]);
+            $netIncome -= $supplierOBUnposted;
         }
 
         $inventoryBridge = $this->getLegacyInventoryBridgeAmount($request, $reportDate, $accounts);
@@ -406,12 +393,13 @@ class BalanceSheetController extends Controller
                 ]]);
             }
 
-            $equity = $equity->concat([(object) [
-                'id'      => null,
-                'code'    => 'SYS-INV-OBE',
-                'name'    => 'Opening Balance Equity (Inventory)',
-                'type'    => 'Equity',
-                'balance' => $inventoryBridge,
+            $currentLiabilities = $currentLiabilities->concat([(object) [
+                'id'       => null,
+                'code'     => 'SYS-INV-OFFSET',
+                'name'     => 'Inventory Offset',
+                'type'     => 'Liability',
+                'sub_type' => 'Current Liability',
+                'balance'  => $inventoryBridge,
             ]]);
         }
 
@@ -421,7 +409,7 @@ class BalanceSheetController extends Controller
         $totalAssets = $totalCurrentAssets + $totalFixedAssets;
         
         $totalLiabilities = $currentLiabilities->sum('balance');
-        $totalEquity = $equity->sum('balance') + $retainedEarnings;
+        $totalEquity = $equity->sum('balance') + $netIncome;
         $statementDifference = round($totalAssets - ($totalLiabilities + $totalEquity), 2);
 
         if (abs($statementDifference) >= 0.01) {
@@ -433,7 +421,7 @@ class BalanceSheetController extends Controller
                 'balance' => $statementDifference,
             ]]);
 
-            $totalEquity = $equity->sum('balance') + $retainedEarnings;
+            $totalEquity = $equity->sum('balance') + $netIncome;
         }
 
         // 6. Map variables to match your Blade @foreach calls exactly
@@ -449,6 +437,7 @@ class BalanceSheetController extends Controller
             'totalLiabilities',
             'totalEquity',
             'retainedEarnings',
+            'netIncome',
             'ledgerDebits',
             'ledgerCredits',
             'ledgerDifference',
