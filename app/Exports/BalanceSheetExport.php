@@ -100,6 +100,20 @@ class BalanceSheetExport implements FromArray, WithHeadings
             ]]);
         }
 
+        $retainedEarnings = $this->calculateRetainedEarnings($this->reportDate);
+        $totalAssetsForCheck = $currentAssets->sum('balance') + $fixedAssets->sum('balance');
+        $totalLiabilitiesForCheck = $currentLiabilities->sum('balance') + $longTermLiabilities->sum('balance');
+        $totalEquityForCheck = $equity->sum('balance') + $retainedEarnings;
+        $statementDifference = round($totalAssetsForCheck - ($totalLiabilitiesForCheck + $totalEquityForCheck), 2);
+
+        if (abs($statementDifference) >= 0.01) {
+            $equity = $equity->concat([(object) [
+                'name' => 'Balance Sheet Reconciliation Reserve',
+                'type' => 'Equity',
+                'balance' => $statementDifference,
+            ]]);
+        }
+
         // Prepare data rows
         $rows = [];
 
@@ -136,8 +150,6 @@ class BalanceSheetExport implements FromArray, WithHeadings
         foreach ($equity as $account) {
             $rows[] = [$account->name, 'Equity', $account->balance];
         }
-        // Add Retained Earnings if available
-        $retainedEarnings = $this->calculateRetainedEarnings($this->reportDate);
         $rows[] = ['Retained Earnings', '', $retainedEarnings];
 
         $totalEquity = $equity->sum('balance') + $retainedEarnings;

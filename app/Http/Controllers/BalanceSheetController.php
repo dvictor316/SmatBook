@@ -422,6 +422,19 @@ class BalanceSheetController extends Controller
         
         $totalLiabilities = $currentLiabilities->sum('balance');
         $totalEquity = $equity->sum('balance') + $retainedEarnings;
+        $statementDifference = round($totalAssets - ($totalLiabilities + $totalEquity), 2);
+
+        if (abs($statementDifference) >= 0.01) {
+            $equity = $equity->concat([(object) [
+                'id' => null,
+                'code' => 'SYS-BS-RECON',
+                'name' => 'Balance Sheet Reconciliation Reserve',
+                'type' => 'Equity',
+                'balance' => $statementDifference,
+            ]]);
+
+            $totalEquity = $equity->sum('balance') + $retainedEarnings;
+        }
 
         // 6. Map variables to match your Blade @foreach calls exactly
         return view('Reports.Reports.balance-sheet', compact(
