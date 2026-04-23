@@ -62,7 +62,9 @@ class TrialBalanceExport implements FromCollection, WithHeadings
         $this->applyCompanyScope($accountsQuery, 'accounts');
         $accounts = $accountsQuery->get();
 
-        $rows = $accounts->map(function ($account) use ($txnTotals) {
+        $openingTotals = ['debit' => 0.0, 'credit' => 0.0];
+
+        $rows = $accounts->map(function ($account) use ($txnTotals, &$openingTotals) {
             $totals = $txnTotals->get($account->id);
             $dr = (float) ($totals->total_debit ?? 0);
             $cr = (float) ($totals->total_credit ?? 0);
@@ -71,7 +73,25 @@ class TrialBalanceExport implements FromCollection, WithHeadings
             $debitBalance = 0.0;
             $creditBalance = 0.0;
 
-            if (in_array($account->type, ['Asset', 'Expense'], true)) {
+            $isDebitNormal = in_array($account->type, ['Asset', 'Expense'], true);
+
+            if (abs($opening) > 0.0001) {
+                if ($isDebitNormal) {
+                    if ($opening >= 0) {
+                        $openingTotals['debit'] += $opening;
+                    } else {
+                        $openingTotals['credit'] += abs($opening);
+                    }
+                } else {
+                    if ($opening >= 0) {
+                        $openingTotals['credit'] += $opening;
+                    } else {
+                        $openingTotals['debit'] += abs($opening);
+                    }
+                }
+            }
+
+            if ($isDebitNormal) {
                 $net = $opening + $dr - $cr;
                 if ($net >= 0) {
                     $debitBalance = $net;
@@ -95,6 +115,17 @@ class TrialBalanceExport implements FromCollection, WithHeadings
                 $creditBalance,
             ];
         })->filter(fn ($row) => ($row[3] > 0 || $row[4] > 0))->values();
+
+        $openingDifference = round((float) $openingTotals['debit'] - (float) $openingTotals['credit'], 2);
+        if (abs($openingDifference) >= 0.01) {
+            $rows->push([
+                'SYS-OPENING-EQUITY',
+                'Opening Balance Equity',
+                'Equity',
+                $openingDifference < 0 ? abs($openingDifference) : 0.0,
+                $openingDifference > 0 ? abs($openingDifference) : 0.0,
+            ]);
+        }
 
         $customerOB = $this->customerOpeningBalance();
         if ($customerOB > 0.01) {
