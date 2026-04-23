@@ -1188,6 +1188,10 @@ class CustomerController extends Controller
             Storage::disk('public')->delete($customer->image);
         }
 
+        // Remove any CUST-OB-* journal entries for this customer so orphaned
+        // transactions don't distort the balance sheet or trial balance.
+        $this->reverseCustomerOpeningBalanceJournal($customer->id);
+
         $customer->delete();
         return redirect()->route('customers.index')->with('success', 'Customer deleted successfully.');
     }
