@@ -49,49 +49,59 @@
 
 <script>
     (function () {
-        const form = document.querySelector('form[action="{{ route('saas-login.post') }}"]');
+        const bindLoginSubmitRefresh = function () {
+            const form = document.querySelector('form[action="{{ route('saas-login.post') }}"]');
 
-        if (!form) {
-            return;
-        }
-
-        let isRefreshingToken = false;
-
-        form.addEventListener('submit', async function (event) {
-            if (isRefreshingToken) {
+            if (!form || form.dataset.csrfRefreshBound === '1') {
                 return;
             }
 
-            event.preventDefault();
-            isRefreshingToken = true;
+            form.dataset.csrfRefreshBound = '1';
+            let isRefreshingToken = false;
 
-            try {
-                const response = await fetch('{{ route('session.csrf-token') }}', {
-                    method: 'GET',
-                    credentials: 'same-origin',
-                    cache: 'no-store',
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
-                    },
-                });
-
-                if (!response.ok) {
-                    throw new Error('Unable to refresh CSRF token.');
+            form.addEventListener('submit', async function (event) {
+                if (isRefreshingToken) {
+                    return;
                 }
 
-                const data = await response.json();
-                const tokenInput = form.querySelector('input[name="_token"]');
+                event.preventDefault();
+                isRefreshingToken = true;
 
-                if (tokenInput && data.token) {
-                    tokenInput.value = data.token;
+                try {
+                    const response = await fetch('{{ route('session.csrf-token') }}', {
+                        method: 'GET',
+                        credentials: 'same-origin',
+                        cache: 'no-store',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Unable to refresh CSRF token.');
+                    }
+
+                    const data = await response.json();
+                    const tokenInput = form.querySelector('input[name="_token"]');
+
+                    if (tokenInput && data.token) {
+                        tokenInput.value = data.token;
+                    }
+                } catch (error) {
+                    console.warn('CSRF refresh failed before login submit.', error);
                 }
-            } catch (error) {
-                console.warn('CSRF refresh failed before login submit.', error);
-            }
 
-            form.submit();
-        });
+                form.submit();
+            });
+        };
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', bindLoginSubmitRefresh, { once: true });
+            return;
+        }
+
+        bindLoginSubmitRefresh();
     })();
 </script>
 
