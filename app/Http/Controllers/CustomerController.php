@@ -1514,12 +1514,9 @@ class CustomerController extends Controller
         string $name, string $code, string $type, string $subType,
         int $companyId, int $userId
     ): Account {
+        // accounts.code has a global unique index — look up without company_id scope
         $account = Account::withoutGlobalScopes()
-            ->whereNull('deleted_at')
-            ->where('company_id', $companyId)
-            ->where(function ($q) use ($code, $name) {
-                $q->where('code', $code)->orWhere('name', $name);
-            })
+            ->where('code', $code)
             ->first();
 
         if (!$account) {
