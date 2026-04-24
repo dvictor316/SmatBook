@@ -1599,6 +1599,11 @@
             'invoice-three',
             'invoice-two',
             'forgot-password',
+            'reset-password',
+            'password.request',
+            'password.email',
+            'password.reset',
+            'password.update',
             'lock-screen',
             'login',
             'register',
@@ -1619,7 +1624,7 @@
         <div class="main-wrapper invoice-two">
     @elseif ($route === 'index-five')
         <div class="main-wrapper container">
-    @elseif (in_array($route, ['forgot-password', 'lock-screen', 'login', 'register', 'saas-login', 'saas-register', 'saas-register-initial']))
+    @elseif (in_array($route, ['forgot-password', 'reset-password', 'password.request', 'password.email', 'password.reset', 'password.update', 'lock-screen', 'login', 'register', 'saas-login', 'saas-register', 'saas-register-initial']))
         <div class="main-wrapper login-body">
     @endif
 
@@ -1636,6 +1641,11 @@
             'saas-register',
             'saas-register-initial',
             'forgot-password',
+            'reset-password',
+            'password.request',
+            'password.email',
+            'password.reset',
+            'password.update',
             'lock-screen',
             'error-404',
             'invoice-one-a',
@@ -1664,6 +1674,11 @@
             'saas-register',
             'saas-register-initial',
             'forgot-password',
+            'reset-password',
+            'password.request',
+            'password.email',
+            'password.reset',
+            'password.update',
             'lock-screen',
             'error-404',
             'invoice-one-a',
@@ -1690,7 +1705,7 @@
     @php
         $needsTenantBranch = !in_array($route, [
             'landing.index', 'index-five', 'mail-pay-invoice', 'cashreceipt-1', 'cashreceipt-2', 'cashreceipt-3', 'cashreceipt-4',
-            'invoice-four-a', 'invoice-one-a', 'invoice-three', 'invoice-two', 'forgot-password', 'lock-screen', 'login', 'register',
+            'invoice-four-a', 'invoice-one-a', 'invoice-three', 'invoice-two', 'forgot-password', 'reset-password', 'password.request', 'password.email', 'password.reset', 'password.update', 'lock-screen', 'login', 'register',
             'saas-login', 'saas-register', 'saas-register-initial',
             'manager.verification.form', 'manager.pending.notice', 'submit.verification', 'manager.submit.verification',
         ]) && !str_starts_with((string) $route, 'deployment.')
@@ -1730,6 +1745,11 @@
             'saas-register',
             'saas-register-initial',
             'forgot-password',
+            'reset-password',
+            'password.request',
+            'password.email',
+            'password.reset',
+            'password.update',
             'lock-screen',
             'error-404',
             'saas.checkout',
@@ -1756,6 +1776,11 @@
             'cashreceipt-4',
             'index-five',
             'forgot-password',
+            'reset-password',
+            'password.request',
+            'password.email',
+            'password.reset',
+            'password.update',
             'lock-screen',
             'login',
             'register',
