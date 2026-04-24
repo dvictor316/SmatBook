@@ -127,9 +127,9 @@
                                                 </td>
                                                 <td class="text-end d-print-none">
                                                     <div class="dropdown dropdown-action">
-                                                        <a href="#" class="action-icon dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                                        <button type="button" class="action-icon dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
                                                             <i class="fas fa-ellipsis-v"></i>
-                                                        </a>
+                                                        </button>
                                                             <div class="dropdown-menu dropdown-menu-end">
 
                                                                 <a class="dropdown-item" href="{{ route('invoices.edit', $invoice->id) }}">

@@ -32,12 +32,9 @@ class SystemEventMailer
             }
         }
 
-        // Temporary routing policy:
-        // - User-originated registrations -> admin inbox only.
-        // - Deployment-manager registrations -> manager + admin inbox.
         $recipients = $type === 'deployment_manager'
             ? self::uniqueEmails([$registrant->email, self::adminInbox()])
-            : [self::adminInbox()];
+            : self::uniqueEmails([$registrant->email, self::adminInbox()]);
         self::send($recipients, $subject, $label, 'A new account has been created on the platform.', $details);
     }
 

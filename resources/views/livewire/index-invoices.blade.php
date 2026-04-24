@@ -47,7 +47,7 @@
                                         <td>{{ $currencySymbol }}{{ number_format($invoice->amount, 2) }}</td>
                                         <td>{{ optional($invoice->due_date)->format('d M Y') ?? 'N/A' }}</td>
                                         <td><span class="badge bg-inverse-{{ Str::slug($invoice->status) ?? 'info' }}">{{ ucfirst($invoice->status) }}</span></td>
-                                        <td class="text-end"><div class="dropdown dropdown-action"><a href="#" class="action-icon dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-ellipsis-h"></i></a><div class="dropdown-menu dropdown-menu-right"><a class="dropdown-item" href="{{ url('edit-invoice') }}"><i class="far fa-edit me-2"></i>Edit</a><a class="dropdown-item" href="{{ url('invoice-details') }}"><i class="far fa-eye me-2"></i>View</a></div></div></td>
+                                        <td class="text-end"><div class="dropdown dropdown-action"><button type="button" class="action-icon dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-ellipsis-h"></i></button><div class="dropdown-menu dropdown-menu-right"><a class="dropdown-item" href="{{ url('edit-invoice') }}"><i class="far fa-edit me-2"></i>Edit</a><a class="dropdown-item" href="{{ url('invoice-details') }}"><i class="far fa-eye me-2"></i>View</a></div></div></td>
                                     </tr> 
                                 @endforeach 
                             </tbody>

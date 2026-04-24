@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\{User, Company, Subscription, Plan, DeploymentManager};
 use App\Support\ActiveBranchResolver;
+use App\Support\AppMailer;
 use App\Support\DeviceSessionManager;
 use App\Support\SystemEventMailer;
 use Illuminate\Cookie\CookieJar;
@@ -869,6 +870,7 @@ class AuthController extends Controller
     public function sendResetLinkEmail(Request $request)
     {
         $request->validate(['email' => 'required|email']);
+        AppMailer::bootCurrentSettings();
         $status = Password::sendResetLink($request->only('email'));
         
         return $status === Password::RESET_LINK_SENT

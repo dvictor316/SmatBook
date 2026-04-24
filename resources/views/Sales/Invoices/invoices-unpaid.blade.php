@@ -91,8 +91,8 @@
                                                 </td>
                                                 <td class="text-end">
                                                     <div class="dropdown dropdown-action">
-                                                        <a href="#" class="btn-action-icon" data-bs-toggle="dropdown"
-                                                            aria-expanded="false"><i class="fas fa-ellipsis-v"></i></a>
+                                                        <button type="button" class="btn-action-icon" data-bs-toggle="dropdown"
+                                                            aria-expanded="false"><i class="fas fa-ellipsis-v"></i></button>
                                                         <div class="dropdown-menu dropdown-menu-end customer-dropdown">
                                                             <a class="dropdown-item" href="{{ url('edit-invoice') }}"><i
                                                                     class="far fa-edit me-2"></i>Edit</a>

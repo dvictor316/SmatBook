@@ -12,6 +12,11 @@ class AppMailer
 {
     private static bool $configured = false;
 
+    public static function bootCurrentSettings(): void
+    {
+        self::configure();
+    }
+
     public static function preferredMailer(): string
     {
         self::configure();

@@ -1206,10 +1206,37 @@
                 gap: 0.4rem;
             }
 
+            button.btn-action-icon,
+            button.action-icon {
+                border: 0;
+                background: transparent;
+                padding: 0;
+                cursor: pointer;
+            }
+
             .btn-action-icon::after,
             .action-icon::after {
                 content: "";
             }
+        }
+
+        .table tbody td button.btn-action-icon {
+            background: #f3f3f3;
+            color: #3f4254;
+            width: 28px;
+            height: 28px;
+            border-radius: 50px;
+            justify-content: center;
+        }
+
+        .table tbody td button.action-icon {
+            color: #333;
+            justify-content: end;
+        }
+
+        button.action-icon.dropdown-toggle::after {
+            border-top: 0;
+            display: none;
         }
 
         /* Feather icon fallback to Font Awesome when feather webfont is missing */
@@ -1650,6 +1677,22 @@
             }
         });
     })();
+    </script>
+
+    <script>
+    document.addEventListener('click', function (event) {
+        const trigger = event.target.closest('.dropdown [data-bs-toggle="dropdown"]');
+
+        if (!trigger) {
+            return;
+        }
+
+        const href = (trigger.getAttribute('href') || '').trim().toLowerCase();
+
+        if (href === '#' || href === 'javascript:void(0);') {
+            event.preventDefault();
+        }
+    }, true);
     </script>
 
 

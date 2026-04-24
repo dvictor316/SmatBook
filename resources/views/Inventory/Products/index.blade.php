@@ -449,10 +449,10 @@
                                         <td>{{ number_format((float) $product->purchase_price, 2) }}</td>
                                         <td class="text-center no-print">
                                             <div class="dropdown">
-                                                <a href="#" class="product-action-trigger dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <button type="button" class="product-action-trigger dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
                                                     <i class="fas fa-bolt"></i>
                                                     <span>Manage</span>
-                                                </a>
+                                                </button>
                                                 <div class="dropdown-menu dropdown-menu-end product-action-menu">
                                                     <a class="dropdown-item" href="{{ route('inventory.history', $product->id) }}"><i class="fas fa-chart-line me-2"></i>Run Report</a>
                                                     <a class="dropdown-item" href="{{ route('inventory.Products.edit', $product->id) }}"><i class="far fa-edit me-2"></i>Edit</a>
