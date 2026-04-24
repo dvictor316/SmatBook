@@ -1944,6 +1944,7 @@
         let mobileSheetTitle = null;
         let mobileSheetOpen = false;
         let lastFocusedTrigger = null;
+        const floatingMenuState = new Map();
         const managedAncestorSelectors = [
             '.table-responsive',
             '.dataTables_wrapper',
@@ -1998,6 +1999,121 @@
         function closeDropdownContainers(dropdown) {
             getManagedAncestors(dropdown).forEach((element) => {
                 element.classList.remove('spb-dropdown-open');
+            });
+        }
+
+        function getActionMenu(trigger) {
+            return trigger?.closest('.dropdown')?.querySelector('.dropdown-menu') || null;
+        }
+
+        function findFloatingMenuByTrigger(trigger) {
+            for (const [menu, state] of floatingMenuState.entries()) {
+                if (state.trigger === trigger) {
+                    return { menu, state };
+                }
+            }
+
+            return null;
+        }
+
+        function positionFloatingMenu(trigger, menu) {
+            if (!trigger || !menu) {
+                return;
+            }
+
+            const rect = trigger.getBoundingClientRect();
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            const menuWidth = Math.max(menu.offsetWidth || 220, 220);
+            const menuHeight = Math.max(menu.offsetHeight || 0, 0);
+            const gutter = 12;
+
+            let top = rect.bottom + 8;
+            if (menuHeight && top + menuHeight > viewportHeight - gutter) {
+                top = Math.max(gutter, rect.top - menuHeight - 8);
+            }
+
+            let left = rect.right - menuWidth;
+            if (left < gutter) {
+                left = gutter;
+            }
+            if (left + menuWidth > viewportWidth - gutter) {
+                left = Math.max(gutter, viewportWidth - menuWidth - gutter);
+            }
+
+            menu.style.position = 'fixed';
+            menu.style.top = `${top}px`;
+            menu.style.left = `${left}px`;
+            menu.style.right = 'auto';
+            menu.style.bottom = 'auto';
+            menu.style.zIndex = '2100';
+            menu.style.minWidth = `${Math.max(rect.width, 190)}px`;
+            menu.style.maxWidth = `min(320px, calc(100vw - ${gutter * 2}px))`;
+            menu.style.transform = 'none';
+            menu.style.inset = 'auto auto auto auto';
+        }
+
+        function floatDesktopMenu(trigger) {
+            if (isPhoneSheetMode() || !isActionTrigger(trigger)) {
+                return;
+            }
+
+            const menu = getActionMenu(trigger);
+            if (!menu || floatingMenuState.has(menu)) {
+                if (menu) {
+                    positionFloatingMenu(trigger, menu);
+                }
+                return;
+            }
+
+            const originalParent = menu.parentNode;
+            const originalNextSibling = menu.nextSibling;
+
+            document.body.appendChild(menu);
+            menu.classList.add('spb-action-dropdown-menu', 'spb-action-dropdown-menu--floating');
+            floatingMenuState.set(menu, {
+                trigger,
+                originalParent,
+                originalNextSibling,
+            });
+
+            positionFloatingMenu(trigger, menu);
+        }
+
+        function restoreFloatingMenu(trigger) {
+            const found = findFloatingMenuByTrigger(trigger);
+            const menu = found?.menu || null;
+            const state = found?.state || null;
+
+            if (!menu || !state) {
+                return;
+            }
+
+            if (state.originalNextSibling && state.originalNextSibling.parentNode === state.originalParent) {
+                state.originalParent.insertBefore(menu, state.originalNextSibling);
+            } else {
+                state.originalParent.appendChild(menu);
+            }
+
+            menu.classList.remove('spb-action-dropdown-menu--floating');
+            menu.style.position = '';
+            menu.style.top = '';
+            menu.style.left = '';
+            menu.style.right = '';
+            menu.style.bottom = '';
+            menu.style.zIndex = '';
+            menu.style.minWidth = '';
+            menu.style.maxWidth = '';
+            menu.style.transform = '';
+            menu.style.inset = '';
+            floatingMenuState.delete(menu);
+        }
+
+        function repositionOpenFloatingMenus() {
+            floatingMenuState.forEach(function (state, menu) {
+                if (menu.classList.contains('show')) {
+                    positionFloatingMenu(state.trigger, menu);
+                }
             });
         }
 
@@ -2104,7 +2220,19 @@
                 return;
             }
 
+            const trigger = event.relatedTarget || dropdown.querySelector('[data-bs-toggle="dropdown"]');
+            restoreFloatingMenu(trigger);
             closeDropdownContainers(dropdown);
+        });
+
+        document.addEventListener('shown.bs.dropdown', function (event) {
+            const dropdown = event.target.closest('.dropdown');
+            if (!dropdown) {
+                return;
+            }
+
+            const trigger = event.relatedTarget || dropdown.querySelector('[data-bs-toggle="dropdown"]');
+            floatDesktopMenu(trigger);
         });
 
         document.addEventListener('click', function (event) {
@@ -2153,7 +2281,11 @@
             if (!isPhoneSheetMode() && mobileSheetOpen) {
                 closeMobileSheet();
             }
+
+            repositionOpenFloatingMenus();
         });
+
+        window.addEventListener('scroll', repositionOpenFloatingMenus, true);
     })();
     </script>
 
