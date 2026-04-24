@@ -2224,6 +2224,7 @@
             menu.style.maxWidth = '';
             menu.style.transform = '';
             menu.style.inset = '';
+            menu.style.visibility = '';
             floatingMenuState.delete(menu);
         }
 
@@ -2327,9 +2328,12 @@
             markActionMenu(trigger);
             openDropdownContainers(dropdown);
 
-            // If we handle this action trigger via our custom desktop menu, block Bootstrap's native dropdown
+            // Hide temporarily to prevent position flash while we float the menu to body
             if (isActionTrigger(trigger) && !isPhoneSheetMode()) {
-                event.preventDefault();
+                const menu = dropdown.querySelector('.dropdown-menu');
+                if (menu) {
+                    menu.style.visibility = 'hidden';
+                }
             }
         });
 
@@ -2342,6 +2346,11 @@
             const trigger = event.relatedTarget || dropdown.querySelector('[data-bs-toggle="dropdown"]');
             restoreFloatingMenu(trigger);
             closeDropdownContainers(dropdown);
+            // Reset visibility in case hide fires before shown (edge case)
+            const menu = dropdown.querySelector('.dropdown-menu');
+            if (menu) {
+                menu.style.visibility = '';
+            }
         });
 
         document.addEventListener('shown.bs.dropdown', function (event) {
@@ -2351,18 +2360,18 @@
             }
 
             const trigger = event.relatedTarget || dropdown.querySelector('[data-bs-toggle="dropdown"]');
-            // Only float if we didn't already handle via openDesktopMenu
-            if (desktopMenuOpen && desktopMenuTrigger === trigger) {
-                return;
-            }
             floatDesktopMenu(trigger);
+            // Restore visibility after floating and repositioning
+            if (isActionTrigger(trigger) && !isPhoneSheetMode()) {
+                const found = findFloatingMenuByTrigger(trigger);
+                const menu = found ? found.menu : dropdown.querySelector('.dropdown-menu');
+                if (menu) {
+                    menu.style.visibility = '';
+                }
+            }
         });
 
         document.addEventListener('click', function (event) {
-            if (desktopMenuOpen && desktopMenu && !event.target.closest('.spb-desktop-action-menu') && !event.target.closest('.dropdown [data-bs-toggle="dropdown"]')) {
-                closeDesktopMenu();
-            }
-
             const trigger = event.target.closest('.dropdown [data-bs-toggle="dropdown"]');
             if (!isActionTrigger(trigger)) {
                 return;
@@ -2374,14 +2383,12 @@
             if (isPhoneSheetMode()) {
                 event.preventDefault();
                 event.stopPropagation();
-                if (openMobileSheet(trigger, dropdown)) {
-                    return;
-                }
+                openMobileSheet(trigger, dropdown);
+                return;
             }
-
-            event.preventDefault();
-            event.stopPropagation();
-            openDesktopMenu(trigger, dropdown);
+            // Desktop: let Bootstrap handle show/hide naturally.
+            // show.bs.dropdown hides the menu temporarily to prevent flash,
+            // shown.bs.dropdown floats it to body and repositions it.
         }, true);
 
         document.addEventListener('keydown', function (event) {
