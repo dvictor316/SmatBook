@@ -2326,6 +2326,11 @@
             const trigger = event.relatedTarget || dropdown.querySelector('[data-bs-toggle="dropdown"]');
             markActionMenu(trigger);
             openDropdownContainers(dropdown);
+
+            // If we handle this action trigger via our custom desktop menu, block Bootstrap's native dropdown
+            if (isActionTrigger(trigger) && !isPhoneSheetMode()) {
+                event.preventDefault();
+            }
         });
 
         document.addEventListener('hide.bs.dropdown', function (event) {
@@ -2346,6 +2351,10 @@
             }
 
             const trigger = event.relatedTarget || dropdown.querySelector('[data-bs-toggle="dropdown"]');
+            // Only float if we didn't already handle via openDesktopMenu
+            if (desktopMenuOpen && desktopMenuTrigger === trigger) {
+                return;
+            }
             floatDesktopMenu(trigger);
         });
 
@@ -2372,27 +2381,7 @@
 
             event.preventDefault();
             event.stopPropagation();
-            if (openDesktopMenu(trigger, dropdown)) {
-                return;
-            }
-
-            if (!window.bootstrap?.Dropdown) {
-                return;
-            }
-
-            window.setTimeout(function () {
-                const menu = dropdown?.querySelector('.dropdown-menu');
-
-                if (!dropdown || !menu || menu.classList.contains('show')) {
-                    return;
-                }
-
-                try {
-                    bootstrap.Dropdown.getOrCreateInstance(trigger).show();
-                } catch (error) {
-                    console.warn('Dropdown fallback open failed', error);
-                }
-            }, 140);
+            openDesktopMenu(trigger, dropdown);
         }, true);
 
         document.addEventListener('keydown', function (event) {
