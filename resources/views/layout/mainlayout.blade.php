@@ -1249,6 +1249,91 @@
             z-index: 1085;
         }
 
+        .spb-mobile-action-sheet {
+            position: fixed;
+            inset: 0;
+            z-index: 2000;
+            display: none;
+        }
+
+        .spb-mobile-action-sheet.is-open {
+            display: block;
+        }
+
+        .spb-mobile-action-sheet__backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.52);
+            backdrop-filter: blur(2px);
+        }
+
+        .spb-mobile-action-sheet__panel {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #ffffff;
+            border-radius: 20px 20px 0 0;
+            box-shadow: 0 -12px 36px rgba(15, 23, 42, 0.22);
+            padding: 0.9rem 1rem calc(1rem + env(safe-area-inset-bottom));
+            transform: translateY(100%);
+            transition: transform 0.22s ease;
+            max-height: min(78vh, 34rem);
+            overflow-y: auto;
+        }
+
+        .spb-mobile-action-sheet.is-open .spb-mobile-action-sheet__panel {
+            transform: translateY(0);
+        }
+
+        .spb-mobile-action-sheet__handle {
+            width: 48px;
+            height: 5px;
+            border-radius: 999px;
+            background: #cbd5e1;
+            margin: 0 auto 0.85rem;
+        }
+
+        .spb-mobile-action-sheet__title {
+            font-size: 0.92rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 0.85rem;
+            text-align: center;
+        }
+
+        .spb-mobile-action-sheet__content .dropdown-item,
+        .spb-mobile-action-sheet__content button.dropdown-item {
+            display: flex;
+            width: 100%;
+            align-items: center;
+            gap: 0.7rem;
+            padding: 0.95rem 0.25rem;
+            border: 0;
+            border-radius: 0;
+            background: transparent;
+            color: #0f172a;
+            font-weight: 700;
+            text-align: left;
+            border-bottom: 1px solid #eef2f7;
+        }
+
+        .spb-mobile-action-sheet__content form:last-child .dropdown-item,
+        .spb-mobile-action-sheet__content > .dropdown-item:last-child,
+        .spb-mobile-action-sheet__content > button.dropdown-item:last-child {
+            border-bottom: 0;
+        }
+
+        .spb-mobile-action-sheet__content .dropdown-divider {
+            margin: 0.35rem 0;
+        }
+
+        @media (min-width: 768px) {
+            .spb-mobile-action-sheet {
+                display: none !important;
+            }
+        }
+
         /* Feather icon fallback to Font Awesome when feather webfont is missing */
         .fe {
             font-family: "Font Awesome 6 Free" !important;
@@ -1707,6 +1792,12 @@
 
     <script>
     (function () {
+        let mobileSheet = null;
+        let mobileSheetPanel = null;
+        let mobileSheetContent = null;
+        let mobileSheetTitle = null;
+        let mobileSheetOpen = false;
+        let lastFocusedTrigger = null;
         const managedAncestorSelectors = [
             '.table-responsive',
             '.dataTables_wrapper',
@@ -1739,6 +1830,92 @@
             });
         }
 
+        function isPhoneSheetMode() {
+            return window.matchMedia('(max-width: 767.98px)').matches;
+        }
+
+        function ensureMobileSheet() {
+            if (mobileSheet) {
+                return;
+            }
+
+            mobileSheet = document.createElement('div');
+            mobileSheet.className = 'spb-mobile-action-sheet';
+            mobileSheet.innerHTML = `
+                <div class="spb-mobile-action-sheet__backdrop" data-spb-sheet-close="true"></div>
+                <div class="spb-mobile-action-sheet__panel" role="dialog" aria-modal="true" aria-label="Action menu">
+                    <div class="spb-mobile-action-sheet__handle"></div>
+                    <div class="spb-mobile-action-sheet__title">Actions</div>
+                    <div class="spb-mobile-action-sheet__content"></div>
+                </div>
+            `;
+
+            document.body.appendChild(mobileSheet);
+            mobileSheetPanel = mobileSheet.querySelector('.spb-mobile-action-sheet__panel');
+            mobileSheetContent = mobileSheet.querySelector('.spb-mobile-action-sheet__content');
+            mobileSheetTitle = mobileSheet.querySelector('.spb-mobile-action-sheet__title');
+
+            mobileSheet.addEventListener('click', function (event) {
+                if (event.target.closest('[data-spb-sheet-close="true"]')) {
+                    closeMobileSheet();
+                    return;
+                }
+
+                const action = event.target.closest('a.dropdown-item, button.dropdown-item');
+                if (action && !action.hasAttribute('data-bs-toggle')) {
+                    window.setTimeout(closeMobileSheet, 40);
+                }
+            });
+        }
+
+        function closeMobileSheet() {
+            if (!mobileSheet) {
+                return;
+            }
+
+            mobileSheet.classList.remove('is-open');
+            document.body.classList.remove('spb-mobile-sheet-open');
+            mobileSheetOpen = false;
+            mobileSheetContent.innerHTML = '';
+
+            if (lastFocusedTrigger && typeof lastFocusedTrigger.focus === 'function') {
+                lastFocusedTrigger.focus({ preventScroll: true });
+            }
+        }
+
+        function openMobileSheet(trigger, dropdown) {
+            ensureMobileSheet();
+
+            const sourceMenu = dropdown?.querySelector('.dropdown-menu');
+            if (!sourceMenu) {
+                return false;
+            }
+
+            const clonedMenu = sourceMenu.cloneNode(true);
+            clonedMenu.classList.remove('show');
+            clonedMenu.style.display = 'block';
+            clonedMenu.style.position = 'static';
+            clonedMenu.style.transform = 'none';
+            clonedMenu.style.inset = 'auto';
+            clonedMenu.style.margin = '0';
+            clonedMenu.style.border = '0';
+            clonedMenu.style.boxShadow = 'none';
+            clonedMenu.style.minWidth = '0';
+            clonedMenu.style.width = '100%';
+            clonedMenu.style.background = 'transparent';
+            clonedMenu.style.padding = '0';
+
+            mobileSheetTitle.textContent = trigger.dataset.sheetTitle || trigger.getAttribute('aria-label') || 'Actions';
+            mobileSheetContent.innerHTML = '';
+            mobileSheetContent.appendChild(clonedMenu);
+
+            lastFocusedTrigger = trigger;
+            mobileSheet.classList.add('is-open');
+            document.body.classList.add('spb-mobile-sheet-open');
+            mobileSheetOpen = true;
+            return true;
+        }
+
         document.addEventListener('show.bs.dropdown', function (event) {
             const dropdown = event.target.closest('.dropdown');
             if (!dropdown) {
@@ -1761,14 +1938,26 @@
 
         document.addEventListener('click', function (event) {
             const trigger = event.target.closest('.dropdown-action [data-bs-toggle="dropdown"], .product-action-trigger[data-bs-toggle="dropdown"]');
-            if (!trigger || !window.bootstrap?.Dropdown) {
+            if (!trigger) {
                 return;
             }
 
             markActionMenu(trigger);
+            const dropdown = trigger.closest('.dropdown');
+
+            if (isPhoneSheetMode()) {
+                event.preventDefault();
+                event.stopPropagation();
+                if (openMobileSheet(trigger, dropdown)) {
+                    return;
+                }
+            }
+
+            if (!window.bootstrap?.Dropdown) {
+                return;
+            }
 
             window.setTimeout(function () {
-                const dropdown = trigger.closest('.dropdown');
                 const menu = dropdown?.querySelector('.dropdown-menu');
 
                 if (!dropdown || !menu || menu.classList.contains('show')) {
@@ -1782,6 +1971,18 @@
                 }
             }, 140);
         }, true);
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && mobileSheetOpen) {
+                closeMobileSheet();
+            }
+        });
+
+        window.addEventListener('resize', function () {
+            if (!isPhoneSheetMode() && mobileSheetOpen) {
+                closeMobileSheet();
+            }
+        });
     })();
     </script>
 
