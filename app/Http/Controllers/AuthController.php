@@ -10,7 +10,7 @@ use App\Support\SystemEventMailer;
 use Illuminate\Cookie\CookieJar;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\{Auth, DB, Hash, Log, Password, RateLimiter, Schema, Session, Storage};
+use Illuminate\Support\Facades\{Auth, DB, Hash, Log, Mail, Password, RateLimiter, Schema, Session, Storage};
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\InvalidStateException;
@@ -870,7 +870,6 @@ class AuthController extends Controller
     public function sendResetLinkEmail(Request $request)
     {
         $request->validate(['email' => 'required|email']);
-        AppMailer::bootCurrentSettings();
         $email = trim((string) $request->input('email'));
         $user = User::withTrashed()->where('email', $email)->first();
 
@@ -886,14 +885,19 @@ class AuthController extends Controller
                 'email' => $user->email,
             ], false);
             $resetUrl = $request->getSchemeAndHttpHost() . $resetPath;
-            $activeMailer = AppMailer::preferredMailer();
 
-            AppMailer::sendView('emails.password-reset', [
+            // Password recovery is a critical auth flow, so it should use the
+            // server mail configuration directly instead of workspace-level
+            // overrides that may be incomplete or stale.
+            Mail::mailer('smtp')->send('emails.password-reset', [
                 'user' => $user,
                 'resetUrl' => $resetUrl,
                 'expiresInMinutes' => (int) config('auth.passwords.users.expire', 60),
             ], function ($message) use ($user) {
-                $message->from(\App\Models\Setting::mailFromAddress(), \App\Models\Setting::mailFromName())
+                $message->from(
+                    (string) config('mail.from.address', 'support@smartprobook.com'),
+                    (string) config('mail.from.name', config('app.name', 'SmartProbook'))
+                )
                     ->to($user->email, $user->name)
                     ->subject('Reset your password');
             });
@@ -902,15 +906,12 @@ class AuthController extends Controller
         } catch (\Throwable $e) {
             Log::error('Password reset email failed', [
                 'email' => $email,
-                'mailer' => AppMailer::preferredMailer(),
-                'smtp_ready' => AppMailer::smtpReady(),
-                'mail_from' => \App\Models\Setting::mailFromAddress(),
+                'mailer' => 'smtp',
+                'mail_from' => (string) config('mail.from.address'),
                 'error' => $e->getMessage(),
             ]);
 
-            $message = AppMailer::preferredMailer() === 'log'
-                ? 'Reset email is not using SMTP right now. Please enable and save SMTP in Email Settings, then try again.'
-                : 'We could not send the reset link right now. Please confirm the SMTP settings and try again.';
+            $message = 'We could not send the reset link right now. Please confirm the server SMTP settings and try again.';
 
             return back()
                 ->with('reset_error', $message)
