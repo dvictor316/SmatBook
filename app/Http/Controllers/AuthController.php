@@ -871,11 +871,43 @@ class AuthController extends Controller
     {
         $request->validate(['email' => 'required|email']);
         AppMailer::bootCurrentSettings();
-        $status = Password::sendResetLink($request->only('email'));
-        
-        return $status === Password::RESET_LINK_SENT
-            ? back()->with('success', 'Link sent!')
-            : back()->withErrors(['email' => __($status)]);
+        $email = trim((string) $request->input('email'));
+        $user = User::withTrashed()->where('email', $email)->first();
+
+        // Keep the response generic so the flow remains secure.
+        if (!$user) {
+            return back()->with('success', 'If that email exists in our system, a reset link has been sent.');
+        }
+
+        try {
+            $token = Password::broker()->createToken($user);
+            $resetPath = route('password.reset', [
+                'token' => $token,
+                'email' => $user->email,
+            ], false);
+            $resetUrl = $request->getSchemeAndHttpHost() . $resetPath;
+
+            AppMailer::sendView('emails.password-reset', [
+                'user' => $user,
+                'resetUrl' => $resetUrl,
+                'expiresInMinutes' => (int) config('auth.passwords.users.expire', 60),
+            ], function ($message) use ($user) {
+                $message->from(\App\Models\Setting::mailFromAddress(), \App\Models\Setting::mailFromName())
+                    ->to($user->email, $user->name)
+                    ->subject('Reset your password');
+            });
+
+            return back()->with('success', 'If that email exists in our system, a reset link has been sent.');
+        } catch (\Throwable $e) {
+            Log::error('Password reset email failed', [
+                'email' => $email,
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()->withErrors([
+                'email' => ['We could not send the reset link right now. Please check email settings and try again.'],
+            ]);
+        }
     }
 
     public function showResetForm(Request $request, $token)
