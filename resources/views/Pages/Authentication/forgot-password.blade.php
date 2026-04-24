@@ -39,13 +39,14 @@
 
     .auth-wrapper {
         min-height: 100vh;
-        display: flex;
-        justify-content: center;
-        align-items: center;
+        display: grid;
+        place-items: center;
         padding: 20px 14px 40px;
         position: relative;
         -webkit-overflow-scrolling: touch;
         width: 100%;
+        max-width: 100vw;
+        margin: 0 auto;
     }
 
     .login-card-custom {
@@ -54,7 +55,7 @@
         box-shadow: 0 30px 90px rgba(15, 23, 42, 0.12), 0 10px 24px rgba(37, 99, 235, 0.08);
         overflow: hidden;
         max-width: 900px;
-        width: 100%;
+        width: min(900px, calc(100vw - 28px));
         border: 1px solid rgba(255, 255, 255, 0.8);
         backdrop-filter: blur(18px);
         margin: auto;
@@ -246,10 +247,11 @@
     @media (max-width: 767px) {
         .auth-wrapper {
             padding: 14px;
-            align-items: flex-start;
+            place-items: start center;
         }
         .login-card-custom {
             border-radius: 20px;
+            width: min(100%, calc(100vw - 20px));
         }
         .mobile-brand-lockup {
             display: inline-flex;
