@@ -133,8 +133,8 @@
                                 <div class="col-lg-6 col-12">
                                     <div class="input-block mb-3">
                                         <label class="form-label fw-semibold">Email From Address</label>
-                                        <input type="email" class="form-control" name="mail_from_address" value="{{ $settings['mail_from_address'] ?? 'contact@smartprobook.com' }}" placeholder="contact@smartprobook.com">
-                                        <div class="form-text">Recommended branded sender: <strong>contact@smartprobook.com</strong>. If your SMTP account is Gmail, use that Gmail address instead.</div>
+                                        <input type="email" class="form-control" name="mail_from_address" value="{{ $settings['mail_from_address'] ?? ($settings['mail_smtp_username'] ?? 'contact@smartprobook.com') }}" placeholder="contact@smartprobook.com">
+                                        <div class="form-text">Use <strong>contact@smartprobook.com</strong> only if that mailbox really exists on your provider. Otherwise use your live SMTP mailbox, for example your Gmail address.</div>
                                     </div>
                                 </div>
                                 <div class="col-lg-12 col-12">

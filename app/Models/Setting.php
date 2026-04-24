@@ -104,10 +104,15 @@ class Setting extends Model
 
     public static function mailFromAddress(?string $fallback = null): string
     {
+        $smtpUsername = trim((string) self::getSensitive('mail_smtp_username', self::get('mail_smtp_username', '')));
+        if ($smtpUsername === '') {
+            $smtpUsername = trim((string) self::get('mail_smtp_username', self::get('mail_username', '')));
+        }
+
         $candidates = [
             (string) self::get('mail_from_address', ''),
+            $smtpUsername,
             (string) self::get('company_email', ''),
-            'contact@smartprobook.com',
             (string) config('mail.from.address', ''),
             (string) env('MAIL_FROM_ADDRESS', ''),
             (string) ($fallback ?? ''),
