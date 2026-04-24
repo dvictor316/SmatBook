@@ -459,6 +459,127 @@
             }
         }
 
+        @media (max-width: 767.98px) {
+            html {
+                -webkit-text-size-adjust: 100%;
+                text-size-adjust: 100%;
+                scroll-behavior: smooth;
+            }
+
+            body:not(.login-body):not(.landing-page-body) {
+                text-rendering: optimizeLegibility;
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+            }
+
+            body:not(.login-body):not(.landing-page-body) .page-wrapper {
+                background:
+                    radial-gradient(circle at top right, rgba(59, 130, 246, 0.10), transparent 28%),
+                    radial-gradient(circle at left 18%, rgba(245, 158, 11, 0.08), transparent 22%),
+                    linear-gradient(180deg, #f7fbff 0%, #f2f7ff 48%, #f8fbff 100%);
+            }
+
+            body:not(.login-body):not(.landing-page-body) .page-wrapper .content,
+            body:not(.login-body):not(.landing-page-body) .page-wrapper .content.container-fluid {
+                padding: 14px 12px 24px !important;
+            }
+
+            body:not(.login-body):not(.landing-page-body) .page-wrapper,
+            body:not(.login-body):not(.landing-page-body) .page-wrapper p,
+            body:not(.login-body):not(.landing-page-body) .page-wrapper li,
+            body:not(.login-body):not(.landing-page-body) .page-wrapper td,
+            body:not(.login-body):not(.landing-page-body) .page-wrapper label,
+            body:not(.login-body):not(.landing-page-body) .page-wrapper input,
+            body:not(.login-body):not(.landing-page-body) .page-wrapper textarea,
+            body:not(.login-body):not(.landing-page-body) .page-wrapper select {
+                color: #10284d;
+            }
+
+            body:not(.login-body):not(.landing-page-body) .page-wrapper .page-header h3,
+            body:not(.login-body):not(.landing-page-body) .page-wrapper .page-title,
+            body:not(.login-body):not(.landing-page-body) .page-wrapper h1:first-child,
+            body:not(.login-body):not(.landing-page-body) .page-wrapper h2:first-child {
+                font-size: clamp(1.16rem, 1rem + 1vw, 1.55rem) !important;
+                color: #0d2752;
+                letter-spacing: -0.03em;
+            }
+
+            body:not(.login-body):not(.landing-page-body) .page-wrapper .text-muted,
+            body:not(.login-body):not(.landing-page-body) .page-wrapper small,
+            body:not(.login-body):not(.landing-page-body) .page-wrapper .small {
+                color: #5d7396 !important;
+            }
+
+            body:not(.login-body):not(.landing-page-body) .page-wrapper .card,
+            body:not(.login-body):not(.landing-page-body) .page-wrapper .metric-card,
+            body:not(.login-body):not(.landing-page-body) .page-wrapper .chart-card,
+            body:not(.login-body):not(.landing-page-body) .page-wrapper .stat-card,
+            body:not(.login-body):not(.landing-page-body) .page-wrapper .kpi-card,
+            body:not(.login-body):not(.landing-page-body) .page-wrapper .table-responsive {
+                border-radius: 20px;
+                border-color: rgba(191, 219, 254, 0.92);
+                box-shadow:
+                    0 14px 30px rgba(37, 99, 235, 0.08),
+                    0 2px 10px rgba(15, 23, 42, 0.04);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+            }
+
+            body:not(.login-body):not(.landing-page-body) .page-wrapper .card .card-header {
+                background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 251, 255, 0.96));
+                border-bottom-color: rgba(191, 219, 254, 0.82);
+            }
+
+            body:not(.login-body):not(.landing-page-body) .page-wrapper .table thead th {
+                color: #4f678d;
+                font-size: 0.76rem;
+            }
+
+            body:not(.login-body):not(.landing-page-body) .page-wrapper .table tbody td {
+                color: #10284d;
+                font-size: 0.93rem;
+            }
+
+            body:not(.login-body):not(.landing-page-body) .page-wrapper .form-control,
+            body:not(.login-body):not(.landing-page-body) .page-wrapper .form-select,
+            body:not(.login-body):not(.landing-page-body) .page-wrapper .input-group-text,
+            body:not(.login-body):not(.landing-page-body) .page-wrapper .btn {
+                min-height: 44px;
+                border-radius: 14px;
+            }
+
+            body:not(.login-body):not(.landing-page-body) .page-wrapper .form-control,
+            body:not(.login-body):not(.landing-page-body) .page-wrapper .form-select,
+            body:not(.login-body):not(.landing-page-body) .page-wrapper .input-group-text,
+            body:not(.login-body):not(.landing-page-body) .page-wrapper input,
+            body:not(.login-body):not(.landing-page-body) .page-wrapper textarea,
+            body:not(.login-body):not(.landing-page-body) .page-wrapper select {
+                background: rgba(255, 255, 255, 0.96);
+                border-color: rgba(191, 219, 254, 0.95);
+                box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+            }
+
+            body:not(.login-body):not(.landing-page-body) .page-wrapper .badge,
+            body:not(.login-body):not(.landing-page-body) .page-wrapper .status-badge {
+                filter: saturate(1.05) contrast(1.03);
+            }
+
+            body:not(.login-body):not(.landing-page-body) .header {
+                backdrop-filter: blur(14px);
+                -webkit-backdrop-filter: blur(14px);
+                background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(247, 251, 255, 0.88));
+                border-bottom: 1px solid rgba(191, 219, 254, 0.72);
+            }
+
+            body:not(.login-body):not(.landing-page-body) .page-wrapper .card,
+            body:not(.login-body):not(.landing-page-body) .page-wrapper .table-responsive,
+            body:not(.login-body):not(.landing-page-body) .page-wrapper .dropdown-menu,
+            body:not(.login-body):not(.landing-page-body) .page-wrapper .modal-content {
+                will-change: transform;
+                transform: translateZ(0);
+            }
+        }
+
         :root {
             --spb-sidebar-bg-top: #f8fbff;
             --spb-sidebar-bg-mid: #f2f7ff;
