@@ -320,6 +320,12 @@
                         </div>
                     @endif
 
+                    @if (session('reset_error'))
+                        <div class="alert alert-danger border-0 shadow-sm small py-3 mb-4">
+                            <i class="fas fa-triangle-exclamation me-2"></i> {{ session('reset_error') }}
+                        </div>
+                    @endif
+
                     <div class="helper-box">
                         <strong>Need access again?</strong> We’ll send your recovery link to the email attached to this SmartProbook workspace.
                     </div>
@@ -331,7 +337,7 @@
                             <label class="form-label small fw-bold text-secondary">Email Address</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-white border-end-0 text-muted"><i class="far fa-envelope"></i></span>
-                                <input type="email" name="email" class="form-control border-start-0 @error('email') is-invalid @enderror" 
+                                <input type="email" name="email" class="form-control border-start-0 @error('email') is-invalid @enderror"
                                        placeholder="name@company.com" value="{{ old('email') }}" required autofocus>
                             </div>
                             @error('email')

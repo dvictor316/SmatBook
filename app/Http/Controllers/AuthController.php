@@ -886,6 +886,7 @@ class AuthController extends Controller
                 'email' => $user->email,
             ], false);
             $resetUrl = $request->getSchemeAndHttpHost() . $resetPath;
+            $activeMailer = AppMailer::preferredMailer();
 
             AppMailer::sendView('emails.password-reset', [
                 'user' => $user,
@@ -901,12 +902,19 @@ class AuthController extends Controller
         } catch (\Throwable $e) {
             Log::error('Password reset email failed', [
                 'email' => $email,
+                'mailer' => AppMailer::preferredMailer(),
+                'smtp_ready' => AppMailer::smtpReady(),
+                'mail_from' => \App\Models\Setting::mailFromAddress(),
                 'error' => $e->getMessage(),
             ]);
 
-            return back()->withErrors([
-                'email' => ['We could not send the reset link right now. Please check email settings and try again.'],
-            ]);
+            $message = AppMailer::preferredMailer() === 'log'
+                ? 'Reset email is not using SMTP right now. Please enable and save SMTP in Email Settings, then try again.'
+                : 'We could not send the reset link right now. Please confirm the SMTP settings and try again.';
+
+            return back()
+                ->with('reset_error', $message)
+                ->withInput($request->only('email'));
         }
     }
 
