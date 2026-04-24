@@ -908,7 +908,16 @@ class AuthController extends Controller
                     ->subject('Reset your password');
             };
 
-            AppMailer::sendView('emails.password-reset', $mailData, $buildMessage);
+            try {
+                Mail::mailer('smtp')->send('emails.password-reset', $mailData, $buildMessage);
+            } catch (\Throwable $smtpException) {
+                Log::warning('Password reset SMTP send failed, trying sendmail', [
+                    'email' => $email,
+                    'error' => $smtpException->getMessage(),
+                ]);
+
+                Mail::mailer('sendmail')->send('emails.password-reset', $mailData, $buildMessage);
+            }
 
             return back()->with('reset_success', 'If that email exists in our system, a reset link has been sent.');
         } catch (\Throwable $e) {
