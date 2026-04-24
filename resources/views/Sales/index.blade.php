@@ -270,13 +270,22 @@
                                 <div class="text-muted" style="font-size: 10px;">{{ $sale->created_at->format('H:i A') }}</div>
                             </td>
                             <td class="text-center pe-4">
-                                <div class="btn-group shadow-sm border rounded">
-                                    <a href="{{ route('sales.show', $sale->id) }}" class="btn btn-sm btn-white table-action-btn" title="View Detail">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    <a href="{{ route('sales.edit', $sale->id) }}" class="btn btn-sm btn-white table-action-btn" title="Edit">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
+                                <div class="dropdown">
+                                    <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                        Action
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li>
+                                            <a class="dropdown-item" href="{{ route('sales.show', $sale->id) }}">
+                                                <i class="fas fa-eye me-2 text-info"></i>View
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{{ route('sales.edit', $sale->id) }}">
+                                                <i class="fas fa-edit me-2 text-primary"></i>Edit
+                                            </a>
+                                        </li>
+                                    </ul>
                                 </div>
                             </td>
                         </tr>
@@ -313,11 +322,43 @@
             if(e.which == 13) {
                 let invoiceId = $(this).val();
                 if(invoiceId) {
-                    // Redirect directly to the show route for that ID
                     let url = "{{ route('sales.show', ':id') }}";
                     window.location.href = url.replace(':id', invoiceId);
                 }
             }
+        });
+    });
+
+    // Fix dropdowns being clipped by .table-responsive overflow.
+    // position:fixed is viewport-relative — do NOT add window.scrollY.
+    // Re-apply on 'shown.bs.dropdown' to override any transform Popper.js injects.
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.dropdown [data-bs-toggle="dropdown"]').forEach(function (toggle) {
+            var menu = toggle.closest('.dropdown').querySelector('.dropdown-menu');
+            if (!menu) return;
+
+            function positionMenu() {
+                var rect = toggle.getBoundingClientRect();
+                menu.style.position  = 'fixed';
+                menu.style.zIndex    = '9999';
+                menu.style.top       = rect.bottom + 'px';
+                menu.style.left      = 'auto';
+                menu.style.right     = (window.innerWidth - rect.right) + 'px';
+                menu.style.minWidth  = '160px';
+                menu.style.transform = 'none';
+            }
+
+            toggle.addEventListener('show.bs.dropdown', function () {
+                document.body.appendChild(menu);
+                positionMenu();
+            });
+
+            toggle.addEventListener('shown.bs.dropdown', positionMenu);
+
+            toggle.addEventListener('hide.bs.dropdown', function () {
+                toggle.closest('.dropdown').appendChild(menu);
+                menu.removeAttribute('style');
+            });
         });
     });
 </script>
