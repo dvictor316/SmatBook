@@ -37,16 +37,27 @@
         overflow: visible !important;
     }
 
+    .main-wrapper.login-body {
+        width: 100vw !important;
+        max-width: 100vw !important;
+        min-height: 100vh !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+    }
+
     .auth-wrapper {
         min-height: 100vh;
-        display: grid;
-        place-items: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         padding: 20px 14px 40px;
         position: relative;
         -webkit-overflow-scrolling: touch;
-        width: 100%;
+        width: 100vw;
         max-width: 100vw;
         margin: 0 auto;
+        box-sizing: border-box;
     }
 
     .login-card-custom {
@@ -54,11 +65,22 @@
         border-radius: 24px;
         box-shadow: 0 30px 90px rgba(15, 23, 42, 0.12), 0 10px 24px rgba(37, 99, 235, 0.08);
         overflow: hidden;
-        max-width: 900px;
-        width: min(900px, calc(100vw - 28px));
+        max-width: 1320px;
+        width: min(1320px, calc(100vw - 40px));
         border: 1px solid rgba(255, 255, 255, 0.8);
         backdrop-filter: blur(18px);
-        margin: auto;
+        margin: 0 auto;
+        flex: 0 1 auto;
+    }
+
+    .login-card-custom > .row {
+        --bs-gutter-x: 0;
+        --bs-gutter-y: 0;
+        margin: 0;
+    }
+
+    .login-card-custom > .row > [class*="col-"] {
+        padding: 0;
     }
 
     .branding-side {
@@ -247,7 +269,8 @@
     @media (max-width: 767px) {
         .auth-wrapper {
             padding: 14px;
-            place-items: start center;
+            align-items: flex-start;
+            width: 100%;
         }
         .login-card-custom {
             border-radius: 20px;
@@ -314,9 +337,9 @@
                         <p class="text-muted mb-0">Enter your email to receive a secure reset link.</p>
                     </div>
 
-                    @if (session('status') || session('success'))
+                    @if (!session('reset_error') && session('reset_success'))
                         <div class="alert alert-success border-0 shadow-sm small py-3 mb-4">
-                            <i class="fas fa-check-circle me-2"></i> {{ session('status') ?? session('success') }}
+                            <i class="fas fa-check-circle me-2"></i> {{ session('reset_success') }}
                         </div>
                     @endif
 

@@ -875,10 +875,16 @@ class AuthController extends Controller
 
         // Keep the response generic so the flow remains secure.
         if (!$user) {
-            return back()->with('success', 'If that email exists in our system, a reset link has been sent.');
+            return back()->with('reset_success', 'If that email exists in our system, a reset link has been sent.');
         }
 
         try {
+            AppMailer::bootCurrentSettings();
+
+            if (!AppMailer::smtpReady()) {
+                throw new \RuntimeException('SMTP is not fully configured.');
+            }
+
             $token = Password::broker()->createToken($user);
             $resetPath = route('password.reset', [
                 'token' => $token,
@@ -886,9 +892,6 @@ class AuthController extends Controller
             ], false);
             $resetUrl = $request->getSchemeAndHttpHost() . $resetPath;
 
-            // Password recovery is a critical auth flow, so it should use the
-            // server mail configuration directly instead of workspace-level
-            // overrides that may be incomplete or stale.
             Mail::mailer('smtp')->send('emails.password-reset', [
                 'user' => $user,
                 'resetUrl' => $resetUrl,
@@ -902,11 +905,14 @@ class AuthController extends Controller
                     ->subject('Reset your password');
             });
 
-            return back()->with('success', 'If that email exists in our system, a reset link has been sent.');
+            return back()->with('reset_success', 'If that email exists in our system, a reset link has been sent.');
         } catch (\Throwable $e) {
             Log::error('Password reset email failed', [
                 'email' => $email,
                 'mailer' => 'smtp',
+                'smtp_ready' => AppMailer::smtpReady(),
+                'smtp_host' => (string) config('mail.mailers.smtp.host'),
+                'smtp_port' => (string) config('mail.mailers.smtp.port'),
                 'mail_from' => (string) config('mail.from.address'),
                 'error' => $e->getMessage(),
             ]);
