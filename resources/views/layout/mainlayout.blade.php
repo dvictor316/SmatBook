@@ -1370,6 +1370,16 @@
             z-index: 1085;
         }
 
+        .spb-desktop-action-menu {
+            position: fixed;
+            z-index: 2100;
+            display: none;
+        }
+
+        .spb-desktop-action-menu.is-open {
+            display: block;
+        }
+
         .spb-mobile-action-sheet {
             position: fixed;
             inset: 0;
@@ -1943,6 +1953,9 @@
         let mobileSheetContent = null;
         let mobileSheetTitle = null;
         let mobileSheetOpen = false;
+        let desktopMenu = null;
+        let desktopMenuOpen = false;
+        let desktopMenuTrigger = null;
         let lastFocusedTrigger = null;
         const floatingMenuState = new Map();
         const managedAncestorSelectors = [
@@ -2000,6 +2013,111 @@
             getManagedAncestors(dropdown).forEach((element) => {
                 element.classList.remove('spb-dropdown-open');
             });
+        }
+
+        function isPhoneSheetMode() {
+            return window.matchMedia('(max-width: 767.98px)').matches;
+        }
+
+        function ensureDesktopMenu() {
+            if (desktopMenu) {
+                return;
+            }
+
+            desktopMenu = document.createElement('div');
+            desktopMenu.className = 'dropdown-menu spb-action-dropdown-menu spb-desktop-action-menu';
+            document.body.appendChild(desktopMenu);
+
+            desktopMenu.addEventListener('click', function (event) {
+                const action = event.target.closest('a.dropdown-item, button.dropdown-item');
+                if (action && !action.hasAttribute('data-bs-toggle')) {
+                    window.setTimeout(closeDesktopMenu, 40);
+                }
+            });
+        }
+
+        function closeDesktopMenu() {
+            if (!desktopMenu) {
+                return;
+            }
+
+            desktopMenu.classList.remove('show', 'is-open');
+            desktopMenu.innerHTML = '';
+            desktopMenuTrigger = null;
+            desktopMenuOpen = false;
+        }
+
+        function positionDesktopMenu(trigger) {
+            if (!desktopMenu || !trigger) {
+                return;
+            }
+
+            const rect = trigger.getBoundingClientRect();
+            const gutter = 12;
+            const menuWidth = Math.max(desktopMenu.offsetWidth || 220, 220);
+            const menuHeight = Math.max(desktopMenu.offsetHeight || 0, 0);
+            let top = rect.bottom + 8;
+            let left = rect.right - menuWidth;
+
+            if (menuHeight && top + menuHeight > window.innerHeight - gutter) {
+                top = Math.max(gutter, rect.top - menuHeight - 8);
+            }
+
+            if (left < gutter) {
+                left = gutter;
+            }
+
+            if (left + menuWidth > window.innerWidth - gutter) {
+                left = Math.max(gutter, window.innerWidth - menuWidth - gutter);
+            }
+
+            desktopMenu.style.top = `${top}px`;
+            desktopMenu.style.left = `${left}px`;
+            desktopMenu.style.right = 'auto';
+            desktopMenu.style.bottom = 'auto';
+            desktopMenu.style.minWidth = `${Math.max(rect.width, 190)}px`;
+            desktopMenu.style.maxWidth = `min(320px, calc(100vw - ${gutter * 2}px))`;
+            desktopMenu.style.transform = 'none';
+            desktopMenu.style.inset = 'auto auto auto auto';
+        }
+
+        function openDesktopMenu(trigger, dropdown) {
+            if (isPhoneSheetMode() || !trigger || !dropdown) {
+                return false;
+            }
+
+            const sourceMenu = dropdown.querySelector('.dropdown-menu');
+            if (!sourceMenu) {
+                return false;
+            }
+
+            ensureDesktopMenu();
+
+            if (desktopMenuOpen && desktopMenuTrigger === trigger) {
+                closeDesktopMenu();
+                return true;
+            }
+
+            const clonedMenu = sourceMenu.cloneNode(true);
+            clonedMenu.classList.remove('show');
+            clonedMenu.style.display = 'block';
+            clonedMenu.style.position = 'static';
+            clonedMenu.style.transform = 'none';
+            clonedMenu.style.inset = 'auto';
+            clonedMenu.style.margin = '0';
+            clonedMenu.style.minWidth = '0';
+            clonedMenu.style.maxWidth = 'none';
+
+            desktopMenu.innerHTML = '';
+            while (clonedMenu.firstChild) {
+                desktopMenu.appendChild(clonedMenu.firstChild);
+            }
+
+            desktopMenuTrigger = trigger;
+            desktopMenu.classList.add('show', 'is-open');
+            desktopMenuOpen = true;
+            positionDesktopMenu(trigger);
+            return true;
         }
 
         function getActionMenu(trigger) {
@@ -2117,10 +2235,6 @@
             });
         }
 
-        function isPhoneSheetMode() {
-            return window.matchMedia('(max-width: 767.98px)').matches;
-        }
-
         function ensureMobileSheet() {
             if (mobileSheet) {
                 return;
@@ -2236,6 +2350,10 @@
         });
 
         document.addEventListener('click', function (event) {
+            if (desktopMenuOpen && desktopMenu && !event.target.closest('.spb-desktop-action-menu') && !event.target.closest('.dropdown [data-bs-toggle="dropdown"]')) {
+                closeDesktopMenu();
+            }
+
             const trigger = event.target.closest('.dropdown [data-bs-toggle="dropdown"]');
             if (!isActionTrigger(trigger)) {
                 return;
@@ -2250,6 +2368,12 @@
                 if (openMobileSheet(trigger, dropdown)) {
                     return;
                 }
+            }
+
+            event.preventDefault();
+            event.stopPropagation();
+            if (openDesktopMenu(trigger, dropdown)) {
+                return;
             }
 
             if (!window.bootstrap?.Dropdown) {
@@ -2272,18 +2396,33 @@
         }, true);
 
         document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && desktopMenuOpen) {
+                closeDesktopMenu();
+                return;
+            }
+
             if (event.key === 'Escape' && mobileSheetOpen) {
                 closeMobileSheet();
             }
         });
 
         window.addEventListener('resize', function () {
+            if (desktopMenuOpen && desktopMenuTrigger) {
+                positionDesktopMenu(desktopMenuTrigger);
+            }
+
             if (!isPhoneSheetMode() && mobileSheetOpen) {
                 closeMobileSheet();
             }
 
             repositionOpenFloatingMenus();
         });
+
+        window.addEventListener('scroll', function () {
+            if (desktopMenuOpen && desktopMenuTrigger) {
+                positionDesktopMenu(desktopMenuTrigger);
+            }
+        }, true);
 
         window.addEventListener('scroll', repositionOpenFloatingMenus, true);
     })();
