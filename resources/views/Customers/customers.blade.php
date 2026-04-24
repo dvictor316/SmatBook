@@ -341,8 +341,8 @@
                                                     </span>
                                                 </td>
                                                 <td class="text-end">
-                                                    <div class="dropdown">
-                                                        <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <div class="dropdown dropdown-action">
+                                                        <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-bs-toggle="dropdown" data-sheet-title="Customer actions" aria-expanded="false">
                                                             Action
                                                         </button>
                                                         <ul class="dropdown-menu dropdown-menu-end">
@@ -428,42 +428,4 @@
         </div>
     </div>
 </div>
-@push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    // Move each dropdown menu to <body> so .table-responsive overflow never clips it.
-    // position:fixed is viewport-relative — do NOT add window.scrollY to top.
-    // We also re-apply on 'shown.bs.dropdown' to override any transform Popper.js injects.
-    document.querySelectorAll('.dropdown [data-bs-toggle="dropdown"]').forEach(function (toggle) {
-        var menu = toggle.closest('.dropdown').querySelector('.dropdown-menu');
-        if (!menu) return;
-
-        function positionMenu() {
-            var rect = toggle.getBoundingClientRect();
-            menu.style.position  = 'fixed';
-            menu.style.zIndex    = '9999';
-            menu.style.top       = rect.bottom + 'px';
-            menu.style.left      = 'auto';
-            menu.style.right     = (window.innerWidth - rect.right) + 'px';
-            menu.style.minWidth  = '160px';
-            menu.style.transform = 'none';
-        }
-
-        toggle.addEventListener('show.bs.dropdown', function () {
-            document.body.appendChild(menu);
-            positionMenu();
-        });
-
-        // Re-apply after Popper.js has run so its transform doesn't override ours
-        toggle.addEventListener('shown.bs.dropdown', positionMenu);
-
-        toggle.addEventListener('hide.bs.dropdown', function () {
-            toggle.closest('.dropdown').appendChild(menu);
-            menu.removeAttribute('style');
-        });
-    });
-});
-</script>
-@endpush
-
 @endsection

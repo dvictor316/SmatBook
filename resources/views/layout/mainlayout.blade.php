@@ -1957,7 +1957,32 @@
                 .filter((element, index, collection) => element && collection.indexOf(element) === index);
         }
 
+        function isActionTrigger(trigger) {
+            if (!trigger) {
+                return false;
+            }
+
+            if (trigger.matches('.btn-action-icon, .action-icon, .product-action-trigger')) {
+                return true;
+            }
+
+            if (trigger.dataset.sheetTitle) {
+                return true;
+            }
+
+            const dropdown = trigger.closest('.dropdown-action');
+            if (dropdown) {
+                return true;
+            }
+
+            return !!trigger.closest('table, .table-responsive, .dataTables_wrapper');
+        }
+
         function markActionMenu(trigger) {
+            if (!isActionTrigger(trigger)) {
+                return;
+            }
+
             const menu = trigger?.closest('.dropdown')?.querySelector('.dropdown-menu');
             if (menu) {
                 menu.classList.add('spb-action-dropdown-menu');
@@ -2083,8 +2108,8 @@
         });
 
         document.addEventListener('click', function (event) {
-            const trigger = event.target.closest('.dropdown-action [data-bs-toggle="dropdown"], .product-action-trigger[data-bs-toggle="dropdown"]');
-            if (!trigger) {
+            const trigger = event.target.closest('.dropdown [data-bs-toggle="dropdown"]');
+            if (!isActionTrigger(trigger)) {
                 return;
             }
 

@@ -127,7 +127,7 @@
                                                 </td>
                                                 <td class="text-end d-print-none">
                                                     <div class="dropdown dropdown-action">
-                                                        <button type="button" class="action-icon dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                                        <button type="button" class="action-icon dropdown-toggle" data-bs-toggle="dropdown" data-sheet-title="Invoice actions" aria-expanded="false">
                                                             <i class="fas fa-ellipsis-v"></i>
                                                         </button>
                                                             <div class="dropdown-menu dropdown-menu-end">
