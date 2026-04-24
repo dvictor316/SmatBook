@@ -881,10 +881,6 @@ class AuthController extends Controller
         try {
             AppMailer::bootCurrentSettings();
 
-            if (!AppMailer::smtpReady()) {
-                throw new \RuntimeException('SMTP is not fully configured.');
-            }
-
             $token = Password::broker()->createToken($user);
             $resetPath = route('password.reset', [
                 'token' => $token,
@@ -892,11 +888,13 @@ class AuthController extends Controller
             ], false);
             $resetUrl = $request->getSchemeAndHttpHost() . $resetPath;
 
-            AppMailer::sendView('emails.password-reset', [
+            $mailData = [
                 'user' => $user,
                 'resetUrl' => $resetUrl,
                 'expiresInMinutes' => (int) config('auth.passwords.users.expire', 60),
-            ], function ($message) use ($user) {
+            ];
+
+            $buildMessage = function ($message) use ($user) {
                 $smtpFromAddress = trim((string) config('mail.mailers.smtp.username'));
                 $fromAddress = filter_var($smtpFromAddress, FILTER_VALIDATE_EMAIL)
                     ? $smtpFromAddress
@@ -908,13 +906,25 @@ class AuthController extends Controller
                 )
                     ->to($user->email, $user->name)
                     ->subject('Reset your password');
-            });
+            };
+
+            try {
+                AppMailer::sendView('emails.password-reset', $mailData, $buildMessage);
+            } catch (\Throwable $mailException) {
+                Log::warning('Password reset primary mailer failed, trying sendmail fallback', [
+                    'email' => $email,
+                    'preferred_mailer' => AppMailer::preferredMailer(),
+                    'error' => $mailException->getMessage(),
+                ]);
+
+                Mail::mailer('sendmail')->send('emails.password-reset', $mailData, $buildMessage);
+            }
 
             return back()->with('reset_success', 'If that email exists in our system, a reset link has been sent.');
         } catch (\Throwable $e) {
             Log::error('Password reset email failed', [
                 'email' => $email,
-                'mailer' => 'smtp',
+                'mailer' => AppMailer::preferredMailer(),
                 'smtp_ready' => AppMailer::smtpReady(),
                 'smtp_host' => (string) config('mail.mailers.smtp.host'),
                 'smtp_port' => (string) config('mail.mailers.smtp.port'),
