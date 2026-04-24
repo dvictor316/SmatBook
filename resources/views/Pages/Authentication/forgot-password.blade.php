@@ -85,7 +85,7 @@
 
     .branding-side {
         background: var(--spa-aside);
-        padding: 30px 26px;
+        padding: 42px 34px 38px;
         position: relative;
     }
 
@@ -150,7 +150,7 @@
         font-size: 1.58rem;
         line-height: 1.1;
         font-weight: 800;
-        margin: 18px 0 8px;
+        margin: 28px 0 14px;
     }
 
     .branding-copy {
@@ -158,13 +158,13 @@
         line-height: 1.55;
         font-size: 0.84rem;
         max-width: 32ch;
-        margin: 0;
+        margin: 0 0 12px;
     }
 
     .branding-points {
         display: grid;
         gap: 10px;
-        margin-top: 16px;
+        margin-top: 22px;
     }
 
     .branding-point {
@@ -281,6 +281,9 @@
         }
         .form-panel {
             padding: 24px 18px;
+        }
+        .branding-side {
+            padding: 30px 24px 28px;
         }
         .logo-img {
             height: 34px;
