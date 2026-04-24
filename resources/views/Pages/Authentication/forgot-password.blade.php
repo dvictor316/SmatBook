@@ -186,7 +186,7 @@
     }
 
     .form-panel {
-        padding: 28px 26px;
+        padding: 40px 36px;
         background: #fff;
     }
 
@@ -247,7 +247,7 @@
         border: 1px solid #e5edf8;
         border-radius: 22px;
         background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
-        padding: 22px;
+        padding: 28px;
         box-shadow: 0 18px 38px rgba(15, 23, 42, 0.05);
     }
 
@@ -280,7 +280,7 @@
             display: inline-flex;
         }
         .form-panel {
-            padding: 22px 18px;
+            padding: 24px 18px;
         }
         .logo-img {
             height: 34px;

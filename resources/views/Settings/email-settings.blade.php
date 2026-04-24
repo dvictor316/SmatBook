@@ -127,13 +127,14 @@
                                 <div class="col-lg-6 col-12">
                                     <div class="input-block mb-3">
                                         <label class="form-label fw-semibold">Email From Name</label>
-                                        <input type="text" class="form-control" name="mail_from_name" value="{{ $settings['mail_from_name'] ?? '' }}" placeholder="e.g. Billing Department">
+                                        <input type="text" class="form-control" name="mail_from_name" value="{{ $settings['mail_from_name'] ?? 'SmartProbook' }}" placeholder="e.g. Billing Department">
                                     </div>
                                 </div>
                                 <div class="col-lg-6 col-12">
                                     <div class="input-block mb-3">
                                         <label class="form-label fw-semibold">Email From Address</label>
-                                        <input type="email" class="form-control" name="mail_from_address" value="{{ $settings['mail_from_address'] ?? '' }}" placeholder="noreply@company.com">
+                                        <input type="email" class="form-control" name="mail_from_address" value="{{ $settings['mail_from_address'] ?? 'contact@smartprobook.com' }}" placeholder="contact@smartprobook.com">
+                                        <div class="form-text">Recommended branded sender: <strong>contact@smartprobook.com</strong>. If your SMTP account is Gmail, use that Gmail address instead.</div>
                                     </div>
                                 </div>
                                 <div class="col-lg-12 col-12">

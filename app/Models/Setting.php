@@ -107,10 +107,11 @@ class Setting extends Model
         $candidates = [
             (string) self::get('mail_from_address', ''),
             (string) self::get('company_email', ''),
+            'contact@smartprobook.com',
             (string) config('mail.from.address', ''),
             (string) env('MAIL_FROM_ADDRESS', ''),
             (string) ($fallback ?? ''),
-            'support@smartprobook.com',
+            'contact@smartprobook.com',
         ];
 
         foreach ($candidates as $candidate) {
