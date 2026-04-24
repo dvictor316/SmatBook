@@ -73,7 +73,17 @@ class AppMailer
         $smtpUsername = self::settingValue(['mail_username', 'mail_smtp_username']);
         $smtpPassword = self::settingValue(['mail_password', 'mail_smtp_password'], true);
         $smtpEncryption = self::settingValue(['mail_encryption', 'mail_smtp_encryption']);
-        $fromAddress = Setting::mailFromAddress((string) config('mail.from.address'));
+        $configuredFromAddress = trim((string) Setting::get('mail_from_address', ''));
+        $fromAddress = $configuredFromAddress;
+
+        if ($fromAddress === '' && $smtpEnabled && filter_var($smtpUsername, FILTER_VALIDATE_EMAIL)) {
+            $fromAddress = $smtpUsername;
+        }
+
+        if ($fromAddress === '') {
+            $fromAddress = Setting::mailFromAddress((string) config('mail.from.address'));
+        }
+
         $fromName = Setting::mailFromName((string) config('mail.from.name'));
 
         // Only let DB-stored SMTP fields override env/default config when the

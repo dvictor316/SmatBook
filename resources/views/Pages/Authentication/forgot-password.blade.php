@@ -65,8 +65,8 @@
         border-radius: 24px;
         box-shadow: 0 30px 90px rgba(15, 23, 42, 0.12), 0 10px 24px rgba(37, 99, 235, 0.08);
         overflow: hidden;
-        max-width: 1320px;
-        width: min(1320px, calc(100vw - 40px));
+        max-width: 980px;
+        width: min(980px, calc(100vw - 40px));
         border: 1px solid rgba(255, 255, 255, 0.8);
         backdrop-filter: blur(18px);
         margin: 0 auto;

@@ -892,13 +892,18 @@ class AuthController extends Controller
             ], false);
             $resetUrl = $request->getSchemeAndHttpHost() . $resetPath;
 
-            Mail::mailer('smtp')->send('emails.password-reset', [
+            AppMailer::sendView('emails.password-reset', [
                 'user' => $user,
                 'resetUrl' => $resetUrl,
                 'expiresInMinutes' => (int) config('auth.passwords.users.expire', 60),
             ], function ($message) use ($user) {
+                $smtpFromAddress = trim((string) config('mail.mailers.smtp.username'));
+                $fromAddress = filter_var($smtpFromAddress, FILTER_VALIDATE_EMAIL)
+                    ? $smtpFromAddress
+                    : (string) config('mail.from.address', 'support@smartprobook.com');
+
                 $message->from(
-                    (string) config('mail.from.address', 'support@smartprobook.com'),
+                    $fromAddress,
                     (string) config('mail.from.name', config('app.name', 'SmartProbook'))
                 )
                     ->to($user->email, $user->name)
