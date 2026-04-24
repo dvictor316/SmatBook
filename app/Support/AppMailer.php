@@ -24,11 +24,11 @@ class AppMailer
         $preferredMailer = strtolower((string) config('mail.default', 'smtp'));
 
         if ($preferredMailer === 'log' && self::smtpReady()) {
-            return 'smtp';
+            return 'failover';
         }
 
-        if ($preferredMailer === 'smtp' && !self::smtpReady()) {
-            return 'log';
+        if (in_array($preferredMailer, ['smtp', 'sendmail', 'failover'], true)) {
+            return 'failover';
         }
 
         return $preferredMailer;
