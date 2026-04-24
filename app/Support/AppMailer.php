@@ -76,24 +76,29 @@ class AppMailer
         $fromAddress = Setting::mailFromAddress((string) config('mail.from.address'));
         $fromName = Setting::mailFromName((string) config('mail.from.name'));
 
-        if ($smtpHost !== '') {
-            Config::set('mail.mailers.smtp.host', $smtpHost);
-        }
+        // Only let DB-stored SMTP fields override env/default config when the
+        // app-level SMTP toggle is explicitly enabled. This prevents stale or
+        // partial settings rows from breaking password recovery and other mail.
+        if ($smtpEnabled) {
+            if ($smtpHost !== '') {
+                Config::set('mail.mailers.smtp.host', $smtpHost);
+            }
 
-        if ($smtpPort !== '') {
-            Config::set('mail.mailers.smtp.port', (int) $smtpPort);
-        }
+            if ($smtpPort !== '') {
+                Config::set('mail.mailers.smtp.port', (int) $smtpPort);
+            }
 
-        if ($smtpUsername !== '') {
-            Config::set('mail.mailers.smtp.username', $smtpUsername);
-        }
+            if ($smtpUsername !== '') {
+                Config::set('mail.mailers.smtp.username', $smtpUsername);
+            }
 
-        if ($smtpPassword !== '') {
-            Config::set('mail.mailers.smtp.password', $smtpPassword);
-        }
+            if ($smtpPassword !== '') {
+                Config::set('mail.mailers.smtp.password', $smtpPassword);
+            }
 
-        if ($smtpEncryption !== '') {
-            Config::set('mail.mailers.smtp.encryption', $smtpEncryption);
+            if ($smtpEncryption !== '') {
+                Config::set('mail.mailers.smtp.encryption', $smtpEncryption);
+            }
         }
 
         Config::set('mail.from.address', $fromAddress);

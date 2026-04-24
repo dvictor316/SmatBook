@@ -69,9 +69,9 @@
                                                 <i class="fa fa-plus-circle me-1"></i> Invoice
                                             </a>
                                             <div class="dropdown dropdown-action">
-                                                <a href="#" class="btn-action-icon" data-bs-toggle="dropdown">
+                                                <button type="button" class="btn-action-icon" data-bs-toggle="dropdown" aria-expanded="false">
                                                     <i class="fas fa-ellipsis-v"></i>
-                                                </a>
+                                                </button>
                                                 <div class="dropdown-menu dropdown-menu-end">
                                                     <a class="dropdown-item" href="{{ route('customers.edit', $customer->id) }}">
                                                         <i class="far fa-edit me-2"></i>Edit

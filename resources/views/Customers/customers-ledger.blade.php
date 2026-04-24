@@ -99,9 +99,9 @@
                                                     <td><span>{{ $ledger['ClosingBalance'] }}</span></td>
                                                     <td class="text-start">
                                                         <div class="dropdown dropdown-action">
-                                                            <a href="#" class=" btn-action-icon "
+                                                            <button type="button" class="btn-action-icon"
                                                                 data-bs-toggle="dropdown" aria-expanded="false"><i
-                                                                    class="fas fa-ellipsis-v"></i></a>
+                                                                    class="fas fa-ellipsis-v"></i></button>
                                                             <div class="dropdown-menu dropdown-menu-right">
                                                                 <ul>
                                                                     <li>

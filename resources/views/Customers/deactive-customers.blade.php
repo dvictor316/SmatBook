@@ -63,9 +63,9 @@
                                                     <a href="{{ url('add-invoice') }}" class="btn btn-greys me-2"><i
                                                             class="fa fa-plus-circle me-1"></i> Invoice</a>
                                                     <div class="dropdown dropdown-action">
-                                                        <a href="#" class=" btn-action-icon "
+                                                        <button type="button" class="btn-action-icon"
                                                             data-bs-toggle="dropdown" aria-expanded="false"><i
-                                                                class="fas fa-ellipsis-v"></i></a>
+                                                                class="fas fa-ellipsis-v"></i></button>
                                                         <div class="dropdown-menu dropdown-menu-end">
                                                             <ul>
                                                                 <li>

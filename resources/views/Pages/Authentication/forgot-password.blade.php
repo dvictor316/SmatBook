@@ -41,9 +41,11 @@
         min-height: 100vh;
         display: flex;
         justify-content: center;
+        align-items: center;
         padding: 20px 14px 40px;
         position: relative;
         -webkit-overflow-scrolling: touch;
+        width: 100%;
     }
 
     .login-card-custom {
@@ -55,7 +57,7 @@
         width: 100%;
         border: 1px solid rgba(255, 255, 255, 0.8);
         backdrop-filter: blur(18px);
-        margin: auto 0;
+        margin: auto;
     }
 
     .branding-side {
@@ -244,6 +246,7 @@
     @media (max-width: 767px) {
         .auth-wrapper {
             padding: 14px;
+            align-items: flex-start;
         }
         .login-card-custom {
             border-radius: 20px;

@@ -55,7 +55,7 @@
                                             </td>
                                             <td class="no-print text-end">
                                                 <div class="dropdown dropdown-action">
-                                                    <a href="#" class="btn-action-icon" data-bs-toggle="dropdown"><i class="fas fa-ellipsis-v"></i></a>
+                                                    <button type="button" class="btn-action-icon" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-ellipsis-v"></i></button>
                                                     <div class="dropdown-menu dropdown-menu-right">
                                                         <a class="dropdown-item" href="javascript:void(0);"><i class="far fa-edit me-2"></i>Edit</a>
                                                         <form action="#" method="POST" class="d-inline">
