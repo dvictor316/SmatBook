@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\{User, Company, Subscription, Plan, DeploymentManager};
+use App\Models\{User, Company, Subscription, Plan, DeploymentManager, Setting};
 use App\Support\ActiveBranchResolver;
 use App\Support\AppMailer;
 use App\Support\DeviceSessionManager;
@@ -895,29 +895,23 @@ class AuthController extends Controller
             ];
 
             $buildMessage = function ($message) use ($user) {
-                $smtpFromAddress = trim((string) config('mail.mailers.smtp.username'));
-                $fromAddress = filter_var($smtpFromAddress, FILTER_VALIDATE_EMAIL)
-                    ? $smtpFromAddress
-                    : (string) config('mail.from.address', 'support@smartprobook.com');
+                $fromAddress = Setting::mailFromAddress((string) config('mail.from.address', 'support@smartprobook.com'));
+                $fromName = Setting::mailFromName((string) config('mail.from.name', config('app.name', 'SmartProbook')));
+                $replyTo = trim((string) config('mail.admin_inbox', ''));
 
                 $message->from(
                     $fromAddress,
-                    (string) config('mail.from.name', config('app.name', 'SmartProbook'))
+                    $fromName
                 )
                     ->to($user->email, $user->name)
                     ->subject('Reset your password');
+
+                if (filter_var($replyTo, FILTER_VALIDATE_EMAIL)) {
+                    $message->replyTo($replyTo, $fromName);
+                }
             };
 
-            try {
-                Mail::mailer('smtp')->send('emails.password-reset', $mailData, $buildMessage);
-            } catch (\Throwable $smtpException) {
-                Log::warning('Password reset SMTP send failed, trying sendmail', [
-                    'email' => $email,
-                    'error' => $smtpException->getMessage(),
-                ]);
-
-                Mail::mailer('sendmail')->send('emails.password-reset', $mailData, $buildMessage);
-            }
+            AppMailer::sendView('emails.password-reset', $mailData, $buildMessage);
 
             return back()->with('reset_success', 'If that email exists in our system, a reset link has been sent.');
         } catch (\Throwable $e) {
