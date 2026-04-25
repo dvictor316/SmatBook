@@ -615,6 +615,10 @@
         line-height: 1.1;
     }
 
+    .branch-pill-mobile {
+        display: none;
+    }
+
     .country-selector {
         display: flex;
         align-items: center;
@@ -768,6 +772,23 @@
         .header-actions { margin-left: auto; gap: 4px; }
         .workspace-switcher { display: none; }
         .branch-pill { display: none; }
+        .branch-pill-mobile {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            border-radius: 10px;
+            border: 1px solid #dbe7ff;
+            background: linear-gradient(135deg, #fff 0%, #f8fbff 100%);
+            color: #1e293b;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+        .branch-pill-mobile i {
+            font-size: 14px;
+        }
         .country-selector {
             padding: 4px 6px;
             gap: 3px;
@@ -1139,6 +1160,13 @@
                         <small>Active Branch</small>
                         {{ $activeBranchName ?: 'Select Branch' }}
                     </span>
+                </a>
+                <a href="#"
+                   class="branch-pill-mobile"
+                   data-bs-toggle="dropdown"
+                   aria-label="Switch active branch"
+                   title="{{ $activeBranchName ?: 'Select Branch' }}">
+                    <i class="fe fe-git-branch"></i>
                 </a>
                 <div class="dropdown-menu dropdown-menu-end">
                     @foreach($headerBranchOptions as $branch)

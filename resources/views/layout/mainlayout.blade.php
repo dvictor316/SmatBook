@@ -1992,6 +1992,10 @@
             return !!trigger.closest('table, .table-responsive, .dataTables_wrapper');
         }
 
+        function prefersNativeDesktopDropdown(trigger) {
+            return !!trigger?.closest('[data-spb-native-desktop-dropdown="true"]');
+        }
+
         function markActionMenu(trigger) {
             if (!isActionTrigger(trigger)) {
                 return;
@@ -2172,7 +2176,7 @@
         }
 
         function floatDesktopMenu(trigger) {
-            if (isPhoneSheetMode() || !isActionTrigger(trigger)) {
+            if (isPhoneSheetMode() || !isActionTrigger(trigger) || prefersNativeDesktopDropdown(trigger)) {
                 return;
             }
 
@@ -2329,7 +2333,7 @@
             openDropdownContainers(dropdown);
 
             // Hide temporarily to prevent position flash while we float the menu to body
-            if (isActionTrigger(trigger) && !isPhoneSheetMode()) {
+            if (isActionTrigger(trigger) && !isPhoneSheetMode() && !prefersNativeDesktopDropdown(trigger)) {
                 const menu = dropdown.querySelector('.dropdown-menu');
                 if (menu) {
                     menu.style.visibility = 'hidden';
@@ -2362,7 +2366,7 @@
             const trigger = event.relatedTarget || dropdown.querySelector('[data-bs-toggle="dropdown"]');
             floatDesktopMenu(trigger);
             // Restore visibility after floating and repositioning
-            if (isActionTrigger(trigger) && !isPhoneSheetMode()) {
+            if (isActionTrigger(trigger) && !isPhoneSheetMode() && !prefersNativeDesktopDropdown(trigger)) {
                 const found = findFloatingMenuByTrigger(trigger);
                 const menu = found ? found.menu : dropdown.querySelector('.dropdown-menu');
                 if (menu) {

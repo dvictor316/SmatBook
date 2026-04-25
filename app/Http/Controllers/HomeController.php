@@ -160,7 +160,7 @@ class HomeController extends Controller
                 || in_array(strtolower((string) ($user->role ?? '')), ['deployment_manager', 'manager'], true);
 
             if ($isDeploymentManager) {
-                return redirect()->route('deployment.dashboard');
+                return $this->handleDeploymentManagerRedirect($user);
             }
 
             return redirect()->route('user.dashboard');
