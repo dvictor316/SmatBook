@@ -1996,6 +1996,22 @@
             return !!trigger?.closest('[data-spb-native-desktop-dropdown="true"]');
         }
 
+        function prefersClonedDesktopDropdown(trigger) {
+            return !!trigger?.closest('[data-spb-desktop-clone-dropdown="true"]');
+        }
+
+        function shouldOpenDropdownContainers(trigger) {
+            if (isPhoneSheetMode()) {
+                return false;
+            }
+
+            if (!isActionTrigger(trigger)) {
+                return true;
+            }
+
+            return prefersNativeDesktopDropdown(trigger);
+        }
+
         function markActionMenu(trigger) {
             if (!isActionTrigger(trigger)) {
                 return;
@@ -2330,7 +2346,9 @@
 
             const trigger = event.relatedTarget || dropdown.querySelector('[data-bs-toggle="dropdown"]');
             markActionMenu(trigger);
-            openDropdownContainers(dropdown);
+            if (shouldOpenDropdownContainers(trigger)) {
+                openDropdownContainers(dropdown);
+            }
 
             // Hide temporarily to prevent position flash while we float the menu to body
             if (isActionTrigger(trigger) && !isPhoneSheetMode() && !prefersNativeDesktopDropdown(trigger)) {
@@ -2349,7 +2367,9 @@
 
             const trigger = event.relatedTarget || dropdown.querySelector('[data-bs-toggle="dropdown"]');
             restoreFloatingMenu(trigger);
-            closeDropdownContainers(dropdown);
+            if (shouldOpenDropdownContainers(trigger)) {
+                closeDropdownContainers(dropdown);
+            }
             // Reset visibility in case hide fires before shown (edge case)
             const menu = dropdown.querySelector('.dropdown-menu');
             if (menu) {
@@ -2376,6 +2396,10 @@
         });
 
         document.addEventListener('click', function (event) {
+            if (desktopMenuOpen && desktopMenu && !event.target.closest('.spb-desktop-action-menu') && !event.target.closest('[data-spb-desktop-clone-dropdown="true"]')) {
+                closeDesktopMenu();
+            }
+
             const trigger = event.target.closest('.dropdown [data-bs-toggle="dropdown"]');
             if (!isActionTrigger(trigger)) {
                 return;
@@ -2390,6 +2414,14 @@
                 openMobileSheet(trigger, dropdown);
                 return;
             }
+
+            if (prefersClonedDesktopDropdown(trigger)) {
+                event.preventDefault();
+                event.stopPropagation();
+                openDesktopMenu(trigger, dropdown);
+                return;
+            }
+
             // Desktop: let Bootstrap handle show/hide naturally.
             // show.bs.dropdown hides the menu temporarily to prevent flash,
             // shown.bs.dropdown floats it to body and repositions it.

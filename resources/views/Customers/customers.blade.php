@@ -342,7 +342,7 @@
                                                 </td>
                                                 <td class="text-end">
                                                     <div class="dropdown dropdown-action">
-                                                        <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-bs-toggle="dropdown" data-sheet-title="Customer actions" aria-expanded="false">
+                                                        <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-bs-toggle="dropdown" data-sheet-title="Customer actions" data-spb-desktop-clone-dropdown="true" aria-expanded="false">
                                                             Action
                                                         </button>
                                                         <ul class="dropdown-menu dropdown-menu-end">
