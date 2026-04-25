@@ -869,6 +869,13 @@ class AuthController extends Controller
 
     public function sendResetLinkEmail(Request $request)
     {
+        Log::info('Password reset form submitted', [
+            'email' => trim((string) $request->input('email')),
+            'ip' => $request->ip(),
+            'user_agent' => (string) $request->userAgent(),
+            'at' => now()->toDateTimeString(),
+        ]);
+
         $request->validate(['email' => 'required|email']);
         $email = trim((string) $request->input('email'));
         $user = User::withTrashed()->where('email', $email)->first();
