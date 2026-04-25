@@ -878,17 +878,34 @@ class AuthController extends Controller
 
         $request->validate(['email' => 'required|email']);
         $email = trim((string) $request->input('email'));
+        Log::info('Password reset validation passed', ['email' => $email]);
+
         $user = User::withTrashed()->where('email', $email)->first();
+        Log::info('Password reset user lookup completed', [
+            'email' => $email,
+            'user_found' => (bool) $user,
+        ]);
 
         // Keep the response generic so the flow remains secure.
         if (!$user) {
+            Log::info('Password reset exited with generic success for missing user', ['email' => $email]);
             return back()->with('reset_success', 'If that email exists in our system, a reset link has been sent.');
         }
 
         try {
             AppMailer::bootCurrentSettings();
+            Log::info('Password reset mail settings booted', [
+                'email' => $email,
+                'mailer' => AppMailer::preferredMailer(),
+                'smtp_ready' => AppMailer::smtpReady(),
+            ]);
 
             $token = Password::broker()->createToken($user);
+            Log::info('Password reset token created', [
+                'email' => $email,
+                'token_length' => strlen((string) $token),
+            ]);
+
             $resetPath = route('password.reset', [
                 'token' => $token,
                 'email' => $user->email,
@@ -918,7 +935,13 @@ class AuthController extends Controller
                 }
             };
 
+            Log::info('Password reset attempting delivery', [
+                'email' => $email,
+                'to' => $user->email,
+                'from' => Setting::mailFromAddress((string) config('mail.from.address', 'support@smartprobook.com')),
+            ]);
             $this->sendPasswordResetMailOrFail('emails.password-reset', $mailData, $buildMessage, $email);
+            Log::info('Password reset delivery completed', ['email' => $email]);
 
             return back()->with('reset_success', 'If that email exists in our system, a reset link has been sent.');
         } catch (\Throwable $e) {
