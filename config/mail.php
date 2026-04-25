@@ -102,7 +102,7 @@ return [
 
     'from' => [
         'address' => env('MAIL_FROM_ADDRESS', 'support@smartprobook.com'),
-        'name' => env('MAIL_FROM_NAME', 'SmartProbook'),
+        'name' => env('MAIL_FROM_NAME', 'Smartprobook Accounting'),
     ],
 
     /*

@@ -9,7 +9,7 @@
     <div style="max-width:680px;margin:0 auto;background:#ffffff;border:1px solid #dbe7ff;border-radius:16px;overflow:hidden;box-shadow:0 14px 34px rgba(37,99,235,0.08);">
         <div style="padding:20px 24px;background:linear-gradient(135deg,#2348c7 0%,#1b2fb5 38%,#0a148a 100%);color:#ffffff;">
             <h1 style="margin:0;font-size:22px;line-height:1.2;">Reset your password</h1>
-            <p style="margin:8px 0 0;font-size:14px;line-height:1.6;color:rgba(255,255,255,0.88);">A secure password recovery request was made for your SmartProbook account.</p>
+            <p style="margin:8px 0 0;font-size:14px;line-height:1.6;color:rgba(255,255,255,0.88);">A secure password recovery request was made for your {{ \App\Models\Setting::mailFromName(config('app.name', 'Smartprobook Accounting')) }} account.</p>
         </div>
 
         <div style="padding:24px;">
@@ -27,7 +27,7 @@
                 <p style="margin:0;font-size:13px;line-height:1.7;color:#425a7f;">If you did not request this change, you can safely ignore this email. Your current password will stay the same.</p>
             </div>
 
-            <p style="margin:18px 0 0;font-size:14px;line-height:1.7;">Regards,<br>{{ \App\Models\Setting::mailFromName(config('app.name', 'SmartProbook')) }}</p>
+            <p style="margin:18px 0 0;font-size:14px;line-height:1.7;">Regards,<br>{{ \App\Models\Setting::mailFromName(config('app.name', 'Smartprobook Accounting')) }}</p>
         </div>
     </div>
 </body>

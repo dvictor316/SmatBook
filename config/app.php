@@ -16,7 +16,7 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'SmartProbook'),
+    'name' => env('APP_NAME', 'Smartprobook Accounting'),
     'address' => env('COMPANY_ADDRESS', '234 Default St'),
     'city'    => env('COMPANY_CITY', 'City, State, Zip'),
     'phone'   => env('COMPANY_PHONE', '+0 000 000 000'),
