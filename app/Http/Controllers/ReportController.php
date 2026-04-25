@@ -1763,7 +1763,10 @@ private function paymentReportRelations(): array
 
     public function customerStatement(Request $request, $id)
     {
-        $customer = Customer::query()
+        // Resolve the customer by tenant only so branch switching can update
+        // the statement scope without 404ing on the base customer record.
+        $customer = Customer::withoutGlobalScope('tenant')
+            ->newQuery()
             ->tap(fn ($query) => $this->applyTenantScope($query, 'customers'))
             ->findOrFail($id);
 
