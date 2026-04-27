@@ -19,9 +19,26 @@ class ManufacturingController extends Controller
      */
     private function getActiveBranchContext(): array
     {
+        $branchId = session('active_branch_id') ? (string) session('active_branch_id') : null;
+        $branchName = session('active_branch_name') ? (string) session('active_branch_name') : null;
+
+        if (!$branchId && !$branchName && \Schema::hasTable('settings')) {
+            $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+            if ($companyId > 0) {
+                $key = 'branches_json_company_' . $companyId;
+                $raw = (string) (\DB::table('settings')->where('key', $key)->value('value') ?? '');
+                $branches = json_decode($raw, true) ?: [];
+                $first = collect($branches)->first();
+                if ($first) {
+                    $branchId = $branchId ?: ($first['id'] ?? null);
+                    $branchName = $branchName ?: ($first['name'] ?? null);
+                }
+            }
+        }
+
         return [
-            'id' => session('active_branch_id', Auth::user()->branch_id ?? null),
-            'name' => session('active_branch_name', null),
+            'id' => $branchId,
+            'name' => $branchName,
         ];
     }
     public function index(Request $request)
