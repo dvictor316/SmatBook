@@ -9,10 +9,21 @@ use Illuminate\Support\Facades\Auth;
 
 class CostCenterController extends Controller
 {
+
+    private function getActiveBranchContext(): array
+    {
+        return [
+            'id' => session('active_branch_id', Auth::user()->branch_id ?? null),
+            'name' => session('active_branch_name', null),
+        ];
+    }
+
     public function index()
     {
-        $companyId   = Auth::user()->company_id;
+        $companyId = Auth::user()->company_id;
+        $branchId = $this->getActiveBranchContext()['id'];
         $costCenters = CostCenter::forCompany($companyId)
+            ->where('branch_id', $branchId)
             ->with('department')
             ->orderBy('name')
             ->paginate(25);
@@ -21,14 +32,18 @@ class CostCenterController extends Controller
 
     public function create()
     {
-        $companyId   = Auth::user()->company_id;
-        $departments = Department::forCompany($companyId)->active()->orderBy('name')->get();
+        $companyId = Auth::user()->company_id;
+        $branchId = $this->getActiveBranchContext()['id'];
+        $departments = Department::forCompany($companyId)
+            ->where('branch_id', $branchId)
+            ->active()->orderBy('name')->get();
         return view('cost-centers.create', compact('departments'));
     }
 
     public function store(Request $request)
     {
         $companyId = Auth::user()->company_id;
+        $branchId = $this->getActiveBranchContext()['id'];
 
         $data = $request->validate([
             'name'          => 'required|string|max:255',
@@ -40,7 +55,7 @@ class CostCenterController extends Controller
         ]);
 
         $data['company_id'] = $companyId;
-        $data['branch_id']  = Auth::user()->branch_id;
+        $data['branch_id']  = $branchId;
         $data['is_active']  = $request->boolean('is_active', true);
         $data['created_by'] = Auth::id();
 

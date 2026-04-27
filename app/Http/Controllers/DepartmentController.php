@@ -10,10 +10,21 @@ use Illuminate\Support\Facades\Auth;
 
 class DepartmentController extends Controller
 {
+
+    private function getActiveBranchContext(): array
+    {
+        return [
+            'id' => session('active_branch_id', Auth::user()->branch_id ?? null),
+            'name' => session('active_branch_name', null),
+        ];
+    }
+
     public function index()
     {
-        $companyId   = Auth::user()->company_id;
+        $companyId = Auth::user()->company_id;
+        $branchId = $this->getActiveBranchContext()['id'];
         $departments = Department::forCompany($companyId)
+            ->where('branch_id', $branchId)
             ->with(['head', 'parent'])
             ->withCount('employees')
             ->orderBy('name')
@@ -23,15 +34,19 @@ class DepartmentController extends Controller
 
     public function create()
     {
-        $companyId   = Auth::user()->company_id;
-        $employees   = Employee::where('company_id', $companyId)->orderBy('name')->get();
-        $departments = Department::forCompany($companyId)->active()->orderBy('name')->get();
+        $companyId = Auth::user()->company_id;
+        $branchId = $this->getActiveBranchContext()['id'];
+        $employees = Employee::where('company_id', $companyId)->orderBy('name')->get();
+        $departments = Department::forCompany($companyId)
+            ->where('branch_id', $branchId)
+            ->active()->orderBy('name')->get();
         return view('departments.create', compact('employees', 'departments'));
     }
 
     public function store(Request $request)
     {
         $companyId = Auth::user()->company_id;
+        $branchId = $this->getActiveBranchContext()['id'];
 
         $data = $request->validate([
             'name'              => 'required|string|max:255',
@@ -43,7 +58,7 @@ class DepartmentController extends Controller
         ]);
 
         $data['company_id'] = $companyId;
-        $data['branch_id']  = Auth::user()->branch_id;
+        $data['branch_id']  = $branchId;
         $data['is_active']  = $request->boolean('is_active', true);
 
         Department::create($data);
