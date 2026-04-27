@@ -201,7 +201,15 @@
                     <label class="form-label small fw-bold text-muted">Specific Date</label>
                     <input type="date" name="sale_date" class="form-control form-control-sm" value="{{ request('sale_date') }}">
                 </div>
-                <div class="col-md-3 d-flex gap-2">
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-muted">From Date</label>
+                    <input type="date" name="date_from" class="form-control form-control-sm" value="{{ request('date_from') }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-muted">To Date</label>
+                    <input type="date" name="date_to" class="form-control form-control-sm" value="{{ request('date_to') }}">
+                </div>
+                <div class="col-md-2 d-flex gap-2">
                     <button type="submit" class="btn btn-primary btn-sm px-4 flex-grow-1">
                         <i class="fas fa-filter me-1"></i> Apply Filter
                     </button>

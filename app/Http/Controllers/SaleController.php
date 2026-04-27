@@ -253,6 +253,7 @@ class SaleController extends Controller
         $activeBranch = $this->getActiveBranchContext();
         $this->applyTenantScope($query, 'sales');
         $this->applyBranchScope($query, 'sales');
+        $salesDateColumn = Schema::hasColumn('sales', 'order_date') ? 'order_date' : 'created_at';
 
         // 2. Apply Filters
         if ($request->invoice_no) {
@@ -262,7 +263,13 @@ class SaleController extends Controller
             $this->applyCustomerNameFilter($query, (string) $request->customer_name);
         }
         if ($request->sale_date) {
-            $query->whereDate('created_at', $request->sale_date);
+            $query->whereDate($salesDateColumn, $request->sale_date);
+        }
+        if ($request->filled('date_from')) {
+            $query->whereDate($salesDateColumn, '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate($salesDateColumn, '<=', $request->date_to);
         }
 
         // 3. Calculate Stats before pagination
@@ -270,7 +277,7 @@ class SaleController extends Controller
         $totalSalesCount = $query->count();
 
         // 4. Paginate
-        $sales = $query->orderBy('created_at', 'desc')->paginate(10);
+        $sales = $query->orderByDesc($salesDateColumn)->orderByDesc('created_at')->paginate(10)->withQueryString();
 
         return view('Sales.index', compact('sales', 'totalRevenue', 'totalSalesCount', 'activeBranch'));
     }
