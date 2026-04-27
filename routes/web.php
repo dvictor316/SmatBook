@@ -1317,6 +1317,44 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::put('/{reportSchedule}', [\App\Http\Controllers\ReportScheduleController::class, 'update'])->name('update');
         Route::delete('/{reportSchedule}', [\App\Http\Controllers\ReportScheduleController::class, 'destroy'])->name('destroy');
     });
+
+    // Request for Quotation (Pro+)
+    Route::prefix('rfq')->name('rfq.')->middleware('plan.access:professional,enterprise')->group(function () {
+        Route::get('/', [\App\Http\Controllers\RFQController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\RFQController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\RFQController::class, 'store'])->name('store');
+        Route::get('/{rfq}', [\App\Http\Controllers\RFQController::class, 'show'])->name('show');
+        Route::get('/{rfq}/edit', [\App\Http\Controllers\RFQController::class, 'edit'])->name('edit');
+        Route::put('/{rfq}', [\App\Http\Controllers\RFQController::class, 'update'])->name('update');
+        Route::delete('/{rfq}', [\App\Http\Controllers\RFQController::class, 'destroy'])->name('destroy');
+        Route::post('/{rfq}/suppliers', [\App\Http\Controllers\RFQController::class, 'addSupplier'])->name('suppliers.add');
+        Route::delete('/{rfq}/suppliers/{rfqSupplier}', [\App\Http\Controllers\RFQController::class, 'removeSupplier'])->name('suppliers.remove');
+        Route::post('/{rfq}/send', [\App\Http\Controllers\RFQController::class, 'sendToSuppliers'])->name('send');
+        Route::post('/{rfq}/suppliers/{rfqSupplier}/quote', [\App\Http\Controllers\RFQController::class, 'receiveQuote'])->name('quote');
+        Route::get('/{rfq}/compare', [\App\Http\Controllers\RFQController::class, 'compareQuotes'])->name('compare');
+        Route::post('/{rfq}/winner', [\App\Http\Controllers\RFQController::class, 'selectWinner'])->name('winner');
+    });
+
+    // Stock Valuation (read-only report)
+    Route::get('/inventory/stock-valuation', [\App\Http\Controllers\StockValuationController::class, 'index'])
+        ->name('inventory.stock-valuation');
+
+    // Landed Costs (Pro+)
+    Route::prefix('landed-costs')->name('landed-costs.')->middleware('plan.access:professional,enterprise')->group(function () {
+        Route::get('/', [\App\Http\Controllers\LandedCostController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\LandedCostController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\LandedCostController::class, 'store'])->name('store');
+        Route::get('/{landedCost}', [\App\Http\Controllers\LandedCostController::class, 'show'])->name('show');
+        Route::get('/{landedCost}/edit', [\App\Http\Controllers\LandedCostController::class, 'edit'])->name('edit');
+        Route::put('/{landedCost}', [\App\Http\Controllers\LandedCostController::class, 'update'])->name('update');
+        Route::post('/{landedCost}/allocate', [\App\Http\Controllers\LandedCostController::class, 'allocate'])->name('allocate');
+        Route::delete('/{landedCost}', [\App\Http\Controllers\LandedCostController::class, 'destroy'])->name('destroy');
+    });
+
+    // Financial Ratios (Enterprise)
+    Route::get('/reports/financial-ratios', [\App\Http\Controllers\FinancialRatiosController::class, 'index'])
+        ->name('reports.financial-ratios')
+        ->middleware('plan.access:professional,enterprise');
 });
 
 /*
