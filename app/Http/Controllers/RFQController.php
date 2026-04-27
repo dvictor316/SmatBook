@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\RequestForQuotation;
 use App\Models\RfqSupplier;
 use App\Models\RfqItem;
+use App\Models\Product;
+use App\Models\Supplier;
 
 class RFQController extends Controller
 {
@@ -34,7 +36,11 @@ class RFQController extends Controller
 
     public function create()
     {
-        return view('rfq.create');
+        $companyId = auth()->user()->company_id;
+        $products = Product::where('company_id', $companyId)->orderBy('name')->get(['id', 'name']);
+        $suppliers = Supplier::where('company_id', $companyId)->orderBy('name')->get(['id', 'name', 'email']);
+
+        return view('rfq.create', compact('products', 'suppliers'));
     }
 
     public function store(Request $request)
@@ -89,7 +95,11 @@ class RFQController extends Controller
         abort_if($rfq->status !== 'draft', 403, 'Only draft RFQs can be edited.');
         $rfq->load(['items', 'rfqSuppliers']);
 
-        return view('rfq.edit', compact('rfq'));
+        $companyId = auth()->user()->company_id;
+        $products = Product::where('company_id', $companyId)->orderBy('name')->get(['id', 'name']);
+        $suppliers = Supplier::where('company_id', $companyId)->orderBy('name')->get(['id', 'name', 'email']);
+
+        return view('rfq.edit', compact('rfq', 'products', 'suppliers'));
     }
 
     public function update(Request $request, RequestForQuotation $rfq)

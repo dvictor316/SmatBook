@@ -1,119 +1,64 @@
-@extends('layout.app')
-
-@section('title', 'Compare Quotes – RFQ #{{ $rfq->rfq_number }}')
+@extends('layout.mainlayout')
 
 @section('content')
-<div class="content container-fluid">
-    <div class="page-header">
-        <div class="row align-items-center">
-            <div class="col">
-                <h3 class="page-title">Quote Comparison – RFQ #{{ $rfq->rfq_number }}</h3>
-                <ul class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{{ route('home') }}">Dashboard</a></li>
-                    <li class="breadcrumb-item"><a href="{{ route('rfq.index') }}">RFQs</a></li>
-                    <li class="breadcrumb-item"><a href="{{ route('rfq.show', $rfq) }}">#{{ $rfq->rfq_number }}</a></li>
-                    <li class="breadcrumb-item active">Compare</li>
-                </ul>
-            </div>
-            <div class="col-auto">
-                <a href="{{ route('rfq.show', $rfq) }}" class="btn btn-outline-secondary btn-sm">← Back to RFQ</a>
+<div class="page-wrapper">
+    <div class="content container-fluid">
+        <div class="page-header">
+            <div class="content-page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <h5 class="mb-1">Compare Quotes for {{ $rfq->rfq_number }}</h5>
+                    <p class="text-muted mb-0">Review supplier responses and select a winner safely.</p>
+                </div>
+                <a href="{{ route('rfq.show', $rfq) }}" class="btn btn-outline-secondary">Back to RFQ</a>
             </div>
         </div>
-    </div>
 
-    @php
-        $supplierList = $rfq->suppliers->where('quoted_at', '!=', null);
-    @endphp
-
-    @if($supplierList->isEmpty())
-        <div class="alert alert-info">No supplier quotes have been submitted yet.</div>
-    @else
         <div class="card">
             <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-bordered mb-0">
-                        <thead class="table-light">
+                    <table class="table table-hover mb-0">
+                        <thead>
                             <tr>
-                                <th style="min-width:180px;">Item</th>
-                                <th>Qty</th>
-                                @foreach($supplierList as $rs)
-                                    <th class="text-center {{ $rs->is_winner ? 'table-success' : '' }}">
-                                        {{ $rs->supplier->name ?? '—' }}
-                                        @if($rs->is_winner)
-                                            <br><span class="badge bg-success">Winner</span>
-                                        @endif
-                                    </th>
-                                @endforeach
+                                <th>Supplier</th>
+                                <th>Status</th>
+                                <th>Quoted Amount</th>
+                                <th>Currency</th>
+                                <th>Notes</th>
+                                <th class="text-end">Winner</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($rfq->items as $item)
-                            <tr>
-                                <td>{{ $item->product->name ?? $item->description ?? '—' }}</td>
-                                <td>{{ $item->quantity }} {{ $item->unit }}</td>
-                                @foreach($supplierList as $rs)
-                                    @php
-                                        $qi = $rs->quoteItems->firstWhere('rfq_item_id', $item->id);
-                                    @endphp
-                                    <td class="text-center {{ $rs->is_winner ? 'table-success' : '' }}">
-                                        @if($qi)
-                                            {{ number_format($qi->unit_price, 2) }}
-                                            @if($qi->delivery_days)
-                                                <br><small class="text-muted">{{ $qi->delivery_days }}d delivery</small>
-                                            @endif
+                            @forelse($rfq->rfqSuppliers as $rfqSupplier)
+                                <tr>
+                                    <td>{{ $rfqSupplier->supplier_name ?: ($rfqSupplier->supplier?->name ?? 'N/A') }}</td>
+                                    <td>{{ ucfirst($rfqSupplier->status ?? 'pending') }}</td>
+                                    <td>{{ $rfqSupplier->total_quoted_amount !== null ? number_format((float) $rfqSupplier->total_quoted_amount, 2) : 'N/A' }}</td>
+                                    <td>{{ $rfqSupplier->currency ?: 'N/A' }}</td>
+                                    <td>{{ $rfqSupplier->notes ?: 'N/A' }}</td>
+                                    <td class="text-end">
+                                        @if(($rfqSupplier->is_winner ?? false) || ($rfqSupplier->is_selected ?? false))
+                                            <span class="badge bg-success">Selected</span>
+                                        @elseif($rfqSupplier->total_quoted_amount !== null)
+                                            <form method="POST" action="{{ route('rfq.winner', $rfq) }}">
+                                                @csrf
+                                                <input type="hidden" name="rfq_supplier_id" value="{{ $rfqSupplier->id }}">
+                                                <button type="submit" class="btn btn-sm btn-outline-success">Select Winner</button>
+                                            </form>
                                         @else
-                                            <span class="text-muted">—</span>
+                                            <span class="text-muted">Awaiting quote</span>
                                         @endif
                                     </td>
-                                @endforeach
-                            </tr>
-                            @endforeach
-
-                            {{-- Total row --}}
-                            <tr class="fw-bold">
-                                <td colspan="2">Total (estimated)</td>
-                                @foreach($supplierList as $rs)
-                                    @php
-                                        $total = $rs->quoteItems->sum(function($qi) use ($rfq) {
-                                            $item = $rfq->items->firstWhere('id', $qi->rfq_item_id);
-                                            return ($item->quantity ?? 0) * $qi->unit_price;
-                                        });
-                                    @endphp
-                                    <td class="text-center {{ $rs->is_winner ? 'table-success' : '' }}">
-                                        {{ number_format($total, 2) }}
-                                    </td>
-                                @endforeach
-                            </tr>
-
-                            {{-- Notes row --}}
-                            <tr>
-                                <td colspan="2" class="text-muted">Notes</td>
-                                @foreach($supplierList as $rs)
-                                    <td class="text-center {{ $rs->is_winner ? 'table-success' : '' }}">
-                                        {{ $rs->notes ?? '—' }}
-                                    </td>
-                                @endforeach
-                            </tr>
-
-                            {{-- Action row --}}
-                            @if(!$rfq->suppliers->where('is_winner', true)->count())
-                            <tr>
-                                <td colspan="2"></td>
-                                @foreach($supplierList as $rs)
-                                    <td class="text-center">
-                                        <form action="{{ route('rfq.winner', [$rfq, $rs]) }}" method="POST">
-                                            @csrf
-                                            <button class="btn btn-sm btn-outline-success">Select as Winner</button>
-                                        </form>
-                                    </td>
-                                @endforeach
-                            </tr>
-                            @endif
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-4">No supplier quotes available yet.</td>
+                                </tr>
+                            @endforelse
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
-    @endif
+    </div>
 </div>
 @endsection

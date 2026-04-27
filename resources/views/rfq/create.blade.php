@@ -1,136 +1,107 @@
-@extends('layout.app')
-
-@section('title', 'Create RFQ')
+@extends('layout.mainlayout')
 
 @section('content')
-<div class="content container-fluid">
-    <div class="page-header">
-        <div class="row align-items-center">
-            <div class="col">
-                <h3 class="page-title">New Request for Quotation</h3>
-                <ul class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{{ route('home') }}">Dashboard</a></li>
-                    <li class="breadcrumb-item"><a href="{{ route('rfq.index') }}">RFQs</a></li>
-                    <li class="breadcrumb-item active">Create</li>
-                </ul>
+<div class="page-wrapper">
+    <div class="content container-fluid">
+        <div class="page-header">
+            <div class="content-page-header">
+                <h5 class="mb-1">Create RFQ</h5>
+                <p class="text-muted mb-0">Create a quotation request and attach the products you want vendors to quote.</p>
             </div>
         </div>
-    </div>
 
-    <form action="{{ route('rfq.store') }}" method="POST">
-        @csrf
-        <div class="row">
-            <div class="col-md-8">
-                <div class="card mb-3">
-                    <div class="card-header"><h5 class="card-title mb-0">RFQ Details</h5></div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label class="form-label">Title <span class="text-danger">*</span></label>
-                            <input type="text" name="title" class="form-control @error('title') is-invalid @enderror"
-                                   value="{{ old('title') }}" required>
-                            @error('title')<div class="invalid-feedback">{{ $message }}</div>@enderror
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" action="{{ route('rfq.store') }}">
+                    @csrf
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-8">
+                            <label class="form-label">Title</label>
+                            <input type="text" name="title" class="form-control" value="{{ old('title') }}" required>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Description</label>
-                            <textarea name="description" class="form-control" rows="3">{{ old('description') }}</textarea>
+                        <div class="col-md-4">
+                            <label class="form-label">Required Date</label>
+                            <input type="date" name="required_date" class="form-control" value="{{ old('required_date') }}">
                         </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Required Date</label>
-                                <input type="date" name="required_date" class="form-control" value="{{ old('required_date') }}">
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Closing Date</label>
-                                <input type="date" name="closing_date" class="form-control" value="{{ old('closing_date') }}">
-                            </div>
-                        </div>
-                        <div class="mb-3">
+                        <div class="col-12">
                             <label class="form-label">Notes</label>
-                            <textarea name="notes" class="form-control" rows="2">{{ old('notes') }}</textarea>
+                            <textarea name="notes" class="form-control" rows="3">{{ old('notes') }}</textarea>
                         </div>
                     </div>
-                </div>
 
-                {{-- Items Section --}}
-                <div class="card mb-3">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0">Items</h5>
-                        <button type="button" class="btn btn-outline-primary btn-sm" id="addItem">
-                            <i class="fe fe-plus me-1"></i> Add Item
-                        </button>
-                    </div>
-                    <div class="card-body p-0">
-                        <table class="table mb-0" id="itemsTable">
-                            <thead class="table-light">
+                    <h6 class="mb-3">Items</h6>
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="rfq-items-table">
+                            <thead>
                                 <tr>
-                                    <th>Product</th><th>Description</th><th>Qty</th><th>Unit</th><th></th>
+                                    <th>Product</th>
+                                    <th>Item Name</th>
+                                    <th>Quantity</th>
+                                    <th>Unit</th>
+                                    <th>Specifications</th>
+                                    <th class="text-end">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr class="item-row">
-                                    <td>
-                                        <select name="items[0][product_id]" class="form-select form-select-sm">
-                                            <option value="">Select product…</option>
-                                            @foreach($products ?? [] as $p)
-                                                <option value="{{ $p->id }}">{{ $p->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </td>
-                                    <td><input type="text" name="items[0][description]" class="form-control form-control-sm"></td>
-                                    <td><input type="number" name="items[0][quantity]" class="form-control form-control-sm" value="1" min="0.01" step="0.01" style="width:80px"></td>
-                                    <td><input type="text" name="items[0][unit]" class="form-control form-control-sm" placeholder="pcs" style="width:70px"></td>
-                                    <td><button type="button" class="btn btn-sm btn-outline-danger remove-item">×</button></td>
-                                </tr>
+                                @php $items = old('items', [['product_id' => '', 'product_name' => '', 'quantity' => 1, 'unit' => '', 'specifications' => '']]); @endphp
+                                @foreach($items as $index => $item)
+                                    <tr>
+                                        <td>
+                                            <select name="items[{{ $index }}][product_id]" class="form-select">
+                                                <option value="">Optional product</option>
+                                                @foreach($products as $product)
+                                                    <option value="{{ $product->id }}" @selected(($item['product_id'] ?? '') == $product->id)>{{ $product->name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </td>
+                                        <td><input type="text" name="items[{{ $index }}][product_name]" class="form-control" value="{{ $item['product_name'] ?? '' }}" required></td>
+                                        <td><input type="number" step="0.01" min="0.0001" name="items[{{ $index }}][quantity]" class="form-control" value="{{ $item['quantity'] ?? 1 }}" required></td>
+                                        <td><input type="text" name="items[{{ $index }}][unit]" class="form-control" value="{{ $item['unit'] ?? '' }}"></td>
+                                        <td><input type="text" name="items[{{ $index }}][specifications]" class="form-control" value="{{ $item['specifications'] ?? '' }}"></td>
+                                        <td class="text-end"><button type="button" class="btn btn-sm btn-outline-danger remove-rfq-item">Remove</button></td>
+                                    </tr>
+                                @endforeach
                             </tbody>
                         </table>
                     </div>
-                </div>
-            </div>
+                    <button type="button" class="btn btn-outline-secondary btn-sm mb-3" id="add-rfq-item">Add Item</button>
 
-            <div class="col-md-4">
-                <div class="card mb-3">
-                    <div class="card-header"><h5 class="card-title mb-0">Suppliers</h5></div>
-                    <div class="card-body">
-                        <p class="text-muted small">Select suppliers to send this RFQ to:</p>
-                        @foreach($suppliers ?? [] as $s)
-                            <div class="form-check mb-1">
-                                <input class="form-check-input" type="checkbox" name="supplier_ids[]" value="{{ $s->id }}"
-                                       id="sup_{{ $s->id }}" {{ in_array($s->id, old('supplier_ids', [])) ? 'checked' : '' }}>
-                                <label class="form-check-label" for="sup_{{ $s->id }}">{{ $s->name }}</label>
-                            </div>
-                        @endforeach
+                    <div>
+                        <button type="submit" class="btn btn-primary">Create RFQ</button>
+                        <a href="{{ route('rfq.index') }}" class="btn btn-outline-secondary">Cancel</a>
                     </div>
-                </div>
-
-                <div class="d-grid gap-2">
-                    <button type="submit" name="action" value="draft" class="btn btn-outline-secondary">Save as Draft</button>
-                    <button type="submit" name="action" value="send" class="btn btn-primary">Save & Send to Suppliers</button>
-                    <a href="{{ route('rfq.index') }}" class="btn btn-link text-muted">Cancel</a>
-                </div>
+                </form>
             </div>
         </div>
-    </form>
+    </div>
 </div>
 
-@push('scripts')
 <script>
-let rowIndex = 1;
-document.getElementById('addItem').addEventListener('click', function () {
-    const tbody = document.querySelector('#itemsTable tbody');
-    const row = tbody.querySelector('.item-row').cloneNode(true);
-    row.querySelectorAll('input,select').forEach(el => {
-        el.name = el.name.replace(/\[\d+\]/, '[' + rowIndex + ']');
-        if (el.type !== 'checkbox') el.value = el.tagName === 'INPUT' && el.name.includes('quantity') ? '1' : '';
+document.addEventListener('DOMContentLoaded', function () {
+    const products = @json($products->map(fn($product) => ['id' => $product->id, 'name' => $product->name])->values());
+    const tbody = document.querySelector('#rfq-items-table tbody');
+    let rowIndex = tbody.querySelectorAll('tr').length;
+
+    document.getElementById('add-rfq-item').addEventListener('click', function () {
+        const options = ['<option value="">Optional product</option>'].concat(products.map(product => `<option value="${product.id}">${product.name}</option>`)).join('');
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><select name="items[${rowIndex}][product_id]" class="form-select">${options}</select></td>
+            <td><input type="text" name="items[${rowIndex}][product_name]" class="form-control" required></td>
+            <td><input type="number" step="0.01" min="0.0001" name="items[${rowIndex}][quantity]" class="form-control" value="1" required></td>
+            <td><input type="text" name="items[${rowIndex}][unit]" class="form-control"></td>
+            <td><input type="text" name="items[${rowIndex}][specifications]" class="form-control"></td>
+            <td class="text-end"><button type="button" class="btn btn-sm btn-outline-danger remove-rfq-item">Remove</button></td>
+        `;
+        tbody.appendChild(row);
+        rowIndex++;
     });
-    tbody.appendChild(row);
-    rowIndex++;
-});
-document.getElementById('itemsTable').addEventListener('click', function (e) {
-    if (e.target.classList.contains('remove-item')) {
-        const rows = document.querySelectorAll('.item-row');
-        if (rows.length > 1) e.target.closest('tr').remove();
-    }
+
+    tbody.addEventListener('click', function (event) {
+        if (event.target.classList.contains('remove-rfq-item') && tbody.querySelectorAll('tr').length > 1) {
+            event.target.closest('tr').remove();
+        }
+    });
 });
 </script>
-@endpush
 @endsection

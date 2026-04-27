@@ -24,7 +24,9 @@ class LotTrackingController extends Controller
     public function index(Request $request)
     {
         $companyId = Auth::user()->company_id;
-        $query     = ProductLot::forCompany($companyId)->with('product');
+        $query     = ProductLot::query()
+            ->where('company_id', $companyId)
+            ->with('product');
 
         if ($productId = $request->query('product_id')) {
             $query->where('product_id', $productId);
@@ -42,7 +44,7 @@ class LotTrackingController extends Controller
     public function show(ProductLot $productLot)
     {
         abort_unless($productLot->company_id === Auth::user()->company_id, 403);
-        $productLot->load(['product', 'serials']);
+        $productLot->load(['product', 'serialNumbers']);
         return view('inventory.lots.show', compact('productLot'));
     }
 

@@ -1,81 +1,61 @@
-@extends('layout.app')
-
-@section('title', 'Purchase Requisitions')
+@extends('layout.mainlayout')
 
 @section('content')
-<div class="content container-fluid">
-    <div class="page-header">
-        <div class="row align-items-center">
-            <div class="col">
-                <h3 class="page-title">Purchase Requisitions</h3>
-                <ul class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{{ route('home') }}">Dashboard</a></li>
-                    <li class="breadcrumb-item active">Purchase Requisitions</li>
-                </ul>
-            </div>
-            <div class="col-auto">
-                <a href="{{ route('purchase-requisitions.create') }}" class="btn btn-primary btn-sm">
-                    <i class="fe fe-plus me-1"></i> New PR
-                </a>
+<div class="page-wrapper">
+    <div class="content container-fluid">
+        <div class="page-header">
+            <div class="content-page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <h5 class="mb-1">Purchase Requisitions</h5>
+                    <p class="text-muted mb-0">Internal requests for purchasing, filtered to the current company.</p>
+                </div>
+                <a href="{{ route('purchase-requisitions.create') }}" class="btn btn-primary">New Requisition</a>
             </div>
         </div>
-    </div>
 
-    @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show">
-            {{ session('success') }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    @endif
-
-    <div class="card">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>PR #</th><th>Title</th><th>Department</th><th>Required By</th><th>Priority</th><th>Status</th><th>Created</th><th class="text-end">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($requisitions as $pr)
+        <div class="card">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
                             <tr>
-                                <td>{{ $pr->pr_number }}</td>
-                                <td>{{ $pr->title }}</td>
-                                <td>{{ $pr->department ?? '—' }}</td>
-                                <td>{{ $pr->required_date ? $pr->required_date->format('d M Y') : '—' }}</td>
-                                <td>
-                                    <span class="badge bg-{{ match($pr->priority) {
-                                        'low' => 'secondary', 'medium' => 'primary', 'high' => 'warning', 'urgent' => 'danger', default => 'secondary'
-                                    } }}">{{ ucfirst($pr->priority) }}</span>
-                                </td>
-                                <td>
-                                    <span class="badge bg-{{ match($pr->status) {
-                                        'draft' => 'secondary', 'pending' => 'warning', 'approved' => 'success', 'rejected' => 'danger', 'converted' => 'info', default => 'secondary'
-                                    } }}">{{ ucfirst($pr->status) }}</span>
-                                </td>
-                                <td>{{ $pr->created_at->format('d M Y') }}</td>
-                                <td class="text-end">
-                                    <a href="{{ route('purchase-requisitions.show', $pr) }}" class="btn btn-sm btn-outline-primary me-1">View</a>
-                                    @if($pr->status === 'draft')
-                                        <a href="{{ route('purchase-requisitions.edit', $pr) }}" class="btn btn-sm btn-outline-secondary me-1">Edit</a>
-                                        <form action="{{ route('purchase-requisitions.destroy', $pr) }}" method="POST" class="d-inline"
-                                              onsubmit="return confirm('Delete this PR?')">
-                                            @csrf @method('DELETE')
-                                            <button class="btn btn-sm btn-outline-danger">Delete</button>
-                                        </form>
-                                    @endif
-                                </td>
+                                <th>Number</th>
+                                <th>Request Date</th>
+                                <th>Required Date</th>
+                                <th>Department</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th>Requested By</th>
+                                <th class="text-end">Action</th>
                             </tr>
-                        @empty
-                            <tr><td colspan="8" class="text-center py-4 text-muted">No requisitions found. <a href="{{ route('purchase-requisitions.create') }}">Create one</a>.</td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            @forelse($requisitions as $requisition)
+                                <tr>
+                                    <td>{{ $requisition->requisition_number }}</td>
+                                    <td>{{ $requisition->request_date ? $requisition->request_date->format('d M Y') : 'N/A' }}</td>
+                                    <td>{{ $requisition->required_date ? $requisition->required_date->format('d M Y') : 'N/A' }}</td>
+                                    <td>{{ $requisition->department?->name ?? 'N/A' }}</td>
+                                    <td>{{ ucfirst($requisition->priority ?? 'normal') }}</td>
+                                    <td>{{ ucfirst($requisition->status ?? 'submitted') }}</td>
+                                    <td>{{ $requisition->requestedBy?->name ?? 'N/A' }}</td>
+                                    <td class="text-end">
+                                        <a href="{{ route('purchase-requisitions.show', $requisition) }}" class="btn btn-sm btn-outline-primary">View</a>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted py-4">No purchase requisitions found.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
+            @if($requisitions->hasPages())
+                <div class="card-footer">{{ $requisitions->links() }}</div>
+            @endif
         </div>
-        @if($requisitions->hasPages())
-            <div class="card-footer">{{ $requisitions->links() }}</div>
-        @endif
     </div>
 </div>
 @endsection

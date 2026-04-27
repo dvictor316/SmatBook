@@ -1,74 +1,82 @@
-@extends('layout.app')
-
-@section('title', 'Serial Numbers')
+@extends('layout.mainlayout')
 
 @section('content')
-<div class="content container-fluid">
-    <div class="page-header">
-        <div class="row align-items-center">
-            <div class="col">
-                <h3 class="page-title">Serial Numbers</h3>
-                <ul class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{{ route('home') }}">Dashboard</a></li>
-                    <li class="breadcrumb-item active">Serial Numbers</li>
-                </ul>
-            </div>
-            <div class="col-auto">
-                <a href="{{ route('inventory.serials.create') }}" class="btn btn-primary btn-sm">
-                    <i class="fe fe-plus me-1"></i> Add Serial
-                </a>
+<div class="page-wrapper">
+    <div class="content container-fluid">
+        <div class="page-header">
+            <div class="content-page-header">
+                <h5 class="mb-1">Serial Numbers</h5>
+                <p class="text-muted mb-0">Track serialized inventory records in the current workspace.</p>
             </div>
         </div>
-    </div>
 
-    @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show">
-            {{ session('success') }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <div class="card">
+            <div class="card-body">
+                <form method="GET" action="{{ route('inventory.serials.index') }}" class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Product</label>
+                        <select name="product_id" class="form-select">
+                            <option value="">All tracked products</option>
+                            @foreach($products as $product)
+                                <option value="{{ $product->id }}" @selected((string) request('product_id') === (string) $product->id)>{{ $product->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Status</label>
+                        <select name="status" class="form-select">
+                            <option value="">All statuses</option>
+                            @foreach(['available', 'sold', 'defective', 'returned'] as $status)
+                                <option value="{{ $status }}" @selected(request('status') === $status)>{{ ucfirst($status) }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">Filter</button>
+                    </div>
+                </form>
+            </div>
         </div>
-    @endif
 
-    <div class="card">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Serial #</th><th>Product</th><th>Lot</th><th>Status</th><th>Sold To</th><th>Warranty Expiry</th><th class="text-end">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($serials as $serial)
+        <div class="card">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
                             <tr>
-                                <td>{{ $serial->serial_number }}</td>
-                                <td>{{ $serial->product->name ?? '—' }}</td>
-                                <td>{{ $serial->lot->lot_number ?? '—' }}</td>
-                                <td>
-                                    <span class="badge bg-{{ match($serial->status) {
-                                        'available' => 'success', 'sold' => 'primary', 'defective' => 'danger', 'returned' => 'warning', default => 'secondary'
-                                    } }}">{{ ucfirst($serial->status) }}</span>
-                                </td>
-                                <td>{{ $serial->soldToCustomer->name ?? '—' }}</td>
-                                <td>{{ $serial->warranty_expiry ? $serial->warranty_expiry->format('d M Y') : '—' }}</td>
-                                <td class="text-end">
-                                    <a href="{{ route('inventory.serials.show', $serial) }}" class="btn btn-sm btn-outline-primary me-1">View</a>
-                                    <a href="{{ route('inventory.serials.edit', $serial) }}" class="btn btn-sm btn-outline-secondary me-1">Edit</a>
-                                    <form action="{{ route('inventory.serials.destroy', $serial) }}" method="POST" class="d-inline"
-                                          onsubmit="return confirm('Delete this serial?')">
-                                        @csrf @method('DELETE')
-                                        <button class="btn btn-sm btn-outline-danger">Delete</button>
-                                    </form>
-                                </td>
+                                <th>Serial Number</th>
+                                <th>Product</th>
+                                <th>Lot</th>
+                                <th>Status</th>
+                                <th>Warranty Expiry</th>
+                                <th class="text-end">Action</th>
                             </tr>
-                        @empty
-                            <tr><td colspan="7" class="text-center py-4 text-muted">No serial numbers found.</td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            @forelse($serials as $serial)
+                                <tr>
+                                    <td>{{ $serial->serial_number }}</td>
+                                    <td>{{ $serial->product?->name ?? 'N/A' }}</td>
+                                    <td>{{ $serial->lot?->lot_number ?? 'N/A' }}</td>
+                                    <td>{{ ucfirst($serial->status ?? 'unknown') }}</td>
+                                    <td>{{ $serial->warranty_expiry ? $serial->warranty_expiry->format('d M Y') : 'N/A' }}</td>
+                                    <td class="text-end">
+                                        <a href="{{ route('inventory.serials.show', $serial) }}" class="btn btn-sm btn-outline-primary">View</a>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-4">No serial numbers found.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
+            @if($serials->hasPages())
+                <div class="card-footer">{{ $serials->links() }}</div>
+            @endif
         </div>
-        @if($serials->hasPages())
-            <div class="card-footer">{{ $serials->links() }}</div>
-        @endif
     </div>
 </div>
 @endsection

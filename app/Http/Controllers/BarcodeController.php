@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ProductBarcode;
+use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -28,7 +29,11 @@ class BarcodeController extends Controller
             ->latest()
             ->paginate(25);
 
-        return view('inventory.barcodes.index', compact('barcodes'));
+        $products = Product::where('company_id', $companyId)
+            ->orderBy('name')
+            ->get(['id', 'name', 'sku']);
+
+        return view('inventory.barcodes.index', compact('barcodes', 'products'));
     }
 
     public function store(Request $request)
