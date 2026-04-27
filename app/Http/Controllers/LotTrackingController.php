@@ -41,7 +41,7 @@ class LotTrackingController extends Controller
     public function index(Request $request)
     {
         $companyId = Auth::user()->company_id;
-        $query     = ProductLot::forCompany($companyId)->with('product');
+        $query     = ProductLot::where('company_id', $companyId)->with('product');
 
         if ($productId = $request->query('product_id')) {
             $query->where('product_id', $productId);
