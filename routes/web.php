@@ -1103,6 +1103,220 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::get('/home', [DashboardController::class, 'index'])->name('home');
         Route::get('/profile', [HomeController::class, 'profile'])->name('profile');
     });
+
+    /*
+    |--------------------------------------------------------------------------
+    | NEW FEATURE ROUTES
+    |--------------------------------------------------------------------------
+    */
+
+    // Exchange Rates (Pro+)
+    Route::prefix('exchange-rates')->name('exchange-rates.')->middleware('plan.access:professional,enterprise')->group(function () {
+        Route::get('/', [\App\Http\Controllers\ExchangeRateController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\ExchangeRateController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\ExchangeRateController::class, 'store'])->name('store');
+        Route::get('/{exchangeRate}/edit', [\App\Http\Controllers\ExchangeRateController::class, 'edit'])->name('edit');
+        Route::put('/{exchangeRate}', [\App\Http\Controllers\ExchangeRateController::class, 'update'])->name('update');
+        Route::delete('/{exchangeRate}', [\App\Http\Controllers\ExchangeRateController::class, 'destroy'])->name('destroy');
+        Route::get('/api/rate', [\App\Http\Controllers\ExchangeRateController::class, 'getRate'])->name('get-rate');
+    });
+
+    // Cheques (Pro+)
+    Route::prefix('cheques')->name('cheques.')->middleware('plan.access:professional,enterprise')->group(function () {
+        Route::get('/', [\App\Http\Controllers\ChequeController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\ChequeController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\ChequeController::class, 'store'])->name('store');
+        Route::get('/{cheque}', [\App\Http\Controllers\ChequeController::class, 'show'])->name('show');
+        Route::get('/{cheque}/edit', [\App\Http\Controllers\ChequeController::class, 'edit'])->name('edit');
+        Route::put('/{cheque}', [\App\Http\Controllers\ChequeController::class, 'update'])->name('update');
+        Route::patch('/{cheque}/status', [\App\Http\Controllers\ChequeController::class, 'updateStatus'])->name('update-status');
+        Route::delete('/{cheque}', [\App\Http\Controllers\ChequeController::class, 'destroy'])->name('destroy');
+    });
+
+    // Loans (Pro+)
+    Route::prefix('loans')->name('loans.')->middleware('plan.access:professional,enterprise')->group(function () {
+        Route::get('/', [\App\Http\Controllers\LoanController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\LoanController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\LoanController::class, 'store'])->name('store');
+        Route::get('/{loan}', [\App\Http\Controllers\LoanController::class, 'show'])->name('show');
+        Route::get('/{loan}/edit', [\App\Http\Controllers\LoanController::class, 'edit'])->name('edit');
+        Route::put('/{loan}', [\App\Http\Controllers\LoanController::class, 'update'])->name('update');
+        Route::post('/{loan}/repayments', [\App\Http\Controllers\LoanController::class, 'addRepayment'])->name('repayments.store');
+        Route::delete('/{loan}', [\App\Http\Controllers\LoanController::class, 'destroy'])->name('destroy');
+    });
+
+    // Purchase Requisitions
+    Route::prefix('purchase-requisitions')->name('purchase-requisitions.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\PurchaseRequisitionController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\PurchaseRequisitionController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\PurchaseRequisitionController::class, 'store'])->name('store');
+        Route::get('/{purchaseRequisition}', [\App\Http\Controllers\PurchaseRequisitionController::class, 'show'])->name('show');
+        Route::post('/{purchaseRequisition}/approve', [\App\Http\Controllers\PurchaseRequisitionController::class, 'approve'])->name('approve');
+        Route::post('/{purchaseRequisition}/reject', [\App\Http\Controllers\PurchaseRequisitionController::class, 'reject'])->name('reject');
+        Route::delete('/{purchaseRequisition}', [\App\Http\Controllers\PurchaseRequisitionController::class, 'destroy'])->name('destroy');
+    });
+
+    // Goods Received Notes
+    Route::prefix('grn')->name('grn.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\GoodsReceivedNoteController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\GoodsReceivedNoteController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\GoodsReceivedNoteController::class, 'store'])->name('store');
+        Route::get('/{goodsReceivedNote}', [\App\Http\Controllers\GoodsReceivedNoteController::class, 'show'])->name('show');
+        Route::delete('/{goodsReceivedNote}', [\App\Http\Controllers\GoodsReceivedNoteController::class, 'destroy'])->name('destroy');
+    });
+
+    // Price Lists
+    Route::prefix('price-lists')->name('price-lists.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\PriceListController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\PriceListController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\PriceListController::class, 'store'])->name('store');
+        Route::get('/{priceList}', [\App\Http\Controllers\PriceListController::class, 'show'])->name('show');
+        Route::get('/{priceList}/edit', [\App\Http\Controllers\PriceListController::class, 'edit'])->name('edit');
+        Route::put('/{priceList}', [\App\Http\Controllers\PriceListController::class, 'update'])->name('update');
+        Route::delete('/{priceList}', [\App\Http\Controllers\PriceListController::class, 'destroy'])->name('destroy');
+    });
+
+    // Lot Tracking
+    Route::prefix('inventory/lots')->name('inventory.lots.')->middleware('plan.access:professional,enterprise')->group(function () {
+        Route::get('/', [\App\Http\Controllers\LotTrackingController::class, 'index'])->name('index');
+        Route::get('/{productLot}', [\App\Http\Controllers\LotTrackingController::class, 'show'])->name('show');
+        Route::patch('/{productLot}/adjust', [\App\Http\Controllers\LotTrackingController::class, 'adjust'])->name('adjust');
+    });
+
+    // Serial Numbers
+    Route::prefix('inventory/serials')->name('inventory.serials.')->middleware('plan.access:professional,enterprise')->group(function () {
+        Route::get('/', [\App\Http\Controllers\SerialNumberController::class, 'index'])->name('index');
+        Route::get('/{serialNumber}', [\App\Http\Controllers\SerialNumberController::class, 'show'])->name('show');
+    });
+
+    // Barcodes
+    Route::prefix('inventory/barcodes')->name('inventory.barcodes.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\BarcodeController::class, 'index'])->name('index');
+        Route::post('/', [\App\Http\Controllers\BarcodeController::class, 'store'])->name('store');
+        Route::get('/lookup', [\App\Http\Controllers\BarcodeController::class, 'lookup'])->name('lookup');
+        Route::delete('/{productBarcode}', [\App\Http\Controllers\BarcodeController::class, 'destroy'])->name('destroy');
+    });
+
+    // Departments (Enterprise)
+    Route::prefix('departments')->name('departments.')->middleware('plan.access:enterprise')->group(function () {
+        Route::get('/', [\App\Http\Controllers\DepartmentController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\DepartmentController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\DepartmentController::class, 'store'])->name('store');
+        Route::get('/{department}/edit', [\App\Http\Controllers\DepartmentController::class, 'edit'])->name('edit');
+        Route::put('/{department}', [\App\Http\Controllers\DepartmentController::class, 'update'])->name('update');
+        Route::delete('/{department}', [\App\Http\Controllers\DepartmentController::class, 'destroy'])->name('destroy');
+    });
+
+    // Cost Centers (Enterprise)
+    Route::prefix('cost-centers')->name('cost-centers.')->middleware('plan.access:enterprise')->group(function () {
+        Route::get('/', [\App\Http\Controllers\CostCenterController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\CostCenterController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\CostCenterController::class, 'store'])->name('store');
+        Route::get('/{costCenter}/edit', [\App\Http\Controllers\CostCenterController::class, 'edit'])->name('edit');
+        Route::put('/{costCenter}', [\App\Http\Controllers\CostCenterController::class, 'update'])->name('update');
+        Route::delete('/{costCenter}', [\App\Http\Controllers\CostCenterController::class, 'destroy'])->name('destroy');
+    });
+
+    // Leave Management (Pro+)
+    Route::prefix('hr/leave')->name('hr.leave.')->middleware('plan.access:professional,enterprise')->group(function () {
+        Route::get('/types', [\App\Http\Controllers\LeaveManagementController::class, 'types'])->name('types');
+        Route::post('/types', [\App\Http\Controllers\LeaveManagementController::class, 'storeType'])->name('types.store');
+        Route::get('/requests', [\App\Http\Controllers\LeaveManagementController::class, 'requests'])->name('requests');
+        Route::get('/requests/create', [\App\Http\Controllers\LeaveManagementController::class, 'createRequest'])->name('create');
+        Route::post('/requests', [\App\Http\Controllers\LeaveManagementController::class, 'storeRequest'])->name('store');
+        Route::post('/requests/{leaveRequest}/approve', [\App\Http\Controllers\LeaveManagementController::class, 'approveRequest'])->name('approve');
+        Route::post('/requests/{leaveRequest}/reject', [\App\Http\Controllers\LeaveManagementController::class, 'rejectRequest'])->name('reject');
+    });
+
+    // Attendance (Pro+)
+    Route::prefix('hr/attendance')->name('hr.attendance.')->middleware('plan.access:professional,enterprise')->group(function () {
+        Route::get('/', [\App\Http\Controllers\AttendanceController::class, 'index'])->name('index');
+        Route::post('/', [\App\Http\Controllers\AttendanceController::class, 'store'])->name('store');
+        Route::post('/bulk', [\App\Http\Controllers\AttendanceController::class, 'bulkStore'])->name('bulk');
+        Route::get('/report', [\App\Http\Controllers\AttendanceController::class, 'report'])->name('report');
+    });
+
+    // Timesheets (Pro+)
+    Route::prefix('timesheets')->name('timesheets.')->middleware('plan.access:professional,enterprise')->group(function () {
+        Route::get('/', [\App\Http\Controllers\TimesheetController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\TimesheetController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\TimesheetController::class, 'store'])->name('store');
+        Route::get('/{timesheet}', [\App\Http\Controllers\TimesheetController::class, 'show'])->name('show');
+        Route::post('/{timesheet}/submit', [\App\Http\Controllers\TimesheetController::class, 'submit'])->name('submit');
+        Route::post('/{timesheet}/approve', [\App\Http\Controllers\TimesheetController::class, 'approve'])->name('approve');
+        Route::delete('/{timesheet}', [\App\Http\Controllers\TimesheetController::class, 'destroy'])->name('destroy');
+    });
+
+    // Milestone Billing (Pro+)
+    Route::prefix('milestones')->name('milestones.')->middleware('plan.access:professional,enterprise')->group(function () {
+        Route::get('/', [\App\Http\Controllers\MilestoneBillingController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\MilestoneBillingController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\MilestoneBillingController::class, 'store'])->name('store');
+        Route::get('/{milestone}', [\App\Http\Controllers\MilestoneBillingController::class, 'show'])->name('show');
+        Route::post('/{milestone}/complete', [\App\Http\Controllers\MilestoneBillingController::class, 'complete'])->name('complete');
+        Route::post('/{milestone}/invoice', [\App\Http\Controllers\MilestoneBillingController::class, 'createInvoice'])->name('invoice');
+        Route::delete('/{milestone}', [\App\Http\Controllers\MilestoneBillingController::class, 'destroy'])->name('destroy');
+    });
+
+    // Intercompany Transactions (Enterprise)
+    Route::prefix('intercompany')->name('intercompany.')->middleware('plan.access:enterprise')->group(function () {
+        Route::get('/', [\App\Http\Controllers\IntercompanyController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\IntercompanyController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\IntercompanyController::class, 'store'])->name('store');
+        Route::post('/{intercompanyTransaction}/approve', [\App\Http\Controllers\IntercompanyController::class, 'approve'])->name('approve');
+        Route::delete('/{intercompanyTransaction}', [\App\Http\Controllers\IntercompanyController::class, 'destroy'])->name('destroy');
+    });
+
+    // Bill of Materials (Enterprise)
+    Route::prefix('bom')->name('bom.')->middleware('plan.access:enterprise')->group(function () {
+        Route::get('/', [\App\Http\Controllers\BOMController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\BOMController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\BOMController::class, 'store'])->name('store');
+        Route::get('/{bom}', [\App\Http\Controllers\BOMController::class, 'show'])->name('show');
+        Route::delete('/{bom}', [\App\Http\Controllers\BOMController::class, 'destroy'])->name('destroy');
+    });
+
+    // Manufacturing (Enterprise)
+    Route::prefix('manufacturing')->name('manufacturing.')->middleware('plan.access:enterprise')->group(function () {
+        Route::get('/', [\App\Http\Controllers\ManufacturingController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\ManufacturingController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\ManufacturingController::class, 'store'])->name('store');
+        Route::get('/{manufacturingOrder}', [\App\Http\Controllers\ManufacturingController::class, 'show'])->name('show');
+        Route::post('/{manufacturingOrder}/start', [\App\Http\Controllers\ManufacturingController::class, 'start'])->name('start');
+        Route::post('/{manufacturingOrder}/complete', [\App\Http\Controllers\ManufacturingController::class, 'complete'])->name('complete');
+        Route::post('/{manufacturingOrder}/cancel', [\App\Http\Controllers\ManufacturingController::class, 'cancel'])->name('cancel');
+    });
+
+    // Asset Maintenance
+    Route::prefix('assets/maintenance')->name('assets.maintenance.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\AssetMaintenanceController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\AssetMaintenanceController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\AssetMaintenanceController::class, 'store'])->name('store');
+        Route::get('/{maintenanceLog}', [\App\Http\Controllers\AssetMaintenanceController::class, 'show'])->name('show');
+        Route::get('/{maintenanceLog}/edit', [\App\Http\Controllers\AssetMaintenanceController::class, 'edit'])->name('edit');
+        Route::put('/{maintenanceLog}', [\App\Http\Controllers\AssetMaintenanceController::class, 'update'])->name('update');
+        Route::delete('/{maintenanceLog}', [\App\Http\Controllers\AssetMaintenanceController::class, 'destroy'])->name('destroy');
+    });
+
+    // Forecasting (Pro+)
+    Route::prefix('forecasting')->name('forecasting.')->middleware('plan.access:professional,enterprise')->group(function () {
+        Route::get('/', [\App\Http\Controllers\ForecastingController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\ForecastingController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\ForecastingController::class, 'store'])->name('store');
+        Route::get('/{forecast}', [\App\Http\Controllers\ForecastingController::class, 'show'])->name('show');
+        Route::post('/{forecast}/actuals', [\App\Http\Controllers\ForecastingController::class, 'updateActuals'])->name('actuals');
+        Route::delete('/{forecast}', [\App\Http\Controllers\ForecastingController::class, 'destroy'])->name('destroy');
+    });
+
+    // Report Schedules (Pro+)
+    Route::prefix('report-schedules')->name('report-schedules.')->middleware('plan.access:professional,enterprise')->group(function () {
+        Route::get('/', [\App\Http\Controllers\ReportScheduleController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\ReportScheduleController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\ReportScheduleController::class, 'store'])->name('store');
+        Route::get('/{reportSchedule}/edit', [\App\Http\Controllers\ReportScheduleController::class, 'edit'])->name('edit');
+        Route::put('/{reportSchedule}', [\App\Http\Controllers\ReportScheduleController::class, 'update'])->name('update');
+        Route::delete('/{reportSchedule}', [\App\Http\Controllers\ReportScheduleController::class, 'destroy'])->name('destroy');
+    });
 });
 
 /*
