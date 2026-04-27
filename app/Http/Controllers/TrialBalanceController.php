@@ -281,7 +281,7 @@ class TrialBalanceController extends Controller
         if ($customerOBUnposted > 0.01) {
             // Find existing AR account or create a virtual one (DR side)
             $arEntry = $accounts->first(
-                fn ($a) => str_contains(strtolower((string) ($a->name ?? '')), 'receivable')
+                fn ($a) => strtolower(trim((string) ($a->name ?? ''))) === 'accounts receivable'
             );
             if ($arEntry) {
                 $arEntry->debit_balance = (float) ($arEntry->debit_balance ?? 0) + $customerOBUnposted;
