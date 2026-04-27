@@ -608,9 +608,7 @@ class AuthController extends Controller
             ]);
 
             // Stateless avoids "Invalid state" errors from cookie/session mismatch across domains.
-            return Socialite::driver($provider)
-                ->redirectUrl($redirectUrl)
-                ->stateless()
+            return $this->socialiteDriver($provider, $redirectUrl)
                 ->redirect();
         } catch (\Exception $e) {
             Log::error('Social redirect failed', [
@@ -637,9 +635,7 @@ class AuthController extends Controller
         }
 
         try {
-            $socialUser = Socialite::driver($provider)
-                ->redirectUrl($this->socialCallbackUrl($provider))
-                ->stateless()
+            $socialUser = $this->socialiteDriver($provider, $this->socialCallbackUrl($provider))
                 ->user();
         } catch (InvalidStateException $e) {
             Log::error('Social callback invalid state', [
@@ -718,22 +714,43 @@ class AuthController extends Controller
 
     /**
      * Build callback URL for OAuth providers.
-     * Prefer current request host (supports real runtime domain), fallback to APP_URL.
+     * Prefer configured provider redirect for strict OAuth providers like Google,
+     * then fallback to the current runtime host, then APP_URL.
      */
     private function socialCallbackUrl(string $provider): string
     {
         $provider = strtolower(trim($provider));
-
-        if (request()) {
-            return url('/auth/' . $provider . '/callback');
-        }
 
         $configured = (string) config("services.{$provider}.redirect", '');
         if ($configured !== '') {
             return $configured;
         }
 
+        if (request()) {
+            return url('/auth/' . $provider . '/callback');
+        }
+
         return rtrim((string) config('app.url'), '/') . '/auth/' . $provider . '/callback';
+    }
+
+    private function socialiteDriver(string $provider, ?string $redirectUrl = null)
+    {
+        $driver = Socialite::driver($provider);
+
+        if ($redirectUrl) {
+            $driver = $driver->redirectUrl($redirectUrl);
+        }
+
+        if ($provider === 'google') {
+            $driver = $driver
+                ->scopes(['openid', 'profile', 'email'])
+                ->with([
+                    'prompt' => 'select_account',
+                    'access_type' => 'offline',
+                ]);
+        }
+
+        return $driver->stateless();
     }
 
     private function rememberSocialContext(Request $request, string $provider): void
