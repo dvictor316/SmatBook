@@ -311,7 +311,7 @@ class TrialBalanceController extends Controller
         $supplierOBUnposted = $this->getUnpostedSupplierOpeningBalanceSum($request, $end);
         if ($supplierOBUnposted > 0.01) {
             $apEntry = $accounts->first(
-                fn ($a) => str_contains(strtolower((string) ($a->name ?? '')), 'payable')
+                fn ($a) => strtolower(trim((string) ($a->name ?? ''))) === 'accounts payable'
             );
             if ($apEntry) {
                 $apEntry->credit_balance = (float) ($apEntry->credit_balance ?? 0) + $supplierOBUnposted;

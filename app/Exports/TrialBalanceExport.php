@@ -129,13 +129,13 @@ class TrialBalanceExport implements FromCollection, WithHeadings
 
         $customerOB = $this->customerOpeningBalance();
         if ($customerOB > 0.01) {
-            $rows->push(['SYS-CUST-AR', 'Accounts Receivable', 'Asset', $customerOB, 0.0]);
+            $this->mergeBalanceIntoRows($rows, 'Accounts Receivable', 'Asset', $customerOB, 0.0, 'SYS-CUST-AR');
             $rows->push(['SYS-CUST-OBE', 'Opening Balance Equity (Customers)', 'Equity', 0.0, $customerOB]);
         }
 
         $supplierOB = $this->supplierOpeningBalance();
         if ($supplierOB > 0.01) {
-            $rows->push(['SYS-SUPP-AP', 'Accounts Payable', 'Liability', 0.0, $supplierOB]);
+            $this->mergeBalanceIntoRows($rows, 'Accounts Payable', 'Liability', 0.0, $supplierOB, 'SYS-SUPP-AP');
             $rows->push(['SYS-SUPP-OBE', 'Opening Balance Equity (Suppliers)', 'Equity', $supplierOB, 0.0]);
         }
 
@@ -172,6 +172,23 @@ class TrialBalanceExport implements FromCollection, WithHeadings
             'Debit Balance',
             'Credit Balance',
         ];
+    }
+
+    private function mergeBalanceIntoRows($rows, string $accountName, string $accountType, float $debit, float $credit, string $fallbackCode): void
+    {
+        $existingIndex = $rows->search(function ($row) use ($accountName) {
+            return strtolower(trim((string) ($row[1] ?? ''))) === strtolower($accountName);
+        });
+
+        if ($existingIndex !== false) {
+            $existingRow = $rows->get($existingIndex);
+            $existingRow[3] = (float) ($existingRow[3] ?? 0) + $debit;
+            $existingRow[4] = (float) ($existingRow[4] ?? 0) + $credit;
+            $rows->put($existingIndex, $existingRow);
+            return;
+        }
+
+        $rows->push([$fallbackCode, $accountName, $accountType, $debit, $credit]);
     }
 
     private function applyCompanyScope($target, string $table): void
