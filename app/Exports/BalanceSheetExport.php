@@ -72,12 +72,19 @@ class BalanceSheetExport implements FromArray, WithHeadings
 
         $supplierOB = $this->supplierOpeningBalance();
         if ($supplierOB > 0.01) {
-            $currentLiabilities = $currentLiabilities->concat([(object) [
-                'name' => 'Accounts Payable',
-                'type' => 'Liability',
-                'sub_type' => 'Current Liability',
-                'balance' => $supplierOB,
-            ]]);
+            $apInLiabilities = $currentLiabilities->first(
+                fn ($account) => strtolower(trim((string) ($account->name ?? ''))) === 'accounts payable'
+            );
+            if ($apInLiabilities) {
+                $apInLiabilities->balance = (float) ($apInLiabilities->balance ?? 0) + $supplierOB;
+            } else {
+                $currentLiabilities = $currentLiabilities->concat([(object) [
+                    'name' => 'Accounts Payable',
+                    'type' => 'Liability',
+                    'sub_type' => 'Accounts Payable',
+                    'balance' => $supplierOB,
+                ]]);
+            }
             $equity = $equity->concat([(object) [
                 'name' => 'Opening Balance Equity (Suppliers)',
                 'type' => 'Equity',

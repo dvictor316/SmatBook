@@ -357,7 +357,7 @@ class BalanceSheetController extends Controller
         $supplierOBUnposted = $this->getUnpostedSupplierOpeningBalanceSum($request, $reportDate);
         if ($supplierOBUnposted > 0.01) {
             $apInLiabilities = $currentLiabilities->first(
-                fn ($a) => str_contains(strtolower((string) ($a->name ?? '')), 'payable')
+                fn ($a) => strtolower(trim((string) ($a->name ?? ''))) === 'accounts payable'
             );
             if ($apInLiabilities) {
                 $apInLiabilities->balance = (float) ($apInLiabilities->balance ?? 0) + $supplierOBUnposted;

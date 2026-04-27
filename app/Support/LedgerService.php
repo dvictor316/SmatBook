@@ -562,24 +562,31 @@ class LedgerService
             return $account;
         }
 
-        foreach ($keywords as $keyword) {
+        foreach (self::accountAliases($name, $keywords) as $alias) {
             $account = (clone $base)
-                ->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($keyword) . '%'])
+                ->whereRaw('LOWER(name) = ?', [strtolower($alias)])
                 ->first();
             if ($account) {
                 return $account;
             }
         }
 
-        $account = (clone $base)->where('is_active', 1)->first();
-        if ($account) {
-            return $account;
+        foreach (self::accountAliases($name, $keywords) as $alias) {
+            $account = (clone $base)
+                ->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($alias) . '%'])
+                ->orderByDesc('is_active')
+                ->orderBy('id')
+                ->first();
+            if ($account) {
+                return $account;
+            }
         }
 
         $payload = [
             'code' => self::nextCode($autoCodePrefix),
             'name' => $name,
             'type' => $type,
+            'sub_type' => self::defaultSubTypeForAccount($name, $type),
             'opening_balance' => 0,
             'current_balance' => 0,
             'is_active' => 1,
@@ -593,6 +600,63 @@ class LedgerService
     {
         $id = (int) (DB::table('accounts')->max('id') ?? 0) + 1;
         return $prefix . '-' . str_pad((string) $id, 5, '0', STR_PAD_LEFT);
+    }
+
+    private static function accountAliases(string $name, array $keywords): array
+    {
+        $normalizedName = strtolower(trim($name));
+
+        $aliases = match ($normalizedName) {
+            'accounts payable' => ['accounts payable', 'account payable', 'trade payable', 'creditor', 'creditors'],
+            'accounts receivable' => ['accounts receivable', 'account receivable', 'trade receivable', 'debtor', 'debtors'],
+            'sales revenue' => ['sales revenue', 'sales income', 'revenue from sales'],
+            'inventory' => ['inventory', 'stock', 'stock on hand'],
+            'main bank account' => ['main bank account', 'bank account', 'cash at bank'],
+            'petty cash' => ['petty cash', 'cash on hand'],
+            'tax payable' => ['tax payable', 'vat payable', 'vat firs', 'firs payable'],
+            default => [],
+        };
+
+        return collect(array_merge([$normalizedName], $aliases, array_map(
+            static fn ($keyword) => strtolower(trim((string) $keyword)),
+            $keywords
+        )))
+            ->filter(fn ($value) => $value !== '')
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    private static function defaultSubTypeForAccount(string $name, string $type): ?string
+    {
+        $normalizedName = strtolower(trim($name));
+        $normalizedType = strtolower(trim($type));
+
+        if ($normalizedType === 'asset') {
+            return 'Current Asset';
+        }
+
+        if ($normalizedType === 'liability') {
+            return match ($normalizedName) {
+                'accounts payable' => 'Accounts Payable',
+                'tax payable' => 'Tax Payable',
+                default => 'Current Liability',
+            };
+        }
+
+        if ($normalizedType === 'equity') {
+            return 'Opening Balance Equity';
+        }
+
+        if ($normalizedType === 'revenue') {
+            return 'Sales Revenue';
+        }
+
+        if ($normalizedType === 'expense') {
+            return 'Operating Expense';
+        }
+
+        return null;
     }
 
     private static function resolveTenantPayload(string $table): array

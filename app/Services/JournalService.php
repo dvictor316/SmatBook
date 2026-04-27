@@ -9,6 +9,15 @@ use Illuminate\Support\Facades\Auth;
 
 class JournalService
 {
+    public function removeInvoiceJournals(Sale $sale): void
+    {
+        Transaction::query()
+            ->where('related_id', $sale->id)
+            ->where('related_type', Sale::class)
+            ->where('transaction_type', Transaction::TYPE_JOURNAL)
+            ->delete();
+    }
+
     /**
      * Post journal entries when an invoice is created (non-draft).
      *
@@ -23,8 +32,11 @@ class JournalService
     {
         $totalAmount = (float) ($sale->total ?? 0);
         if ($totalAmount <= 0) {
+            $this->removeInvoiceJournals($sale);
             return;
         }
+
+        $this->removeInvoiceJournals($sale);
 
         $ref  = $sale->invoice_no ?? ('INV-' . $sale->id);
         $date = $sale->order_date ?? today();
@@ -132,6 +144,8 @@ class JournalService
         string  $description,
                 $date
     ): void {
+        $branch = $this->resolveBranchContext($sale);
+
         Transaction::create([
             'account_id'       => $account->id,
             'transaction_date' => $date,
@@ -145,8 +159,38 @@ class JournalService
             'related_type'     => Sale::class,
             'user_id'          => (int) (Auth::id() ?? $sale->user_id ?? 0),
             'company_id'       => (int) ($sale->company_id ?? 0),
-            'branch_id'        => (string) ($sale->branch_id ?? ''),
-            'branch_name'      => (string) ($sale->branch_name ?? ''),
+            'branch_id'        => $branch['id'],
+            'branch_name'      => $branch['name'],
         ]);
+    }
+
+    private function resolveBranchContext(Sale $sale): array
+    {
+        $branchId = trim((string) ($sale->getRawOriginal('branch_id') ?? $sale->branch_id ?? ''));
+        $branchName = trim((string) ($sale->getRawOriginal('branch_name') ?? $sale->branch_name ?? $sale->branch_label ?? ''));
+
+        if ($branchId === '') {
+            $branchId = trim((string) session('active_branch_id', ''));
+        }
+        if ($branchName === '') {
+            $branchName = trim((string) session('active_branch_name', ''));
+        }
+
+        if (($branchId === '' || $branchName === '') && !$sale->relationLoaded('customer')) {
+            $sale->loadMissing('customer');
+        }
+
+        $customer = $sale->customer;
+        if ($branchId === '') {
+            $branchId = trim((string) ($customer?->branch_id ?? ''));
+        }
+        if ($branchName === '') {
+            $branchName = trim((string) ($customer?->branch_name ?? ''));
+        }
+
+        return [
+            'id' => $branchId !== '' ? $branchId : null,
+            'name' => $branchName !== '' ? $branchName : null,
+        ];
     }
 }

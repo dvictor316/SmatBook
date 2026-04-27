@@ -558,8 +558,10 @@ class InvoiceController extends Controller
             }
 
             // Post double-entry journal entries (skip draft invoices)
-            if (!$isDraft) {
-                $this->journalService->postInvoiceCreated($sale);
+            if ($isDraft) {
+                $this->journalService->removeInvoiceJournals($sale);
+            } else {
+                $this->journalService->postInvoiceCreated($sale->fresh('customer'));
             }
 
             DB::commit();
@@ -696,6 +698,8 @@ class InvoiceController extends Controller
                 'amount_paid'    => $amountPaid,
                 'balance'        => $balance,
             ]);
+
+            $this->journalService->postInvoiceCreated($sale->fresh('customer'));
 
             return redirect()->route('invoices.index')->with('success', 'Invoice updated successfully');
         }
@@ -937,6 +941,12 @@ class InvoiceController extends Controller
                         $companyId > 0 ? $companyId : (int) ($product->company_id ?? 0)
                     );
                 }
+            }
+
+            if ($isDraft) {
+                $this->journalService->removeInvoiceJournals($sale);
+            } else {
+                $this->journalService->postInvoiceCreated($sale->fresh('customer'));
             }
 
             DB::commit();
@@ -1196,7 +1206,9 @@ class InvoiceController extends Controller
 
     public function destroy($id)
     {
-        $this->applyTenantScope(Sale::query(), 'sales')->findOrFail($id)->delete();
+        $sale = $this->applyTenantScope(Sale::query(), 'sales')->findOrFail($id);
+        $this->journalService->removeInvoiceJournals($sale);
+        $sale->delete();
         return redirect()->route('invoices.index')->with('success', 'Invoice Deleted');
     }
 }
