@@ -271,23 +271,41 @@ class BranchInventoryService
             'product_id' => $productModel->id,
             'branch_id' => (string) $branch['id'],
         ]);
+        $seededFromCurrentProductStock = false;
 
         if (!$branchStock->exists) {
-            $seedQuantity = (float) ($productModel->stock ?? $productModel->stock_quantity ?? 0);
-            $branchStock->quantity = $seedQuantity;
+            // Callers update product stock first, then sync the branch row.
+            // Seed a brand-new branch row from the already-updated product stock
+            // so we do not apply the same delta twice.
+            $branchStock->quantity = round((float) ($productModel->stock ?? $productModel->stock_quantity ?? 0), 2);
+            $seededFromCurrentProductStock = true;
         } elseif (((float) ($branchStock->quantity ?? 0)) === 0.0) {
             $productStock = (float) ($productModel->stock ?? $productModel->stock_quantity ?? 0);
             if ($productStock !== 0.0) {
-                $branchStock->quantity = $productStock;
+                // Same rule here: quantity zero plus a non-zero product stock usually
+                // means the branch row needs a reset to the current product stock,
+                // not another delta layered on top of it.
+                $branchStock->quantity = round($productStock, 2);
+                $seededFromCurrentProductStock = true;
             }
         }
 
         $branchStock->company_id = $resolvedCompanyId > 0 ? $resolvedCompanyId : null;
         $branchStock->branch_name = $branch['name'];
-        $branchStock->quantity = round(((float) ($branchStock->quantity ?? 0)) + $delta, 2);
+        if (!$seededFromCurrentProductStock) {
+            $branchStock->quantity = round(((float) ($branchStock->quantity ?? 0)) + $delta, 2);
+        }
         $branchStock->save();
 
         return $branchStock;
+    }
+
+    public function calculateBranchStock(Product|int $product, ?array $branch = null): ?float
+    {
+        $productModel = $product instanceof Product ? $product : Product::query()->findOrFail($product);
+        $branch = $branch ?: $this->getActiveBranchContext();
+
+        return $this->calculateTransactionalStock($productModel, $branch);
     }
 
     public function setBranchStock(Product|int $product, float $quantity, ?array $branch = null, ?int $companyId = null): ?ProductBranchStock
