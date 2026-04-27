@@ -22,7 +22,7 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            $table->index(['company_id', 'base_currency', 'target_currency', 'effective_date']);
+            $table->index(['company_id', 'base_currency', 'target_currency', 'effective_date'], 'er_company_currencies_date_idx');
         });
     }
 

@@ -80,7 +80,7 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            $table->index(['company_id', 'counterparty_company_id', 'status']);
+            $table->index(['company_id', 'counterparty_company_id', 'status'], 'ict_company_counterparty_status_idx');
         });
     }
 
