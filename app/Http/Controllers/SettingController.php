@@ -6,10 +6,13 @@ use App\Models\Setting;
 use App\Models\EmailAuditLog;
 use App\Models\Bank;
 use App\Models\Account;
+use App\Models\BankStatementImport;
+use App\Models\BankStatementLine;
 use App\Models\Plan;
 use App\Models\Transaction;
 use App\Models\Subscription;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -544,6 +547,7 @@ class SettingController extends Controller
         $settings = $this->getSettings();
         $banks = collect();
         $reconciliations = collect();
+        $recentImports = collect();
         $summary = [
             'bank_count' => 0,
             'matched_count' => 0,
@@ -618,7 +622,15 @@ class SettingController extends Controller
             ];
         }
 
-        return view('Settings.bank-reconciliation', compact('settings', 'banks', 'reconciliations', 'summary'));
+        if (Schema::hasTable('bank_statement_imports')) {
+            $recentImports = BankStatementImport::query()
+                ->with('bank')
+                ->latest()
+                ->limit(8)
+                ->get();
+        }
+
+        return view('Settings.bank-reconciliation', compact('settings', 'banks', 'reconciliations', 'summary', 'recentImports'));
     }
     public function manual_journal()
     {
@@ -799,6 +811,273 @@ class SettingController extends Controller
         ]);
 
         return redirect()->route('chart-of-accounts')->with('success', 'Account added to chart of accounts.');
+    }
+
+    public function storeBankStatementImport(Request $request)
+    {
+        if (!Schema::hasTable('bank_statement_imports') || !Schema::hasTable('bank_statement_lines')) {
+            return redirect()->back()->with('error', 'Bank statement import tables are not available yet. Run the latest migrations first.');
+        }
+
+        $companyId = (int) (Auth::user()->company_id ?? session('current_tenant_id') ?? 0);
+        $userId = (int) Auth::id();
+        $activeBranchId = (string) session('active_branch_id', '');
+        $activeBranchName = (string) session('active_branch_name', '');
+
+        $validated = $request->validate([
+            'bank_id' => ['required', 'integer'],
+            'statement_file' => ['required', 'file', 'mimes:csv,txt', 'max:5120'],
+            'currency' => ['nullable', 'string', 'max:10'],
+            'notes' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $bank = Bank::query()->findOrFail((int) $validated['bank_id']);
+
+        if ($companyId > 0 && (int) ($bank->company_id ?? 0) > 0 && (int) $bank->company_id !== $companyId) {
+            abort(403, 'You are not allowed to import statements for this bank account.');
+        }
+
+        $bankBranchId = trim((string) ($bank->branch_id ?? ''));
+        $bankBranchName = trim((string) ($bank->branch_name ?? $bank->branch ?? ''));
+
+        if ($activeBranchId !== '' && $bankBranchId !== '' && $bankBranchId !== $activeBranchId) {
+            return redirect()->back()->with('error', 'The selected bank account belongs to another branch.');
+        }
+
+        $branchId = $bankBranchId !== '' ? $bankBranchId : $activeBranchId;
+        $branchName = $bankBranchName !== '' ? $bankBranchName : $activeBranchName;
+
+        $parsed = $this->parseBankStatementCsv($request->file('statement_file')->getRealPath());
+        if (empty($parsed['lines'])) {
+            return redirect()->back()->with('error', 'No valid statement lines were found in the uploaded CSV.');
+        }
+
+        $storedPath = $request->file('statement_file')->store('bank-statements');
+
+        DB::transaction(function () use ($companyId, $userId, $branchId, $branchName, $validated, $storedPath, $bank, $parsed) {
+            $import = BankStatementImport::create([
+                'company_id' => $companyId ?: null,
+                'user_id' => $userId ?: null,
+                'branch_id' => $branchId !== '' ? $branchId : null,
+                'branch_name' => $branchName !== '' ? $branchName : null,
+                'bank_id' => $bank->id,
+                'uploaded_by' => $userId ?: null,
+                'source_file_name' => (string) $validated['statement_file']->getClientOriginalName(),
+                'stored_file_path' => $storedPath,
+                'currency' => strtoupper(trim((string) ($validated['currency'] ?? ''))) ?: null,
+                'statement_date_from' => $parsed['date_from'],
+                'statement_date_to' => $parsed['date_to'],
+                'line_count' => count($parsed['lines']),
+                'opening_balance' => $parsed['opening_balance'],
+                'closing_balance' => $parsed['closing_balance'],
+                'status' => 'imported',
+                'notes' => $validated['notes'] ?? null,
+            ]);
+
+            foreach ($parsed['lines'] as $line) {
+                BankStatementLine::create([
+                    'company_id' => $companyId ?: null,
+                    'user_id' => $userId ?: null,
+                    'branch_id' => $branchId !== '' ? $branchId : null,
+                    'branch_name' => $branchName !== '' ? $branchName : null,
+                    'bank_statement_import_id' => $import->id,
+                    'bank_id' => $bank->id,
+                    'line_date' => $line['line_date'],
+                    'description' => $line['description'],
+                    'reference' => $line['reference'],
+                    'debit' => $line['debit'],
+                    'credit' => $line['credit'],
+                    'amount' => $line['amount'],
+                    'balance' => $line['balance'],
+                    'status' => 'unmatched',
+                    'raw_row' => $line['raw_row'],
+                ]);
+            }
+        });
+
+        return redirect()->route('bank-reconciliation')->with('success', 'Bank statement imported successfully. The lines are now available for reconciliation expansion.');
+    }
+
+    private function parseBankStatementCsv(string $path): array
+    {
+        $handle = fopen($path, 'r');
+        if ($handle === false) {
+            throw new \RuntimeException('Unable to open the uploaded statement file.');
+        }
+
+        $header = null;
+        $columnMap = [];
+        $lines = [];
+        $dates = [];
+
+        while (($row = fgetcsv($handle)) !== false) {
+            if ($this->rowIsEmpty($row)) {
+                continue;
+            }
+
+            if ($header === null) {
+                $header = array_map(fn ($value) => trim((string) $value), $row);
+                $columnMap = $this->mapStatementColumns($header);
+                continue;
+            }
+
+            $rawRow = [];
+            foreach ($header as $index => $columnName) {
+                $rawRow[$columnName !== '' ? $columnName : 'column_' . $index] = isset($row[$index]) ? trim((string) $row[$index]) : null;
+            }
+
+            $lineDate = $this->parseStatementDate($this->extractMappedValue($row, $columnMap, 'date'));
+            $description = trim((string) $this->extractMappedValue($row, $columnMap, 'description'));
+            $reference = trim((string) $this->extractMappedValue($row, $columnMap, 'reference'));
+            $debit = $this->parseStatementAmount($this->extractMappedValue($row, $columnMap, 'debit'));
+            $credit = $this->parseStatementAmount($this->extractMappedValue($row, $columnMap, 'credit'));
+            $amount = $this->parseStatementAmount($this->extractMappedValue($row, $columnMap, 'amount'));
+            $balance = $this->parseStatementAmount($this->extractMappedValue($row, $columnMap, 'balance'));
+
+            if ($amount === null) {
+                if ($credit !== null && $debit !== null) {
+                    $amount = $credit - $debit;
+                } elseif ($credit !== null) {
+                    $amount = abs($credit);
+                } elseif ($debit !== null) {
+                    $amount = -abs($debit);
+                } else {
+                    $amount = 0.0;
+                }
+            }
+
+            if ($lineDate === null && $description === '' && $reference === '' && abs((float) $amount) < 0.00001 && $balance === null) {
+                continue;
+            }
+
+            if ($lineDate !== null) {
+                $dates[] = $lineDate;
+            }
+
+            $lines[] = [
+                'line_date' => $lineDate,
+                'description' => $description !== '' ? $description : null,
+                'reference' => $reference !== '' ? $reference : null,
+                'debit' => $debit,
+                'credit' => $credit,
+                'amount' => round((float) $amount, 2),
+                'balance' => $balance,
+                'raw_row' => $rawRow,
+            ];
+        }
+
+        fclose($handle);
+
+        $openingBalance = !empty($lines) ? ($lines[0]['balance'] !== null ? round((float) $lines[0]['balance'] - (float) $lines[0]['amount'], 2) : null) : null;
+        $closingBalance = !empty($lines) ? $lines[array_key_last($lines)]['balance'] : null;
+
+        return [
+            'lines' => $lines,
+            'date_from' => !empty($dates) ? min($dates) : null,
+            'date_to' => !empty($dates) ? max($dates) : null,
+            'opening_balance' => $openingBalance,
+            'closing_balance' => $closingBalance,
+        ];
+    }
+
+    private function rowIsEmpty(array $row): bool
+    {
+        foreach ($row as $value) {
+            if (trim((string) $value) !== '') {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private function mapStatementColumns(array $header): array
+    {
+        $aliases = [
+            'date' => ['date', 'transaction date', 'value date', 'posting date'],
+            'description' => ['description', 'details', 'narration', 'transaction details', 'remark', 'remarks'],
+            'reference' => ['reference', 'ref', 'transaction ref', 'transaction id', 'document no', 'document'],
+            'debit' => ['debit', 'withdrawal', 'money out', 'debits'],
+            'credit' => ['credit', 'deposit', 'money in', 'credits'],
+            'amount' => ['amount', 'transaction amount'],
+            'balance' => ['balance', 'running balance', 'closing balance'],
+        ];
+
+        $normalizedHeader = array_map(function ($value) {
+            return strtolower(trim(preg_replace('/\s+/', ' ', (string) $value)));
+        }, $header);
+
+        $map = [];
+        foreach ($aliases as $key => $possibleLabels) {
+            foreach ($normalizedHeader as $index => $columnName) {
+                if (in_array($columnName, $possibleLabels, true)) {
+                    $map[$key] = $index;
+                    break;
+                }
+            }
+        }
+
+        return $map;
+    }
+
+    private function extractMappedValue(array $row, array $map, string $key): ?string
+    {
+        if (!array_key_exists($key, $map)) {
+            return null;
+        }
+
+        $value = $row[$map[$key]] ?? null;
+
+        return $value === null ? null : trim((string) $value);
+    }
+
+    private function parseStatementAmount(?string $value): ?float
+    {
+        $value = trim((string) $value);
+        if ($value === '') {
+            return null;
+        }
+
+        $normalized = str_replace([',', ' '], '', $value);
+        $negative = false;
+
+        if (str_starts_with($normalized, '(') && str_ends_with($normalized, ')')) {
+            $negative = true;
+            $normalized = trim($normalized, '()');
+        }
+
+        $normalized = preg_replace('/[^0-9.\-]/', '', $normalized);
+        if ($normalized === '' || $normalized === '-' || !is_numeric($normalized)) {
+            return null;
+        }
+
+        $amount = (float) $normalized;
+
+        return round($negative ? -abs($amount) : $amount, 2);
+    }
+
+    private function parseStatementDate(?string $value): ?string
+    {
+        $value = trim((string) $value);
+        if ($value === '') {
+            return null;
+        }
+
+        foreach (['Y-m-d', 'd/m/Y', 'm/d/Y', 'd-m-Y', 'm-d-Y', 'd M Y', 'd M, Y', 'M d, Y'] as $format) {
+            try {
+                $date = Carbon::createFromFormat($format, $value);
+                if ($date !== false) {
+                    return $date->toDateString();
+                }
+            } catch (\Throwable $e) {
+            }
+        }
+
+        try {
+            return Carbon::parse($value)->toDateString();
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 
     public function updateChartAccount(Request $request, $id)

@@ -118,10 +118,29 @@
         align-items: end;
     }
 
+    .recon-import-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.9fr);
+        gap: 18px;
+    }
+
+    .recon-import-list {
+        display: grid;
+        gap: 12px;
+    }
+
+    .recon-import-item {
+        border: 1px solid #dbe7ff;
+        background: #fff;
+        border-radius: 14px;
+        padding: 12px 14px;
+    }
+
     @media (max-width: 991px) {
         .recon-summary-grid,
         .recon-balance-grid,
-        .recon-adjust-form {
+        .recon-adjust-form,
+        .recon-import-grid {
             grid-template-columns: 1fr;
         }
     }
@@ -174,6 +193,71 @@
                                     <strong class="{{ abs($summary['difference_total']) > 0.009 ? 'recon-bad' : 'recon-good' }}">
                                         {{ number_format((float) $summary['difference_total'], 2) }}
                                     </strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card recon-card">
+                        <div class="card-body">
+                            <div class="recon-import-grid">
+                                <div>
+                                    <h5 class="mb-1">Import Bank Statement</h5>
+                                    <p class="text-muted mb-3">Upload a CSV statement into the current tenant and branch workspace so we can build full reconciliation on top of real bank lines.</p>
+                                    <form method="POST" action="{{ route('settings.bank-reconciliation.import') }}" enctype="multipart/form-data" class="row g-3">
+                                        @csrf
+                                        <div class="col-md-6">
+                                            <label class="form-label">Bank Account</label>
+                                            <select name="bank_id" class="form-select" required>
+                                                <option value="">Select bank</option>
+                                                @foreach($banks as $bank)
+                                                    <option value="{{ $bank->id }}">{{ $bank->name }}{{ $bank->account_number ? ' - ' . $bank->account_number : '' }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label">Currency</label>
+                                            <input type="text" name="currency" class="form-control" placeholder="NGN">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label">Statement File</label>
+                                            <input type="file" name="statement_file" class="form-control" accept=".csv,.txt" required>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label">Notes</label>
+                                            <input type="text" name="notes" class="form-control" placeholder="Optional import note">
+                                        </div>
+                                        <div class="col-12">
+                                            <button type="submit" class="btn btn-primary">Import Statement CSV</button>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div>
+                                    <h5 class="mb-1">Recent Imports</h5>
+                                    <p class="text-muted mb-3">Latest statement batches within your current workspace.</p>
+                                    <div class="recon-import-list">
+                                        @forelse($recentImports as $import)
+                                            <div class="recon-import-item">
+                                                <div class="fw-semibold">{{ optional($import->bank)->name ?: 'Bank Account' }}</div>
+                                                <div class="small text-muted mb-2">{{ $import->source_file_name }}</div>
+                                                <div class="small">
+                                                    {{ number_format((float) $import->line_count) }} lines
+                                                    @if($import->statement_date_from || $import->statement_date_to)
+                                                        •
+                                                        {{ $import->statement_date_from ? $import->statement_date_from->format('d M Y') : 'N/A' }}
+                                                        to
+                                                        {{ $import->statement_date_to ? $import->statement_date_to->format('d M Y') : 'N/A' }}
+                                                    @endif
+                                                </div>
+                                                <div class="small text-muted">
+                                                    Closing balance:
+                                                    <strong>{{ $import->closing_balance !== null ? number_format((float) $import->closing_balance, 2) : 'N/A' }}</strong>
+                                                </div>
+                                            </div>
+                                        @empty
+                                            <div class="text-muted small">No statement imports yet for this workspace.</div>
+                                        @endforelse
+                                    </div>
                                 </div>
                             </div>
                         </div>
