@@ -18,6 +18,7 @@ class BankStatementLine extends Model
         'branch_name',
         'bank_statement_import_id',
         'bank_id',
+        'matched_transaction_id',
         'line_date',
         'description',
         'reference',
@@ -26,6 +27,9 @@ class BankStatementLine extends Model
         'amount',
         'balance',
         'status',
+        'matched_at',
+        'matched_by',
+        'review_notes',
         'raw_row',
     ];
 
@@ -35,6 +39,7 @@ class BankStatementLine extends Model
         'credit' => 'decimal:2',
         'amount' => 'decimal:2',
         'balance' => 'decimal:2',
+        'matched_at' => 'datetime',
         'raw_row' => 'array',
     ];
 
@@ -46,5 +51,15 @@ class BankStatementLine extends Model
     public function bank(): BelongsTo
     {
         return $this->belongsTo(Bank::class);
+    }
+
+    public function matchedTransaction(): BelongsTo
+    {
+        return $this->belongsTo(Transaction::class, 'matched_transaction_id');
+    }
+
+    public function matcher(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'matched_by');
     }
 }

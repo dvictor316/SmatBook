@@ -47,11 +47,20 @@
         box-shadow: 0 10px 20px rgba(91, 61, 245, 0.08);
         transform: translateX(1px);
     }
-}
+
+    .settings-menu .menu-group-label {
+        margin: 10px 4px 2px;
+        font-size: 0.7rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #64748b;
+    }
 </style>
 
 <div class="widget settings-menu mb-0">
     <ul>
+        <li class="menu-group-label">Workspace</li>
         <li class="nav-item">
             <a href="{{ route('settings.index') }}" class="nav-link {{ Request::routeIs('settings.index') ? 'active' : '' }}">
                 <i class="fas fa-user"></i> <span>Account Settings</span>
@@ -81,6 +90,7 @@
                 <i class="fas fa-credit-card"></i> <span>Payment Methods</span>
             </a>
         </li>
+        <li class="menu-group-label">Banking & Accounting</li>
         <li class="nav-item">
             <a href="{{ route('bank-account') }}" class="nav-link {{ Request::routeIs('bank-account') ? 'active' : '' }}">
                 <i class="fas fa-university"></i> <span>Bank Settings</span>
@@ -102,6 +112,11 @@
             </a>
         </li>
         <li class="nav-item">
+            <a href="{{ route('bank-statement-imports') }}" class="nav-link {{ Request::routeIs('bank-statement-imports') ? 'active' : '' }}">
+                <i class="fas fa-file-import"></i> <span>Statement Imports</span>
+            </a>
+        </li>
+        <li class="nav-item">
             <a href="{{ route('manual-journal') }}" class="nav-link {{ Request::routeIs('manual-journal') ? 'active' : '' }}">
                 <i class="fas fa-pen-to-square"></i> <span>Manual Journal</span>
             </a>
@@ -116,6 +131,7 @@
                 <i class="fas fa-wallet"></i> <span>Plan & Billing</span>
             </a>
         </li>
+        <li class="menu-group-label">Security & Communication</li>
         <li class="nav-item">
             <a href="{{ route('two-factor') }}" class="nav-link {{ Request::routeIs('two-factor') ? 'active' : '' }}">
                 <i class="fas fa-shield-halved"></i> <span>Two Factor</span>

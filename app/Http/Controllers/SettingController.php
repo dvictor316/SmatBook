@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
@@ -570,24 +571,7 @@ class SettingController extends Controller
 
         if ($banks->isNotEmpty()) {
             $reconciliations = $banks->map(function (Bank $bank) use ($accounts) {
-                $account = $accounts->first(function (Account $account) use ($bank) {
-                    $bankName = strtolower(trim((string) $bank->name));
-                    $accountName = strtolower(trim((string) $account->name));
-
-                    return $bankName !== '' && (
-                        $accountName === $bankName
-                        || str_contains($accountName, $bankName)
-                        || str_contains($bankName, $accountName)
-                    );
-                });
-
-                if (!$account) {
-                    $account = $accounts->first(function (Account $account) {
-                        $name = strtolower((string) $account->name);
-                        return str_contains($name, 'bank') || str_contains($name, 'cash');
-                    });
-                }
-
+                $account = $this->resolveBankLedgerAccount($bank, $accounts);
                 $bookBalance = $account
                     ? (float) ($account->current_balance ?? $account->calculateBalance())
                     : 0.0;
@@ -631,6 +615,133 @@ class SettingController extends Controller
         }
 
         return view('Settings.bank-reconciliation', compact('settings', 'banks', 'reconciliations', 'summary', 'recentImports'));
+    }
+
+    public function bankStatementImports(Request $request)
+    {
+        $settings = $this->getSettings();
+        $banks = Schema::hasTable('banks')
+            ? Bank::query()->orderBy('name')->get()
+            : collect();
+
+        $imports = new LengthAwarePaginator([], 0, 15);
+        $selectedImport = null;
+        $selectedLines = new LengthAwarePaginator([], 0, 25);
+        $selectedAccount = null;
+        $selectedBank = null;
+        $statusSummary = [
+            'total' => 0,
+            'matched' => 0,
+            'unmatched' => 0,
+        ];
+
+        if (Schema::hasTable('bank_statement_imports')) {
+            $importsQuery = BankStatementImport::query()
+                ->with('bank')
+                ->withCount('lines')
+                ->latest();
+
+            if ($request->filled('bank_id')) {
+                $importsQuery->where('bank_id', (int) $request->input('bank_id'));
+            }
+
+            if ($request->filled('date_from')) {
+                $importsQuery->whereDate('created_at', '>=', $request->input('date_from'));
+            }
+
+            if ($request->filled('date_to')) {
+                $importsQuery->whereDate('created_at', '<=', $request->input('date_to'));
+            }
+
+            $imports = $importsQuery->paginate(12)->withQueryString();
+            $selectedImportId = (int) $request->input('import_id', $imports->first()?->id ?? 0);
+
+            if ($selectedImportId > 0) {
+                $selectedImport = BankStatementImport::query()
+                    ->with('bank')
+                    ->find($selectedImportId);
+            }
+        }
+
+        if ($selectedImport && Schema::hasTable('bank_statement_lines')) {
+            $selectedBank = $selectedImport->bank;
+            $assetAccounts = Schema::hasTable('accounts')
+                ? Account::query()
+                    ->where('is_active', true)
+                    ->where('type', Account::TYPE_ASSET)
+                    ->orderBy('name')
+                    ->get()
+                : collect();
+
+            $selectedAccount = $selectedBank ? $this->resolveBankLedgerAccount($selectedBank, $assetAccounts) : null;
+
+            $baseLineQuery = BankStatementLine::query()
+                ->where('bank_statement_import_id', $selectedImport->id);
+
+            $statusSummary = [
+                'total' => (clone $baseLineQuery)->count(),
+                'matched' => (clone $baseLineQuery)->where('status', 'matched')->count(),
+                'unmatched' => (clone $baseLineQuery)->where('status', '!=', 'matched')->count(),
+            ];
+
+            $lineQuery = BankStatementLine::query()
+                ->with(['matchedTransaction.account'])
+                ->where('bank_statement_import_id', $selectedImport->id)
+                ->orderByDesc('line_date')
+                ->orderByDesc('id');
+
+            $status = strtolower(trim((string) $request->input('status', '')));
+            if (in_array($status, ['matched', 'unmatched'], true)) {
+                if ($status === 'matched') {
+                    $lineQuery->where('status', 'matched');
+                } else {
+                    $lineQuery->where('status', '!=', 'matched');
+                }
+            }
+
+            $selectedLines = $lineQuery->paginate(25)->withQueryString();
+
+            $transactionPool = collect();
+            if ($selectedAccount && Schema::hasTable('transactions')) {
+                $lineDates = $selectedLines->getCollection()
+                    ->pluck('line_date')
+                    ->filter()
+                    ->map(fn ($date) => Carbon::parse($date));
+
+                $transactionQuery = Transaction::query()
+                    ->with('account')
+                    ->where('account_id', $selectedAccount->id)
+                    ->orderByDesc('transaction_date')
+                    ->orderByDesc('id');
+
+                if ($lineDates->isNotEmpty()) {
+                    $transactionQuery->whereBetween('transaction_date', [
+                        $lineDates->min()->copy()->subDays(7)->toDateString(),
+                        $lineDates->max()->copy()->addDays(7)->toDateString(),
+                    ]);
+                }
+
+                $transactionPool = $transactionQuery->limit(400)->get();
+            }
+
+            $selectedLines->setCollection(
+                $selectedLines->getCollection()->map(function (BankStatementLine $line) use ($transactionPool) {
+                    $line->setRelation('suggestedTransactions', $this->suggestTransactionsForStatementLine($line, $transactionPool));
+                    return $line;
+                })
+            );
+        }
+
+        return view('Settings.bank-statement-imports', compact(
+            'settings',
+            'banks',
+            'imports',
+            'selectedImport',
+            'selectedLines',
+            'selectedAccount',
+            'selectedBank',
+            'statusSummary'
+        ));
     }
     public function manual_journal()
     {
@@ -854,7 +965,7 @@ class SettingController extends Controller
 
         $storedPath = $request->file('statement_file')->store('bank-statements');
 
-        DB::transaction(function () use ($companyId, $userId, $branchId, $branchName, $validated, $storedPath, $bank, $parsed) {
+        $importId = DB::transaction(function () use ($companyId, $userId, $branchId, $branchName, $validated, $storedPath, $bank, $parsed) {
             $import = BankStatementImport::create([
                 'company_id' => $companyId ?: null,
                 'user_id' => $userId ?: null,
@@ -893,9 +1004,57 @@ class SettingController extends Controller
                     'raw_row' => $line['raw_row'],
                 ]);
             }
+
+            return $import->id;
         });
 
-        return redirect()->route('bank-reconciliation')->with('success', 'Bank statement imported successfully. The lines are now available for reconciliation expansion.');
+        return redirect()->route('bank-statement-imports', ['import_id' => $importId])->with('success', 'Bank statement imported successfully. Review and match the imported lines.');
+    }
+
+    public function matchBankStatementLine(Request $request, BankStatementLine $line)
+    {
+        $validated = $request->validate([
+            'transaction_id' => ['required', 'integer'],
+            'review_notes' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $line->loadMissing('bank', 'import');
+        $transaction = Transaction::query()->findOrFail((int) $validated['transaction_id']);
+
+        if ($line->company_id && (int) $line->company_id !== (int) ($transaction->company_id ?? 0)) {
+            return redirect()->back()->with('error', 'The selected transaction belongs to another tenant.');
+        }
+
+        if ($line->branch_id && trim((string) $line->branch_id) !== trim((string) ($transaction->branch_id ?? ''))) {
+            return redirect()->back()->with('error', 'The selected transaction belongs to another branch.');
+        }
+
+        $mappedAccount = $line->bank ? $this->resolveBankLedgerAccount($line->bank) : null;
+        if ($mappedAccount && (int) $transaction->account_id !== (int) $mappedAccount->id) {
+            return redirect()->back()->with('error', 'The selected transaction is not posted to the mapped bank ledger account.');
+        }
+
+        $line->update([
+            'matched_transaction_id' => $transaction->id,
+            'status' => 'matched',
+            'matched_at' => now(),
+            'matched_by' => $request->user()?->id,
+            'review_notes' => $validated['review_notes'] ?? null,
+        ]);
+
+        return redirect()->back()->with('success', 'Statement line matched successfully.');
+    }
+
+    public function unmatchBankStatementLine(BankStatementLine $line)
+    {
+        $line->update([
+            'matched_transaction_id' => null,
+            'status' => 'unmatched',
+            'matched_at' => null,
+            'matched_by' => null,
+        ]);
+
+        return redirect()->back()->with('success', 'Statement line unmatched successfully.');
     }
 
     private function parseBankStatementCsv(string $path): array
@@ -1078,6 +1237,65 @@ class SettingController extends Controller
         } catch (\Throwable $e) {
             return null;
         }
+    }
+
+    private function resolveBankLedgerAccount(Bank $bank, $accounts = null): ?Account
+    {
+        $accounts = $accounts instanceof \Illuminate\Support\Collection
+            ? $accounts
+            : (Schema::hasTable('accounts')
+                ? Account::query()
+                    ->where('is_active', true)
+                    ->where('type', Account::TYPE_ASSET)
+                    ->orderBy('name')
+                    ->get()
+                : collect());
+
+        $account = $accounts->first(function (Account $account) use ($bank) {
+            $bankName = strtolower(trim((string) $bank->name));
+            $accountName = strtolower(trim((string) $account->name));
+
+            return $bankName !== '' && (
+                $accountName === $bankName
+                || str_contains($accountName, $bankName)
+                || str_contains($bankName, $accountName)
+            );
+        });
+
+        if ($account) {
+            return $account;
+        }
+
+        return $accounts->first(function (Account $account) {
+            $name = strtolower((string) $account->name);
+            return str_contains($name, 'bank') || str_contains($name, 'cash');
+        });
+    }
+
+    private function suggestTransactionsForStatementLine(BankStatementLine $line, $transactions)
+    {
+        $lineAmount = round((float) ($line->amount ?? 0), 2);
+        $lineDate = $line->line_date ? Carbon::parse($line->line_date) : null;
+
+        return $transactions
+            ->map(function (Transaction $transaction) use ($lineAmount, $lineDate) {
+                $transactionImpact = round((float) $transaction->debit - (float) $transaction->credit, 2);
+                $sameAmount = abs($transactionImpact - $lineAmount) < 0.01;
+                $sameAbsoluteAmount = abs(abs($transactionImpact) - abs($lineAmount)) < 0.01;
+                $daysAway = $lineDate ? abs(Carbon::parse($transaction->transaction_date)->diffInDays($lineDate)) : 999;
+                $score = ($sameAmount ? 100 : 0) + ($sameAbsoluteAmount ? 35 : 0) + max(0, 15 - min($daysAway, 15));
+
+                return [
+                    'transaction' => $transaction,
+                    'score' => $score,
+                    'impact' => $transactionImpact,
+                    'days_away' => $daysAway,
+                ];
+            })
+            ->filter(fn ($candidate) => $candidate['score'] > 0)
+            ->sortByDesc('score')
+            ->take(3)
+            ->values();
     }
 
     public function updateChartAccount(Request $request, $id)

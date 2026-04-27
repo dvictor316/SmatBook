@@ -1009,6 +1009,8 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::delete('/settings/chart-of-accounts/{id}', 'destroyChartAccount')->name('settings.chart-of-accounts.destroy');
         Route::post('/settings/chart-of-accounts/{id}/deactivate', 'deactivateChartAccount')->name('settings.chart-of-accounts.deactivate');
         Route::post('/settings/bank-reconciliation/import', 'storeBankStatementImport')->name('settings.bank-reconciliation.import');
+        Route::post('/settings/bank-statement-lines/{line}/match', 'matchBankStatementLine')->name('settings.bank-statement-lines.match');
+        Route::post('/settings/bank-statement-lines/{line}/unmatch', 'unmatchBankStatementLine')->name('settings.bank-statement-lines.unmatch');
         Route::post('/settings/bank-reconciliation/adjustment', 'storeBankReconciliationAdjustment')->name('settings.bank-reconciliation.adjustment');
         Route::post('/settings/manual-journal', 'storeManualJournal')->name('settings.manual-journal.store');
         Route::prefix('settings')->group(function () {
@@ -1016,6 +1018,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
             Route::get('/branches', 'branches')->name('branches.index');
             Route::get('/chart-of-accounts', 'chart_of_accounts')->name('chart-of-accounts');
             Route::get('/bank-reconciliation', 'bank_reconciliation')->name('bank-reconciliation');
+            Route::get('/bank-statement-imports', 'bankStatementImports')->name('bank-statement-imports');
             Route::get('/manual-journal', 'manual_journal')->name('manual-journal');
             Route::get('/company-settings', 'company_settings')->name('company-settings');
             Route::get('/email-settings', 'email_settings')->name('email-settings');

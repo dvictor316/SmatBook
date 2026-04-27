@@ -238,7 +238,10 @@
                                     <div class="recon-import-list">
                                         @forelse($recentImports as $import)
                                             <div class="recon-import-item">
-                                                <div class="fw-semibold">{{ optional($import->bank)->name ?: 'Bank Account' }}</div>
+                                                <div class="d-flex justify-content-between align-items-start gap-2">
+                                                    <div class="fw-semibold">{{ optional($import->bank)->name ?: 'Bank Account' }}</div>
+                                                    <a href="{{ route('bank-statement-imports', ['import_id' => $import->id]) }}" class="btn btn-sm btn-outline-primary">Review</a>
+                                                </div>
                                                 <div class="small text-muted mb-2">{{ $import->source_file_name }}</div>
                                                 <div class="small">
                                                     {{ number_format((float) $import->line_count) }} lines
