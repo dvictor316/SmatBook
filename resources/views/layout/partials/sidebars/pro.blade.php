@@ -71,6 +71,18 @@
                         @if(Route::has('inventory.transfer-audit'))
                             <li><a href="{{ route('inventory.transfer-audit') }}">Transfer Audit</a></li>
                         @endif
+                        <li><a href="{{ route('inventory.stock-valuation') }}">Stock Valuation</a></li>
+                        <li><a href="{{ route('inventory.lots.index') }}">Lot Tracking</a></li>
+                        <li><a href="{{ route('inventory.serials.index') }}">Serial Numbers</a></li>
+                        <li><a href="{{ route('inventory.barcodes.index') }}">Barcode Management</a></li>
+                    </ul>
+                </li>
+
+                <li class="submenu {{ Request::is('price-lists*') ? 'active subdrop' : '' }}">
+                    <a href="#"><i class="fe fe-tag"></i><span>Price Lists</span><span class="menu-arrow"></span></a>
+                    <ul>
+                        <li><a href="{{ route('price-lists.index') }}">All Price Lists</a></li>
+                        <li><a href="{{ route('price-lists.create') }}">New Price List</a></li>
                     </ul>
                 </li>
 
@@ -115,6 +127,24 @@
                     </ul>
                 </li>
 
+                <li class="submenu {{ Request::is('rfq*') ? 'active subdrop' : '' }}">
+                    <a href="#"><i class="fe fe-send"></i><span>RFQ</span><span class="menu-arrow"></span></a>
+                    <ul>
+                        <li><a href="{{ route('rfq.index') }}">All RFQs</a></li>
+                        <li><a href="{{ route('rfq.create') }}">New RFQ</a></li>
+                    </ul>
+                </li>
+
+                <li class="submenu {{ Request::is('grn*') ? 'active subdrop' : '' }}">
+                    <a href="#"><i class="fe fe-truck"></i><span>Goods Received Notes</span><span class="menu-arrow"></span></a>
+                    <ul>
+                        <li><a href="{{ route('grn.index') }}">All GRNs</a></li>
+                        <li><a href="{{ route('grn.create') }}">New GRN</a></li>
+                    </ul>
+                </li>
+
+                <li><a href="{{ route('landed-costs.index') }}"><i class="fe fe-anchor"></i><span>Landed Costs</span></a></li>
+
                 <li class="submenu {{ Request::is('chat*', 'calendar*', 'messages*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-grid"></i><span>Applications</span><span class="menu-arrow"></span></a>
                     <ul>
@@ -144,6 +174,24 @@
                 @if(Route::has('finance.follow-ups.index'))
                     <li><a href="{{ route('finance.follow-ups.index') }}"><i class="fe fe-calendar"></i><span>Follow-Ups</span></a></li>
                 @endif
+                <li class="menu-title"><span>Banking & Cash</span></li>
+
+                <li class="submenu {{ Request::is('cheques*') ? 'active subdrop' : '' }}">
+                    <a href="#"><i class="fe fe-credit-card"></i><span>Cheque Register</span><span class="menu-arrow"></span></a>
+                    <ul>
+                        <li><a href="{{ route('cheques.index') }}">All Cheques</a></li>
+                        <li><a href="{{ route('cheques.create') }}">New Cheque</a></li>
+                    </ul>
+                </li>
+
+                <li class="submenu {{ Request::is('loans*') ? 'active subdrop' : '' }}">
+                    <a href="#"><i class="fe fe-dollar-sign"></i><span>Loans & Overdraft</span><span class="menu-arrow"></span></a>
+                    <ul>
+                        <li><a href="{{ route('loans.index') }}">All Loans</a></li>
+                        <li><a href="{{ route('loans.create') }}">New Loan</a></li>
+                    </ul>
+                </li>
+
                 <li class="{{ request()->routeIs('branches.index') ? 'active' : '' }}">
                     <a href="{{ route('branches.index') }}" class="{{ request()->routeIs('branches.index') ? 'active' : '' }}">
                         <i class="fe fe-git-branch"></i><span>Branches</span>
@@ -155,6 +203,7 @@
                         <li><a href="{{ route('chart-of-accounts') }}" class="{{ request()->routeIs('chart-of-accounts') ? 'active' : '' }}">Chart of Accounts</a></li>
                         <li><a href="{{ route('bank-reconciliation') }}" class="{{ request()->routeIs('bank-reconciliation') ? 'active' : '' }}">Bank Reconciliation</a></li>
                         <li><a href="{{ route('manual-journal') }}" class="{{ request()->routeIs('manual-journal') ? 'active' : '' }}">Manual Journal</a></li>
+                        <li><a href="{{ route('exchange-rates.index') }}">Exchange Rates</a></li>
                     </ul>
                 </li>
 
@@ -169,10 +218,40 @@
                 <li class="menu-title"><span>Reports</span></li>
 
                 @include('layout.partials.sidebars.reports-menu', ['reportAccess' => 'pro'])
+                <li><a href="{{ route('report-schedules.index') }}"><i class="fe fe-clock"></i><span>Scheduled Reports</span></a></li>
+                <li><a href="{{ route('reports.financial-ratios') }}"><i class="fe fe-percent"></i><span>Financial Ratios</span></a></li>
+
+                <li class="menu-title"><span>Payroll & HR</span></li>
+                <li class="submenu {{ Request::is('hr/leave*') ? 'active subdrop' : '' }}">
+                    <a href="#"><i class="fe fe-calendar"></i><span>Leave Management</span><span class="menu-arrow"></span></a>
+                    <ul>
+                        <li><a href="{{ route('hr.leave.requests') }}">Leave Requests</a></li>
+                        <li><a href="{{ route('hr.leave.create') }}">New Request</a></li>
+                        <li><a href="{{ route('hr.leave.types') }}">Leave Types</a></li>
+                    </ul>
+                </li>
+                <li class="submenu {{ Request::is('hr/attendance*') ? 'active subdrop' : '' }}">
+                    <a href="#"><i class="fe fe-clock"></i><span>Attendance</span><span class="menu-arrow"></span></a>
+                    <ul>
+                        <li><a href="{{ route('hr.attendance.index') }}">Attendance Log</a></li>
+                        <li><a href="{{ route('hr.attendance.report') }}">Report</a></li>
+                    </ul>
+                </li>
 
                 <li class="menu-title"><span>Growth & Projects</span></li>
                 <li><a href="{{ route('projects.index') }}"><i class="fe fe-briefcase"></i><span>Project Management</span></a></li>
                 <li><a href="{{ route('projects.index') }}#profitability"><i class="fe fe-trending-up"></i><span>Project Profitability</span></a></li>
+                <li><a href="{{ route('timesheets.index') }}"><i class="fe fe-clock"></i><span>Timesheets</span></a></li>
+                <li><a href="{{ route('milestones.index') }}"><i class="fe fe-flag"></i><span>Milestone Billing</span></a></li>
+
+                <li class="menu-title"><span>Budgeting & Planning</span></li>
+                <li class="submenu {{ Request::is('forecasting*') ? 'active subdrop' : '' }}">
+                    <a href="#"><i class="fe fe-trending-up"></i><span>Forecasting</span><span class="menu-arrow"></span></a>
+                    <ul>
+                        <li><a href="{{ route('forecasting.index') }}">All Forecasts</a></li>
+                        <li><a href="{{ route('forecasting.create') }}">New Forecast</a></li>
+                    </ul>
+                </li>
 
                 <li class="menu-title"><span>Enterprise Features</span></li>
 
