@@ -12,6 +12,18 @@ use Illuminate\Support\Facades\DB;
 
 class TimesheetController extends Controller
 {
+    /**
+     * Get the active branch context (id, name) from session.
+     *
+     * @return array
+     */
+    private function getActiveBranchContext(): array
+    {
+        return [
+            'id' => session('active_branch_id', Auth::user()->branch_id ?? null),
+            'name' => session('active_branch_name', null),
+        ];
+    }
     public function index(Request $request)
     {
         $companyId  = Auth::user()->company_id;
@@ -48,12 +60,14 @@ class TimesheetController extends Controller
             'entries.*.notes'        => 'nullable|string|max:500',
         ]);
 
-        DB::transaction(function () use ($data, $companyId) {
+        $branch = $this->getActiveBranchContext();
+        DB::transaction(function () use ($data, $companyId, $branch) {
             $totalHours = collect($data['entries'])->sum('hours');
 
             $timesheet = Timesheet::create([
                 'company_id'      => $companyId,
-                'branch_id'       => Auth::user()->branch_id,
+                'branch_id'       => $branch['id'],
+                'branch_name'     => $branch['name'],
                 'employee_id'     => $data['employee_id'],
                 'week_start_date' => $data['week_start_date'],
                 'total_hours'     => $totalHours,

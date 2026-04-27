@@ -30,6 +30,18 @@ class IntercompanyController extends Controller
         return view('intercompany.create', compact('companies', 'accounts'));
     }
 
+        /**
+         * Get the active branch context (id, name) from session.
+         *
+         * @return array
+         */
+        private function getActiveBranchContext(): array
+        {
+            return [
+                'id' => session('active_branch_id', Auth::user()->branch_id ?? null),
+                'name' => session('active_branch_name', null),
+            ];
+        }
     public function store(Request $request)
     {
         $companyId = Auth::user()->company_id;
@@ -49,20 +61,23 @@ class IntercompanyController extends Controller
         abort_if($data['counterparty_company_id'] == $companyId, 422,
             'Cannot create intercompany transaction with the same company.');
 
-        IntercompanyTransaction::create([
-            'company_id'               => $companyId,
-            'counterparty_company_id'  => $data['counterparty_company_id'],
-            'transaction_type'         => $data['transaction_type'],
-            'transaction_date'         => $data['transaction_date'],
-            'amount'                   => $data['amount'],
-            'currency'                 => $data['currency'],
-            'description'              => $data['description'],
-            'debit_account_id'         => $data['debit_account_id'] ?? null,
-            'credit_account_id'        => $data['credit_account_id'] ?? null,
-            'reference'                => $data['reference'] ?? null,
-            'status'                   => 'pending',
-            'created_by'               => Auth::id(),
-        ]);
+            $branch = $this->getActiveBranchContext();
+            IntercompanyTransaction::create([
+                'company_id'               => $companyId,
+                'branch_id'                => $branch['id'],
+                'branch_name'              => $branch['name'],
+                'counterparty_company_id'  => $data['counterparty_company_id'],
+                'transaction_type'         => $data['transaction_type'],
+                'transaction_date'         => $data['transaction_date'],
+                'amount'                   => $data['amount'],
+                'currency'                 => $data['currency'],
+                'description'              => $data['description'],
+                'debit_account_id'         => $data['debit_account_id'] ?? null,
+                'credit_account_id'        => $data['credit_account_id'] ?? null,
+                'reference'                => $data['reference'] ?? null,
+                'status'                   => 'pending',
+                'created_by'               => Auth::id(),
+            ]);
 
         return redirect()->route('intercompany.index')
             ->with('success', 'Intercompany transaction created.');

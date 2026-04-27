@@ -12,6 +12,18 @@ use Illuminate\Support\Facades\DB;
 
 class LeaveManagementController extends Controller
 {
+    /**
+     * Get the active branch context (id, name) from session.
+     *
+     * @return array
+     */
+    private function getActiveBranchContext(): array
+    {
+        return [
+            'id' => session('active_branch_id', Auth::user()->branch_id ?? null),
+            'name' => session('active_branch_name', null),
+        ];
+    }
     // --- Leave Types ---
     public function types()
     {
@@ -34,7 +46,10 @@ class LeaveManagementController extends Controller
             'requires_approval'       => 'boolean',
         ]);
 
+        $branch = $this->getActiveBranchContext();
         $data['company_id']        = $companyId;
+        $data['branch_id']         = $branch['id'];
+        $data['branch_name']       = $branch['name'];
         $data['is_paid']           = $request->boolean('is_paid', true);
         $data['carry_forward']     = $request->boolean('carry_forward', false);
         $data['requires_approval'] = $request->boolean('requires_approval', true);

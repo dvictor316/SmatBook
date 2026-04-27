@@ -7,6 +7,18 @@ use App\Models\LandedCost;
 
 class LandedCostController extends Controller
 {
+    /**
+     * Get the active branch context (id, name) from session.
+     *
+     * @return array
+     */
+    private function getActiveBranchContext(): array
+    {
+        return [
+            'id' => session('active_branch_id', auth()->user()->branch_id ?? null),
+            'name' => session('active_branch_name', null),
+        ];
+    }
     public function index(Request $request)
     {
         $companyId = auth()->user()->company_id;
@@ -36,9 +48,11 @@ class LandedCostController extends Controller
 
         $user = auth()->user();
 
+        $branch = $this->getActiveBranchContext();
         LandedCost::create($validated + [
             'company_id' => $user->company_id,
-            'branch_id'  => $user->branch_id,
+            'branch_id'  => $branch['id'],
+            'branch_name'=> $branch['name'],
             'created_by' => $user->id,
             'status'     => 'pending',
         ]);

@@ -9,6 +9,18 @@ use Illuminate\Support\Facades\Auth;
 
 class AttendanceController extends Controller
 {
+    /**
+     * Get the active branch context (id, name) from session.
+     *
+     * @return array
+     */
+    private function getActiveBranchContext(): array
+    {
+        return [
+            'id' => session('active_branch_id', Auth::user()->branch_id ?? null),
+            'name' => session('active_branch_name', null),
+        ];
+    }
     public function index(Request $request)
     {
         $companyId = Auth::user()->company_id;
@@ -49,6 +61,7 @@ class AttendanceController extends Controller
             $hoursWorked = round($in->diffInMinutes($out) / 60, 2);
         }
 
+        $branch = $this->getActiveBranchContext();
         AttendanceRecord::updateOrCreate(
             [
                 'company_id'      => $companyId,
@@ -56,10 +69,11 @@ class AttendanceController extends Controller
                 'attendance_date' => $data['attendance_date'],
             ],
             array_merge($data, [
-                'company_id'  => $companyId,
-                'branch_id'   => Auth::user()->branch_id,
+                'company_id'   => $companyId,
+                'branch_id'    => $branch['id'],
+                'branch_name'  => $branch['name'],
                 'hours_worked' => $hoursWorked,
-                'created_by'  => Auth::id(),
+                'created_by'   => Auth::id(),
             ])
         );
 

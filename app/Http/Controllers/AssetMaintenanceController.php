@@ -57,8 +57,10 @@ class AssetMaintenanceController extends Controller
         // Verify asset belongs to company
         $asset = FixedAsset::where('company_id', $companyId)->findOrFail($data['asset_id']);
 
+        $branch = $this->getActiveBranchContext();
         $data['company_id']  = $companyId;
-        $data['branch_id']   = Auth::user()->branch_id;
+        $data['branch_id']   = $branch['id'];
+        $data['branch_name'] = $branch['name'];
         $data['created_by']  = Auth::id();
 
         AssetMaintenanceLog::create($data);
@@ -72,6 +74,18 @@ class AssetMaintenanceController extends Controller
             ->with('success', 'Maintenance log created.');
     }
 
+    /**
+     * Get the active branch context (id, name) from session.
+     *
+     * @return array
+     */
+    private function getActiveBranchContext(): array
+    {
+        return [
+            'id' => session('active_branch_id', Auth::user()->branch_id ?? null),
+            'name' => session('active_branch_name', null),
+        ];
+    }
     public function show(AssetMaintenanceLog $maintenanceLog)
     {
         $this->authorize($maintenanceLog);

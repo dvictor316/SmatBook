@@ -11,6 +11,18 @@ use Illuminate\Support\Facades\DB;
 
 class BOMController extends Controller
 {
+    /**
+     * Get the active branch context (id, name) from session.
+     *
+     * @return array
+     */
+    private function getActiveBranchContext(): array
+    {
+        return [
+            'id' => session('active_branch_id', Auth::user()->branch_id ?? null),
+            'name' => session('active_branch_name', null),
+        ];
+    }
     public function index()
     {
         $companyId = Auth::user()->company_id;
@@ -47,12 +59,14 @@ class BOMController extends Controller
             'items.*.item_type'            => 'nullable|in:component,byproduct,phantom',
         ]);
 
-        DB::transaction(function () use ($data, $companyId) {
+        $branch = $this->getActiveBranchContext();
+        DB::transaction(function () use ($data, $companyId, $branch) {
             $product = Product::find($data['product_id']);
 
             $bom = BillOfMaterials::create([
                 'company_id'      => $companyId,
-                'branch_id'       => Auth::user()->branch_id,
+                'branch_id'       => $branch['id'],
+                'branch_name'     => $branch['name'],
                 'bom_number'      => 'BOM-' . strtoupper(substr($product->name, 0, 3)) . '-' . now()->format('Ymd'),
                 'product_id'      => $data['product_id'],
                 'output_quantity' => $data['output_quantity'],

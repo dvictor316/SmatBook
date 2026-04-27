@@ -10,6 +10,18 @@ use Illuminate\Support\Facades\DB;
 
 class ForecastingController extends Controller
 {
+    /**
+     * Get the active branch context (id, name) from session.
+     *
+     * @return array
+     */
+    private function getActiveBranchContext(): array
+    {
+        return [
+            'id' => session('active_branch_id', Auth::user()->branch_id ?? null),
+            'name' => session('active_branch_name', null),
+        ];
+    }
     public function index()
     {
         $companyId = Auth::user()->company_id;
@@ -41,10 +53,12 @@ class ForecastingController extends Controller
             'items.*.notes'    => 'nullable|string',
         ]);
 
-        DB::transaction(function () use ($data, $companyId) {
+        $branch = $this->getActiveBranchContext();
+        DB::transaction(function () use ($data, $companyId, $branch) {
             $forecast = Forecast::create([
                 'company_id'   => $companyId,
-                'branch_id'    => Auth::user()->branch_id,
+                'branch_id'    => $branch['id'],
+                'branch_name'  => $branch['name'],
                 'name'         => $data['name'],
                 'type'         => $data['type'],
                 'period_type'  => $data['period_type'],

@@ -11,6 +11,18 @@ use Illuminate\Support\Facades\DB;
 
 class MilestoneBillingController extends Controller
 {
+    /**
+     * Get the active branch context (id, name) from session.
+     *
+     * @return array
+     */
+    private function getActiveBranchContext(): array
+    {
+        return [
+            'id' => session('active_branch_id', Auth::user()->branch_id ?? null),
+            'name' => session('active_branch_name', null),
+        ];
+    }
     public function index(Request $request)
     {
         $companyId  = Auth::user()->company_id;
@@ -45,8 +57,10 @@ class MilestoneBillingController extends Controller
             'deliverables'    => 'nullable|string',
         ]);
 
+        $branch = $this->getActiveBranchContext();
         $data['company_id'] = $companyId;
-        $data['branch_id']  = Auth::user()->branch_id;
+        $data['branch_id']  = $branch['id'];
+        $data['branch_name'] = $branch['name'];
         $data['status']     = 'pending';
         $data['billable']   = $request->boolean('billable', true);
         $data['created_by'] = Auth::id();

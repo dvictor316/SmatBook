@@ -9,6 +9,18 @@ use Illuminate\Support\Facades\Auth;
 
 class SerialNumberController extends Controller
 {
+    /**
+     * Get the active branch context (id, name) from session.
+     *
+     * @return array
+     */
+    private function getActiveBranchContext(): array
+    {
+        return [
+            'id' => session('active_branch_id', Auth::user()->branch_id ?? null),
+            'name' => session('active_branch_name', null),
+        ];
+    }
     public function index(Request $request)
     {
         $companyId = Auth::user()->company_id;

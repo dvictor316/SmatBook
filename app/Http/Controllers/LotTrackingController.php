@@ -9,6 +9,18 @@ use Illuminate\Support\Facades\Auth;
 
 class LotTrackingController extends Controller
 {
+    /**
+     * Get the active branch context (id, name) from session.
+     *
+     * @return array
+     */
+    private function getActiveBranchContext(): array
+    {
+        return [
+            'id' => session('active_branch_id', Auth::user()->branch_id ?? null),
+            'name' => session('active_branch_name', null),
+        ];
+    }
     public function index(Request $request)
     {
         $companyId = Auth::user()->company_id;
@@ -46,7 +58,12 @@ class LotTrackingController extends Controller
         $newQty = $productLot->quantity + $data['adjustment'];
         abort_if($newQty < 0, 422, 'Quantity cannot go below zero.');
 
-        $productLot->update(['quantity' => $newQty]);
+        $branch = $this->getActiveBranchContext();
+        $productLot->update([
+            'quantity' => $newQty,
+            'branch_id' => $branch['id'],
+            'branch_name' => $branch['name'],
+        ]);
 
         return back()->with('success', 'Lot quantity adjusted.');
     }

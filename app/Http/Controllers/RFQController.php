@@ -9,6 +9,18 @@ use App\Models\RfqItem;
 
 class RFQController extends Controller
 {
+    /**
+     * Get the active branch context (id, name) from session.
+     *
+     * @return array
+     */
+    private function getActiveBranchContext(): array
+    {
+        return [
+            'id' => session('active_branch_id', auth()->user()->branch_id ?? null),
+            'name' => session('active_branch_name', null),
+        ];
+    }
     public function index(Request $request)
     {
         $companyId = auth()->user()->company_id;
@@ -41,9 +53,12 @@ class RFQController extends Controller
 
         $user = auth()->user();
 
+
+        $branch = $this->getActiveBranchContext();
         $rfq = RequestForQuotation::create([
             'company_id'    => $user->company_id,
-            'branch_id'     => $user->branch_id,
+            'branch_id'     => $branch['id'],
+            'branch_name'   => $branch['name'],
             'rfq_number'    => $this->generateRfqNumber($user->company_id),
             'title'         => $validated['title'],
             'required_date' => $validated['required_date'] ?? null,

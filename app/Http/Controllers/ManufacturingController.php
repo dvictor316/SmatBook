@@ -12,6 +12,18 @@ use Illuminate\Support\Facades\DB;
 
 class ManufacturingController extends Controller
 {
+    /**
+     * Get the active branch context (id, name) from session.
+     *
+     * @return array
+     */
+    private function getActiveBranchContext(): array
+    {
+        return [
+            'id' => session('active_branch_id', Auth::user()->branch_id ?? null),
+            'name' => session('active_branch_name', null),
+        ];
+    }
     public function index(Request $request)
     {
         $companyId = Auth::user()->company_id;
@@ -47,10 +59,12 @@ class ManufacturingController extends Controller
         $bom = BillOfMaterials::with('items.componentProduct')->findOrFail($data['bom_id']);
         abort_unless($bom->company_id === $companyId, 403);
 
-        DB::transaction(function () use ($data, $companyId, $bom) {
+        $branch = $this->getActiveBranchContext();
+        DB::transaction(function () use ($data, $companyId, $bom, $branch) {
             $order = ManufacturingOrder::create([
                 'company_id'           => $companyId,
-                'branch_id'            => Auth::user()->branch_id,
+                'branch_id'            => $branch['id'],
+                'branch_name'          => $branch['name'],
                 'mo_number'            => $this->nextMoNumber($companyId),
                 'bom_id'               => $bom->id,
                 'product_id'           => $bom->product_id,

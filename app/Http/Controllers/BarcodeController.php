@@ -8,6 +8,18 @@ use Illuminate\Support\Facades\Auth;
 
 class BarcodeController extends Controller
 {
+    /**
+     * Get the active branch context (id, name) from session.
+     *
+     * @return array
+     */
+    private function getActiveBranchContext(): array
+    {
+        return [
+            'id' => session('active_branch_id', Auth::user()->branch_id ?? null),
+            'name' => session('active_branch_name', null),
+        ];
+    }
     public function index()
     {
         $companyId = Auth::user()->company_id;
@@ -30,8 +42,11 @@ class BarcodeController extends Controller
             'is_primary'   => 'boolean',
         ]);
 
+        $branch = $this->getActiveBranchContext();
         ProductBarcode::create([
             'company_id'   => $companyId,
+            'branch_id'    => $branch['id'],
+            'branch_name'  => $branch['name'],
             'product_id'   => $data['product_id'],
             'barcode'      => $data['barcode'],
             'barcode_type' => $data['barcode_type'] ?? 'EAN13',
