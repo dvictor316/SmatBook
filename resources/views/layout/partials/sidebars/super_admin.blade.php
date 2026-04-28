@@ -68,7 +68,7 @@
                     </ul>
                 </li>
 
-                <li class="menu-title"><span>Inventory</span></li>
+                <li class="menu-title"><span>Operations</span></li>
 
                 <li class="submenu {{ Request::is('product-list*', 'categories*', 'units*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-package"></i><span>Products</span><span class="menu-arrow"></span></a>
@@ -132,7 +132,15 @@
                     </ul>
                 </li>
 
-                <li class="menu-title"><span>Sales</span></li>
+                <li class="menu-title"><span>Sales &amp; Receivables</span></li>
+
+                <li class="submenu {{ Request::is('quotations*') ? 'active subdrop' : '' }}">
+                    <a href="#"><i class="fe fe-file-text"></i><span>Quotations</span><span class="menu-arrow"></span></a>
+                    <ul>
+                        <li><a href="{{ route('quotations') }}">All Quotations</a></li>
+                        <li><a href="{{ route('add-quotations') }}">Add Quotation</a></li>
+                    </ul>
+                </li>
 
                 <li class="submenu {{ Request::is('invoices*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-file"></i><span>Invoices</span><span class="menu-arrow"></span></a>
@@ -144,7 +152,7 @@
 
                 <li><a href="{{ route('recuring-invoices') }}"><i class="fe fe-clipboard"></i><span>Recurring Invoices</span></a></li>
 
-                <li class="menu-title"><span>Purchases</span></li>
+                <li class="menu-title"><span>Purchases &amp; Payables</span></li>
 
                 <li><a href="{{ route('purchases.index') }}"><i class="fe fe-shopping-bag"></i><span>Purchases</span></a></li>
                 <li><a href="{{ route('purchase-orders') }}"><i class="fe fe-file-text"></i><span>Purchase Orders</span></a></li>
@@ -213,23 +221,11 @@
                 @if(Route::has('finance.follow-ups.index'))
                     <li><a href="{{ route('finance.follow-ups.index') }}"><i class="fe fe-calendar"></i><span>Follow-Ups</span></a></li>
                 @endif
-                @if(Route::has('finance.fixed-assets.index'))
-                    <li><a href="{{ route('finance.fixed-assets.index') }}"><i class="fe fe-archive"></i><span>Fixed Assets</span></a></li>
-                @endif
                 @if(Route::has('finance.budgets.index'))
                     <li><a href="{{ route('finance.budgets.index') }}"><i class="fe fe-target"></i><span>Budgets</span></a></li>
                 @endif
-                @if(Route::has('activity-log.index'))
-                    <li><a href="{{ route('activity-log.index') }}"><i class="fe fe-activity"></i><span>Activity Log</span></a></li>
-                @endif
-                @if(Route::has('close.index'))
-                    <li><a href="{{ route('close.index') }}"><i class="fe fe-lock"></i><span>Period Close</span></a></li>
-                @endif
-                <li class="{{ request()->routeIs('branches.index') ? 'active' : '' }}">
-                    <a href="{{ route('branches.index') }}" class="{{ request()->routeIs('branches.index') ? 'active' : '' }}">
-                        <i class="fe fe-git-branch"></i><span>Branches</span>
-                    </a>
-                </li>
+
+                <li class="menu-title"><span>Accounting &amp; Control</span></li>
                 <li class="submenu {{ request()->routeIs('chart-of-accounts', 'bank-reconciliation', 'manual-journal') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-book-open"></i><span>Accounting</span><span class="menu-arrow"></span></a>
                     <ul>
@@ -237,6 +233,16 @@
                         <li><a href="{{ route('bank-reconciliation') }}" class="{{ request()->routeIs('bank-reconciliation') ? 'active' : '' }}">Bank Reconciliation</a></li>
                         <li><a href="{{ route('manual-journal') }}" class="{{ request()->routeIs('manual-journal') ? 'active' : '' }}">Manual Journal</a></li>
                         <li><a href="{{ route('exchange-rates.index') }}">Exchange Rates</a></li>
+                    </ul>
+                </li>
+
+                <li><a href="{{ route('intercompany.index') }}"><i class="fe fe-link"></i><span>Intercompany</span></a></li>
+
+                <li class="submenu {{ Request::is('cost-centers*') ? 'active subdrop' : '' }}">
+                    <a href="#"><i class="fe fe-layers"></i><span>Cost Centers</span><span class="menu-arrow"></span></a>
+                    <ul>
+                        <li><a href="{{ route('cost-centers.index') }}">All Cost Centers</a></li>
+                        <li><a href="{{ route('cost-centers.create') }}">New Cost Center</a></li>
                     </ul>
                 </li>
 
@@ -258,8 +264,6 @@
                         </ul>
                     </li>
                 @endif
-
-                <li><a href="{{ route('quotations') }}"><i class="fe fe-file-text"></i><span>Quotations</span></a></li>
 
                 <li class="menu-title"><span>Manufacturing & BOM</span></li>
 
@@ -313,6 +317,12 @@
                 <li><a href="{{ route('report-schedules.index') }}"><i class="fe fe-clock"></i><span>Scheduled Reports</span></a></li>
                 <li><a href="{{ route('reports.financial-ratios') }}"><i class="fe fe-percent"></i><span>Financial Ratios</span></a></li>
 
+                <li class="menu-title"><span>Fixed Assets</span></li>
+                @if(Route::has('finance.fixed-assets.index'))
+                    <li><a href="{{ route('finance.fixed-assets.index') }}"><i class="fe fe-archive"></i><span>Asset Register</span></a></li>
+                @endif
+                <li><a href="{{ route('assets.maintenance.index') }}"><i class="fe fe-tool"></i><span>Asset Maintenance</span></a></li>
+
                 <li class="menu-title"><span>Projects & Planning</span></li>
 
                 <li><a href="{{ route('projects.index') }}"><i class="fe fe-briefcase"></i><span>Project Management</span></a></li>
@@ -325,24 +335,26 @@
                         <li><a href="{{ route('forecasting.create') }}">New Forecast</a></li>
                     </ul>
                 </li>
-                <li><a href="{{ route('intercompany.index') }}"><i class="fe fe-link"></i><span>Intercompany</span></a></li>
-                <li><a href="{{ route('assets.maintenance.index') }}"><i class="fe fe-tool"></i><span>Asset Maintenance</span></a></li>
 
                 <li class="menu-title"><span>Management</span></li>
                 @if(Route::has('users.index'))
                     <li><a href="{{ route('users.index') }}"><i class="fe fe-user"></i><span>Users</span></a></li>
                 @endif
-
-                <li class="submenu {{ Request::is('cost-centers*') ? 'active subdrop' : '' }}">
-                    <a href="#"><i class="fe fe-layers"></i><span>Cost Centers</span><span class="menu-arrow"></span></a>
-                    <ul>
-                        <li><a href="{{ route('cost-centers.index') }}">All Cost Centers</a></li>
-                        <li><a href="{{ route('cost-centers.create') }}">New Cost Center</a></li>
-                    </ul>
+                <li class="{{ request()->routeIs('branches.index') ? 'active' : '' }}">
+                    <a href="{{ route('branches.index') }}" class="{{ request()->routeIs('branches.index') ? 'active' : '' }}">
+                        <i class="fe fe-git-branch"></i><span>Branches</span>
+                    </a>
                 </li>
 
                 <li><a href="{{ route('roles.index') }}"><i class="fe fe-shield"></i><span>Roles & Permission</span></a></li>
 
+                <li class="menu-title"><span>Compliance</span></li>
+                @if(Route::has('activity-log.index'))
+                    <li><a href="{{ route('activity-log.index') }}"><i class="fe fe-activity"></i><span>Activity Log</span></a></li>
+                @endif
+                @if(Route::has('close.index'))
+                    <li><a href="{{ route('close.index') }}"><i class="fe fe-lock"></i><span>Period Close</span></a></li>
+                @endif
                 @if(Route::has('audit.index'))
                     <li><a href="{{ route('audit.index') }}"><i class="fe fe-clipboard"></i><span>Audit Trail</span></a></li>
                 @endif

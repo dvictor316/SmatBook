@@ -33,7 +33,7 @@
                     </ul>
                 </li>
 
-                <li class="menu-title"><span>Inventory</span></li>
+                <li class="menu-title"><span>Operations</span></li>
 
                 <li class="submenu {{ Request::is('product-list*', 'categories*', 'units*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-package"></i><span>Products</span><span class="menu-arrow"></span></a>
@@ -86,7 +86,15 @@
                     </ul>
                 </li>
 
-                <li class="menu-title"><span>Sales</span></li>
+                <li class="menu-title"><span>Sales &amp; Receivables</span></li>
+
+                <li class="submenu {{ Request::is('quotations*') ? 'active subdrop' : '' }}">
+                    <a href="#"><i class="fe fe-file-text"></i><span>Quotations</span><span class="menu-arrow"></span></a>
+                    <ul>
+                        <li><a href="{{ route('quotations') }}">All Quotations</a></li>
+                        <li><a href="{{ route('add-quotations') }}">Add Quotation</a></li>
+                    </ul>
+                </li>
 
                 <li class="submenu {{ Request::is('invoices*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-file"></i><span>Invoices</span><span class="menu-arrow"></span></a>
@@ -109,7 +117,7 @@
                     </ul>
                 </li>
 
-                <li class="menu-title"><span>Purchases</span></li>
+                <li class="menu-title"><span>Purchases &amp; Payables</span></li>
 
                 <li class="submenu {{ Request::is('purchases*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-shopping-bag"></i><span>Purchases</span><span class="menu-arrow"></span></a>
@@ -154,7 +162,7 @@
                     </ul>
                 </li>
 
-                <li class="menu-title"><span>Finance</span></li>
+                <li class="menu-title"><span>Finance &amp; Accounting</span></li>
 
                 <li><a href="{{ route('expenses.index') }}"><i class="fe fe-file-plus"></i><span>Expenses</span></a></li>
 
@@ -192,11 +200,6 @@
                     </ul>
                 </li>
 
-                <li class="{{ request()->routeIs('branches.index') ? 'active' : '' }}">
-                    <a href="{{ route('branches.index') }}" class="{{ request()->routeIs('branches.index') ? 'active' : '' }}">
-                        <i class="fe fe-git-branch"></i><span>Branches</span>
-                    </a>
-                </li>
                 <li class="submenu {{ request()->routeIs('chart-of-accounts', 'bank-reconciliation', 'manual-journal') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-book-open"></i><span>Accounting</span><span class="menu-arrow"></span></a>
                     <ul>
@@ -204,14 +207,6 @@
                         <li><a href="{{ route('bank-reconciliation') }}" class="{{ request()->routeIs('bank-reconciliation') ? 'active' : '' }}">Bank Reconciliation</a></li>
                         <li><a href="{{ route('manual-journal') }}" class="{{ request()->routeIs('manual-journal') ? 'active' : '' }}">Manual Journal</a></li>
                         <li><a href="{{ route('exchange-rates.index') }}">Exchange Rates</a></li>
-                    </ul>
-                </li>
-
-                <li class="submenu {{ Request::is('quotations*') ? 'active subdrop' : '' }}">
-                    <a href="#"><i class="fe fe-file-text"></i><span>Quotations</span><span class="menu-arrow"></span></a>
-                    <ul>
-                        <li><a href="{{ route('quotations') }}">All Quotations</a></li>
-                        <li><a href="{{ route('add-quotations') }}">Add Quotation</a></li>
                     </ul>
                 </li>
 
@@ -239,7 +234,7 @@
                     </ul>
                 </li>
 
-                <li class="menu-title"><span>Growth & Projects</span></li>
+                <li class="menu-title"><span>Projects</span></li>
                 <li><a href="{{ route('projects.index') }}"><i class="fe fe-briefcase"></i><span>Project Management</span></a></li>
                 <li><a href="{{ route('projects.index') }}#profitability"><i class="fe fe-trending-up"></i><span>Project Profitability</span></a></li>
                 <li><a href="{{ route('timesheets.index') }}"><i class="fe fe-clock"></i><span>Timesheets</span></a></li>
@@ -299,6 +294,11 @@
                     </a>
                 </li>
                 <li class="menu-title"><span>Settings</span></li>
+                <li class="{{ request()->routeIs('branches.index') ? 'active' : '' }}">
+                    <a href="{{ route('branches.index') }}" class="{{ request()->routeIs('branches.index') ? 'active' : '' }}">
+                        <i class="fe fe-git-branch"></i><span>Branches</span>
+                    </a>
+                </li>
                 <li><a href="{{ route('settings.index') }}"><i class="fe fe-settings"></i><span>Settings</span></a></li>
                 <li><a href="{{ route('roles.index') }}"><i class="fe fe-shield"></i><span>Roles & Permission</span></a></li>
                 @if(Route::has('activity-log.index'))
