@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\IntercompanyTransaction;
 use App\Models\Company;
-use App\Models\ChartOfAccount;
+use App\Models\Account;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -13,9 +13,11 @@ class IntercompanyController extends Controller
     public function index(Request $request)
     {
         $companyId      = Auth::user()->company_id;
-        $transactions   = IntercompanyTransaction::where('company_id', $companyId)
-            ->orWhere('counterparty_company_id', $companyId)
-            ->with(['company', 'counterpartyCompany'])
+        $transactions   = IntercompanyTransaction::where(function ($query) use ($companyId) {
+                $query->where('company_id', $companyId)
+                    ->orWhere('counterparty_company_id', $companyId);
+            })
+            ->with(['company', 'counterpartyCompany', 'sourceAccount', 'targetAccount'])
             ->latest('transaction_date')
             ->paginate(25);
 
@@ -26,7 +28,7 @@ class IntercompanyController extends Controller
     {
         $companyId = Auth::user()->company_id;
         $companies = Company::where('id', '!=', $companyId)->where('status', 'active')->get();
-        $accounts  = ChartOfAccount::where('company_id', $companyId)->orderBy('name')->get();
+        $accounts  = Account::where('company_id', $companyId)->orderBy('name')->get();
         return view('intercompany.create', compact('companies', 'accounts'));
     }
 
@@ -53,9 +55,9 @@ class IntercompanyController extends Controller
             'amount'                   => 'required|numeric|min:0.01',
             'currency'                 => 'required|string|size:3',
             'description'              => 'required|string|max:500',
-            'debit_account_id'         => 'nullable|exists:chart_of_accounts,id',
-            'credit_account_id'        => 'nullable|exists:chart_of_accounts,id',
-            'reference'                => 'nullable|string|max:100',
+            'source_account_id'        => 'nullable|exists:accounts,id',
+            'target_account_id'        => 'nullable|exists:accounts,id',
+            'reference_number'         => 'nullable|string|max:100',
         ]);
 
         abort_if($data['counterparty_company_id'] == $companyId, 422,
@@ -72,9 +74,9 @@ class IntercompanyController extends Controller
                 'amount'                   => $data['amount'],
                 'currency'                 => $data['currency'],
                 'description'              => $data['description'],
-                'debit_account_id'         => $data['debit_account_id'] ?? null,
-                'credit_account_id'        => $data['credit_account_id'] ?? null,
-                'reference'                => $data['reference'] ?? null,
+                'source_account_id'        => $data['source_account_id'] ?? null,
+                'target_account_id'        => $data['target_account_id'] ?? null,
+                'reference_number'         => $data['reference_number'] ?? null,
                 'status'                   => 'pending',
                 'created_by'               => Auth::id(),
             ]);
@@ -89,9 +91,7 @@ class IntercompanyController extends Controller
         abort_unless($intercompanyTransaction->status === 'pending', 422, 'Not pending.');
 
         $intercompanyTransaction->update([
-            'status'      => 'approved',
-            'approved_by' => Auth::id(),
-            'approved_at' => now(),
+            'status'      => 'posted',
         ]);
 
         return back()->with('success', 'Transaction approved.');
