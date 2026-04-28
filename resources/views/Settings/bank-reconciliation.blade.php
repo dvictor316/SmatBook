@@ -3,6 +3,14 @@
 @section('content')
 
 <style>
+    .recon-page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
     .recon-shell {
         display: grid;
         gap: 20px;
@@ -17,6 +25,11 @@
 
     .recon-card .card-body {
         padding: 18px;
+    }
+
+    .recon-settings-card {
+        position: sticky;
+        top: 92px;
     }
 
     .recon-summary-grid {
@@ -137,11 +150,30 @@
     }
 
     @media (max-width: 991px) {
+        .recon-settings-card {
+            position: static;
+        }
+
         .recon-summary-grid,
         .recon-balance-grid,
         .recon-adjust-form,
         .recon-import-grid {
             grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .recon-page-header,
+        .recon-page-header > *,
+        .recon-page-header .badge,
+        .recon-adjust-form .btn,
+        .recon-import-item .btn {
+            width: 100%;
+        }
+
+        .recon-bank-row,
+        .recon-card .card-body {
+            padding: 14px;
         }
     }
 </style>
@@ -150,7 +182,7 @@
     <div class="content container-fluid">
         <div class="row">
             <div class="col-xl-3 col-md-4">
-                <div class="card">
+                <div class="card recon-settings-card">
                     <div class="card-body">
                         <div class="page-header">
                             <div class="content-page-header">
@@ -164,7 +196,7 @@
             </div>
 
             <div class="col-xl-9 col-md-8">
-                <div class="content-page-header d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                <div class="content-page-header recon-page-header mb-3">
                     <div>
                         <h4 class="mb-1">Bank Reconciliation</h4>
                         <p class="text-muted mb-0">Compare bank balances against ledger balances and post balancing adjustments when required.</p>

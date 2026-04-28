@@ -3,6 +3,14 @@
 @section('content')
 
 <style>
+    .statement-page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
     .statement-shell {
         display: grid;
         gap: 20px;
@@ -17,6 +25,11 @@
 
     .statement-card .card-body {
         padding: 18px;
+    }
+
+    .statement-settings-card {
+        position: sticky;
+        top: 92px;
     }
 
     .statement-layout {
@@ -109,11 +122,37 @@
     }
 
     @media (max-width: 1199px) {
+        .statement-settings-card {
+            position: static;
+        }
+
         .statement-layout,
         .statement-filter-grid,
         .statement-summary-grid,
         .statement-line-meta {
             grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .statement-page-header,
+        .statement-page-header > *,
+        .statement-page-header .btn,
+        .statement-line-top > *,
+        .statement-line-top .text-end,
+        .statement-suggestion form {
+            width: 100%;
+        }
+
+        .statement-card .card-body,
+        .statement-summary-box,
+        .statement-import-box,
+        .statement-line-box {
+            padding: 14px;
+        }
+
+        .statement-suggestion form {
+            min-width: 0 !important;
         }
     }
 </style>
@@ -122,7 +161,7 @@
     <div class="content container-fluid">
         <div class="row">
             <div class="col-xl-3 col-md-4">
-                <div class="card">
+                <div class="card statement-settings-card">
                     <div class="card-body">
                         <div class="page-header">
                             <div class="content-page-header">
@@ -136,7 +175,7 @@
             </div>
 
             <div class="col-xl-9 col-md-8">
-                <div class="content-page-header d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                <div class="content-page-header statement-page-header mb-3">
                     <div>
                         <h4 class="mb-1">Statement Imports</h4>
                         <p class="text-muted mb-0">Review imported bank lines, inspect mapped ledger activity, and mark confirmed matches inside the current tenant and branch workspace.</p>

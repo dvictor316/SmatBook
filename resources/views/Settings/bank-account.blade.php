@@ -3,19 +3,46 @@
 
 @section('content')
     <style>
-        /* Sidebar Offset to match your Dashboard and Analytics pages */
-        .page-wrapper {
-            margin-left: 270px;
-            transition: all 0.3s ease-in-out;
-        }
-        body.mini-sidebar .page-wrapper { margin-left: 80px; }
-
-        @media (max-width: 1200px) {
-            .page-wrapper { margin-left: 0 !important; }
+        .bank-page .card {
+            border-radius: 18px;
+            border: 1px solid #dbe7ff;
+            box-shadow: 0 10px 26px rgba(15, 23, 42, 0.05);
         }
 
-        .card { border-radius: 15px; border: none; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
-        .thead-light th { background-color: #f8f9fa; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; }
+        .bank-page .thead-light th {
+            background-color: #f8f9fa;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+        }
+
+        .bank-settings-card {
+            position: sticky;
+            top: 92px;
+        }
+
+        .bank-page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .bank-toolbar {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .bank-table-wrap {
+            overflow-x: auto;
+        }
+
+        .bank-table {
+            min-width: 760px;
+        }
 
         /* Print Styles */
         @media print {
@@ -24,14 +51,35 @@
             .col-xl-9 { width: 100% !important; }
             .card { box-shadow: none !important; border: 1px solid #eee !important; }
         }
+
+        @media (max-width: 991.98px) {
+            .bank-settings-card {
+                position: static;
+            }
+        }
+
+        @media (max-width: 767.98px) {
+            .bank-page-header,
+            .bank-toolbar,
+            .bank-toolbar .btn,
+            .bank-action-group,
+            .bank-action-group .btn {
+                width: 100%;
+            }
+
+            .bank-toolbar .btn,
+            .bank-action-group .btn {
+                justify-content: center;
+            }
+        }
     </style>
 
-    <div class="page-wrapper">
+    <div class="page-wrapper bank-page">
         <div class="content container-fluid">
 
             <div class="row">
                 <div class="col-xl-3 col-md-4">
-                    <div class="card shadow-sm">
+                    <div class="card shadow-sm bank-settings-card">
                         <div class="card-body">
                             <div class="page-header mb-3">
                                 <div class="content-page-header">
@@ -57,9 +105,9 @@
                                 </div>
                             @endif
 
-                            <div class="content-page-header p-0 mb-4 d-flex justify-content-between align-items-center">
-                                <h5>Bank Accounts & Payment Channels</h5>
-                                <div class="list-btn d-flex gap-2">
+                            <div class="content-page-header p-0 mb-4 bank-page-header">
+                                <h5 class="mb-0">Bank Accounts & Payment Channels</h5>
+                                <div class="list-btn bank-toolbar">
                                     <button onclick="window.print()" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
                                         <i class="fas fa-print me-1"></i> Print
                                     </button>
@@ -74,8 +122,8 @@
                                 <div class="col-sm-12">
                                     <div class="card-table border-0 shadow-none">
                                         <div class="card-body p-0">
-                                            <div class="table-responsive no-pagination">
-                                                <table class="table table-center table-hover datatable mb-0">
+                                            <div class="table-responsive no-pagination bank-table-wrap">
+                                                <table class="table table-center table-hover datatable mb-0 bank-table">
                                                     <thead class="thead-light">
                                                         <tr>
                                                             <th>#</th>
@@ -147,6 +195,8 @@
             font-size: 0.8rem;
             font-weight: 600;
             padding: 0.35rem 0.75rem;
+            display: inline-flex;
+            align-items: center;
         }
     </style>
 
