@@ -6,6 +6,7 @@ use App\Models\CostCenter;
 use App\Models\Department;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class CostCenterController extends Controller
 {
@@ -47,7 +48,12 @@ class CostCenterController extends Controller
 
         $data = $request->validate([
             'name'          => 'required|string|max:255',
-            'code'          => 'nullable|string|max:50|unique:cost_centers,code,NULL,id,company_id,'.$companyId,
+            'code'          => [
+                'nullable',
+                'string',
+                'max:50',
+                Rule::unique('cost_centers', 'code')->where(fn ($query) => $query->where('company_id', $companyId)),
+            ],
             'type'          => 'required|in:operational,project,department,branch,profit_center,investment_center',
             'department_id' => 'nullable|exists:departments,id',
             'is_active'     => 'boolean',
@@ -78,7 +84,14 @@ class CostCenterController extends Controller
 
         $data = $request->validate([
             'name'          => 'required|string|max:255',
-            'code'          => 'nullable|string|max:50|unique:cost_centers,code,'.$costCenter->id.',id,company_id,'.$companyId,
+            'code'          => [
+                'nullable',
+                'string',
+                'max:50',
+                Rule::unique('cost_centers', 'code')
+                    ->where(fn ($query) => $query->where('company_id', $companyId))
+                    ->ignore($costCenter->id),
+            ],
             'type'          => 'required|in:operational,project,department,branch,profit_center,investment_center',
             'department_id' => 'nullable|exists:departments,id',
             'is_active'     => 'boolean',

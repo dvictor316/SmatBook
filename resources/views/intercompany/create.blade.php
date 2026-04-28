@@ -30,13 +30,21 @@
                 <form method="POST" action="{{ route('intercompany.store') }}" class="row g-3">
                     @csrf
                     <div class="col-xl-4 col-md-6">
-                        <label class="form-label">Counter-party Company</label>
-                        <select name="counterparty_company_id" class="form-select" required>
+                        <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                            <label class="form-label mb-0">Counter-party Company</label>
+                            @if(Route::has('companies.create'))
+                                <a href="{{ route('companies.create') }}" class="btn btn-sm btn-outline-primary" title="Add company">+</a>
+                            @endif
+                        </div>
+                        <select name="counterparty_company_id" class="form-select" @if($companies->isNotEmpty()) required @endif>
                             <option value="">Select company</option>
                             @foreach($companies as $company)
                                 <option value="{{ $company->id }}" @selected(old('counterparty_company_id') == $company->id)>{{ $company->name ?? $company->company_name ?? ('Company #' . $company->id) }}</option>
                             @endforeach
                         </select>
+                        @if($companies->isEmpty())
+                            <div class="form-text text-danger">No counter-party companies are available yet. Add one to continue.</div>
+                        @endif
                     </div>
                     <div class="col-xl-4 col-md-6">
                         <label class="form-label">Transaction Type</label>
@@ -63,29 +71,45 @@
                         <input type="text" name="reference_number" class="form-control" value="{{ old('reference_number') }}" placeholder="Optional reference">
                     </div>
                     <div class="col-xl-6 col-md-6">
-                        <label class="form-label">Source Account</label>
+                        <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                            <label class="form-label mb-0">Source Account</label>
+                            @if(Route::has('chart-of-accounts'))
+                                <a href="{{ route('chart-of-accounts') }}" class="btn btn-sm btn-outline-primary" title="Add account">+</a>
+                            @endif
+                        </div>
                         <select name="source_account_id" class="form-select">
                             <option value="">Select source account</option>
                             @foreach($accounts as $account)
                                 <option value="{{ $account->id }}" @selected(old('source_account_id') == $account->id)>{{ trim(($account->code ? $account->code . ' - ' : '') . $account->name) }}</option>
                             @endforeach
                         </select>
+                        @if($accounts->isEmpty())
+                            <div class="form-text text-warning">No accounts are available yet. Use the + button to add accounts first.</div>
+                        @endif
                     </div>
                     <div class="col-xl-6 col-md-6">
-                        <label class="form-label">Target Account</label>
+                        <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                            <label class="form-label mb-0">Target Account</label>
+                            @if(Route::has('chart-of-accounts'))
+                                <a href="{{ route('chart-of-accounts') }}" class="btn btn-sm btn-outline-primary" title="Add account">+</a>
+                            @endif
+                        </div>
                         <select name="target_account_id" class="form-select">
                             <option value="">Select target account</option>
                             @foreach($accounts as $account)
                                 <option value="{{ $account->id }}" @selected(old('target_account_id') == $account->id)>{{ trim(($account->code ? $account->code . ' - ' : '') . $account->name) }}</option>
                             @endforeach
                         </select>
+                        @if($accounts->isEmpty())
+                            <div class="form-text text-warning">No accounts are available yet. Use the + button to add accounts first.</div>
+                        @endif
                     </div>
                     <div class="col-12">
                         <label class="form-label">Description</label>
                         <textarea name="description" class="form-control" rows="4" required>{{ old('description') }}</textarea>
                     </div>
                     <div class="col-12 d-flex flex-wrap gap-2">
-                        <button class="btn btn-primary">Create Transaction</button>
+                        <button class="btn btn-primary" @disabled($companies->isEmpty())>Create Transaction</button>
                         <a href="{{ route('intercompany.index') }}" class="btn btn-light">Cancel</a>
                     </div>
                 </form>
