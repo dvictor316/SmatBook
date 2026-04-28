@@ -6,6 +6,7 @@ use App\Models\AssetMaintenanceLog;
 use App\Models\FixedAsset;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 
 class AssetMaintenanceController extends Controller
 {
@@ -20,9 +21,16 @@ class AssetMaintenanceController extends Controller
 
         $logs = $query->latest('maintenance_date')->paginate(25);
 
+        $nameColumn = Schema::hasColumn('fixed_assets', 'name') ? 'name' : 'asset_name';
+        $assetColumns = ['id', $nameColumn];
+
+        if (Schema::hasColumn('fixed_assets', 'asset_code')) {
+            $assetColumns[] = 'asset_code';
+        }
+
         $assets = FixedAsset::where('company_id', $companyId)
-            ->orderBy('asset_name')
-            ->get(['id', 'asset_name', 'asset_code']);
+            ->orderBy($nameColumn)
+            ->get($assetColumns);
 
         return view('assets.maintenance.index', compact('logs', 'assets'));
     }
@@ -30,7 +38,8 @@ class AssetMaintenanceController extends Controller
     public function create(Request $request)
     {
         $companyId = Auth::user()->company_id;
-        $assets    = FixedAsset::where('company_id', $companyId)->orderBy('asset_name')->get();
+        $nameColumn = Schema::hasColumn('fixed_assets', 'name') ? 'name' : 'asset_name';
+        $assets    = FixedAsset::where('company_id', $companyId)->orderBy($nameColumn)->get();
         $assetId   = $request->query('asset_id');
         return view('assets.maintenance.create', compact('assets', 'assetId'));
     }
@@ -96,7 +105,8 @@ class AssetMaintenanceController extends Controller
     {
         $this->authorizeAssetMaintenanceAccess($maintenanceLog);
         $companyId = Auth::user()->company_id;
-        $assets    = FixedAsset::where('company_id', $companyId)->orderBy('asset_name')->get();
+        $nameColumn = Schema::hasColumn('fixed_assets', 'name') ? 'name' : 'asset_name';
+        $assets    = FixedAsset::where('company_id', $companyId)->orderBy($nameColumn)->get();
         return view('assets.maintenance.edit', compact('maintenanceLog', 'assets'));
     }
 

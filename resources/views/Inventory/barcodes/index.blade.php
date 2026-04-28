@@ -12,7 +12,7 @@
             </div>
         </div>
 
-        <div class="row">
+        <div class="row g-3">
             <div class="col-xl-4 col-lg-5">
                 <div class="card">
                     <div class="card-header">
@@ -48,7 +48,7 @@
                                 <input class="form-check-input" type="checkbox" name="is_primary" value="1" id="is_primary" @checked(old('is_primary'))>
                                 <label class="form-check-label" for="is_primary">Set as primary barcode</label>
                             </div>
-                            <button type="submit" class="btn btn-primary">Save Barcode</button>
+                            <button type="submit" class="btn btn-primary w-100 w-sm-auto">Save Barcode</button>
                         </form>
                     </div>
                 </div>

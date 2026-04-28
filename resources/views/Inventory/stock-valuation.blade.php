@@ -1,103 +1,95 @@
-@extends('layout.app')
-
-@section('title', 'Stock Valuation')
+@extends('layout.mainlayout')
 
 @section('content')
-<div class="content container-fluid">
-    <div class="page-header">
-        <div class="row align-items-center">
-            <div class="col">
-                <h3 class="page-title">Stock Valuation</h3>
-                <ul class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{{ route('home') }}">Dashboard</a></li>
-                    <li class="breadcrumb-item active">Stock Valuation</li>
-                </ul>
+<div class="page-wrapper">
+    <div class="content container-fluid">
+        <div class="page-header">
+            <div class="content-page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div>
+                    <h5 class="mb-1">Stock Valuation</h5>
+                    <p class="text-muted mb-0">Review current stock value using the available inventory cost basis.</p>
+                </div>
             </div>
         </div>
-    </div>
 
-    {{-- Filters --}}
-    <div class="card mb-3">
-        <div class="card-body">
-            <form method="GET" class="row g-3 align-items-end">
-                <div class="col-md-3">
-                    <label class="form-label fw-semibold">Valuation Method</label>
-                    <select name="method" class="form-select form-select-sm">
-                        <option value="weighted_avg" {{ request('method','weighted_avg') === 'weighted_avg' ? 'selected' : '' }}>Weighted Average</option>
-                        <option value="fifo" {{ request('method') === 'fifo' ? 'selected' : '' }}>FIFO</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label fw-semibold">Branch</label>
-                    <select name="branch_id" class="form-select form-select-sm">
-                        <option value="">All Branches</option>
-                        @foreach($branches ?? [] as $branch)
-                            <option value="{{ $branch->id }}" {{ request('branch_id') == $branch->id ? 'selected' : '' }}>{{ $branch->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label fw-semibold">As of Date</label>
-                    <input type="date" name="as_of" class="form-control form-control-sm" value="{{ request('as_of', date('Y-m-d')) }}">
-                </div>
-                <div class="col-md-3">
-                    <button type="submit" class="btn btn-primary btn-sm w-100">Apply</button>
-                </div>
-            </form>
+        <div class="card">
+            <div class="card-body">
+                <form method="GET" action="{{ route('inventory.stock-valuation') }}" class="row g-3 align-items-end">
+                    <div class="col-lg-4 col-md-6">
+                        <label class="form-label">Valuation Method</label>
+                        <select name="method" class="form-select">
+                            <option value="weighted_avg" @selected($method === 'weighted_avg')>Weighted Average</option>
+                            <option value="fifo" @selected($method === 'fifo')>FIFO</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-4 col-md-6">
+                        <label class="form-label">As Of Date</label>
+                        <input type="date" name="as_of" class="form-control" value="{{ $asOf }}">
+                    </div>
+                    <div class="col-lg-4 col-md-6">
+                        <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+                    </div>
+                </form>
+            </div>
         </div>
-    </div>
 
-    {{-- Summary --}}
-    <div class="row mb-3">
-        <div class="col-md-4">
-            <div class="card border-0 bg-primary text-white">
-                <div class="card-body">
-                    <div class="text-white-50 small mb-1">Total Stock Value</div>
-                    <div class="fs-4 fw-bold">{{ number_format(collect($valuations ?? [])->sum('total_value'), 2) }}</div>
+        <div class="row g-3 mb-3">
+            <div class="col-xl-4 col-md-6">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <p class="text-muted mb-1">Products With Stock</p>
+                        <h4 class="mb-0">{{ $rows->count() }}</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-4 col-md-6">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <p class="text-muted mb-1">Units On Hand</p>
+                        <h4 class="mb-0">{{ number_format((float) $rows->sum('quantity'), 2) }}</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-4 col-md-12">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <p class="text-muted mb-1">Total Stock Value</p>
+                        <h4 class="mb-0">{{ number_format((float) $grandTotal, 2) }}</h4>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card border-0 bg-success text-white">
-                <div class="card-body">
-                    <div class="text-white-50 small mb-1">Products with Stock</div>
-                    <div class="fs-4 fw-bold">{{ collect($valuations ?? [])->where('quantity', '>', 0)->count() }}</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card border-0 bg-secondary text-white">
-                <div class="card-body">
-                    <div class="text-white-50 small mb-1">Method</div>
-                    <div class="fs-4 fw-bold">{{ strtoupper(str_replace('_', ' ', request('method', 'weighted_avg'))) }}</div>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <div class="card">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Product</th><th>SKU</th><th class="text-end">Qty on Hand</th><th class="text-end">Unit Cost</th><th class="text-end">Total Value</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($valuations ?? [] as $item)
+        <div class="card">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
                             <tr>
-                                <td>{{ $item['product_name'] }}</td>
-                                <td>{{ $item['sku'] ?? '—' }}</td>
-                                <td class="text-end">{{ number_format($item['quantity'], 2) }}</td>
-                                <td class="text-end">{{ number_format($item['unit_cost'], 2) }}</td>
-                                <td class="text-end fw-semibold">{{ number_format($item['total_value'], 2) }}</td>
+                                <th>Product</th>
+                                <th>SKU</th>
+                                <th class="text-end">Quantity</th>
+                                <th class="text-end">Unit Cost</th>
+                                <th class="text-end">Total Value</th>
                             </tr>
-                        @empty
-                            <tr><td colspan="5" class="text-center py-4 text-muted">No stock data available.</td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            @forelse($rows as $row)
+                                <tr>
+                                    <td>{{ $row['product']->name ?? 'N/A' }}</td>
+                                    <td>{{ $row['product']->sku ?? 'N/A' }}</td>
+                                    <td class="text-end">{{ number_format((float) $row['quantity'], 2) }}</td>
+                                    <td class="text-end">{{ number_format((float) $row['unit_cost'], 2) }}</td>
+                                    <td class="text-end fw-semibold">{{ number_format((float) $row['total'], 2) }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-4">No stocked products found for this workspace.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>

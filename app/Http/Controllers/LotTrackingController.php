@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\ProductLot;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 
 class LotTrackingController extends Controller
 {
@@ -48,10 +49,13 @@ class LotTrackingController extends Controller
         }
 
         $lots     = $query->latest()->paginate(25);
-        $products = Product::where('company_id', $companyId)
-            ->where('track_lots', true)
-            ->orderBy('name')
-            ->get(['id', 'name']);
+        $productsQuery = Product::where('company_id', $companyId)->orderBy('name');
+
+        if (Schema::hasColumn('products', 'track_lots')) {
+            $productsQuery->where('track_lots', true);
+        }
+
+        $products = $productsQuery->get(['id', 'name']);
 
         return view('inventory.lots.index', compact('lots', 'products'));
     }
@@ -59,7 +63,7 @@ class LotTrackingController extends Controller
     public function show(ProductLot $productLot)
     {
         abort_unless($productLot->company_id === Auth::user()->company_id, 403);
-        $productLot->load(['product', 'serials']);
+        $productLot->load(['product', 'serialNumbers']);
         return view('inventory.lots.show', compact('productLot'));
     }
 

@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 
 class StockValuationController extends Controller
 {
@@ -14,46 +16,43 @@ class StockValuationController extends Controller
     {
         $companyId = auth()->user()->company_id;
         $method    = $request->input('method', 'weighted_avg'); // fifo|weighted_avg
-        $branchId  = $request->input('branch_id');
         $asOf      = $request->input('as_of', now()->toDateString());
+        $branchId  = $request->input('branch_id');
 
-        // Load products with their current stock quantities and cost data.
-        $query = \App\Models\Product::where('company_id', $companyId)
-            ->with(['stockMovements' => function ($q) use ($asOf) {
-                $q->where('date', '<=', $asOf)->orderBy('date');
-            }]);
+        $quantityColumn = Schema::hasColumn('products', 'quantity')
+            ? 'quantity'
+            : (Schema::hasColumn('products', 'stock_quantity') ? 'stock_quantity' : (Schema::hasColumn('products', 'stock') ? 'stock' : null));
+        $unitCostColumn = Schema::hasColumn('products', 'purchase_price')
+            ? 'purchase_price'
+            : (Schema::hasColumn('products', 'cost_price') ? 'cost_price' : (Schema::hasColumn('products', 'cost') ? 'cost' : 'price'));
 
-        if ($branchId) {
-            $query->where('branch_id', $branchId);
-        }
+        $rows = collect();
+        $grandTotal = 0;
 
-        $products = $query->get();
+        if ($quantityColumn) {
+            $query = Product::where('company_id', $companyId)->orderBy('name');
 
-        $rows = $products->map(function ($product) use ($method) {
-            $qty  = $product->stockMovements->sum('quantity') ?? 0;
-            $cost = $product->cost ?? 0;
-
-            if ($method === 'fifo') {
-                $cost = $this->fifoUnitCost($product->stockMovements);
+            if ($branchId && Schema::hasColumn('products', 'branch_id')) {
+                $query->where('branch_id', $branchId);
             }
 
-            return [
-                'product'   => $product,
-                'quantity'  => $qty,
-                'unit_cost' => $cost,
-                'total'     => $qty * $cost,
-            ];
-        })->filter(fn ($r) => $r['quantity'] > 0);
+            $products = $query->get();
 
-        $grandTotal = $rows->sum('total');
+            $rows = $products->map(function ($product) use ($quantityColumn, $unitCostColumn) {
+                $quantity = (float) ($product->{$quantityColumn} ?? 0);
+                $unitCost = (float) ($product->{$unitCostColumn} ?? 0);
+
+                return [
+                    'product' => $product,
+                    'quantity' => $quantity,
+                    'unit_cost' => $unitCost,
+                    'total' => $quantity * $unitCost,
+                ];
+            })->filter(fn ($row) => $row['quantity'] > 0)->values();
+
+            $grandTotal = (float) $rows->sum('total');
+        }
 
         return view('inventory.stock-valuation', compact('rows', 'grandTotal', 'method', 'asOf'));
-    }
-
-    private function fifoUnitCost($movements): float
-    {
-        // Simplified FIFO: return cost of latest purchase batch still in stock.
-        $lastIn = $movements->where('type', 'in')->last();
-        return $lastIn ? (float) $lastIn->unit_cost : 0.0;
     }
 }
