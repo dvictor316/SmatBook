@@ -3,11 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\ProjectMilestone;
-use App\Models\Sale;
 use App\Models\Customer;
+use App\Models\Project;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 
 class MilestoneBillingController extends Controller
 {
@@ -27,7 +26,7 @@ class MilestoneBillingController extends Controller
     {
         $companyId  = Auth::user()->company_id;
         $milestones = ProjectMilestone::forCompany($companyId)
-            ->with(['customer', 'invoice'])
+            ->with(['project', 'customer', 'invoice'])
             ->latest()
             ->paginate(25);
 
@@ -38,7 +37,8 @@ class MilestoneBillingController extends Controller
     {
         $companyId = Auth::user()->company_id;
         $customers = Customer::where('company_id', $companyId)->orderBy('name')->get();
-        return view('milestones.create', compact('customers'));
+        $projects = Project::where('company_id', $companyId)->orderBy('name')->get();
+        return view('milestones.create', compact('customers', 'projects'));
     }
 
     public function store(Request $request)
@@ -46,26 +46,28 @@ class MilestoneBillingController extends Controller
         $companyId = Auth::user()->company_id;
 
         $data = $request->validate([
-            'project_name'    => 'required|string|max:255',
+            'project_id'      => 'required|exists:projects,id',
             'customer_id'     => 'nullable|exists:customers,id',
-            'title'           => 'required|string|max:255',
+            'name'            => 'required|string|max:255',
             'description'     => 'nullable|string',
             'due_date'        => 'required|date',
-            'amount'          => 'required|numeric|min:0',
-            'currency'        => 'nullable|string|size:3',
-            'billable'        => 'boolean',
-            'deliverables'    => 'nullable|string',
+            'billing_amount'  => 'required|numeric|min:0',
+            'billing_type'    => 'required|in:fixed,percentage_of_contract,on_completion',
+            'percentage'      => 'nullable|numeric|min:0|max:100',
         ]);
 
-        $branch = $this->getActiveBranchContext();
-        $data['company_id'] = $companyId;
-        $data['branch_id']  = $branch['id'];
-        $data['branch_name'] = $branch['name'];
-        $data['status']     = 'pending';
-        $data['billable']   = $request->boolean('billable', true);
-        $data['created_by'] = Auth::id();
-
-        ProjectMilestone::create($data);
+        ProjectMilestone::create([
+            'company_id'      => $companyId,
+            'project_id'      => $data['project_id'],
+            'customer_id'     => $data['customer_id'] ?? null,
+            'name'            => $data['name'],
+            'description'     => $data['description'] ?? null,
+            'due_date'        => $data['due_date'],
+            'billing_amount'  => $data['billing_amount'],
+            'billing_type'    => $data['billing_type'],
+            'percentage'      => $data['percentage'] ?? null,
+            'status'          => 'pending',
+        ]);
 
         return redirect()->route('milestones.index')->with('success', 'Milestone created.');
     }
@@ -73,7 +75,7 @@ class MilestoneBillingController extends Controller
     public function show(ProjectMilestone $milestone)
     {
         $this->authorizeMilestoneAccess($milestone);
-        $milestone->load(['customer', 'invoice']);
+        $milestone->load(['project', 'customer', 'invoice']);
         return view('milestones.show', compact('milestone'));
     }
 
@@ -85,7 +87,7 @@ class MilestoneBillingController extends Controller
 
         $milestone->update([
             'status'       => 'completed',
-            'completed_at' => now(),
+            'completion_date' => now(),
         ]);
 
         return back()->with('success', 'Milestone marked as completed. Ready to invoice.');
@@ -96,14 +98,13 @@ class MilestoneBillingController extends Controller
         $this->authorizeMilestoneAccess($milestone);
         abort_unless($milestone->status === 'completed', 422,
             'Only completed milestones can be invoiced.');
-        abort_unless($milestone->billable, 422, 'Milestone is not billable.');
         abort_if($milestone->invoice_id, 422, 'Invoice already exists for this milestone.');
 
         // Redirect to invoice creation pre-filled with milestone data
-        return redirect()->route('invoices.create', [
-            'customer_id'  => $milestone->customer_id,
-            'description'  => $milestone->project_name . ' — ' . $milestone->title,
-            'amount'       => $milestone->amount,
+        return redirect()->route('add-invoice', [
+            'customer_id' => $milestone->customer_id,
+            'description' => $milestone->name,
+            'amount' => $milestone->billing_amount,
             'milestone_id' => $milestone->id,
         ]);
     }

@@ -25,7 +25,10 @@ class ForecastingController extends Controller
     public function index()
     {
         $companyId = Auth::user()->company_id;
-        $forecasts = Forecast::forCompany($companyId)->latest('period_start')->paginate(20);
+        $forecasts = Forecast::forCompany($companyId)
+            ->with('items')
+            ->latest('period_start')
+            ->paginate(20);
         return view('forecasting.index', compact('forecasts'));
     }
 
@@ -41,40 +44,42 @@ class ForecastingController extends Controller
         $data = $request->validate([
             'name'             => 'required|string|max:255',
             'type'             => 'required|in:revenue,expense,cash_flow,sales',
-            'period_type'      => 'required|in:monthly,quarterly,annual',
+            'scenario'         => 'required|in:base,optimistic,pessimistic,custom',
+            'frequency'        => 'required|in:weekly,monthly,quarterly,annually',
             'period_start'     => 'required|date',
             'period_end'       => 'required|date|after:period_start',
-            'currency'         => 'required|string|size:3',
             'assumptions'      => 'nullable|string',
             'items'            => 'nullable|array',
             'items.*.category' => 'required|string|max:255',
-            'items.*.period_label' => 'required|string|max:100',
-            'items.*.forecasted_amount' => 'required|numeric|min:0',
+            'items.*.period_date' => 'required|date',
+            'items.*.forecast_amount' => 'required|numeric|min:0',
             'items.*.notes'    => 'nullable|string',
         ]);
 
         $branch = $this->getActiveBranchContext();
         DB::transaction(function () use ($data, $companyId, $branch) {
+            $totalForecastAmount = collect($data['items'] ?? [])->sum('forecast_amount');
+
             $forecast = Forecast::create([
                 'company_id'   => $companyId,
                 'branch_id'    => $branch['id'],
-                'branch_name'  => $branch['name'],
                 'name'         => $data['name'],
                 'type'         => $data['type'],
-                'period_type'  => $data['period_type'],
+                'scenario'     => $data['scenario'],
+                'frequency'    => $data['frequency'],
                 'period_start' => $data['period_start'],
                 'period_end'   => $data['period_end'],
-                'currency'     => $data['currency'],
                 'assumptions'  => $data['assumptions'] ?? null,
                 'status'       => 'draft',
+                'total_forecast_amount' => $totalForecastAmount,
                 'created_by'   => Auth::id(),
             ]);
 
             foreach ($data['items'] ?? [] as $item) {
                 $forecast->items()->create([
                     'category'           => $item['category'],
-                    'period_label'       => $item['period_label'],
-                    'forecasted_amount'  => $item['forecasted_amount'],
+                    'period_date'        => $item['period_date'],
+                    'forecast_amount'    => $item['forecast_amount'],
                     'actual_amount'      => 0,
                     'notes'              => $item['notes'] ?? null,
                 ]);

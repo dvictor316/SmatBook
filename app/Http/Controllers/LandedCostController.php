@@ -22,11 +22,12 @@ class LandedCostController extends Controller
     public function index(Request $request)
     {
         $companyId = auth()->user()->company_id;
-        $items = LandedCost::where('company_id', $companyId)
+        $landedCosts = LandedCost::with('grn')
+            ->where('company_id', $companyId)
             ->latest()
             ->paginate(20);
 
-        return view('landed-costs.index', compact('items'));
+        return view('landed-costs.index', compact('landedCosts'));
     }
 
     public function create()

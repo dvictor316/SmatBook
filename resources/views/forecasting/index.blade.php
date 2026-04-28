@@ -40,10 +40,10 @@
                         @forelse($forecasts as $forecast)
                             <tr>
                                 <td>{{ $forecast->name }}</td>
-                                <td>{{ ucfirst($forecast->forecast_type ?? '—') }}</td>
+                                <td>{{ ucfirst(str_replace('_', ' ', $forecast->type ?? '—')) }}</td>
                                 <td>{{ $forecast->period_start->format('d M Y') }}</td>
                                 <td>{{ $forecast->period_end->format('d M Y') }}</td>
-                                <td>{{ number_format($forecast->items->sum('forecasted_amount') ?? 0, 2) }}</td>
+                                <td>{{ number_format((float) ($forecast->total_forecast_amount ?? $forecast->items->sum('forecast_amount')), 2) }}</td>
                                 <td>
                                     <span class="badge bg-{{ match($forecast->status) {
                                         'draft' => 'secondary', 'active' => 'success', 'archived' => 'warning', default => 'secondary'
@@ -52,7 +52,6 @@
                                 <td>{{ $forecast->created_at->format('d M Y') }}</td>
                                 <td class="text-end">
                                     <a href="{{ route('forecasting.show', $forecast) }}" class="btn btn-sm btn-outline-primary me-1">View</a>
-                                    <a href="{{ route('forecasting.edit', $forecast) }}" class="btn btn-sm btn-outline-secondary me-1">Edit</a>
                                     <form action="{{ route('forecasting.destroy', $forecast) }}" method="POST" class="d-inline"
                                           onsubmit="return confirm('Delete this forecast?')">
                                         @csrf @method('DELETE')

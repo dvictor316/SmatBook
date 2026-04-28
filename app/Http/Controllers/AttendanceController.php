@@ -55,7 +55,7 @@ class AttendanceController extends Controller
         ]);
 
         $hoursWorked = 0;
-        if ($data['check_in_time'] && $data['check_out_time'] ?? null) {
+        if (($data['check_in_time'] ?? null) && ($data['check_out_time'] ?? null)) {
             $in  = \Carbon\Carbon::parse($data['check_in_time']);
             $out = \Carbon\Carbon::parse($data['check_out_time']);
             $hoursWorked = round($in->diffInMinutes($out) / 60, 2);

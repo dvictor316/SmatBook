@@ -81,12 +81,11 @@ class ManufacturingController extends Controller
             $order = ManufacturingOrder::create([
                 'company_id'           => $companyId,
                 'branch_id'            => $branch['id'],
-                'branch_name'          => $branch['name'],
                 'mo_number'            => $this->nextMoNumber($companyId),
                 'bom_id'               => $bom->id,
                 'product_id'           => $bom->product_id,
-                'quantity_to_produce'  => $data['quantity_to_produce'],
-                'quantity_produced'    => 0,
+                'planned_quantity'     => $data['quantity_to_produce'],
+                'produced_quantity'    => 0,
                 'planned_start_date'   => $data['planned_start_date'],
                 'planned_end_date'     => $data['planned_end_date'],
                 'status'               => 'planned',
@@ -98,10 +97,10 @@ class ManufacturingController extends Controller
 
             foreach ($bom->items as $bomItem) {
                 $order->items()->create([
-                    'component_product_id'  => $bomItem->component_product_id,
-                    'component_name'        => $bomItem->component_name,
+                    'product_id'            => $bomItem->component_product_id,
+                    'product_name'          => $bomItem->component_name,
                     'required_quantity'     => $bomItem->quantity * $ratio,
-                    'issued_quantity'       => 0,
+                    'consumed_quantity'     => 0,
                     'unit_cost'             => $bomItem->unit_cost,
                     'unit'                  => $bomItem->unit,
                 ]);
@@ -127,7 +126,7 @@ class ManufacturingController extends Controller
 
         $manufacturingOrder->update([
             'status'     => 'in_progress',
-            'started_at' => now(),
+            'actual_start_date' => now(),
         ]);
 
         return back()->with('success', 'Manufacturing order started.');
@@ -145,8 +144,8 @@ class ManufacturingController extends Controller
 
         $manufacturingOrder->update([
             'status'            => 'completed',
-            'quantity_produced' => $data['quantity_produced'],
-            'completed_at'      => now(),
+            'produced_quantity' => $data['quantity_produced'],
+            'actual_end_date'   => now(),
         ]);
 
         return back()->with('success', 'Manufacturing order completed.');

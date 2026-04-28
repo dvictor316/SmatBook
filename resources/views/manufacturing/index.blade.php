@@ -41,10 +41,10 @@
                             <tr>
                                 <td>{{ $mo->mo_number }}</td>
                                 <td>{{ $mo->product->name ?? '—' }}</td>
-                                <td>{{ $mo->quantity_planned }}</td>
-                                <td>{{ $mo->quantity_produced ?? 0 }}</td>
+                                <td>{{ number_format((float) ($mo->planned_quantity ?? 0), 2) }}</td>
+                                <td>{{ number_format((float) ($mo->produced_quantity ?? 0), 2) }}</td>
                                 <td>{{ $mo->bom->bom_number ?? '—' }}</td>
-                                <td>{{ $mo->scheduled_start ? $mo->scheduled_start->format('d M Y') : '—' }}</td>
+                                <td>{{ $mo->planned_start_date ? $mo->planned_start_date->format('d M Y') : '—' }}</td>
                                 <td>
                                     <span class="badge bg-{{ match($mo->status) {
                                         'draft' => 'secondary', 'planned' => 'primary', 'in_progress' => 'warning', 'completed' => 'success', 'cancelled' => 'danger', default => 'secondary'
@@ -52,14 +52,23 @@
                                 </td>
                                 <td class="text-end">
                                     <a href="{{ route('manufacturing.show', $mo) }}" class="btn btn-sm btn-outline-primary me-1">View</a>
-                                    @if(!in_array($mo->status, ['completed', 'cancelled']))
-                                        <a href="{{ route('manufacturing.edit', $mo) }}" class="btn btn-sm btn-outline-secondary me-1">Edit</a>
+                                    @if(in_array($mo->status, ['draft', 'planned'], true))
+                                        <form action="{{ route('manufacturing.start', $mo) }}" method="POST" class="d-inline">
+                                            @csrf
+                                            <button class="btn btn-sm btn-outline-secondary me-1">Start</button>
+                                        </form>
                                     @endif
-                                    @if($mo->status === 'draft')
-                                        <form action="{{ route('manufacturing.destroy', $mo) }}" method="POST" class="d-inline"
-                                              onsubmit="return confirm('Delete this order?')">
-                                            @csrf @method('DELETE')
-                                            <button class="btn btn-sm btn-outline-danger">Delete</button>
+                                    @if($mo->status === 'in_progress')
+                                        <form action="{{ route('manufacturing.complete', $mo) }}" method="POST" class="d-inline">
+                                            @csrf
+                                            <input type="hidden" name="quantity_produced" value="{{ $mo->planned_quantity }}">
+                                            <button class="btn btn-sm btn-outline-success me-1">Complete</button>
+                                        </form>
+                                    @endif
+                                    @if(in_array($mo->status, ['draft', 'planned'], true))
+                                        <form action="{{ route('manufacturing.cancel', $mo) }}" method="POST" class="d-inline">
+                                            @csrf
+                                            <button class="btn btn-sm btn-outline-danger">Cancel</button>
                                         </form>
                                     @endif
                                 </td>

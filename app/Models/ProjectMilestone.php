@@ -24,6 +24,7 @@ class ProjectMilestone extends Model
     ];
 
     public function company(): BelongsTo  { return $this->belongsTo(Company::class); }
+    public function project(): BelongsTo  { return $this->belongsTo(Project::class); }
     public function customer(): BelongsTo { return $this->belongsTo(Customer::class); }
     public function invoice(): BelongsTo  { return $this->belongsTo(Invoice::class); }
 

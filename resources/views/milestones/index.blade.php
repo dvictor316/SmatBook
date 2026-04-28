@@ -41,33 +41,40 @@
                             <tr>
                                 <td>{{ $ms->project->name ?? '—' }}</td>
                                 <td>{{ $ms->name }}</td>
-                                <td>{{ number_format($ms->amount ?? 0, 2) }}</td>
+                                <td>{{ number_format($ms->billing_amount ?? 0, 2) }}</td>
                                 <td>{{ $ms->due_date ? $ms->due_date->format('d M Y') : '—' }}</td>
                                 <td>
                                     <div class="progress" style="height:6px;">
-                                        <div class="progress-bar" style="width:{{ $ms->completion_percentage ?? 0 }}%"></div>
+                                        <div class="progress-bar" style="width:{{ $ms->percentage ?? 0 }}%"></div>
                                     </div>
-                                    <small class="text-muted">{{ $ms->completion_percentage ?? 0 }}%</small>
+                                    <small class="text-muted">{{ $ms->percentage ?? 0 }}%</small>
                                 </td>
                                 <td>
                                     <span class="badge bg-{{ match($ms->status) {
-                                        'pending' => 'warning', 'in_progress' => 'primary', 'completed' => 'success', 'invoiced' => 'info', default => 'secondary'
+                                        'pending' => 'warning', 'in_progress' => 'primary', 'completed' => 'success', 'billed' => 'info', default => 'secondary'
                                     } }}">{{ ucfirst(str_replace('_', ' ', $ms->status)) }}</span>
                                 </td>
                                 <td class="text-end">
                                     <a href="{{ route('milestones.show', $ms) }}" class="btn btn-sm btn-outline-primary me-1">View</a>
-                                    <a href="{{ route('milestones.edit', $ms) }}" class="btn btn-sm btn-outline-secondary me-1">Edit</a>
+                                    @if(in_array($ms->status, ['pending', 'in_progress'], true))
+                                        <form action="{{ route('milestones.complete', $ms) }}" method="POST" class="d-inline">
+                                            @csrf
+                                            <button class="btn btn-sm btn-outline-secondary me-1">Complete</button>
+                                        </form>
+                                    @endif
                                     @if($ms->status === 'completed')
                                         <form action="{{ route('milestones.invoice', $ms) }}" method="POST" class="d-inline">
                                             @csrf
                                             <button class="btn btn-sm btn-outline-success me-1">Invoice</button>
                                         </form>
                                     @endif
-                                    <form action="{{ route('milestones.destroy', $ms) }}" method="POST" class="d-inline"
-                                          onsubmit="return confirm('Delete this milestone?')">
-                                        @csrf @method('DELETE')
-                                        <button class="btn btn-sm btn-outline-danger">Delete</button>
-                                    </form>
+                                    @if(!$ms->invoice_id)
+                                        <form action="{{ route('milestones.destroy', $ms) }}" method="POST" class="d-inline"
+                                              onsubmit="return confirm('Delete this milestone?')">
+                                            @csrf @method('DELETE')
+                                            <button class="btn btn-sm btn-outline-danger">Delete</button>
+                                        </form>
+                                    @endif
                                 </td>
                             </tr>
                         @empty

@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Timesheet;
 use App\Models\TimesheetEntry;
 use App\Models\Employee;
-use App\Models\Sale;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -51,45 +50,53 @@ class TimesheetController extends Controller
             'week_start_date' => 'required|date',
             'notes'           => 'nullable|string',
             'entries'         => 'required|array|min:1',
-            'entries.*.work_date'    => 'required|date',
-            'entries.*.project_name' => 'nullable|string|max:255',
-            'entries.*.task'         => 'nullable|string|max:255',
+            'entries.*.entry_date'   => 'required|date',
+            'entries.*.activity_description' => 'required|string|max:255',
             'entries.*.hours'        => 'required|numeric|min:0.1|max:24',
-            'entries.*.billable'     => 'boolean',
-            'entries.*.rate'         => 'nullable|numeric|min:0',
+            'entries.*.is_billable'  => 'boolean',
+            'entries.*.hourly_rate'  => 'nullable|numeric|min:0',
             'entries.*.notes'        => 'nullable|string|max:500',
         ]);
 
         $branch = $this->getActiveBranchContext();
         DB::transaction(function () use ($data, $companyId, $branch) {
             $totalHours = collect($data['entries'])->sum('hours');
+            $billableHours = collect($data['entries'])
+                ->filter(fn ($entry) => (bool) ($entry['is_billable'] ?? false))
+                ->sum('hours');
+            $billableAmount = collect($data['entries'])->sum(function ($entry) {
+                if (! (bool) ($entry['is_billable'] ?? false)) {
+                    return 0;
+                }
+
+                return (float) $entry['hours'] * (float) ($entry['hourly_rate'] ?? 0);
+            });
 
             $timesheet = Timesheet::create([
                 'company_id'      => $companyId,
                 'branch_id'       => $branch['id'],
-                'branch_name'     => $branch['name'],
                 'employee_id'     => $data['employee_id'],
                 'week_start_date' => $data['week_start_date'],
                 'total_hours'     => $totalHours,
+                'billable_hours'  => $billableHours,
+                'billable_amount' => $billableAmount,
                 'status'          => 'draft',
                 'notes'           => $data['notes'] ?? null,
-                'created_by'      => Auth::id(),
+                'user_id'         => Auth::id(),
             ]);
 
             foreach ($data['entries'] as $entry) {
-                $billable = (bool) ($entry['billable'] ?? false);
+                $billable = (bool) ($entry['is_billable'] ?? false);
                 $hours    = $entry['hours'];
-                $rate     = $entry['rate'] ?? 0;
+                $rate     = $entry['hourly_rate'] ?? 0;
 
                 $timesheet->entries()->create([
-                    'work_date'      => $entry['work_date'],
-                    'project_name'   => $entry['project_name'] ?? null,
-                    'task'           => $entry['task'] ?? null,
-                    'hours'          => $hours,
-                    'billable'       => $billable,
-                    'billable_amount' => $billable ? ($hours * $rate) : 0,
-                    'rate'           => $rate,
-                    'notes'          => $entry['notes'] ?? null,
+                    'entry_date'            => $entry['entry_date'],
+                    'activity_description'  => $entry['activity_description'],
+                    'hours'                 => $hours,
+                    'is_billable'           => $billable,
+                    'hourly_rate'           => $rate,
+                    'line_total'            => $billable ? ($hours * $rate) : 0,
                 ]);
             }
         });

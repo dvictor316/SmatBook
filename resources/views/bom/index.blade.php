@@ -41,17 +41,16 @@
                             <tr>
                                 <td>{{ $bom->bom_number }}</td>
                                 <td>{{ $bom->product->name ?? '—' }}</td>
-                                <td>{{ $bom->version ?? '1.0' }}</td>
-                                <td>{{ $bom->quantity_produced }}</td>
+                                <td>{{ ucfirst($bom->bom_type ?? 'standard') }}</td>
+                                <td>{{ number_format((float) $bom->output_quantity, 2) }}</td>
                                 <td>{{ $bom->items->count() }}</td>
                                 <td>
                                     <span class="badge bg-{{ match($bom->status) {
-                                        'active' => 'success', 'draft' => 'secondary', 'obsolete' => 'danger', default => 'secondary'
+                                        'active' => 'success', 'draft' => 'secondary', 'inactive' => 'danger', default => 'secondary'
                                     } }}">{{ ucfirst($bom->status) }}</span>
                                 </td>
                                 <td class="text-end">
                                     <a href="{{ route('bom.show', $bom) }}" class="btn btn-sm btn-outline-primary me-1">View</a>
-                                    <a href="{{ route('bom.edit', $bom) }}" class="btn btn-sm btn-outline-secondary me-1">Edit</a>
                                     <form action="{{ route('bom.destroy', $bom) }}" method="POST" class="d-inline"
                                           onsubmit="return confirm('Delete this BOM?')">
                                         @csrf @method('DELETE')

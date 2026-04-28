@@ -40,7 +40,7 @@
                         @forelse($timesheets as $ts)
                             <tr>
                                 <td>{{ $ts->employee->name ?? '—' }}</td>
-                                <td>{{ $ts->period_start->format('d M') }} – {{ $ts->period_end->format('d M Y') }}</td>
+                                <td>{{ $ts->week_start_date->format('d M Y') }} – {{ $ts->week_start_date->copy()->addDays(6)->format('d M Y') }}</td>
                                 <td>{{ number_format($ts->total_hours ?? 0, 1) }}</td>
                                 <td>{{ number_format($ts->billable_hours ?? 0, 1) }}</td>
                                 <td>
@@ -48,11 +48,10 @@
                                         'draft' => 'secondary', 'submitted' => 'warning', 'approved' => 'success', 'rejected' => 'danger', default => 'secondary'
                                     } }}">{{ ucfirst($ts->status) }}</span>
                                 </td>
-                                <td>{{ $ts->submitted_at ? $ts->submitted_at->format('d M Y') : '—' }}</td>
+                                <td>{{ $ts->approved_at ? $ts->approved_at->format('d M Y') : '—' }}</td>
                                 <td class="text-end">
                                     <a href="{{ route('timesheets.show', $ts) }}" class="btn btn-sm btn-outline-primary me-1">View</a>
                                     @if($ts->status === 'draft')
-                                        <a href="{{ route('timesheets.edit', $ts) }}" class="btn btn-sm btn-outline-secondary me-1">Edit</a>
                                         <form action="{{ route('timesheets.destroy', $ts) }}" method="POST" class="d-inline"
                                               onsubmit="return confirm('Delete this timesheet?')">
                                             @csrf @method('DELETE')

@@ -15,7 +15,7 @@ class AssetMaintenanceController extends Controller
         $query     = AssetMaintenanceLog::forCompany($companyId)->with('asset');
 
         if ($assetId = $request->query('asset_id')) {
-            $query->where('asset_id', $assetId);
+            $query->where('fixed_asset_id', $assetId);
         }
 
         $logs = $query->latest('maintenance_date')->paginate(25);
@@ -40,22 +40,21 @@ class AssetMaintenanceController extends Controller
         $companyId = Auth::user()->company_id;
 
         $data = $request->validate([
-            'asset_id'           => 'required|exists:fixed_assets,id',
+            'fixed_asset_id'      => 'required|exists:fixed_assets,id',
             'maintenance_type'   => 'required|in:preventive,corrective,inspection,upgrade,overhaul',
             'maintenance_date'   => 'required|date',
             'next_maintenance_date' => 'nullable|date|after:maintenance_date',
             'performed_by'       => 'nullable|string|max:255',
-            'vendor'             => 'nullable|string|max:255',
+            'vendor_name'        => 'nullable|string|max:255',
             'cost'               => 'nullable|numeric|min:0',
-            'downtime_hours'     => 'nullable|numeric|min:0',
             'description'        => 'required|string',
             'findings'           => 'nullable|string',
-            'actions_taken'      => 'nullable|string',
+            'parts_replaced'     => 'nullable|string',
             'status'             => 'required|in:scheduled,in_progress,completed,cancelled',
         ]);
 
         // Verify asset belongs to company
-        $asset = FixedAsset::where('company_id', $companyId)->findOrFail($data['asset_id']);
+        $asset = FixedAsset::where('company_id', $companyId)->findOrFail($data['fixed_asset_id']);
 
         $branch = $this->getActiveBranchContext();
         $data['company_id']  = $companyId;
@@ -70,7 +69,7 @@ class AssetMaintenanceController extends Controller
             $asset->update(['maintenance_schedule' => $data['next_maintenance_date']]);
         }
 
-        return redirect()->route('assets.maintenance.index', ['asset_id' => $data['asset_id']])
+        return redirect()->route('assets.maintenance.index', ['asset_id' => $data['fixed_asset_id']])
             ->with('success', 'Maintenance log created.');
     }
 
@@ -109,12 +108,11 @@ class AssetMaintenanceController extends Controller
             'maintenance_date'      => 'required|date',
             'next_maintenance_date' => 'nullable|date|after:maintenance_date',
             'performed_by'          => 'nullable|string|max:255',
-            'vendor'                => 'nullable|string|max:255',
+            'vendor_name'           => 'nullable|string|max:255',
             'cost'                  => 'nullable|numeric|min:0',
-            'downtime_hours'        => 'nullable|numeric|min:0',
             'description'           => 'required|string',
             'findings'              => 'nullable|string',
-            'actions_taken'         => 'nullable|string',
+            'parts_replaced'        => 'nullable|string',
             'status'                => 'required|in:scheduled,in_progress,completed,cancelled',
         ]);
 

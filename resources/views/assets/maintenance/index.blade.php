@@ -39,7 +39,7 @@
                     <tbody>
                         @forelse($logs as $log)
                             <tr>
-                                <td>{{ $log->asset_name }}</td>
+                                <td>{{ $log->asset->name ?? $log->asset->asset_code ?? '—' }}</td>
                                 <td>{{ str_replace('_', ' ', ucfirst($log->maintenance_type)) }}</td>
                                 <td>{{ \Illuminate\Support\Str::limit($log->description, 50) }}</td>
                                 <td>{{ $log->cost ? number_format($log->cost, 2) : '—' }}</td>
@@ -47,6 +47,7 @@
                                 <td>{{ $log->maintenance_date->format('d M Y') }}</td>
                                 <td>{{ $log->next_maintenance_date ? $log->next_maintenance_date->format('d M Y') : '—' }}</td>
                                 <td class="text-end">
+                                    <a href="{{ route('assets.maintenance.show', $log) }}" class="btn btn-sm btn-outline-primary me-1">View</a>
                                     <a href="{{ route('assets.maintenance.edit', $log) }}" class="btn btn-sm btn-outline-secondary me-1">Edit</a>
                                     <form action="{{ route('assets.maintenance.destroy', $log) }}" method="POST" class="d-inline"
                                           onsubmit="return confirm('Delete this log?')">
