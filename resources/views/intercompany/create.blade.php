@@ -44,6 +44,13 @@
                         </div>
                         @if($companies->isEmpty())
                             <div class="form-text text-danger">No counter-party companies are available yet. Add one to continue.</div>
+                            @if(Route::has('companies.create'))
+                                <div class="mt-2">
+                                    <a href="{{ route('companies.create') }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fe fe-plus me-1"></i> Add Company
+                                    </a>
+                                </div>
+                            @endif
                         @endif
                     </div>
                     <div class="col-xl-4 col-md-6">
