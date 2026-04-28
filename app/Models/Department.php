@@ -22,7 +22,7 @@ class Department extends Model
     public function parent(): BelongsTo      { return $this->belongsTo(Department::class, 'parent_id'); }
     public function children(): HasMany      { return $this->hasMany(Department::class, 'parent_id'); }
     public function head(): BelongsTo        { return $this->belongsTo(Employee::class, 'head_employee_id'); }
-    public function employees(): HasMany     { return $this->hasMany(Employee::class); }
+    public function employees(): HasMany     { return $this->hasMany(Employee::class, 'department', 'name'); }
     public function costCenters(): HasMany   { return $this->hasMany(CostCenter::class); }
 
     public function scopeForCompany($query, int $companyId) { return $query->where('company_id', $companyId); }

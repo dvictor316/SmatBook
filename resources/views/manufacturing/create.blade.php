@@ -3,6 +3,7 @@
 @section('title', 'Create Manufacturing Order')
 
 @section('content')
+<div class="page-wrapper">
 <div class="content container-fluid">
     <div class="page-header"><h3 class="page-title">Create Manufacturing Order</h3></div>
     <div class="card">
@@ -40,5 +41,6 @@
             </form>
         </div>
     </div>
+</div>
 </div>
 @endsection

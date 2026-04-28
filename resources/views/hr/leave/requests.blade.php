@@ -3,6 +3,7 @@
 @section('title', 'Leave Requests')
 
 @section('content')
+<div class="page-wrapper">
 <div class="content container-fluid">
     <div class="page-header">
         <div class="row align-items-center">
@@ -46,5 +47,6 @@
             </div>
         </div>
     </div>
+</div>
 </div>
 @endsection

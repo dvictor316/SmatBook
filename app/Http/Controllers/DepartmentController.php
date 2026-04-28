@@ -36,7 +36,7 @@ class DepartmentController extends Controller
     {
         $companyId = Auth::user()->company_id;
         $branchId = $this->getActiveBranchContext()['id'];
-        $employees = Employee::where('company_id', $companyId)->orderBy('name')->get();
+        $employees = Employee::forWorkspaceCompany($companyId)->orderBy('name')->get();
         $departments = Department::forCompany($companyId)
             ->where('branch_id', $branchId)
             ->active()->orderBy('name')->get();
@@ -70,7 +70,7 @@ class DepartmentController extends Controller
     {
         $this->authorizeDepartmentAccess($department);
         $companyId   = Auth::user()->company_id;
-        $employees   = Employee::where('company_id', $companyId)->orderBy('name')->get();
+        $employees   = Employee::forWorkspaceCompany($companyId)->orderBy('name')->get();
         $departments = Department::forCompany($companyId)->active()->where('id', '!=', $department->id)->orderBy('name')->get();
         return view('departments.edit', compact('department', 'employees', 'departments'));
     }

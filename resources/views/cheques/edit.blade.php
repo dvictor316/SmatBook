@@ -3,6 +3,7 @@
 @section('title', 'Edit Cheque #' . $cheque->cheque_number)
 
 @section('content')
+<div class="page-wrapper">
 <div class="content container-fluid">
     <div class="page-header">
         <div class="row align-items-center">
@@ -123,6 +124,7 @@
             </div>
         </div>
     </div>
+</div>
 </div>
 
 @push('scripts')

@@ -32,7 +32,7 @@ class AttendanceController extends Controller
             ->orderBy('check_in_time')
             ->paginate(50);
 
-        $employees = Employee::where('company_id', $companyId)
+        $employees = Employee::forWorkspaceCompany($companyId)
             ->where('status', 'active')
             ->orderBy('name')
             ->get();

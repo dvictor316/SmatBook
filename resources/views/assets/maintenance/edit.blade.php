@@ -3,6 +3,7 @@
 @section('title', 'Edit Maintenance Log')
 
 @section('content')
+<div class="page-wrapper">
 <div class="content container-fluid">
     <div class="page-header"><h3 class="page-title">Edit Maintenance Log</h3></div>
     <div class="card">
@@ -38,5 +39,6 @@
             </form>
         </div>
     </div>
+</div>
 </div>
 @endsection

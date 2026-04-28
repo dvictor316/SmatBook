@@ -3,6 +3,7 @@
 @section('title', 'Landed Cost Details')
 
 @section('content')
+<div class="page-wrapper">
 <div class="content container-fluid">
     <div class="page-header"><h3 class="page-title">{{ $landedCost->cost_type }}</h3></div>
     <div class="card">
@@ -18,5 +19,6 @@
             </div>
         </div>
     </div>
+</div>
 </div>
 @endsection

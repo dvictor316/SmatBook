@@ -3,6 +3,7 @@
 @section('title', 'New Loan / Overdraft')
 
 @section('content')
+<div class="page-wrapper">
 <div class="content container-fluid">
     <div class="page-header">
         <div class="row align-items-center">
@@ -31,9 +32,9 @@
                         @csrf
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">Loan Reference Number <span class="text-danger">*</span></label>
+                                <label class="form-label fw-semibold">Loan Reference Number</label>
                                 <input type="text" name="loan_number" class="form-control @error('loan_number') is-invalid @enderror"
-                                       value="{{ old('loan_number') }}" required>
+                                       value="{{ old('loan_number') }}">
                                 @error('loan_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                             <div class="col-md-6">
@@ -89,9 +90,9 @@
                                 @error('disbursement_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label fw-semibold">Maturity Date <span class="text-danger">*</span></label>
+                                <label class="form-label fw-semibold">Maturity Date</label>
                                 <input type="date" name="maturity_date" class="form-control @error('maturity_date') is-invalid @enderror"
-                                       value="{{ old('maturity_date') }}" required>
+                                       value="{{ old('maturity_date') }}">
                                 @error('maturity_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                             <div class="col-md-4">
@@ -105,7 +106,8 @@
                                 <select name="repayment_frequency" class="form-select @error('repayment_frequency') is-invalid @enderror" required>
                                     <option value="monthly" @selected(old('repayment_frequency') === 'monthly')>Monthly</option>
                                     <option value="quarterly" @selected(old('repayment_frequency') === 'quarterly')>Quarterly</option>
-                                    <option value="annual" @selected(old('repayment_frequency') === 'annual')>Annual</option>
+                                    <option value="bi_annually" @selected(old('repayment_frequency') === 'bi_annually')>Bi-annually</option>
+                                    <option value="annually" @selected(old('repayment_frequency') === 'annually')>Annually</option>
                                     <option value="bullet" @selected(old('repayment_frequency') === 'bullet')>Bullet (Lump Sum)</option>
                                 </select>
                                 @error('repayment_frequency')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -125,5 +127,6 @@
             </div>
         </div>
     </div>
+</div>
 </div>
 @endsection

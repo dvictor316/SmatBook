@@ -5,12 +5,17 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Traits\TenantScoped;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Schema;
 
 class Employee extends Model
 {
     use HasFactory, TenantScoped;
 
     protected $fillable = [
+        'company_id',
+        'branch_id',
+        'user_id',
         'name', 'employee_id', 'department', 'job_title',
         'email', 'phone', 'employment_date',
         'bank_name', 'account_number', 'tax_id',
@@ -44,5 +49,20 @@ class Employee extends Model
     public function scopeActive($query)
     {
         return $query->where('status', 'active');
+    }
+
+    public function scopeForWorkspaceCompany(Builder $query, int $companyId): Builder
+    {
+        $table = $this->getTable();
+
+        if (Schema::hasColumn($table, 'company_id')) {
+            return $query->where($table . '.company_id', $companyId);
+        }
+
+        if (Schema::hasColumn($table, 'business_id')) {
+            return $query->where($table . '.business_id', $companyId);
+        }
+
+        return $query;
     }
 }

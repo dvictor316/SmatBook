@@ -78,7 +78,7 @@ class LeaveManagementController extends Controller
     public function createRequest()
     {
         $companyId  = Auth::user()->company_id;
-        $employees  = Employee::where('company_id', $companyId)->orderBy('name')->get();
+        $employees  = Employee::forWorkspaceCompany($companyId)->orderBy('name')->get();
         $leaveTypes = LeaveType::forCompany($companyId)->active()->orderBy('name')->get();
         return view('hr.leave.create', compact('employees', 'leaveTypes'));
     }

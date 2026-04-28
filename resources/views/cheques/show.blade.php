@@ -3,6 +3,7 @@
 @section('title', 'Cheque #' . $cheque->cheque_number)
 
 @section('content')
+<div class="page-wrapper">
 <div class="content container-fluid">
     <div class="page-header">
         <div class="row align-items-center">
@@ -103,7 +104,7 @@
             <div class="card">
                 <div class="card-header"><h5 class="card-title mb-0">Update Status</h5></div>
                 <div class="card-body">
-                    <form action="{{ route('cheques.status', $cheque) }}" method="POST">
+                    <form action="{{ route('cheques.update-status', $cheque) }}" method="POST">
                         @csrf
                         @method('PATCH')
                         <div class="mb-3">
@@ -114,15 +115,12 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Notes</label>
-                            <textarea name="notes" class="form-control" rows="2" placeholder="Reason for status change..."></textarea>
-                        </div>
                         <button type="submit" class="btn btn-primary w-100">Update Status</button>
                     </form>
                 </div>
             </div>
         </div>
     </div>
+</div>
 </div>
 @endsection

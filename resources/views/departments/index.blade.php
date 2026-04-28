@@ -3,6 +3,7 @@
 @section('title', 'Departments')
 
 @section('content')
+<div class="page-wrapper">
 <div class="content container-fluid">
     <div class="page-header">
         <div class="row align-items-center">
@@ -33,7 +34,7 @@
                 <table class="table table-hover mb-0">
                     <thead class="table-light">
                         <tr>
-                            <th>Name</th><th>Code</th><th>Parent</th><th>Manager</th><th>Budget</th><th>Status</th><th class="text-end">Actions</th>
+                            <th>Name</th><th>Code</th><th>Parent</th><th>Head</th><th>Employees</th><th>Status</th><th class="text-end">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -42,8 +43,8 @@
                                 <td>{{ $dept->name }}</td>
                                 <td>{{ $dept->code ?? '—' }}</td>
                                 <td>{{ $dept->parent->name ?? '—' }}</td>
-                                <td>{{ $dept->manager_name ?? '—' }}</td>
-                                <td>{{ $dept->budget ? number_format($dept->budget, 2) : '—' }}</td>
+                                <td>{{ $dept->head->name ?? '—' }}</td>
+                                <td>{{ $dept->employees_count ?? 0 }}</td>
                                 <td>
                                     <span class="badge bg-{{ $dept->is_active ? 'success' : 'secondary' }}">{{ $dept->is_active ? 'Active' : 'Inactive' }}</span>
                                 </td>
@@ -67,5 +68,6 @@
             <div class="card-footer">{{ $departments->links() }}</div>
         @endif
     </div>
+</div>
 </div>
 @endsection

@@ -3,6 +3,7 @@
 @section('title', 'Create Leave Request')
 
 @section('content')
+<div class="page-wrapper">
 <div class="content container-fluid">
     <div class="page-header"><h3 class="page-title">Create Leave Request</h3></div>
     <div class="card">
@@ -34,5 +35,6 @@
             </form>
         </div>
     </div>
+</div>
 </div>
 @endsection

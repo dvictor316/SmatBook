@@ -3,6 +3,7 @@
 @section('title', 'Exchange Rates')
 
 @section('content')
+<div class="page-wrapper">
 <div class="content container-fluid">
     <div class="page-header">
         <div class="row align-items-center">
@@ -39,10 +40,10 @@
                     <tbody>
                         @forelse($rates as $rate)
                             <tr>
-                                <td>{{ $rate->from_currency }}</td>
-                                <td>{{ $rate->to_currency }}</td>
+                                <td>{{ $rate->base_currency }}</td>
+                                <td>{{ $rate->target_currency }}</td>
                                 <td>{{ number_format($rate->rate, 6) }}</td>
-                                <td>{{ $rate->rate_date->format('d M Y') }}</td>
+                                <td>{{ $rate->effective_date?->format('d M Y') ?? '—' }}</td>
                                 <td>{{ $rate->source ?? '—' }}</td>
                                 <td class="text-end">
                                     <a href="{{ route('exchange-rates.edit', $rate) }}" class="btn btn-sm btn-outline-secondary me-1">Edit</a>
@@ -64,5 +65,6 @@
             <div class="card-footer">{{ $rates->links() }}</div>
         @endif
     </div>
+</div>
 </div>
 @endsection

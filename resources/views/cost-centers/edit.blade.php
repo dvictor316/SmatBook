@@ -3,6 +3,7 @@
 @section('title', 'Edit Cost Center')
 
 @section('content')
+<div class="page-wrapper">
 <div class="content container-fluid">
     <div class="page-header">
         <div class="row align-items-center">
@@ -47,28 +48,11 @@
                                 <label class="form-label fw-semibold">Type</label>
                                 <select name="type" class="form-select @error('type') is-invalid @enderror">
                                     <option value="">-- Select Type --</option>
-                                    @foreach(['profit_center','cost_center','investment_center'] as $t)
+                                    @foreach(['operational','project','department','branch','profit_center','investment_center'] as $t)
                                         <option value="{{ $t }}" @selected(old('type', $costCenter->type) === $t)>{{ ucwords(str_replace('_', ' ', $t)) }}</option>
                                     @endforeach
                                 </select>
                                 @error('type')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">Parent Cost Center</label>
-                                <select name="parent_id" class="form-select @error('parent_id') is-invalid @enderror">
-                                    <option value="">-- None (Top Level) --</option>
-                                    @foreach($costCenters as $cc)
-                                        @if($cc->id !== $costCenter->id)
-                                            <option value="{{ $cc->id }}" @selected(old('parent_id', $costCenter->parent_id) == $cc->id)>{{ $cc->name }}</option>
-                                        @endif
-                                    @endforeach
-                                </select>
-                                @error('parent_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">Budget (optional)</label>
-                                <input type="number" name="budget" class="form-control"
-                                       value="{{ old('budget', $costCenter->budget) }}" step="0.01" min="0">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">Department (link)</label>
@@ -101,5 +85,6 @@
             </div>
         </div>
     </div>
+</div>
 </div>
 @endsection

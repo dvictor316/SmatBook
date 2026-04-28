@@ -3,6 +3,7 @@
 @section('title', 'BOM Details')
 
 @section('content')
+<div class="page-wrapper">
 <div class="content container-fluid">
     <div class="page-header"><h3 class="page-title">{{ $bom->bom_number }}</h3></div>
     <div class="card mb-4">
@@ -36,5 +37,6 @@
             </div>
         </div>
     </div>
+</div>
 </div>
 @endsection

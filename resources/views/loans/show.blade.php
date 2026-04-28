@@ -3,6 +3,7 @@
 @section('title', 'Loan #' . $loan->loan_number)
 
 @section('content')
+<div class="page-wrapper">
 <div class="content container-fluid">
     <div class="page-header">
         <div class="row align-items-center">
@@ -53,7 +54,7 @@
                         <tr><th>Bank Account</th><td>{{ $loan->bank?->name ?? '—' }}</td></tr>
                         <tr><th>Principal</th><td><strong>{{ number_format($loan->principal_amount, 2) }}</strong></td></tr>
                         <tr><th>Interest Rate</th><td>{{ $loan->interest_rate }}% ({{ ucfirst($loan->interest_type) }})</td></tr>
-                        <tr><th>Repayment</th><td>{{ ucfirst($loan->repayment_frequency) }}</td></tr>
+                        <tr><th>Repayment</th><td>{{ ucfirst(str_replace('_', ' ', $loan->repayment_frequency)) }}</td></tr>
                         <tr><th>Disbursement</th><td>{{ $loan->disbursement_date?->format('d M Y') ?? '—' }}</td></tr>
                         <tr><th>Maturity</th><td>{{ $loan->maturity_date?->format('d M Y') ?? '—' }}</td></tr>
                         <tr><th>Tenure</th><td>{{ $loan->tenure_months ? $loan->tenure_months . ' months' : '—' }}</td></tr>
@@ -172,5 +173,6 @@
             </div>
         </div>
     </div>
+</div>
 </div>
 @endsection

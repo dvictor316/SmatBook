@@ -3,6 +3,7 @@
 @section('title', 'New Cost Center')
 
 @section('content')
+<div class="page-wrapper">
 <div class="content container-fluid">
     <div class="page-header">
         <div class="row align-items-center">
@@ -46,27 +47,14 @@
                                 <label class="form-label fw-semibold">Type</label>
                                 <select name="type" class="form-select @error('type') is-invalid @enderror">
                                     <option value="">-- Select Type --</option>
+                                    <option value="operational" @selected(old('type') === 'operational')>Operational</option>
+                                    <option value="project" @selected(old('type') === 'project')>Project</option>
+                                    <option value="department" @selected(old('type') === 'department')>Department</option>
+                                    <option value="branch" @selected(old('type') === 'branch')>Branch</option>
                                     <option value="profit_center" @selected(old('type') === 'profit_center')>Profit Center</option>
-                                    <option value="cost_center" @selected(old('type') === 'cost_center')>Cost Center</option>
                                     <option value="investment_center" @selected(old('type') === 'investment_center')>Investment Center</option>
                                 </select>
                                 @error('type')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">Parent Cost Center</label>
-                                <select name="parent_id" class="form-select @error('parent_id') is-invalid @enderror">
-                                    <option value="">-- None (Top Level) --</option>
-                                    @foreach($costCenters as $cc)
-                                        <option value="{{ $cc->id }}" @selected(old('parent_id') == $cc->id)>{{ $cc->name }}</option>
-                                    @endforeach
-                                </select>
-                                @error('parent_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">Budget (optional)</label>
-                                <input type="number" name="budget" class="form-control @error('budget') is-invalid @enderror"
-                                       value="{{ old('budget') }}" step="0.01" min="0" placeholder="Annual budget">
-                                @error('budget')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">Department (link)</label>
@@ -76,6 +64,7 @@
                                         <option value="{{ $dept->id }}" @selected(old('department_id') == $dept->id)>{{ $dept->name }}</option>
                                     @endforeach
                                 </select>
+                                @error('department_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                             <div class="col-12">
                                 <label class="form-label fw-semibold">Description</label>
@@ -99,5 +88,6 @@
             </div>
         </div>
     </div>
+</div>
 </div>
 @endsection

@@ -3,6 +3,7 @@
 @section('title', 'Cheque Register')
 
 @section('content')
+<div class="page-wrapper">
 <div class="content container-fluid">
     <div class="page-header">
         <div class="row align-items-center">
@@ -40,18 +41,19 @@
                         @forelse($cheques as $cheque)
                             <tr>
                                 <td>{{ $cheque->cheque_number }}</td>
-                                <td><span class="badge bg-{{ $cheque->cheque_type === 'received' ? 'success' : 'primary' }}">{{ ucfirst($cheque->cheque_type) }}</span></td>
-                                <td>{{ number_format($cheque->amount, 2) }} {{ $cheque->currency }}</td>
-                                <td>{{ $cheque->party_name }}</td>
-                                <td>{{ $cheque->bank_name }}</td>
-                                <td>{{ $cheque->cheque_date->format('d M Y') }}</td>
+                                <td><span class="badge bg-{{ $cheque->type === 'receive' ? 'success' : 'primary' }}">{{ ucfirst($cheque->type) }}</span></td>
+                                <td>{{ number_format($cheque->amount, 2) }} {{ $cheque->currency ?? 'NGN' }}</td>
+                                <td>{{ $cheque->payee_name }}</td>
+                                <td>{{ $cheque->bank?->name ?? '—' }}</td>
+                                <td>{{ $cheque->cheque_date?->format('d M Y') ?? '—' }}</td>
                                 <td>{{ $cheque->due_date ? $cheque->due_date->format('d M Y') : '—' }}</td>
                                 <td>
                                     <span class="badge bg-{{ match($cheque->status) {
-                                        'pending' => 'warning', 'cleared' => 'success', 'bounced' => 'danger', 'cancelled' => 'secondary', default => 'secondary'
+                                        'pending' => 'warning', 'cleared' => 'success', 'bounced' => 'danger', 'cancelled', 'voided' => 'secondary', 'deposited' => 'info', default => 'secondary'
                                     } }}">{{ ucfirst($cheque->status) }}</span>
                                 </td>
                                 <td class="text-end">
+                                    <a href="{{ route('cheques.show', $cheque) }}" class="btn btn-sm btn-outline-primary me-1">View</a>
                                     <a href="{{ route('cheques.edit', $cheque) }}" class="btn btn-sm btn-outline-secondary me-1">Edit</a>
                                     <form action="{{ route('cheques.destroy', $cheque) }}" method="POST" class="d-inline"
                                           onsubmit="return confirm('Delete this cheque?')">
@@ -71,5 +73,6 @@
             <div class="card-footer">{{ $cheques->links() }}</div>
         @endif
     </div>
+</div>
 </div>
 @endsection

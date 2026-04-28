@@ -3,6 +3,7 @@
 @section('title', 'Loans & Overdraft')
 
 @section('content')
+<div class="page-wrapper">
 <div class="content container-fluid">
     <div class="page-header">
         <div class="row align-items-center">
@@ -39,16 +40,16 @@
                     <tbody>
                         @forelse($loans as $loan)
                             <tr>
-                                <td>{{ $loan->reference }}</td>
-                                <td>{{ str_replace('_', ' ', ucfirst($loan->loan_type)) }}</td>
+                                <td>{{ $loan->loan_number }}</td>
+                                <td>{{ str_replace('_', ' ', ucfirst($loan->type)) }}</td>
                                 <td>{{ number_format($loan->principal_amount, 2) }}</td>
                                 <td>{{ number_format($loan->outstanding_balance, 2) }}</td>
                                 <td>{{ $loan->interest_rate }}%</td>
                                 <td>{{ $loan->lender_name }}</td>
-                                <td>{{ $loan->start_date->format('d M Y') }}</td>
+                                <td>{{ $loan->disbursement_date?->format('d M Y') ?? '—' }}</td>
                                 <td>
                                     <span class="badge bg-{{ match($loan->status) {
-                                        'active' => 'success', 'fully_paid' => 'secondary', 'defaulted' => 'danger', default => 'warning'
+                                        'active' => 'success', 'closed' => 'secondary', 'defaulted' => 'danger', default => 'warning'
                                     } }}">{{ ucfirst($loan->status) }}</span>
                                 </td>
                                 <td class="text-end">
@@ -72,5 +73,6 @@
             <div class="card-footer">{{ $loans->links() }}</div>
         @endif
     </div>
+</div>
 </div>
 @endsection

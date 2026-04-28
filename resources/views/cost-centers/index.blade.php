@@ -3,6 +3,7 @@
 @section('title', 'Cost Centers')
 
 @section('content')
+<div class="page-wrapper">
 <div class="content container-fluid">
     <div class="page-header">
         <div class="row align-items-center">
@@ -33,7 +34,7 @@
                 <table class="table table-hover mb-0">
                     <thead class="table-light">
                         <tr>
-                            <th>Name</th><th>Code</th><th>Type</th><th>Department</th><th>Budget</th><th>Status</th><th class="text-end">Actions</th>
+                            <th>Name</th><th>Code</th><th>Type</th><th>Department</th><th>Description</th><th>Status</th><th class="text-end">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -41,9 +42,9 @@
                             <tr>
                                 <td>{{ $cc->name }}</td>
                                 <td>{{ $cc->code ?? '—' }}</td>
-                                <td>{{ ucfirst($cc->type ?? 'cost') }}</td>
+                                <td>{{ ucfirst(str_replace('_', ' ', $cc->type ?? 'cost')) }}</td>
                                 <td>{{ $cc->department->name ?? '—' }}</td>
-                                <td>{{ $cc->budget ? number_format($cc->budget, 2) : '—' }}</td>
+                                <td>{{ $cc->description ? \Illuminate\Support\Str::limit($cc->description, 40) : '—' }}</td>
                                 <td>
                                     <span class="badge bg-{{ $cc->is_active ? 'success' : 'secondary' }}">{{ $cc->is_active ? 'Active' : 'Inactive' }}</span>
                                 </td>
@@ -67,5 +68,6 @@
             <div class="card-footer">{{ $costCenters->links() }}</div>
         @endif
     </div>
+</div>
 </div>
 @endsection
