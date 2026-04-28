@@ -225,11 +225,6 @@
                 @if(Route::has('close.index'))
                     <li><a href="{{ route('close.index') }}"><i class="fe fe-lock"></i><span>Period Close</span></a></li>
                 @endif
-                <li class="{{ request()->routeIs('payroll.*') ? 'active' : '' }}">
-                    <a href="{{ route('payroll.index') }}" class="{{ request()->routeIs('payroll.*') ? 'active' : '' }}">
-                        <i class="fe fe-dollar-sign"></i><span>Payroll</span>
-                    </a>
-                </li>
                 <li class="{{ request()->routeIs('branches.index') ? 'active' : '' }}">
                     <a href="{{ route('branches.index') }}" class="{{ request()->routeIs('branches.index') ? 'active' : '' }}">
                         <i class="fe fe-git-branch"></i><span>Branches</span>
@@ -286,18 +281,27 @@
 
                 <li class="menu-title"><span>Payroll & HR</span></li>
 
-                <li class="submenu {{ Request::is('hr/leave*') ? 'active subdrop' : '' }}">
-                    <a href="#"><i class="fe fe-calendar"></i><span>Leave Management</span><span class="menu-arrow"></span></a>
+                <li class="submenu {{ request()->routeIs('employees.*', 'payroll.*', 'salary-structures.*', 'departments.*', 'hr.leave.*', 'hr.attendance.*') ? 'active subdrop' : '' }}">
+                    <a href="#"><i class="fe fe-users"></i><span>HR Workspace</span><span class="menu-arrow"></span></a>
                     <ul>
+                        @if(Route::has('employees.index'))
+                            <li><a href="{{ route('employees.index') }}">Employees</a></li>
+                        @endif
+                        @if(Route::has('departments.index'))
+                            <li><a href="{{ route('departments.index') }}">Departments</a></li>
+                        @endif
+                        @if(Route::has('departments.create'))
+                            <li><a href="{{ route('departments.create') }}">New Department</a></li>
+                        @endif
+                        @if(Route::has('payroll.index'))
+                            <li><a href="{{ route('payroll.index') }}">Payroll</a></li>
+                        @endif
+                        @if(Route::has('salary-structures.index'))
+                            <li><a href="{{ route('salary-structures.index') }}">Salary Structures</a></li>
+                        @endif
                         <li><a href="{{ route('hr.leave.requests') }}">Leave Requests</a></li>
                         <li><a href="{{ route('hr.leave.create') }}">New Request</a></li>
                         <li><a href="{{ route('hr.leave.types') }}">Leave Types</a></li>
-                    </ul>
-                </li>
-
-                <li class="submenu {{ Request::is('hr/attendance*') ? 'active subdrop' : '' }}">
-                    <a href="#"><i class="fe fe-clock"></i><span>Attendance</span><span class="menu-arrow"></span></a>
-                    <ul>
                         <li><a href="{{ route('hr.attendance.index') }}">Attendance Log</a></li>
                         <li><a href="{{ route('hr.attendance.report') }}">Report</a></li>
                     </ul>
@@ -309,38 +313,31 @@
                 <li><a href="{{ route('report-schedules.index') }}"><i class="fe fe-clock"></i><span>Scheduled Reports</span></a></li>
                 <li><a href="{{ route('reports.financial-ratios') }}"><i class="fe fe-percent"></i><span>Financial Ratios</span></a></li>
 
-                <li class="menu-title"><span>Management</span></li>
+                <li class="menu-title"><span>Projects & Planning</span></li>
 
                 <li><a href="{{ route('projects.index') }}"><i class="fe fe-briefcase"></i><span>Project Management</span></a></li>
                 <li><a href="{{ route('timesheets.index') }}"><i class="fe fe-clock"></i><span>Timesheets</span></a></li>
                 <li><a href="{{ route('milestones.index') }}"><i class="fe fe-flag"></i><span>Milestone Billing</span></a></li>
+                <li class="submenu {{ Request::is('forecasting*') ? 'active subdrop' : '' }}">
+                    <a href="#"><i class="fe fe-trending-up"></i><span>Forecasting</span><span class="menu-arrow"></span></a>
+                    <ul>
+                        <li><a href="{{ route('forecasting.index') }}">All Forecasts</a></li>
+                        <li><a href="{{ route('forecasting.create') }}">New Forecast</a></li>
+                    </ul>
+                </li>
                 <li><a href="{{ route('intercompany.index') }}"><i class="fe fe-link"></i><span>Intercompany</span></a></li>
                 <li><a href="{{ route('assets.maintenance.index') }}"><i class="fe fe-tool"></i><span>Asset Maintenance</span></a></li>
+
+                <li class="menu-title"><span>Management</span></li>
                 @if(Route::has('users.index'))
                     <li><a href="{{ route('users.index') }}"><i class="fe fe-user"></i><span>Users</span></a></li>
                 @endif
-
-                <li class="submenu {{ Request::is('departments*') ? 'active subdrop' : '' }}">
-                    <a href="#"><i class="fe fe-grid"></i><span>Departments</span><span class="menu-arrow"></span></a>
-                    <ul>
-                        <li><a href="{{ route('departments.index') }}">All Departments</a></li>
-                        <li><a href="{{ route('departments.create') }}">New Department</a></li>
-                    </ul>
-                </li>
 
                 <li class="submenu {{ Request::is('cost-centers*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-layers"></i><span>Cost Centers</span><span class="menu-arrow"></span></a>
                     <ul>
                         <li><a href="{{ route('cost-centers.index') }}">All Cost Centers</a></li>
                         <li><a href="{{ route('cost-centers.create') }}">New Cost Center</a></li>
-                    </ul>
-                </li>
-
-                <li class="submenu {{ Request::is('forecasting*') ? 'active subdrop' : '' }}">
-                    <a href="#"><i class="fe fe-trending-up"></i><span>Forecasting</span><span class="menu-arrow"></span></a>
-                    <ul>
-                        <li><a href="{{ route('forecasting.index') }}">All Forecasts</a></li>
-                        <li><a href="{{ route('forecasting.create') }}">New Forecast</a></li>
                     </ul>
                 </li>
 

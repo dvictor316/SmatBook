@@ -289,10 +289,6 @@
                     <a href="{{ route('cost-centers.index') }}"><i class="fe fe-sliders"></i><span>Cost Centers</span></a>
                 </li>
 
-                <li class="{{ request()->routeIs('departments.*') ? 'active' : '' }}">
-                    <a href="{{ route('departments.index') }}"><i class="fe fe-users"></i><span>Departments</span></a>
-                </li>
-
                 {{-- ── FIXED ASSETS ─────────────────────────────────────── --}}
                 <li class="menu-title"><span>Fixed Assets</span></li>
 
@@ -313,24 +309,24 @@
                 {{-- ── PAYROLL & HR ─────────────────────────────────────── --}}
                 <li class="menu-title"><span>Payroll &amp; HR</span></li>
 
-                @if(Route::has('employees.index'))
-                    <li><a href="{{ route('employees.index') }}"><i class="fe fe-user"></i><span>Employees</span></a></li>
-                @endif
-
-                <li class="{{ request()->routeIs('payroll.*') ? 'active' : '' }}">
-                    <a href="{{ route('payroll.index') }}"><i class="fe fe-dollar-sign"></i><span>Payroll</span></a>
-                </li>
-
-                @if(Route::has('salary-structures.index'))
-                    <li><a href="{{ route('salary-structures.index') }}"><i class="fe fe-list"></i><span>Salary Structures</span></a></li>
-                @endif
-
-                <li class="{{ request()->routeIs('hr.leave.*') ? 'active' : '' }}">
-                    <a href="{{ route('hr.leave.requests') }}"><i class="fe fe-sun"></i><span>Leave Management</span></a>
-                </li>
-
-                <li class="{{ request()->routeIs('hr.attendance.*') ? 'active' : '' }}">
-                    <a href="{{ route('hr.attendance.index') }}"><i class="fe fe-clock"></i><span>Attendance</span></a>
+                <li class="submenu {{ request()->routeIs('employees.*', 'payroll.*', 'salary-structures.*', 'departments.*', 'hr.leave.*', 'hr.attendance.*') ? 'active subdrop' : '' }}">
+                    <a href="#"><i class="fe fe-users"></i><span>HR Workspace</span><span class="menu-arrow"></span></a>
+                    <ul>
+                        @if(Route::has('employees.index'))
+                            <li><a href="{{ route('employees.index') }}">Employees</a></li>
+                        @endif
+                        @if(Route::has('departments.index'))
+                            <li><a href="{{ route('departments.index') }}">Departments</a></li>
+                        @endif
+                        @if(Route::has('payroll.index'))
+                            <li><a href="{{ route('payroll.index') }}">Payroll</a></li>
+                        @endif
+                        @if(Route::has('salary-structures.index'))
+                            <li><a href="{{ route('salary-structures.index') }}">Salary Structures</a></li>
+                        @endif
+                        <li><a href="{{ route('hr.leave.requests') }}">Leave Management</a></li>
+                        <li><a href="{{ route('hr.attendance.index') }}">Attendance</a></li>
+                    </ul>
                 </li>
 
                 {{-- ── BUDGETING & PLANNING ─────────────────────────────── --}}

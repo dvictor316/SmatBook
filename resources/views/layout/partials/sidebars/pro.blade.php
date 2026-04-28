@@ -222,17 +222,18 @@
                 <li><a href="{{ route('reports.financial-ratios') }}"><i class="fe fe-percent"></i><span>Financial Ratios</span></a></li>
 
                 <li class="menu-title"><span>Payroll & HR</span></li>
-                <li class="submenu {{ Request::is('hr/leave*') ? 'active subdrop' : '' }}">
-                    <a href="#"><i class="fe fe-calendar"></i><span>Leave Management</span><span class="menu-arrow"></span></a>
+                <li class="submenu {{ request()->routeIs('payroll.*', 'departments.*', 'hr.leave.*', 'hr.attendance.*') ? 'active subdrop' : '' }}">
+                    <a href="#"><i class="fe fe-users"></i><span>HR Workspace</span><span class="menu-arrow"></span></a>
                     <ul>
+                        @if(Route::has('departments.index'))
+                            <li><a href="{{ route('departments.index') }}">Departments</a></li>
+                        @endif
+                        @if(Route::has('payroll.index'))
+                            <li><a href="{{ route('payroll.index') }}">Payroll</a></li>
+                        @endif
                         <li><a href="{{ route('hr.leave.requests') }}">Leave Requests</a></li>
                         <li><a href="{{ route('hr.leave.create') }}">New Request</a></li>
                         <li><a href="{{ route('hr.leave.types') }}">Leave Types</a></li>
-                    </ul>
-                </li>
-                <li class="submenu {{ Request::is('hr/attendance*') ? 'active subdrop' : '' }}">
-                    <a href="#"><i class="fe fe-clock"></i><span>Attendance</span><span class="menu-arrow"></span></a>
-                    <ul>
                         <li><a href="{{ route('hr.attendance.index') }}">Attendance Log</a></li>
                         <li><a href="{{ route('hr.attendance.report') }}">Report</a></li>
                     </ul>
