@@ -71,12 +71,7 @@
                         <input type="text" name="reference_number" class="form-control" value="{{ old('reference_number') }}" placeholder="Optional reference">
                     </div>
                     <div class="col-xl-6 col-md-6">
-                        <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
-                            <label class="form-label mb-0">Source Account</label>
-                            @if(Route::has('chart-of-accounts'))
-                                <a href="{{ route('chart-of-accounts') }}" class="btn btn-sm btn-outline-primary" title="Add account">+</a>
-                            @endif
-                        </div>
+                        <label class="form-label">Source Account</label>
                         <select name="source_account_id" class="form-select">
                             <option value="">Select source account</option>
                             @foreach($accounts as $account)
@@ -84,16 +79,11 @@
                             @endforeach
                         </select>
                         @if($accounts->isEmpty())
-                            <div class="form-text text-warning">No accounts are available yet. Use the + button to add accounts first.</div>
+                            <div class="form-text text-warning">No accounts are available yet.</div>
                         @endif
                     </div>
                     <div class="col-xl-6 col-md-6">
-                        <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
-                            <label class="form-label mb-0">Target Account</label>
-                            @if(Route::has('chart-of-accounts'))
-                                <a href="{{ route('chart-of-accounts') }}" class="btn btn-sm btn-outline-primary" title="Add account">+</a>
-                            @endif
-                        </div>
+                        <label class="form-label">Target Account</label>
                         <select name="target_account_id" class="form-select">
                             <option value="">Select target account</option>
                             @foreach($accounts as $account)
@@ -101,7 +91,7 @@
                             @endforeach
                         </select>
                         @if($accounts->isEmpty())
-                            <div class="form-text text-warning">No accounts are available yet. Use the + button to add accounts first.</div>
+                            <div class="form-text text-warning">No accounts are available yet.</div>
                         @endif
                     </div>
                     <div class="col-12">
