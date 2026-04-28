@@ -7,6 +7,7 @@ use App\Models\Company;
 use App\Models\Account;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 
 class IntercompanyController extends Controller
 {
@@ -27,7 +28,26 @@ class IntercompanyController extends Controller
     public function create()
     {
         $companyId = Auth::user()->company_id;
-        $companies = Company::where('id', '!=', $companyId)->where('status', 'active')->get();
+        $baseCompaniesQuery = Company::query();
+
+        if ($companyId) {
+            $baseCompaniesQuery->where('id', '!=', $companyId);
+        }
+
+        $companies = (clone $baseCompaniesQuery)
+            ->when(
+                Schema::hasColumn('companies', 'status'),
+                fn ($query) => $query->whereIn('status', ['active', 'Active'])
+            )
+            ->orderByRaw("COALESCE(NULLIF(name, ''), company_name, '')")
+            ->get();
+
+        if ($companies->isEmpty()) {
+            $companies = (clone $baseCompaniesQuery)
+                ->orderByRaw("COALESCE(NULLIF(name, ''), company_name, '')")
+                ->get();
+        }
+
         $accounts  = Account::where('company_id', $companyId)->orderBy('name')->get();
         return view('intercompany.create', compact('companies', 'accounts'));
     }
