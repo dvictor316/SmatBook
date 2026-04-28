@@ -36,7 +36,7 @@ class MilestoneBillingController extends Controller
     public function create()
     {
         $companyId = Auth::user()->company_id;
-        $customers = Customer::where('company_id', $companyId)->orderBy('name')->get();
+        $customers = Customer::where('company_id', $companyId)->orderBy('customer_name')->get();
         $projects = Project::where('company_id', $companyId)->orderBy('name')->get();
         return view('milestones.create', compact('customers', 'projects'));
     }

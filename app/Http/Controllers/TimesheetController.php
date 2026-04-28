@@ -37,7 +37,7 @@ class TimesheetController extends Controller
     public function create()
     {
         $companyId = Auth::user()->company_id;
-        $employees = Employee::where('company_id', $companyId)->orderBy('name')->get();
+        $employees = Employee::forWorkspaceCompany($companyId)->orderBy('name')->get();
         return view('timesheets.create', compact('employees'));
     }
 

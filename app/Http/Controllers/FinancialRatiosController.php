@@ -56,7 +56,7 @@ class FinancialRatiosController extends Controller
             'asset_turnover'     => $totalAssets > 0 ? round($revenue / $totalAssets, 2) : 0,
         ];
 
-        return view('reports.financial-ratios', compact('ratios', 'period', 'revenue', 'netIncome'));
+        return view('Reports.financial-ratios', compact('ratios', 'period', 'revenue', 'netIncome'));
     }
 
     private function sumLedger(int $companyId, string $category, string $period): float

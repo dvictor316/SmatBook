@@ -14,12 +14,12 @@ class ReportScheduleController extends Controller
         $schedules = ReportSchedule::forCompany($companyId)
             ->orderBy('report_type')
             ->paginate(20);
-        return view('reports.schedules.index', compact('schedules'));
+        return view('report-schedules.index', compact('schedules'));
     }
 
     public function create()
     {
-        return view('reports.schedules.create');
+        return view('report-schedules.create');
     }
 
     public function store(Request $request)
@@ -54,7 +54,7 @@ class ReportScheduleController extends Controller
     public function edit(ReportSchedule $reportSchedule)
     {
         $this->authorizeReportScheduleAccess($reportSchedule);
-        return view('reports.schedules.edit', compact('reportSchedule'));
+        return view('report-schedules.edit', compact('reportSchedule'));
     }
 
     public function update(Request $request, ReportSchedule $reportSchedule)

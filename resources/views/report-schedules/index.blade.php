@@ -1,8 +1,9 @@
-@extends('layout.app')
+@extends('layout.mainlayout')
 
 @section('title', 'Report Schedules')
 
 @section('content')
+<div class="page-wrapper">
 <div class="content container-fluid">
     <div class="page-header">
         <div class="row align-items-center">
@@ -81,5 +82,6 @@
             <div class="card-footer">{{ $schedules->links() }}</div>
         @endif
     </div>
+</div>
 </div>
 @endsection

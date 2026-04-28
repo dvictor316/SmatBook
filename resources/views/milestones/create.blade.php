@@ -1,4 +1,4 @@
-@extends('layout.app')
+@extends('layout.mainlayout')
 
 @section('title', 'Create Milestone')
 
@@ -24,7 +24,7 @@
                     <select name="customer_id" class="form-select">
                         <option value="">Optional customer</option>
                         @foreach($customers as $customer)
-                            <option value="{{ $customer->id }}">{{ $customer->name }}</option>
+                            <option value="{{ $customer->id }}">{{ $customer->customer_name }}</option>
                         @endforeach
                     </select>
                 </div>
