@@ -38,19 +38,15 @@
                                     <option value="{{ $company->id }}" @selected(old('counterparty_company_id') == $company->id)>{{ $company->name ?? $company->company_name ?? ('Company #' . $company->id) }}</option>
                                 @endforeach
                             </select>
-                            @if(Route::has('companies.create'))
-                                <a href="{{ route('companies.create') }}" class="btn btn-outline-primary flex-shrink-0 px-3" title="Add company" aria-label="Add company">+</a>
-                            @endif
+                            <a href="{{ url('/companies/create') }}" class="btn btn-outline-primary flex-shrink-0 px-3" title="Add company" aria-label="Add company">+</a>
                         </div>
                         @if($companies->isEmpty())
                             <div class="form-text text-danger">No counter-party companies are available yet. Add one to continue.</div>
-                            @if(Route::has('companies.create'))
-                                <div class="mt-2">
-                                    <a href="{{ route('companies.create') }}" class="btn btn-sm btn-outline-primary">
-                                        <i class="fe fe-plus me-1"></i> Add Company
-                                    </a>
-                                </div>
-                            @endif
+                            <div class="mt-2">
+                                <a href="{{ url('/companies/create') }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fe fe-plus me-1"></i> Add Company
+                                </a>
+                            </div>
                         @endif
                     </div>
                     <div class="col-xl-4 col-md-6">
