@@ -3,6 +3,7 @@
 @section('title', 'Forecasting')
 
 @section('content')
+<div class="page-wrapper">
 <div class="content container-fluid">
     <div class="page-header">
         <div class="row align-items-center">
@@ -70,5 +71,6 @@
             <div class="card-footer">{{ $forecasts->links() }}</div>
         @endif
     </div>
+</div>
 </div>
 @endsection

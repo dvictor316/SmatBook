@@ -405,6 +405,8 @@
 
         body:not(.login-body):not(.landing-page-body) .page-wrapper .table-responsive {
             border-radius: 18px;
+            width: 100%;
+            overflow-x: auto;
         }
 
         body:not(.login-body):not(.landing-page-body) .page-wrapper .table > :not(caption) > * > * {
@@ -423,6 +425,25 @@
         body:not(.login-body):not(.landing-page-body) .page-wrapper .table tbody td {
             color: #183153;
             font-size: 0.9rem;
+        }
+
+        body:not(.login-body):not(.landing-page-body) .page-wrapper .page-header .row {
+            row-gap: 0.9rem;
+        }
+
+        body:not(.login-body):not(.landing-page-body) .page-wrapper .page-header .col-auto {
+            max-width: 100%;
+        }
+
+        body:not(.login-body):not(.landing-page-body) .page-wrapper .page-header .btn {
+            max-width: 100%;
+            white-space: normal;
+        }
+
+        body:not(.login-body):not(.landing-page-body) .page-wrapper .card,
+        body:not(.login-body):not(.landing-page-body) .page-wrapper .table-responsive,
+        body:not(.login-body):not(.landing-page-body) .page-wrapper .table {
+            min-width: 0;
         }
 
         body:not(.login-body):not(.landing-page-body) .page-wrapper .badge,
@@ -508,6 +529,11 @@
             body:not(.login-body):not(.landing-page-body) .page-wrapper small,
             body:not(.login-body):not(.landing-page-body) .page-wrapper .small {
                 color: #5d7396 !important;
+            }
+
+            body:not(.login-body):not(.landing-page-body) .page-wrapper .page-header .col-auto,
+            body:not(.login-body):not(.landing-page-body) .page-wrapper .page-header .btn {
+                width: 100%;
             }
 
             body:not(.login-body):not(.landing-page-body) .page-wrapper .card,
