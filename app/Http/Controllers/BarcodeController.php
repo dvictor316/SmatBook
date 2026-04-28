@@ -49,7 +49,7 @@ class BarcodeController extends Controller
             ->orderBy('name')
             ->get(['id', 'name', 'sku']);
 
-        return view('inventory.barcodes.index', compact('barcodes', 'products'));
+        return view('Inventory.barcodes.index', compact('barcodes', 'products'));
     }
 
     public function store(Request $request)

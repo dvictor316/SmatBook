@@ -61,13 +61,13 @@ class SerialNumberController extends Controller
 
         $products = $productsQuery->get(['id', 'name']);
 
-        return view('inventory.serials.index', compact('serials', 'products'));
+        return view('Inventory.serials.index', compact('serials', 'products'));
     }
 
     public function show(SerialNumber $serialNumber)
     {
         abort_unless($serialNumber->company_id === Auth::user()->company_id, 403);
         $serialNumber->load(['product', 'lot']);
-        return view('inventory.serials.show', compact('serialNumber'));
+        return view('Inventory.serials.show', compact('serialNumber'));
     }
 }

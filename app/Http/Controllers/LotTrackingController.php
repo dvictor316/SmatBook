@@ -57,14 +57,14 @@ class LotTrackingController extends Controller
 
         $products = $productsQuery->get(['id', 'name']);
 
-        return view('inventory.lots.index', compact('lots', 'products'));
+        return view('Inventory.lots.index', compact('lots', 'products'));
     }
 
     public function show(ProductLot $productLot)
     {
         abort_unless($productLot->company_id === Auth::user()->company_id, 403);
         $productLot->load(['product', 'serialNumbers']);
-        return view('inventory.lots.show', compact('productLot'));
+        return view('Inventory.lots.show', compact('productLot'));
     }
 
     public function adjust(Request $request, ProductLot $productLot)

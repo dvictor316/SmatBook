@@ -53,6 +53,6 @@ class StockValuationController extends Controller
             $grandTotal = (float) $rows->sum('total');
         }
 
-        return view('inventory.stock-valuation', compact('rows', 'grandTotal', 'method', 'asOf'));
+        return view('Inventory.stock-valuation', compact('rows', 'grandTotal', 'method', 'asOf'));
     }
 }
