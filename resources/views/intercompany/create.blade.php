@@ -31,20 +31,14 @@
                     @csrf
                     <div class="col-xl-4 col-md-6">
                         <label class="form-label">Counter-party Company</label>
-                        <div class="d-flex align-items-stretch gap-2">
-                            <select name="counterparty_company_id" class="form-select" @if($companies->isNotEmpty()) required @endif>
-                                <option value="">Select company</option>
-                                @foreach($companies as $company)
-                                    <option value="{{ $company->id }}" @selected(old('counterparty_company_id') == $company->id)>{{ $company->name ?? $company->company_name ?? ('Company #' . $company->id) }}</option>
-                                @endforeach
-                            </select>
-                            <a href="{{ route('super_admin.companies.create') }}" class="btn btn-outline-primary flex-shrink-0 px-3" title="Add company" aria-label="Add company">+</a>
-                        </div>
+                        <select name="counterparty_company_id" class="form-select" @if($companies->isNotEmpty()) required @endif>
+                            <option value="">Select company</option>
+                            @foreach($companies as $company)
+                                <option value="{{ $company->id }}" @selected(old('counterparty_company_id') == $company->id)>{{ $company->name ?? $company->company_name ?? ('Company #' . $company->id) }}</option>
+                            @endforeach
+                        </select>
                         @if($companies->isEmpty())
-                            <div class="form-text text-danger">
-                                No counter-party companies are available yet.
-                                <a href="{{ route('super_admin.companies.create') }}" class="fw-semibold text-decoration-underline text-danger">Add one now.</a>
-                            </div>
+                            <div class="form-text text-danger">No counter-party companies are available yet.</div>
                         @endif
                     </div>
                     <div class="col-xl-4 col-md-6">
