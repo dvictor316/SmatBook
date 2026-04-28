@@ -15,6 +15,9 @@
 .payroll-shell {
     padding: 1.5rem;
     width: 100%;
+    max-width: 1560px;
+    margin: 0 auto;
+    min-width: 0;
     overflow-x: hidden;
 }
 .payroll-shell .row { margin-left: 0; margin-right: 0; }
@@ -99,7 +102,8 @@
     background: #fff;
     border: 1px solid #e2e8f0;
     border-radius: 14px;
-    overflow: hidden;
+    overflow-x: auto;
+    overflow-y: hidden;
     box-shadow: 0 2px 8px rgba(15,23,42,0.04);
 }
 .payroll-table-header {
@@ -291,10 +295,18 @@
     .kpi-value { font-size: 0.88rem; }
     .table-search { width: 100%; }
     .payroll-table-header { flex-direction: column; align-items: flex-start; }
+    .payroll-header .btn-gold,
+    .payroll-header .btn-blue,
+    .payroll-table-header .btn-outline,
+    .payroll-table-header .form-select {
+        width: 100% !important;
+        justify-content: center;
+    }
     .payroll-table td, .payroll-table th { padding: 8px 10px; font-size: 0.74rem; }
 }
 </style>
 
+<div class="page-wrapper">
 <div class="payroll-shell">
 
     <div class="payroll-header mb-4">
@@ -637,4 +649,5 @@ document.addEventListener('DOMContentLoaded', function() {
     if (filter) filter.addEventListener('change', filterTable);
 });
 </script>
+</div>
 @endsection

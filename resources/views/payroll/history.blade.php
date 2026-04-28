@@ -4,12 +4,12 @@
 @section('content')
 <style>
 :root { --blue-deep:#002347; --gold:#c5a059; --gold-bright:#ffdf91; --red:#bc002d; }
-.payroll-shell { width:100%; max-width:100%; padding:1.5rem 0.75rem; overflow-x:hidden; }
+.payroll-shell { width:100%; max-width:1560px; margin:0 auto; padding:1.5rem 0.75rem; min-width:0; overflow-x:hidden; }
 .payroll-shell .row { margin-left:0; margin-right:0; }
 .payroll-shell .row > * { padding-left:calc(var(--bs-gutter-x, 1.5rem) * 0.5); padding-right:calc(var(--bs-gutter-x, 1.5rem) * 0.5); }
 .page-header { background:linear-gradient(135deg,var(--blue-deep),#003d6b); border-radius:16px; padding:28px 32px; color:white; margin-bottom:28px; }
 .page-header h1 { font-size:1.5rem; font-weight:800; margin:0; color:#ffffff; }
-.table-wrap { background:#fff; border:1px solid #e8ecf4; border-radius:14px; overflow:hidden; box-shadow:0 2px 12px rgba(0,35,71,0.05); }
+.table-wrap { background:#fff; border:1px solid #e8ecf4; border-radius:14px; overflow-x:auto; overflow-y:hidden; box-shadow:0 2px 12px rgba(0,35,71,0.05); }
 .table-header { padding:20px 24px; border-bottom:1px solid #e8ecf4; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; }
 .table-header h6 { font-weight:800; color:var(--blue-deep); margin:0; }
 .data-table { width:100%; border-collapse:collapse; }
@@ -25,9 +25,15 @@
 .btn-gold { background:linear-gradient(135deg,var(--gold),var(--gold-bright)); color:var(--blue-deep)!important; border:none; padding:10px 22px; font-weight:800; border-radius:8px; font-size:0.8rem; text-transform:uppercase; letter-spacing:1px; transition:all 0.3s; text-decoration:none; display:inline-flex; align-items:center; gap:7px; }
 .btn-outline { background:transparent; color:var(--blue-deep)!important; border:1.5px solid #e8ecf4; padding:8px 16px; font-weight:700; border-radius:8px; font-size:0.78rem; transition:all 0.3s; text-decoration:none; display:inline-flex; align-items:center; gap:6px; }
 .btn-outline:hover { border-color:var(--gold); color:var(--gold)!important; }
+@media(max-width:768px){
+    .page-header h1{font-size:1.2rem;}
+    .btn-gold, .btn-outline { width:100%; justify-content:center; }
+    .table-header { align-items:stretch; }
+}
 @media(min-width:768px){ .payroll-shell{ padding-left:1rem; padding-right:1rem; } }
 </style>
 
+<div class="page-wrapper">
 <div class="payroll-shell">
 
     <div class="page-header">
@@ -98,5 +104,6 @@
         <div class="p-3 border-top d-flex justify-content-center">{{ $runs->links() }}</div>
         @endif
     </div>
+</div>
 </div>
 @endsection

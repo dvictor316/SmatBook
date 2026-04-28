@@ -4,7 +4,7 @@
 @section('content')
 <style>
 :root { --blue-deep:#002347; --gold:#c5a059; --gold-bright:#ffdf91; --red:#bc002d; }
-.payroll-shell { width:100%; max-width:100%; padding:1.5rem 0.75rem; overflow-x:hidden; }
+.payroll-shell { width:100%; max-width:1560px; margin:0 auto; padding:1.5rem 0.75rem; min-width:0; overflow-x:hidden; }
 .payroll-shell .row { margin-left:0; margin-right:0; }
 .payroll-shell .row > * { padding-left:calc(var(--bs-gutter-x, 1.5rem) * 0.5); padding-right:calc(var(--bs-gutter-x, 1.5rem) * 0.5); }
 .page-header { background:linear-gradient(135deg,var(--blue-deep),#003d6b); border-radius:16px; padding:28px 32px; color:white; margin-bottom:28px; }
@@ -35,10 +35,15 @@
 .net-preview .amount { font-size:1.8rem; font-weight:900; color:var(--gold-bright); }
 .calc-row { display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.08); font-size:0.83rem; }
 .calc-row:last-child { border-bottom:none; font-weight:900; font-size:0.95rem; }
-@media(max-width:768px){ .page-header h1{font-size:1.2rem;} }
+@media(max-width:768px){
+    .page-header h1{font-size:1.2rem;}
+    .btn-gold, .btn-outline, .btn-add { width:100%; justify-content:center; }
+    .form-card-body { padding:16px; }
+}
 @media(min-width:768px){ .payroll-shell{ padding-left:1rem; padding-right:1rem; } }
 </style>
 
+<div class="page-wrapper">
 <div class="payroll-shell">
 
     <div class="page-header">
@@ -385,4 +390,5 @@ function autoCalcStatutory() {
 
 document.addEventListener('DOMContentLoaded', recalculate);
 </script>
+</div>
 @endsection

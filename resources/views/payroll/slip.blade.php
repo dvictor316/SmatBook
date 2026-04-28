@@ -4,7 +4,7 @@
 @section('content')
 <style>
 :root { --blue-deep:#002347; --gold:#c5a059; --gold-bright:#ffdf91; --red:#bc002d; }
-.slip-wrap { max-width:780px; margin:0 auto; padding:20px; }
+.slip-wrap { max-width:920px; margin:0 auto; padding:20px 14px 32px; min-width:0; }
 .btn-gold { background:linear-gradient(135deg,var(--gold),var(--gold-bright)); color:var(--blue-deep)!important; border:none; padding:11px 24px; font-weight:800; border-radius:8px; font-size:0.82rem; text-transform:uppercase; letter-spacing:1px; transition:all 0.3s; cursor:pointer; display:inline-flex; align-items:center; gap:7px; text-decoration:none; }
 .btn-gold:hover { transform:translateY(-2px); box-shadow:0 8px 20px rgba(197,160,89,0.4); }
 .btn-outline { background:transparent; color:var(--blue-deep)!important; border:1.5px solid #e8ecf4; padding:11px 24px; font-weight:700; border-radius:8px; font-size:0.82rem; transition:all 0.3s; cursor:pointer; display:inline-flex; align-items:center; gap:7px; text-decoration:none; }
@@ -101,8 +101,15 @@
     .info-grid { grid-template-columns:1fr; }
     .net-amount { font-size:1.5rem; }
 }
+@media(max-width:768px){
+    .slip-wrap { padding:14px 12px 24px; }
+    .btn-gold, .btn-outline { width:100%; justify-content:center; }
+    .payslip-top, .payslip-body { padding:20px 18px; }
+    .info-grid { grid-template-columns:1fr; }
+}
 </style>
 
+<div class="page-wrapper">
 <div class="slip-wrap">
 
     <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2 no-print">
@@ -245,5 +252,6 @@
             This payslip is computer generated and does not require a signature. · {{ $payslipBrand }} · {{ now()->year }}
         </div>
     </div>
+</div>
 </div>
 @endsection
