@@ -91,14 +91,14 @@ class PurchaseRequisitionController extends Controller
 
     public function show(PurchaseRequisition $purchaseRequisition)
     {
-        $this->authorize($purchaseRequisition);
+        $this->authorizePurchaseRequisitionAccess($purchaseRequisition);
         $purchaseRequisition->load(['items.product', 'requestedBy', 'approvedBy', 'department', 'costCenter']);
         return view('purchase-requisitions.show', compact('purchaseRequisition'));
     }
 
     public function approve(Request $request, PurchaseRequisition $purchaseRequisition)
     {
-        $this->authorize($purchaseRequisition);
+        $this->authorizePurchaseRequisitionAccess($purchaseRequisition);
         abort_unless($purchaseRequisition->status === 'submitted', 422, 'Only submitted requisitions can be approved.');
 
         $purchaseRequisition->update([
@@ -112,7 +112,7 @@ class PurchaseRequisitionController extends Controller
 
     public function reject(Request $request, PurchaseRequisition $purchaseRequisition)
     {
-        $this->authorize($purchaseRequisition);
+        $this->authorizePurchaseRequisitionAccess($purchaseRequisition);
         $request->validate(['rejection_reason' => 'required|string|max:500']);
 
         $purchaseRequisition->update([
@@ -125,7 +125,7 @@ class PurchaseRequisitionController extends Controller
 
     public function destroy(PurchaseRequisition $purchaseRequisition)
     {
-        $this->authorize($purchaseRequisition);
+        $this->authorizePurchaseRequisitionAccess($purchaseRequisition);
         abort_if(in_array($purchaseRequisition->status, ['approved', 'converted']), 422,
             'Cannot delete an approved requisition.');
         $purchaseRequisition->delete();
@@ -138,7 +138,7 @@ class PurchaseRequisitionController extends Controller
         return 'PR-' . str_pad($count, 5, '0', STR_PAD_LEFT);
     }
 
-    private function authorize(PurchaseRequisition $pr): void
+    private function authorizePurchaseRequisitionAccess(PurchaseRequisition $pr): void
     {
         abort_unless($pr->company_id === Auth::user()->company_id, 403);
     }

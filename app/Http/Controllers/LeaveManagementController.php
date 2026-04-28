@@ -118,7 +118,7 @@ class LeaveManagementController extends Controller
 
     public function approveRequest(LeaveRequest $leaveRequest)
     {
-        $this->authorize($leaveRequest);
+        $this->authorizeLeaveRequestAccess($leaveRequest);
         abort_unless($leaveRequest->isPending(), 422, 'Only pending requests can be approved.');
 
         $leaveRequest->update([
@@ -132,7 +132,7 @@ class LeaveManagementController extends Controller
 
     public function rejectRequest(Request $request, LeaveRequest $leaveRequest)
     {
-        $this->authorize($leaveRequest);
+        $this->authorizeLeaveRequestAccess($leaveRequest);
         $request->validate(['rejection_reason' => 'required|string|max:500']);
 
         $leaveRequest->update([
@@ -143,7 +143,7 @@ class LeaveManagementController extends Controller
         return back()->with('success', 'Leave request rejected.');
     }
 
-    private function authorize(LeaveRequest $lr): void
+    private function authorizeLeaveRequestAccess(LeaveRequest $lr): void
     {
         abort_unless($lr->company_id === Auth::user()->company_id, 403);
     }

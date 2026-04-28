@@ -68,7 +68,7 @@ class DepartmentController extends Controller
 
     public function edit(Department $department)
     {
-        $this->authorize($department);
+        $this->authorizeDepartmentAccess($department);
         $companyId   = Auth::user()->company_id;
         $employees   = Employee::where('company_id', $companyId)->orderBy('name')->get();
         $departments = Department::forCompany($companyId)->active()->where('id', '!=', $department->id)->orderBy('name')->get();
@@ -77,7 +77,7 @@ class DepartmentController extends Controller
 
     public function update(Request $request, Department $department)
     {
-        $this->authorize($department);
+        $this->authorizeDepartmentAccess($department);
 
         $data = $request->validate([
             'name'             => 'required|string|max:255',
@@ -96,14 +96,14 @@ class DepartmentController extends Controller
 
     public function destroy(Department $department)
     {
-        $this->authorize($department);
+        $this->authorizeDepartmentAccess($department);
         abort_if($department->employees()->count() > 0, 422,
             'Cannot delete a department with assigned employees.');
         $department->delete();
         return redirect()->route('departments.index')->with('success', 'Department deleted.');
     }
 
-    private function authorize(Department $dept): void
+    private function authorizeDepartmentAccess(Department $dept): void
     {
         abort_unless($dept->company_id === Auth::user()->company_id, 403);
     }

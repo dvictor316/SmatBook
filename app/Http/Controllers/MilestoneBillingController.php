@@ -72,14 +72,14 @@ class MilestoneBillingController extends Controller
 
     public function show(ProjectMilestone $milestone)
     {
-        $this->authorize($milestone);
+        $this->authorizeMilestoneAccess($milestone);
         $milestone->load(['customer', 'invoice']);
         return view('milestones.show', compact('milestone'));
     }
 
     public function complete(ProjectMilestone $milestone)
     {
-        $this->authorize($milestone);
+        $this->authorizeMilestoneAccess($milestone);
         abort_unless($milestone->status === 'in_progress' || $milestone->status === 'pending', 422,
             'Milestone cannot be completed.');
 
@@ -93,7 +93,7 @@ class MilestoneBillingController extends Controller
 
     public function createInvoice(ProjectMilestone $milestone)
     {
-        $this->authorize($milestone);
+        $this->authorizeMilestoneAccess($milestone);
         abort_unless($milestone->status === 'completed', 422,
             'Only completed milestones can be invoiced.');
         abort_unless($milestone->billable, 422, 'Milestone is not billable.');
@@ -110,13 +110,13 @@ class MilestoneBillingController extends Controller
 
     public function destroy(ProjectMilestone $milestone)
     {
-        $this->authorize($milestone);
+        $this->authorizeMilestoneAccess($milestone);
         abort_if($milestone->invoice_id, 422, 'Cannot delete a milstone that has been invoiced.');
         $milestone->delete();
         return redirect()->route('milestones.index')->with('success', 'Milestone deleted.');
     }
 
-    private function authorize(ProjectMilestone $milestone): void
+    private function authorizeMilestoneAccess(ProjectMilestone $milestone): void
     {
         abort_unless($milestone->company_id === Auth::user()->company_id, 403);
     }

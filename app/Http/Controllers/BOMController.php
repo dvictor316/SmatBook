@@ -100,21 +100,21 @@ class BOMController extends Controller
 
     public function show(BillOfMaterials $bom)
     {
-        $this->authorize($bom);
+        $this->authorizeBomAccess($bom);
         $bom->load(['product', 'items.componentProduct']);
         return view('bom.show', compact('bom'));
     }
 
     public function destroy(BillOfMaterials $bom)
     {
-        $this->authorize($bom);
+        $this->authorizeBomAccess($bom);
         abort_if($bom->orders()->where('status', '!=', 'cancelled')->count() > 0, 422,
             'BOM has active manufacturing orders.');
         $bom->delete();
         return redirect()->route('bom.index')->with('success', 'BOM deleted.');
     }
 
-    private function authorize(BillOfMaterials $bom): void
+    private function authorizeBomAccess(BillOfMaterials $bom): void
     {
         abort_unless($bom->company_id === Auth::user()->company_id, 403);
     }

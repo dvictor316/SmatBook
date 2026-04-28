@@ -95,14 +95,14 @@ class PriceListController extends Controller
 
     public function show(PriceList $priceList)
     {
-        $this->authorize($priceList);
+        $this->authorizePriceListAccess($priceList);
         $priceList->load(['items.product']);
         return view('price-lists.show', compact('priceList'));
     }
 
     public function edit(PriceList $priceList)
     {
-        $this->authorize($priceList);
+        $this->authorizePriceListAccess($priceList);
         $companyId = Auth::user()->company_id;
         $products  = Product::where('company_id', $companyId)->orderBy('name')->get();
         $priceList->load('items');
@@ -111,7 +111,7 @@ class PriceListController extends Controller
 
     public function update(Request $request, PriceList $priceList)
     {
-        $this->authorize($priceList);
+        $this->authorizePriceListAccess($priceList);
 
         $data = $request->validate([
             'name'       => 'required|string|max:255',
@@ -129,12 +129,12 @@ class PriceListController extends Controller
 
     public function destroy(PriceList $priceList)
     {
-        $this->authorize($priceList);
+        $this->authorizePriceListAccess($priceList);
         $priceList->delete();
         return redirect()->route('price-lists.index')->with('success', 'Price list deleted.');
     }
 
-    private function authorize(PriceList $pl): void
+    private function authorizePriceListAccess(PriceList $pl): void
     {
         abort_unless($pl->company_id === Auth::user()->company_id, 403);
     }

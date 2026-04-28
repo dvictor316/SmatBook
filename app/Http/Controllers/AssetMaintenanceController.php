@@ -88,14 +88,14 @@ class AssetMaintenanceController extends Controller
     }
     public function show(AssetMaintenanceLog $maintenanceLog)
     {
-        $this->authorize($maintenanceLog);
+        $this->authorizeAssetMaintenanceAccess($maintenanceLog);
         $maintenanceLog->load('asset');
         return view('assets.maintenance.show', compact('maintenanceLog'));
     }
 
     public function edit(AssetMaintenanceLog $maintenanceLog)
     {
-        $this->authorize($maintenanceLog);
+        $this->authorizeAssetMaintenanceAccess($maintenanceLog);
         $companyId = Auth::user()->company_id;
         $assets    = FixedAsset::where('company_id', $companyId)->orderBy('asset_name')->get();
         return view('assets.maintenance.edit', compact('maintenanceLog', 'assets'));
@@ -103,7 +103,7 @@ class AssetMaintenanceController extends Controller
 
     public function update(Request $request, AssetMaintenanceLog $maintenanceLog)
     {
-        $this->authorize($maintenanceLog);
+        $this->authorizeAssetMaintenanceAccess($maintenanceLog);
 
         $data = $request->validate([
             'maintenance_date'      => 'required|date',
@@ -126,12 +126,12 @@ class AssetMaintenanceController extends Controller
 
     public function destroy(AssetMaintenanceLog $maintenanceLog)
     {
-        $this->authorize($maintenanceLog);
+        $this->authorizeAssetMaintenanceAccess($maintenanceLog);
         $maintenanceLog->delete();
         return back()->with('success', 'Maintenance log deleted.');
     }
 
-    private function authorize(AssetMaintenanceLog $log): void
+    private function authorizeAssetMaintenanceAccess(AssetMaintenanceLog $log): void
     {
         abort_unless($log->company_id === Auth::user()->company_id, 403);
     }

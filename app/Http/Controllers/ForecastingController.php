@@ -86,14 +86,14 @@ class ForecastingController extends Controller
 
     public function show(Forecast $forecast)
     {
-        $this->authorize($forecast);
+        $this->authorizeForecastAccess($forecast);
         $forecast->load('items');
         return view('forecasting.show', compact('forecast'));
     }
 
     public function updateActuals(Request $request, Forecast $forecast)
     {
-        $this->authorize($forecast);
+        $this->authorizeForecastAccess($forecast);
 
         $data = $request->validate([
             'items'              => 'required|array',
@@ -112,12 +112,12 @@ class ForecastingController extends Controller
 
     public function destroy(Forecast $forecast)
     {
-        $this->authorize($forecast);
+        $this->authorizeForecastAccess($forecast);
         $forecast->delete();
         return redirect()->route('forecasting.index')->with('success', 'Forecast deleted.');
     }
 
-    private function authorize(Forecast $forecast): void
+    private function authorizeForecastAccess(Forecast $forecast): void
     {
         abort_unless($forecast->company_id === Auth::user()->company_id, 403);
     }

@@ -61,21 +61,21 @@ class LoanController extends Controller
 
     public function show(Loan $loan)
     {
-        $this->authorize($loan);
+        $this->authorizeLoanAccess($loan);
         $loan->load(['repayments', 'bank']);
         return view('loans.show', compact('loan'));
     }
 
     public function edit(Loan $loan)
     {
-        $this->authorize($loan);
+        $this->authorizeLoanAccess($loan);
         $banks = Bank::where('company_id', Auth::user()->company_id)->orderBy('name')->get();
         return view('loans.edit', compact('loan', 'banks'));
     }
 
     public function update(Request $request, Loan $loan)
     {
-        $this->authorize($loan);
+        $this->authorizeLoanAccess($loan);
 
         $data = $request->validate([
             'lender_name'   => 'required|string|max:255',
@@ -92,7 +92,7 @@ class LoanController extends Controller
 
     public function addRepayment(Request $request, Loan $loan)
     {
-        $this->authorize($loan);
+        $this->authorizeLoanAccess($loan);
 
         $data = $request->validate([
             'payment_date'   => 'required|date',
@@ -125,14 +125,14 @@ class LoanController extends Controller
 
     public function destroy(Loan $loan)
     {
-        $this->authorize($loan);
+        $this->authorizeLoanAccess($loan);
         abort_if($loan->repayments()->count() > 0, 422,
             'Cannot delete a loan with existing repayments.');
         $loan->delete();
         return redirect()->route('loans.index')->with('success', 'Loan deleted.');
     }
 
-    private function authorize(Loan $loan): void
+    private function authorizeLoanAccess(Loan $loan): void
     {
         abort_unless($loan->company_id === Auth::user()->company_id, 403);
     }

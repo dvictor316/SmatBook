@@ -53,13 +53,13 @@ class ReportScheduleController extends Controller
 
     public function edit(ReportSchedule $reportSchedule)
     {
-        $this->authorize($reportSchedule);
+        $this->authorizeReportScheduleAccess($reportSchedule);
         return view('reports.schedules.edit', compact('reportSchedule'));
     }
 
     public function update(Request $request, ReportSchedule $reportSchedule)
     {
-        $this->authorize($reportSchedule);
+        $this->authorizeReportScheduleAccess($reportSchedule);
 
         $data = $request->validate([
             'name'         => 'required|string|max:255',
@@ -79,7 +79,7 @@ class ReportScheduleController extends Controller
 
     public function destroy(ReportSchedule $reportSchedule)
     {
-        $this->authorize($reportSchedule);
+        $this->authorizeReportScheduleAccess($reportSchedule);
         $reportSchedule->delete();
         return redirect()->route('report-schedules.index')
             ->with('success', 'Schedule deleted.');
@@ -96,7 +96,7 @@ class ReportScheduleController extends Controller
         };
     }
 
-    private function authorize(ReportSchedule $rs): void
+    private function authorizeReportScheduleAccess(ReportSchedule $rs): void
     {
         abort_unless($rs->company_id === Auth::user()->company_id, 403);
     }

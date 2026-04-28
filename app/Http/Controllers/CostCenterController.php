@@ -66,14 +66,14 @@ class CostCenterController extends Controller
 
     public function edit(CostCenter $costCenter)
     {
-        $this->authorize($costCenter);
+        $this->authorizeCostCenterAccess($costCenter);
         $departments = Department::forCompany(Auth::user()->company_id)->active()->orderBy('name')->get();
         return view('cost-centers.edit', compact('costCenter', 'departments'));
     }
 
     public function update(Request $request, CostCenter $costCenter)
     {
-        $this->authorize($costCenter);
+        $this->authorizeCostCenterAccess($costCenter);
         $companyId = Auth::user()->company_id;
 
         $data = $request->validate([
@@ -93,12 +93,12 @@ class CostCenterController extends Controller
 
     public function destroy(CostCenter $costCenter)
     {
-        $this->authorize($costCenter);
+        $this->authorizeCostCenterAccess($costCenter);
         $costCenter->delete();
         return redirect()->route('cost-centers.index')->with('success', 'Cost center deleted.');
     }
 
-    private function authorize(CostCenter $cc): void
+    private function authorizeCostCenterAccess(CostCenter $cc): void
     {
         abort_unless($cc->company_id === Auth::user()->company_id, 403);
     }

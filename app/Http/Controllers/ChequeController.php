@@ -70,14 +70,14 @@ class ChequeController extends Controller
 
     public function show(Cheque $cheque)
     {
-        $this->authorize($cheque);
+        $this->authorizeChequeAccess($cheque);
         $cheque->load(['supplier', 'customer', 'bank']);
         return view('cheques.show', compact('cheque'));
     }
 
     public function edit(Cheque $cheque)
     {
-        $this->authorize($cheque);
+        $this->authorizeChequeAccess($cheque);
         $companyId = Auth::user()->company_id;
         $suppliers = Supplier::where('company_id', $companyId)->orderBy('name')->get();
         $customers = Customer::where('company_id', $companyId)->orderBy('name')->get();
@@ -87,7 +87,7 @@ class ChequeController extends Controller
 
     public function update(Request $request, Cheque $cheque)
     {
-        $this->authorize($cheque);
+        $this->authorizeChequeAccess($cheque);
 
         $data = $request->validate([
             'payee_name'  => 'required|string|max:255',
@@ -106,7 +106,7 @@ class ChequeController extends Controller
 
     public function updateStatus(Request $request, Cheque $cheque)
     {
-        $this->authorize($cheque);
+        $this->authorizeChequeAccess($cheque);
 
         $data = $request->validate([
             'status' => 'required|in:pending,cleared,bounced,cancelled,voided,deposited',
@@ -119,14 +119,14 @@ class ChequeController extends Controller
 
     public function destroy(Cheque $cheque)
     {
-        $this->authorize($cheque);
+        $this->authorizeChequeAccess($cheque);
         abort_if(in_array($cheque->status, ['cleared', 'deposited']), 422,
             'Cannot delete a cleared or deposited cheque.');
         $cheque->delete();
         return redirect()->route('cheques.index')->with('success', 'Cheque deleted.');
     }
 
-    private function authorize(Cheque $cheque): void
+    private function authorizeChequeAccess(Cheque $cheque): void
     {
         abort_unless($cheque->company_id === Auth::user()->company_id, 403);
     }

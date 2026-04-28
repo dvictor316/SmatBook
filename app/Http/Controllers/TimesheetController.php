@@ -99,14 +99,14 @@ class TimesheetController extends Controller
 
     public function show(Timesheet $timesheet)
     {
-        $this->authorize($timesheet);
+        $this->authorizeTimesheetAccess($timesheet);
         $timesheet->load(['employee', 'entries', 'approvedBy']);
         return view('timesheets.show', compact('timesheet'));
     }
 
     public function submit(Timesheet $timesheet)
     {
-        $this->authorize($timesheet);
+        $this->authorizeTimesheetAccess($timesheet);
         abort_unless($timesheet->status === 'draft', 422, 'Only drafts can be submitted.');
         $timesheet->update(['status' => 'submitted']);
         return back()->with('success', 'Timesheet submitted for approval.');
@@ -114,7 +114,7 @@ class TimesheetController extends Controller
 
     public function approve(Timesheet $timesheet)
     {
-        $this->authorize($timesheet);
+        $this->authorizeTimesheetAccess($timesheet);
         abort_unless($timesheet->status === 'submitted', 422, 'Not submitted.');
 
         $timesheet->update([
@@ -128,13 +128,13 @@ class TimesheetController extends Controller
 
     public function destroy(Timesheet $timesheet)
     {
-        $this->authorize($timesheet);
+        $this->authorizeTimesheetAccess($timesheet);
         abort_if($timesheet->status === 'approved', 422, 'Cannot delete approved timesheet.');
         $timesheet->delete();
         return redirect()->route('timesheets.index')->with('success', 'Timesheet deleted.');
     }
 
-    private function authorize(Timesheet $ts): void
+    private function authorizeTimesheetAccess(Timesheet $ts): void
     {
         abort_unless($ts->company_id === Auth::user()->company_id, 403);
     }

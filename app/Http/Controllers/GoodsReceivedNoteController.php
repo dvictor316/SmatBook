@@ -86,14 +86,14 @@ class GoodsReceivedNoteController extends Controller
 
     public function show(GoodsReceivedNote $goodsReceivedNote)
     {
-        $this->authorize($goodsReceivedNote);
+        $this->authorizeGrnAccess($goodsReceivedNote);
         $goodsReceivedNote->load(['supplier', 'items.product']);
         return view('grn.show', compact('goodsReceivedNote'));
     }
 
     public function destroy(GoodsReceivedNote $goodsReceivedNote)
     {
-        $this->authorize($goodsReceivedNote);
+        $this->authorizeGrnAccess($goodsReceivedNote);
         abort_if($goodsReceivedNote->status === 'accepted', 422,
             'Cannot delete an accepted GRN.');
         $goodsReceivedNote->delete();
@@ -106,7 +106,7 @@ class GoodsReceivedNoteController extends Controller
         return 'GRN-' . str_pad($count, 5, '0', STR_PAD_LEFT);
     }
 
-    private function authorize(GoodsReceivedNote $grn): void
+    private function authorizeGrnAccess(GoodsReceivedNote $grn): void
     {
         abort_unless($grn->company_id === Auth::user()->company_id, 403);
     }

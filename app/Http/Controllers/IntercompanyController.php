@@ -85,7 +85,7 @@ class IntercompanyController extends Controller
 
     public function approve(IntercompanyTransaction $intercompanyTransaction)
     {
-        $this->authorize($intercompanyTransaction);
+        $this->authorizeIntercompanyAccess($intercompanyTransaction);
         abort_unless($intercompanyTransaction->status === 'pending', 422, 'Not pending.');
 
         $intercompanyTransaction->update([
@@ -99,14 +99,14 @@ class IntercompanyController extends Controller
 
     public function destroy(IntercompanyTransaction $intercompanyTransaction)
     {
-        $this->authorize($intercompanyTransaction);
+        $this->authorizeIntercompanyAccess($intercompanyTransaction);
         abort_if($intercompanyTransaction->status === 'approved', 422,
             'Cannot delete an approved transaction.');
         $intercompanyTransaction->delete();
         return redirect()->route('intercompany.index')->with('success', 'Transaction deleted.');
     }
 
-    private function authorize(IntercompanyTransaction $txn): void
+    private function authorizeIntercompanyAccess(IntercompanyTransaction $txn): void
     {
         abort_unless(
             $txn->company_id === Auth::user()->company_id ||

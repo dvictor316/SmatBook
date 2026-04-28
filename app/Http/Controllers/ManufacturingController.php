@@ -114,14 +114,14 @@ class ManufacturingController extends Controller
 
     public function show(ManufacturingOrder $manufacturingOrder)
     {
-        $this->authorize($manufacturingOrder);
+        $this->authorizeManufacturingAccess($manufacturingOrder);
         $manufacturingOrder->load(['product', 'bom', 'items.componentProduct']);
         return view('manufacturing.show', compact('manufacturingOrder'));
     }
 
     public function start(ManufacturingOrder $manufacturingOrder)
     {
-        $this->authorize($manufacturingOrder);
+        $this->authorizeManufacturingAccess($manufacturingOrder);
         abort_unless(in_array($manufacturingOrder->status, ['planned', 'draft']), 422,
             'Order cannot be started.');
 
@@ -135,7 +135,7 @@ class ManufacturingController extends Controller
 
     public function complete(Request $request, ManufacturingOrder $manufacturingOrder)
     {
-        $this->authorize($manufacturingOrder);
+        $this->authorizeManufacturingAccess($manufacturingOrder);
         abort_unless($manufacturingOrder->status === 'in_progress', 422,
             'Only in-progress orders can be completed.');
 
@@ -154,7 +154,7 @@ class ManufacturingController extends Controller
 
     public function cancel(ManufacturingOrder $manufacturingOrder)
     {
-        $this->authorize($manufacturingOrder);
+        $this->authorizeManufacturingAccess($manufacturingOrder);
         abort_unless(in_array($manufacturingOrder->status, ['planned', 'draft']), 422,
             'Only planned orders can be cancelled.');
 
@@ -168,7 +168,7 @@ class ManufacturingController extends Controller
         return 'MO-' . str_pad($count, 5, '0', STR_PAD_LEFT);
     }
 
-    private function authorize(ManufacturingOrder $mo): void
+    private function authorizeManufacturingAccess(ManufacturingOrder $mo): void
     {
         abort_unless($mo->company_id === Auth::user()->company_id, 403);
     }
