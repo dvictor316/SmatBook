@@ -30,18 +30,18 @@
                 <form method="POST" action="{{ route('intercompany.store') }}" class="row g-3">
                     @csrf
                     <div class="col-xl-4 col-md-6">
-                        <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
-                            <label class="form-label mb-0">Counter-party Company</label>
+                        <label class="form-label">Counter-party Company</label>
+                        <div class="d-flex align-items-stretch gap-2">
+                            <select name="counterparty_company_id" class="form-select" @if($companies->isNotEmpty()) required @endif>
+                                <option value="">Select company</option>
+                                @foreach($companies as $company)
+                                    <option value="{{ $company->id }}" @selected(old('counterparty_company_id') == $company->id)>{{ $company->name ?? $company->company_name ?? ('Company #' . $company->id) }}</option>
+                                @endforeach
+                            </select>
                             @if(Route::has('companies.create'))
-                                <a href="{{ route('companies.create') }}" class="btn btn-sm btn-outline-primary" title="Add company">+</a>
+                                <a href="{{ route('companies.create') }}" class="btn btn-outline-primary flex-shrink-0 px-3" title="Add company" aria-label="Add company">+</a>
                             @endif
                         </div>
-                        <select name="counterparty_company_id" class="form-select" @if($companies->isNotEmpty()) required @endif>
-                            <option value="">Select company</option>
-                            @foreach($companies as $company)
-                                <option value="{{ $company->id }}" @selected(old('counterparty_company_id') == $company->id)>{{ $company->name ?? $company->company_name ?? ('Company #' . $company->id) }}</option>
-                            @endforeach
-                        </select>
                         @if($companies->isEmpty())
                             <div class="form-text text-danger">No counter-party companies are available yet. Add one to continue.</div>
                         @endif
