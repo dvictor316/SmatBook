@@ -77,7 +77,7 @@ class IntercompanyController extends Controller
                 'source_account_id'        => $data['source_account_id'] ?? null,
                 'target_account_id'        => $data['target_account_id'] ?? null,
                 'reference_number'         => $data['reference_number'] ?? null,
-                'status'                   => 'pending',
+                'status'                   => 'draft',
                 'created_by'               => Auth::id(),
             ]);
 
@@ -88,20 +88,20 @@ class IntercompanyController extends Controller
     public function approve(IntercompanyTransaction $intercompanyTransaction)
     {
         $this->authorizeIntercompanyAccess($intercompanyTransaction);
-        abort_unless($intercompanyTransaction->status === 'pending', 422, 'Not pending.');
+        abort_unless($intercompanyTransaction->status === 'draft', 422, 'Only draft transactions can be posted.');
 
         $intercompanyTransaction->update([
             'status'      => 'posted',
         ]);
 
-        return back()->with('success', 'Transaction approved.');
+        return back()->with('success', 'Transaction posted.');
     }
 
     public function destroy(IntercompanyTransaction $intercompanyTransaction)
     {
         $this->authorizeIntercompanyAccess($intercompanyTransaction);
-        abort_if($intercompanyTransaction->status === 'approved', 422,
-            'Cannot delete an approved transaction.');
+        abort_if($intercompanyTransaction->status === 'posted', 422,
+            'Cannot delete a posted transaction.');
         $intercompanyTransaction->delete();
         return redirect()->route('intercompany.index')->with('success', 'Transaction deleted.');
     }

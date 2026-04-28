@@ -44,23 +44,23 @@
                                 <tr>
                                     <td>{{ $txn->reference_number ?: 'N/A' }}</td>
                                     <td>{{ str_replace('_', ' ', ucfirst($txn->transaction_type)) }}</td>
-                                    <td>{{ $txn->counterpartyCompany?->name ?? 'N/A' }}</td>
+                                    <td>{{ $txn->counterpartyCompany?->name ?? $txn->counterpartyCompany?->company_name ?? 'N/A' }}</td>
                                     <td>{{ number_format((float) $txn->amount, 2) }}</td>
                                     <td>{{ $txn->currency ?? 'NGN' }}</td>
                                     <td>{{ $txn->transaction_date?->format('d M Y') ?: 'N/A' }}</td>
                                     <td>
                                         <span class="badge bg-{{ match($txn->status) {
-                                            'pending' => 'warning',
+                                            'draft' => 'warning',
                                             'posted' => 'success',
                                             default => 'secondary'
                                         } }}">{{ ucfirst($txn->status ?? 'draft') }}</span>
                                     </td>
                                     <td class="text-end">
                                         <div class="d-inline-flex flex-wrap justify-content-end gap-1">
-                                            @if($txn->status === 'pending')
+                                            @if($txn->status === 'draft')
                                                 <form action="{{ route('intercompany.approve', $txn) }}" method="POST" class="d-inline">
                                                     @csrf
-                                                    <button class="btn btn-sm btn-outline-success">Approve</button>
+                                                    <button class="btn btn-sm btn-outline-success">Post</button>
                                                 </form>
                                                 <form action="{{ route('intercompany.destroy', $txn) }}" method="POST" class="d-inline"
                                                     onsubmit="return confirm('Delete this transaction?')">

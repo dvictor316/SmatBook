@@ -7,6 +7,7 @@ use App\Models\CostCenter;
 use App\Models\Employee;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class DepartmentController extends Controller
 {
@@ -50,7 +51,12 @@ class DepartmentController extends Controller
 
         $data = $request->validate([
             'name'              => 'required|string|max:255',
-            'code'              => 'nullable|string|max:50',
+            'code'              => [
+                'nullable',
+                'string',
+                'max:50',
+                Rule::unique('departments', 'code')->where(fn ($query) => $query->where('company_id', $companyId)),
+            ],
             'parent_id'         => 'nullable|exists:departments,id',
             'head_employee_id'  => 'nullable|exists:employees,id',
             'is_active'         => 'boolean',
@@ -81,7 +87,14 @@ class DepartmentController extends Controller
 
         $data = $request->validate([
             'name'             => 'required|string|max:255',
-            'code'             => 'nullable|string|max:50',
+            'code'             => [
+                'nullable',
+                'string',
+                'max:50',
+                Rule::unique('departments', 'code')
+                    ->where(fn ($query) => $query->where('company_id', $department->company_id))
+                    ->ignore($department->id),
+            ],
             'parent_id'        => 'nullable|exists:departments,id',
             'head_employee_id' => 'nullable|exists:employees,id',
             'is_active'        => 'boolean',

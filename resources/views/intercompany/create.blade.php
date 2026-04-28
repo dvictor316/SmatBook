@@ -34,7 +34,7 @@
                         <select name="counterparty_company_id" class="form-select" required>
                             <option value="">Select company</option>
                             @foreach($companies as $company)
-                                <option value="{{ $company->id }}" @selected(old('counterparty_company_id') == $company->id)>{{ $company->name }}</option>
+                                <option value="{{ $company->id }}" @selected(old('counterparty_company_id') == $company->id)>{{ $company->name ?? $company->company_name ?? ('Company #' . $company->id) }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -67,7 +67,7 @@
                         <select name="source_account_id" class="form-select">
                             <option value="">Select source account</option>
                             @foreach($accounts as $account)
-                                <option value="{{ $account->id }}" @selected(old('source_account_id') == $account->id)>{{ $account->code }} - {{ $account->name }}</option>
+                                <option value="{{ $account->id }}" @selected(old('source_account_id') == $account->id)>{{ trim(($account->code ? $account->code . ' - ' : '') . $account->name) }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -76,7 +76,7 @@
                         <select name="target_account_id" class="form-select">
                             <option value="">Select target account</option>
                             @foreach($accounts as $account)
-                                <option value="{{ $account->id }}" @selected(old('target_account_id') == $account->id)>{{ $account->code }} - {{ $account->name }}</option>
+                                <option value="{{ $account->id }}" @selected(old('target_account_id') == $account->id)>{{ trim(($account->code ? $account->code . ' - ' : '') . $account->name) }}</option>
                             @endforeach
                         </select>
                     </div>
