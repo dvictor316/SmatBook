@@ -393,14 +393,26 @@ class BalanceSheetController extends Controller
                 ]]);
             }
 
-            $currentLiabilities = $currentLiabilities->concat([(object) [
-                'id'       => null,
-                'code'     => 'SYS-INV-OFFSET',
-                'name'     => 'Inventory Offset',
-                'type'     => 'Liability',
-                'sub_type' => 'Current Liability',
-                'balance'  => $inventoryBridge,
-            ]]);
+            // Legacy stock bridge belongs to opening equity support, not current liabilities.
+            // Showing it as "Inventory Offset" under liabilities inflates payable totals and
+            // makes the balance sheet look incorrect compared with standard accounting output.
+            $openingEquityLine = $equity->first(function ($account) {
+                $name = strtolower(trim((string) ($account->name ?? '')));
+                return $name === 'opening balance equity' || str_contains($name, 'opening balance');
+            });
+
+            if ($openingEquityLine) {
+                $openingEquityLine->balance = (float) ($openingEquityLine->balance ?? 0) + $inventoryBridge;
+            } else {
+                $equity = $equity->concat([(object) [
+                    'id'       => null,
+                    'code'     => 'SYS-INV-EQUITY',
+                    'name'     => 'Opening Balance Equity',
+                    'type'     => 'Equity',
+                    'sub_type' => 'Equity',
+                    'balance'  => $inventoryBridge,
+                ]]);
+            }
         }
 
         // 5. Final Totals
