@@ -376,7 +376,8 @@ class SaleController extends Controller
             $salesAgg->where('sales.payment_status', (string) $request->payment_status);
         }
 
-        $branchStockSelect = $baseStockExpression . ' as instock_qty';
+        $branchStockValueExpression = $baseStockExpression;
+        $branchStockSelect = "CASE WHEN {$branchStockValueExpression} < 0 THEN 0 ELSE {$branchStockValueExpression} END as instock_qty";
 
         $query = Product::query()
             ->leftJoin('categories', 'products.category_id', '=', 'categories.id');
@@ -392,7 +393,8 @@ class SaleController extends Controller
                 }
             });
 
-            $branchStockSelect = "COALESCE(product_branch_stocks.quantity, {$baseStockExpression}, 0) as instock_qty";
+            $branchStockValueExpression = "COALESCE(product_branch_stocks.quantity, {$baseStockExpression}, 0)";
+            $branchStockSelect = "CASE WHEN {$branchStockValueExpression} < 0 THEN 0 ELSE {$branchStockValueExpression} END as instock_qty";
         }
 
         $query->leftJoinSub($salesAgg, 'sales_report', function ($join) {
@@ -414,7 +416,7 @@ class SaleController extends Controller
                 'products.sku',
                 'categories.name',
                 DB::raw($priceExpression),
-                DB::raw(str_replace(' as instock_qty', '', $branchStockSelect)),
+                DB::raw($branchStockValueExpression),
                 'sales_report.total_sold_qty',
                 'sales_report.total_sold_amount'
             );
@@ -433,8 +435,8 @@ class SaleController extends Controller
         }
 
         $reports = $query
-            ->orderByDesc('total_sold_amount')
-            ->orderBy('products.name')
+            // Keep report rows stable by product creation order so new items append at the end.
+            ->orderBy('products.id')
             ->paginate(15)
             ->withQueryString();
 
