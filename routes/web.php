@@ -546,10 +546,10 @@ Route::middleware(['auth'])->prefix('ajax/inventory')->name('ajax.inventory.')->
 // Reports hub — accessible to all authenticated users (superadmin, managers, staff)
 Route::middleware(['auth'])->group(function () {
     Route::get('/reports', [ReportController::class, 'reportsHub'])->name('reports.hub');
-    Route::post('/reports/custom-templates', [ReportController::class, 'storeCustomReportTemplate'])->name('reports.custom.store');
-    Route::get('/reports/custom-templates/{templateId}/run', [ReportController::class, 'runCustomReportTemplate'])->name('reports.custom.run');
-    Route::post('/reports/custom-templates/{templateId}/duplicate', [ReportController::class, 'duplicateCustomReportTemplate'])->name('reports.custom.duplicate');
-    Route::delete('/reports/custom-templates/{templateId}', [ReportController::class, 'destroyCustomReportTemplate'])->name('reports.custom.destroy');
+    Route::post('/reports/custom-templates', [ReportController::class, 'storeCustomReportTemplate'])->middleware('plan.access:enterprise')->name('reports.custom.store');
+    Route::get('/reports/custom-templates/{templateId}/run', [ReportController::class, 'runCustomReportTemplate'])->middleware('plan.access:enterprise')->name('reports.custom.run');
+    Route::post('/reports/custom-templates/{templateId}/duplicate', [ReportController::class, 'duplicateCustomReportTemplate'])->middleware('plan.access:enterprise')->name('reports.custom.duplicate');
+    Route::delete('/reports/custom-templates/{templateId}', [ReportController::class, 'destroyCustomReportTemplate'])->middleware('plan.access:enterprise')->name('reports.custom.destroy');
 });
 
 /*
@@ -899,9 +899,9 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::get('/payment-summary', 'paymentSummary')->name('payment-summary');
 
         // Sub-report family — P&L
-        Route::get('/profit-loss-comparison', 'profitLossComparison')->name('profit-loss-comparison');
-        Route::get('/profit-loss-by-month', 'profitLossByMonth')->name('profit-loss-by-month');
-        Route::get('/profit-loss-detail', 'profitLossDetail')->name('profit-loss-detail');
+        Route::get('/profit-loss-comparison', 'profitLossComparison')->middleware('plan.access:professional,enterprise')->name('profit-loss-comparison');
+        Route::get('/profit-loss-by-month', 'profitLossByMonth')->middleware('plan.access:professional,enterprise')->name('profit-loss-by-month');
+        Route::get('/profit-loss-detail', 'profitLossDetail')->middleware('plan.access:professional,enterprise')->name('profit-loss-detail');
 
         // Sub-report family — Who Owes You / AR
         Route::get('/ar-ageing-detail', 'accountsReceivableAgeingDetail')->name('ar-ageing-detail');

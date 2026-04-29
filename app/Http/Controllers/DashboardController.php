@@ -39,43 +39,7 @@ class DashboardController extends Controller
      */
     public function index(Request $request)
     {
-        // --- SUBDOMAIN ENFORCEMENT: Redirect to correct subdomain if user is on the wrong one ---
-        $userCompany = null;
-        if (!empty($user->company_id)) {
-            $userCompany = Company::find($user->company_id);
-        }
-        if ($userCompany && !empty($userCompany->domain_prefix)) {
-            $expectedSubdomain = Str::lower($userCompany->domain_prefix);
-            $currentSubdomain = null;
-            if (!in_array(Str::lower($currentHost), $centralHosts, true)) {
-                $currentSubdomain = explode('.', $currentHost)[0];
-            }
-            if ($currentSubdomain && $currentSubdomain !== $expectedSubdomain) {
-                // Build correct URL and redirect
-                $hostParts = explode('.', $currentHost);
-                $hostParts[0] = $expectedSubdomain;
-                $correctHost = implode('.', $hostParts);
-                $scheme = $request->getScheme();
-                $uri = $scheme . '://' . $correctHost . $request->getRequestUri();
-                return redirect()->to($uri);
-            }
-        }
         $user = Auth::user();
-        $currentSubscription = Subscription::resolveCurrentForUser($user);
-        $hasBusinessWorkspace = (int) ($user->company_id ?? 0) > 0
-            || (int) ($currentSubscription?->company_id ?? 0) > 0
-            || (int) session('current_tenant_id', 0) > 0;
-        $canUsePlatformWorkspace = in_array((string) ($user->role ?? ''), ['superadmin'], true);
-        $defaultWorkspaceContext = $hasBusinessWorkspace ? 'business' : 'platform';
-        $workspaceContext = (string) $request->session()->get('workspace_context', $defaultWorkspaceContext);
-
-        if (!$canUsePlatformWorkspace) {
-            $workspaceContext = 'business';
-            $request->session()->put('workspace_context', 'business');
-        }
-
-        $isBusinessWorkspace = $workspaceContext === 'business';
-        $activeBranch = $isBusinessWorkspace ? $this->activeBranchContext() : ['id' => null, 'name' => null];
         $currentHost = $request->getHost();
         $mainDomain = ltrim(config('app.domain', 'smartprobook.com'), '.');
         $appUrlHost = parse_url((string) config('app.url'), PHP_URL_HOST);
@@ -99,6 +63,41 @@ class DashboardController extends Controller
             ->values()
             ->all();
 
+        $userCompany = null;
+        if (!empty($user?->company_id)) {
+            $userCompany = Company::find($user->company_id);
+        }
+        if ($userCompany && !empty($userCompany->domain_prefix)) {
+            $expectedSubdomain = Str::lower($userCompany->domain_prefix);
+            $currentSubdomain = null;
+            if (!in_array(Str::lower($currentHost), $centralHosts, true)) {
+                $currentSubdomain = explode('.', $currentHost)[0];
+            }
+            if ($currentSubdomain && $currentSubdomain !== $expectedSubdomain) {
+                $hostParts = explode('.', $currentHost);
+                $hostParts[0] = $expectedSubdomain;
+                $correctHost = implode('.', $hostParts);
+                $scheme = $request->getScheme();
+                $uri = $scheme . '://' . $correctHost . $request->getRequestUri();
+                return redirect()->to($uri);
+            }
+        }
+
+        $currentSubscription = Subscription::resolveCurrentForUser($user);
+        $hasBusinessWorkspace = (int) ($user->company_id ?? 0) > 0
+            || (int) ($currentSubscription?->company_id ?? 0) > 0
+            || (int) session('current_tenant_id', 0) > 0;
+        $canUsePlatformWorkspace = in_array((string) ($user->role ?? ''), ['superadmin'], true);
+        $defaultWorkspaceContext = $hasBusinessWorkspace ? 'business' : 'platform';
+        $workspaceContext = (string) $request->session()->get('workspace_context', $defaultWorkspaceContext);
+
+        if (!$canUsePlatformWorkspace) {
+            $workspaceContext = 'business';
+            $request->session()->put('workspace_context', 'business');
+        }
+
+        $isBusinessWorkspace = $workspaceContext === 'business';
+        $activeBranch = $isBusinessWorkspace ? $this->activeBranchContext() : ['id' => null, 'name' => null];
         // 1. TENANT IDENTIFICATION VIA SUBDOMAIN
         $subdomain = in_array(Str::lower($currentHost), $centralHosts, true) ? null : explode('.', $currentHost)[0];
 

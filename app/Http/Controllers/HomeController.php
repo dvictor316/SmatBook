@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\{Company, Subscription, User, DeploymentManager};
+use App\Models\{Company, Subscription, User, DeploymentManager, Domain};
 use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Quotation;
@@ -317,8 +317,21 @@ class HomeController extends Controller
             return redirect()->route('saas.setup', $subscription->id);
         }
 
-        // All good — send to workspace subdomain
-        $mainDomain   = trim((string) config('session.domain', env('SESSION_DOMAIN', 'smartprobook.com')), ". \t\n\r\0\x0B");
+        if (!$this->companyWorkspaceSubdomainReady($company, $subscription, $user)) {
+            Log::warning('→ Workspace subdomain not ready, keeping user on central workspace', [
+                'company_id' => $company->id,
+                'subscription_id' => $subscription->id,
+                'domain_prefix' => $company->domain_prefix,
+            ]);
+
+            return $this->redirectToCentralBusinessWorkspace(
+                $company,
+                $subscription,
+                'Your workspace is available, but the secure custom subdomain is still being finalized. You can continue safely from the central dashboard for now.'
+            );
+        }
+
+        $mainDomain = trim((string) config('session.domain', env('SESSION_DOMAIN', 'smartprobook.com')), ". \t\n\r\0\x0B");
         $workspaceUrl = 'https://' . $company->domain_prefix . '.' . $mainDomain;
 
         Log::info('→ Redirecting to workspace', [
@@ -326,12 +339,74 @@ class HomeController extends Controller
             'subscription_id' => $subscription->id,
         ]);
 
-        // Store plan in session so sidebar knows which plan to show
         session([
             'user_plan' => strtolower($subscription->plan ?? $subscription->plan_name ?? 'basic'),
+            'current_tenant_id' => $company->id,
+            'current_tenant_name' => $company->name ?? $company->company_name ?? 'Workspace',
+            'workspace_context' => 'business',
         ]);
 
         return redirect()->away($workspaceUrl);
+    }
+
+    private function redirectToCentralBusinessWorkspace(Company $company, Subscription $subscription, ?string $message = null)
+    {
+        session([
+            'user_plan' => strtolower($subscription->plan ?? $subscription->plan_name ?? $company->plan ?? 'basic'),
+            'current_tenant_id' => $company->id,
+            'current_tenant_name' => $company->name ?? $company->company_name ?? 'Workspace',
+            'workspace_context' => 'business',
+        ]);
+
+        $redirect = redirect()->route('workspace.business.dashboard');
+
+        return $message ? $redirect->with('info', $message) : $redirect;
+    }
+
+    private function companyWorkspaceSubdomainReady(Company $company, Subscription $subscription, User $user): bool
+    {
+        $prefix = trim((string) ($company->domain_prefix ?? ''));
+        if ($prefix === '' || !Schema::hasTable('domains')) {
+            return false;
+        }
+
+        $mainDomain = trim((string) config('session.domain', env('SESSION_DOMAIN', 'smartprobook.com')), ". \t\n\r\0\x0B");
+        $expectedDomain = strtolower($prefix . '.' . $mainDomain);
+
+        $domain = Domain::withoutGlobalScopes()
+            ->where(function ($query) use ($company, $subscription, $user, $expectedDomain) {
+                $query->whereRaw('LOWER(COALESCE(domain_name, "")) = ?', [$expectedDomain]);
+
+                if (!empty($subscription->id)) {
+                    $query->orWhere('subscription_id', $subscription->id);
+                }
+
+                if (!empty($company->user_id)) {
+                    $query->orWhere('tenant_id', $company->user_id);
+                }
+
+                if (!empty($user->email)) {
+                    $query->orWhere('email', $user->email);
+                }
+            })
+            ->orderByDesc('approved_at')
+            ->orderByDesc('setup_completed_at')
+            ->latest('id')
+            ->first();
+
+        if (!$domain) {
+            return false;
+        }
+
+        $status = strtolower(trim((string) ($domain->status ?? '')));
+        if ($status !== 'active') {
+            return false;
+        }
+
+        $approved = !Schema::hasColumn('domains', 'approved_at') || !empty($domain->approved_at);
+        $setupComplete = !Schema::hasColumn('domains', 'setup_completed_at') || !empty($domain->setup_completed_at);
+
+        return $approved && $setupComplete;
     }
 
     /*

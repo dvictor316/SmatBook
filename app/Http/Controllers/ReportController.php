@@ -32,8 +32,80 @@ use App\Support\InventoryQuantity;
 
 
 
-    class ReportController extends Controller
-    {
+class ReportController extends Controller
+{
+        private function normalizeReportPlan(string $plan): string
+        {
+            $value = strtolower(trim($plan));
+
+            if ($value === '' || str_contains($value, 'basic')) {
+                return 'basic';
+            }
+
+            if ($value === 'pro' || $value === 'professional' || str_contains($value, 'professional') || str_contains($value, 'pro ')) {
+                return 'pro';
+            }
+
+            if (str_contains($value, 'enterprise')) {
+                return 'enterprise';
+            }
+
+            return match ($value) {
+                'super_admin', 'superadmin', 'administrator', 'admin' => 'full',
+                default => 'basic',
+            };
+        }
+
+        private function resolveReportAccess(): string
+        {
+            $user = Auth::user();
+            $role = strtolower(trim((string) ($user?->role ?? '')));
+
+            if (in_array($role, ['super_admin', 'superadmin', 'administrator', 'admin'], true)
+                || strtolower((string) ($user?->email ?? '')) === 'donvictorlive@gmail.com') {
+                return 'full';
+            }
+
+            $planCandidates = [
+                optional($user?->company)->plan,
+                optional(Subscription::resolveCurrentForUser($user))->planLabel(),
+                session('user_plan'),
+            ];
+
+            foreach ($planCandidates as $candidate) {
+                if (filled($candidate)) {
+                    return $this->normalizeReportPlan((string) $candidate);
+                }
+            }
+
+            return 'basic';
+        }
+
+        private function allowedReportTabs(string $reportAccess): array
+        {
+            return match ($reportAccess) {
+                'full', 'enterprise' => ['standard', 'management', 'custom'],
+                'pro' => ['standard', 'management'],
+                default => ['standard'],
+            };
+        }
+
+        private function reportTabSections(array $allowedTabs): array
+        {
+            $map = [
+                'standard' => ['overview', 'owes', 'sales', 'inventory'],
+                'management' => ['financial'],
+                'custom' => ['custom'],
+            ];
+
+            return collect($map)->only($allowedTabs)->all();
+        }
+
+        private function ensureCustomReportAccess(): void
+        {
+            abort_unless(in_array('custom', $this->allowedReportTabs($this->resolveReportAccess()), true), 403);
+        }
+
         private function calculateReportSideBalances(float $amount, bool $isDebitNormal): array
         {
             if ($isDebitNormal) {
@@ -49,17 +121,36 @@ use App\Support\InventoryQuantity;
 
         public function reportsHub()
         {
-            $customReportCatalog = $this->customReportCatalog();
-            $availableBranches = $this->availableCustomReportBranches();
-            $customReportTemplates = $this->getCustomReportTemplates();
+            $reportAccess = $this->resolveReportAccess();
+            $allowedTabs = $this->allowedReportTabs($reportAccess);
+            $currentTab = request('tab', $allowedTabs[0] ?? 'standard');
+            if (!in_array($currentTab, $allowedTabs, true)) {
+                $currentTab = $allowedTabs[0] ?? 'standard';
+            }
+
+            $canUseCustomReports = in_array('custom', $allowedTabs, true);
+            $customReportCatalog = $canUseCustomReports ? $this->customReportCatalog() : [];
+            $availableBranches = $canUseCustomReports ? $this->availableCustomReportBranches() : collect();
+            $customReportTemplates = $canUseCustomReports ? $this->getCustomReportTemplates() : collect();
             $editingTemplate = null;
             $editTemplateId = trim((string) request()->query('edit_template', ''));
 
-            if ($editTemplateId !== '') {
+            if ($canUseCustomReports && $editTemplateId !== '') {
                 $editingTemplate = $customReportTemplates->firstWhere('id', $editTemplateId);
             }
 
-            return view('Reports.hub', compact('customReportCatalog', 'customReportTemplates', 'editingTemplate', 'availableBranches'));
+            $tabSections = $this->reportTabSections($allowedTabs);
+
+            return view('Reports.hub', compact(
+                'customReportCatalog',
+                'customReportTemplates',
+                'editingTemplate',
+                'availableBranches',
+                'reportAccess',
+                'allowedTabs',
+                'currentTab',
+                'tabSections'
+            ));
         }
 
         private function customReportCatalog(): array
@@ -233,6 +324,8 @@ use App\Support\InventoryQuantity;
 
         public function storeCustomReportTemplate(Request $request)
         {
+            $this->ensureCustomReportAccess();
+
             $catalog = $this->customReportCatalog();
             $availableBranches = $this->availableCustomReportBranches();
             $allowedBranchFilters = array_merge(['current', 'all'], $availableBranches->pluck('id')->all());
@@ -286,6 +379,8 @@ use App\Support\InventoryQuantity;
 
         public function runCustomReportTemplate(string $templateId)
         {
+            $this->ensureCustomReportAccess();
+
             $catalog = $this->customReportCatalog();
             $template = $this->getCustomReportTemplates()->firstWhere('id', $templateId);
 
@@ -331,6 +426,8 @@ use App\Support\InventoryQuantity;
 
         public function destroyCustomReportTemplate(string $templateId)
         {
+            $this->ensureCustomReportAccess();
+
             $templates = $this->getCustomReportTemplates()
                 ->reject(fn ($template) => (string) ($template['id'] ?? '') === $templateId)
                 ->values();
@@ -342,6 +439,8 @@ use App\Support\InventoryQuantity;
 
         public function duplicateCustomReportTemplate(string $templateId)
         {
+            $this->ensureCustomReportAccess();
+
             $template = $this->getCustomReportTemplates()->firstWhere('id', $templateId);
 
             abort_unless($template, 404);
