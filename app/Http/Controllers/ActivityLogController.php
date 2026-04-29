@@ -47,10 +47,24 @@ class ActivityLogController extends Controller
         $statsQuery = clone $query;
 
         $logs = $query->latest()->paginate(25)->withQueryString();
-        $modules = ActivityLog::query()
+        $modulesQuery = ActivityLog::withoutGlobalScopes()
             ->select('module')
-            ->whereNotNull('module')
-            ->when(!$this->canViewAll($user), fn ($q) => $q->where('user_id', $user?->id))
+            ->whereNotNull('module');
+
+        if (!$this->canViewAll($user)) {
+            $modulesQuery->where('user_id', $user?->id);
+            $this->applyTenantBranchScope($modulesQuery, 'activity_logs');
+        } else {
+            $role = strtolower(trim((string) ($user?->role ?? '')));
+            $isCentralSuperAdmin = in_array($role, ['super_admin', 'superadmin'], true)
+                || (string) $user?->email === 'donvictorlive@gmail.com';
+
+            if (!$isCentralSuperAdmin) {
+                $this->applyTenantBranchScope($modulesQuery, 'activity_logs');
+            }
+        }
+
+        $modules = $modulesQuery
             ->distinct()
             ->orderBy('module')
             ->pluck('module');
@@ -184,21 +198,27 @@ class ActivityLogController extends Controller
     private function baseQuery($user)
     {
         $query = ActivityLog::withoutGlobalScopes()->with('user');
-        $companyId = (int) ($user?->company_id ?? session('current_tenant_id') ?? 0);
+        $scope = $this->scopeContext();
+        $companyId = $scope['company_id'];
+        $branchId = $scope['branch_id'];
 
         if (!$this->canViewAll($user)) {
-            return $query->where('user_id', $user?->id);
+            $query->where('user_id', $user?->id);
+            return $this->applyTenantBranchScope($query, 'activity_logs');
         }
 
         $role = strtolower(trim((string) ($user?->role ?? '')));
         $isCentralSuperAdmin = in_array($role, ['super_admin', 'superadmin'], true)
             || (string) $user?->email === 'donvictorlive@gmail.com';
 
-        if (!$isCentralSuperAdmin && $companyId > 0 && Schema::hasColumn('activity_logs', 'company_id')) {
-            $query->where(function ($scopedQuery) use ($companyId) {
-                $scopedQuery->where('company_id', $companyId)
-                    ->orWhereNull('company_id');
-            });
+        if (!$isCentralSuperAdmin) {
+            if ($companyId > 0 && Schema::hasColumn('activity_logs', 'company_id')) {
+                $query->where('company_id', $companyId);
+            }
+
+            if ($branchId !== '' && Schema::hasColumn('activity_logs', 'branch_id')) {
+                $query->where('branch_id', $branchId);
+            }
         }
 
         return $query;

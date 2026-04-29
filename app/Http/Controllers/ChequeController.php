@@ -13,10 +13,10 @@ class ChequeController extends Controller
 {
     public function index(Request $request)
     {
-        $companyId = Auth::user()->company_id;
         $type = $request->query('type', 'all');
 
-        $query = Cheque::forCompany($companyId)->with(['supplier', 'customer', 'bank']);
+        $query = Cheque::query()->with(['supplier', 'customer', 'bank']);
+        $this->applyTenantBranchScope($query, 'cheques');
 
         if (in_array($type, ['issue', 'receive'])) {
             $query->where('type', $type);
@@ -32,17 +32,27 @@ class ChequeController extends Controller
 
     public function create()
     {
-        $companyId = Auth::user()->company_id;
-        $suppliers = Supplier::where('company_id', $companyId)->orderBy('name')->get();
-        $customers = Customer::where('company_id', $companyId)->orderBy('customer_name')->get();
-        $banks     = Bank::where('company_id', $companyId)->orderBy('name')->get();
+        $suppliers = Supplier::query()
+            ->tap(fn ($query) => $this->applyTenantBranchScope($query, 'suppliers'))
+            ->orderBy('name')
+            ->get();
+        $customers = Customer::query()
+            ->tap(fn ($query) => $this->applyTenantBranchScope($query, 'customers'))
+            ->orderBy('customer_name')
+            ->get();
+        $banks     = Bank::query()
+            ->tap(fn ($query) => $this->applyTenantBranchScope($query, 'banks'))
+            ->orderBy('name')
+            ->get();
 
         return view('cheques.create', compact('suppliers', 'customers', 'banks'));
     }
 
     public function store(Request $request)
     {
-        $companyId = Auth::user()->company_id;
+        $scope = $this->scopeContext();
+        $companyId = $scope['company_id'];
+        $branchId = $scope['branch_id'] !== '' ? $scope['branch_id'] : (Auth::user()->branch_id ?? null);
 
         $data = $request->validate([
             'cheque_number' => 'required|string|max:100',
@@ -57,8 +67,26 @@ class ChequeController extends Controller
             'notes'         => 'nullable|string|max:500',
         ]);
 
+        if (!empty($data['supplier_id'])) {
+            Supplier::query()
+                ->tap(fn ($query) => $this->applyTenantBranchScope($query, 'suppliers'))
+                ->findOrFail($data['supplier_id']);
+        }
+
+        if (!empty($data['customer_id'])) {
+            Customer::query()
+                ->tap(fn ($query) => $this->applyTenantBranchScope($query, 'customers'))
+                ->findOrFail($data['customer_id']);
+        }
+
+        if (!empty($data['bank_id'])) {
+            Bank::query()
+                ->tap(fn ($query) => $this->applyTenantBranchScope($query, 'banks'))
+                ->findOrFail($data['bank_id']);
+        }
+
         $data['company_id'] = $companyId;
-        $data['branch_id']  = Auth::user()->branch_id;
+        $data['branch_id']  = $branchId;
         $data['created_by'] = Auth::id();
         $data['status']     = 'pending';
 
@@ -78,10 +106,18 @@ class ChequeController extends Controller
     public function edit(Cheque $cheque)
     {
         $this->authorizeChequeAccess($cheque);
-        $companyId = Auth::user()->company_id;
-        $suppliers = Supplier::where('company_id', $companyId)->orderBy('name')->get();
-        $customers = Customer::where('company_id', $companyId)->orderBy('customer_name')->get();
-        $banks     = Bank::where('company_id', $companyId)->orderBy('name')->get();
+        $suppliers = Supplier::query()
+            ->tap(fn ($query) => $this->applyTenantBranchScope($query, 'suppliers'))
+            ->orderBy('name')
+            ->get();
+        $customers = Customer::query()
+            ->tap(fn ($query) => $this->applyTenantBranchScope($query, 'customers'))
+            ->orderBy('customer_name')
+            ->get();
+        $banks     = Bank::query()
+            ->tap(fn ($query) => $this->applyTenantBranchScope($query, 'banks'))
+            ->orderBy('name')
+            ->get();
         return view('cheques.edit', compact('cheque', 'suppliers', 'customers', 'banks'));
     }
 
@@ -128,6 +164,6 @@ class ChequeController extends Controller
 
     private function authorizeChequeAccess(Cheque $cheque): void
     {
-        abort_unless($cheque->company_id === Auth::user()->company_id, 403);
+        $this->authorizeTenantBranchModelAccess($cheque);
     }
 }

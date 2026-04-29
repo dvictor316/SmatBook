@@ -15,9 +15,9 @@ class GoodsReceivedNoteController extends Controller
 {
     public function index(Request $request)
     {
-        $companyId = Auth::user()->company_id;
-        $grns = GoodsReceivedNote::forCompany($companyId)
+        $grns = GoodsReceivedNote::query()
             ->with(['supplier', 'purchaseOrder', 'createdBy'])
+            ->tap(fn ($query) => $this->applyTenantBranchScope($query, 'goods_received_notes'))
             ->latest('received_date')
             ->paginate(25);
 
@@ -26,16 +26,26 @@ class GoodsReceivedNoteController extends Controller
 
     public function create()
     {
-        $companyId = Auth::user()->company_id;
-        $suppliers = Supplier::where('company_id', $companyId)->orderBy('name')->get();
-        $products  = Product::where('company_id', $companyId)->orderBy('name')->get();
-        $purchaseOrders = Purchase::where('company_id', $companyId)->orderByDesc('id')->get();
+        $suppliers = Supplier::query()
+            ->tap(fn ($query) => $this->applyTenantBranchScope($query, 'suppliers'))
+            ->orderBy('name')
+            ->get();
+        $products  = Product::query()
+            ->tap(fn ($query) => $this->applyTenantBranchScope($query, 'products'))
+            ->orderBy('name')
+            ->get();
+        $purchaseOrders = Purchase::query()
+            ->tap(fn ($query) => $this->applyTenantBranchScope($query, 'purchases'))
+            ->orderByDesc('id')
+            ->get();
         return view('grn.create', compact('suppliers', 'products', 'purchaseOrders'));
     }
 
     public function store(Request $request)
     {
-        $companyId = Auth::user()->company_id;
+        $scope = $this->scopeContext();
+        $companyId = $scope['company_id'];
+        $branchId = $scope['branch_id'] !== '' ? $scope['branch_id'] : (Auth::user()->branch_id ?? null);
 
         $data = $request->validate([
             'supplier_id'           => 'required|exists:suppliers,id',
@@ -53,12 +63,22 @@ class GoodsReceivedNoteController extends Controller
             'items.*.expiry_date'   => 'nullable|date',
         ]);
 
-        DB::transaction(function () use ($data, $companyId) {
+        DB::transaction(function () use ($data, $companyId, $branchId) {
+            $supplier = Supplier::query()
+                ->tap(fn ($query) => $this->applyTenantBranchScope($query, 'suppliers'))
+                ->findOrFail($data['supplier_id']);
+
+            if (!empty($data['purchase_order_id'])) {
+                Purchase::query()
+                    ->tap(fn ($query) => $this->applyTenantBranchScope($query, 'purchases'))
+                    ->findOrFail($data['purchase_order_id']);
+            }
+
             $grn = GoodsReceivedNote::create([
                 'company_id'        => $companyId,
-                'branch_id'         => Auth::user()->branch_id,
-                'grn_number'        => $this->nextGrnNumber($companyId),
-                'supplier_id'       => $data['supplier_id'],
+                'branch_id'         => $branchId,
+                'grn_number'        => $this->nextGrnNumber($companyId, $branchId),
+                'supplier_id'       => $supplier->id,
                 'purchase_order_id' => $data['purchase_order_id'] ?? null,
                 'received_date'     => $data['received_date'],
                 'status'            => 'received',
@@ -67,9 +87,13 @@ class GoodsReceivedNoteController extends Controller
             ]);
 
             foreach ($data['items'] as $item) {
+                $product = Product::query()
+                    ->tap(fn ($query) => $this->applyTenantBranchScope($query, 'products'))
+                    ->findOrFail($item['product_id']);
+
                 $grn->items()->create([
-                    'product_id'          => $item['product_id'],
-                    'product_name'        => $item['product_name'],
+                    'product_id'          => $product->id,
+                    'product_name'        => $item['product_name'] ?: $product->name,
                     'ordered_quantity'    => $item['ordered_quantity'] ?? 0,
                     'received_quantity'   => $item['received_quantity'],
                     'rejected_quantity'   => 0,
@@ -102,14 +126,18 @@ class GoodsReceivedNoteController extends Controller
         return redirect()->route('grn.index')->with('success', 'GRN deleted.');
     }
 
-    private function nextGrnNumber(int $companyId): string
+    private function nextGrnNumber(int $companyId, $branchId = null): string
     {
-        $count = GoodsReceivedNote::forCompany($companyId)->withTrashed()->count() + 1;
+        $query = GoodsReceivedNote::withTrashed()->where('company_id', $companyId);
+        if ($branchId !== null && \Illuminate\Support\Facades\Schema::hasColumn('goods_received_notes', 'branch_id')) {
+            $query->where('branch_id', $branchId);
+        }
+        $count = $query->count() + 1;
         return 'GRN-' . str_pad($count, 5, '0', STR_PAD_LEFT);
     }
 
     private function authorizeGrnAccess(GoodsReceivedNote $grn): void
     {
-        abort_unless($grn->company_id === Auth::user()->company_id, 403);
+        $this->authorizeTenantBranchModelAccess($grn);
     }
 }
