@@ -1653,28 +1653,25 @@ public function inventory(Request $request)
             ->sortByDesc(fn ($row) => strtotime((string) ($row->created_at ?? '1970-01-01 00:00:00')))
             ->values();
 
-        $runningBalance = 0.0;
+        $currentStock = max(0, $this->branchInventory->getAvailableStock($product, $activeBranch));
+        $runningBalance = $currentStock;
         $inventoryHistories = $inventoryHistories
-            ->reverse()
-            ->values()
             ->map(function ($row) use (&$runningBalance) {
                 $quantity = (float) ($row->quantity ?? 0);
                 $stockQuantity = (float) ($row->stock_quantity ?? $quantity);
                 $isStockIn = in_array(strtolower(trim((string) ($row->type ?? ''))), ['in', 'stock in'], true);
                 $signedQuantity = $isStockIn ? $stockQuantity : -1 * $stockQuantity;
 
-                $runningBalance = round($runningBalance + $signedQuantity, 2);
                 $row->running_balance = $runningBalance;
                 $row->stock_value = round($runningBalance * (float) ($row->purchase_price ?? 0), 2);
+                $runningBalance = round($runningBalance - $signedQuantity, 2);
 
                 return $row;
             })
-            ->reverse()
             ->values();
 
         $totalIn = $inventoryHistories->filter(fn ($row) => in_array(strtolower(trim((string) ($row->type ?? ''))), ['in', 'stock in'], true))->sum('quantity');
         $totalOut = $inventoryHistories->filter(fn ($row) => !in_array(strtolower(trim((string) ($row->type ?? ''))), ['in', 'stock in'], true))->sum(fn ($row) => (float) ($row->stock_quantity ?? $row->quantity ?? 0));
-        $currentStock = max(0, (float) $totalIn - (float) $totalOut);
 
         return view('Inventory.inventory-history', compact('inventoryHistories', 'activeBranch', 'product', 'currentStock', 'totalIn', 'totalOut'));
     }
