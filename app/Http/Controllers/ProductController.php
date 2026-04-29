@@ -165,6 +165,49 @@ class ProductController extends Controller
         }
     }
 
+    private function inventoryHistoryBranchContext(?object $history = null): array
+    {
+        $activeBranch = $this->getActiveBranchContext();
+
+        return [
+            'id' => isset($history?->branch_id) && trim((string) $history->branch_id) !== ''
+                ? (string) $history->branch_id
+                : ($activeBranch['id'] ?? null),
+            'name' => isset($history?->branch_name) && trim((string) $history->branch_name) !== ''
+                ? (string) $history->branch_name
+                : ($activeBranch['name'] ?? null),
+        ];
+    }
+
+    private function syncBranchStockFromHistoryRecord(object $history): void
+    {
+        if (!Schema::hasTable('product_branch_stocks')) {
+            return;
+        }
+
+        $product = Product::query()->find((int) ($history->product_id ?? 0));
+        if (!$product) {
+            return;
+        }
+
+        $branch = $this->inventoryHistoryBranchContext($history);
+        if (empty($branch['id'])) {
+            return;
+        }
+
+        $calculated = $this->branchInventory->calculateBranchStock($product, $branch);
+        if ($calculated === null) {
+            return;
+        }
+
+        $this->branchInventory->setBranchStock(
+            $product,
+            max(0, $calculated),
+            $branch,
+            (int) ($product->company_id ?? $this->tenantCompanyId())
+        );
+    }
+
     public function undoLastImport(Request $request): RedirectResponse
     {
         $cacheKey = 'product_import_last_' . auth()->id();
@@ -1693,15 +1736,19 @@ public function inventory(Request $request)
             return redirect()->back()->with('error', 'Inventory history record not found for the active branch.');
         }
 
-        DB::table('inventory_history')
-            ->where('id', (int) $validated['id'])
-            ->update([
-                'quantity' => (float) $validated['quantity'],
-                'type' => $validated['type'],
-                'updated_at' => now(),
-            ]);
+        DB::transaction(function () use ($validated, $history) {
+            DB::table('inventory_history')
+                ->where('id', (int) $validated['id'])
+                ->update([
+                    'quantity' => (float) $validated['quantity'],
+                    'type' => $validated['type'],
+                    'updated_at' => now(),
+                ]);
 
-        $this->clearDashboardMetricsCache();
+            $this->syncBranchStockFromHistoryRecord($history);
+        });
+
+        $this->clearDashboardMetricsCache($this->inventoryHistoryBranchContext($history)['id'] ?? null);
 
         return redirect()->back()->with('success', 'Inventory history record updated successfully.');
     }
@@ -1721,8 +1768,12 @@ public function inventory(Request $request)
             return redirect()->back()->with('error', 'Inventory history record not found for the active branch.');
         }
 
-        DB::table('inventory_history')->where('id', (int) $validated['id'])->delete();
-        $this->clearDashboardMetricsCache();
+        DB::transaction(function () use ($validated, $history) {
+            DB::table('inventory_history')->where('id', (int) $validated['id'])->delete();
+            $this->syncBranchStockFromHistoryRecord($history);
+        });
+
+        $this->clearDashboardMetricsCache($this->inventoryHistoryBranchContext($history)['id'] ?? null);
 
         return redirect()->back()->with('success', 'Inventory history record deleted successfully.');
     }
