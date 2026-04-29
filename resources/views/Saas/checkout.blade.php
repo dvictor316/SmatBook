@@ -13,6 +13,7 @@
     ];
     $defaultGateway = 'paystack';
     $hasGatewayIssue = (bool) ($gatewayConfigurationIssue ?? false);
+    $enabledGatewayCount = collect($gatewayAvailability)->filter()->count();
 @endphp
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
@@ -255,6 +256,97 @@
         box-shadow: 0 0 0 2px rgba(37, 99, 235, .14);
     }
 
+    .gateway-section {
+        margin-top: 6px;
+    }
+
+    .gateway-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 10px;
+        flex-wrap: wrap;
+    }
+
+    .gateway-status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: #ecfeff;
+        border: 1px solid #99f6e4;
+        color: #0f766e;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: .03em;
+    }
+
+    .gateway-status-badge i {
+        font-size: 10px;
+    }
+
+    .gateway-single-wrap {
+        border: 1px solid #bfdbfe;
+        border-radius: 16px;
+        background: linear-gradient(135deg, #f8fbff 0%, #ecfeff 100%);
+        padding: 14px;
+    }
+
+    .gateway-single-note {
+        margin-top: 10px;
+        font-size: 12px;
+        color: #475569;
+        line-height: 1.5;
+    }
+
+    .gateway-grid.gateway-grid-single {
+        grid-template-columns: 1fr;
+        margin-top: 0;
+    }
+
+    .gateway-grid.gateway-grid-single .gateway-pill {
+        min-height: 72px;
+        justify-content: space-between;
+        padding: 14px 16px;
+        border-radius: 14px;
+        text-align: left;
+    }
+
+    .gateway-pill-content {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .gateway-pill-title {
+        font-size: 16px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+    }
+
+    .gateway-pill-copy {
+        font-size: 12px;
+        font-weight: 600;
+        opacity: .82;
+        line-height: 1.45;
+    }
+
+    .gateway-pill-tag {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(15, 118, 110, 0.1);
+        color: #0f766e;
+        border: 1px solid rgba(15, 118, 110, 0.14);
+        font-size: 11px;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+
     .pay-btn {
         width: 100%;
         margin-top: 18px;
@@ -395,12 +487,30 @@
                         <input class="field-input" type="email" value="{{ $checkoutProfileEmail }}" autocomplete="email" readonly>
                     </div>
                     <div class="col-12">
-                        <label class="field-label">Payment Gateway</label>
-                        <div class="gateway-grid">
-                            <label class="gateway-option">
-                                <input type="radio" name="gateway_option" value="paystack" {{ ($defaultGateway === 'paystack' && $gatewayAvailability['paystack']) ? 'checked' : '' }} {{ $gatewayAvailability['paystack'] ? '' : 'disabled' }}>
-                                <span class="gateway-pill gateway-paystack">Paystack</span>
-                            </label>
+                        <div class="gateway-section">
+                            <div class="gateway-head">
+                                <label class="field-label mb-0">Payment Gateway</label>
+                                @if($enabledGatewayCount === 1)
+                                    <span class="gateway-status-badge"><i class="fas fa-shield-check"></i> Recommended Secure Option</span>
+                                @endif
+                            </div>
+                            <div class="gateway-single-wrap">
+                                <div class="gateway-grid gateway-grid-single">
+                                    <label class="gateway-option">
+                                        <input type="radio" name="gateway_option" value="paystack" {{ ($defaultGateway === 'paystack' && $gatewayAvailability['paystack']) ? 'checked' : '' }} {{ $gatewayAvailability['paystack'] ? '' : 'disabled' }}>
+                                        <span class="gateway-pill gateway-paystack">
+                                            <span class="gateway-pill-content">
+                                                <span class="gateway-pill-title">Paystack</span>
+                                                <span class="gateway-pill-copy">Card and bank payments with secure hosted checkout for your workspace activation.</span>
+                                            </span>
+                                            <span class="gateway-pill-tag">Available Now</span>
+                                        </span>
+                                    </label>
+                                </div>
+                                <div class="gateway-single-note">
+                                    Paystack is currently the active payment channel for this checkout. Other gateways will appear here once they are fully configured.
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
