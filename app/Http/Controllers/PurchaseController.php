@@ -28,6 +28,46 @@ use App\Models\Transaction as LedgerTransaction;
 
 class PurchaseController extends Controller
 {
+    private function scopeSuppliersForActiveBranch($query)
+    {
+        $this->applyTenantScope($query, 'suppliers');
+
+        $activeBranch = $this->getActiveBranchContext();
+        $branchId = trim((string) ($activeBranch['id'] ?? ''));
+        $branchName = trim((string) ($activeBranch['name'] ?? ''));
+
+        if ($branchId === '' && $branchName === '') {
+            return $query;
+        }
+
+        return $query->where(function ($sub) use ($branchId, $branchName) {
+            $matched = false;
+
+            if ($branchId !== '' && Schema::hasColumn('suppliers', 'branch_id')) {
+                $sub->where('suppliers.branch_id', $branchId);
+                $matched = true;
+            }
+
+            if ($branchName !== '' && Schema::hasColumn('suppliers', 'branch_name')) {
+                $method = $matched ? 'orWhere' : 'where';
+                $sub->{$method}('suppliers.branch_name', $branchName);
+                $matched = true;
+            }
+
+            if (Schema::hasColumn('suppliers', 'branch_id') || Schema::hasColumn('suppliers', 'branch_name')) {
+                $method = $matched ? 'orWhere' : 'where';
+                $sub->{$method}(function ($fallback) {
+                    if (Schema::hasColumn('suppliers', 'branch_id')) {
+                        $fallback->whereNull('suppliers.branch_id');
+                    }
+                    if (Schema::hasColumn('suppliers', 'branch_name')) {
+                        $fallback->whereNull('suppliers.branch_name');
+                    }
+                });
+            }
+        });
+    }
+
     private function scopeProductsForActiveBranch($query, array $activeBranch)
     {
         $this->applyTenantScope($query, 'products');
@@ -208,8 +248,7 @@ private function applyBranchScope($query, string $table = 'purchases')
         $suppliers = collect();
         if (Schema::hasTable('suppliers')) {
             $suppliersQuery = Supplier::orderBy('name');
-            $this->applyTenantScope($suppliersQuery, 'suppliers');
-            $this->applyBranchScope($suppliersQuery, 'suppliers');
+            $this->scopeSuppliersForActiveBranch($suppliersQuery);
             $suppliers = $suppliersQuery->get();
         }
         $productsQuery = Product::orderBy('name');
@@ -640,6 +679,16 @@ public function show($id)
                     continue;
                 }
 
+                $availableBranchStock = $this->branchInventory->getAvailableStock($previousProduct, $activeBranch);
+                if ($availableBranchStock < $previousQty) {
+                    throw new \RuntimeException("Cannot reduce {$previousProduct->name} below zero while updating this purchase.");
+                }
+
+                $currentProductStock = (float) ($previousProduct->stock ?? $previousProduct->stock_quantity ?? 0);
+                if ($currentProductStock < $previousQty) {
+                    throw new \RuntimeException("Cannot update this purchase because {$previousProduct->name} stock has already been used elsewhere.");
+                }
+
                 $previousProduct->decrement('stock', $previousQty);
                 if (Schema::hasColumn('products', 'stock_quantity')) {
                     $previousProduct->decrement('stock_quantity', $previousQty);
@@ -916,6 +965,20 @@ public function show($id)
                     continue;
                 }
 
+                $purchaseBranch = [
+                    'id' => $purchase->branch_id ?? $activeBranch['id'],
+                    'name' => $purchase->branch_name ?? $activeBranch['name'],
+                ];
+                $availableBranchStock = $this->branchInventory->getAvailableStock($product, $purchaseBranch);
+                if ($availableBranchStock < $quantity) {
+                    throw new \RuntimeException("Cannot delete purchase because {$product->name} has already been issued, sold, or transferred. Available stock is {$availableBranchStock}, but this purchase would remove {$quantity}.");
+                }
+
+                $currentProductStock = (float) ($product->stock ?? $product->stock_quantity ?? 0);
+                if ($currentProductStock < $quantity) {
+                    throw new \RuntimeException("Cannot delete purchase because {$product->name} stock has already been used elsewhere.");
+                }
+
                 $product->decrement('stock', $quantity);
                 if (Schema::hasColumn('products', 'stock_quantity')) {
                     $product->decrement('stock_quantity', $quantity);
@@ -923,10 +986,7 @@ public function show($id)
                 $this->branchInventory->adjustBranchStock(
                     $product,
                     -$quantity,
-                    [
-                        'id' => $purchase->branch_id ?? $activeBranch['id'],
-                        'name' => $purchase->branch_name ?? $activeBranch['name'],
-                    ],
+                    $purchaseBranch,
                     (int) ($product->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id') ?? 0)
                 );
             }

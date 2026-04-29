@@ -7,6 +7,7 @@ use App\Models\ProductBranchStock;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use RuntimeException;
 
 class BranchInventoryService
 {
@@ -277,7 +278,7 @@ class BranchInventoryService
             // Callers update product stock first, then sync the branch row.
             // Seed a brand-new branch row from the already-updated product stock
             // so we do not apply the same delta twice.
-            $branchStock->quantity = round((float) ($productModel->stock ?? $productModel->stock_quantity ?? 0), 2);
+            $branchStock->quantity = round(max(0, (float) ($productModel->stock ?? $productModel->stock_quantity ?? 0)), 2);
             $seededFromCurrentProductStock = true;
         } elseif (((float) ($branchStock->quantity ?? 0)) === 0.0) {
             $productStock = (float) ($productModel->stock ?? $productModel->stock_quantity ?? 0);
@@ -285,16 +286,23 @@ class BranchInventoryService
                 // Same rule here: quantity zero plus a non-zero product stock usually
                 // means the branch row needs a reset to the current product stock,
                 // not another delta layered on top of it.
-                $branchStock->quantity = round($productStock, 2);
+                $branchStock->quantity = round(max(0, $productStock), 2);
                 $seededFromCurrentProductStock = true;
             }
         }
 
         $branchStock->company_id = $resolvedCompanyId > 0 ? $resolvedCompanyId : null;
         $branchStock->branch_name = $branch['name'];
-        if (!$seededFromCurrentProductStock) {
-            $branchStock->quantity = round(((float) ($branchStock->quantity ?? 0)) + $delta, 2);
+        $proposedQuantity = !$seededFromCurrentProductStock
+            ? round(((float) ($branchStock->quantity ?? 0)) + $delta, 2)
+            : round((float) ($branchStock->quantity ?? 0), 2);
+
+        if ($proposedQuantity < 0) {
+            $branchLabel = $branch['name'] ?? $branch['id'] ?? 'this branch';
+            throw new RuntimeException("Negative stock is not allowed for {$productModel->name} in {$branchLabel}.");
         }
+
+        $branchStock->quantity = max(0, $proposedQuantity);
         $branchStock->save();
 
         return $branchStock;

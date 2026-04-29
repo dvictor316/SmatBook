@@ -123,9 +123,14 @@ class SaleController extends Controller
             $updates['stock_quantity'] = DB::raw('stock_quantity - ' . $quantity);
         }
 
-        DB::table('products')
+        $updated = DB::table('products')
             ->where('id', $product->id)
+            ->where('stock', '>=', $quantity)
             ->update($updates);
+
+        if ($updated === 0) {
+            throw new \RuntimeException("Insufficient stock for {$product->name}. Negative stock is not allowed.");
+        }
     }
 
     private function tenantCompanyId(): int
