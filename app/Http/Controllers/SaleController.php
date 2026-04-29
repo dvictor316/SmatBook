@@ -289,7 +289,7 @@ class SaleController extends Controller
 
     public function report(Request $request)
     {
-        $stockExpression = Schema::hasColumn('products', 'stock')
+        $baseStockExpression = Schema::hasColumn('products', 'stock')
             ? 'COALESCE(products.stock, 0)'
             : (Schema::hasColumn('products', 'stock_quantity') ? 'COALESCE(products.stock_quantity, 0)' : '0');
         $priceExpression = Schema::hasColumn('products', 'product_price')
@@ -299,6 +299,11 @@ class SaleController extends Controller
         $branchOptions = collect($this->getAvailableBranches())
             ->mapWithKeys(fn ($branch) => [(string) $branch['id'] => (string) $branch['name']])
             ->all();
+        $activeBranch = $this->getActiveBranchContext();
+        $selectedBranchId = trim((string) ($request->branch_id ?: ($activeBranch['id'] ?? '')));
+        $selectedBranchName = $selectedBranchId !== ''
+            ? (string) ($branchOptions[$selectedBranchId] ?? ($activeBranch['name'] ?? ''))
+            : trim((string) ($activeBranch['name'] ?? ''));
 
         $staffOptions = [];
         if (Schema::hasTable('users')) {
@@ -316,18 +321,12 @@ class SaleController extends Controller
                 ->all();
         }
 
-        $query = Product::query()
-            ->leftJoin('categories', 'products.category_id', '=', 'categories.id')
-            ->leftJoin('sale_items', 'products.id', '=', 'sale_items.product_id')
-            ->leftJoin('sales', 'sale_items.sale_id', '=', 'sales.id')
+        $salesAgg = DB::table('sale_items')
+            ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+            ->join('products as sale_products', 'sale_items.product_id', '=', 'sale_products.id')
             ->selectRaw("
-                products.id,
-                products.name as product_name,
-                products.sku,
-                categories.name as category_name,
-                {$priceExpression} as product_price,
-                {$stockExpression} as instock_qty,
-                COALESCE(SUM(" . InventoryQuantity::saleStockUnitsExpression('sale_items', 'products') . "), 0) as total_sold_qty,
+                sale_items.product_id,
+                COALESCE(SUM(" . InventoryQuantity::saleStockUnitsExpression('sale_items', 'sale_products') . "), 0) as total_sold_qty,
                 COALESCE(SUM(
                     CASE
                         WHEN sale_items.total_price IS NOT NULL THEN sale_items.total_price
@@ -336,32 +335,92 @@ class SaleController extends Controller
                     END
                 ), 0) as total_sold_amount
             ")
+            ->groupBy('sale_items.product_id');
+        $this->applyTenantScope($salesAgg, 'sales');
+
+        if ($selectedBranchId !== '' || $selectedBranchName !== '') {
+            $salesAgg->where(function ($builder) use ($selectedBranchId, $selectedBranchName) {
+                $matched = false;
+
+                if ($selectedBranchId !== '' && Schema::hasColumn('sales', 'branch_id')) {
+                    $builder->where('sales.branch_id', $selectedBranchId);
+                    $matched = true;
+                }
+
+                if ($selectedBranchName !== '' && Schema::hasColumn('sales', 'branch_name')) {
+                    $method = $matched ? 'orWhere' : 'where';
+                    $builder->{$method}('sales.branch_name', $selectedBranchName);
+                }
+            });
+        }
+
+        if ($request->filled('search')) {
+            $search = trim((string) $request->search);
+        } else {
+            $search = '';
+        }
+
+        if ($request->filled('date_from') && Schema::hasColumn('sales', 'created_at')) {
+            $salesAgg->whereDate('sales.created_at', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to') && Schema::hasColumn('sales', 'created_at')) {
+            $salesAgg->whereDate('sales.created_at', '<=', $request->date_to);
+        }
+
+        if ($request->filled('staff_id') && Schema::hasColumn('sales', 'user_id')) {
+            $salesAgg->where('sales.user_id', (int) $request->staff_id);
+        }
+
+        if ($request->filled('payment_status') && Schema::hasColumn('sales', 'payment_status')) {
+            $salesAgg->where('sales.payment_status', (string) $request->payment_status);
+        }
+
+        $branchStockSelect = $baseStockExpression . ' as instock_qty';
+
+        $query = Product::query()
+            ->leftJoin('categories', 'products.category_id', '=', 'categories.id');
+
+        if (Schema::hasTable('product_branch_stocks') && ($selectedBranchId !== '' || $selectedBranchName !== '')) {
+            $query->leftJoin('product_branch_stocks', function ($join) use ($selectedBranchId, $selectedBranchName) {
+                $join->on('product_branch_stocks.product_id', '=', 'products.id');
+
+                if ($selectedBranchId !== '' && Schema::hasColumn('product_branch_stocks', 'branch_id')) {
+                    $join->where('product_branch_stocks.branch_id', $selectedBranchId);
+                } elseif ($selectedBranchName !== '' && Schema::hasColumn('product_branch_stocks', 'branch_name')) {
+                    $join->where('product_branch_stocks.branch_name', $selectedBranchName);
+                }
+            });
+
+            $branchStockSelect = "COALESCE(product_branch_stocks.quantity, {$baseStockExpression}, 0) as instock_qty";
+        }
+
+        $query->leftJoinSub($salesAgg, 'sales_report', function ($join) {
+                $join->on('products.id', '=', 'sales_report.product_id');
+            })
+            ->selectRaw("
+                products.id,
+                products.name as product_name,
+                products.sku,
+                categories.name as category_name,
+                {$priceExpression} as product_price,
+                {$branchStockSelect},
+                COALESCE(sales_report.total_sold_qty, 0) as total_sold_qty,
+                COALESCE(sales_report.total_sold_amount, 0) as total_sold_amount
+            ")
             ->groupBy(
                 'products.id',
                 'products.name',
                 'products.sku',
                 'categories.name',
                 DB::raw($priceExpression),
-                DB::raw($stockExpression)
+                DB::raw(str_replace(' as instock_qty', '', $branchStockSelect)),
+                'sales_report.total_sold_qty',
+                'sales_report.total_sold_amount'
             );
         $this->applyTenantScope($query, 'products');
-        $activeBranch = $this->getActiveBranchContext();
-        if (!empty($activeBranch['id']) && Schema::hasColumn('sales', 'branch_id')) {
-            $branchId = (string) $activeBranch['id'];
-            $query->where(function ($builder) use ($branchId) {
-                $builder->whereNull('sales.id')
-                    ->orWhere('sales.branch_id', $branchId);
-            });
-        } elseif (!empty($activeBranch['name']) && Schema::hasColumn('sales', 'branch_name')) {
-            $branchName = (string) $activeBranch['name'];
-            $query->where(function ($builder) use ($branchName) {
-                $builder->whereNull('sales.id')
-                    ->orWhere('sales.branch_name', $branchName);
-            });
-        }
 
-        if ($request->filled('search')) {
-            $search = trim((string) $request->search);
+        if ($search !== '') {
             $query->where(function ($builder) use ($search) {
                 $builder->where('products.name', 'like', "%{$search}%")
                     ->orWhere('products.sku', 'like', "%{$search}%")
@@ -371,44 +430,6 @@ class SaleController extends Controller
 
         if ($request->filled('category_id')) {
             $query->where('products.category_id', $request->integer('category_id'));
-        }
-
-        if ($request->filled('date_from')) {
-            $query->where(function ($builder) use ($request) {
-                $builder->whereNull('sales.created_at')
-                    ->orWhereDate('sales.created_at', '>=', $request->date_from);
-            });
-        }
-
-        if ($request->filled('date_to')) {
-            $query->where(function ($builder) use ($request) {
-                $builder->whereNull('sales.created_at')
-                    ->orWhereDate('sales.created_at', '<=', $request->date_to);
-            });
-        }
-
-        if ($request->filled('branch_id') && Schema::hasColumn('sales', 'branch_id')) {
-            $branchId = (string) $request->branch_id;
-            $query->where(function ($builder) use ($branchId) {
-                $builder->whereNull('sales.id')
-                    ->orWhere('sales.branch_id', $branchId);
-            });
-        }
-
-        if ($request->filled('staff_id') && Schema::hasColumn('sales', 'user_id')) {
-            $staffId = (int) $request->staff_id;
-            $query->where(function ($builder) use ($staffId) {
-                $builder->whereNull('sales.id')
-                    ->orWhere('sales.user_id', $staffId);
-            });
-        }
-
-        if ($request->filled('payment_status') && Schema::hasColumn('sales', 'payment_status')) {
-            $paymentStatus = (string) $request->payment_status;
-            $query->where(function ($builder) use ($paymentStatus) {
-                $builder->whereNull('sales.id')
-                    ->orWhere('sales.payment_status', $paymentStatus);
-            });
         }
 
         $reports = $query
