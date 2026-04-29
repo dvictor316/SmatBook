@@ -26,6 +26,20 @@ class SuperAdminDashboardController extends Controller
             ->firstOrFail();
     }
 
+    private function customerUsersQuery()
+    {
+        $query = User::query();
+
+        if (Schema::hasColumn('users', 'role')) {
+            $query->whereNotIn(
+                DB::raw("LOWER(COALESCE(role, ''))"),
+                ['super_admin', 'superadmin', 'deployment_manager']
+            );
+        }
+
+        return $query;
+    }
+
     public function index()
     {
         $user = Auth::user();
@@ -144,7 +158,61 @@ class SuperAdminDashboardController extends Controller
                 })
                 ->count();
             $totalCompanies = Company::count();
-            $recentSignups = User::where('created_at', '>=', now()->subDays(30))->count();
+            $customerUsersBaseQuery = $this->customerUsersQuery();
+            $totalCustomerUsers = (clone $customerUsersBaseQuery)->count();
+            $recentSignups = (clone $customerUsersBaseQuery)
+                ->where('created_at', '>=', now()->subDays(30))
+                ->count();
+
+            $deploymentCustomerUsers = 0;
+            if (
+                Schema::hasTable('companies')
+                && Schema::hasColumn('users', 'company_id')
+                && Schema::hasColumn('companies', 'deployed_by')
+            ) {
+                $deploymentCustomerUsers = (clone $customerUsersBaseQuery)
+                    ->leftJoin('companies as customer_companies', 'users.company_id', '=', 'customer_companies.id')
+                    ->whereNotNull('customer_companies.deployed_by')
+                    ->where('customer_companies.deployed_by', '!=', 0)
+                    ->distinct()
+                    ->count('users.id');
+            }
+            $directCustomerUsers = max(0, $totalCustomerUsers - $deploymentCustomerUsers);
+
+            $deploymentSubscriptionRevenue = 0.0;
+            $deploymentPaidSubs = 0;
+            if ($paidSubscriptionsQuery) {
+                $deploymentSubscriptionsQuery = (clone $paidSubscriptionsQuery)
+                    ->leftJoin('companies as source_companies', 'subscriptions.company_id', '=', 'source_companies.id')
+                    ->where(function ($query) {
+                        $hasSource = false;
+
+                        if (Schema::hasColumn('subscriptions', 'deployed_by')) {
+                            $query->whereNotNull('subscriptions.deployed_by')
+                                ->where('subscriptions.deployed_by', '!=', 0);
+                            $hasSource = true;
+                        }
+
+                        if (Schema::hasColumn('companies', 'deployed_by')) {
+                            $method = $hasSource ? 'orWhere' : 'where';
+                            $query->{$method}(function ($subQuery) {
+                                $subQuery->whereNotNull('source_companies.deployed_by')
+                                    ->where('source_companies.deployed_by', '!=', 0);
+                            });
+                            $hasSource = true;
+                        }
+
+                        if (!$hasSource) {
+                            $query->whereRaw('1 = 0');
+                        }
+                    });
+
+                $deploymentSubscriptionRevenue = (float) ($deploymentSubscriptionsQuery->sum('subscriptions.amount') ?? 0);
+                $deploymentPaidSubs = (int) ($deploymentSubscriptionsQuery->distinct()->count('subscriptions.id') ?? 0);
+            }
+
+            $directSubscriptionRevenue = max(0, $subscriptionRevenue - $deploymentSubscriptionRevenue);
+            $directPaidSubs = max(0, $paidSubscriptionsCount - $deploymentPaidSubs);
 
             $stockValue = 0;
             $lowStockItems = 0;
@@ -187,15 +255,21 @@ class SuperAdminDashboardController extends Controller
             $metrics = [
                 'total_companies'  => $totalCompanies, 
                 'total_tenants'    => $activeCompanies > 0 ? $activeCompanies : $totalCompanies,
-                'total_users'      => User::count(),
-                'verified_users'   => Schema::hasColumn('users', 'is_verified') ? User::where('is_verified', 1)->count() : 0,
+                'total_users'      => $totalCustomerUsers,
+                'verified_users'   => Schema::hasColumn('users', 'is_verified')
+                                      ? (clone $customerUsersBaseQuery)->where('is_verified', 1)->count()
+                                      : 0,
                 'active_subs'      => $activeSubs > 0 ? $activeSubs : $activeCompanies,
                 'paid_subs'        => $paidSubscriptionsCount,
+                'direct_paid_subs' => $directPaidSubs,
+                'deployment_paid_subs' => $deploymentPaidSubs,
                 'total_subs'       => Schema::hasTable('subscriptions')
                                       ? Subscription::count()
                                       : 0,
                 'platform_revenue' => $platformRevenue,
                 'owner_subscription_revenue' => $subscriptionRevenue,
+                'direct_subscription_revenue' => $directSubscriptionRevenue,
+                'deployment_subscription_revenue' => $deploymentSubscriptionRevenue,
                 'pending_setups'   => Schema::hasTable('subscriptions')
                                       ? Subscription::query()->whereIn(DB::raw("LOWER(COALESCE(status, ''))"), $pendingSubscriptionStatuses)->count()
                                       : 0,
@@ -211,6 +285,8 @@ class SuperAdminDashboardController extends Controller
                 'total_stock_val'  => $stockValue,
                 'low_stock_items'  => $lowStockItems,
                 'recent_signups'   => $recentSignups,
+                'direct_customer_users' => $directCustomerUsers,
+                'deployment_customer_users' => $deploymentCustomerUsers,
                 'plan_sales_today' => $planSalesToday,
                 'plan_sales_month' => $planSalesMonth,
                 'plan_sales_value_month' => $planSalesValueMonth,
@@ -261,7 +337,7 @@ class SuperAdminDashboardController extends Controller
             // TENANT GROWTH
             $tenantGrowth = collect();
             if (Schema::hasTable('companies')) {
-                $tenantGrowth = Company::has('subscription')
+                $tenantGrowth = Company::query()
                     ->select(
                         DB::raw('MONTHNAME(created_at) as month'),
                         DB::raw('COUNT(*) as count'),
@@ -501,17 +577,10 @@ class SuperAdminDashboardController extends Controller
             }
 
             // RECENT TENANTS
-            $recentTenants = Company::has('subscription')
-                ->with(['user', 'subscription'])
+            $recentTenants = Company::with(['user', 'subscription'])
                 ->latest()
                 ->limit(5)
                 ->get();
-            if ($recentTenants->isEmpty()) {
-                $recentTenants = Company::with(['user', 'subscription'])
-                    ->latest()
-                    ->limit(5)
-                    ->get();
-            }
 
             // PLATFORM ACTIVITY
             $platformActivity = collect();
@@ -574,6 +643,9 @@ class SuperAdminDashboardController extends Controller
                 'platform_revenue' => 0, 'owner_subscription_revenue' => 0, 'total_users' => 0, 'pending_setups' => 0, 
                 'pending_managers' => 0, 'active_managers' => 0, 'total_stock_val' => 0,
                 'paid_subs' => 0, 'total_subs' => 0, 'verified_users' => 0, 'recent_signups' => 0,
+                'direct_paid_subs' => 0, 'deployment_paid_subs' => 0,
+                'direct_subscription_revenue' => 0, 'deployment_subscription_revenue' => 0,
+                'direct_customer_users' => 0, 'deployment_customer_users' => 0,
                 'low_stock_items' => 0, 'plan_sales_today' => 0, 'plan_sales_month' => 0,
                 'plan_sales_value_month' => 0, 'avg_plan_sale' => 0,
                 'item_sales_revenue' => 0, 'item_sales_today_revenue' => 0, 'item_sales_orders' => 0, 'item_sales_units' => 0,
@@ -1210,9 +1282,21 @@ public function pendingManagers()
 
         try {
             $data = match ($type) {
-                'revenue' => Subscription::where('payment_status', 'paid')->with('company')->get()->map(fn($s) => ['ID' => $s->id, 'Company' => $s->company->name ?? 'N/A', 'Amount' => $s->amount, 'Date' => $s->created_at]),
+                'revenue' => Subscription::where('payment_status', 'paid')->with('company')->get()->map(fn($s) => [
+                    'ID' => $s->id,
+                    'Company' => $s->company->name ?? $s->company->company_name ?? 'N/A',
+                    'Amount' => $s->amount,
+                    'Source' => (!empty($s->deployed_by) || !empty($s->company?->deployed_by)) ? 'Deployment Manager' : 'Direct',
+                    'Date' => $s->created_at,
+                ]),
                 'managers' => DB::table('deployment_managers')->join('users', 'deployment_managers.user_id', '=', 'users.id')->select('users.name', 'users.email', 'deployment_managers.status')->get(),
-                'tenants' => Company::has('subscription')->with(['subscription'])->get()->map(fn($c) => ['Company' => $c->name, 'Plan' => $c->subscription->plan_name ?? 'N/A', 'Status' => $c->status, 'Joined' => $c->created_at]),
+                'tenants' => Company::with(['subscription'])->get()->map(fn($c) => [
+                    'Company' => $c->name ?? $c->company_name ?? 'N/A',
+                    'Plan' => $c->subscription->plan_name ?? $c->plan ?? 'N/A',
+                    'Source' => !empty($c->deployed_by) ? 'Deployment Manager' : 'Direct',
+                    'Status' => $c->status,
+                    'Joined' => $c->created_at,
+                ]),
                 default => throw new \Exception('Invalid type')
             };
 

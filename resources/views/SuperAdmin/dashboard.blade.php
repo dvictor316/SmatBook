@@ -1083,7 +1083,7 @@
                                         <div class="mt-3">
                                             <h6 class="kpi-kicker mb-2">Paid Plan Buyers</h6>
                                             <h3 class="fw-bold mb-0 kpi-value">{{ number_format($metrics['paid_subs'] ?? 0) }}</h3>
-                                            <p class="kpi-note mb-0 mt-2">Users or companies that have paid for plans</p>
+                                            <p class="kpi-note mb-0 mt-2">Direct and deployment-created buyers combined</p>
                                         </div>
                                     </div>
                                 </div>
@@ -1101,6 +1101,41 @@
                                             <h6 class="kpi-kicker mb-2">Average Plan Sale</h6>
                                             <h3 class="fw-bold mb-0 kpi-value">₦{{ number_format($metrics['avg_plan_sale'] ?? 0, 2) }}</h3>
                                             <p class="kpi-note mb-0 mt-2">Average income per verified plan purchase</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mt-2">
+                            <div class="col-12 grid-margin stretch-card">
+                                <div class="card card-rounded shadow-sm border-0">
+                                    <div class="card-body p-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                                            <div>
+                                                <h5 class="mb-0 fw-bold text-dark">Customer Source Snapshot</h5>
+                                                <small class="text-muted">Inclusive super admin counts for direct registrations and deployment-manager-created accounts</small>
+                                            </div>
+                                            <span class="live-badge-soft">Cross-checked</span>
+                                        </div>
+                                        <div class="row g-2">
+                                            @foreach([
+                                                ['label' => 'Customer Users', 'value' => number_format($metrics['total_users'] ?? 0), 'tone' => 'tone-cobalt'],
+                                                ['label' => 'Direct Signup Users', 'value' => number_format($metrics['direct_customer_users'] ?? 0), 'tone' => 'tone-emerald'],
+                                                ['label' => 'Deployment Signup Users', 'value' => number_format($metrics['deployment_customer_users'] ?? 0), 'tone' => 'tone-violet'],
+                                                ['label' => 'Direct Plan Revenue', 'value' => '₦' . number_format($metrics['direct_subscription_revenue'] ?? 0, 2), 'tone' => 'tone-amber'],
+                                                ['label' => 'Deployment Plan Revenue', 'value' => '₦' . number_format($metrics['deployment_subscription_revenue'] ?? 0, 2), 'tone' => 'tone-rose'],
+                                            ] as $sourceKpi)
+                                                <div class="col-sm-6 col-xl">
+                                                    <div class="kpi-compact w-100 {{ $sourceKpi['tone'] }}">
+                                                        <div class="d-flex justify-content-between align-items-start">
+                                                            <div class="label">{{ $sourceKpi['label'] }}</div>
+                                                            <span class="live-badge-soft">Live</span>
+                                                        </div>
+                                                        <div class="value">{{ $sourceKpi['value'] }}</div>
+                                                    </div>
+                                                </div>
+                                            @endforeach
                                         </div>
                                     </div>
                                 </div>
