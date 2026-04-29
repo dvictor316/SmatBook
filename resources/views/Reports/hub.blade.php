@@ -5,6 +5,7 @@
     $reportAccess = $reportAccess ?? 'basic';
     $allowedTabs = $allowedTabs ?? ['standard'];
     $currentTab = $currentTab ?? ($allowedTabs[0] ?? 'standard');
+    $tabSections = $tabSections ?? ['standard' => ['overview', 'owes', 'sales', 'inventory']];
     $canUseProReports = in_array($reportAccess, ['pro', 'enterprise', 'full'], true);
     $canUseEnterpriseReports = in_array($reportAccess, ['enterprise', 'full'], true);
     $canUseCustomReports = in_array('custom', $allowedTabs, true);
@@ -646,14 +647,15 @@
 <script>
 (function () {
     /* ── Tab → section mapping ── */
-    const TAB_SECTIONS = @json($tabSections ?? ['standard' => ['overview', 'owes', 'sales', 'inventory']]);
+    const TAB_SECTIONS = @json($tabSections);
+    const DEFAULT_TAB = @json($currentTab);
 
     /* ── State ── */
     const FAV_KEY = 'rh_favourites_v2';
     let favs      = JSON.parse(localStorage.getItem(FAV_KEY) || '[]');
 
-    const urlTab  = new URLSearchParams(location.search).get('tab') || @json($currentTab);
-    let activeTab = Object.keys(TAB_SECTIONS).includes(urlTab) ? urlTab : @json($currentTab);
+    const urlTab  = new URLSearchParams(location.search).get('tab') || DEFAULT_TAB;
+    let activeTab = Object.keys(TAB_SECTIONS).includes(urlTab) ? urlTab : DEFAULT_TAB;
     let favsOnly  = false;
 
     const rows      = document.querySelectorAll('.rl-row');
