@@ -1,4 +1,4 @@
-@extends('layout.app')
+@extends('layout.mainlayout')
 
 @section('title', 'New Cheque')
 
@@ -99,7 +99,7 @@
                                 <select name="customer_id" class="form-select @error('customer_id') is-invalid @enderror">
                                     <option value="">-- None --</option>
                                     @foreach($customers as $c)
-                                        <option value="{{ $c->id }}" @selected(old('customer_id') == $c->id)>{{ $c->name }}</option>
+                                        <option value="{{ $c->id }}" @selected(old('customer_id') == $c->id)>{{ $c->customer_name }}</option>
                                     @endforeach
                                 </select>
                                 @error('customer_id')<div class="invalid-feedback">{{ $message }}</div>@enderror

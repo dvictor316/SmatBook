@@ -1,4 +1,4 @@
-@extends('layout.app')
+@extends('layout.mainlayout')
 
 @section('title', 'Cheque #' . $cheque->cheque_number)
 
@@ -86,7 +86,7 @@
                         @if($cheque->customer)
                         <tr>
                             <th>Customer</th>
-                            <td>{{ $cheque->customer->name }}</td>
+                            <td>{{ $cheque->customer->customer_name }}</td>
                         </tr>
                         @endif
                         @if($cheque->notes)

@@ -34,7 +34,7 @@ class ChequeController extends Controller
     {
         $companyId = Auth::user()->company_id;
         $suppliers = Supplier::where('company_id', $companyId)->orderBy('name')->get();
-        $customers = Customer::where('company_id', $companyId)->orderBy('name')->get();
+        $customers = Customer::where('company_id', $companyId)->orderBy('customer_name')->get();
         $banks     = Bank::where('company_id', $companyId)->orderBy('name')->get();
 
         return view('cheques.create', compact('suppliers', 'customers', 'banks'));
@@ -80,7 +80,7 @@ class ChequeController extends Controller
         $this->authorizeChequeAccess($cheque);
         $companyId = Auth::user()->company_id;
         $suppliers = Supplier::where('company_id', $companyId)->orderBy('name')->get();
-        $customers = Customer::where('company_id', $companyId)->orderBy('name')->get();
+        $customers = Customer::where('company_id', $companyId)->orderBy('customer_name')->get();
         $banks     = Bank::where('company_id', $companyId)->orderBy('name')->get();
         return view('cheques.edit', compact('cheque', 'suppliers', 'customers', 'banks'));
     }

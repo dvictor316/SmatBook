@@ -1,8 +1,9 @@
-@extends('layout.app')
+@extends('layout.mainlayout')
 
 @section('title', 'GRN #' . $grn->grn_number)
 
 @section('content')
+<div class="page-wrapper">
 <div class="content container-fluid">
     <div class="page-header">
         <div class="row align-items-center">
@@ -42,9 +43,9 @@
                             </td>
                         </tr>
                         <tr><th>Supplier</th><td>{{ $grn->supplier?->name ?? '—' }}</td></tr>
-                        <tr><th>PO Reference</th><td>{{ $grn->purchase_order_id ?? '—' }}</td></tr>
+                        <tr><th>PO Reference</th><td>{{ $grn->purchaseOrder?->purchase_no ?? ($grn->purchase_order_id ?? '—') }}</td></tr>
                         <tr><th>Received Date</th><td>{{ $grn->received_date?->format('d M Y') ?? '—' }}</td></tr>
-                        <tr><th>Received By</th><td>{{ $grn->receivedBy?->name ?? '—' }}</td></tr>
+                        <tr><th>Received By</th><td>{{ $grn->createdBy?->name ?? '—' }}</td></tr>
                         @if($grn->notes)
                         <tr><th>Notes</th><td>{{ $grn->notes }}</td></tr>
                         @endif
@@ -128,5 +129,6 @@
             </div>
         </div>
     </div>
+</div>
 </div>
 @endsection

@@ -1,8 +1,9 @@
-@extends('layout.app')
+@extends('layout.mainlayout')
 
 @section('title', 'New Goods Received Note')
 
 @section('content')
+<div class="page-wrapper">
 <div class="content container-fluid">
     <div class="page-header">
         <div class="row align-items-center">
@@ -43,7 +44,15 @@
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label fw-semibold">Purchase Order # (optional)</label>
-                                <input type="text" name="purchase_order_id" class="form-control" value="{{ old('purchase_order_id') }}" placeholder="PO reference">
+                                <select name="purchase_order_id" class="form-select @error('purchase_order_id') is-invalid @enderror">
+                                    <option value="">-- Select Purchase Order --</option>
+                                    @foreach($purchaseOrders as $purchaseOrder)
+                                        <option value="{{ $purchaseOrder->id }}" @selected(old('purchase_order_id') == $purchaseOrder->id)>
+                                            {{ $purchaseOrder->purchase_no ?? ('PO #' . $purchaseOrder->id) }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('purchase_order_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label fw-semibold">Received Date <span class="text-danger">*</span></label>
@@ -113,6 +122,7 @@
             </div>
         </div>
     </div>
+</div>
 </div>
 
 @push('scripts')

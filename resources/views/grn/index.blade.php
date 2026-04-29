@@ -1,8 +1,9 @@
-@extends('layout.app')
+@extends('layout.mainlayout')
 
 @section('title', 'Goods Received Notes')
 
 @section('content')
+<div class="page-wrapper">
 <div class="content container-fluid">
     <div class="page-header">
         <div class="row align-items-center">
@@ -40,18 +41,18 @@
                         @forelse($grns as $grn)
                             <tr>
                                 <td><a href="{{ route('grn.show', $grn) }}">{{ $grn->grn_number }}</a></td>
-                                <td>{{ $grn->supplier_name ?? '—' }}</td>
-                                <td>{{ $grn->purchase_order_id ?? '—' }}</td>
+                                <td>{{ $grn->supplier?->name ?? '—' }}</td>
+                                <td>{{ $grn->purchaseOrder?->purchase_no ?? ($grn->purchase_order_id ?? '—') }}</td>
                                 <td>{{ $grn->received_date->format('d M Y') }}</td>
-                                <td>{{ $grn->received_by ?? '—' }}</td>
+                                <td>{{ $grn->createdBy?->name ?? '—' }}</td>
                                 <td>
                                     <span class="badge bg-{{ match($grn->status) {
-                                        'pending' => 'warning', 'complete' => 'success', 'partial' => 'info', 'rejected' => 'danger', default => 'secondary'
+                                        'received' => 'success', 'pending' => 'warning', 'complete' => 'success', 'partial' => 'info', 'rejected' => 'danger', default => 'secondary'
                                     } }}">{{ ucfirst($grn->status) }}</span>
                                 </td>
                                 <td class="text-end">
                                     <a href="{{ route('grn.show', $grn) }}" class="btn btn-sm btn-outline-primary me-1">View</a>
-                                    @if($grn->status === 'pending')
+                                    @if($grn->status === 'pending' || $grn->status === 'draft')
                                         <a href="{{ route('grn.edit', $grn) }}" class="btn btn-sm btn-outline-secondary me-1">Edit</a>
                                         <form action="{{ route('grn.destroy', $grn) }}" method="POST" class="d-inline"
                                               onsubmit="return confirm('Delete this GRN?')">
@@ -72,5 +73,6 @@
             <div class="card-footer">{{ $grns->links() }}</div>
         @endif
     </div>
+</div>
 </div>
 @endsection

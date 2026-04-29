@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\User;
 
 class GoodsReceivedNote extends Model
 {
@@ -23,6 +24,7 @@ class GoodsReceivedNote extends Model
     public function company(): BelongsTo        { return $this->belongsTo(Company::class); }
     public function supplier(): BelongsTo       { return $this->belongsTo(Supplier::class); }
     public function purchaseOrder(): BelongsTo  { return $this->belongsTo(Purchase::class, 'purchase_order_id'); }
+    public function createdBy(): BelongsTo      { return $this->belongsTo(User::class, 'created_by'); }
     public function items(): HasMany            { return $this->hasMany(GrnItem::class); }
 
     public function scopeForCompany($query, int $companyId) { return $query->where('company_id', $companyId); }

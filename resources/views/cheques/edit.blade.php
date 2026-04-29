@@ -1,4 +1,4 @@
-@extends('layout.app')
+@extends('layout.mainlayout')
 
 @section('title', 'Edit Cheque #' . $cheque->cheque_number)
 
@@ -104,7 +104,7 @@
                                 <select name="customer_id" class="form-select">
                                     <option value="">-- None --</option>
                                     @foreach($customers as $c)
-                                        <option value="{{ $c->id }}" @selected(old('customer_id', $cheque->customer_id) == $c->id)>{{ $c->name }}</option>
+                                        <option value="{{ $c->id }}" @selected(old('customer_id', $cheque->customer_id) == $c->id)>{{ $c->customer_name }}</option>
                                     @endforeach
                                 </select>
                             </div>

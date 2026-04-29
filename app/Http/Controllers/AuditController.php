@@ -11,7 +11,7 @@ class AuditController extends Controller
      */
     public function index()
     {
-        //
+        return app(ActivityLogController::class)->index(request());
     }
 
     /**
@@ -35,7 +35,12 @@ class AuditController extends Controller
      */
     public function show(string $id)
     {
-        //
+        return redirect()->route('audit.index');
+    }
+
+    public function export(Request $request)
+    {
+        return app(ActivityLogController::class)->export($request);
     }
 
     /**

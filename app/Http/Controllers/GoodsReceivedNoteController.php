@@ -17,7 +17,7 @@ class GoodsReceivedNoteController extends Controller
     {
         $companyId = Auth::user()->company_id;
         $grns = GoodsReceivedNote::forCompany($companyId)
-            ->with(['supplier'])
+            ->with(['supplier', 'purchaseOrder', 'createdBy'])
             ->latest('received_date')
             ->paginate(25);
 
@@ -29,7 +29,8 @@ class GoodsReceivedNoteController extends Controller
         $companyId = Auth::user()->company_id;
         $suppliers = Supplier::where('company_id', $companyId)->orderBy('name')->get();
         $products  = Product::where('company_id', $companyId)->orderBy('name')->get();
-        return view('grn.create', compact('suppliers', 'products'));
+        $purchaseOrders = Purchase::where('company_id', $companyId)->orderByDesc('id')->get();
+        return view('grn.create', compact('suppliers', 'products', 'purchaseOrders'));
     }
 
     public function store(Request $request)
@@ -87,8 +88,9 @@ class GoodsReceivedNoteController extends Controller
     public function show(GoodsReceivedNote $goodsReceivedNote)
     {
         $this->authorizeGrnAccess($goodsReceivedNote);
-        $goodsReceivedNote->load(['supplier', 'items.product']);
-        return view('grn.show', compact('goodsReceivedNote'));
+        $goodsReceivedNote->load(['supplier', 'purchaseOrder', 'createdBy', 'items.product']);
+        $grn = $goodsReceivedNote;
+        return view('grn.show', compact('grn'));
     }
 
     public function destroy(GoodsReceivedNote $goodsReceivedNote)
