@@ -1044,12 +1044,12 @@
                                             <div class="kpi-icon-shell">
                                                 <i class="fas fa-sack-dollar" aria-hidden="true"></i>
                                             </div>
-                                            <div class="kpi-badge">Revenue</div>
+                                            <div class="kpi-badge">Owners</div>
                                         </div>
                                         <div class="mt-3">
-                                            <h6 class="kpi-kicker mb-2">Platform Revenue</h6>
-                                            <h3 class="fw-bold mb-0 kpi-value">₦{{ number_format($metrics['platform_revenue'], 2) }}</h3>
-                                            <p class="kpi-note mb-0 mt-2">Total Verified Subscriptions</p>
+                                            <h6 class="kpi-kicker mb-2">Total Plan Revenue</h6>
+                                            <h3 class="fw-bold mb-0 kpi-value">₦{{ number_format($metrics['owner_subscription_revenue'] ?? 0, 2) }}</h3>
+                                            <p class="kpi-note mb-0 mt-2">All verified subscription income to platform owners</p>
                                         </div>
                                     </div>
                                 </div>
@@ -1061,12 +1061,12 @@
                                             <div class="kpi-icon-shell">
                                                 <i class="fas fa-chart-line" aria-hidden="true"></i>
                                             </div>
-                                            <div class="kpi-badge">MRR</div>
+                                            <div class="kpi-badge">Month</div>
                                         </div>
                                         <div class="mt-3">
-                                            <h6 class="kpi-kicker mb-2">Active Subscriptions</h6>
-                                            <h3 class="fw-bold mb-0 kpi-value">{{ number_format($metrics['active_subs']) }}</h3>
-                                            <p class="kpi-note mb-0 mt-2">Monthly Recurring Revenue</p>
+                                            <h6 class="kpi-kicker mb-2">Monthly Plan Revenue</h6>
+                                            <h3 class="fw-bold mb-0 kpi-value">₦{{ number_format($metrics['plan_sales_value_month'] ?? 0, 2) }}</h3>
+                                            <p class="kpi-note mb-0 mt-2">Income collected from plan buyers this month</p>
                                         </div>
                                     </div>
                                 </div>
@@ -1078,12 +1078,12 @@
                                             <div class="kpi-icon-shell">
                                                 <i class="fas fa-building" aria-hidden="true"></i>
                                             </div>
-                                            <div class="kpi-badge">Tenants</div>
+                                            <div class="kpi-badge">Buyers</div>
                                         </div>
                                         <div class="mt-3">
-                                            <h6 class="kpi-kicker mb-2">Total Companies</h6>
-                                            <h3 class="fw-bold mb-0 kpi-value">{{ number_format($metrics['total_tenants']) }}</h3>
-                                            <p class="kpi-note mb-0 mt-2">Registered Organizations</p>
+                                            <h6 class="kpi-kicker mb-2">Paid Plan Buyers</h6>
+                                            <h3 class="fw-bold mb-0 kpi-value">{{ number_format($metrics['paid_subs'] ?? 0) }}</h3>
+                                            <p class="kpi-note mb-0 mt-2">Users or companies that have paid for plans</p>
                                         </div>
                                     </div>
                                 </div>
@@ -1095,12 +1095,46 @@
                                             <div class="kpi-icon-shell">
                                                 <i class="fas fa-users" aria-hidden="true"></i>
                                             </div>
-                                            <div class="kpi-badge">Users</div>
+                                            <div class="kpi-badge">Ticket</div>
                                         </div>
                                         <div class="mt-3">
-                                            <h6 class="kpi-kicker mb-2">Total Users</h6>
-                                            <h3 class="fw-bold mb-0 kpi-value">{{ number_format($metrics['total_users']) }}</h3>
-                                            <p class="kpi-note mb-0 mt-2">Active Accounts</p>
+                                            <h6 class="kpi-kicker mb-2">Average Plan Sale</h6>
+                                            <h3 class="fw-bold mb-0 kpi-value">₦{{ number_format($metrics['avg_plan_sale'] ?? 0, 2) }}</h3>
+                                            <p class="kpi-note mb-0 mt-2">Average income per verified plan purchase</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mt-2">
+                            <div class="col-12 grid-margin stretch-card">
+                                <div class="card card-rounded shadow-sm border-0">
+                                    <div class="card-body p-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                                            <div>
+                                                <h5 class="mb-0 fw-bold text-dark">Business Item Sales Snapshot</h5>
+                                                <small class="text-muted">Secondary business-sales metrics kept separate from platform plan income</small>
+                                            </div>
+                                            <span class="live-badge-soft">Business Sales</span>
+                                        </div>
+                                        <div class="row g-2">
+                                            @foreach([
+                                                ['label' => 'Item Sales Revenue', 'value' => '₦' . number_format($metrics['item_sales_revenue'] ?? 0, 2), 'tone' => 'tone-cobalt'],
+                                                ['label' => 'Item Sales Today', 'value' => '₦' . number_format($metrics['item_sales_today_revenue'] ?? 0, 2), 'tone' => 'tone-emerald'],
+                                                ['label' => 'Item Orders', 'value' => number_format($metrics['item_sales_orders'] ?? 0), 'tone' => 'tone-amber'],
+                                                ['label' => 'Item Units Sold', 'value' => number_format($metrics['item_sales_units'] ?? 0), 'tone' => 'tone-rose'],
+                                            ] as $salesKpi)
+                                                <div class="col-sm-6 col-xl-3">
+                                                    <div class="kpi-compact w-100 {{ $salesKpi['tone'] }}">
+                                                        <div class="d-flex justify-content-between align-items-start">
+                                                            <div class="label">{{ $salesKpi['label'] }}</div>
+                                                            <span class="live-badge-soft">Live</span>
+                                                        </div>
+                                                        <div class="value">{{ $salesKpi['value'] }}</div>
+                                                    </div>
+                                                </div>
+                                            @endforeach
                                         </div>
                                     </div>
                                 </div>

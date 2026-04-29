@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use App\Support\SystemEventMailer;
+use App\Support\InventoryQuantity;
 
 class SuperAdminDashboardController extends Controller
 {
@@ -101,9 +102,32 @@ class SuperAdminDashboardController extends Controller
             $subscriptionRevenue = $paidSubscriptionsQuery
                 ? ((float) ((clone $paidSubscriptionsQuery)->sum('amount') ?? 0))
                 : 0.0;
+            $paidSubscriptionsCount = $paidSubscriptionsQuery
+                ? (int) ((clone $paidSubscriptionsQuery)->count() ?? 0)
+                : 0;
             $platformRevenue = !empty($activeBranch['id']) || !empty($activeBranch['name'])
                 ? $salesRevenue
                 : ($subscriptionRevenue > 0 ? $subscriptionRevenue : $salesRevenue);
+
+            $itemSalesTodayRevenue = 0.0;
+            $itemSalesOrders = 0;
+            $itemSalesUnits = 0.0;
+            if (Schema::hasTable('sales')) {
+                $itemSalesTodayRevenue = (float) ($salesBranchScope(DB::table('sales'))
+                    ->whereDate('created_at', today())
+                    ->sum('total') ?? 0);
+                $itemSalesOrders = (int) ($salesBranchScope(DB::table('sales'))
+                    ->count() ?? 0);
+            }
+            if (Schema::hasTable('sale_items') && Schema::hasTable('products') && Schema::hasTable('sales')) {
+                $itemSalesUnitsQuery = DB::table('sale_items')
+                    ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+                    ->join('products as sale_products', 'sale_items.product_id', '=', 'sale_products.id')
+                    ->selectRaw('COALESCE(SUM(' . InventoryQuantity::saleStockUnitsExpression('sale_items', 'sale_products') . '), 0) as total_units');
+
+                $salesBranchScope($itemSalesUnitsQuery, 'sales');
+                $itemSalesUnits = (float) ($itemSalesUnitsQuery->value('total_units') ?? 0);
+            }
 
             $activeSubs = Schema::hasTable('subscriptions')
                 ? Subscription::query()
@@ -166,11 +190,12 @@ class SuperAdminDashboardController extends Controller
                 'total_users'      => User::count(),
                 'verified_users'   => Schema::hasColumn('users', 'is_verified') ? User::where('is_verified', 1)->count() : 0,
                 'active_subs'      => $activeSubs > 0 ? $activeSubs : $activeCompanies,
-                'paid_subs'        => $paidSubscriptionsQuery ? (clone $paidSubscriptionsQuery)->count() : 0,
+                'paid_subs'        => $paidSubscriptionsCount,
                 'total_subs'       => Schema::hasTable('subscriptions')
                                       ? Subscription::count()
                                       : 0,
                 'platform_revenue' => $platformRevenue,
+                'owner_subscription_revenue' => $subscriptionRevenue,
                 'pending_setups'   => Schema::hasTable('subscriptions')
                                       ? Subscription::query()->whereIn(DB::raw("LOWER(COALESCE(status, ''))"), $pendingSubscriptionStatuses)->count()
                                       : 0,
@@ -190,6 +215,10 @@ class SuperAdminDashboardController extends Controller
                 'plan_sales_month' => $planSalesMonth,
                 'plan_sales_value_month' => $planSalesValueMonth,
                 'avg_plan_sale'    => $avgPlanSale,
+                'item_sales_revenue' => $salesRevenue,
+                'item_sales_today_revenue' => $itemSalesTodayRevenue,
+                'item_sales_orders' => $itemSalesOrders,
+                'item_sales_units' => $itemSalesUnits,
                 'expiring_soon_subs' => Schema::hasTable('subscriptions')
                                       ? Subscription::expiringSoon(7)->count()
                                       : 0,
@@ -542,11 +571,12 @@ class SuperAdminDashboardController extends Controller
             
             $emptyMetrics = [
                 'total_companies' => 0, 'total_tenants' => 0, 'active_subs' => 0, 
-                'platform_revenue' => 0, 'total_users' => 0, 'pending_setups' => 0, 
+                'platform_revenue' => 0, 'owner_subscription_revenue' => 0, 'total_users' => 0, 'pending_setups' => 0, 
                 'pending_managers' => 0, 'active_managers' => 0, 'total_stock_val' => 0,
                 'paid_subs' => 0, 'total_subs' => 0, 'verified_users' => 0, 'recent_signups' => 0,
                 'low_stock_items' => 0, 'plan_sales_today' => 0, 'plan_sales_month' => 0,
                 'plan_sales_value_month' => 0, 'avg_plan_sale' => 0,
+                'item_sales_revenue' => 0, 'item_sales_today_revenue' => 0, 'item_sales_orders' => 0, 'item_sales_units' => 0,
                 'expiring_soon_subs' => 0, 'expired_subs' => 0
             ];
 
