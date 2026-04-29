@@ -7,11 +7,11 @@
     $checkoutProfileName = old('customer_name', $subscription->user->name ?? auth()->user()->name);
     $checkoutProfileEmail = old('customer_email', $subscription->user->email ?? auth()->user()->email);
     $gatewayAvailability = $gatewayAvailability ?? [
-        'stripe' => true,
+        'stripe' => false,
         'paystack' => true,
-        'flutterwave' => true,
+        'flutterwave' => false,
     ];
-    $defaultGateway = $defaultGateway ?? 'paystack';
+    $defaultGateway = 'paystack';
     $hasGatewayIssue = (bool) ($gatewayConfigurationIssue ?? false);
 @endphp
 <style>
@@ -373,7 +373,7 @@
             @endif
 
             <h1>Payment Details</h1>
-            <p>Choose your preferred payment gateway. Paystack, Stripe, and Flutterwave remain available for test mode.</p>
+            <p>Complete payment securely with Paystack.</p>
 
             @if($hasGatewayIssue)
                 <div class="alert alert-warning py-2">
@@ -398,16 +398,8 @@
                         <label class="field-label">Payment Gateway</label>
                         <div class="gateway-grid">
                             <label class="gateway-option">
-                                <input type="radio" name="gateway_option" value="stripe" {{ ($defaultGateway === 'stripe' && $gatewayAvailability['stripe']) ? 'checked' : '' }} {{ $gatewayAvailability['stripe'] ? '' : 'disabled' }}>
-                                <span class="gateway-pill gateway-stripe">Stripe</span>
-                            </label>
-                            <label class="gateway-option">
                                 <input type="radio" name="gateway_option" value="paystack" {{ ($defaultGateway === 'paystack' && $gatewayAvailability['paystack']) ? 'checked' : '' }} {{ $gatewayAvailability['paystack'] ? '' : 'disabled' }}>
                                 <span class="gateway-pill gateway-paystack">Paystack</span>
-                            </label>
-                            <label class="gateway-option">
-                                <input type="radio" name="gateway_option" value="flutterwave" {{ ($defaultGateway === 'flutterwave' && $gatewayAvailability['flutterwave']) ? 'checked' : '' }} {{ $gatewayAvailability['flutterwave'] ? '' : 'disabled' }}>
-                                <span class="gateway-pill gateway-flutterwave">Flutterwave</span>
                             </label>
                         </div>
                     </div>
@@ -446,18 +438,6 @@
         const setGatewayUI = (gateway) => {
             if (gatewayInput) {
                 gatewayInput.value = gateway;
-            }
-
-            if (gateway === 'stripe') {
-                payNowBtn.innerHTML = `Continue to Stripe (${amountLabel})`;
-                gatewayHelpText.textContent = 'You will be redirected to Stripe secure checkout and returned automatically.';
-                return;
-            }
-
-            if (gateway === 'flutterwave') {
-                payNowBtn.innerHTML = `Continue to Flutterwave (${amountLabel})`;
-                gatewayHelpText.textContent = 'You will be redirected to Flutterwave secure checkout and returned automatically.';
-                return;
             }
 
             payNowBtn.innerHTML = `Continue to Paystack (${amountLabel})`;
