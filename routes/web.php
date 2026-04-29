@@ -256,7 +256,7 @@ Route::middleware(['auth'])->group(function () {
 // ============================================================
 // ALL DEPLOYMENT MANAGER ROUTES
 // ============================================================
-Route::middleware(['auth'])
+Route::middleware(['auth', 'manager.verified'])
     ->prefix('deployment')
     ->name('deployment.')
     ->group(function () {

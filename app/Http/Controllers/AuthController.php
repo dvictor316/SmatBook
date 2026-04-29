@@ -1134,8 +1134,12 @@ class AuthController extends Controller
         if (!$manager || $manager->status === 'pending_info') {
             return redirect()->route('manager.verification.form');
         }
-        
-        return redirect()->route('deployment.dashboard');
+
+        if (strtolower((string) $manager->status) === 'active') {
+            return redirect()->route('deployment.dashboard');
+        }
+
+        return redirect()->route('manager.pending.notice');
     }
 
     private function getTenantDetails()

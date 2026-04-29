@@ -147,9 +147,16 @@ class DeploymentManagerController extends Controller
         $user = Auth::user();
         $manager = DeploymentManager::where('user_id', $user->id)->first();
 
-        if (($manager && $manager->status === 'active') || $user->is_verified == 1) {
+        $status = strtolower((string) ($manager->status ?? 'pending_info'));
+
+        if ($status === 'active' || $user->is_verified == 1) {
             return redirect()->route('deployment.dashboard')
                 ->with('info', 'Your deployment workspace is already verified and active.');
+        }
+
+        if ($status === 'pending') {
+            return redirect()->route('manager.pending.notice')
+                ->with('info', 'Your profile has been submitted and is awaiting super admin approval.');
         }
 
         return view('deployment.verify-profile', compact('user', 'manager'));
@@ -201,28 +208,14 @@ class DeploymentManagerController extends Controller
             'address' => $normalizedPayload['address'],
             'id_type' => $normalizedPayload['id_type'],
             'id_number' => $normalizedPayload['id_number'],
-            'status' => 'active',
+            'status' => 'pending',
             'commission_rate' => self::COMMISSION_RATE,
         ];
 
-        if (Schema::hasColumn('deployment_managers', 'approved_at')) {
-            $updatePayload['approved_at'] = now();
-        }
-
         $manager->update($updatePayload);
 
-        $user = User::findOrFail($manager->user_id);
-        $user->update([
-            'is_verified' => 1,
-            'role' => 'deployment_manager',
-            'email_verified_at' => $user->email_verified_at ?? now(),
-        ]);
-
-        $this->ensureManagerHasWorkspace($user);
-        SystemEventMailer::notifyManagerApproved($user, Auth::user());
-
-        return redirect()->route('deployment.dashboard')
-            ->with('success', 'Profile verified and activated after thorough ID validation.');
+        return redirect()->route('manager.pending.notice')
+            ->with('success', 'Profile submitted successfully. Your deployment access will open after super admin approval.');
     }
 
     /**

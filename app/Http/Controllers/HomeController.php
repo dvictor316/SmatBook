@@ -208,28 +208,34 @@ class HomeController extends Controller
             'is_verified' => $user->is_verified,
         ]);
 
-        // No record, needs verification, or still pending initial info / pending review
-        if (!$manager || in_array($manager->status, ['pending_info', 'pending']) || !$user->is_verified) {
+        if (!$manager) {
+            Log::info('→ Redirecting to verification form');
+            return redirect()->route('manager.verification.form');
+        }
+
+        $status = strtolower((string) ($manager->status ?? 'pending_info'));
+
+        if ($status === 'pending_info') {
             Log::info('→ Redirecting to verification form');
             return redirect()->route('manager.verification.form');
         }
 
         // Suspended / Inactive / Rejected → log out
-        if (in_array($manager->status, ['suspended', 'inactive', 'rejected'])) {
-            Log::warning('Manager account restricted', ['status' => $manager->status]);
+        if (in_array($status, ['suspended', 'inactive', 'rejected'], true)) {
+            Log::warning('Manager account restricted', ['status' => $status]);
             Auth::logout();
             return redirect()->route('login')
-                ->with('error', 'Your account has been ' . $manager->status . '. Please contact support.');
+                ->with('error', 'Your account has been ' . $status . '. Please contact support.');
         }
 
         // Pending approval
-        if ($manager->status === 'pending') {
+        if ($status === 'pending' || !$user->is_verified) {
             Log::info('→ Manager pending approval');
             return redirect()->route('manager.pending.notice');
         }
 
         // Active
-        if ($manager->status === 'active') {
+        if ($status === 'active') {
             Log::info('→ Redirecting to DEPLOYMENT DASHBOARD');
             // Clear any tenant context that may have leaked from a previous client checkout
             session()->forget(['current_tenant_id', 'current_tenant_name']);
