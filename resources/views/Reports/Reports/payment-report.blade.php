@@ -308,7 +308,12 @@
                     'Accept': 'application/json',
                     'X-CSRF-TOKEN': token
                 },
-                body: JSON.stringify({ subject, body, recipient: recipient.trim() || null })
+                body: JSON.stringify({
+                    subject,
+                    body,
+                    recipient: recipient.trim() || null,
+                    report_html: window.captureReportEmailHtml ? window.captureReportEmailHtml() : ''
+                })
             })
             .then(res => res.json())
             .then(data => alert(data.message || 'Email request sent.'))

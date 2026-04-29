@@ -64,5 +64,12 @@
         <div class="summary-label">Report Summary</div>
         <div class="body">{{ $body }}</div>
     </div>
+
+    @if(!empty($reportHtml))
+        <div style="margin-top: 24px;">
+            <div class="summary-label">Full Report</div>
+            <div>{!! $reportHtml !!}</div>
+        </div>
+    @endif
 </body>
 </html>

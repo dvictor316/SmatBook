@@ -268,6 +268,33 @@ function reportSwitchBranch(branchId) {
 }
 
 (function () {
+    function captureReportEmailHtml() {
+        const selectors = [
+            '.purchase-report-shell',
+            '.customer-report-shell',
+            '.report-card',
+            '.report-shell',
+            '.report-container',
+            '.table-profit-loss',
+            '.page-wrapper .content',
+            '.content',
+            'main'
+        ];
+
+        const source = selectors
+            .map(selector => document.querySelector(selector))
+            .find(Boolean);
+
+        if (!source) return '';
+
+        const clone = source.cloneNode(true);
+        clone.querySelectorAll('script, style, .modal, .report-context-strip, .btn, button, form, nav, .pagination, .dataTables_length, .dataTables_filter').forEach(node => node.remove());
+
+        return clone.innerHTML.trim();
+    }
+
+    window.captureReportEmailHtml = captureReportEmailHtml;
+
     function initEmailReportModal() {
         const modal = document.getElementById('emailReportModal');
         if (!modal) return;
@@ -287,6 +314,7 @@ function reportSwitchBranch(branchId) {
             const recipient = recipientInput ? recipientInput.value.trim() : '';
             const subject = (document.getElementById('emailReportSubject')?.value || '').trim();
             const body = (document.getElementById('emailReportBody')?.value || '').trim();
+            const reportHtml = captureReportEmailHtml();
             const btn = this;
 
             if (!recipient) {
@@ -306,7 +334,7 @@ function reportSwitchBranch(branchId) {
                     'X-CSRF-TOKEN': '{{ csrf_token() }}',
                     'Accept': 'application/json',
                 },
-                body: JSON.stringify({ subject, body, recipient }),
+                body: JSON.stringify({ subject, body, recipient, report_html: reportHtml }),
             })
             .then(r => r.json())
             .then(data => {

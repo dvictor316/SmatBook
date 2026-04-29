@@ -2505,6 +2505,7 @@ public function destroy($id)
             'subject' => 'required|string|max:255',
             'body' => 'required|string',
             'recipient' => 'nullable|email',
+            'report_html' => 'nullable|string',
         ]);
 
         $recipient = $data['recipient']
@@ -2518,7 +2519,8 @@ public function destroy($id)
         try {
             [$attachmentContent, $attachmentName, $attachmentMime] = $this->buildReportEmailAttachment(
                 $data['subject'],
-                $data['body']
+                $data['body'],
+                $data['report_html'] ?? null
             );
 
             AppMailer::sendView('emails.system-event', [
@@ -2595,7 +2597,7 @@ public function destroy($id)
         return 'Email failed: ' . $message;
     }
 
-    private function buildReportEmailAttachment(string $subject, string $body): array
+    private function buildReportEmailAttachment(string $subject, string $body, ?string $reportHtml = null): array
     {
         $safeBaseName = Str::slug($subject !== '' ? $subject : 'report');
         if ($safeBaseName === '') {
@@ -2609,6 +2611,7 @@ public function destroy($id)
             $pdf = Pdf::loadView('emails.report-attachment', [
                 'subject' => $subject,
                 'body' => $body,
+                'reportHtml' => $this->sanitizeReportHtml($reportHtml),
                 'generatedAt' => $generatedAt,
                 'generatedBy' => $generatedBy,
             ]);
@@ -2637,6 +2640,20 @@ public function destroy($id)
                 'text/plain',
             ];
         }
+    }
+
+    private function sanitizeReportHtml(?string $html): string
+    {
+        if (!is_string($html) || trim($html) === '') {
+            return '';
+        }
+
+        $clean = preg_replace('/<script\b[^>]*>(.*?)<\/script>/is', '', $html) ?? '';
+        $clean = preg_replace('/<style\b[^>]*>(.*?)<\/style>/is', '', $clean) ?? $clean;
+        $clean = preg_replace('/ on[a-z]+="[^"]*"/i', '', $clean) ?? $clean;
+        $clean = preg_replace("/ on[a-z]+='[^']*'/i", '', $clean) ?? $clean;
+
+        return trim($clean);
     }
 
     /*
