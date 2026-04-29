@@ -155,6 +155,9 @@
                 <li class="menu-title"><span>Purchases &amp; Payables</span></li>
 
                 <li><a href="{{ route('purchases.index') }}"><i class="fe fe-shopping-bag"></i><span>Purchases</span></a></li>
+                @if(Route::has('purchases.create'))
+                    <li><a href="{{ route('purchases.create') }}"><i class="fe fe-file-text"></i><span>Bills</span></a></li>
+                @endif
                 <li><a href="{{ route('purchase-orders') }}"><i class="fe fe-file-text"></i><span>Purchase Orders</span></a></li>
 
                 <li class="submenu {{ Request::is('purchase-requisitions*') ? 'active subdrop' : '' }}">
@@ -551,6 +554,9 @@
                 <li class="menu-title"><span>Purchases</span></li>
 
                 <li><a href="{{ route('purchases.index') }}"><i class="fe fe-shopping-bag"></i><span>Purchases</span></a></li>
+                @if(Route::has('purchases.create'))
+                    <li><a href="{{ route('purchases.create') }}"><i class="fe fe-file-text"></i><span>Bills</span></a></li>
+                @endif
                 <li><a href="{{ route('purchase-orders') }}"><i class="fe fe-file-text"></i><span>Purchase Orders</span></a></li>
 
                 <li class="menu-title"><span>Finance</span></li>
@@ -672,6 +678,9 @@
                 <li class="menu-title"><span>Purchases</span></li>
 
                 <li><a href="{{ route('purchases.index') }}"><i class="fe fe-shopping-bag"></i><span>Purchases</span></a></li>
+                @if(Route::has('purchases.create'))
+                    <li><a href="{{ route('purchases.create') }}"><i class="fe fe-file-text"></i><span>Bills</span></a></li>
+                @endif
                 <li><a href="{{ route('purchase-orders') }}"><i class="fe fe-file-text"></i><span>Purchase Orders</span></a></li>
 
                 <li class="menu-title"><span>Finance</span></li>

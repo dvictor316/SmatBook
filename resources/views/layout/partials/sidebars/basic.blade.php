@@ -63,18 +63,17 @@
     @endif
 
     @if(Route::has('purchases.index'))
-    <li class="submenu {{ Request::is('purchases*', 'purchase-*', 'add-purchases*') ? 'active subdrop' : '' }}">
-        <a href="#"><i class="fe fe-shopping-bag"></i><span>Purchases</span><span class="menu-arrow"></span></a>
-        <ul>
-            <li><a href="{{ route('purchases.index') }}">All Purchases</a></li>
-            @if(Route::has('purchases.create'))
-                <li><a href="{{ route('purchases.create') }}">Add Purchase</a></li>
-            @endif
-            @if(Route::has('purchase-transaction'))
-                <li><a href="{{ route('purchase-transaction') }}">Purchase Ledger</a></li>
-            @endif
-        </ul>
+    <li class="{{ request()->routeIs('purchases.index') ? 'active' : '' }}">
+        <a href="{{ route('purchases.index') }}"><i class="fe fe-shopping-bag"></i><span>Purchases</span></a>
     </li>
+    @if(Route::has('purchases.create'))
+        <li class="{{ request()->routeIs('purchases.create') ? 'active' : '' }}">
+            <a href="{{ route('purchases.create') }}"><i class="fe fe-file-text"></i><span>Bills</span></a>
+        </li>
+    @endif
+    @if(Route::has('purchase-transaction'))
+        <li><a href="{{ route('purchase-transaction') }}"><i class="fe fe-book-open"></i><span>Purchase Ledger</span></a></li>
+    @endif
     @endif
 
     <li class="menu-title"><span>Sales</span></li>

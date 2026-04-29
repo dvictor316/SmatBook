@@ -119,13 +119,15 @@
 
                 <li class="menu-title"><span>Purchases &amp; Payables</span></li>
 
-                <li class="submenu {{ Request::is('purchases*') ? 'active subdrop' : '' }}">
-                    <a href="#"><i class="fe fe-shopping-bag"></i><span>Purchases</span><span class="menu-arrow"></span></a>
-                    <ul>
-                        <li><a href="{{ route('purchases.index') }}">Purchase List</a></li>
-                        <li><a href="{{ route('purchases.create') }}">New Purchase</a></li>
-                    </ul>
+                <li class="{{ request()->routeIs('purchases.index') ? 'active' : '' }}">
+                    <a href="{{ route('purchases.index') }}"><i class="fe fe-shopping-bag"></i><span>Purchases</span></a>
                 </li>
+
+                @if(Route::has('purchases.create'))
+                    <li class="{{ request()->routeIs('purchases.create') ? 'active' : '' }}">
+                        <a href="{{ route('purchases.create') }}"><i class="fe fe-file-text"></i><span>Bills</span></a>
+                    </li>
+                @endif
 
                 <li class="submenu {{ Request::is('purchase-orders*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-file-text"></i><span>Purchase Orders</span><span class="menu-arrow"></span></a>
