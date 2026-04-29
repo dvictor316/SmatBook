@@ -383,17 +383,21 @@ class SaleController extends Controller
             ->leftJoin('categories', 'products.category_id', '=', 'categories.id');
 
         if (Schema::hasTable('product_branch_stocks') && ($selectedBranchId !== '' || $selectedBranchName !== '')) {
-            $query->leftJoin('product_branch_stocks', function ($join) use ($selectedBranchId, $selectedBranchName) {
-                $join->on('product_branch_stocks.product_id', '=', 'products.id');
+            $branchStockSub = DB::table('product_branch_stocks')
+                ->selectRaw('product_id, MAX(COALESCE(quantity, 0)) as branch_quantity')
+                ->groupBy('product_id');
 
-                if ($selectedBranchId !== '' && Schema::hasColumn('product_branch_stocks', 'branch_id')) {
-                    $join->where('product_branch_stocks.branch_id', $selectedBranchId);
-                } elseif ($selectedBranchName !== '' && Schema::hasColumn('product_branch_stocks', 'branch_name')) {
-                    $join->where('product_branch_stocks.branch_name', $selectedBranchName);
-                }
+            if ($selectedBranchId !== '' && Schema::hasColumn('product_branch_stocks', 'branch_id')) {
+                $branchStockSub->where('branch_id', $selectedBranchId);
+            } elseif ($selectedBranchName !== '' && Schema::hasColumn('product_branch_stocks', 'branch_name')) {
+                $branchStockSub->where('branch_name', $selectedBranchName);
+            }
+
+            $query->leftJoinSub($branchStockSub, 'branch_stock', function ($join) {
+                $join->on('branch_stock.product_id', '=', 'products.id');
             });
 
-            $branchStockValueExpression = "COALESCE(product_branch_stocks.quantity, {$baseStockExpression}, 0)";
+            $branchStockValueExpression = "COALESCE(branch_stock.branch_quantity, {$baseStockExpression}, 0)";
             $branchStockSelect = "CASE WHEN {$branchStockValueExpression} < 0 THEN 0 ELSE {$branchStockValueExpression} END as instock_qty";
         }
 
@@ -409,17 +413,7 @@ class SaleController extends Controller
                 {$branchStockSelect},
                 COALESCE(sales_report.total_sold_qty, 0) as total_sold_qty,
                 COALESCE(sales_report.total_sold_amount, 0) as total_sold_amount
-            ")
-            ->groupBy(
-                'products.id',
-                'products.name',
-                'products.sku',
-                'categories.name',
-                DB::raw($priceExpression),
-                DB::raw($branchStockValueExpression),
-                'sales_report.total_sold_qty',
-                'sales_report.total_sold_amount'
-            );
+            ");
         $this->applyTenantScope($query, 'products');
 
         if ($search !== '') {
