@@ -13,6 +13,32 @@ use App\Exports\TrialBalanceExport;
 
 class TrialBalanceController extends Controller
 {
+    private function addOrAccumulateVirtualEntry(&$accounts, array $payload): void
+    {
+        $code = (string) ($payload['code'] ?? '');
+        $name = (string) ($payload['name'] ?? '');
+
+        $existing = $accounts->first(function ($account) use ($code, $name) {
+            return (string) ($account->code ?? '') === $code
+                || strtolower(trim((string) ($account->name ?? ''))) === strtolower(trim($name));
+        });
+
+        if ($existing) {
+            $existing->debit_balance = (float) ($existing->debit_balance ?? 0) + (float) ($payload['debit_balance'] ?? 0);
+            $existing->credit_balance = (float) ($existing->credit_balance ?? 0) + (float) ($payload['credit_balance'] ?? 0);
+            $existing->has_activity = true;
+            return;
+        }
+
+        $accounts->push((object) array_merge([
+            'id' => null,
+            'type' => 'Equity',
+            'debit_balance' => 0.0,
+            'credit_balance' => 0.0,
+            'has_activity' => true,
+        ], $payload));
+    }
+
     private function calculateSideBalances(float $amount, bool $isDebitNormal): array
     {
         if ($isDebitNormal) {
@@ -265,14 +291,12 @@ class TrialBalanceController extends Controller
         $openingDifference = round($openingTotals['debit'] - $openingTotals['credit'], 2);
 
         if (abs($openingDifference) >= 0.01) {
-            $accounts->push((object) [
-                'id' => null,
+            $this->addOrAccumulateVirtualEntry($accounts, [
                 'code' => 'SYS-OPENING-EQUITY',
                 'name' => 'Opening Balance Equity',
                 'type' => 'Equity',
                 'debit_balance' => $openingDifference < 0 ? abs($openingDifference) : 0.0,
                 'credit_balance' => $openingDifference > 0 ? abs($openingDifference) : 0.0,
-                'has_activity' => true,
             ]);
         }
 
@@ -297,14 +321,12 @@ class TrialBalanceController extends Controller
                 ]);
             }
             // Balancing credit entry (Opening Balance Equity - Customers)
-            $accounts->push((object) [
-                'id'             => null,
-                'code'           => 'SYS-CUST-OBE',
-                'name'           => 'Opening Balance Equity (Customers)',
+            $this->addOrAccumulateVirtualEntry($accounts, [
+                'code'           => 'SYS-OPENING-EQUITY',
+                'name'           => 'Opening Balance Equity',
                 'type'           => 'Equity',
                 'debit_balance'  => 0.0,
                 'credit_balance' => $customerOBUnposted,
-                'has_activity'   => true,
             ]);
         }
 
@@ -327,14 +349,12 @@ class TrialBalanceController extends Controller
                 ]);
             }
 
-            $accounts->push((object) [
-                'id'             => null,
-                'code'           => 'SYS-SUPP-OBE',
-                'name'           => 'Opening Balance Equity (Suppliers)',
+            $this->addOrAccumulateVirtualEntry($accounts, [
+                'code'           => 'SYS-OPENING-EQUITY',
+                'name'           => 'Opening Balance Equity',
                 'type'           => 'Equity',
                 'debit_balance'  => $supplierOBUnposted,
                 'credit_balance' => 0.0,
-                'has_activity'   => true,
             ]);
         }
 
@@ -358,14 +378,12 @@ class TrialBalanceController extends Controller
                 ]);
             }
 
-            $accounts->push((object) [
-                'id'             => null,
-                'code'           => 'SYS-INV-OBE',
-                'name'           => 'Opening Balance Equity (Inventory)',
+            $this->addOrAccumulateVirtualEntry($accounts, [
+                'code'           => 'SYS-OPENING-EQUITY',
+                'name'           => 'Opening Balance Equity',
                 'type'           => 'Equity',
                 'debit_balance'  => 0.0,
                 'credit_balance' => $inventoryBridge,
-                'has_activity'   => true,
             ]);
         }
 
