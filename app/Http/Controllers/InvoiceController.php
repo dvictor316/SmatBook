@@ -27,9 +27,57 @@ class InvoiceController extends Controller
     ) {
     }
 
-    private function decrementSellableStock(Product $product, float $quantity): void
+    private function syncGlobalStockFromBranches(Product $product): void
+    {
+        if (!Schema::hasTable('product_branch_stocks')) {
+            return;
+        }
+
+        $branchStockTotal = (float) $product->branchStocks()->sum('quantity');
+
+        $updates = [
+            'stock' => max(0, $branchStockTotal),
+            'updated_at' => now(),
+        ];
+
+        if (Schema::hasColumn('products', 'stock_quantity')) {
+            $updates['stock_quantity'] = max(0, $branchStockTotal);
+        }
+
+        DB::table('products')
+            ->where('id', $product->id)
+            ->update($updates);
+    }
+
+    private function decrementSellableStock(Product $product, float $quantity, ?array $branch = null): void
     {
         if ($quantity <= 0) {
+            return;
+        }
+
+        $branch = $branch ?: $this->getActiveBranchContext();
+        $hasBranchContext = !empty($branch['id']) && Schema::hasTable('product_branch_stocks');
+
+        if ($hasBranchContext) {
+            $branchAvailable = (float) $this->branchInventory->getAvailableStock($product, $branch);
+
+            if ($branchAvailable < $quantity) {
+                throw new \RuntimeException("Insufficient stock for {$product->name}. Negative stock is not allowed.");
+            }
+
+            $updates = [
+                'stock' => DB::raw('GREATEST(COALESCE(stock, 0) - ' . $quantity . ', 0)'),
+                'updated_at' => now(),
+            ];
+
+            if (Schema::hasColumn('products', 'stock_quantity')) {
+                $updates['stock_quantity'] = DB::raw('GREATEST(COALESCE(stock_quantity, 0) - ' . $quantity . ', 0)');
+            }
+
+            DB::table('products')
+                ->where('id', $product->id)
+                ->update($updates);
+
             return;
         }
 
@@ -52,7 +100,7 @@ class InvoiceController extends Controller
         }
     }
 
-    private function incrementSellableStock(Product $product, float $quantity): void
+    private function incrementSellableStock(Product $product, float $quantity, ?array $branch = null): void
     {
         if ($quantity <= 0) {
             return;
@@ -70,6 +118,11 @@ class InvoiceController extends Controller
         DB::table('products')
             ->where('id', $product->id)
             ->update($updates);
+
+        $branch = $branch ?: $this->getActiveBranchContext();
+        if (!empty($branch['id']) && Schema::hasTable('product_branch_stocks')) {
+            $this->syncGlobalStockFromBranches($product->fresh());
+        }
     }
 
     private function ignoredAppliedPaymentStatuses(): array
@@ -420,14 +473,20 @@ class InvoiceController extends Controller
                 }
 
                 $requestedQty = max(0, (float) ($item['qty'] ?? 0));
+                $requestedStockUnits = InventoryQuantity::resolveSaleStockUnits(
+                    $product,
+                    $requestedQty,
+                    $item['unit_type'] ?? $item['unitType'] ?? null,
+                    isset($item['stock_units']) ? (float) $item['stock_units'] : (isset($item['stockUnits']) ? (float) $item['stockUnits'] : null)
+                );
                 $availableStock = (float) $this->branchInventory->getAvailableStock($product, $activeBranch);
 
                 if ($availableStock <= 0) {
                     throw new \Exception("{$product->name} is out of stock and cannot be invoiced.");
                 }
 
-                if ($requestedQty > $availableStock) {
-                    throw new \Exception("Insufficient stock for {$product->name}. Available: {$availableStock}, requested: {$requestedQty}.");
+                if ($requestedStockUnits > $availableStock) {
+                    throw new \Exception("Insufficient stock for {$product->name}. Available: {$availableStock}, requested: {$requestedStockUnits}.");
                 }
             }
 
@@ -551,7 +610,7 @@ class InvoiceController extends Controller
                 $sale->items()->create($this->onlyExistingColumns('sale_items', $saleItemPayload));
 
                 if ($product && $stockUnits > 0) {
-                    $this->decrementSellableStock($product, $stockUnits);
+                    $this->decrementSellableStock($product, $stockUnits, $activeBranch);
 
                     $this->branchInventory->adjustBranchStock(
                         $product,
@@ -559,6 +618,7 @@ class InvoiceController extends Controller
                         $activeBranch,
                         $companyId > 0 ? $companyId : (int) ($product->company_id ?? 0)
                     );
+                    $this->syncGlobalStockFromBranches($product->fresh());
                 }
             }
 
@@ -771,13 +831,14 @@ class InvoiceController extends Controller
                 }
 
                 if ($existingStockUnits > 0) {
-                    $this->incrementSellableStock($product, $existingStockUnits);
+                    $this->incrementSellableStock($product, $existingStockUnits, $activeBranch);
                     $this->branchInventory->adjustBranchStock(
                         $product,
                         $existingStockUnits,
                         $activeBranch,
                         $companyId > 0 ? $companyId : (int) ($product->company_id ?? 0)
                     );
+                    $this->syncGlobalStockFromBranches($product->fresh());
                 }
             }
 
@@ -813,14 +874,20 @@ class InvoiceController extends Controller
                 }
 
                 $requestedQty = max(0, (float) ($item['qty'] ?? 0));
+                $requestedStockUnits = InventoryQuantity::resolveSaleStockUnits(
+                    $product,
+                    $requestedQty,
+                    $item['unit_type'] ?? $item['unitType'] ?? null,
+                    isset($item['stock_units']) ? (float) $item['stock_units'] : (isset($item['stockUnits']) ? (float) $item['stockUnits'] : null)
+                );
                 $availableStock = (float) $this->branchInventory->getAvailableStock($product, $activeBranch);
 
                 if ($availableStock <= 0) {
                     throw new \Exception("{$product->name} is out of stock and cannot be invoiced.");
                 }
 
-                if ($requestedQty > $availableStock) {
-                    throw new \Exception("Insufficient stock for {$product->name}. Available: {$availableStock}, requested: {$requestedQty}.");
+                if ($requestedStockUnits > $availableStock) {
+                    throw new \Exception("Insufficient stock for {$product->name}. Available: {$availableStock}, requested: {$requestedStockUnits}.");
                 }
             }
 
@@ -938,13 +1005,14 @@ class InvoiceController extends Controller
                 $sale->items()->create($this->onlyExistingColumns('sale_items', $saleItemPayload));
 
                 if ($product && $stockUnits > 0) {
-                    $this->decrementSellableStock($product, $stockUnits);
+                    $this->decrementSellableStock($product, $stockUnits, $activeBranch);
                     $this->branchInventory->adjustBranchStock(
                         $product,
                         -$stockUnits,
                         $activeBranch,
                         $companyId > 0 ? $companyId : (int) ($product->company_id ?? 0)
                     );
+                    $this->syncGlobalStockFromBranches($product->fresh());
                 }
             }
 
