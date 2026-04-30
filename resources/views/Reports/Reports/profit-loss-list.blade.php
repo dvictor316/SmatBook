@@ -285,7 +285,7 @@
                     <div class="pl-date">
                         {{ request('start_date') || request('end_date')
                             ? 'For the period ' . (request('start_date') ? \Carbon\Carbon::parse(request('start_date'))->format('d M Y') : 'Start') . ' to ' . (request('end_date') ? \Carbon\Carbon::parse(request('end_date'))->format('d M Y') : 'Date')
-                            : 'For the current reporting window' }}
+                            : 'As at ' . \Carbon\Carbon::parse($reportDate)->format('d M Y') }}
                     </div>
                     @if($activeBranchName !== '')
                         <div class="pl-branch">Branch: {{ $activeBranchName }}</div>
@@ -338,7 +338,7 @@
                 </table>
 
                 <div class="pl-note">
-                    Revenue is shown separately from purchase cost and operating expenses so the final net result reads like the balance sheet report instead of a dense card dashboard.
+                    Revenue, purchase cost and operating expenses are laid out in statement form to match the balance sheet reading pattern.
                 </div>
 
                 <div class="pl-breakdown">

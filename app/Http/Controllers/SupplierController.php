@@ -766,6 +766,7 @@ class SupplierController extends Controller
                     $purchase->save();
 
                     if (Schema::hasTable('supplier_payments')) {
+                        $sourceBalanceBefore = $this->resolveSourceBalance($bank, $account);
                         $paymentPayload = [
                             'supplier_id' => $supplier->id,
                             'purchase_id' => $purchase->id,
@@ -785,6 +786,12 @@ class SupplierController extends Controller
 
                         if (Schema::hasColumn('supplier_payments', 'account_id')) {
                             $paymentPayload['account_id'] = $account?->id;
+                        }
+                        if (Schema::hasColumn('supplier_payments', 'source_balance_before')) {
+                            $paymentPayload['source_balance_before'] = $sourceBalanceBefore;
+                        }
+                        if (Schema::hasColumn('supplier_payments', 'source_balance_after')) {
+                            $paymentPayload['source_balance_after'] = max(0, $sourceBalanceBefore - $amount);
                         }
 
                         SupplierPayment::create($paymentPayload);
@@ -817,6 +824,7 @@ class SupplierController extends Controller
                         $supplier->save();
 
                         if (Schema::hasTable('supplier_payments')) {
+                            $sourceBalanceBefore = $this->resolveSourceBalance($bank, $account);
                             $paymentPayload = [
                                 'supplier_id' => $supplier->id,
                                 'purchase_id' => null,
@@ -836,6 +844,12 @@ class SupplierController extends Controller
 
                             if (Schema::hasColumn('supplier_payments', 'account_id')) {
                                 $paymentPayload['account_id'] = $account?->id;
+                            }
+                            if (Schema::hasColumn('supplier_payments', 'source_balance_before')) {
+                                $paymentPayload['source_balance_before'] = $sourceBalanceBefore;
+                            }
+                            if (Schema::hasColumn('supplier_payments', 'source_balance_after')) {
+                                $paymentPayload['source_balance_after'] = max(0, $sourceBalanceBefore - $amount);
                             }
 
                             SupplierPayment::create($paymentPayload);

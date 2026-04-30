@@ -20,6 +20,8 @@ class SupplierPayment extends Model
         'branch_name',
         'bank_id',
         'account_id',
+        'source_balance_before',
+        'source_balance_after',
         'payment_group',
         'reference',
         'amount',
@@ -31,6 +33,8 @@ class SupplierPayment extends Model
 
     protected $casts = [
         'amount' => 'decimal:2',
+        'source_balance_before' => 'decimal:2',
+        'source_balance_after' => 'decimal:2',
         'payment_date' => 'date',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',

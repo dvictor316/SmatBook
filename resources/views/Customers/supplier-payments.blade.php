@@ -248,6 +248,7 @@
                                 <th>Bank / Account</th>
                                 <th>Method</th>
                                 <th class="text-end">Amount</th>
+                                <th class="text-end">Balance After</th>
                                 <th>Note</th>
                             </tr>
                         </thead>
@@ -260,11 +261,12 @@
                                     <td>{{ $payment->bank?->name ?: ($payment->account?->name ?: 'Not specified') }}</td>
                                     <td>{{ $payment->method ?: '-' }}</td>
                                     <td class="text-end fw-semibold">{{ \App\Support\GeoCurrency::format((float) $payment->amount, 'NGN', $currencyCode, $currencyLocale) }}</td>
+                                    <td class="text-end">{{ $payment->source_balance_after !== null ? \App\Support\GeoCurrency::format((float) $payment->source_balance_after, 'NGN', $currencyCode, $currencyLocale) : '-' }}</td>
                                     <td>{{ $payment->note ?: '-' }}</td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="text-center text-muted py-4">No supplier payment history recorded yet.</td>
+                                    <td colspan="8" class="text-center text-muted py-4">No supplier payment history recorded yet.</td>
                                 </tr>
                             @endforelse
                         </tbody>
