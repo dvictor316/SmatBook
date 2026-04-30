@@ -40,6 +40,11 @@ class SuperAdminDashboardController extends Controller
         return $query;
     }
 
+    private function platformSubscriptionsQuery()
+    {
+        return Subscription::withoutGlobalScope('tenant');
+    }
+
     public function index()
     {
         $user = Auth::user();
@@ -50,7 +55,7 @@ class SuperAdminDashboardController extends Controller
         if (method_exists(Subscription::class, 'expireDueSubscriptions')) {
             Subscription::expireDueSubscriptions();
         } else {
-            Subscription::query()
+            $this->platformSubscriptionsQuery()
                 ->whereRaw("LOWER(COALESCE(status, '')) IN ('active','trial')")
                 ->whereNotNull('end_date')
                 ->whereDate('end_date', '<', now()->toDateString())
@@ -87,7 +92,7 @@ class SuperAdminDashboardController extends Controller
             $activeCompanyStatuses = ['active', 'trial', 'enabled'];
 
             $paidSubscriptionsQuery = Schema::hasTable('subscriptions')
-                ? Subscription::query()->where(function ($query) use ($paidPaymentStatuses) {
+                ? $this->platformSubscriptionsQuery()->where(function ($query) use ($paidPaymentStatuses) {
                     $query->whereIn(DB::raw("LOWER(COALESCE(payment_status, ''))"), $paidPaymentStatuses);
 
                     if (Schema::hasColumn('subscriptions', 'paid_at')) {
@@ -144,7 +149,7 @@ class SuperAdminDashboardController extends Controller
             }
 
             $activeSubs = Schema::hasTable('subscriptions')
-                ? Subscription::query()
+                ? $this->platformSubscriptionsQuery()
                     ->where(function ($query) use ($activeSubscriptionStatuses, $paidPaymentStatuses) {
                         $query->whereIn(DB::raw("LOWER(COALESCE(status, ''))"), $activeSubscriptionStatuses)
                             ->orWhereIn(DB::raw("LOWER(COALESCE(payment_status, ''))"), array_merge($paidPaymentStatuses, ['free']));
@@ -265,14 +270,14 @@ class SuperAdminDashboardController extends Controller
                 'direct_paid_subs' => $directPaidSubs,
                 'deployment_paid_subs' => $deploymentPaidSubs,
                 'total_subs'       => Schema::hasTable('subscriptions')
-                                      ? Subscription::count()
+                                      ? $this->platformSubscriptionsQuery()->count()
                                       : 0,
                 'platform_revenue' => $platformRevenue,
                 'owner_subscription_revenue' => $subscriptionRevenue,
                 'direct_subscription_revenue' => $directSubscriptionRevenue,
                 'deployment_subscription_revenue' => $deploymentSubscriptionRevenue,
                 'pending_setups'   => Schema::hasTable('subscriptions')
-                                      ? Subscription::query()->whereIn(DB::raw("LOWER(COALESCE(status, ''))"), $pendingSubscriptionStatuses)->count()
+                                      ? $this->platformSubscriptionsQuery()->whereIn(DB::raw("LOWER(COALESCE(status, ''))"), $pendingSubscriptionStatuses)->count()
                                       : 0,
                 'pending_managers' => Schema::hasTable('deployment_managers') 
                                       ? DB::table('deployment_managers')->whereIn('status', ['pending', 'pending_info'])->count() 
@@ -297,10 +302,10 @@ class SuperAdminDashboardController extends Controller
                 'item_sales_orders' => $itemSalesOrders,
                 'item_sales_units' => $itemSalesUnits,
                 'expiring_soon_subs' => Schema::hasTable('subscriptions')
-                                      ? Subscription::expiringSoon(7)->count()
+                                      ? $this->platformSubscriptionsQuery()->expiringSoon(7)->count()
                                       : 0,
                 'expired_subs'       => Schema::hasTable('subscriptions')
-                                      ? Subscription::whereRaw("LOWER(COALESCE(status, '')) = 'expired'")->count()
+                                      ? $this->platformSubscriptionsQuery()->whereRaw("LOWER(COALESCE(status, '')) = 'expired'")->count()
                                       : 0,
             ];
 
@@ -1062,7 +1067,7 @@ public function pendingManagers()
 
     public function transferUsers(Request $request)
     {
-        $query = Subscription::query()
+        $query = $this->platformSubscriptionsQuery()
             ->leftJoin('users', 'subscriptions.user_id', '=', 'users.id')
             ->leftJoin('companies', 'subscriptions.company_id', '=', 'companies.id')
             ->select(
@@ -1284,7 +1289,7 @@ public function pendingManagers()
 
         try {
             $data = match ($type) {
-                'revenue' => Subscription::where('payment_status', 'paid')->with('company')->get()->map(fn($s) => [
+                'revenue' => $this->platformSubscriptionsQuery()->where('payment_status', 'paid')->with('company')->get()->map(fn($s) => [
                     'ID' => $s->id,
                     'Company' => $s->company->name ?? $s->company->company_name ?? 'N/A',
                     'Amount' => $s->amount,
