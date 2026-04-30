@@ -9,6 +9,7 @@ use App\Models\Customer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class PriceListController extends Controller
 {
@@ -89,30 +90,66 @@ class PriceListController extends Controller
 
         $branch = $this->getActiveBranchContext();
         DB::transaction(function () use ($data, $items, $companyId, $branch) {
-            $priceList = PriceList::create([
-                'company_id'     => $companyId,
-                'branch_id'      => $branch['id'],
-                'branch_name'    => $branch['name'],
-                'name'           => $data['name'],
-                'currency'       => $data['currency'],
-                'discount_type'  => $data['discount_type'] ?? null,
-                'discount_value' => $data['discount_value'] ?? 0,
-                'valid_from'     => $data['valid_from'] ?? null,
-                'valid_to'       => $data['valid_to'] ?? null,
-                'is_default'     => (bool) ($data['is_default'] ?? false),
-                'is_active'      => (bool) ($data['is_active'] ?? true),
-                'notes'          => $data['notes'] ?? null,
-                'created_by'     => Auth::id(),
-            ]);
+            $priceListPayload = [
+                'name'       => $data['name'],
+                'currency'   => $data['currency'],
+                'valid_from' => $data['valid_from'] ?? null,
+                'valid_to'   => $data['valid_to'] ?? null,
+                'is_active'  => (bool) ($data['is_active'] ?? true),
+                'created_by' => Auth::id(),
+            ];
+
+            if (Schema::hasColumn('price_lists', 'company_id')) {
+                $priceListPayload['company_id'] = $companyId;
+            }
+            if (Schema::hasColumn('price_lists', 'branch_id')) {
+                $priceListPayload['branch_id'] = $branch['id'];
+            }
+            if (Schema::hasColumn('price_lists', 'branch_name')) {
+                $priceListPayload['branch_name'] = $branch['name'];
+            }
+            if (Schema::hasColumn('price_lists', 'discount_type')) {
+                $priceListPayload['discount_type'] = $data['discount_type'] ?? null;
+            }
+            if (Schema::hasColumn('price_lists', 'discount_value')) {
+                $priceListPayload['discount_value'] = $data['discount_value'] ?? 0;
+            }
+            if (Schema::hasColumn('price_lists', 'type')) {
+                $priceListPayload['type'] = ($data['discount_type'] ?? null) === 'fixed' ? 'fixed' : 'discount';
+            }
+            if (Schema::hasColumn('price_lists', 'adjustment_value')) {
+                $priceListPayload['adjustment_value'] = $data['discount_value'] ?? 0;
+            }
+            if (Schema::hasColumn('price_lists', 'is_default')) {
+                $priceListPayload['is_default'] = (bool) ($data['is_default'] ?? false);
+            }
+            if (Schema::hasColumn('price_lists', 'notes')) {
+                $priceListPayload['notes'] = $data['notes'] ?? null;
+            }
+            if (Schema::hasColumn('price_lists', 'description')) {
+                $priceListPayload['description'] = $data['notes'] ?? null;
+            }
+
+            $priceList = PriceList::create($priceListPayload);
 
             if ($items->isNotEmpty()) {
                 foreach ($items as $item) {
-                    $priceList->items()->create([
+                    $itemPayload = [
                         'product_id'   => $item['product_id'],
-                        'price'        => $item['price'],
                         'min_quantity' => $item['min_quantity'] ?? 1,
-                        'currency'     => $data['currency'],
-                    ]);
+                    ];
+
+                    if (Schema::hasColumn('price_list_items', 'price')) {
+                        $itemPayload['price'] = $item['price'];
+                    }
+                    if (Schema::hasColumn('price_list_items', 'unit_price')) {
+                        $itemPayload['unit_price'] = $item['price'];
+                    }
+                    if (Schema::hasColumn('price_list_items', 'currency')) {
+                        $itemPayload['currency'] = $data['currency'];
+                    }
+
+                    $priceList->items()->create($itemPayload);
                 }
             }
         });

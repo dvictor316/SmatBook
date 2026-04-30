@@ -12,9 +12,10 @@ class PriceList extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'company_id', 'branch_id', 'name', 'currency', 'discount_type',
-        'discount_value', 'is_default', 'valid_from', 'valid_to',
-        'applies_to', 'is_active', 'notes', 'created_by',
+        'company_id', 'branch_id', 'branch_name', 'name', 'code', 'currency',
+        'discount_type', 'discount_value', 'type', 'adjustment_value',
+        'is_default', 'valid_from', 'valid_to', 'applies_to', 'is_active',
+        'notes', 'description', 'created_by',
     ];
 
     protected $casts = [
@@ -44,8 +45,8 @@ class PriceListItem extends Model
     protected $table = 'price_list_items';
 
     protected $fillable = [
-        'price_list_id', 'product_id', 'price', 'min_quantity', 'max_quantity',
-        'currency', 'notes',
+        'price_list_id', 'product_id', 'price', 'unit_price', 'min_quantity',
+        'max_quantity', 'currency', 'notes',
     ];
 
     protected $casts = [
