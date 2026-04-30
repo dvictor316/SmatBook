@@ -329,6 +329,16 @@ class LedgerService
                     $method = ($branchId !== '' && Schema::hasColumn('supplier_payments', 'branch_id')) ? 'orWhere' : 'where';
                     $sub->{$method}('branch_name', $branchName);
                 }
+
+                // Include older supplier payment rows that were saved before
+                // branch metadata was populated correctly. They will be reposted
+                // using the purchase/payment branch context below.
+                if (Schema::hasColumn('supplier_payments', 'branch_id')) {
+                    $sub->orWhereNull('branch_id')->orWhere('branch_id', '');
+                }
+                if (Schema::hasColumn('supplier_payments', 'branch_name')) {
+                    $sub->orWhereNull('branch_name')->orWhere('branch_name', '');
+                }
             });
         }
 
