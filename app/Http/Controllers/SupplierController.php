@@ -813,7 +813,10 @@ class SupplierController extends Controller
                         $request->input('method') ?: ($bank?->name ?: ($account?->name ?: 'Bank Transfer')),
                         $paymentGroup,
                         $account?->id,
-                        $paymentDate
+                        $paymentDate,
+                        auth()->id(),
+                        $purchase->branch_id ?? $activeBranch['id'],
+                        $purchase->branch_name ?? $activeBranch['name']
                     );
                 }
 

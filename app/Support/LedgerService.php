@@ -201,7 +201,10 @@ class LedgerService
         ?string $paymentMethod = null,
         ?string $reference = null,
         ?int $paymentAccountId = null,
-        ?string $paymentDate = null
+        ?string $paymentDate = null,
+        ?int $userId = null,
+        ?string $branchId = null,
+        ?string $branchName = null
     ): void {
         if (!self::isReady() || $amount <= 0) {
             return;
@@ -226,9 +229,9 @@ class LedgerService
 
         $ref = $reference ?: ($purchase->purchase_no ?: ('PUR-' . $purchase->id)) . '-PAY';
         $date = self::resolveDate($paymentDate ?? $purchase->paid_at ?? $purchase->updated_at ?? now());
-        $userId = auth()->id();
-        $branchId = $purchase->branch_id ?? null;
-        $branchName = $purchase->branch_name ?? $purchase->branch_label ?? null;
+        $userId = $userId ?? auth()->id();
+        $branchId = $branchId ?? $purchase->branch_id ?? null;
+        $branchName = $branchName ?? $purchase->branch_name ?? $purchase->branch_label ?? null;
 
         self::postDoubleEntry(
             debitAccountId: $payableAccount->id,
@@ -372,7 +375,10 @@ class LedgerService
                     $payment->method ?: null,
                     $reference !== '' ? $reference : null,
                     (int) ($payment->account_id ?? 0) ?: null,
-                    optional($payment->payment_date)->toDateString() ?: optional($payment->created_at)->toDateString()
+                    optional($payment->payment_date)->toDateString() ?: optional($payment->created_at)->toDateString(),
+                    (int) ($payment->created_by ?? $payment->user_id ?? auth()->id() ?? 0) ?: null,
+                    $payment->branch_id ? (string) $payment->branch_id : null,
+                    $payment->branch_name ? (string) $payment->branch_name : null
                 );
                 $backfilled++;
                 continue;
