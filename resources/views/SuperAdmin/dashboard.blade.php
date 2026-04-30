@@ -288,13 +288,13 @@
         letter-spacing: -0.02em;
     }
     .dashboard-row-balanced {
-        align-items: stretch;
+        align-items: flex-start;
     }
     .dashboard-row-balanced .dashboard-stack {
-        height: 100%;
+        height: auto;
     }
     .dashboard-row-balanced .dashboard-stack > .card:last-child {
-        flex: 1 1 auto;
+        flex: 0 0 auto;
     }
     .dashboard-stack {
         display: flex;
