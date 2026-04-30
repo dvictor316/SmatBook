@@ -1916,6 +1916,35 @@
                                         </div>
                                     </div>
                                 </div>
+
+                                <div class="card card-rounded shadow-sm">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <div>
+                                                <h5 class="mb-0 fw-bold text-dark">Subscription Side Snapshot</h5>
+                                                <small class="text-muted">Compact companion metrics beside health mix</small>
+                                            </div>
+                                            <span class="live-badge-soft">Live</span>
+                                        </div>
+                                        <div class="row g-2">
+                                            @foreach([
+                                                ['label' => 'Direct Revenue', 'value' => '₦' . number_format($metrics['direct_subscription_revenue'] ?? 0, 0), 'tone' => 'tone-amber'],
+                                                ['label' => 'Deployment Revenue', 'value' => '₦' . number_format($metrics['deployment_subscription_revenue'] ?? 0, 0), 'tone' => 'tone-violet'],
+                                                ['label' => 'Pending Setups', 'value' => number_format($metrics['pending_setups'] ?? 0), 'tone' => 'tone-rose'],
+                                                ['label' => 'Expiring Soon', 'value' => number_format($metrics['expiring_soon_subs'] ?? 0), 'tone' => 'tone-sky'],
+                                                ['label' => 'Registered Revenue', 'value' => '₦' . number_format($metrics['registered_user_revenue'] ?? 0, 0), 'tone' => 'tone-emerald'],
+                                                ['label' => 'Avg Plan Sale', 'value' => '₦' . number_format($metrics['avg_plan_sale'] ?? 0, 0), 'tone' => 'tone-cobalt'],
+                                            ] as $sideMini)
+                                                <div class="col-sm-6 col-xl-4">
+                                                    <div class="summary-fill {{ $sideMini['tone'] }} h-100">
+                                                        <div class="label">{{ $sideMini['label'] }}</div>
+                                                        <div class="value">{{ $sideMini['value'] }}</div>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             <div class="col-12 col-xl-5 grid-margin dashboard-stack">
@@ -2413,6 +2442,33 @@
                                                         </div>
                                                     </div>
                                                 @endforelse
+                                                @if(($recentTenants ?? collect())->count() < 2)
+                                                    <div class="col-md-6">
+                                                        <div class="summary-fill h-100">
+                                                            <div class="label">Direct vs Deployment</div>
+                                                            <div class="value">{{ number_format($metrics['direct_paid_subs'] ?? 0) }} / {{ number_format($metrics['deployment_paid_subs'] ?? 0) }}</div>
+                                                            <div class="small text-muted mt-1">Paid buyers split</div>
+                                                        </div>
+                                                    </div>
+                                                @endif
+                                                @if(($recentTenants ?? collect())->count() < 3)
+                                                    <div class="col-md-6">
+                                                        <div class="summary-fill h-100">
+                                                            <div class="label">Revenue Pressure</div>
+                                                            <div class="value">₦{{ number_format((float) (($metrics['direct_subscription_revenue'] ?? 0) + ($metrics['deployment_subscription_revenue'] ?? 0)), 0) }}</div>
+                                                            <div class="small text-muted mt-1">Current paid plan income</div>
+                                                        </div>
+                                                    </div>
+                                                @endif
+                                                @if(($recentTenants ?? collect())->count() < 4)
+                                                    <div class="col-md-6">
+                                                        <div class="summary-fill h-100">
+                                                            <div class="label">Readiness Coverage</div>
+                                                            <div class="value">{{ number_format($metrics['active_subs'] ?? 0) }}</div>
+                                                            <div class="small text-muted mt-1">Active subscription nodes</div>
+                                                        </div>
+                                                    </div>
+                                                @endif
                                             </div>
                                             <div class="row g-2 mt-3">
                                                 @foreach([
