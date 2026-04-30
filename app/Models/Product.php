@@ -65,6 +65,32 @@ class Product extends Model
             : $this->rollsPerCarton();
     }
 
+    public function stockBreakdown(?float $quantity = null): array
+    {
+        $remainingUnits = max(0, (int) floor($quantity ?? ($this->stock ?? $this->stock_quantity ?? 0)));
+        $unitsPerRoll = $this->unitsPerRoll();
+        $unitsPerCarton = $this->unitsPerCarton();
+
+        $cartons = 0;
+        $rolls = 0;
+
+        if ($unitsPerCarton > 0) {
+            $cartons = intdiv($remainingUnits, $unitsPerCarton);
+            $remainingUnits -= $cartons * $unitsPerCarton;
+        }
+
+        if ($unitsPerRoll > 0) {
+            $rolls = intdiv($remainingUnits, $unitsPerRoll);
+            $remainingUnits -= $rolls * $unitsPerRoll;
+        }
+
+        return [
+            'cartons' => $cartons,
+            'rolls' => $rolls,
+            'units' => $remainingUnits,
+        ];
+    }
+
     /**
      * Get the category that owns the product.
      */

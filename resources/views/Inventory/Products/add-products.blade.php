@@ -319,6 +319,10 @@
                                                 <strong id="quick_stock_preview_text">0 pcs</strong>
                                             </div>
                                             <div class="quick-summary-pill">
+                                                <span>Entered Mix</span>
+                                                <strong id="quick_stock_mix_preview_text">0 ctn + 0 roll + 0 pcs</strong>
+                                            </div>
+                                            <div class="quick-summary-pill">
                                                 <span>Estimated Opening Value</span>
                                                 <strong id="quick_stock_value_preview">0.00</strong>
                                             </div>
@@ -494,14 +498,22 @@ $(document).ready(function () {
 
     function packagingValue(selector) { return parseFloat($(selector).val()) || 0; }
     function setPackagingValue(selector, value) { $(selector).val(value > 0 ? value : 0); }
+    function quickBaseUnitLabel() {
+        var raw = ($('input[name="base_unit_name"]').val() || 'pcs').trim();
+        return raw.length ? raw : 'pcs';
+    }
+    function formatQuickQty(value) {
+        return (parseFloat(value) || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
+    }
 
     function syncPackagingHiddenFields() {
         var rollsPerCtn = packagingValue('#quick_rolls_per_carton_helper');
         var pcsPerRoll  = packagingValue('#quick_pcs_per_roll_helper');
         var pcsPerCtn   = packagingValue('#quick_pcs_per_carton_helper');
+        var unitLabel   = quickBaseUnitLabel();
         $('#quick_units_per_roll_input').val(pcsPerRoll > 0 ? pcsPerRoll : 0);
         $('#quick_units_per_carton_input').val(rollsPerCtn > 0 ? rollsPerCtn : pcsPerCtn);
-        $('#quick_units_per_carton_preview_text').text((pcsPerCtn > 0 ? pcsPerCtn : 0).toLocaleString() + ' pcs');
+        $('#quick_units_per_carton_preview_text').text(formatQuickQty(pcsPerCtn > 0 ? pcsPerCtn : 0) + ' ' + unitLabel);
     }
 
     function syncQuickUnitType() {
@@ -552,6 +564,7 @@ $(document).ready(function () {
         var pcsPerRoll    = parseFloat($('#quick_units_per_roll_input').val()) || 0;
         var pcsPerCtn     = packagingValue('#quick_pcs_per_carton_helper');
         var purchasePrice = parseFloat($('input[name="purchase_price"]').val()) || 0;
+        var unitLabel     = quickBaseUnitLabel();
 
         var fromCartons = pcsPerCtn > 0
             ? cartons * pcsPerCtn
@@ -560,7 +573,8 @@ $(document).ready(function () {
         var total = fromCartons + fromRolls + pieces;
 
         var stockValue = total * purchasePrice;
-        $('#quick_stock_preview_text').text(total.toLocaleString() + ' pcs');
+        $('#quick_stock_preview_text').text(formatQuickQty(total) + ' ' + unitLabel);
+        $('#quick_stock_mix_preview_text').text(formatQuickQty(cartons) + ' ctn + ' + formatQuickQty(rolls) + ' roll + ' + formatQuickQty(pieces) + ' ' + unitLabel);
         $('#quick_stock_value_preview').text(stockValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
         $('#quick_final_stock_input').val(Math.round(total));
     }

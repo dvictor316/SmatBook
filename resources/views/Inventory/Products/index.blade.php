@@ -429,12 +429,27 @@
                                             <?php
                                                 $stockStatusLabel = $displayStock <= 0 ? 'Out of stock' : ($displayStock <= 5 ? 'Low stock' : 'In stock');
                                                 $stockStatusClass = $displayStock <= 0 ? 'text-danger' : ($displayStock <= 5 ? 'text-warning' : 'text-success');
+                                                $stockBreakdown = method_exists($product, 'stockBreakdown')
+                                                    ? $product->stockBreakdown($displayStock)
+                                                    : ['cartons' => 0, 'rolls' => 0, 'units' => (int) floor($displayStock)];
+                                                $baseUnitLabel = trim((string) ($product->base_unit_name ?? 'pcs')) ?: 'pcs';
+                                                $stockMix = [];
+                                                if (($stockBreakdown['cartons'] ?? 0) > 0) {
+                                                    $stockMix[] = rtrim(rtrim(number_format((float) $stockBreakdown['cartons'], 2), '0'), '.') . ' ctn';
+                                                }
+                                                if (($stockBreakdown['rolls'] ?? 0) > 0) {
+                                                    $stockMix[] = rtrim(rtrim(number_format((float) $stockBreakdown['rolls'], 2), '0'), '.') . ' roll';
+                                                }
+                                                if (($stockBreakdown['units'] ?? 0) > 0 || empty($stockMix)) {
+                                                    $stockMix[] = rtrim(rtrim(number_format((float) ($stockBreakdown['units'] ?? 0), 2), '0'), '.') . ' ' . $baseUnitLabel;
+                                                }
                                             ?>
                                             <?php $hasActiveBranch = !empty($activeBranch['name'] ?? null); ?>
                                             <span class="badge {{ $displayStock <= 5 ? 'bg-danger' : 'bg-success' }}">
                                                 {{ rtrim(rtrim(number_format((float) $displayStock, 2), '0'), '.') }}
                                             </span>
                                             <div class="small fw-semibold {{ $stockStatusClass }} mt-1">{{ $stockStatusLabel }}</div>
+                                            <div class="small text-muted mt-1">{{ implode(' + ', $stockMix) }}</div>
                                             @if($hasActiveBranch)
                                                 <div class="small text-muted mt-1">{{ $activeBranch['name'] }}</div>
                                             @endif
@@ -672,6 +687,10 @@
                                             <div class="quick-summary-pill">
                                                 <span>Total Opening Stock</span>
                                                 <strong id="quick_stock_preview_text">0 pcs</strong>
+                                            </div>
+                                            <div class="quick-summary-pill">
+                                                <span>Entered Mix</span>
+                                                <strong id="quick_stock_mix_preview_text">0 ctn + 0 roll + 0 pcs</strong>
                                             </div>
                                             <div class="quick-summary-pill">
                                                 <span>Estimated Opening Value</span>
@@ -1027,6 +1046,15 @@
             $('#quick_opening_unit_label').text('Opening ' + titleUnit);
         }
 
+        function quickBaseUnitLabel() {
+            const raw = ($('input[name="base_unit_name"]').val() || 'pcs').trim();
+            return raw.length ? raw : 'pcs';
+        }
+
+        function formatQuickQty(value) {
+            return (parseFloat(value) || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
+        }
+
         let lastPackagingFieldEdited = null;
 
         function packagingValue(selector) {
@@ -1041,10 +1069,11 @@
             const rollsPerCtn = packagingValue('#quick_rolls_per_carton_helper');
             const pcsPerRoll = packagingValue('#quick_pcs_per_roll_helper');
             const pcsPerCtn = packagingValue('#quick_pcs_per_carton_helper');
+            const unitLabel = quickBaseUnitLabel();
 
             $('#quick_units_per_roll_input').val(pcsPerRoll > 0 ? pcsPerRoll : 0);
             $('#quick_units_per_carton_input').val(rollsPerCtn > 0 ? rollsPerCtn : pcsPerCtn);
-            $('#quick_units_per_carton_preview_text').text((pcsPerCtn > 0 ? pcsPerCtn : 0).toLocaleString() + ' pcs');
+            $('#quick_units_per_carton_preview_text').text(formatQuickQty(pcsPerCtn > 0 ? pcsPerCtn : 0) + ' ' + unitLabel);
         }
 
         function syncQuickUnitType() {
@@ -1102,6 +1131,7 @@
             const piecesPerRoll = parseFloat($('#quick_units_per_roll_input').val()) || 0;
             const piecesPerCarton = packagingValue('#quick_pcs_per_carton_helper');
             const purchasePrice = parseFloat($('input[name="purchase_price"]').val()) || 0;
+            const unitLabel = quickBaseUnitLabel();
 
             const fromCartons = piecesPerCarton > 0
                 ? cartons * piecesPerCarton
@@ -1111,7 +1141,8 @@
 
             const stockValue = total * purchasePrice;
 
-            $('#quick_stock_preview_text').text(total.toLocaleString() + ' pcs');
+            $('#quick_stock_preview_text').text(formatQuickQty(total) + ' ' + unitLabel);
+            $('#quick_stock_mix_preview_text').text(formatQuickQty(cartons) + ' ctn + ' + formatQuickQty(rolls) + ' roll + ' + formatQuickQty(pieces) + ' ' + unitLabel);
             $('#quick_stock_value_preview').text(stockValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
             $('#quick_final_stock_input').val(Math.round(total));
         }
