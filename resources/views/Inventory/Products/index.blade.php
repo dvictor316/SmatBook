@@ -12,6 +12,7 @@
     $stockTransferEnabled = $stockTransferEnabled ?? false;
     $branchOptions = $availableBranches;
     $showStockTransferModal = $stockTransferEnabled && count($branchOptions) > 1;
+    $showQuickProductAdvancedFields = $errors->hasAny(['sku', 'barcode', 'wholesale_price', 'special_price', 'reorder_level', 'reorder_quantity', 'unit_type']);
 @endphp
 <style>
     /* Hide default DataTables buttons as we trigger them via our custom dropdown */
@@ -590,7 +591,7 @@
                                 <p class="product-form-muted">Enter the basic information first. This is all most products need.</p>
                                 <div class="row g-3">
                                     <div class="col-md-6">
-                                        <label class="form-label">Product Name</label>
+                                        <label class="form-label">Product Name <span class="text-danger">*</span></label>
                                         <input type="text" name="name" class="form-control @error('name') is-invalid @enderror" placeholder="e.g. Big Bull Rice 50kg" value="{{ old('name') }}" required>
                                         @error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
@@ -613,12 +614,12 @@
                                         @error('base_unit_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
                                     <div class="col-md-4">
-                                        <label class="form-label">Retail / Default Price</label>
+                                        <label class="form-label">Retail / Default Price <span class="text-danger">*</span></label>
                                         <input type="number" step="0.01" name="price" class="form-control @error('price') is-invalid @enderror" placeholder="0.00" value="{{ old('price') }}" required>
                                         @error('price')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
                                     <div class="col-md-4">
-                                        <label class="form-label">Purchase Price</label>
+                                        <label class="form-label">Purchase Price <span class="text-danger">*</span></label>
                                         <input type="number" step="0.01" name="purchase_price" class="form-control @error('purchase_price') is-invalid @enderror" placeholder="0.00" value="{{ old('purchase_price') }}" required>
                                         @error('purchase_price')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
@@ -722,7 +723,7 @@
                             </button>
                         </div>
 
-                        <div class="col-12 collapse {{ $errors->has('sku') || $errors->has('barcode') || $errors->has('wholesale_price') || $errors->has('special_price') || $errors->has('unit_type') ? 'show' : '' }}" id="advancedProductFields">
+                        <div class="col-12 collapse {{ $showQuickProductAdvancedFields ? 'show' : '' }}" id="advancedProductFields">
                             <div class="product-form-sheet">
                                 <h6>Advanced Options</h6>
                                 <p class="product-form-muted">Only open this when the product needs a SKU, barcode, or extra price levels.</p>
@@ -749,6 +750,16 @@
                                         <label class="form-label">Special Discount Price</label>
                                         <input type="number" step="0.01" name="special_price" class="form-control @error('special_price') is-invalid @enderror" placeholder="Optional" value="{{ old('special_price') }}">
                                         @error('special_price')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Reorder Level</label>
+                                        <input type="number" name="reorder_level" min="0" class="form-control @error('reorder_level') is-invalid @enderror" value="{{ old('reorder_level', 0) }}">
+                                        @error('reorder_level')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Reorder Quantity</label>
+                                        <input type="number" name="reorder_quantity" min="0" class="form-control @error('reorder_quantity') is-invalid @enderror" value="{{ old('reorder_quantity', 0) }}">
+                                        @error('reorder_quantity')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
                             </div>
@@ -1035,6 +1046,12 @@
             });
         });
 
+        $('#addProductModal').on('hidden.bs.modal', function() {
+            clearQuickCategorySuccess();
+            clearQuickCategoryError();
+            clearQuickProductMessages();
+        });
+
         if (shouldReopenProductModal) {
             const productModalElement = document.getElementById('addProductModal');
             if (productModalElement) {
@@ -1049,9 +1066,11 @@
 
         $('#quick_add_product_form').on('submit', function() {
             const imageInput = document.getElementById('quick_add_product_image');
+            const submitButton = $(this).find('button[type="submit"]');
             if (imageInput && (!imageInput.files || imageInput.files.length === 0)) {
                 imageInput.disabled = true;
             }
+            submitButton.prop('disabled', true).text('Saving Product...');
             showQuickProductMessage('success', 'Saving product...');
         });
 

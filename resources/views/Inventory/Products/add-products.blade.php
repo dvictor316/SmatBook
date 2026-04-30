@@ -1,5 +1,12 @@
 @extends('layout.mainlayout')
 @section('content')
+@php
+    $showAdvancedFields = $errors->hasAny(['sku', 'barcode', 'wholesale_price', 'special_price', 'reorder_level', 'reorder_quantity', 'unit_type']);
+    $oldUnitsPerCarton = (float) old('units_per_carton', 0);
+    $oldUnitsPerRoll = (float) old('units_per_roll', 0);
+    $oldRollsPerCarton = $oldUnitsPerRoll > 0 ? $oldUnitsPerCarton : 0;
+    $oldPiecesPerCarton = $oldUnitsPerRoll > 0 ? $oldUnitsPerCarton * $oldUnitsPerRoll : $oldUnitsPerCarton;
+@endphp
 
 <style>
     .product-form-muted {
@@ -267,22 +274,22 @@
                                 <div class="row g-3">
                                     <div class="col-md-4">
                                         <label class="form-label">Rolls Per Ctn</label>
-                                        <input type="number" id="quick_rolls_per_carton_helper" min="0" step="0.01" class="form-control" value="0">
+                                        <input type="number" id="quick_rolls_per_carton_helper" min="0" step="0.01" class="form-control" value="{{ $oldRollsPerCarton }}">
                                         <small class="text-muted">How many rolls are inside one carton.</small>
                                     </div>
                                     <div class="col-md-4">
                                         <label class="form-label">Pcs Per Roll</label>
-                                        <input type="number" id="quick_pcs_per_roll_helper" min="0" step="0.01" class="form-control" value="0">
+                                        <input type="number" id="quick_pcs_per_roll_helper" min="0" step="0.01" class="form-control" value="{{ $oldUnitsPerRoll }}">
                                         <small class="text-muted">How many pcs are inside one roll.</small>
                                     </div>
                                     <div class="col-md-4">
                                         <label class="form-label">Pcs Per Ctn</label>
-                                        <input type="number" id="quick_pcs_per_carton_helper" min="0" step="0.01" class="form-control" value="0">
+                                        <input type="number" id="quick_pcs_per_carton_helper" min="0" step="0.01" class="form-control" value="{{ $oldPiecesPerCarton }}">
                                         <small class="text-muted">Enter any two fields and this last one will calculate.</small>
                                     </div>
-                                    <input type="hidden" name="units_per_roll" id="quick_units_per_roll_input" value="0">
-                                    <input type="hidden" name="units_per_carton" id="quick_units_per_carton_input" value="0">
-                                    <input type="hidden" name="unit_type" id="quick_unit_type_input" value="unit">
+                                    <input type="hidden" name="units_per_roll" id="quick_units_per_roll_input" value="{{ old('units_per_roll', 0) }}">
+                                    <input type="hidden" name="units_per_carton" id="quick_units_per_carton_input" value="{{ old('units_per_carton', 0) }}">
+                                    <input type="hidden" name="unit_type" id="quick_unit_type_input" value="{{ old('unit_type', 'unit') }}">
                                 </div>
                             </div>
                         </div>
@@ -341,7 +348,7 @@
                             </button>
                         </div>
 
-                        <div class="col-12 collapse @if($errors->hasAny(['sku','barcode','wholesale_price','special_price','reorder_level'])) show @endif" id="advancedProductFields">
+                        <div class="col-12 collapse @if($showAdvancedFields) show @endif" id="advancedProductFields">
                             <div class="product-form-sheet">
                                 <h6>Advanced Options</h6>
                                 <p class="product-form-muted">Only open this when the product needs a SKU, barcode, or extra price levels.</p>
@@ -372,6 +379,11 @@
                                         <input type="number" name="reorder_level" min="0" class="form-control @error('reorder_level') is-invalid @enderror" value="{{ old('reorder_level', 0) }}">
                                         @error('reorder_level')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Reorder Quantity</label>
+                                        <input type="number" name="reorder_quantity" min="0" class="form-control @error('reorder_quantity') is-invalid @enderror" value="{{ old('reorder_quantity', 0) }}">
+                                        @error('reorder_quantity')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -379,7 +391,7 @@
                         {{-- Save button --}}
                         <div class="col-12 d-flex justify-content-between align-items-center pt-2">
                             <p class="text-muted small mb-0">Save once and the product, pricing, and opening stock will be ready together.</p>
-                            <button type="submit" class="btn btn-primary px-5">Save Product</button>
+                            <button type="submit" class="btn btn-primary px-5" id="page_add_product_submit">Save Product</button>
                         </div>
 
                     </div>{{-- /row --}}
@@ -467,6 +479,26 @@ $(document).ready(function () {
             if (selectedValue !== '') select.value = String(selectedValue);
         })
         .catch(function (err) { showQuickCategoryError(err.message || 'Unable to load categories.'); });
+    }
+
+    function initializeQuickCategorySelect() {
+        var categorySelect = $('#product_category_select');
+        if (!categorySelect.length || !$.fn.select2) return;
+
+        if (!categorySelect.find('option[value=""]').length) {
+            categorySelect.prepend(new Option('No category', '', false, false));
+        }
+
+        if (categorySelect.hasClass('select2-hidden-accessible')) {
+            categorySelect.select2('destroy');
+        }
+
+        categorySelect.select2({
+            width: '100%',
+            placeholder: 'No category',
+            dropdownCssClass: 'quick-category-dropdown',
+            minimumResultsForSearch: Infinity
+        });
     }
 
     function upsertCategoryOption(selector, category) {
@@ -604,7 +636,9 @@ $(document).ready(function () {
 
     $('#add_product_form').on('submit', function () {
         var img = document.getElementById('product_image_input');
+        var submitButton = $('#page_add_product_submit');
         if (img && (!img.files || img.files.length === 0)) img.disabled = true;
+        submitButton.prop('disabled', true).text('Saving Product...');
     });
 
     // AJAX Quick Add Category
@@ -667,7 +701,9 @@ $(document).ready(function () {
     refreshQuickPackagingLabels();
     calculateQuickCartonContent();
     calculateQuickStock();
-    reloadCategoryOptions($('#product_category_select').val() || '').catch(function () {});
+    reloadCategoryOptions($('#product_category_select').val() || '').finally(function () {
+        initializeQuickCategorySelect();
+    }).catch(function () {});
 });
 </script>
 @endpush
