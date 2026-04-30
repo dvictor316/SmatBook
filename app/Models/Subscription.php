@@ -106,7 +106,15 @@ class Subscription extends Model
 
     public function domain(): HasOne
     {
-        return $this->hasOne(Domain::class);
+        if (Schema::hasColumn('domains', 'subscription_id')) {
+            return $this->hasOne(Domain::class, 'subscription_id');
+        }
+
+        if (Schema::hasColumn('domains', 'tenant_id')) {
+            return $this->hasOne(Domain::class, 'tenant_id', 'user_id');
+        }
+
+        return $this->hasOne(Domain::class, 'id', 'id')->whereRaw('1 = 0');
     }
 
     // =========================================================================

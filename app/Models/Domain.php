@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Schema;
 use App\Models\Traits\TenantScoped;
 
 class Domain extends Model
@@ -45,9 +47,13 @@ class Domain extends Model
      * RELATIONSHIP: Subscription
      * Each domain belongs to a specific subscription purchase.
      */
-    public function subscription()
+    public function subscription(): BelongsTo
     {
-        return $this->belongsTo(Subscription::class);
+        if (Schema::hasColumn('domains', 'subscription_id')) {
+            return $this->belongsTo(Subscription::class, 'subscription_id');
+        }
+
+        return $this->belongsTo(Subscription::class, 'id', 'id')->whereRaw('1 = 0');
     }
 
     /**

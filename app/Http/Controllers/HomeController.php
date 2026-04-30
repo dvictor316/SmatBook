@@ -391,20 +391,20 @@ class HomeController extends Controller
             ->where(function ($query) use ($company, $subscription, $user, $expectedDomain) {
                 $query->whereRaw('LOWER(COALESCE(domain_name, "")) = ?', [$expectedDomain]);
 
-                if (!empty($subscription->id)) {
+                if (!empty($subscription->id) && Schema::hasColumn('domains', 'subscription_id')) {
                     $query->orWhere('subscription_id', $subscription->id);
                 }
 
-                if (!empty($company->user_id)) {
+                if (!empty($company->user_id) && Schema::hasColumn('domains', 'tenant_id')) {
                     $query->orWhere('tenant_id', $company->user_id);
                 }
 
-                if (!empty($user->email)) {
+                if (!empty($user->email) && Schema::hasColumn('domains', 'email')) {
                     $query->orWhere('email', $user->email);
                 }
             })
-            ->orderByDesc('approved_at')
-            ->orderByDesc('setup_completed_at')
+            ->when(Schema::hasColumn('domains', 'approved_at'), fn ($query) => $query->orderByDesc('approved_at'))
+            ->when(Schema::hasColumn('domains', 'setup_completed_at'), fn ($query) => $query->orderByDesc('setup_completed_at'))
             ->latest('id')
             ->first();
 
