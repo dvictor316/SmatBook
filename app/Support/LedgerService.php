@@ -155,8 +155,19 @@ class LedgerService
             return;
         }
 
+        self::$currentCompanyId = (int) ($purchase->company_id
+            ?? Auth::user()?->company_id
+            ?? session('current_tenant_id')
+            ?? 0) ?: null;
+
         $payableAccount = self::resolveAccount('Accounts Payable', 'Liability', ['payable', 'creditor'], 'AUTO-LIB-AP');
-        $cashAccount = self::resolveCashAccount($paymentMethod);
+        $cashAccount = null;
+        if ($paymentMethod) {
+            $cashAccount = self::resolveAssetAccountByName($paymentMethod);
+        }
+        if (!$cashAccount) {
+            $cashAccount = self::resolveCashAccount($paymentMethod);
+        }
 
         $ref = $reference ?: ($purchase->purchase_no ?: ('PUR-' . $purchase->id)) . '-PAY';
         $date = self::resolveDate($purchase->paid_at ?? $purchase->updated_at ?? now());
@@ -198,11 +209,27 @@ class LedgerService
             ->exists();
 
         if ($existing) {
-            return;
+            Transaction::query()
+                ->where('related_id', $payment->id)
+                ->where('related_type', Payment::class)
+                ->where('transaction_type', Transaction::TYPE_RECEIPT)
+                ->delete();
         }
 
+        self::$currentCompanyId = (int) ($payment->company_id
+            ?? $sale->company_id
+            ?? Auth::user()?->company_id
+            ?? session('current_tenant_id')
+            ?? 0) ?: null;
+
         $receivableAccount = self::resolveAccount('Accounts Receivable', 'Asset', ['receivable', 'debtor'], 'AUTO-AST-AR');
-        $cashAccount = self::resolveCashAccount($payment->method ?? $sale->payment_method ?? null);
+        $cashAccount = null;
+        if (!empty($payment->payment_account_id)) {
+            $cashAccount = Account::withoutGlobalScopes()->find((int) $payment->payment_account_id);
+        }
+        if (!$cashAccount) {
+            $cashAccount = self::resolveCashAccount($payment->method ?? $sale->payment_method ?? null);
+        }
         $reference = $externalReference ?: ($payment->payment_id ?: ('PAY-' . $payment->id));
         $date = self::resolveDate($payment->created_at);
         $userId = $payment->created_by ?? $sale->user_id ?? auth()->id();
@@ -290,12 +317,21 @@ class LedgerService
             ->where('transaction_type', Transaction::TYPE_RECEIPT)
             ->exists();
         if ($existing) {
-            return;
+            Transaction::query()
+                ->where('related_id', $payment->id)
+                ->where('related_type', Payment::class)
+                ->where('transaction_type', Transaction::TYPE_RECEIPT)
+                ->delete();
         }
+
+        self::$currentCompanyId = (int) ($payment->company_id
+            ?? Auth::user()?->company_id
+            ?? session('current_tenant_id')
+            ?? 0) ?: null;
 
         $cashAccount = null;
         if (!empty($payment->payment_account_id)) {
-            $cashAccount = Account::query()->find((int) $payment->payment_account_id);
+            $cashAccount = Account::withoutGlobalScopes()->find((int) $payment->payment_account_id);
         }
         if (!$cashAccount) {
             $cashAccount = self::resolveCashAccount($payment->method ?? null);
@@ -338,6 +374,11 @@ class LedgerService
             && !in_array(strtolower((string) ($expense->payment_status ?? '')), ['paid', 'completed'], true)) {
             return;
         }
+
+        self::$currentCompanyId = (int) ($expense->company_id
+            ?? Auth::user()?->company_id
+            ?? session('current_tenant_id')
+            ?? 0) ?: null;
 
         $existing = Transaction::query()
             ->where('related_id', $expense->id)
@@ -518,7 +559,7 @@ class LedgerService
     {
         $cid = self::$currentCompanyId;
         $base = Account::withoutGlobalScopes()->where('type', 'Asset')->where('is_active', 1);
-        if ($cid) {
+        if ($cid && Schema::hasColumn('accounts', 'company_id')) {
             $base->where('company_id', $cid);
         }
 
@@ -548,12 +589,34 @@ class LedgerService
         return self::resolveAccount('Main Bank Account', 'Asset', ['bank', 'cash'], 'AUTO-AST-CASH');
     }
 
+    private static function resolveAssetAccountByName(string $name): ?Account
+    {
+        $cid = self::$currentCompanyId;
+        $normalized = strtolower(trim($name));
+        if ($normalized === '') {
+            return null;
+        }
+
+        $base = Account::withoutGlobalScopes()->where('type', 'Asset')->where('is_active', 1);
+        if ($cid && Schema::hasColumn('accounts', 'company_id')) {
+            $base->where('company_id', $cid);
+        }
+
+        return (clone $base)
+            ->whereRaw('LOWER(name) = ?', [$normalized])
+            ->first()
+            ?: (clone $base)
+                ->whereRaw('LOWER(name) LIKE ?', ['%' . $normalized . '%'])
+                ->orderBy('id')
+                ->first();
+    }
+
     private static function resolveAccount(string $name, string $type, array $keywords, string $autoCodePrefix): Account
     {
         $cid = self::$currentCompanyId;
 
         $base = Account::withoutGlobalScopes()->where('type', $type);
-        if ($cid) {
+        if ($cid && Schema::hasColumn('accounts', 'company_id')) {
             $base->where('company_id', $cid);
         }
 
