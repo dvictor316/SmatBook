@@ -2707,6 +2707,35 @@
                                         </div>
                                     </div>
                                 </div>
+
+                                <div class="card card-rounded shadow-sm">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <div>
+                                                <h5 class="mb-0 fw-bold text-dark">Readiness Crosscheck</h5>
+                                                <small class="text-muted">Compact balance panel for onboarding and revenue readiness</small>
+                                            </div>
+                                            <span class="live-badge-soft">Live</span>
+                                        </div>
+                                        <div class="row g-2">
+                                            @foreach([
+                                                ['label' => 'Recent Users', 'value' => number_format($recentUsers->count() ?? 0), 'tone' => 'tone-sky'],
+                                                ['label' => 'Recent Companies', 'value' => number_format($recentTenants->count() ?? 0), 'tone' => 'tone-emerald'],
+                                                ['label' => 'Pending Setup', 'value' => number_format($metrics['pending_setups'] ?? 0), 'tone' => 'tone-violet'],
+                                                ['label' => 'Paid Nodes', 'value' => number_format($metrics['paid_subs'] ?? 0), 'tone' => 'tone-amber'],
+                                                ['label' => 'Direct Revenue', 'value' => '₦' . number_format($metrics['direct_subscription_revenue'] ?? 0, 0), 'tone' => 'tone-cobalt'],
+                                                ['label' => 'Deployment Revenue', 'value' => '₦' . number_format($metrics['deployment_subscription_revenue'] ?? 0, 0), 'tone' => 'tone-rose'],
+                                            ] as $crossStat)
+                                                <div class="col-sm-6 col-xl-4">
+                                                    <div class="summary-fill {{ $crossStat['tone'] }} h-100">
+                                                        <div class="label">{{ $crossStat['label'] }}</div>
+                                                        <div class="value">{{ $crossStat['value'] }}</div>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
