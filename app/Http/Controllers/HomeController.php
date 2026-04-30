@@ -434,14 +434,23 @@ class HomeController extends Controller
 
         return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($workspaceUrl) {
             try {
+                $pingUrl = rtrim($workspaceUrl, '/') . '/session/ping';
+
                 $response = Http::timeout(5)
                     ->connectTimeout(3)
+                    ->acceptJson()
                     ->withOptions([
                         'allow_redirects' => true,
                     ])
-                    ->head($workspaceUrl);
+                    ->get($pingUrl);
 
-                return in_array($response->status(), [200, 201, 202, 204, 301, 302, 303, 307, 308, 401, 403, 405], true);
+                if (!$response->ok()) {
+                    return false;
+                }
+
+                $payload = $response->json();
+
+                return is_array($payload) && ($payload['ok'] ?? false) === true;
             } catch (\Throwable $e) {
                 Log::warning('Workspace HTTPS readiness probe failed', [
                     'workspace_url' => $workspaceUrl,
