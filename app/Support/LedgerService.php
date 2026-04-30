@@ -32,6 +32,8 @@ class LedgerService
         }
 
         $total = (float) ($sale->total ?? 0);
+        $tax = max(0, (float) ($sale->tax ?? $sale->tax_amount ?? 0));
+        $netSales = max(0, $total - $tax);
         if ($total <= 0) {
             return;
         }
@@ -55,21 +57,43 @@ class LedgerService
 
         $receivableAccount = self::resolveAccount('Accounts Receivable', 'Asset', ['receivable', 'debtor'], 'AUTO-AST-AR');
         $salesRevenueAccount = self::resolveAccount('Sales Revenue', 'Revenue', ['sales', 'income'], 'AUTO-REV-SALES');
+        $taxPayableAccount = $tax > 0
+            ? self::resolveAccount('Tax Payable', 'Liability', ['tax payable', 'vat payable', 'output vat', 'firs payable'], 'AUTO-LIB-TAX')
+            : null;
 
-        self::postDoubleEntry(
-            debitAccountId: $receivableAccount->id,
-            creditAccountId: $salesRevenueAccount->id,
-            amount: $total,
-            date: $date,
-            reference: $reference,
-            description: 'Sale posted: ' . $reference,
-            transactionType: Transaction::TYPE_SALE,
-            relatedId: $sale->id,
-            relatedType: Sale::class,
-            userId: $userId,
-            branchId: $branchId,
-            branchName: $branchName
-        );
+        if ($netSales > 0) {
+            self::postDoubleEntry(
+                debitAccountId: $receivableAccount->id,
+                creditAccountId: $salesRevenueAccount->id,
+                amount: $netSales,
+                date: $date,
+                reference: $reference,
+                description: 'Sale posted: ' . $reference,
+                transactionType: Transaction::TYPE_SALE,
+                relatedId: $sale->id,
+                relatedType: Sale::class,
+                userId: $userId,
+                branchId: $branchId,
+                branchName: $branchName
+            );
+        }
+
+        if ($tax > 0 && $taxPayableAccount) {
+            self::postDoubleEntry(
+                debitAccountId: $receivableAccount->id,
+                creditAccountId: $taxPayableAccount->id,
+                amount: min($tax, $total),
+                date: $date,
+                reference: $reference,
+                description: 'Sales tax posted: ' . $reference,
+                transactionType: Transaction::TYPE_SALE,
+                relatedId: $sale->id,
+                relatedType: Sale::class,
+                userId: $userId,
+                branchId: $branchId,
+                branchName: $branchName
+            );
+        }
 
         $paid = (float) ($sale->paid ?? $sale->amount_paid ?? 0);
         if ($paid > 0) {
@@ -105,6 +129,8 @@ class LedgerService
         }
 
         $total = (float) ($purchase->total_amount ?? 0);
+        $tax = max(0, (float) ($purchase->tax_amount ?? $purchase->tax ?? 0));
+        $netInventory = max(0, $total - $tax);
         if ($total <= 0) {
             return;
         }
@@ -128,21 +154,43 @@ class LedgerService
 
         $inventoryOrPurchase = self::resolveAccount('Inventory', 'Asset', ['inventory', 'stock'], 'AUTO-AST-INV');
         $payableAccount = self::resolveAccount('Accounts Payable', 'Liability', ['payable', 'creditor'], 'AUTO-LIB-AP');
+        $inputVatAccount = $tax > 0
+            ? self::resolveAccount('Input VAT', 'Asset', ['input vat', 'vat receivable', 'recoverable vat', 'tax receivable'], 'AUTO-AST-TAX')
+            : null;
 
-        self::postDoubleEntry(
-            debitAccountId: $inventoryOrPurchase->id,
-            creditAccountId: $payableAccount->id,
-            amount: $total,
-            date: $date,
-            reference: $reference,
-            description: 'Purchase posted: ' . $reference,
-            transactionType: Transaction::TYPE_PURCHASE,
-            relatedId: $purchase->id,
-            relatedType: Purchase::class,
-            userId: $userId,
-            branchId: $branchId,
-            branchName: $branchName
-        );
+        if ($netInventory > 0) {
+            self::postDoubleEntry(
+                debitAccountId: $inventoryOrPurchase->id,
+                creditAccountId: $payableAccount->id,
+                amount: $netInventory,
+                date: $date,
+                reference: $reference,
+                description: 'Purchase posted: ' . $reference,
+                transactionType: Transaction::TYPE_PURCHASE,
+                relatedId: $purchase->id,
+                relatedType: Purchase::class,
+                userId: $userId,
+                branchId: $branchId,
+                branchName: $branchName
+            );
+        }
+
+        if ($tax > 0 && $inputVatAccount) {
+            self::postDoubleEntry(
+                debitAccountId: $inputVatAccount->id,
+                creditAccountId: $payableAccount->id,
+                amount: min($tax, $total),
+                date: $date,
+                reference: $reference,
+                description: 'Purchase tax posted: ' . $reference,
+                transactionType: Transaction::TYPE_PURCHASE,
+                relatedId: $purchase->id,
+                relatedType: Purchase::class,
+                userId: $userId,
+                branchId: $branchId,
+                branchName: $branchName
+            );
+        }
     }
 
     public static function postPurchasePayment(
@@ -673,6 +721,7 @@ class LedgerService
             'inventory' => ['inventory', 'stock', 'stock on hand'],
             'main bank account' => ['main bank account', 'bank account', 'cash at bank'],
             'petty cash' => ['petty cash', 'cash on hand'],
+            'input vat' => ['input vat', 'vat receivable', 'recoverable vat', 'tax receivable'],
             'tax payable' => ['tax payable', 'vat payable', 'vat firs', 'firs payable'],
             default => [],
         };
