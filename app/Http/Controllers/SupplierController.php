@@ -811,7 +811,9 @@ class SupplierController extends Controller
                         $purchase->fresh(),
                         $amount,
                         $request->input('method') ?: ($bank?->name ?: ($account?->name ?: 'Bank Transfer')),
-                        $paymentGroup
+                        $paymentGroup,
+                        $account?->id,
+                        $paymentDate
                     );
                 }
 
@@ -864,6 +866,18 @@ class SupplierController extends Controller
                             $account->current_balance = max(0, (float) $account->current_balance - $amount);
                             $account->save();
                         }
+
+                        LedgerService::postSupplierOpeningBalancePayment(
+                            $supplier->id,
+                            $amount,
+                            $request->input('method') ?: ($bank?->name ?: ($account?->name ?: 'Bank Transfer')),
+                            $paymentGroup,
+                            $account?->id,
+                            $paymentDate,
+                            auth()->id(),
+                            $activeBranch['id'],
+                            $activeBranch['name']
+                        );
                     }
                 }
             });

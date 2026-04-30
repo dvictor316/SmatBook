@@ -7,6 +7,7 @@ use App\Models\Expense;
 use App\Models\Payment;
 use App\Models\Purchase;
 use App\Models\Sale;
+use App\Models\Supplier;
 use App\Models\Transaction;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -197,7 +198,9 @@ class LedgerService
         Purchase $purchase,
         float $amount,
         ?string $paymentMethod = null,
-        ?string $reference = null
+        ?string $reference = null,
+        ?int $paymentAccountId = null,
+        ?string $paymentDate = null
     ): void {
         if (!self::isReady() || $amount <= 0) {
             return;
@@ -210,7 +213,10 @@ class LedgerService
 
         $payableAccount = self::resolveAccount('Accounts Payable', 'Liability', ['payable', 'creditor'], 'AUTO-LIB-AP');
         $cashAccount = null;
-        if ($paymentMethod) {
+        if ($paymentAccountId && $paymentAccountId > 0) {
+            $cashAccount = Account::withoutGlobalScopes()->find($paymentAccountId);
+        }
+        if (!$cashAccount && $paymentMethod) {
             $cashAccount = self::resolveAssetAccountByName($paymentMethod);
         }
         if (!$cashAccount) {
@@ -218,7 +224,7 @@ class LedgerService
         }
 
         $ref = $reference ?: ($purchase->purchase_no ?: ('PUR-' . $purchase->id)) . '-PAY';
-        $date = self::resolveDate($purchase->paid_at ?? $purchase->updated_at ?? now());
+        $date = self::resolveDate($paymentDate ?? $purchase->paid_at ?? $purchase->updated_at ?? now());
         $userId = auth()->id();
         $branchId = $purchase->branch_id ?? null;
         $branchName = $purchase->branch_name ?? $purchase->branch_label ?? null;
@@ -234,6 +240,57 @@ class LedgerService
             relatedId: $purchase->id,
             relatedType: Purchase::class,
             userId: $userId,
+            branchId: $branchId,
+            branchName: $branchName
+        );
+    }
+
+    public static function postSupplierOpeningBalancePayment(
+        int $supplierId,
+        float $amount,
+        ?string $paymentMethod = null,
+        ?string $reference = null,
+        ?int $paymentAccountId = null,
+        ?string $paymentDate = null,
+        ?int $userId = null,
+        ?string $branchId = null,
+        ?string $branchName = null
+    ): void {
+        if (!self::isReady() || $amount <= 0 || $supplierId <= 0) {
+            return;
+        }
+
+        self::$currentCompanyId = (int) (
+            Auth::user()?->company_id
+            ?? session('current_tenant_id')
+            ?? 0
+        ) ?: null;
+
+        $payableAccount = self::resolveAccount('Accounts Payable', 'Liability', ['payable', 'creditor'], 'AUTO-LIB-AP');
+        $cashAccount = null;
+        if ($paymentAccountId && $paymentAccountId > 0) {
+            $cashAccount = Account::withoutGlobalScopes()->find($paymentAccountId);
+        }
+        if (!$cashAccount && $paymentMethod) {
+            $cashAccount = self::resolveAssetAccountByName($paymentMethod);
+        }
+        if (!$cashAccount) {
+            $cashAccount = self::resolveCashAccount($paymentMethod);
+        }
+
+        $ref = $reference ?: ('SUP-OPEN-' . $supplierId . '-PAY');
+
+        self::postDoubleEntry(
+            debitAccountId: $payableAccount->id,
+            creditAccountId: $cashAccount->id,
+            amount: $amount,
+            date: self::resolveDate($paymentDate ?? now()),
+            reference: $ref,
+            description: 'Supplier opening balance payment: ' . $ref,
+            transactionType: Transaction::TYPE_PAYMENT,
+            relatedId: $supplierId,
+            relatedType: Supplier::class,
+            userId: $userId ?? auth()->id(),
             branchId: $branchId,
             branchName: $branchName
         );
