@@ -1138,6 +1138,29 @@
                                                 </div>
                                             @endforeach
                                         </div>
+                                        @php
+                                            $directPaidSubs = (int) ($metrics['direct_paid_subs'] ?? 0);
+                                            $deploymentPaidSubs = (int) ($metrics['deployment_paid_subs'] ?? 0);
+                                            $directRevenue = (float) ($metrics['direct_subscription_revenue'] ?? 0);
+                                            $deploymentRevenue = (float) ($metrics['deployment_subscription_revenue'] ?? 0);
+                                        @endphp
+                                        <div class="row g-2 mt-3">
+                                            @foreach([
+                                                ['label' => 'Direct Paid Buyers', 'value' => number_format($directPaidSubs)],
+                                                ['label' => 'Deployment Paid Buyers', 'value' => number_format($deploymentPaidSubs)],
+                                                ['label' => 'Direct Avg Revenue', 'value' => '₦' . number_format($directPaidSubs > 0 ? ($directRevenue / $directPaidSubs) : 0, 2)],
+                                                ['label' => 'Deployment Avg Revenue', 'value' => '₦' . number_format($deploymentPaidSubs > 0 ? ($deploymentRevenue / $deploymentPaidSubs) : 0, 2)],
+                                                ['label' => 'Verified Users', 'value' => number_format($metrics['verified_users'] ?? 0)],
+                                                ['label' => 'Recent Signups (30d)', 'value' => number_format($metrics['recent_signups'] ?? 0)],
+                                            ] as $sourceMini)
+                                                <div class="col-sm-6 col-xl-2">
+                                                    <div class="summary-fill h-100">
+                                                        <div class="label">{{ $sourceMini['label'] }}</div>
+                                                        <div class="value">{{ $sourceMini['value'] }}</div>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -1168,6 +1191,21 @@
                                                             <span class="live-badge-soft">Live</span>
                                                         </div>
                                                         <div class="value">{{ $salesKpi['value'] }}</div>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                        <div class="row g-2 mt-3">
+                                            @foreach([
+                                                ['label' => 'Stock Value', 'value' => '₦' . number_format($metrics['total_stock_val'] ?? 0, 2)],
+                                                ['label' => 'Low Stock Items', 'value' => number_format($metrics['low_stock_items'] ?? 0)],
+                                                ['label' => 'Orders per User', 'value' => number_format(((int) ($metrics['total_users'] ?? 0)) > 0 ? ((float) ($metrics['item_sales_orders'] ?? 0) / max(1, (int) ($metrics['total_users'] ?? 0))) : 0, 2)],
+                                                ['label' => 'Revenue per Order', 'value' => '₦' . number_format(((int) ($metrics['item_sales_orders'] ?? 0)) > 0 ? ((float) ($metrics['item_sales_revenue'] ?? 0) / max(1, (int) ($metrics['item_sales_orders'] ?? 0))) : 0, 2)],
+                                            ] as $salesMini)
+                                                <div class="col-sm-6 col-xl-3">
+                                                    <div class="summary-fill h-100">
+                                                        <div class="label">{{ $salesMini['label'] }}</div>
+                                                        <div class="value">{{ $salesMini['value'] }}</div>
                                                     </div>
                                                 </div>
                                             @endforeach
@@ -1860,6 +1898,21 @@
                                                     <div class="value">{{ number_format($metrics['total_users'] ?? 0) }}</div>
                                                 </div>
                                             </div>
+                                        </div>
+                                        <div class="row g-2 mt-3">
+                                            @foreach([
+                                                ['label' => 'Verified Users', 'value' => number_format($metrics['verified_users'] ?? 0)],
+                                                ['label' => 'Active Subs', 'value' => number_format($metrics['active_subs'] ?? 0)],
+                                                ['label' => 'Direct Paid Buyers', 'value' => number_format($metrics['direct_paid_subs'] ?? 0)],
+                                                ['label' => 'Deployment Paid Buyers', 'value' => number_format($metrics['deployment_paid_subs'] ?? 0)],
+                                            ] as $momentumStat)
+                                                <div class="col-sm-6 col-xl-3">
+                                                    <div class="summary-fill h-100">
+                                                        <div class="label">{{ $momentumStat['label'] }}</div>
+                                                        <div class="value">{{ $momentumStat['value'] }}</div>
+                                                    </div>
+                                                </div>
+                                            @endforeach
                                         </div>
                                     </div>
                                 </div>
