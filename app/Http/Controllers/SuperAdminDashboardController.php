@@ -359,7 +359,7 @@ class SuperAdminDashboardController extends Controller
             $planStats = [];
             if (Schema::hasTable('subscriptions')) {
                 $planExpr = "COALESCE(NULLIF(plan_name, ''), plan, 'Basic')";
-                $planStats = Subscription::selectRaw("{$planExpr} as plan_label, COUNT(*) as total")
+                $planStats = $this->platformSubscriptionsQuery()->selectRaw("{$planExpr} as plan_label, COUNT(*) as total")
                     ->groupByRaw($planExpr)
                     ->pluck('total', 'plan_label')
                     ->toArray();
@@ -526,7 +526,7 @@ class SuperAdminDashboardController extends Controller
             $activityHeatmap = [];
             $forceBranchHeatmap = !empty($activeBranch['id']) || !empty($activeBranch['name']);
             if (!$forceBranchHeatmap && Schema::hasTable('subscriptions')) {
-                $heatRows = Subscription::select(
+                $heatRows = $this->platformSubscriptionsQuery()->select(
                         DB::raw('DAYOFWEEK(created_at) as dow'),
                         DB::raw('HOUR(created_at) as hr'),
                         DB::raw('COUNT(*) as total')
@@ -616,7 +616,7 @@ class SuperAdminDashboardController extends Controller
 
             $expiringSubscriptions = collect();
             if (Schema::hasTable('subscriptions')) {
-                $expiringSubscriptions = Subscription::with(['company', 'user'])
+                $expiringSubscriptions = $this->platformSubscriptionsQuery()->with(['company', 'user'])
                     ->expiringSoon(7)
                     ->orderBy('end_date', 'asc')
                     ->limit(10)
