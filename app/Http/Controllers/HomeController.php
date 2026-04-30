@@ -9,7 +9,7 @@ use App\Models\Quotation;
 use App\Support\SystemEventMailer;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Facades\{Auth, DB, Log, Schema, Storage, Hash};
+use Illuminate\Support\Facades\{Auth, Cache, DB, Http, Log, Schema, Storage, Hash};
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -334,6 +334,20 @@ class HomeController extends Controller
         $mainDomain = trim((string) config('session.domain', env('SESSION_DOMAIN', 'smartprobook.com')), ". \t\n\r\0\x0B");
         $workspaceUrl = 'https://' . $company->domain_prefix . '.' . $mainDomain;
 
+        if (!$this->workspaceHttpsReady($workspaceUrl)) {
+            Log::warning('→ Workspace HTTPS endpoint not ready, keeping user on central workspace', [
+                'company_id' => $company->id,
+                'subscription_id' => $subscription->id,
+                'workspace_url' => $workspaceUrl,
+            ]);
+
+            return $this->redirectToCentralBusinessWorkspace(
+                $company,
+                $subscription,
+                'Your workspace is being finalized. Continue from the central dashboard until the secure subdomain is ready.'
+            );
+        }
+
         Log::info('→ Redirecting to workspace', [
             'url'             => $workspaceUrl,
             'subscription_id' => $subscription->id,
@@ -407,6 +421,36 @@ class HomeController extends Controller
         $setupComplete = !Schema::hasColumn('domains', 'setup_completed_at') || !empty($domain->setup_completed_at);
 
         return $approved && $setupComplete;
+    }
+
+    private function workspaceHttpsReady(string $workspaceUrl): bool
+    {
+        $host = parse_url($workspaceUrl, PHP_URL_HOST);
+        if (!is_string($host) || trim($host) === '') {
+            return false;
+        }
+
+        $cacheKey = 'workspace_https_ready:' . strtolower($host);
+
+        return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($workspaceUrl) {
+            try {
+                $response = Http::timeout(5)
+                    ->connectTimeout(3)
+                    ->withOptions([
+                        'allow_redirects' => true,
+                    ])
+                    ->head($workspaceUrl);
+
+                return in_array($response->status(), [200, 201, 202, 204, 301, 302, 303, 307, 308, 401, 403, 405], true);
+            } catch (\Throwable $e) {
+                Log::warning('Workspace HTTPS readiness probe failed', [
+                    'workspace_url' => $workspaceUrl,
+                    'error' => $e->getMessage(),
+                ]);
+
+                return false;
+            }
+        });
     }
 
     /*
