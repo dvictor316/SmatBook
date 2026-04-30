@@ -13,6 +13,47 @@ use App\Exports\TrialBalanceExport;
 
 class TrialBalanceController extends Controller
 {
+    private function normalizeAccountType(?string $type): string
+    {
+        $value = strtolower(trim((string) $type));
+        if ($value === '') {
+            return 'other';
+        }
+
+        $map = [
+            'asset' => ['asset', 'assets'],
+            'liability' => ['liability', 'liabilities', 'payable', 'payables', 'current liability', 'long term liability', 'long-term liability'],
+            'equity' => ['equity', 'capital', 'owner equity', 'owners equity', "owner's equity", 'share capital', 'shareholder equity'],
+            'revenue' => ['revenue', 'income', 'sales', 'turnover'],
+            'expense' => ['expense', 'expenses', 'cost', 'cogs', 'cost of sales', 'cost of goods sold'],
+        ];
+
+        foreach ($map as $key => $aliases) {
+            if (in_array($value, $aliases, true)) {
+                return $key;
+            }
+        }
+
+        return $value;
+    }
+
+    private function isDebitNormalAccount(object $account): bool
+    {
+        $type = $this->normalizeAccountType($account->type ?? null);
+        $subType = $this->normalizeAccountType($account->sub_type ?? null);
+        $name = strtolower(trim((string) ($account->name ?? '')));
+
+        if ($type === 'asset' || $type === 'expense' || $subType === 'asset' || $subType === 'expense') {
+            return true;
+        }
+
+        if (str_contains($name, 'payable') || str_contains($name, 'vat') || str_contains($name, 'tax') || str_contains($name, 'firs') || str_contains($name, 'withholding') || str_contains($name, 'paye')) {
+            return false;
+        }
+
+        return false;
+    }
+
     private function addOrAccumulateVirtualEntry(&$accounts, array $payload): void
     {
         $code = (string) ($payload['code'] ?? '');
@@ -263,8 +304,7 @@ class TrialBalanceController extends Controller
             $dr = (float) ($totals->total_debit ?? 0);
             $cr = (float) ($totals->total_credit ?? 0);
             $openingBalance = (float) ($account->opening_balance ?? 0);
-            $type = strtolower((string) ($account->type ?? ''));
-            $isDebitNormal = in_array($type, ['asset', 'expense'], true);
+            $isDebitNormal = $this->isDebitNormalAccount($account);
 
             $account->debit_balance = 0;
             $account->credit_balance = 0;

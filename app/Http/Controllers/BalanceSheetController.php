@@ -112,6 +112,24 @@ class BalanceSheetController extends Controller
         return $value;
     }
 
+    private function accountLooksLikeLiability(object $account): bool
+    {
+        $type = $this->normalizeAccountType($account->type ?? null);
+        $subType = $this->normalizeAccountType($account->sub_type ?? null);
+        $name = strtolower(trim((string) ($account->name ?? '')));
+
+        if ($type === 'liability' || $subType === 'liability') {
+            return true;
+        }
+
+        return str_contains($name, 'payable')
+            || str_contains($name, 'vat')
+            || str_contains($name, 'tax')
+            || str_contains($name, 'firs')
+            || str_contains($name, 'withholding')
+            || str_contains($name, 'paye');
+    }
+
     public function index(Request $request)
     {
         $activeBranch = $this->resolveActiveBranch($request);
@@ -314,7 +332,7 @@ class BalanceSheetController extends Controller
         } elseif ($uncategorizedAssets->isNotEmpty()) {
             $currentAssets = $currentAssets->concat($uncategorizedAssets)->unique('id')->values();
         }
-        $currentLiabilities = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type ?? null) === 'liability');
+        $currentLiabilities = $accounts->filter(fn ($a) => $this->accountLooksLikeLiability($a));
         $equity = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type ?? null) === 'equity'); // Changed from equityAccounts to equity
         $openingDifference = round($openingTotals['debit'] - $openingTotals['credit'], 2);
 
