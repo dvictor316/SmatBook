@@ -48,6 +48,9 @@
                                             <option value="{{ $dept->id }}" @selected(old('parent_id') == $dept->id)>{{ $dept->name }}</option>
                                         @endforeach
                                     </select>
+                                    @if($departments->isEmpty())
+                                        <small class="text-muted d-block mt-2">No existing departments are available in this branch yet. This new record will be created as a top-level department.</small>
+                                    @endif
                                     @error('parent_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 </div>
                                 <div class="col-md-6">
@@ -58,6 +61,9 @@
                                             <option value="{{ $emp->id }}" @selected(old('head_employee_id') == $emp->id)>{{ $emp->name }}</option>
                                         @endforeach
                                     </select>
+                                    @if($employees->isEmpty())
+                                        <small class="text-muted d-block mt-2">No employees were found for this workspace yet. You can save the department now and assign a head later.</small>
+                                    @endif
                                     @error('head_employee_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 </div>
                                 <div class="col-12">

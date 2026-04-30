@@ -7,6 +7,7 @@ use App\Models\CostCenter;
 use App\Models\Employee;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 
 class DepartmentController extends Controller
@@ -20,12 +21,26 @@ class DepartmentController extends Controller
         ];
     }
 
+    private function resolveDepartmentBranchId(): ?int
+    {
+        $branchId = $this->getActiveBranchContext()['id'];
+
+        if ($branchId === null || $branchId === '') {
+            return null;
+        }
+
+        return is_numeric($branchId) ? (int) $branchId : null;
+    }
+
     public function index()
     {
         $companyId = Auth::user()->company_id;
-        $branchId = $this->getActiveBranchContext()['id'];
+        $branchId = $this->resolveDepartmentBranchId();
         $departments = Department::forCompany($companyId)
-            ->where('branch_id', $branchId)
+            ->when(
+                $branchId !== null && Schema::hasColumn('departments', 'branch_id'),
+                fn ($query) => $query->where('branch_id', $branchId)
+            )
             ->with(['head', 'parent'])
             ->withCount('employees')
             ->orderBy('name')
@@ -36,10 +51,13 @@ class DepartmentController extends Controller
     public function create()
     {
         $companyId = Auth::user()->company_id;
-        $branchId = $this->getActiveBranchContext()['id'];
+        $branchId = $this->resolveDepartmentBranchId();
         $employees = Employee::forWorkspaceCompany($companyId)->orderBy('name')->get();
         $departments = Department::forCompany($companyId)
-            ->where('branch_id', $branchId)
+            ->when(
+                $branchId !== null && Schema::hasColumn('departments', 'branch_id'),
+                fn ($query) => $query->where('branch_id', $branchId)
+            )
             ->active()->orderBy('name')->get();
         return view('departments.create', compact('employees', 'departments'));
     }
@@ -47,7 +65,7 @@ class DepartmentController extends Controller
     public function store(Request $request)
     {
         $companyId = Auth::user()->company_id;
-        $branchId = $this->getActiveBranchContext()['id'];
+        $branchId = $this->resolveDepartmentBranchId();
 
         $data = $request->validate([
             'name'              => 'required|string|max:255',
@@ -64,7 +82,9 @@ class DepartmentController extends Controller
         ]);
 
         $data['company_id'] = $companyId;
-        $data['branch_id']  = $branchId;
+        if ($branchId !== null && Schema::hasColumn('departments', 'branch_id')) {
+            $data['branch_id'] = $branchId;
+        }
         $data['is_active']  = $request->boolean('is_active', true);
 
         Department::create($data);
@@ -76,8 +96,17 @@ class DepartmentController extends Controller
     {
         $this->authorizeDepartmentAccess($department);
         $companyId   = Auth::user()->company_id;
+        $branchId = $this->resolveDepartmentBranchId();
         $employees   = Employee::forWorkspaceCompany($companyId)->orderBy('name')->get();
-        $departments = Department::forCompany($companyId)->active()->where('id', '!=', $department->id)->orderBy('name')->get();
+        $departments = Department::forCompany($companyId)
+            ->when(
+                $branchId !== null && Schema::hasColumn('departments', 'branch_id'),
+                fn ($query) => $query->where('branch_id', $branchId)
+            )
+            ->active()
+            ->where('id', '!=', $department->id)
+            ->orderBy('name')
+            ->get();
         return view('departments.edit', compact('department', 'employees', 'departments'));
     }
 
