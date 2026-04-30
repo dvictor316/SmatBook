@@ -45,6 +45,9 @@
                                     <label class="form-label fw-semibold">Parent Department</label>
                                     <select name="parent_id" class="form-select @error('parent_id') is-invalid @enderror">
                                         <option value="">-- None (Top Level) --</option>
+                                        @if($departments->isEmpty())
+                                            <option value="" disabled>No parent departments available yet</option>
+                                        @endif
                                         @foreach($departments as $dept)
                                             @if($dept->id !== $department->id)
                                                 <option value="{{ $dept->id }}" @selected(old('parent_id', $department->parent_id) == $dept->id)>{{ $dept->name }}</option>
@@ -60,6 +63,9 @@
                                     <label class="form-label fw-semibold">Head / Manager</label>
                                     <select name="head_employee_id" class="form-select @error('head_employee_id') is-invalid @enderror">
                                         <option value="">-- None --</option>
+                                        @if($employees->isEmpty())
+                                            <option value="" disabled>No employees available yet</option>
+                                        @endif
                                         @foreach($employees as $emp)
                                             <option value="{{ $emp->id }}" @selected(old('head_employee_id', $department->head_employee_id) == $emp->id)>{{ $emp->name }}</option>
                                         @endforeach
@@ -92,6 +98,5 @@
             </div>
         </div>
     </div>
-</div>
 </div>
 @endsection

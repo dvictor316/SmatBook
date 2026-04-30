@@ -59,6 +59,14 @@ class DepartmentController extends Controller
                 fn ($query) => $query->where('branch_id', $branchId)
             )
             ->active()->orderBy('name')->get();
+
+        if ($departments->isEmpty()) {
+            $departments = Department::forCompany($companyId)
+                ->active()
+                ->orderBy('name')
+                ->get();
+        }
+
         return view('departments.create', compact('employees', 'departments'));
     }
 
@@ -107,6 +115,15 @@ class DepartmentController extends Controller
             ->where('id', '!=', $department->id)
             ->orderBy('name')
             ->get();
+
+        if ($departments->isEmpty()) {
+            $departments = Department::forCompany($companyId)
+                ->active()
+                ->where('id', '!=', $department->id)
+                ->orderBy('name')
+                ->get();
+        }
+
         return view('departments.edit', compact('department', 'employees', 'departments'));
     }
 
