@@ -22,12 +22,12 @@
                     <div class="card-body">
                         <table class="table table-sm mb-0">
                             <tr><th>Currency</th><td>{{ $priceList->currency }}</td></tr>
-                            <tr><th>Discount</th><td>{{ $priceList->discount_type ? ucfirst($priceList->discount_type) . ' ' . number_format((float) $priceList->discount_value, 2) : 'N/A' }}</td></tr>
+                            <tr><th>Discount</th><td>{{ $formData['discount_type'] ? ucfirst($formData['discount_type']) . ' ' . number_format((float) $formData['discount_value'], 2) : 'N/A' }}</td></tr>
                             <tr><th>Valid From</th><td>{{ $priceList->valid_from ? $priceList->valid_from->format('d M Y') : 'N/A' }}</td></tr>
                             <tr><th>Valid To</th><td>{{ $priceList->valid_to ? $priceList->valid_to->format('d M Y') : 'N/A' }}</td></tr>
-                            <tr><th>Default</th><td>{{ $priceList->is_default ? 'Yes' : 'No' }}</td></tr>
+                            <tr><th>Default</th><td>{{ ($priceList->is_default ?? false) ? 'Yes' : 'No' }}</td></tr>
                             <tr><th>Status</th><td>{{ $priceList->is_active ? 'Active' : 'Inactive' }}</td></tr>
-                            <tr><th>Notes</th><td>{{ $priceList->notes ?: 'N/A' }}</td></tr>
+                            <tr><th>Notes</th><td>{{ $formData['notes'] ?: 'N/A' }}</td></tr>
                         </table>
                     </div>
                 </div>
@@ -50,9 +50,9 @@
                                     @forelse($priceList->items as $item)
                                         <tr>
                                             <td>{{ $item->product?->name ?? 'N/A' }}</td>
-                                            <td>{{ number_format((float) $item->price, 2) }}</td>
+                                            <td>{{ number_format((float) ($item->price ?? $item->unit_price), 2) }}</td>
                                             <td>{{ number_format((float) $item->min_quantity, 2) }}</td>
-                                            <td>{{ $item->currency ?: $priceList->currency }}</td>
+                                            <td>{{ $item->currency ?? $priceList->currency }}</td>
                                         </tr>
                                     @empty
                                         <tr>
