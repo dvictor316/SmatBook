@@ -1699,7 +1699,8 @@ private function paymentReportColumns(): array
         'note' => Schema::hasColumn('payments', 'note'),
         'method' => Schema::hasColumn('payments', 'method'),
         'status' => Schema::hasColumn('payments', 'status'),
-        'payment_account_id' => Schema::hasColumn('payments', 'payment_account_id'),
+        'payment_account_id' => Schema::hasColumn('payments', 'payment_account_id')
+            || Schema::hasColumn('payments', 'account_id'),
     ];
 }
 
@@ -1711,7 +1712,10 @@ private function paymentReportRelations(): array
         $relations[] = 'sale.customer';
     }
 
-    if (Schema::hasTable('accounts') && Schema::hasColumn('payments', 'payment_account_id')) {
+    if (
+        Schema::hasTable('accounts')
+        && (Schema::hasColumn('payments', 'payment_account_id') || Schema::hasColumn('payments', 'account_id'))
+    ) {
         $relations[] = 'account';
     }
 
