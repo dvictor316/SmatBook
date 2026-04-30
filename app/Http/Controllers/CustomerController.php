@@ -946,6 +946,8 @@ class CustomerController extends Controller
 
                     if (Schema::hasColumn('payments', 'payment_account_id')) {
                         $paymentPayload['payment_account_id'] = $resolvedAccountId;
+                    } elseif (Schema::hasColumn('payments', 'account_id')) {
+                        $paymentPayload['account_id'] = $resolvedAccountId;
                     }
                     if (Schema::hasColumn('payments', 'company_id')) {
                         $paymentPayload['company_id'] = auth()->user()?->company_id ?? session('current_tenant_id');
@@ -1013,6 +1015,8 @@ class CustomerController extends Controller
 
                     if (Schema::hasColumn('payments', 'payment_account_id')) {
                         $paymentPayload['payment_account_id'] = $resolvedAccountId;
+                    } elseif (Schema::hasColumn('payments', 'account_id')) {
+                        $paymentPayload['account_id'] = $resolvedAccountId;
                     }
                     if (Schema::hasColumn('payments', 'company_id')) {
                         $paymentPayload['company_id'] = auth()->user()?->company_id ?? session('current_tenant_id');

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo; // Necessary for relationships
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use App\Support\GeoCurrency;
 use App\Models\Traits\TenantScoped;
@@ -21,6 +22,7 @@ class Payment extends Model
         'user_id',
         'branch_id',
         'branch_name',
+        'account_id',
         'payment_account_id', // ADDED: Required to save the account link
         'receipt_no',
         'reference',
@@ -53,7 +55,11 @@ class Payment extends Model
      */
     public function account(): BelongsTo
     {
-        return $this->belongsTo(Account::class, 'payment_account_id');
+        $foreignKey = Schema::hasColumn('payments', 'payment_account_id')
+            ? 'payment_account_id'
+            : 'account_id';
+
+        return $this->belongsTo(Account::class, $foreignKey);
     }
 
     /**

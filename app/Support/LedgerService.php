@@ -224,8 +224,9 @@ class LedgerService
 
         $receivableAccount = self::resolveAccount('Accounts Receivable', 'Asset', ['receivable', 'debtor'], 'AUTO-AST-AR');
         $cashAccount = null;
-        if (!empty($payment->payment_account_id)) {
-            $cashAccount = Account::withoutGlobalScopes()->find((int) $payment->payment_account_id);
+        $paymentAccountId = (int) ($payment->payment_account_id ?? $payment->account_id ?? 0);
+        if ($paymentAccountId > 0) {
+            $cashAccount = Account::withoutGlobalScopes()->find($paymentAccountId);
         }
         if (!$cashAccount) {
             $cashAccount = self::resolveCashAccount($payment->method ?? $sale->payment_method ?? null);
@@ -273,8 +274,9 @@ class LedgerService
         }
 
         $cashAccount = null;
-        if (!empty($payment->payment_account_id)) {
-            $cashAccount = Account::query()->find((int) $payment->payment_account_id);
+        $paymentAccountId = (int) ($payment->payment_account_id ?? $payment->account_id ?? 0);
+        if ($paymentAccountId > 0) {
+            $cashAccount = Account::withoutGlobalScopes()->find($paymentAccountId);
         }
         if (!$cashAccount) {
             $cashAccount = self::resolveCashAccount($payment->method ?? null);
@@ -330,8 +332,9 @@ class LedgerService
             ?? 0) ?: null;
 
         $cashAccount = null;
-        if (!empty($payment->payment_account_id)) {
-            $cashAccount = Account::withoutGlobalScopes()->find((int) $payment->payment_account_id);
+        $paymentAccountId = (int) ($payment->payment_account_id ?? $payment->account_id ?? 0);
+        if ($paymentAccountId > 0) {
+            $cashAccount = Account::withoutGlobalScopes()->find($paymentAccountId);
         }
         if (!$cashAccount) {
             $cashAccount = self::resolveCashAccount($payment->method ?? null);

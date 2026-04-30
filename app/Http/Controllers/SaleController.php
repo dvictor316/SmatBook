@@ -965,6 +965,8 @@ $sale = Sale::create([
             ];
             if (Schema::hasColumn('payments', 'payment_account_id')) {
                 $paymentPayload['payment_account_id'] = $paymentAccount?->id;
+            } elseif (Schema::hasColumn('payments', 'account_id')) {
+                $paymentPayload['account_id'] = $paymentAccount?->id;
             }
             Payment::create($paymentPayload);
         }

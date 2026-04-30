@@ -228,6 +228,8 @@ class PaymentController extends Controller
 
                 if (Schema::hasColumn('payments', 'payment_account_id')) {
                     $payload['payment_account_id'] = $resolvedAccountId;
+                } elseif (Schema::hasColumn('payments', 'account_id')) {
+                    $payload['account_id'] = $resolvedAccountId;
                 }
                 if (Schema::hasColumn('payments', 'company_id')) {
                     $payload['company_id'] = Auth::user()?->company_id ?? session('current_tenant_id');
