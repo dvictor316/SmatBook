@@ -583,12 +583,6 @@ class LedgerService
             return $cash;
         }
 
-        // Last resort: any active asset account for this company
-        $any = (clone $base)->first();
-        if ($any) {
-            return $any;
-        }
-
         return self::resolveAccount('Main Bank Account', 'Asset', ['bank', 'cash'], 'AUTO-AST-CASH');
     }
 

@@ -212,17 +212,21 @@
                         </div>
                     @endif
 
-                    <div class="rl-row" data-section="overview" data-tab="overview" data-id="balance-sheet" data-url="{{ route('balance-sheet') }}" data-keywords="balance sheet assets liabilities equity net worth">
-                        <button class="rl-star" data-id="balance-sheet" title="Favourite"><i class="far fa-star"></i></button>
-                        <a href="{{ route('balance-sheet') }}" class="rl-name">Balance Sheet</a>
-                        <a href="{{ route('balance-sheet') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
-                    </div>
+                    @if($canUseProReports)
+                        <div class="rl-row" data-section="overview" data-tab="overview" data-id="balance-sheet" data-url="{{ route('balance-sheet') }}" data-keywords="balance sheet assets liabilities equity net worth">
+                            <button class="rl-star" data-id="balance-sheet" title="Favourite"><i class="far fa-star"></i></button>
+                            <a href="{{ route('balance-sheet') }}" class="rl-name">Balance Sheet</a>
+                            <span class="rl-badge rl-badge-pro"><i class="fas fa-star" style="font-size:7px;"></i> Pro</span>
+                            <a href="{{ route('balance-sheet') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                        </div>
 
-                    <div class="rl-row" data-section="overview" data-tab="overview" data-id="cash-flow" data-url="{{ route('reports.cash-flow') }}" data-keywords="cash flow liquidity inflows outflows">
-                        <button class="rl-star" data-id="cash-flow" title="Favourite"><i class="far fa-star"></i></button>
-                        <a href="{{ route('reports.cash-flow') }}" class="rl-name">Cash Flow</a>
-                        <a href="{{ route('reports.cash-flow') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
-                    </div>
+                        <div class="rl-row" data-section="overview" data-tab="overview" data-id="cash-flow" data-url="{{ route('reports.cash-flow') }}" data-keywords="cash flow liquidity inflows outflows">
+                            <button class="rl-star" data-id="cash-flow" title="Favourite"><i class="far fa-star"></i></button>
+                            <a href="{{ route('reports.cash-flow') }}" class="rl-name">Cash Flow</a>
+                            <span class="rl-badge rl-badge-pro"><i class="fas fa-star" style="font-size:7px;"></i> Pro</span>
+                            <a href="{{ route('reports.cash-flow') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                        </div>
+                    @endif
 
                     <div class="rl-row" data-section="overview" data-tab="overview" data-id="income-report" data-url="{{ route('reports.income') }}" data-keywords="income report earnings revenue streams">
                         <button class="rl-star" data-id="income-report" title="Favourite"><i class="far fa-star"></i></button>
@@ -482,47 +486,58 @@
                         </div>
                     @endif
 
-                    <div class="rl-row" data-section="financial" data-tab="financial" data-id="bs-financial" data-url="{{ route('balance-sheet') }}" data-keywords="balance sheet assets liabilities equity">
-                        <button class="rl-star" data-id="bs-financial" title="Favourite"><i class="far fa-star"></i></button>
-                        <a href="{{ route('balance-sheet') }}" class="rl-name">Balance Sheet</a>
-                        <a href="{{ route('balance-sheet') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
-                    </div>
+                    @if($canUseProReports)
+                        <div class="rl-row" data-section="financial" data-tab="financial" data-id="bs-financial" data-url="{{ route('balance-sheet') }}" data-keywords="balance sheet assets liabilities equity">
+                            <button class="rl-star" data-id="bs-financial" title="Favourite"><i class="far fa-star"></i></button>
+                            <a href="{{ route('balance-sheet') }}" class="rl-name">Balance Sheet</a>
+                            <span class="rl-badge rl-badge-pro"><i class="fas fa-star" style="font-size:7px;"></i> Pro</span>
+                            <a href="{{ route('balance-sheet') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                        </div>
 
-                    <div class="rl-row" data-section="financial" data-tab="financial" data-id="bs-summary" data-url="{{ route('balance-sheet-summary') }}" data-keywords="balance sheet summary kpi totals net worth snapshot">
-                        <button class="rl-star" data-id="bs-summary" title="Favourite"><i class="far fa-star"></i></button>
-                        <a href="{{ route('balance-sheet-summary') }}" class="rl-name">Balance Sheet Summary</a>
-                        <a href="{{ route('balance-sheet-summary') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
-                    </div>
+                        <div class="rl-row" data-section="financial" data-tab="financial" data-id="bs-summary" data-url="{{ route('balance-sheet-summary') }}" data-keywords="balance sheet summary kpi totals net worth snapshot">
+                            <button class="rl-star" data-id="bs-summary" title="Favourite"><i class="far fa-star"></i></button>
+                            <a href="{{ route('balance-sheet-summary') }}" class="rl-name">Balance Sheet Summary</a>
+                            <span class="rl-badge rl-badge-pro"><i class="fas fa-star" style="font-size:7px;"></i> Pro</span>
+                            <a href="{{ route('balance-sheet-summary') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                        </div>
 
-                    <div class="rl-row" data-section="financial" data-tab="financial" data-id="bs-comparison" data-url="{{ route('balance-sheet-comparison') }}" data-keywords="balance sheet comparison two dates period change variance">
-                        <button class="rl-star" data-id="bs-comparison" title="Favourite"><i class="far fa-star"></i></button>
-                        <a href="{{ route('balance-sheet-comparison') }}" class="rl-name">Balance Sheet Comparison</a>
-                        <a href="{{ route('balance-sheet-comparison') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
-                    </div>
+                        <div class="rl-row" data-section="financial" data-tab="financial" data-id="bs-comparison" data-url="{{ route('balance-sheet-comparison') }}" data-keywords="balance sheet comparison two dates period change variance">
+                            <button class="rl-star" data-id="bs-comparison" title="Favourite"><i class="far fa-star"></i></button>
+                            <a href="{{ route('balance-sheet-comparison') }}" class="rl-name">Balance Sheet Comparison</a>
+                            <span class="rl-badge rl-badge-pro"><i class="fas fa-star" style="font-size:7px;"></i> Pro</span>
+                            <a href="{{ route('balance-sheet-comparison') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                        </div>
 
-                    <div class="rl-row" data-section="financial" data-tab="financial" data-id="tax-summary" data-url="{{ route('reports.tax-summary') }}" data-keywords="tax summary output input net liability vat gst">
-                        <button class="rl-star" data-id="tax-summary" title="Favourite"><i class="far fa-star"></i></button>
-                        <a href="{{ route('reports.tax-summary') }}" class="rl-name">Tax Summary</a>
-                        <a href="{{ route('reports.tax-summary') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
-                    </div>
+                        <div class="rl-row" data-section="financial" data-tab="financial" data-id="cf-financial" data-url="{{ route('reports.cash-flow') }}" data-keywords="cash flow statement liquidity operating">
+                            <button class="rl-star" data-id="cf-financial" title="Favourite"><i class="far fa-star"></i></button>
+                            <a href="{{ route('reports.cash-flow') }}" class="rl-name">Cash Flow</a>
+                            <span class="rl-badge rl-badge-pro"><i class="fas fa-star" style="font-size:7px;"></i> Pro</span>
+                            <a href="{{ route('reports.cash-flow') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                        </div>
 
-                    <div class="rl-row" data-section="financial" data-tab="financial" data-id="cf-financial" data-url="{{ route('reports.cash-flow') }}" data-keywords="cash flow statement liquidity operating">
-                        <button class="rl-star" data-id="cf-financial" title="Favourite"><i class="far fa-star"></i></button>
-                        <a href="{{ route('reports.cash-flow') }}" class="rl-name">Cash Flow</a>
-                        <a href="{{ route('reports.cash-flow') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
-                    </div>
+                        <div class="rl-row" data-section="financial" data-tab="financial" data-id="trial-balance" data-url="{{ route('trial-balance') }}" data-keywords="trial balance debits credits ledger accounts">
+                            <button class="rl-star" data-id="trial-balance" title="Favourite"><i class="far fa-star"></i></button>
+                            <a href="{{ route('trial-balance') }}" class="rl-name">Trial Balance</a>
+                            <span class="rl-badge rl-badge-pro"><i class="fas fa-star" style="font-size:7px;"></i> Pro</span>
+                            <a href="{{ route('trial-balance') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                        </div>
 
-                    <div class="rl-row" data-section="financial" data-tab="financial" data-id="trial-balance" data-url="{{ route('trial-balance') }}" data-keywords="trial balance debits credits ledger accounts">
-                        <button class="rl-star" data-id="trial-balance" title="Favourite"><i class="far fa-star"></i></button>
-                        <a href="{{ route('trial-balance') }}" class="rl-name">Trial Balance</a>
-                        <a href="{{ route('trial-balance') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
-                    </div>
+                        <div class="rl-row" data-section="financial" data-tab="financial" data-id="chart-of-accounts" data-url="{{ route('reports.chart-of-accounts') }}" data-keywords="chart of accounts account balances ledger register account list">
+                            <button class="rl-star" data-id="chart-of-accounts" title="Favourite"><i class="far fa-star"></i></button>
+                            <a href="{{ route('reports.chart-of-accounts') }}" class="rl-name">Chart of Accounts</a>
+                            <span class="rl-badge rl-badge-pro"><i class="fas fa-star" style="font-size:7px;"></i> Pro</span>
+                            <a href="{{ route('reports.chart-of-accounts') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                        </div>
+                    @endif
 
-                    <div class="rl-row" data-section="financial" data-tab="financial" data-id="chart-of-accounts" data-url="{{ route('reports.chart-of-accounts') }}" data-keywords="chart of accounts account balances ledger register account list">
-                        <button class="rl-star" data-id="chart-of-accounts" title="Favourite"><i class="far fa-star"></i></button>
-                        <a href="{{ route('reports.chart-of-accounts') }}" class="rl-name">Chart of Accounts</a>
-                        <a href="{{ route('reports.chart-of-accounts') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
-                    </div>
+                    @if($canUseEnterpriseReports)
+                        <div class="rl-row" data-section="financial" data-tab="financial" data-id="tax-summary" data-url="{{ route('reports.tax-summary') }}" data-keywords="tax summary output input net liability vat gst">
+                            <button class="rl-star" data-id="tax-summary" title="Favourite"><i class="far fa-star"></i></button>
+                            <a href="{{ route('reports.tax-summary') }}" class="rl-name">Tax Summary</a>
+                            <span class="rl-badge rl-badge-ent"><i class="fas fa-lock" style="font-size:7px;"></i> Ent</span>
+                            <a href="{{ route('reports.tax-summary') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                        </div>
+                    @endif
 
                     @if($canUseEnterpriseReports && Route::has('general-ledger'))
                         <div class="rl-row" data-section="financial" data-tab="financial" data-id="general-ledger" data-url="{{ route('general-ledger') }}" data-keywords="general ledger accounts double entry transactions history">

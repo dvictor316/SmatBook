@@ -18,9 +18,9 @@ class CheckPlanAccess
         $userPlan = (string) ($user?->company?->plan ?? 'Basic');
         $normalizedUserPlan = $this->normalizePlan($userPlan);
 
-        // Super admins / administrators bypass plan checks
+        // Only platform super admins bypass plan checks.
         if (
-            in_array(strtolower((string) ($user->role ?? '')), ['super_admin', 'superadmin', 'administrator', 'admin'], true) ||
+            in_array(strtolower((string) ($user->role ?? '')), ['super_admin', 'superadmin'], true) ||
             strtolower((string) ($user->email ?? '')) === 'donvictorlive@gmail.com'
         ) {
             return $next($request);

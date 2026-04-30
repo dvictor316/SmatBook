@@ -933,8 +933,6 @@ class CustomerController extends Controller
                     $paymentPayload = [
                         'sale_id' => $sale->id,
                         'customer_id' => $customer->id,
-                        'branch_id' => $sale->branch_id ?? $activeBranch['id'],
-                        'branch_name' => $sale->branch_name ?? $sale->branch_label ?? $activeBranch['name'],
                         'reference' => $referenceBase !== '' ? $referenceBase : ($sale->invoice_no ?: ('SALE-' . $sale->id . '-PAY')),
                         'amount' => $amount,
                         'receipt_no' => $this->generatePaymentReceiptNo(),
@@ -943,6 +941,13 @@ class CustomerController extends Controller
                         'note' => $request->input('note') ?: 'Customer payment received.',
                         'created_by' => auth()->id(),
                     ];
+
+                    if (Schema::hasColumn('payments', 'branch_id')) {
+                        $paymentPayload['branch_id'] = $sale->branch_id ?? $activeBranch['id'];
+                    }
+                    if (Schema::hasColumn('payments', 'branch_name')) {
+                        $paymentPayload['branch_name'] = $sale->branch_name ?? $sale->branch_label ?? $activeBranch['name'];
+                    }
 
                     if (Schema::hasColumn('payments', 'payment_account_id')) {
                         $paymentPayload['payment_account_id'] = $resolvedAccountId;
@@ -1002,8 +1007,6 @@ class CustomerController extends Controller
                     $paymentPayload = [
                         'sale_id' => $openingSale?->id,
                         'customer_id' => $customer->id,
-                        'branch_id' => $openingSale?->branch_id ?? $activeBranch['id'],
-                        'branch_name' => $openingSale?->branch_name ?? $activeBranch['name'],
                         'reference' => $referenceBase !== '' ? $referenceBase : ('OPENING-BAL-' . $customer->id),
                         'amount' => $openingPaymentAmount,
                         'receipt_no' => $this->generatePaymentReceiptNo(),
@@ -1012,6 +1015,13 @@ class CustomerController extends Controller
                         'note' => $request->input('note') ?: 'Customer opening balance payment received.',
                         'created_by' => auth()->id(),
                     ];
+
+                    if (Schema::hasColumn('payments', 'branch_id')) {
+                        $paymentPayload['branch_id'] = $openingSale?->branch_id ?? $activeBranch['id'];
+                    }
+                    if (Schema::hasColumn('payments', 'branch_name')) {
+                        $paymentPayload['branch_name'] = $openingSale?->branch_name ?? $activeBranch['name'];
+                    }
 
                     if (Schema::hasColumn('payments', 'payment_account_id')) {
                         $paymentPayload['payment_account_id'] = $resolvedAccountId;

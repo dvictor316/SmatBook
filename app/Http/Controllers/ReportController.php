@@ -51,7 +51,7 @@ class ReportController extends Controller
             }
 
             return match ($value) {
-                'super_admin', 'superadmin', 'administrator', 'admin' => 'full',
+                'super_admin', 'superadmin' => 'full',
                 default => 'basic',
             };
         }
@@ -61,7 +61,7 @@ class ReportController extends Controller
             $user = Auth::user();
             $role = strtolower(trim((string) ($user?->role ?? '')));
 
-            if (in_array($role, ['super_admin', 'superadmin', 'administrator', 'admin'], true)
+            if (in_array($role, ['super_admin', 'superadmin'], true)
                 || strtolower((string) ($user?->email ?? '')) === 'donvictorlive@gmail.com') {
                 return 'full';
             }
