@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
 use App\Models\Account;
 use App\Models\Transaction;
+use App\Support\LedgerService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
@@ -134,6 +135,14 @@ class BalanceSheetController extends Controller
     {
         $activeBranch = $this->resolveActiveBranch($request);
         $reportDate = $request->date ? Carbon::parse($request->date) : Carbon::now();
+
+        LedgerService::backfillSupplierPaymentLedgerEntries(
+            (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0) ?: null,
+            (int) ($request->user()?->id ?? 0) ?: null,
+            ($activeBranch['scope'] ?? 'branch') === 'all' ? null : ($activeBranch['id'] ?? null),
+            ($activeBranch['scope'] ?? 'branch') === 'all' ? null : ($activeBranch['name'] ?? null)
+        );
+
         Log::info('Balance sheet accessed', [
             'host' => $request->getHost(),
             'user_id' => $request->user()?->id,

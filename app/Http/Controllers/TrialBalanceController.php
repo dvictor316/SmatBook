@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
 use App\Models\Account;
 use App\Models\Transaction;
+use App\Support\LedgerService;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\TrialBalanceExport;
 
@@ -173,6 +174,13 @@ class TrialBalanceController extends Controller
     public function index(Request $request)
     {
         $activeBranch = $this->resolveActiveBranch($request);
+        LedgerService::backfillSupplierPaymentLedgerEntries(
+            (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0) ?: null,
+            (int) ($request->user()?->id ?? 0) ?: null,
+            ($activeBranch['scope'] ?? 'branch') === 'all' ? null : ($activeBranch['id'] ?? null),
+            ($activeBranch['scope'] ?? 'branch') === 'all' ? null : ($activeBranch['name'] ?? null)
+        );
+
         // 1. Set Date Range (Default: latest transaction month)
         $start = $request->start_date ? Carbon::parse($request->start_date) : null;
         $end = $request->end_date ? Carbon::parse($request->end_date) : null;

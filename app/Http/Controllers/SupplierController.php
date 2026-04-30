@@ -1185,28 +1185,19 @@ class SupplierController extends Controller
 
     private function calculateTotalPayables(): float
     {
-        $openingBalances = 0.0;
-        $purchaseBalances = 0.0;
-
         $supplierQuery = $this->newSupplierQuery();
         $this->applyTenantScope($supplierQuery);
-        if (Schema::hasColumn('suppliers', 'opening_balance')) {
-            $openingBalances = (float) $supplierQuery->sum('opening_balance');
-        }
 
-        if (Schema::hasTable('purchases')) {
-            $query = Purchase::query()->select(array_values(array_filter([
-                'id',
-                'supplier_id',
-                'total_amount',
-                Schema::hasColumn('purchases', 'paid_amount') ? 'paid_amount' : null,
-            ])));
-            $this->applyTenantScope($query, 'purchases');
-            $this->applyBranchScopeToPurchases($query);
-            $purchaseBalances = round((float) $query->get()->sum(fn ($purchase) => $this->resolvePurchaseOutstandingAmount($purchase)), 2);
-        }
+        $suppliers = $supplierQuery->select(array_values(array_filter([
+            'id',
+            Schema::hasColumn('suppliers', 'opening_balance') ? 'opening_balance' : null,
+        ])))->get();
 
-        return $openingBalances + $purchaseBalances;
+        $supplierIds = $suppliers->pluck('id')->map(fn ($id) => (int) $id)->filter(fn ($id) => $id > 0)->all();
+        $openingBalances = round((float) $suppliers->sum(fn ($supplier) => (float) ($supplier->opening_balance ?? 0)), 2);
+        $purchaseBalances = round((float) collect($this->supplierOutstandingBalances($supplierIds))->sum(), 2);
+
+        return round($openingBalances + $purchaseBalances, 2);
     }
 
     private function normalizeImportHeaderCell($value): string

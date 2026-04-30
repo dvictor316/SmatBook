@@ -8,6 +8,7 @@ use App\Models\Payment;
 use App\Models\Purchase;
 use App\Models\Sale;
 use App\Models\Supplier;
+use App\Models\SupplierPayment;
 use App\Models\Transaction;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -294,6 +295,104 @@ class LedgerService
             branchId: $branchId,
             branchName: $branchName
         );
+    }
+
+    public static function backfillSupplierPaymentLedgerEntries(
+        ?int $companyId = null,
+        ?int $userId = null,
+        ?string $branchId = null,
+        ?string $branchName = null
+    ): int {
+        if (!self::isReady() || !Schema::hasTable('supplier_payments')) {
+            return 0;
+        }
+
+        $query = SupplierPayment::withoutGlobalScopes()->orderBy('id');
+
+        if ($companyId && Schema::hasColumn('supplier_payments', 'company_id')) {
+            $query->where('company_id', $companyId);
+        } elseif ($userId && Schema::hasColumn('supplier_payments', 'user_id')) {
+            $query->where('user_id', $userId);
+        }
+
+        $branchId = trim((string) ($branchId ?? ''));
+        $branchName = trim((string) ($branchName ?? ''));
+        if ($branchId !== '' || $branchName !== '') {
+            $query->where(function ($sub) use ($branchId, $branchName) {
+                if ($branchId !== '' && Schema::hasColumn('supplier_payments', 'branch_id')) {
+                    $sub->where('branch_id', $branchId);
+                }
+                if ($branchName !== '' && Schema::hasColumn('supplier_payments', 'branch_name')) {
+                    $method = ($branchId !== '' && Schema::hasColumn('supplier_payments', 'branch_id')) ? 'orWhere' : 'where';
+                    $sub->{$method}('branch_name', $branchName);
+                }
+            });
+        }
+
+        $backfilled = 0;
+
+        foreach ($query->get() as $payment) {
+            $reference = trim((string) ($payment->reference ?: $payment->payment_group ?: ''));
+            $relatedId = (int) ($payment->purchase_id ?: $payment->supplier_id ?: 0);
+            $relatedType = $payment->purchase_id ? Purchase::class : Supplier::class;
+
+            if ($relatedId <= 0) {
+                continue;
+            }
+
+            self::$currentCompanyId = (int) ($payment->company_id ?? $companyId ?? Auth::user()?->company_id ?? session('current_tenant_id') ?? 0) ?: null;
+
+            $existing = Transaction::withoutGlobalScopes()
+                ->where('related_id', $relatedId)
+                ->where('related_type', $relatedType)
+                ->where('transaction_type', Transaction::TYPE_PAYMENT)
+                ->when($reference !== '', fn ($txn) => $txn->where('reference', $reference))
+                ->get();
+
+            $isBalancedPair = $existing->count() >= 2
+                && abs((float) $existing->sum('debit') - (float) $existing->sum('credit')) < 0.01;
+
+            if ($isBalancedPair) {
+                continue;
+            }
+
+            if ($existing->isNotEmpty()) {
+                $existing->each->delete();
+            }
+
+            if ($payment->purchase_id) {
+                $purchase = Purchase::withoutGlobalScopes()->find((int) $payment->purchase_id);
+                if (!$purchase) {
+                    continue;
+                }
+
+                self::postPurchasePayment(
+                    $purchase,
+                    (float) $payment->amount,
+                    $payment->method ?: null,
+                    $reference !== '' ? $reference : null,
+                    (int) ($payment->account_id ?? 0) ?: null,
+                    optional($payment->payment_date)->toDateString() ?: optional($payment->created_at)->toDateString()
+                );
+                $backfilled++;
+                continue;
+            }
+
+            self::postSupplierOpeningBalancePayment(
+                (int) $payment->supplier_id,
+                (float) $payment->amount,
+                $payment->method ?: null,
+                $reference !== '' ? $reference : null,
+                (int) ($payment->account_id ?? 0) ?: null,
+                optional($payment->payment_date)->toDateString() ?: optional($payment->created_at)->toDateString(),
+                (int) ($payment->created_by ?? $payment->user_id ?? auth()->id() ?? 0) ?: null,
+                $payment->branch_id ? (string) $payment->branch_id : null,
+                $payment->branch_name ? (string) $payment->branch_name : null
+            );
+            $backfilled++;
+        }
+
+        return $backfilled;
     }
 
     public static function postSalePayment(Sale $sale, Payment $payment, ?string $externalReference = null): void
