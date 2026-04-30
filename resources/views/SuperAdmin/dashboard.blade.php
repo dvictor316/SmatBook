@@ -1949,6 +1949,21 @@
                                                 </div>
                                             </div>
                                         </div>
+                                        <div class="row g-2 mt-3">
+                                            @foreach([
+                                                ['label' => 'Direct Revenue', 'value' => '₦' . number_format($metrics['direct_subscription_revenue'] ?? 0, 0)],
+                                                ['label' => 'Deployment Revenue', 'value' => '₦' . number_format($metrics['deployment_subscription_revenue'] ?? 0, 0)],
+                                                ['label' => 'Direct Buyers', 'value' => number_format($metrics['direct_paid_subs'] ?? 0)],
+                                                ['label' => 'Deployment Buyers', 'value' => number_format($metrics['deployment_paid_subs'] ?? 0)],
+                                            ] as $mixMini)
+                                                <div class="col-sm-6">
+                                                    <div class="summary-fill h-100">
+                                                        <div class="label">{{ $mixMini['label'] }}</div>
+                                                        <div class="value">{{ $mixMini['value'] }}</div>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
                                     </div>
                                 </div>
 
@@ -1961,6 +1976,21 @@
                                             @endif
                                         </div>
                                         <p class="card-subtitle card-subtitle-dash text-muted mb-3">Approve or decline deployment manager access</p>
+                                        <div class="row g-2 mb-3">
+                                            @foreach([
+                                                ['label' => 'Approved Managers', 'value' => number_format($metrics['active_managers'] ?? 0)],
+                                                ['label' => 'Suspended Managers', 'value' => number_format($metrics['suspended_managers'] ?? 0)],
+                                                ['label' => 'Pending Managers', 'value' => number_format($metrics['pending_managers'] ?? 0)],
+                                                ['label' => 'Approval Rate', 'value' => number_format(((int) (($metrics['active_managers'] ?? 0) + ($metrics['pending_managers'] ?? 0) + ($metrics['suspended_managers'] ?? 0))) > 0 ? (((float) ($metrics['active_managers'] ?? 0)) / max(1, (int) (($metrics['active_managers'] ?? 0) + ($metrics['pending_managers'] ?? 0) + ($metrics['suspended_managers'] ?? 0)))) * 100 : 0, 1) . '%'],
+                                            ] as $managerStat)
+                                                <div class="col-sm-6 col-xl-3">
+                                                    <div class="summary-fill h-100">
+                                                        <div class="label">{{ $managerStat['label'] }}</div>
+                                                        <div class="value">{{ $managerStat['value'] }}</div>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
                                         <div class="table-responsive" style="max-height: 520px; overflow-y: auto;">
                                             <table class="table table-hover align-middle">
                                                 <thead class="bg-light sticky-top">
@@ -2210,6 +2240,21 @@
                                                 </div>
                                             </div>
                                         </div>
+                                        <div class="row g-2 mt-2">
+                                            @foreach([
+                                                ['label' => 'Deployment-Sourced', 'value' => number_format(($recentTenants ?? collect())->filter(fn($tenant) => !empty($tenant->deployed_by))->count())],
+                                                ['label' => 'Direct-Sourced', 'value' => number_format(($recentTenants ?? collect())->filter(fn($tenant) => empty($tenant->deployed_by))->count())],
+                                                ['label' => 'Paid Nodes', 'value' => number_format($metrics['paid_subs'] ?? 0)],
+                                                ['label' => 'Pending Setup', 'value' => number_format($metrics['pending_setups'] ?? 0)],
+                                            ] as $tenantMini)
+                                                <div class="col-sm-6 col-xl-3">
+                                                    <div class="summary-fill h-100">
+                                                        <div class="label">{{ $tenantMini['label'] }}</div>
+                                                        <div class="value">{{ $tenantMini['value'] }}</div>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
                                         </div>
                                     </div>
                                 </div>
@@ -2458,6 +2503,21 @@
                                                     </div>
                                                 </div>
                                             </div>
+                                                <div class="row g-2 mt-2">
+                                                    @foreach([
+                                                        ['label' => 'Verified Users', 'value' => number_format($metrics['verified_users'] ?? 0)],
+                                                        ['label' => 'Direct Buyers', 'value' => number_format($metrics['direct_paid_subs'] ?? 0)],
+                                                        ['label' => 'Deployment Buyers', 'value' => number_format($metrics['deployment_paid_subs'] ?? 0)],
+                                                        ['label' => 'Registered Revenue', 'value' => '₦' . number_format($metrics['registered_user_revenue'] ?? 0, 0)],
+                                                    ] as $regionMini)
+                                                        <div class="col-sm-6 col-xl-3">
+                                                            <div class="summary-fill h-100">
+                                                                <div class="label">{{ $regionMini['label'] }}</div>
+                                                                <div class="value">{{ $regionMini['value'] }}</div>
+                                                            </div>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
                                         </div>
                                     </div>
                                 </div>
