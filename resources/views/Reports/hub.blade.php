@@ -468,7 +468,7 @@
                 <div class="rh-sec-head" onclick="toggleSection(this)">
                     <span class="rh-sec-icon pal-purple"><i class="fas fa-university"></i></span>
                     <span class="rh-sec-title">Financial Statements</span>
-                    <span class="rh-sec-count">8 reports</span>
+                    <span class="rh-sec-count">9 reports</span>
                     <i class="fas fa-chevron-down rh-sec-chevron"></i>
                 </div>
                 <div class="rh-col-grid">
@@ -516,6 +516,12 @@
                         <button class="rl-star" data-id="trial-balance" title="Favourite"><i class="far fa-star"></i></button>
                         <a href="{{ route('trial-balance') }}" class="rl-name">Trial Balance</a>
                         <a href="{{ route('trial-balance') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
+                    </div>
+
+                    <div class="rl-row" data-section="financial" data-tab="financial" data-id="chart-of-accounts" data-url="{{ route('reports.chart-of-accounts') }}" data-keywords="chart of accounts account balances ledger register account list">
+                        <button class="rl-star" data-id="chart-of-accounts" title="Favourite"><i class="far fa-star"></i></button>
+                        <a href="{{ route('reports.chart-of-accounts') }}" class="rl-name">Chart of Accounts</a>
+                        <a href="{{ route('reports.chart-of-accounts') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
                     </div>
 
                     @if($canUseEnterpriseReports && Route::has('general-ledger'))

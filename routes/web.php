@@ -944,6 +944,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
     Route::get('/balance-sheet-comparison', [BalanceSheetController::class, 'comparison'])->name('balance-sheet-comparison');
     Route::get('/trial-balance', [TrialBalanceController::class, 'index'])->name('trial-balance');
     Route::get('/trial-balance/export', [TrialBalanceController::class, 'export'])->name('trial-balance.export');
+    Route::get('/reports/chart-of-accounts', [ReportController::class, 'chartOfAccountsReport'])->name('reports.chart-of-accounts');
     Route::get('/general-ledger', [GeneralLedgerController::class, 'index'])
         ->middleware('plan.access:enterprise')
         ->name('general-ledger');

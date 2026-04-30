@@ -234,6 +234,14 @@ class ReportController extends Controller
                     'filter' => 'as_of',
                     'date_param' => 'date',
                 ],
+                'chart_of_accounts' => [
+                    'label' => 'Chart of Accounts',
+                    'route' => 'reports.chart-of-accounts',
+                    'description' => 'Account list with balances, status, and transaction counts.',
+                    'filter' => 'date_range',
+                    'from_param' => 'start_date',
+                    'to_param' => 'end_date',
+                ],
                 'ar_ageing_detail' => [
                     'label' => 'AR Ageing Detail',
                     'route' => 'reports.ar-ageing-detail',
@@ -939,6 +947,86 @@ class ReportController extends Controller
             ]);
 
             return view('Reports.Reports.profit-loss-list', $data);
+        }
+
+        public function chartOfAccountsReport(Request $request)
+        {
+            $accountsQuery = Account::query()
+                ->when(Schema::hasTable('transactions'), fn ($query) => $query->withCount('transactions'))
+                ->orderByRaw("FIELD(type, 'Asset', 'Liability', 'Equity', 'Revenue', 'Expense')")
+                ->orderBy('code');
+
+            $this->applyTenantScope($accountsQuery, 'accounts');
+            $this->applyGenericBranchFilter($accountsQuery, 'accounts');
+
+            if ($request->filled('type')) {
+                $accountsQuery->where('type', $request->input('type'));
+            }
+
+            if ($request->filled('status') && Schema::hasColumn('accounts', 'is_active')) {
+                if ($request->input('status') === 'active') {
+                    $accountsQuery->where('is_active', 1);
+                } elseif ($request->input('status') === 'inactive') {
+                    $accountsQuery->where('is_active', 0);
+                }
+            }
+
+            if ($request->filled('search')) {
+                $search = trim((string) $request->input('search'));
+                $accountsQuery->where(function ($query) use ($search) {
+                    $query->where('name', 'like', '%' . $search . '%');
+                    if (Schema::hasColumn('accounts', 'code')) {
+                        $query->orWhere('code', 'like', '%' . $search . '%');
+                    }
+                    if (Schema::hasColumn('accounts', 'sub_type')) {
+                        $query->orWhere('sub_type', 'like', '%' . $search . '%');
+                    }
+                    if (Schema::hasColumn('accounts', 'description')) {
+                        $query->orWhere('description', 'like', '%' . $search . '%');
+                    }
+                });
+            }
+
+            $accounts = $accountsQuery->get();
+
+            if (Schema::hasTable('transactions') && $accounts->isNotEmpty()) {
+                $transactionTotals = \App\Models\Transaction::query()
+                    ->selectRaw('account_id, SUM(debit) as total_debit, SUM(credit) as total_credit')
+                    ->whereIn('account_id', $accounts->pluck('id')->all())
+                    ->when(
+                        $request->filled('start_date') && $request->filled('end_date'),
+                        fn ($query) => $query->whereBetween('transaction_date', [
+                            Carbon::parse($request->input('start_date'))->startOfDay(),
+                            Carbon::parse($request->input('end_date'))->endOfDay(),
+                        ])
+                    )
+                    ->groupBy('account_id')
+                    ->get()
+                    ->keyBy('account_id');
+
+                $accounts = $accounts->map(function (Account $account) use ($transactionTotals) {
+                    $totals = $transactionTotals->get($account->id);
+                    $debits = (float) ($totals->total_debit ?? 0);
+                    $credits = (float) ($totals->total_credit ?? 0);
+                    $openingBalance = (float) ($account->opening_balance ?? 0);
+                    $isDebitNormal = in_array($account->type, [Account::TYPE_ASSET, Account::TYPE_EXPENSE], true);
+                    $account->current_balance = $isDebitNormal
+                        ? ($openingBalance + $debits) - $credits
+                        : ($openingBalance + $credits) - $debits;
+
+                    return $account;
+                });
+            }
+
+            $accountTypes = Account::typeOptions();
+            $summary = [
+                'total_accounts' => $accounts->count(),
+                'active_accounts' => Schema::hasColumn('accounts', 'is_active') ? $accounts->where('is_active', true)->count() : $accounts->count(),
+                'inactive_accounts' => Schema::hasColumn('accounts', 'is_active') ? $accounts->where('is_active', false)->count() : 0,
+                'total_balance' => (float) $accounts->sum(fn ($account) => (float) ($account->current_balance ?? $account->opening_balance ?? 0)),
+            ];
+
+            return $this->renderReportView('chart-of-accounts-report', compact('accounts', 'accountTypes', 'summary'));
         }
 
 
