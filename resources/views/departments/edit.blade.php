@@ -51,6 +51,9 @@
                                             @endif
                                         @endforeach
                                     </select>
+                                    @if($departments->isEmpty())
+                                        <small class="text-muted d-block mt-2">No other active departments are available in this branch yet, so this department cannot be assigned a parent right now.</small>
+                                    @endif
                                     @error('parent_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 </div>
                                 <div class="col-md-6">
@@ -61,6 +64,9 @@
                                             <option value="{{ $emp->id }}" @selected(old('head_employee_id', $department->head_employee_id) == $emp->id)>{{ $emp->name }}</option>
                                         @endforeach
                                     </select>
+                                    @if($employees->isEmpty())
+                                        <small class="text-muted d-block mt-2">No employees are available in this workspace yet, so no head can be assigned for now.</small>
+                                    @endif
                                     @error('head_employee_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 </div>
                                 <div class="col-12">
@@ -86,4 +92,6 @@
             </div>
         </div>
     </div>
+</div>
+</div>
 @endsection
