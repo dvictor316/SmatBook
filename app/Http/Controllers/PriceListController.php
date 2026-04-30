@@ -53,14 +53,42 @@ class PriceListController extends Controller
             'is_active'      => 'boolean',
             'notes'          => 'nullable|string',
             'items'          => 'nullable|array',
-            'items.*.product_id'   => 'required|exists:products,id',
-            'items.*.price'        => 'required|numeric|min:0',
+            'items.*.product_id'   => 'nullable|exists:products,id',
+            'items.*.price'        => 'nullable|numeric|min:0',
             'items.*.min_quantity' => 'nullable|numeric|min:0',
         ]);
 
+        $items = collect($data['items'] ?? [])
+            ->map(function ($item) {
+                return [
+                    'product_id' => $item['product_id'] ?? null,
+                    'price' => $item['price'] ?? null,
+                    'min_quantity' => $item['min_quantity'] ?? 1,
+                ];
+            })
+            ->filter(function ($item) {
+                return $item['product_id'] !== null
+                    || $item['price'] !== null
+                    || (float) ($item['min_quantity'] ?? 1) !== 1.0;
+            })
+            ->values();
+
+        foreach ($items as $index => $item) {
+            if (empty($item['product_id'])) {
+                return back()
+                    ->withErrors(["items.{$index}.product_id" => 'Please select a product for each price list item.'])
+                    ->withInput();
+            }
+
+            if ($item['price'] === null || $item['price'] === '') {
+                return back()
+                    ->withErrors(["items.{$index}.price" => 'Please enter a price for each selected product.'])
+                    ->withInput();
+            }
+        }
 
         $branch = $this->getActiveBranchContext();
-        DB::transaction(function () use ($data, $companyId, $branch) {
+        DB::transaction(function () use ($data, $items, $companyId, $branch) {
             $priceList = PriceList::create([
                 'company_id'     => $companyId,
                 'branch_id'      => $branch['id'],
@@ -77,8 +105,8 @@ class PriceListController extends Controller
                 'created_by'     => Auth::id(),
             ]);
 
-            if (! empty($data['items'])) {
-                foreach ($data['items'] as $item) {
+            if ($items->isNotEmpty()) {
+                foreach ($items as $item) {
                     $priceList->items()->create([
                         'product_id'   => $item['product_id'],
                         'price'        => $item['price'],

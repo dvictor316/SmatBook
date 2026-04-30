@@ -84,6 +84,94 @@ class ReportController extends Controller
                 : ['debit' => abs($amount), 'credit' => 0.0];
         }
 
+        private function normalizeProfitLossAccountType(?string $value): string
+        {
+            $value = strtolower(trim((string) $value));
+
+            return match ($value) {
+                'asset', 'assets' => 'asset',
+                'liability', 'liabilities', 'payable', 'payables', 'current liability', 'long term liability', 'long-term liability' => 'liability',
+                'equity', 'capital', 'owner equity', 'owners equity', "owner's equity", 'share capital', 'shareholder equity' => 'equity',
+                'revenue', 'income', 'sales', 'turnover' => 'revenue',
+                'expense', 'expenses', 'cost', 'cogs', 'cost of sales', 'cost of goods sold' => 'expense',
+                default => $value,
+            };
+        }
+
+        private function classifyProfitLossEntry(object $entry): ?string
+        {
+            $type = $this->normalizeProfitLossAccountType($entry->account_type ?? null);
+            $subType = $this->normalizeProfitLossAccountType($entry->account_sub_type ?? null);
+            $name = strtolower(trim((string) ($entry->account_name ?? '')));
+
+            if ($type === 'revenue' || $subType === 'revenue') {
+                return 'income';
+            }
+
+            if ($type === 'expense' || $subType === 'expense') {
+                if (
+                    str_contains($name, 'purchase')
+                    || str_contains($name, 'inventory')
+                    || str_contains($name, 'cogs')
+                    || str_contains($name, 'cost of sales')
+                    || str_contains($name, 'cost of goods sold')
+                ) {
+                    return 'purchase_expense';
+                }
+
+                return 'operating_expense';
+            }
+
+            return null;
+        }
+
+        private function profitLossLedgerEntries(string $from, string $to)
+        {
+            $query = DB::table('transactions')
+                ->join('accounts', 'transactions.account_id', '=', 'accounts.id')
+                ->select([
+                    'transactions.transaction_date',
+                    'transactions.reference',
+                    'transactions.description',
+                    'transactions.debit',
+                    'transactions.credit',
+                    DB::raw('COALESCE(accounts.name, "Unknown Account") as account_name'),
+                    DB::raw('COALESCE(accounts.type, "") as account_type'),
+                    DB::raw('COALESCE(accounts.sub_type, "") as account_sub_type'),
+                ])
+                ->whereBetween('transactions.transaction_date', [$from, $to]);
+
+            $this->applyTenantScope($query, 'transactions');
+            $this->applyGenericBranchFilter($query, 'transactions');
+
+            return $query->orderBy('transactions.transaction_date')
+                ->orderBy('transactions.id')
+                ->get()
+                ->map(function ($entry) {
+                    $stream = $this->classifyProfitLossEntry($entry);
+                    if (!$stream) {
+                        return null;
+                    }
+
+                    $amount = $stream === 'income'
+                        ? ((float) $entry->credit - (float) $entry->debit)
+                        : ((float) $entry->debit - (float) $entry->credit);
+
+                    if (abs($amount) < 0.0001) {
+                        return null;
+                    }
+
+                    $entry->stream = $stream;
+                    $entry->amount = $amount;
+                    $entry->report_date = Carbon::parse($entry->transaction_date)->toDateString();
+                    $entry->party = $entry->account_name;
+
+                    return $entry;
+                })
+                ->filter()
+                ->values();
+        }
+
         public function reportsHub()
         {
             $reportAccess = $this->resolveReportAccess();
@@ -3091,146 +3179,57 @@ public function destroy($id)
     {
         $start_date = $request->input('start_date');
         $end_date = $request->input('end_date');
-        $user = Auth::user();
-        $companyId = (int) ($user?->company_id ?? 0);
+        if (!$start_date || !$end_date) {
+            $latestTxnDate = DB::table('transactions')
+                ->tap(fn ($query) => $this->applyTenantScope($query, 'transactions'))
+                ->tap(fn ($query) => $this->applyGenericBranchFilter($query, 'transactions'))
+                ->max('transaction_date');
 
-        // Use COALESCE so POS sales (where order_date is NULL) fall back to created_at
-        $salesDateExpr = Schema::hasColumn('sales', 'order_date')
-            ? 'COALESCE(sales.order_date, sales.created_at)'
-            : (Schema::hasColumn('sales', 'date') ? 'sales.date' : 'sales.created_at');
-        $salesDateColumn = 'order_date'; // kept for whereBetween alias but we use $salesDateExpr in queries
+            $effectiveEnd = $latestTxnDate
+                ? Carbon::parse($latestTxnDate)->endOfDay()
+                : now()->endOfDay();
 
-        $salesAmountColumn = Schema::hasColumn('sales', 'total')
-            ? 'total'
-            : (Schema::hasColumn('sales', 'total_amount') ? 'total_amount' : null);
-
-        $applyTenantScope = function ($query, string $table) {
-            $user = Auth::user();
-            $companyId = (int) ($user?->company_id ?? 0);
-
-            if ($companyId > 0 && Schema::hasColumn($table, 'company_id')) {
-                $query->where(function ($sub) use ($table, $companyId, $user) {
-                    $sub->where("{$table}.company_id", $companyId);
-                    if ($user && Schema::hasColumn($table, 'user_id')) {
-                        $sub->orWhere(function ($fallback) use ($table, $user) {
-                            $fallback->whereNull("{$table}.company_id")
-                                ->where("{$table}.user_id", $user->id);
-                        });
-                    }
-                });
-            } elseif ($user && Schema::hasColumn($table, 'user_id')) {
-                $query->where("{$table}.user_id", $user->id);
-            } elseif ($user && Schema::hasColumn($table, 'created_by')) {
-                $query->where("{$table}.created_by", $user->id);
-            }
-        };
-
-        // Base Sales Query (Income)
-        $salesQuery = $this->scopedTable('sales')
-            ->select([
-                DB::raw("DATE({$salesDateExpr}) as report_date"),
-                DB::raw('SUM(COALESCE(sales.' . ($salesAmountColumn ?? 'total') . ', 0)) as income'),
-                DB::raw('0 as operating_expense'),
-                DB::raw('0 as purchase_expense'),
-            ])
-            ->when(
-                $start_date && $end_date,
-                fn($q) => $q->whereBetween(DB::raw("DATE({$salesDateExpr})"), [$start_date, $end_date])
-            )
-            ->tap(fn($q) => $applyTenantScope($q, 'sales'))
-            ->tap(fn($q) => $this->applySaleBranchFilter($q, 'sales'))
-            ->groupBy(DB::raw("DATE({$salesDateExpr})"));
-
-        // Base Expenses Query (Operational Expense)
-        $expensesQuery = $this->scopedTable('expenses')
-            ->select([
-                DB::raw('DATE(expenses.created_at) as report_date'),
-                DB::raw('0 as income'),
-                DB::raw('SUM(COALESCE(expenses.amount, 0)) as operating_expense'),
-                DB::raw('0 as purchase_expense'),
-            ])
-            ->when(
-                $start_date && $end_date,
-                fn($q) => $q->whereBetween(DB::raw('DATE(expenses.created_at)'), [$start_date, $end_date])
-            )
-            ->tap(fn($q) => $applyTenantScope($q, 'expenses'))
-            ->groupBy(DB::raw('DATE(expenses.created_at)'));
-
-        // Purchases Query (COGS/Purchase Cost)
-        $purchaseDateColumn = Schema::hasColumn('purchases', 'purchase_date')
-            ? 'purchase_date'
-            : (Schema::hasColumn('purchases', 'date') ? 'date' : 'created_at');
-
-        $purchaseBase = $this->scopedTable('purchases')
-            ->when(
-                $start_date && $end_date,
-                fn($q) => $q->whereBetween(DB::raw("DATE(purchases.{$purchaseDateColumn})"), [$start_date, $end_date])
-            )
-            ->tap(fn($q) => $applyTenantScope($q, 'purchases'));
-
-        $hasPurchaseRows = (clone $purchaseBase)->exists();
-
-        if ($hasPurchaseRows) {
-            $purchasesQuery = $purchaseBase
-                ->select([
-                    DB::raw("DATE(purchases.{$purchaseDateColumn}) as report_date"),
-                    DB::raw('0 as income'),
-                    DB::raw('0 as operating_expense'),
-                    DB::raw('SUM(ABS(COALESCE(purchases.total_amount, 0))) as purchase_expense'),
-                ])
-                ->groupBy(DB::raw("DATE(purchases.{$purchaseDateColumn})"));
-        } elseif (Schema::hasTable('inventory_history') && Schema::hasTable('products')) {
-            $purchasesQuery = $this->scopedTable('inventory_history')
-                ->join('products', 'inventory_history.product_id', '=', 'products.id')
-                ->select([
-                    DB::raw('DATE(inventory_history.created_at) as report_date'),
-                    DB::raw('0 as income'),
-                    DB::raw('0 as operating_expense'),
-                    DB::raw('SUM(COALESCE(inventory_history.quantity, 0) * COALESCE(products.purchase_price, products.price, 0)) as purchase_expense'),
-                ])
-                ->whereRaw("LOWER(COALESCE(inventory_history.type, '')) = 'in'")
-                ->when(
-                    $start_date && $end_date,
-                    fn($q) => $q->whereBetween(DB::raw('DATE(inventory_history.created_at)'), [$start_date, $end_date])
-                )
-                ->when(
-                    $companyId > 0 && Schema::hasColumn('products', 'company_id'),
-                    fn($q) => $q->where('products.company_id', $companyId)
-                )
-                ->groupBy(DB::raw('DATE(inventory_history.created_at)'));
-        } else {
-            $purchasesQuery = $this->scopedTable('purchases')
-                ->select([
-                    DB::raw("DATE(NOW()) as report_date"),
-                    DB::raw('0 as income'),
-                    DB::raw('0 as operating_expense'),
-                    DB::raw('0 as purchase_expense'),
-                ])
-                ->whereRaw('1 = 0');
+            $end_date = $end_date ?: $effectiveEnd->toDateString();
+            $start_date = $start_date ?: $effectiveEnd->copy()->startOfMonth()->toDateString();
         }
 
-        $combined = DB::query()->fromSub(
-            $salesQuery->unionAll($expensesQuery)->unionAll($purchasesQuery),
-            'combined_data'
+        $entries = $this->profitLossLedgerEntries($start_date, $end_date);
+
+        $dailyRows = $entries
+            ->groupBy('report_date')
+            ->map(function ($rows, $reportDate) {
+                $income = (float) $rows->where('stream', 'income')->sum('amount');
+                $operatingExpense = (float) $rows->where('stream', 'operating_expense')->sum('amount');
+                $purchaseExpense = (float) $rows->where('stream', 'purchase_expense')->sum('amount');
+
+                return (object) [
+                    'report_date' => $reportDate,
+                    'income' => $income,
+                    'operating_expense' => $operatingExpense,
+                    'purchase_expense' => $purchaseExpense,
+                    'expense' => $operatingExpense + $purchaseExpense,
+                ];
+            })
+            ->sortByDesc('report_date')
+            ->values();
+
+        $totals = (object) [
+            'total_income' => (float) $dailyRows->sum('income'),
+            'total_operating_expense' => (float) $dailyRows->sum('operating_expense'),
+            'total_purchase_expense' => (float) $dailyRows->sum('purchase_expense'),
+            'total_expense' => (float) $dailyRows->sum('expense'),
+        ];
+
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $perPage = 15;
+        $pageItems = $dailyRows->forPage($currentPage, $perPage)->values();
+        $profitLossData = new LengthAwarePaginator(
+            $pageItems,
+            $dailyRows->count(),
+            $perPage,
+            $currentPage,
+            ['path' => request()->url(), 'query' => request()->query()]
         );
-
-        $totals = (clone $combined)->select([
-            DB::raw('SUM(income) as total_income'),
-            DB::raw('SUM(operating_expense) as total_operating_expense'),
-            DB::raw('SUM(purchase_expense) as total_purchase_expense'),
-            DB::raw('SUM(operating_expense + purchase_expense) as total_expense'),
-        ])->first();
-
-        $profitLossData = $combined->select([
-            'report_date',
-            DB::raw('SUM(income) as income'),
-            DB::raw('SUM(operating_expense) as operating_expense'),
-            DB::raw('SUM(purchase_expense) as purchase_expense'),
-            DB::raw('SUM(operating_expense + purchase_expense) as expense'),
-        ])
-        ->groupBy('report_date')
-        ->orderBy('report_date', 'desc')
-        ->paginate(15);
 
         return $this->renderReportView('profit-loss-list', compact('profitLossData', 'totals'));
     }
@@ -3391,13 +3390,9 @@ public function destroy($id)
             $toB   = $request->input('to_b')   ?: now()->subYear()->toDateString();
 
             $fetch = function (string $start, string $end) {
-                $dateCol = Schema::hasColumn('sales', 'order_date') ? 'order_date'
-                    : (Schema::hasColumn('sales', 'date') ? 'date' : 'created_at');
-                $income  = (float) $this->scopedTable('sales')->whereBetween($dateCol, [$start.' 00:00:00', $end.' 23:59:59'])->sum('total');
-                $expense = 0.0;
-                if (Schema::hasTable('expenses')) {
-                    $expense = (float) $this->scopedTable('expenses')->whereBetween('created_at', [$start.' 00:00:00', $end.' 23:59:59'])->sum('amount');
-                }
+                $entries = $this->profitLossLedgerEntries($start, $end);
+                $income = (float) $entries->where('stream', 'income')->sum('amount');
+                $expense = (float) $entries->whereIn('stream', ['operating_expense', 'purchase_expense'])->sum('amount');
                 return ['income' => $income, 'expense' => $expense, 'net' => $income - $expense];
             };
 
@@ -3411,18 +3406,16 @@ public function destroy($id)
         public function profitLossByMonth(Request $request)
         {
             $year = (int) ($request->input('year') ?: now()->year);
-            $dateCol = Schema::hasColumn('sales', 'order_date') ? 'order_date'
-                : (Schema::hasColumn('sales', 'date') ? 'date' : 'created_at');
+            $entries = $this->profitLossLedgerEntries(
+                sprintf('%04d-01-01', $year),
+                sprintf('%04d-12-31', $year)
+            );
 
             $months = [];
             for ($m = 1; $m <= 12; $m++) {
-                $start = sprintf('%04d-%02d-01 00:00:00', $year, $m);
-                $end   = sprintf('%04d-%02d-%02d 23:59:59', $year, $m, cal_days_in_month(CAL_GREGORIAN, $m, $year));
-                $income  = (float) $this->scopedTable('sales')->whereBetween($dateCol, [$start, $end])->sum('total');
-                $expense = 0.0;
-                if (Schema::hasTable('expenses')) {
-                    $expense = (float) $this->scopedTable('expenses')->whereBetween('created_at', [$start, $end])->sum('amount');
-                }
+                $monthRows = $entries->filter(fn ($entry) => (int) Carbon::parse($entry->transaction_date)->month === $m);
+                $income = (float) $monthRows->where('stream', 'income')->sum('amount');
+                $expense = (float) $monthRows->whereIn('stream', ['operating_expense', 'purchase_expense'])->sum('amount');
                 $months[$m] = ['income' => $income, 'expense' => $expense, 'net' => $income - $expense];
             }
 
@@ -3434,22 +3427,32 @@ public function destroy($id)
         {
             $from = $request->input('from_date') ?: now()->startOfMonth()->toDateString();
             $to   = $request->input('to_date')   ?: now()->toDateString();
-            $dateCol = Schema::hasColumn('sales', 'order_date') ? 'order_date'
-                : (Schema::hasColumn('sales', 'date') ? 'date' : 'created_at');
+            $entries = $this->profitLossLedgerEntries($from, $to);
 
-            $salesQuery = $this->scopedTable('sales')
-                ->select(DB::raw("COALESCE(customer_name,'Unknown') as party"), DB::raw("total as amount"), DB::raw("'{$dateCol}' as date_col"), DB::raw($dateCol.' as txn_date'), DB::raw("'Income' as stream"), DB::raw("invoice_no as reference"))
-                ->whereBetween($dateCol, [$from.' 00:00:00', $to.' 23:59:59']);
-            $this->applySalesScope($salesQuery, 'sales');
+            $salesRows = $entries->where('stream', 'income')
+                ->map(function ($entry) {
+                    return (object) [
+                        'party' => $entry->party ?? 'Revenue',
+                        'amount' => (float) $entry->amount,
+                        'txn_date' => $entry->transaction_date,
+                        'reference' => $entry->reference ?: '—',
+                    ];
+                })
+                ->sortByDesc('txn_date')
+                ->values();
 
-            $expenseRows = collect();
-            if (Schema::hasTable('expenses')) {
-                $expenseRows = $this->scopedTable('expenses')
-                    ->select(DB::raw("COALESCE(company_name,'N/A') as party"), DB::raw("amount"), DB::raw("created_at as txn_date"), DB::raw("'Expense' as stream"), DB::raw("COALESCE(reference,'—') as reference"))
-                    ->whereBetween('created_at', [$from.' 00:00:00', $to.' 23:59:59'])->get();
-            }
+            $expenseRows = $entries->whereIn('stream', ['operating_expense', 'purchase_expense'])
+                ->map(function ($entry) {
+                    return (object) [
+                        'party' => $entry->party ?? 'Expense',
+                        'amount' => (float) $entry->amount,
+                        'txn_date' => $entry->transaction_date,
+                        'reference' => $entry->reference ?: '—',
+                    ];
+                })
+                ->sortByDesc('txn_date')
+                ->values();
 
-            $salesRows   = $salesQuery->orderByDesc($dateCol)->get();
             $totalIncome  = (float) $salesRows->sum('amount');
             $totalExpense = (float) $expenseRows->sum('amount');
             $netProfit    = $totalIncome - $totalExpense;
