@@ -882,7 +882,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::get('/customer-statement/{id}', 'customerStatement')->name('customer-statement');
         Route::get('/quotation-report', 'quotation_report')->name('quotation');
         Route::get('/profit-loss-list', 'profit_loss_list')
-            ->middleware('plan.access:professional,enterprise')
+            ->middleware('plan.access:pro,enterprise')
             ->name('profit-loss');
         Route::get('/tax-purchase', 'tax_purchase')
             ->middleware('plan.access:enterprise')
@@ -899,9 +899,9 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::get('/payment-summary', 'paymentSummary')->name('payment-summary');
 
         // Sub-report family — P&L
-        Route::get('/profit-loss-comparison', 'profitLossComparison')->middleware('plan.access:professional,enterprise')->name('profit-loss-comparison');
-        Route::get('/profit-loss-by-month', 'profitLossByMonth')->middleware('plan.access:professional,enterprise')->name('profit-loss-by-month');
-        Route::get('/profit-loss-detail', 'profitLossDetail')->middleware('plan.access:professional,enterprise')->name('profit-loss-detail');
+        Route::get('/profit-loss-comparison', 'profitLossComparison')->middleware('plan.access:pro,enterprise')->name('profit-loss-comparison');
+        Route::get('/profit-loss-by-month', 'profitLossByMonth')->middleware('plan.access:pro,enterprise')->name('profit-loss-by-month');
+        Route::get('/profit-loss-detail', 'profitLossDetail')->middleware('plan.access:pro,enterprise')->name('profit-loss-detail');
 
         // Sub-report family — Who Owes You / AR
         Route::get('/ar-ageing-detail', 'accountsReceivableAgeingDetail')->name('ar-ageing-detail');
@@ -936,15 +936,15 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
     });
     
     // Financial Reports
-    Route::get('/cash-flow', [CashFlowController::class, 'cashFlow'])->middleware('plan.access:professional,enterprise')->name('reports.cash-flow');
-    Route::get('/cash-flow/export', [CashFlowController::class, 'exportCashFlow'])->middleware('plan.access:professional,enterprise')->name('reports.cash-flow.export');
-    Route::get('/balance-sheet', [BalanceSheetController::class, 'index'])->middleware('plan.access:professional,enterprise')->name('balance-sheet');
-    Route::get('/balance-sheet/export', [BalanceSheetController::class, 'export'])->middleware('plan.access:professional,enterprise')->name('balance-sheet.export');
-    Route::get('/balance-sheet-summary', [BalanceSheetController::class, 'summary'])->middleware('plan.access:professional,enterprise')->name('balance-sheet-summary');
-    Route::get('/balance-sheet-comparison', [BalanceSheetController::class, 'comparison'])->middleware('plan.access:professional,enterprise')->name('balance-sheet-comparison');
-    Route::get('/trial-balance', [TrialBalanceController::class, 'index'])->middleware('plan.access:professional,enterprise')->name('trial-balance');
-    Route::get('/trial-balance/export', [TrialBalanceController::class, 'export'])->middleware('plan.access:professional,enterprise')->name('trial-balance.export');
-    Route::get('/reports/chart-of-accounts', [ReportController::class, 'chartOfAccountsReport'])->middleware('plan.access:professional,enterprise')->name('reports.chart-of-accounts');
+    Route::get('/cash-flow', [CashFlowController::class, 'cashFlow'])->middleware('plan.access:pro,enterprise')->name('reports.cash-flow');
+    Route::get('/cash-flow/export', [CashFlowController::class, 'exportCashFlow'])->middleware('plan.access:pro,enterprise')->name('reports.cash-flow.export');
+    Route::get('/balance-sheet', [BalanceSheetController::class, 'index'])->middleware('plan.access:enterprise')->name('balance-sheet');
+    Route::get('/balance-sheet/export', [BalanceSheetController::class, 'export'])->middleware('plan.access:enterprise')->name('balance-sheet.export');
+    Route::get('/balance-sheet-summary', [BalanceSheetController::class, 'summary'])->middleware('plan.access:enterprise')->name('balance-sheet-summary');
+    Route::get('/balance-sheet-comparison', [BalanceSheetController::class, 'comparison'])->middleware('plan.access:enterprise')->name('balance-sheet-comparison');
+    Route::get('/trial-balance', [TrialBalanceController::class, 'index'])->middleware('plan.access:enterprise')->name('trial-balance');
+    Route::get('/trial-balance/export', [TrialBalanceController::class, 'export'])->middleware('plan.access:enterprise')->name('trial-balance.export');
+    Route::get('/reports/chart-of-accounts', [ReportController::class, 'chartOfAccountsReport'])->middleware('plan.access:pro,enterprise')->name('reports.chart-of-accounts');
     Route::get('/general-ledger', [GeneralLedgerController::class, 'index'])
         ->middleware('plan.access:enterprise')
         ->name('general-ledger');

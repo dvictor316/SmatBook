@@ -27,6 +27,7 @@ use App\Models\Sale;
 use App\Models\Setting;
 use App\Models\Plan;
 use App\Models\Subscription;
+use App\Support\PlanAccess;
 use App\Support\LedgerService;
 use App\Support\AppMailer;
 use App\Support\InventoryQuantity;
@@ -37,49 +38,12 @@ class ReportController extends Controller
 {
         private function normalizeReportPlan(string $plan): string
         {
-            $value = strtolower(trim($plan));
-
-            if ($value === '' || str_contains($value, 'basic')) {
-                return 'basic';
-            }
-
-            if ($value === 'pro' || $value === 'professional' || str_contains($value, 'professional') || str_contains($value, 'pro ')) {
-                return 'pro';
-            }
-
-            if (str_contains($value, 'enterprise')) {
-                return 'enterprise';
-            }
-
-            return match ($value) {
-                'super_admin', 'superadmin' => 'full',
-                default => 'basic',
-            };
+            return PlanAccess::normalizeTier($plan) ?? 'basic';
         }
 
         private function resolveReportAccess(): string
         {
-            $user = Auth::user();
-            $role = strtolower(trim((string) ($user?->role ?? '')));
-
-            if (in_array($role, ['super_admin', 'superadmin'], true)
-                || strtolower((string) ($user?->email ?? '')) === 'donvictorlive@gmail.com') {
-                return 'full';
-            }
-
-            $planCandidates = [
-                optional($user?->company)->plan,
-                optional(Subscription::resolveCurrentForUser($user))->planLabel(),
-                session('user_plan'),
-            ];
-
-            foreach ($planCandidates as $candidate) {
-                if (filled($candidate)) {
-                    return $this->normalizeReportPlan((string) $candidate);
-                }
-            }
-
-            return 'basic';
+            return PlanAccess::resolveTierForUser(Auth::user());
         }
 
         private function allowedReportTabs(string $reportAccess): array
