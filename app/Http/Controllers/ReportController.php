@@ -3773,10 +3773,18 @@ public function destroy($id)
                 $this->applySalesScope($q, 'sales');
                 $taxOnSales = (float) $q->sum('tax');
             }
-            if (Schema::hasTable('purchases') && Schema::hasColumn('purchases', 'tax')) {
-                $dateC = Schema::hasColumn('purchases', 'purchase_date') ? 'purchase_date' : 'created_at';
-                $q = $this->applyTenantScope(DB::table('purchases'), 'purchases')->whereBetween($dateC, [$from, $to]);
-                $taxOnPurchases = (float) $q->sum('tax');
+            if (Schema::hasTable('purchases')) {
+                $dateC = Schema::hasColumn('purchases', 'purchase_date')
+                    ? 'purchase_date'
+                    : (Schema::hasColumn('purchases', 'date') ? 'date' : 'created_at');
+                $purchaseTaxColumn = Schema::hasColumn('purchases', 'tax_amount')
+                    ? 'tax_amount'
+                    : (Schema::hasColumn('purchases', 'tax') ? 'tax' : null);
+
+                if ($purchaseTaxColumn) {
+                    $q = $this->applyTenantScope(DB::table('purchases'), 'purchases')->whereBetween($dateC, [$from, $to]);
+                    $taxOnPurchases = (float) $q->sum($purchaseTaxColumn);
+                }
             }
             $netTaxLiability = $taxOnSales - $taxOnPurchases;
 
