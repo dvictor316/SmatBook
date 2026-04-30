@@ -709,6 +709,25 @@ class AuthController extends Controller
             return redirect()->route('saas.setup', ['id' => $subscription->id]);
         }
 
+        if (($socialContext['intent'] ?? 'login') === 'register') {
+            $existingSubscription = Subscription::query()
+                ->where('user_id', $user->id)
+                ->latest('id')
+                ->first();
+
+            if ($existingSubscription) {
+                if (strtolower((string) $existingSubscription->payment_status) !== 'paid') {
+                    return redirect()->route('saas.checkout', ['id' => $existingSubscription->id])
+                        ->with('success', ucfirst($provider) . ' account connected. Complete your checkout to continue.');
+                }
+
+                if (strtolower((string) $existingSubscription->status) !== 'active' || empty($existingSubscription->company_id)) {
+                    return redirect()->route('saas.setup', ['id' => $existingSubscription->id])
+                        ->with('success', ucfirst($provider) . ' account connected. Complete your workspace setup to continue.');
+                }
+            }
+        }
+
         return redirect()->route('home');
     }
 
