@@ -1120,6 +1120,7 @@
                                         </div>
                                         <div class="row g-2">
                                             @foreach([
+                                                ['label' => 'Registered User Revenue', 'value' => '₦' . number_format($metrics['registered_user_revenue'] ?? 0, 2), 'tone' => 'tone-cobalt'],
                                                 ['label' => 'Customer Users', 'value' => number_format($metrics['total_users'] ?? 0), 'tone' => 'tone-cobalt'],
                                                 ['label' => 'Direct Signup Users', 'value' => number_format($metrics['direct_customer_users'] ?? 0), 'tone' => 'tone-emerald'],
                                                 ['label' => 'Deployment Signup Users', 'value' => number_format($metrics['deployment_customer_users'] ?? 0), 'tone' => 'tone-violet'],
@@ -1359,7 +1360,7 @@
 
                         <div class="row mt-2">
                             @foreach([
-                                ['label' => 'Live MRR', 'value' => '₦' . number_format($metrics['platform_revenue'] ?? 0, 0), 'tone' => 'tone-indigo'],
+                                ['label' => 'Registered User Revenue', 'value' => '₦' . number_format($metrics['registered_user_revenue'] ?? 0, 0), 'tone' => 'tone-indigo'],
                                 ['label' => 'Plan Sales Today', 'value' => number_format($metrics['plan_sales_today'] ?? 0), 'tone' => 'tone-sky'],
                                 ['label' => 'Plan Sales This Month', 'value' => number_format($metrics['plan_sales_month'] ?? 0), 'tone' => 'tone-emerald'],
                                 ['label' => 'Monthly Plan Value', 'value' => '₦' . number_format($metrics['plan_sales_value_month'] ?? 0, 0), 'tone' => 'tone-violet'],
@@ -1438,7 +1439,7 @@
                                     </div>
                                     <div class="row g-2">
                                         @foreach([
-                                            ['label' => 'MRR', 'value' => '₦' . number_format($metrics['platform_revenue'] ?? 0, 0)],
+                                            ['label' => 'Registered Revenue', 'value' => '₦' . number_format($metrics['registered_user_revenue'] ?? 0, 0)],
                                             ['label' => 'Paid Subs', 'value' => number_format($metrics['paid_subs'] ?? 0)],
                                             ['label' => 'Plan Sales Today', 'value' => number_format($metrics['plan_sales_today'] ?? 0)],
                                             ['label' => 'Plan Sales Month', 'value' => number_format($metrics['plan_sales_month'] ?? 0)],
@@ -1446,7 +1447,7 @@
                                             ['label' => 'Average Plan Sale', 'value' => '₦' . number_format($metrics['avg_plan_sale'] ?? 0, 0)],
                                             ['label' => 'Expiring Soon', 'value' => number_format($metrics['expiring_soon_subs'] ?? 0)],
                                             ['label' => 'Expired', 'value' => number_format($metrics['expired_subs'] ?? 0)],
-                                            ['label' => 'Tenants', 'value' => number_format($metrics['total_tenants'] ?? 0)],
+                                            ['label' => 'Verified Users', 'value' => number_format($metrics['verified_users'] ?? 0)],
                                             ['label' => 'Low Stock', 'value' => number_format($metrics['low_stock_items'] ?? 0)],
                                             ['label' => 'New Signups (30d)', 'value' => number_format($metrics['recent_signups'] ?? 0)],
                                             ['label' => 'Users', 'value' => number_format($metrics['total_users'] ?? 0)],
@@ -1738,7 +1739,7 @@
                                             $activeManagers = (int) ($metrics['active_managers'] ?? 0);
                                             $suspendedManagers = (int) ($metrics['suspended_managers'] ?? 0);
                                             $verifiedUsers = (int) ($metrics['verified_users'] ?? 0);
-                                            $totalCompanies = (int) ($metrics['total_companies'] ?? 0);
+                                            $totalRegisteredUsers = (int) ($metrics['total_users'] ?? 0);
                                             $managerUniverse = $pendingManagers + $activeManagers + $suspendedManagers;
                                         @endphp
                                         <div class="pulse-chart-shell">
@@ -1782,7 +1783,7 @@
                                                         <span class="label">Verified Users</span>
                                                     </div>
                                                     <div class="value">{{ number_format($verifiedUsers) }}</div>
-                                                    <div class="note">{{ number_format($totalCompanies) }} companies currently live.</div>
+                                                    <div class="note">{{ number_format($totalRegisteredUsers) }} registered users currently tracked.</div>
                                                 </div>
                                             </div>
                                         </div>
@@ -1821,7 +1822,7 @@
                                                 ['label' => 'Average Plan Sale', 'value' => '₦' . number_format($metrics['avg_plan_sale'] ?? 0, 0), 'tone' => 'tone-amber'],
                                                 ['label' => 'Monthly Plan Value', 'value' => '₦' . number_format($metrics['plan_sales_value_month'] ?? 0, 0), 'tone' => 'tone-violet'],
                                                 ['label' => 'Users', 'value' => number_format($metrics['total_users'] ?? 0), 'tone' => 'tone-sky'],
-                                                ['label' => 'Companies', 'value' => number_format($metrics['total_tenants'] ?? 0), 'tone' => 'tone-emerald'],
+                                                ['label' => 'Verified Users', 'value' => number_format($metrics['verified_users'] ?? 0), 'tone' => 'tone-emerald'],
                                             ] as $monitorStat)
                                                 <div class="col-sm-6">
                                                     <div class="summary-fill {{ $monitorStat['tone'] }}">
@@ -1839,7 +1840,7 @@
                                         <div class="d-flex justify-content-between align-items-center mb-2">
                                             <div>
                                                 <h5 class="mb-0 fw-bold text-dark">Subscriber Momentum</h5>
-                                                <small class="text-muted">Companies vs users trend</small>
+                                                <small class="text-muted">Active tenants vs registered users trend</small>
                                             </div>
                                             <span class="live-badge-soft">Live</span>
                                         </div>
@@ -1849,7 +1850,7 @@
                                         <div class="row g-2 mt-2">
                                             <div class="col-sm-6">
                                                 <div class="summary-fill">
-                                                    <div class="label">Total Companies</div>
+                                                    <div class="label">Active Tenants</div>
                                                     <div class="value">{{ number_format($metrics['total_tenants'] ?? 0) }}</div>
                                                 </div>
                                             </div>

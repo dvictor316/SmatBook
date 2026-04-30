@@ -256,6 +256,7 @@ class SuperAdminDashboardController extends Controller
                 'total_companies'  => $totalCompanies, 
                 'total_tenants'    => $activeCompanies > 0 ? $activeCompanies : $totalCompanies,
                 'total_users'      => $totalCustomerUsers,
+                'registered_user_revenue' => $subscriptionRevenue,
                 'verified_users'   => Schema::hasColumn('users', 'is_verified')
                                       ? (clone $customerUsersBaseQuery)->where('is_verified', 1)->count()
                                       : 0,
@@ -491,7 +492,8 @@ class SuperAdminDashboardController extends Controller
                 ->get();
             $monthlyCompaniesMap = $companyRows->pluck('total', 'month_num')->toArray();
 
-            $userRows = User::select(
+            $userRows = (clone $customerUsersBaseQuery)
+                ->select(
                     DB::raw('MONTH(created_at) as month_num'),
                     DB::raw('COUNT(*) as total')
                 )
