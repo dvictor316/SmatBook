@@ -1064,6 +1064,14 @@
             }
         }
 
+        function quickProductForm() {
+            return $('#quick_add_product_form');
+        }
+
+        function quickFormField(selector) {
+            return quickProductForm().find(selector);
+        }
+
         $('#quick_add_product_form').on('submit', function() {
             const imageInput = document.getElementById('quick_add_product_image');
             const submitButton = $(this).find('button[type="submit"]');
@@ -1075,7 +1083,7 @@
         });
 
         function refreshQuickPackagingLabels() {
-            const baseUnitName = ($('input[name="base_unit_name"]').val() || 'pcs').trim();
+            const baseUnitName = (quickFormField('input[name="base_unit_name"]').val() || 'pcs').trim();
             const unitLabel = baseUnitName.length ? baseUnitName : 'pcs';
             const titleUnit = unitLabel.charAt(0).toUpperCase() + unitLabel.slice(1);
 
@@ -1083,7 +1091,7 @@
         }
 
         function quickBaseUnitLabel() {
-            const raw = ($('input[name="base_unit_name"]').val() || 'pcs').trim();
+            const raw = (quickFormField('input[name="base_unit_name"]').val() || 'pcs').trim();
             return raw.length ? raw : 'pcs';
         }
 
@@ -1160,13 +1168,13 @@
         }
 
         function calculateQuickStock() {
-            const cartons = parseFloat($('input[name="stock_cartons"]').val()) || 0;
-            const rolls = parseFloat($('input[name="stock_rolls"]').val()) || 0;
-            const pieces = parseFloat($('input[name="stock_units"]').val()) || 0;
+            const cartons = parseFloat(quickFormField('input[name="stock_cartons"]').val()) || 0;
+            const rolls = parseFloat(quickFormField('input[name="stock_rolls"]').val()) || 0;
+            const pieces = parseFloat(quickFormField('input[name="stock_units"]').val()) || 0;
             const rollsPerCarton = parseFloat($('#quick_units_per_carton_input').val()) || 0;
             const piecesPerRoll = parseFloat($('#quick_units_per_roll_input').val()) || 0;
             const piecesPerCarton = packagingValue('#quick_pcs_per_carton_helper');
-            const purchasePrice = parseFloat($('input[name="purchase_price"]').val()) || 0;
+            const purchasePrice = parseFloat(quickFormField('input[name="purchase_price"]').val()) || 0;
             const unitLabel = quickBaseUnitLabel();
 
             const fromCartons = piecesPerCarton > 0
@@ -1197,6 +1205,7 @@
 
         $('#quick_add_product_form').find('input[name="base_unit_name"]').on('input', function() {
             refreshQuickPackagingLabels();
+            calculateQuickStock();
         });
 
         refreshQuickPackagingLabels();
