@@ -12,6 +12,65 @@ use Illuminate\Validation\Rule;
 
 class DepartmentController extends Controller
 {
+    private function departmentOptionsForCompany(int $companyId, ?int $branchId, ?int $excludeDepartmentId = null)
+    {
+        $query = Department::forCompany($companyId)
+            ->when(
+                $branchId !== null && Schema::hasColumn('departments', 'branch_id'),
+                fn ($builder) => $builder->where('branch_id', $branchId)
+            )
+            ->active()
+            ->when($excludeDepartmentId !== null, fn ($builder) => $builder->where('id', '!=', $excludeDepartmentId))
+            ->orderBy('name');
+
+        $departments = $query->get();
+
+        if ($departments->isEmpty()) {
+            $departments = Department::forCompany($companyId)
+                ->active()
+                ->when($excludeDepartmentId !== null, fn ($builder) => $builder->where('id', '!=', $excludeDepartmentId))
+                ->orderBy('name')
+                ->get();
+        }
+
+        return $departments;
+    }
+
+    private function employeeOptionsForCompany(int $companyId, ?int $branchId)
+    {
+        $query = Employee::withoutGlobalScopes()
+            ->forWorkspaceCompany($companyId)
+            ->when(
+                $branchId !== null && Schema::hasColumn('employees', 'branch_id'),
+                fn ($builder) => $builder->where('employees.branch_id', $branchId)
+            )
+            ->when(
+                Schema::hasColumn('employees', 'status'),
+                fn ($builder) => $builder->where(function ($sub) {
+                    $sub->whereNull('employees.status')
+                        ->orWhere('employees.status', 'active');
+                })
+            )
+            ->orderBy('name');
+
+        $employees = $query->get();
+
+        if ($employees->isEmpty()) {
+            $employees = Employee::withoutGlobalScopes()
+                ->forWorkspaceCompany($companyId)
+                ->when(
+                    Schema::hasColumn('employees', 'status'),
+                    fn ($builder) => $builder->where(function ($sub) {
+                        $sub->whereNull('employees.status')
+                            ->orWhere('employees.status', 'active');
+                    })
+                )
+                ->orderBy('name')
+                ->get();
+        }
+
+        return $employees;
+    }
 
     private function getActiveBranchContext(): array
     {
@@ -52,20 +111,8 @@ class DepartmentController extends Controller
     {
         $companyId = Auth::user()->company_id;
         $branchId = $this->resolveDepartmentBranchId();
-        $employees = Employee::forWorkspaceCompany($companyId)->orderBy('name')->get();
-        $departments = Department::forCompany($companyId)
-            ->when(
-                $branchId !== null && Schema::hasColumn('departments', 'branch_id'),
-                fn ($query) => $query->where('branch_id', $branchId)
-            )
-            ->active()->orderBy('name')->get();
-
-        if ($departments->isEmpty()) {
-            $departments = Department::forCompany($companyId)
-                ->active()
-                ->orderBy('name')
-                ->get();
-        }
+        $employees = $this->employeeOptionsForCompany($companyId, $branchId);
+        $departments = $this->departmentOptionsForCompany($companyId, $branchId);
 
         return view('departments.create', compact('employees', 'departments'));
     }
@@ -105,24 +152,8 @@ class DepartmentController extends Controller
         $this->authorizeDepartmentAccess($department);
         $companyId   = Auth::user()->company_id;
         $branchId = $this->resolveDepartmentBranchId();
-        $employees   = Employee::forWorkspaceCompany($companyId)->orderBy('name')->get();
-        $departments = Department::forCompany($companyId)
-            ->when(
-                $branchId !== null && Schema::hasColumn('departments', 'branch_id'),
-                fn ($query) => $query->where('branch_id', $branchId)
-            )
-            ->active()
-            ->where('id', '!=', $department->id)
-            ->orderBy('name')
-            ->get();
-
-        if ($departments->isEmpty()) {
-            $departments = Department::forCompany($companyId)
-                ->active()
-                ->where('id', '!=', $department->id)
-                ->orderBy('name')
-                ->get();
-        }
+        $employees   = $this->employeeOptionsForCompany($companyId, $branchId);
+        $departments = $this->departmentOptionsForCompany($companyId, $branchId, $department->id);
 
         return view('departments.edit', compact('department', 'employees', 'departments'));
     }
