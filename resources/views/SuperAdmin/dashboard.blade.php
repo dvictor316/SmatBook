@@ -2414,6 +2414,23 @@
                                                     </div>
                                                 @endforelse
                                             </div>
+                                            <div class="row g-2 mt-3">
+                                                @foreach([
+                                                    ['label' => 'Active Recent', 'value' => number_format(($recentTenants ?? collect())->where('status', 'active')->count())],
+                                                    ['label' => 'Deployment Recent', 'value' => number_format(($recentTenants ?? collect())->filter(fn($tenant) => !empty($tenant->deployed_by))->count())],
+                                                    ['label' => 'Direct Recent', 'value' => number_format(($recentTenants ?? collect())->filter(fn($tenant) => empty($tenant->deployed_by))->count())],
+                                                    ['label' => 'Verified Users', 'value' => number_format($metrics['verified_users'] ?? 0)],
+                                                    ['label' => 'Recent Signups', 'value' => number_format($metrics['recent_signups'] ?? 0)],
+                                                    ['label' => 'Direct Buyers', 'value' => number_format($metrics['direct_paid_subs'] ?? 0)],
+                                                ] as $readinessMini)
+                                                    <div class="col-sm-6 col-xl-4">
+                                                        <div class="summary-fill h-100">
+                                                            <div class="label">{{ $readinessMini['label'] }}</div>
+                                                            <div class="value">{{ $readinessMini['value'] }}</div>
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -2596,6 +2613,23 @@
                                                     Expired Plans: {{ number_format($expiredSubs) }}
                                                 </div>
                                             </div>
+                                        </div>
+                                        <div class="row g-2 mt-3">
+                                            @foreach([
+                                                ['label' => 'Verified Recent Users', 'value' => number_format(($recentUsers ?? collect())->filter(fn($item) => !empty($item->is_verified))->count())],
+                                                ['label' => 'Users With Company', 'value' => number_format(($recentUsers ?? collect())->filter(fn($item) => !empty(optional($item->company)->id))->count())],
+                                                ['label' => 'Users Awaiting Setup', 'value' => number_format(($recentUsers ?? collect())->filter(fn($item) => empty(optional($item->company)->id))->count())],
+                                                ['label' => 'Avg Plan Revenue', 'value' => '₦' . number_format($metrics['avg_plan_sale'] ?? 0, 0)],
+                                                ['label' => 'Registered Revenue', 'value' => '₦' . number_format($metrics['registered_user_revenue'] ?? 0, 0)],
+                                                ['label' => 'Expiry Pressure', 'value' => number_format(max(0, ((int) ($metrics['expiring_soon_subs'] ?? 0)) + ((int) ($metrics['expired_subs'] ?? 0))))],
+                                            ] as $healthMini)
+                                                <div class="col-sm-6 col-xl-4">
+                                                    <div class="summary-fill h-100">
+                                                        <div class="label">{{ $healthMini['label'] }}</div>
+                                                        <div class="value">{{ $healthMini['value'] }}</div>
+                                                    </div>
+                                                </div>
+                                            @endforeach
                                         </div>
                                     </div>
                                 </div>
