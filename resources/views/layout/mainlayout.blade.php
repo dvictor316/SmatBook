@@ -162,6 +162,26 @@
                 overflow: visible !important;
                 position: static !important;
             }
+            body.report-workspace,
+            body.report-workspace .page-wrapper,
+            body.report-workspace .content,
+            body.report-workspace .container-fluid,
+            body.report-workspace .container,
+            body.report-workspace .table-responsive,
+            body.report-workspace .card,
+            body.report-workspace .card-body,
+            body.report-workspace .card-table,
+            body.report-workspace .dataTables_wrapper,
+            body.report-workspace .row,
+            body.report-workspace [class*="col-"] {
+                overflow: visible !important;
+                max-height: none !important;
+            }
+            body.report-workspace *::-webkit-scrollbar {
+                display: none !important;
+                width: 0 !important;
+                height: 0 !important;
+            }
             .content,
             .container-fluid,
             .container {
@@ -212,6 +232,15 @@
             }
 
             body.print-scope-active .print-scope-target .no-print,
+            body.print-scope-active .print-scope-target .page-header,
+            body.print-scope-active .print-scope-target .content-page-header,
+            body.print-scope-active .print-scope-target .report-context-strip,
+            body.print-scope-active .print-scope-target .filter-card,
+            body.print-scope-active .print-scope-target .filter-list,
+            body.print-scope-active .print-scope-target .inventory-toolbar,
+            body.print-scope-active .print-scope-target .table-top-head,
+            body.print-scope-active .print-scope-target .breadcrumb,
+            body.print-scope-active .print-scope-target .dataTables_info,
             body.print-scope-active .print-scope-target .btn,
             body.print-scope-active .print-scope-target button,
             body.print-scope-active .print-scope-target input,
@@ -231,6 +260,29 @@
             body.print-scope-active .print-scope-target .popover,
             body.print-scope-active .print-scope-target .swal2-container {
                 display: none !important;
+            }
+
+            body.print-scope-active .print-scope-target .table-responsive,
+            body.print-scope-active .print-scope-target .dataTables_wrapper,
+            body.print-scope-active .print-scope-target .card,
+            body.print-scope-active .print-scope-target .card-body,
+            body.print-scope-active .print-scope-target .card-table,
+            body.print-scope-active .print-scope-target .row,
+            body.print-scope-active .print-scope-target [class*="col-"] {
+                overflow: visible !important;
+                max-height: none !important;
+                height: auto !important;
+            }
+
+            body.print-scope-active .print-scope-target table {
+                width: 100% !important;
+                page-break-inside: auto !important;
+            }
+
+            body.print-scope-active .print-scope-target tr,
+            body.print-scope-active .print-scope-target td,
+            body.print-scope-active .print-scope-target th {
+                page-break-inside: avoid !important;
             }
 
             body.print-scope-active .print-scope-target i[class*="fa-"],
@@ -2596,6 +2648,22 @@
                 const resolvedExplicitTarget = resolveTarget(explicitTarget);
                 if (resolvedExplicitTarget && isVisible(resolvedExplicitTarget)) {
                     return resolvedExplicitTarget;
+                }
+
+                if (document.body.classList.contains('report-workspace')) {
+                    const reportWorkspaceSelectors = [
+                        '.page-wrapper .content.container-fluid',
+                        '.page-wrapper .content',
+                        '.content.container-fluid',
+                        '.content',
+                    ];
+
+                    for (const selector of reportWorkspaceSelectors) {
+                        const match = Array.from(document.querySelectorAll(selector)).find((el) => isVisible(el));
+                        if (match) {
+                            return match;
+                        }
+                    }
                 }
 
                 const selectors = [

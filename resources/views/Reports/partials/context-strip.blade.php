@@ -23,7 +23,7 @@
     $stripMultiBranch = count($stripAvailableBranches) > 1;
 @endphp
 
-<div class="report-context-strip mb-3">
+<div class="report-context-strip mb-3 d-print-none">
     <div class="report-context-main">
         <span class="report-context-kicker">{{ $stripReportLabel }}</span>
         <h6 class="report-context-company mb-0">{{ $stripCompanyName }}</h6>
