@@ -325,6 +325,24 @@
         flex-direction: column;
         gap: 0.7rem;
     }
+    .workspace-readiness-board {
+        gap: 0.5rem;
+    }
+    .workspace-readiness-board .summary-fill {
+        padding: 9px 11px;
+        border-radius: 12px;
+    }
+    .workspace-readiness-board .summary-fill .label {
+        font-size: 9px;
+        margin-bottom: 0.18rem;
+    }
+    .workspace-readiness-board .summary-fill .value {
+        font-size: 0.92rem;
+        line-height: 1.15;
+    }
+    .workspace-readiness-board .summary-fill .small {
+        font-size: 0.72rem;
+    }
     .dashboard-split-card .table-responsive,
     .dashboard-split-card .list-wrapper {
         max-height: 260px !important;
@@ -2397,7 +2415,7 @@
 
                                 <div class="card card-rounded shadow-sm">
                                     <div class="card-body">
-                                        <div class="dashboard-split-card">
+                                        <div class="dashboard-split-card workspace-readiness-board">
                                             <div class="d-flex justify-content-between align-items-center mb-3">
                                                 <div>
                                                     <h4 class="card-title card-title-dash mb-1">Workspace Readiness Board</h4>
@@ -2406,7 +2424,7 @@
                                                 <span class="live-badge-soft">Live</span>
                                             </div>
 
-                                            <div class="row g-2 mb-3">
+                                            <div class="row g-2 mb-2">
                                                 @foreach([
                                                     ['label' => 'Recent Tenants', 'value' => number_format($recentTenants->count() ?? 0)],
                                                     ['label' => 'Paid Nodes', 'value' => number_format($metrics['paid_subs'] ?? 0)],
@@ -2422,7 +2440,7 @@
                                                 @endforeach
                                             </div>
 
-                                            <div class="small text-muted fw-semibold mb-2">Newest Company Nodes</div>
+                                            <div class="small text-muted fw-semibold mb-1">Newest Company Nodes</div>
                                             <div class="row g-2">
                                                 @forelse(($recentTenants ?? collect())->take(4) as $tenant)
                                                     <div class="col-md-6">
@@ -2470,7 +2488,7 @@
                                                     </div>
                                                 @endif
                                             </div>
-                                            <div class="row g-2 mt-3">
+                                            <div class="row g-2 mt-2">
                                                 @foreach([
                                                     ['label' => 'Active Recent', 'value' => number_format(($recentTenants ?? collect())->where('status', 'active')->count())],
                                                     ['label' => 'Deployment Recent', 'value' => number_format(($recentTenants ?? collect())->filter(fn($tenant) => !empty($tenant->deployed_by))->count())],
