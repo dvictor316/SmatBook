@@ -205,7 +205,7 @@ class TrialBalanceController extends Controller
         $txnTotalsQuery = Transaction::query()
             ->selectRaw('account_id, SUM(debit) as total_debit, SUM(credit) as total_credit')
             ->whereDate('transaction_date', '<=', $end->toDateString())
-            ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
+            ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch, $accountIds) {
                 $branchId = trim((string) ($activeBranch['id'] ?? ''));
                 $branchName = trim((string) ($activeBranch['name'] ?? ''));
 
@@ -299,6 +299,12 @@ class TrialBalanceController extends Controller
                     // Include global accounts with no branch assignment
                     $sub->orWhereNull('branch_id')
                         ->orWhere('branch_id', '');
+
+                    // Keep any account that already has branch-scoped transaction activity
+                    // in this trial balance, regardless of the branch tag on the account master row.
+                    if (!empty($accountIds)) {
+                        $sub->orWhereIn('id', $accountIds);
+                    }
                 });
             });
         $this->applyAccountScope($accountsQuery, $request);

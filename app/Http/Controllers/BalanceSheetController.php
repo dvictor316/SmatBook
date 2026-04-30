@@ -255,7 +255,7 @@ class BalanceSheetController extends Controller
                 // that does not reset when transactions are deleted.
                 $query->orWhere('opening_balance', '!=', 0);
             })
-            ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
+            ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch, $accountIds) {
                 $branchId = trim((string) ($activeBranch['id'] ?? ''));
                 $branchName = trim((string) ($activeBranch['name'] ?? ''));
 
@@ -277,6 +277,12 @@ class BalanceSheetController extends Controller
                     // (Accounts Receivable, Sales Revenue, Petty Cash, etc.)
                     $sub->orWhereNull('branch_id')
                         ->orWhere('branch_id', '');
+
+                    // If this account already has branch-scoped transaction activity in the report,
+                    // do not hide it just because the account master row carries a different branch tag.
+                    if (!empty($accountIds)) {
+                        $sub->orWhereIn('id', $accountIds);
+                    }
                 });
             });
 
