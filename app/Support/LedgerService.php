@@ -348,6 +348,8 @@ class LedgerService
             $reference = trim((string) ($payment->reference ?: $payment->payment_group ?: ''));
             $relatedId = (int) ($payment->purchase_id ?: $payment->supplier_id ?: 0);
             $relatedType = $payment->purchase_id ? Purchase::class : Supplier::class;
+            $expectedBranchId = $payment->branch_id ? (string) $payment->branch_id : null;
+            $expectedBranchName = $payment->branch_name ? (string) $payment->branch_name : null;
 
             if ($relatedId <= 0) {
                 continue;
@@ -364,8 +366,20 @@ class LedgerService
 
             $isBalancedPair = $existing->count() >= 2
                 && abs((float) $existing->sum('debit') - (float) $existing->sum('credit')) < 0.01;
+            $hasMatchingBranchEntry = $existing->isNotEmpty() && (
+                ($expectedBranchId === null && $expectedBranchName === null)
+                || $existing->contains(function ($entry) use ($expectedBranchId, $expectedBranchName) {
+                    if ($expectedBranchId !== null && isset($entry->branch_id) && (string) $entry->branch_id === $expectedBranchId) {
+                        return true;
+                    }
 
-            if ($isBalancedPair) {
+                    return $expectedBranchName !== null
+                        && isset($entry->branch_name)
+                        && (string) $entry->branch_name === $expectedBranchName;
+                })
+            );
+
+            if ($isBalancedPair && $hasMatchingBranchEntry) {
                 continue;
             }
 

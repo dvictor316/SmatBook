@@ -105,9 +105,13 @@ class SupplierController extends Controller
             return round(max(0, $paidFromColumn), 2);
         }
 
-        $paidFromPayments = (float) $this->supplierPaymentQueryForSupplier((int) $purchase->supplier_id)
+        $paidFromPaymentsQuery = SupplierPayment::withoutGlobalScopes()
+            ->where('supplier_id', (int) $purchase->supplier_id)
             ->where('purchase_id', $purchase->id)
-            ->sum('amount');
+            ->whereNotNull('purchase_id');
+        $this->applyCompanyUserScope($paidFromPaymentsQuery, 'supplier_payments');
+
+        $paidFromPayments = (float) $paidFromPaymentsQuery->sum('amount');
 
         return round(max($paidFromColumn, $paidFromPayments), 2);
     }
