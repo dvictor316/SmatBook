@@ -26,6 +26,7 @@ use App\Models\Customer;
 use App\Models\Sale;
 use App\Models\Setting;
 use App\Models\Plan;
+use App\Models\Subscription;
 use App\Support\LedgerService;
 use App\Support\AppMailer;
 use App\Support\InventoryQuantity;
