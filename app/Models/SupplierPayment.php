@@ -19,6 +19,7 @@ class SupplierPayment extends Model
         'branch_id',
         'branch_name',
         'bank_id',
+        'account_id',
         'payment_group',
         'reference',
         'amount',
@@ -48,5 +49,10 @@ class SupplierPayment extends Model
     public function bank(): BelongsTo
     {
         return $this->belongsTo(Bank::class, 'bank_id');
+    }
+
+    public function account(): BelongsTo
+    {
+        return $this->belongsTo(Account::class, 'account_id');
     }
 }

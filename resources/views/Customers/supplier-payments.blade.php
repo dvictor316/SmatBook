@@ -100,9 +100,9 @@
             <div class="col-md-4">
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-body">
-                        <p class="text-muted mb-1">Selected Bank Available Balance</p>
+                        <p class="text-muted mb-1">Selected Payment Source Available Balance</p>
                         <h4 class="mb-0">{{ $currencySymbol }}<span data-selected-bank-balance>0.00</span></h4>
-                        <small class="text-muted">Choose a bank account to verify available funds before saving payment.</small>
+                        <small class="text-muted">Choose a bank or account to verify available funds before saving payment.</small>
                     </div>
                 </div>
             </div>
@@ -123,14 +123,23 @@
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Bank / Account</label>
-                            <select name="bank_id" class="form-select">
-                                <option value="">Select bank</option>
-                                @foreach($banks as $bank)
-                                    <option value="{{ $bank->id }}" data-balance="{{ number_format((float) ($bank->balance ?? 0), 2) }}" @selected((string) old('bank_id') === (string) $bank->id)>
-                                        {{ $bank->name }} — {{ \App\Support\GeoCurrency::format((float) ($bank->balance ?? 0), 'NGN', $currencyCode, $currencyLocale) }}
+                            @php
+                                $selectedPaymentSource = old('payment_source');
+                                if (!$selectedPaymentSource && old('bank_id')) {
+                                    $selectedPaymentSource = 'bank:' . old('bank_id');
+                                }
+                            @endphp
+                            <select name="payment_source" class="form-select">
+                                <option value="">Select bank or account</option>
+                                @foreach($paymentSources as $source)
+                                    <option value="{{ $source->value }}" data-balance="{{ number_format((float) ($source->balance ?? 0), 2) }}" @selected((string) $selectedPaymentSource === (string) $source->value)>
+                                        {{ $source->label }} ({{ $source->type }}) — {{ \App\Support\GeoCurrency::format((float) ($source->balance ?? 0), 'NGN', $currencyCode, $currencyLocale) }}
                                     </option>
                                 @endforeach
                             </select>
+                            @if($paymentSources->isEmpty())
+                                <small class="text-danger">No bank or account is available for this workspace/branch yet.</small>
+                            @endif
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Payment Method</label>
@@ -236,7 +245,7 @@
                                 <th>Date</th>
                                 <th>Reference</th>
                                 <th>Purchase</th>
-                                <th>Bank</th>
+                                <th>Bank / Account</th>
                                 <th>Method</th>
                                 <th class="text-end">Amount</th>
                                 <th>Note</th>
@@ -248,7 +257,7 @@
                                     <td>{{ optional($payment->payment_date)->format('d M Y') ?: optional($payment->created_at)->format('d M Y') }}</td>
                                     <td>{{ $payment->reference ?: ($payment->payment_group ?: '-') }}</td>
                                     <td>{{ $payment->purchase?->purchase_no ?: 'Manual supplier payment' }}</td>
-                                    <td>{{ $payment->bank?->name ?: 'Not specified' }}</td>
+                                    <td>{{ $payment->bank?->name ?: ($payment->account?->name ?: 'Not specified') }}</td>
                                     <td>{{ $payment->method ?: '-' }}</td>
                                     <td class="text-end fw-semibold">{{ \App\Support\GeoCurrency::format((float) $payment->amount, 'NGN', $currencyCode, $currencyLocale) }}</td>
                                     <td>{{ $payment->note ?: '-' }}</td>
@@ -271,7 +280,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const supplierCurrencySymbol = @json($currencySymbol);
     const paymentAmountInput = document.querySelector('input[name="payment_amount"]');
     const totalEl = document.querySelector('[data-allocation-total]');
-    const bankSelect = document.querySelector('select[name="bank_id"]');
+    const bankSelect = document.querySelector('select[name="payment_source"]');
     const bankBalanceEl = document.querySelector('[data-selected-bank-balance]');
     const bankWarningEl = document.querySelector('[data-bank-warning]');
     const paymentForm = document.querySelector('#supplierPaymentForm');
@@ -301,7 +310,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const currentTotal = parseFloat((totalEl?.textContent || '0').replace(/,/g, '')) || 0;
         if (bankSelect?.value && currentTotal > balance && bankWarningEl) {
-            bankWarningEl.textContent = 'Selected bank balance is not sufficient for the current payment total of ' + supplierCurrencySymbol + formatCurrency(currentTotal) + '. Please choose another account or reduce the payment amount.';
+            bankWarningEl.textContent = 'Selected payment source balance is not sufficient for the current payment total of ' + supplierCurrencySymbol + formatCurrency(currentTotal) + '. Please choose another source or reduce the payment amount.';
             bankWarningEl.classList.remove('d-none');
         } else if (bankWarningEl) {
             bankWarningEl.classList.add('d-none');
@@ -338,7 +347,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (bankSelect?.value && total > balance) {
                 event.preventDefault();
                 if (bankWarningEl) {
-                    bankWarningEl.textContent = 'Cannot save payment because the selected bank does not have enough funds to cover ' + supplierCurrencySymbol + formatCurrency(total) + '.';
+                    bankWarningEl.textContent = 'Cannot save payment because the selected payment source does not have enough funds to cover ' + supplierCurrencySymbol + formatCurrency(total) + '.';
                     bankWarningEl.classList.remove('d-none');
                     bankWarningEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }

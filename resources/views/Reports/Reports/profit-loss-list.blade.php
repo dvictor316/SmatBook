@@ -4,6 +4,13 @@
     $currencyCode = $geoCurrency ?? \App\Support\GeoCurrency::currentCurrency();
     $currencyLocale = $geoCurrencyLocale ?? \App\Support\GeoCurrency::currentLocale();
     $currencySymbol = $geoCurrencySymbol ?? \App\Support\GeoCurrency::currentSymbol();
+    $reportCompany = auth()->user()?->company;
+    $reportCompanyName = $reportCompany?->company_name
+        ?? $reportCompany?->name
+        ?? \App\Models\Setting::where('key', 'company_name')->value('value')
+        ?? 'SmartProbook';
+    $activeBranchName = trim((string) (session('active_branch_name') ?? ''));
+    $fmt = fn ($amount) => \App\Support\GeoCurrency::format((float) $amount, 'NGN', $currencyCode, $currencyLocale);
 
     // Subdomain parameter detection for all routes
     $currentSubdomain = request()->route('subdomain') ?? 'admin';
@@ -42,27 +49,136 @@
 
 @section('style')
 <style>
-    #profitLossTable { font-size: 12.5px !important; }
+    .pl-page {
+        max-width: 980px;
+        margin: 0 auto 24px;
+    }
+    .pl-toolbar {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+    .pl-btn {
+        border: 1px solid #cbd5e1;
+        background: #fff;
+        color: #0f172a;
+        border-radius: 999px;
+        padding: 10px 16px;
+        font-size: 0.74rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+    .pl-sheet {
+        background: #fff;
+        border: 1px solid #dbe2ea;
+        padding: 30px 34px 26px;
+        box-shadow: 0 16px 38px rgba(15, 23, 42, 0.06);
+    }
+    .pl-header {
+        text-align: center;
+        margin-bottom: 18px;
+    }
+    .pl-title {
+        font-size: 1.55rem;
+        font-weight: 500;
+        color: #111827;
+        margin: 0 0 10px;
+    }
+    .pl-company {
+        font-size: 1.15rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        color: #111827;
+        margin: 0;
+    }
+    .pl-date,
+    .pl-branch {
+        margin-top: 6px;
+        color: #475569;
+        font-size: 0.92rem;
+    }
+    .pl-statement {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.92rem;
+        color: #111827;
+    }
+    .pl-statement col:first-child { width: 74%; }
+    .pl-statement col:last-child { width: 26%; }
+    .pl-statement td {
+        padding: 4px 0;
+        vertical-align: top;
+    }
+    .pl-head-row td {
+        border-top: 2px solid #111827;
+        border-bottom: 1px solid #111827;
+        padding-top: 6px;
+        padding-bottom: 6px;
+        font-size: 0.76rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    .pl-head-row td:last-child,
+    .pl-amount {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+    .pl-section td {
+        padding-top: 12px;
+        font-weight: 500;
+    }
+    .pl-line td:first-child {
+        padding-left: 32px;
+    }
+    .pl-total td {
+        font-weight: 700;
+        border-top: 1px solid #cbd5e1;
+        padding-top: 4px;
+    }
+    .pl-grand td {
+        font-weight: 700;
+        border-top: 3px double #111827;
+        padding-top: 5px;
+    }
+    .pl-note {
+        margin-top: 16px;
+        padding: 10px 14px;
+        border: 1px solid #e2e8f0;
+        background: #f8fafc;
+        color: #475569;
+        font-size: 0.82rem;
+    }
+    .pl-breakdown {
+        margin-top: 22px;
+        border-top: 1px solid #e2e8f0;
+        padding-top: 18px;
+    }
+    .pl-breakdown h3 {
+        margin: 0 0 12px;
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #111827;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+    #profitLossTable {
+        font-size: 12.5px !important;
+    }
     #profitLossTable thead th {
         font-size: 0.75rem !important;
         text-transform: uppercase;
         letter-spacing: 0.08em;
-        background-color: #f1f5f9;
-        color: #102a5a;
+        background-color: #f8fafc;
+        color: #334155;
         border-bottom: 1px solid #dbe7f5;
     }
     #profitLossTable tbody td,
     #profitLossTable tfoot td {
         vertical-align: middle;
-    }
-    .card-body h3 {
-        font-size: clamp(0.9rem, 1.7vw, 1.02rem);
-        font-weight: 800;
-        letter-spacing: -0.02em;
-        line-height: 1.2;
-        font-variant-numeric: tabular-nums;
-        overflow-wrap: anywhere;
-        word-break: break-word;
     }
     .dt-buttons { margin-bottom: 15px; gap: 5px; display: flex; }
     .dt-button {
@@ -74,112 +190,29 @@
         padding: 0.5rem 0.9rem !important;
         color: #374151 !important;
     }
-    .pl-detail-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 1rem;
-    }
-    .pl-detail-card {
-        border: 1px solid #dbe7f5;
-        border-radius: 18px;
-        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
-        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
-        padding: 1rem;
-    }
-    .pl-detail-card.is-profit {
-        border-top: 4px solid #22c55e;
-    }
-    .pl-detail-card.is-loss {
-        border-top: 4px solid #ef4444;
-    }
-    .pl-detail-card.is-breakeven {
-        border-top: 4px solid #94a3b8;
-    }
-    .pl-detail-head {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 0.8rem;
-        margin-bottom: 0.9rem;
-    }
-    .pl-detail-kicker {
-        display: block;
-        font-size: 0.7rem;
-        font-weight: 800;
-        color: #64748b;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        margin-bottom: 0.2rem;
-    }
-    .pl-detail-date {
-        display: block;
-        font-size: 1rem;
-        line-height: 1.25;
-        font-weight: 800;
-        color: #102a5a;
-    }
-    .pl-detail-badge {
-        white-space: nowrap;
-        border-radius: 999px;
-        padding: 0.35rem 0.7rem;
-        font-size: 0.76rem;
-        font-weight: 700;
-    }
-    .pl-detail-metrics {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 0.75rem;
-    }
-    .pl-detail-metric {
-        border: 1px solid #e2e8f0;
-        border-radius: 14px;
-        background: #fff;
-        padding: 0.75rem 0.85rem;
-        min-width: 0;
-    }
-    .pl-detail-label {
-        display: block;
-        font-size: 0.7rem;
-        font-weight: 800;
-        color: #64748b;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        margin-bottom: 0.2rem;
-    }
-    .pl-detail-value {
-        display: block;
-        font-size: 0.92rem;
-        font-weight: 800;
-        color: #102a5a;
-        line-height: 1.3;
-        font-variant-numeric: tabular-nums;
-        overflow-wrap: anywhere;
-    }
-    .pl-detail-value.is-income,
-    .pl-detail-value.is-net-positive {
-        color: #16a34a;
-    }
-    .pl-detail-value.is-expense,
-    .pl-detail-value.is-net-negative {
-        color: #dc2626;
-    }
-    .pl-detail-table-heading {
-        font-size: 0.85rem;
-        font-weight: 800;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: #64748b;
-        margin-bottom: 0.85rem;
-    }
     @media (max-width: 767.98px) {
-        .pl-detail-metrics {
-            grid-template-columns: 1fr;
+        .pl-sheet {
+            padding: 20px 16px;
+        }
+        .pl-title {
+            font-size: 1.3rem;
+        }
+        .pl-company {
+            font-size: 1rem;
         }
     }
     @media print {
-        .no-print, .filter-card, .dataTables_filter, .dt-buttons, .pagination-wrapper, .pl-detail-grid { display: none !important; }
+        .no-print, .filter-card, .dataTables_filter, .dt-buttons, .pagination-wrapper { display: none !important; }
         .page-wrapper { margin: 0; padding: 0; background: white; }
-        .card { border: 1px solid #eee !important; box-shadow: none !important; }
+        .pl-page {
+            max-width: none;
+            margin: 0;
+        }
+        .pl-sheet {
+            box-shadow: none;
+            border: none;
+            padding: 0;
+        }
     }
 </style>
 @endsection
@@ -212,42 +245,6 @@
                 : 'Current Business Performance',
         ])
 
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="card shadow-sm border-0 bg-success-light">
-                    <div class="card-body p-3">
-                        <p class="small fw-bold text-uppercase text-success mb-1">{{ __('Overall Revenue') }}</p>
-                        <h3 class="mb-0 text-success">{{ \App\Support\GeoCurrency::format($grandIncome, 'NGN', $currencyCode, $currencyLocale) }}</h3>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card shadow-sm border-0">
-                    <div class="card-body p-3">
-                        <p class="small fw-bold text-uppercase text-muted mb-1">{{ __('Purchase Cost') }}</p>
-                        <h3 class="mb-0">{{ \App\Support\GeoCurrency::format($grandPurchaseExpense, 'NGN', $currencyCode, $currencyLocale) }}</h3>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card shadow-sm border-0 bg-danger-light">
-                    <div class="card-body p-3">
-                        <p class="small fw-bold text-uppercase text-danger mb-1">{{ __('Total Expenses') }}</p>
-                        <p class="small text-muted mb-1">OpEx: {{ \App\Support\GeoCurrency::format($grandOperatingExpense, 'NGN', $currencyCode, $currencyLocale) }}</p>
-                        <h3 class="mb-0 text-danger">{{ \App\Support\GeoCurrency::format($grandExpense, 'NGN', $currencyCode, $currencyLocale) }}</h3>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card shadow-sm border-0 {{ $grandNet >= 0 ? 'bg-primary-light' : 'bg-warning-light' }}">
-                    <div class="card-body p-3">
-                        <p class="small fw-bold text-uppercase {{ $grandNet >= 0 ? 'text-primary' : 'text-warning' }} mb-1">{{ __('Net Profit/Loss') }}</p>
-                        <h3 class="mb-0 {{ $grandNet >= 0 ? 'text-primary' : 'text-warning' }}">{{ \App\Support\GeoCurrency::format($grandNet, 'NGN', $currencyCode, $currencyLocale) }}</h3>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <div class="card mb-4 filter-card no-print">
             <div class="card-body">
 
@@ -275,66 +272,79 @@
             </div>
         </div>
 
-        @if($isProfessionalReportView)
-            <div class="pl-detail-grid mb-4">
-                @forelse($profitLossData as $item)
-                    @php
-                        $dailyProfit = $item->income - $item->expense;
-                        $cardState = $dailyProfit > 0 ? 'profit' : ($dailyProfit < 0 ? 'loss' : 'breakeven');
-                    @endphp
-                    <div class="pl-detail-card is-{{ $cardState }}">
-                        <div class="pl-detail-head">
-                            <div>
-                                <span class="pl-detail-kicker">{{ __('Transaction Date') }}</span>
-                                <span class="pl-detail-date">{{ \Carbon\Carbon::parse($item->report_date)->format('D, d M Y') }}</span>
-                            </div>
-                            @if($dailyProfit > 0)
-                                <span class="pl-detail-badge bg-success-light text-success">{{ __('Profit') }}</span>
-                            @elseif($dailyProfit < 0)
-                                <span class="pl-detail-badge bg-danger-light text-danger">{{ __('Loss') }}</span>
-                            @else
-                                <span class="pl-detail-badge bg-light text-muted">{{ __('Breakeven') }}</span>
-                            @endif
-                        </div>
-
-                        <div class="pl-detail-metrics">
-                            <div class="pl-detail-metric">
-                                <span class="pl-detail-label">{{ __('Income') }}</span>
-                                <span class="pl-detail-value is-income">{{ \App\Support\GeoCurrency::format($item->income, 'NGN', $currencyCode, $currencyLocale) }}</span>
-                            </div>
-                            <div class="pl-detail-metric">
-                                <span class="pl-detail-label">{{ __('Purchases') }}</span>
-                                <span class="pl-detail-value">{{ \App\Support\GeoCurrency::format($item->purchase_expense ?? 0, 'NGN', $currencyCode, $currencyLocale) }}</span>
-                            </div>
-                            <div class="pl-detail-metric">
-                                <span class="pl-detail-label">{{ __('OpEx') }}</span>
-                                <span class="pl-detail-value">{{ \App\Support\GeoCurrency::format($item->operating_expense ?? 0, 'NGN', $currencyCode, $currencyLocale) }}</span>
-                            </div>
-                            <div class="pl-detail-metric">
-                                <span class="pl-detail-label">{{ __('Expenses') }}</span>
-                                <span class="pl-detail-value is-expense">{{ \App\Support\GeoCurrency::format($item->expense, 'NGN', $currencyCode, $currencyLocale) }}</span>
-                            </div>
-                            <div class="pl-detail-metric" style="grid-column: 1 / -1;">
-                                <span class="pl-detail-label">{{ __('Net Result') }}</span>
-                                <span class="pl-detail-value {{ $dailyProfit >= 0 ? 'is-net-positive' : 'is-net-negative' }}">{{ \App\Support\GeoCurrency::format($dailyProfit, 'NGN', $currencyCode, $currencyLocale) }}</span>
-                            </div>
-                        </div>
-                    </div>
-                @empty
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-body text-muted">{{ __('No profit and loss data found for the selected period.') }}</div>
-                    </div>
-                @endforelse
+        <div class="pl-page mb-4">
+            <div class="pl-toolbar no-print">
+                <button type="button" onclick="window.print()" class="pl-btn">Print</button>
+                <button type="button" onclick="$('#profitLossTable').DataTable().button('.buttons-excel').trigger()" class="pl-btn">Excel</button>
             </div>
-        @endif
 
-        <div class="card mb-4">
-            <div class="card-body p-3">
-                @if($isProfessionalReportView)
-                    <div class="pl-detail-table-heading">{{ __('Detailed Statement Table') }}</div>
-                @endif
-                <div class="table-responsive">
-                    <table id="profitLossTable" class="table table-hover">
+            <div class="pl-sheet">
+                <div class="pl-header">
+                    <h1 class="pl-title">Profit and Loss Statement</h1>
+                    <div class="pl-company">{{ $reportCompanyName }}</div>
+                    <div class="pl-date">
+                        {{ request('start_date') || request('end_date')
+                            ? 'For the period ' . (request('start_date') ? \Carbon\Carbon::parse(request('start_date'))->format('d M Y') : 'Start') . ' to ' . (request('end_date') ? \Carbon\Carbon::parse(request('end_date'))->format('d M Y') : 'Date')
+                            : 'For the current reporting window' }}
+                    </div>
+                    @if($activeBranchName !== '')
+                        <div class="pl-branch">Branch: {{ $activeBranchName }}</div>
+                    @endif
+                </div>
+
+                <table class="pl-statement">
+                    <colgroup>
+                        <col>
+                        <col>
+                    </colgroup>
+                    <tbody>
+                        <tr class="pl-head-row">
+                            <td></td>
+                            <td>Total</td>
+                        </tr>
+                        <tr class="pl-section">
+                            <td>Income</td>
+                            <td></td>
+                        </tr>
+                        <tr class="pl-line">
+                            <td>Sales / Revenue</td>
+                            <td class="pl-amount">{{ $fmt($grandIncome) }}</td>
+                        </tr>
+                        <tr class="pl-total">
+                            <td>Total Income</td>
+                            <td class="pl-amount">{{ $fmt($grandIncome) }}</td>
+                        </tr>
+                        <tr class="pl-section">
+                            <td>Expenses</td>
+                            <td></td>
+                        </tr>
+                        <tr class="pl-line">
+                            <td>Purchase Cost</td>
+                            <td class="pl-amount">{{ $fmt($grandPurchaseExpense) }}</td>
+                        </tr>
+                        <tr class="pl-line">
+                            <td>Operating Expenses</td>
+                            <td class="pl-amount">{{ $fmt($grandOperatingExpense) }}</td>
+                        </tr>
+                        <tr class="pl-total">
+                            <td>Total Expenses</td>
+                            <td class="pl-amount">{{ $fmt($grandExpense) }}</td>
+                        </tr>
+                        <tr class="pl-grand">
+                            <td>Net Profit / Loss</td>
+                            <td class="pl-amount">{{ $fmt($grandNet) }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="pl-note">
+                    Revenue is shown separately from purchase cost and operating expenses so the final net result reads like the balance sheet report instead of a dense card dashboard.
+                </div>
+
+                <div class="pl-breakdown">
+                    <h3>{{ __('Period Breakdown') }}</h3>
+                    <div class="table-responsive">
+                        <table id="profitLossTable" class="table table-hover">
                         <thead>
                             <tr>
                                 <th>{{ __('Transaction Date') }}</th>
@@ -343,7 +353,6 @@
                                 <th>{{ __('OpEx (₦)') }}</th>
                                 <th>{{ __('Expenses (₦)') }}</th>
                                 <th>{{ __('Net (₦)') }}</th>
-                                <th class="text-center">{{ __('Performance') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -358,15 +367,6 @@
                                     <td class="fw-semibold {{ $dailyProfit >= 0 ? 'text-success' : 'text-danger' }}">
                                         {{ number_format($dailyProfit, 2) }}
                                     </td>
-                                    <td class="text-center">
-                                        @if($dailyProfit > 0)
-                                            <span class="badge bg-success-light text-success">Profit</span>
-                                        @elseif($dailyProfit < 0)
-                                            <span class="badge bg-danger-light text-danger">Loss</span>
-                                        @else
-                                            <span class="badge bg-light text-muted">Breakeven</span>
-                                        @endif
-                                    </td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -377,12 +377,13 @@
                                 <td class="text-muted">₦{{ number_format($pagePurchaseExpense, 2) }}</td>
                                 <td class="text-muted">₦{{ number_format($pageOperatingExpense, 2) }}</td>
                                 <td class="text-danger">₦{{ number_format($pageExpense, 2) }}</td>
-                                <td colspan="2" class="{{ $pageNet >= 0 ? 'text-success' : 'text-danger' }}">
+                                <td class="{{ $pageNet >= 0 ? 'text-success' : 'text-danger' }}">
                                     ₦{{ number_format($pageNet, 2) }}
                                 </td>
                             </tr>
                         </tfoot>
                     </table>
+                </div>
                 </div>
                 <div class="mt-3 pagination-wrapper no-print">
                     {{ $profitLossData->appends(request()->query())->links() }}
@@ -416,7 +417,7 @@ $(document).ready(function() {
                     text: '<i class="fas fa-table me-1"></i> Excel',
                     title: 'Profit_Loss_Statement_{{ $reportDate }}',
                     footer: true
-                },
+                }
                 {
                     extend: 'pdfHtml5',
                     className: 'dt-button',
