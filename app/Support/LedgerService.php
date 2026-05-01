@@ -1121,7 +1121,7 @@ class LedgerService
     {
         $payload = [];
         $user = Auth::user();
-        $companyId = $user?->company_id ?? session('current_tenant_id');
+        $companyId = $user?->company_id ?? session('current_tenant_id') ?? self::$currentCompanyId;
         $userId = $user?->id;
         $branchId = trim((string) session('active_branch_id', ''));
         $branchName = trim((string) session('active_branch_name', ''));
