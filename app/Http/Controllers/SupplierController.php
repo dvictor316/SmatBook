@@ -105,66 +105,11 @@ class SupplierController extends Controller
             return round(max(0, $paidFromColumn), 2);
         }
 
-        $paidFromPaymentsQuery = SupplierPayment::withoutGlobalScopes()
-            ->where('supplier_id', (int) $purchase->supplier_id)
+        $paidFromPayments = (float) $this->supplierPaymentQueryForSupplier((int) $purchase->supplier_id)
             ->where('purchase_id', $purchase->id)
-            ->whereNotNull('purchase_id');
-        $this->applyCompanyUserScope($paidFromPaymentsQuery, 'supplier_payments');
-        $this->applySupplierPaymentBranchScopeForPurchase($paidFromPaymentsQuery, $purchase);
-
-        $paidFromPayments = (float) $paidFromPaymentsQuery->sum('amount');
+            ->sum('amount');
 
         return round(max($paidFromColumn, $paidFromPayments), 2);
-    }
-
-    private function applySupplierPaymentBranchScopeForPurchase($query, $purchase): void
-    {
-        $branchId = trim((string) ($purchase->branch_id ?? $this->getActiveBranchContext()['id'] ?? ''));
-        $branchName = trim((string) ($purchase->branch_name ?? $this->getActiveBranchContext()['name'] ?? ''));
-
-        if ($branchId === '' && $branchName === '') {
-            return;
-        }
-
-        $hasBranchId = Schema::hasColumn('supplier_payments', 'branch_id');
-        $hasBranchName = Schema::hasColumn('supplier_payments', 'branch_name');
-        if (!$hasBranchId && !$hasBranchName) {
-            return;
-        }
-
-        $query->where(function ($sub) use ($branchId, $branchName, $hasBranchId, $hasBranchName) {
-            $matched = false;
-
-            if ($branchId !== '' && $hasBranchId) {
-                $sub->where('supplier_payments.branch_id', $branchId);
-                $matched = true;
-            }
-
-            if ($branchName !== '' && $hasBranchName) {
-                $method = $matched ? 'orWhere' : 'where';
-                $sub->{$method}('supplier_payments.branch_name', $branchName);
-                $matched = true;
-            }
-
-            $method = $matched ? 'orWhere' : 'where';
-            $sub->{$method}(function ($fallback) use ($hasBranchId, $hasBranchName) {
-                if ($hasBranchId) {
-                    $fallback->where(function ($branchIdQuery) {
-                        $branchIdQuery
-                            ->whereNull('supplier_payments.branch_id')
-                            ->orWhere('supplier_payments.branch_id', '');
-                    });
-                }
-
-                if ($hasBranchName) {
-                    $fallback->where(function ($branchNameQuery) {
-                        $branchNameQuery
-                            ->whereNull('supplier_payments.branch_name')
-                            ->orWhere('supplier_payments.branch_name', '');
-                    });
-                }
-            });
-        });
     }
 
     private function resolvePurchaseOutstandingAmount($purchase): float
@@ -414,8 +359,6 @@ class SupplierController extends Controller
         $nameColumn = $this->resolveNameColumn();
         $payload[$nameColumn] = $request->input('name');
         $supplier = Supplier::create($payload);
-
-        $this->syncSupplierOpeningBalanceJournal($supplier->fresh());
 
         return redirect()->route('suppliers.index')->with('success', 'Supplier added successfully.');
     }
@@ -870,11 +813,7 @@ class SupplierController extends Controller
                         $request->input('method') ?: ($bank?->name ?: ($account?->name ?: 'Bank Transfer')),
                         $paymentGroup,
                         $account?->id,
-                        $bank?->name,
-                        $paymentDate,
-                        auth()->id(),
-                        $purchase->branch_id ?? $activeBranch['id'],
-                        $purchase->branch_name ?? $activeBranch['name']
+                        $paymentDate
                     );
                 }
 
@@ -934,7 +873,6 @@ class SupplierController extends Controller
                             $request->input('method') ?: ($bank?->name ?: ($account?->name ?: 'Bank Transfer')),
                             $paymentGroup,
                             $account?->id,
-                            $bank?->name,
                             $paymentDate,
                             auth()->id(),
                             $activeBranch['id'],
@@ -977,7 +915,6 @@ class SupplierController extends Controller
         $payload[$nameColumn] = $request->input('name');
 
         $supplier->update($payload);
-        $this->syncSupplierOpeningBalanceJournal($supplier->fresh());
         return redirect()->route('suppliers.index')->with('success', 'Supplier updated successfully.');
     }
 
@@ -1129,7 +1066,6 @@ class SupplierController extends Controller
                     $supplier = $supplier ?: new Supplier();
                     $supplier->fill($payload);
                     $supplier->save();
-                    $this->syncSupplierOpeningBalanceJournal($supplier->fresh());
 
                     if ($isNew) {
                         $created++;
@@ -1262,56 +1198,6 @@ class SupplierController extends Controller
         $purchaseBalances = round((float) collect($this->supplierOutstandingBalances($supplierIds))->sum(), 2);
 
         return round($openingBalances + $purchaseBalances, 2);
-    }
-
-    private function syncSupplierOpeningBalanceJournal(Supplier $supplier): void
-    {
-        if (!Schema::hasTable('transactions')) {
-            return;
-        }
-
-        $this->reverseSupplierOpeningBalanceJournal($supplier->id);
-
-        $openingBalance = $this->resolveSupplierOriginalOpeningBalance($supplier);
-        if ($openingBalance <= 0) {
-            return;
-        }
-
-        LedgerService::postSupplierOpeningBalance(
-            $supplier,
-            $openingBalance,
-            $supplier->branch_id ?? ($this->getActiveBranchContext()['id'] ?? null),
-            $supplier->branch_name ?? ($this->getActiveBranchContext()['name'] ?? null)
-        );
-    }
-
-    private function reverseSupplierOpeningBalanceJournal(int $supplierId): void
-    {
-        if (!Schema::hasTable('transactions')) {
-            return;
-        }
-
-        \App\Models\Transaction::withoutGlobalScopes()
-            ->where('reference', 'SUPP-OB-' . $supplierId)
-            ->where('transaction_type', \App\Models\Transaction::TYPE_OPENING_BALANCE)
-            ->where('related_id', $supplierId)
-            ->where('related_type', Supplier::class)
-            ->delete();
-    }
-
-    private function resolveSupplierOriginalOpeningBalance(Supplier $supplier): float
-    {
-        $remainingBalance = round((float) ($supplier->opening_balance ?? 0), 2);
-
-        if (!Schema::hasTable('supplier_payments')) {
-            return $remainingBalance;
-        }
-
-        $paidAmount = round((float) $this->supplierPaymentQueryForSupplier((int) $supplier->id)
-            ->whereNull('purchase_id')
-            ->sum('amount'), 2);
-
-        return round(max(0, $remainingBalance + $paidAmount), 2);
     }
 
     private function normalizeImportHeaderCell($value): string
