@@ -43,6 +43,35 @@ class BalanceSheetController extends Controller
         return $query;
     }
 
+    private function applyBranchTransactionVisibility($query, array $activeBranch)
+    {
+        if (($activeBranch['scope'] ?? 'branch') === 'all') {
+            return $query;
+        }
+
+        $branchId = trim((string) ($activeBranch['id'] ?? ''));
+        $branchName = trim((string) ($activeBranch['name'] ?? ''));
+
+        if ($branchId === '' && $branchName === '') {
+            return $query;
+        }
+
+        return $query->where(function ($sub) use ($branchId, $branchName) {
+            if ($branchId !== '') {
+                $sub->where('branch_id', $branchId);
+            }
+            if ($branchName !== '') {
+                $method = $branchId !== '' ? 'orWhere' : 'where';
+                $sub->{$method}('branch_name', $branchName);
+            }
+
+            $sub->orWhereNull('branch_id')
+                ->orWhere('branch_id', '')
+                ->orWhereNull('branch_name')
+                ->orWhere('branch_name', '');
+        });
+    }
+
     private function resolveActiveBranch(Request $request): array
     {
         $branchScope = (string) $request->get('branch_scope', '');
@@ -176,20 +205,8 @@ class BalanceSheetController extends Controller
         // 1. Get all accounts with sums up to the report date (branch-safe)
         $txnTotalsQuery = Transaction::query()
             ->selectRaw('account_id, SUM(debit) as total_debit, SUM(credit) as total_credit')
-            ->where('transaction_date', '<=', $reportDate)
-            ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
-                $branchId = trim((string) ($activeBranch['id'] ?? ''));
-                $branchName = trim((string) ($activeBranch['name'] ?? ''));
-
-                return $query->where(function ($sub) use ($branchId, $branchName) {
-                    if ($branchId !== '') {
-                        $sub->where('branch_id', $branchId);
-                    }
-                    if ($branchName !== '') {
-                        $sub->orWhere('branch_name', $branchName);
-                    }
-                });
-            });
+            ->where('transaction_date', '<=', $reportDate);
+        $this->applyBranchTransactionVisibility($txnTotalsQuery, $activeBranch);
         $this->applyTransactionScope($txnTotalsQuery, $request);
 
         $txnTotals = $txnTotalsQuery
@@ -199,20 +216,8 @@ class BalanceSheetController extends Controller
 
         $ledgerTotalsQuery = Transaction::query()
             ->selectRaw('SUM(debit) as total_debit, SUM(credit) as total_credit')
-            ->where('transaction_date', '<=', $reportDate)
-            ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
-                $branchId = trim((string) ($activeBranch['id'] ?? ''));
-                $branchName = trim((string) ($activeBranch['name'] ?? ''));
-
-                return $query->where(function ($sub) use ($branchId, $branchName) {
-                    if ($branchId !== '') {
-                        $sub->where('branch_id', $branchId);
-                    }
-                    if ($branchName !== '') {
-                        $sub->orWhere('branch_name', $branchName);
-                    }
-                });
-            });
+            ->where('transaction_date', '<=', $reportDate);
+        $this->applyBranchTransactionVisibility($ledgerTotalsQuery, $activeBranch);
         $this->applyTransactionScope($ledgerTotalsQuery, $request);
 
         $ledgerTotals = $ledgerTotalsQuery->first();
@@ -222,20 +227,8 @@ class BalanceSheetController extends Controller
 
         $imbalancedEntriesQuery = Transaction::query()
             ->selectRaw('related_type, related_id, transaction_type, reference, SUM(debit) as total_debit, SUM(credit) as total_credit')
-            ->where('transaction_date', '<=', $reportDate)
-            ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
-                $branchId = trim((string) ($activeBranch['id'] ?? ''));
-                $branchName = trim((string) ($activeBranch['name'] ?? ''));
-
-                return $query->where(function ($sub) use ($branchId, $branchName) {
-                    if ($branchId !== '') {
-                        $sub->where('branch_id', $branchId);
-                    }
-                    if ($branchName !== '') {
-                        $sub->orWhere('branch_name', $branchName);
-                    }
-                });
-            });
+            ->where('transaction_date', '<=', $reportDate);
+        $this->applyBranchTransactionVisibility($imbalancedEntriesQuery, $activeBranch);
         $this->applyTransactionScope($imbalancedEntriesQuery, $request);
 
         $imbalancedEntries = $imbalancedEntriesQuery

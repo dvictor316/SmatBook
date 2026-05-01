@@ -189,18 +189,7 @@ class BalanceSheetExport implements FromArray, WithHeadings
             ->groupBy('account_id');
         $this->applyCompanyScope($txnQuery, 'transactions');
 
-        if ($this->branchScope !== 'all') {
-            $branchId = trim((string) ($this->branchId ?? ''));
-            $branchName = trim((string) ($this->branchName ?? ''));
-            $txnQuery->where(function ($sub) use ($branchId, $branchName) {
-                if ($branchId !== '') {
-                    $sub->where('branch_id', $branchId);
-                }
-                if ($branchName !== '') {
-                    $sub->orWhere('branch_name', $branchName);
-                }
-            });
-        }
+        $this->applyBranchTransactionVisibility($txnQuery);
 
         $txnTotals = $txnQuery->get()->keyBy('account_id');
         $accountIds = $txnTotals->keys()->all();
@@ -245,18 +234,7 @@ class BalanceSheetExport implements FromArray, WithHeadings
             ->groupBy('account_id');
         $this->applyCompanyScope($txnQuery, 'transactions');
 
-        if ($this->branchScope !== 'all') {
-            $branchId = trim((string) ($this->branchId ?? ''));
-            $branchName = trim((string) ($this->branchName ?? ''));
-            $txnQuery->where(function ($sub) use ($branchId, $branchName) {
-                if ($branchId !== '') {
-                    $sub->where('branch_id', $branchId);
-                }
-                if ($branchName !== '') {
-                    $sub->orWhere('branch_name', $branchName);
-                }
-            });
-        }
+        $this->applyBranchTransactionVisibility($txnQuery);
 
         $txnTotals = $txnQuery->get()->keyBy('account_id');
         $accountIds = $txnTotals->keys()->all();
@@ -324,6 +302,34 @@ class BalanceSheetExport implements FromArray, WithHeadings
         } elseif ($this->userId > 0 && \Schema::hasColumn($table, 'user_id')) {
             $target->where('user_id', $this->userId);
         }
+    }
+
+    private function applyBranchTransactionVisibility($query): void
+    {
+        if ($this->branchScope === 'all') {
+            return;
+        }
+
+        $branchId = trim((string) ($this->branchId ?? ''));
+        $branchName = trim((string) ($this->branchName ?? ''));
+        if ($branchId === '' && $branchName === '') {
+            return;
+        }
+
+        $query->where(function ($sub) use ($branchId, $branchName) {
+            if ($branchId !== '') {
+                $sub->where('branch_id', $branchId);
+            }
+            if ($branchName !== '') {
+                $method = $branchId !== '' ? 'orWhere' : 'where';
+                $sub->{$method}('branch_name', $branchName);
+            }
+
+            $sub->orWhereNull('branch_id')
+                ->orWhere('branch_id', '')
+                ->orWhereNull('branch_name')
+                ->orWhere('branch_name', '');
+        });
     }
 
     private function scopedTable(string $table)
