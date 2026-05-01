@@ -43,35 +43,6 @@ class BalanceSheetController extends Controller
         return $query;
     }
 
-    private function applyBranchTransactionVisibility($query, array $activeBranch)
-    {
-        if (($activeBranch['scope'] ?? 'branch') === 'all') {
-            return $query;
-        }
-
-        $branchId = trim((string) ($activeBranch['id'] ?? ''));
-        $branchName = trim((string) ($activeBranch['name'] ?? ''));
-
-        if ($branchId === '' && $branchName === '') {
-            return $query;
-        }
-
-        return $query->where(function ($sub) use ($branchId, $branchName) {
-            if ($branchId !== '') {
-                $sub->where('branch_id', $branchId);
-            }
-            if ($branchName !== '') {
-                $method = $branchId !== '' ? 'orWhere' : 'where';
-                $sub->{$method}('branch_name', $branchName);
-            }
-
-            $sub->orWhereNull('branch_id')
-                ->orWhere('branch_id', '')
-                ->orWhereNull('branch_name')
-                ->orWhere('branch_name', '');
-        });
-    }
-
     private function resolveActiveBranch(Request $request): array
     {
         $branchScope = (string) $request->get('branch_scope', '');
@@ -165,12 +136,13 @@ class BalanceSheetController extends Controller
         $activeBranch = $this->resolveActiveBranch($request);
         $reportDate = $request->date ? Carbon::parse($request->date) : Carbon::now();
 
-        LedgerService::backfillSupplierOpeningBalanceEntries(
+        LedgerService::backfillBankLedgerAccounts(
             (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0) ?: null,
             (int) ($request->user()?->id ?? 0) ?: null,
             ($activeBranch['scope'] ?? 'branch') === 'all' ? null : ($activeBranch['id'] ?? null),
             ($activeBranch['scope'] ?? 'branch') === 'all' ? null : ($activeBranch['name'] ?? null)
         );
+
         LedgerService::backfillSupplierPaymentLedgerEntries(
             (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0) ?: null,
             (int) ($request->user()?->id ?? 0) ?: null,
@@ -205,8 +177,20 @@ class BalanceSheetController extends Controller
         // 1. Get all accounts with sums up to the report date (branch-safe)
         $txnTotalsQuery = Transaction::query()
             ->selectRaw('account_id, SUM(debit) as total_debit, SUM(credit) as total_credit')
-            ->where('transaction_date', '<=', $reportDate);
-        $this->applyBranchTransactionVisibility($txnTotalsQuery, $activeBranch);
+            ->where('transaction_date', '<=', $reportDate)
+            ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
+                $branchId = trim((string) ($activeBranch['id'] ?? ''));
+                $branchName = trim((string) ($activeBranch['name'] ?? ''));
+
+                return $query->where(function ($sub) use ($branchId, $branchName) {
+                    if ($branchId !== '') {
+                        $sub->where('branch_id', $branchId);
+                    }
+                    if ($branchName !== '') {
+                        $sub->orWhere('branch_name', $branchName);
+                    }
+                });
+            });
         $this->applyTransactionScope($txnTotalsQuery, $request);
 
         $txnTotals = $txnTotalsQuery
@@ -216,8 +200,20 @@ class BalanceSheetController extends Controller
 
         $ledgerTotalsQuery = Transaction::query()
             ->selectRaw('SUM(debit) as total_debit, SUM(credit) as total_credit')
-            ->where('transaction_date', '<=', $reportDate);
-        $this->applyBranchTransactionVisibility($ledgerTotalsQuery, $activeBranch);
+            ->where('transaction_date', '<=', $reportDate)
+            ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
+                $branchId = trim((string) ($activeBranch['id'] ?? ''));
+                $branchName = trim((string) ($activeBranch['name'] ?? ''));
+
+                return $query->where(function ($sub) use ($branchId, $branchName) {
+                    if ($branchId !== '') {
+                        $sub->where('branch_id', $branchId);
+                    }
+                    if ($branchName !== '') {
+                        $sub->orWhere('branch_name', $branchName);
+                    }
+                });
+            });
         $this->applyTransactionScope($ledgerTotalsQuery, $request);
 
         $ledgerTotals = $ledgerTotalsQuery->first();
@@ -227,8 +223,20 @@ class BalanceSheetController extends Controller
 
         $imbalancedEntriesQuery = Transaction::query()
             ->selectRaw('related_type, related_id, transaction_type, reference, SUM(debit) as total_debit, SUM(credit) as total_credit')
-            ->where('transaction_date', '<=', $reportDate);
-        $this->applyBranchTransactionVisibility($imbalancedEntriesQuery, $activeBranch);
+            ->where('transaction_date', '<=', $reportDate)
+            ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
+                $branchId = trim((string) ($activeBranch['id'] ?? ''));
+                $branchName = trim((string) ($activeBranch['name'] ?? ''));
+
+                return $query->where(function ($sub) use ($branchId, $branchName) {
+                    if ($branchId !== '') {
+                        $sub->where('branch_id', $branchId);
+                    }
+                    if ($branchName !== '') {
+                        $sub->orWhere('branch_name', $branchName);
+                    }
+                });
+            });
         $this->applyTransactionScope($imbalancedEntriesQuery, $request);
 
         $imbalancedEntries = $imbalancedEntriesQuery
@@ -254,7 +262,7 @@ class BalanceSheetController extends Controller
                 // that does not reset when transactions are deleted.
                 $query->orWhere('opening_balance', '!=', 0);
             })
-            ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch, $accountIds) {
+            ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
                 $branchId = trim((string) ($activeBranch['id'] ?? ''));
                 $branchName = trim((string) ($activeBranch['name'] ?? ''));
 
@@ -276,12 +284,6 @@ class BalanceSheetController extends Controller
                     // (Accounts Receivable, Sales Revenue, Petty Cash, etc.)
                     $sub->orWhereNull('branch_id')
                         ->orWhere('branch_id', '');
-
-                    // If this account already has branch-scoped transaction activity in the report,
-                    // do not hide it just because the account master row carries a different branch tag.
-                    if (!empty($accountIds)) {
-                        $sub->orWhereIn('id', $accountIds);
-                    }
                 });
             });
 
@@ -648,20 +650,7 @@ class BalanceSheetController extends Controller
             $postedSupplierIds = $postedQuery->distinct()->pluck('related_id')->filter()->map(fn ($v) => (int) $v)->all();
         }
 
-        $supplierQuery = DB::table('suppliers')
-            ->leftJoinSub(
-                Schema::hasTable('supplier_payments')
-                    ? DB::table('supplier_payments')
-                        ->selectRaw('supplier_id, SUM(amount) as opening_balance_paid')
-                        ->whereNull('purchase_id')
-                        ->groupBy('supplier_id')
-                    : DB::table('suppliers')->selectRaw('id as supplier_id, 0 as opening_balance_paid')->whereRaw('1 = 0'),
-                'supplier_opening_payments',
-                'supplier_opening_payments.supplier_id',
-                '=',
-                'suppliers.id'
-            )
-            ->whereRaw('COALESCE(suppliers.opening_balance, 0) + COALESCE(supplier_opening_payments.opening_balance_paid, 0) > 0');
+        $supplierQuery = DB::table('suppliers')->where('opening_balance', '>', 0);
         if (Schema::hasColumn('suppliers', 'opening_balance_date')) {
             $supplierQuery->where(function ($q) use ($reportDate) {
                 $q->whereNull('opening_balance_date')
@@ -669,15 +658,15 @@ class BalanceSheetController extends Controller
             });
         }
         if ($companyId > 0 && Schema::hasColumn('suppliers', 'company_id')) {
-            $supplierQuery->where('suppliers.company_id', $companyId);
+            $supplierQuery->where('company_id', $companyId);
         } elseif ($userId > 0 && Schema::hasColumn('suppliers', 'user_id')) {
-            $supplierQuery->where('suppliers.user_id', $userId);
+            $supplierQuery->where('user_id', $userId);
         }
         if (!empty($postedSupplierIds)) {
-            $supplierQuery->whereNotIn('suppliers.id', $postedSupplierIds);
+            $supplierQuery->whereNotIn('id', $postedSupplierIds);
         }
 
-        return round((float) $supplierQuery->sum(DB::raw('COALESCE(suppliers.opening_balance, 0) + COALESCE(supplier_opening_payments.opening_balance_paid, 0)')), 2);
+        return (float) $supplierQuery->sum('opening_balance');
     }
 
     private function getLegacyInventoryBridgeAmount(Request $request, $reportDate, $accounts): float

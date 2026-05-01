@@ -202,11 +202,7 @@ class LedgerService
         ?string $paymentMethod = null,
         ?string $reference = null,
         ?int $paymentAccountId = null,
-        ?string $bankName = null,
-        ?string $paymentDate = null,
-        ?int $userId = null,
-        ?string $branchId = null,
-        ?string $branchName = null
+        ?string $paymentDate = null
     ): void {
         if (!self::isReady() || $amount <= 0) {
             return;
@@ -222,9 +218,6 @@ class LedgerService
         if ($paymentAccountId && $paymentAccountId > 0) {
             $cashAccount = Account::withoutGlobalScopes()->find($paymentAccountId);
         }
-        if (!$cashAccount && $bankName) {
-            $cashAccount = self::findOrCreateAssetAccountByName($bankName);
-        }
         if (!$cashAccount && $paymentMethod) {
             $cashAccount = self::resolveAssetAccountByName($paymentMethod);
         }
@@ -234,9 +227,9 @@ class LedgerService
 
         $ref = $reference ?: ($purchase->purchase_no ?: ('PUR-' . $purchase->id)) . '-PAY';
         $date = self::resolveDate($paymentDate ?? $purchase->paid_at ?? $purchase->updated_at ?? now());
-        $userId = $userId ?? auth()->id();
-        $branchId = $branchId ?? $purchase->branch_id ?? null;
-        $branchName = $branchName ?? $purchase->branch_name ?? $purchase->branch_label ?? null;
+        $userId = auth()->id();
+        $branchId = $purchase->branch_id ?? null;
+        $branchName = $purchase->branch_name ?? $purchase->branch_label ?? null;
 
         self::postDoubleEntry(
             debitAccountId: $payableAccount->id,
@@ -260,7 +253,6 @@ class LedgerService
         ?string $paymentMethod = null,
         ?string $reference = null,
         ?int $paymentAccountId = null,
-        ?string $bankName = null,
         ?string $paymentDate = null,
         ?int $userId = null,
         ?string $branchId = null,
@@ -280,9 +272,6 @@ class LedgerService
         $cashAccount = null;
         if ($paymentAccountId && $paymentAccountId > 0) {
             $cashAccount = Account::withoutGlobalScopes()->find($paymentAccountId);
-        }
-        if (!$cashAccount && $bankName) {
-            $cashAccount = self::findOrCreateAssetAccountByName($bankName);
         }
         if (!$cashAccount && $paymentMethod) {
             $cashAccount = self::resolveAssetAccountByName($paymentMethod);
@@ -307,169 +296,6 @@ class LedgerService
             branchId: $branchId,
             branchName: $branchName
         );
-    }
-
-    public static function postSupplierOpeningBalance(
-        Supplier $supplier,
-        float $amount,
-        ?string $branchId = null,
-        ?string $branchName = null
-    ): void {
-        if (!self::isReady() || $amount <= 0) {
-            return;
-        }
-
-        self::$currentCompanyId = (int) ($supplier->company_id
-            ?? Auth::user()?->company_id
-            ?? session('current_tenant_id')
-            ?? 0) ?: null;
-
-        $payableAccount = self::resolveAccount('Accounts Payable', 'Liability', ['payable', 'creditor'], 'AUTO-LIB-AP');
-        $openingBalanceEquity = self::resolveAccount('Opening Balance Equity', 'Equity', ['opening balance equity', 'owner equity'], 'AUTO-EQT-OBE');
-        $reference = 'SUPP-OB-' . $supplier->id;
-        $supplierName = $supplier->name ?? $supplier->supplier_name ?? $supplier->company_name ?? ('Supplier #' . $supplier->id);
-
-        self::postDoubleEntry(
-            debitAccountId: $openingBalanceEquity->id,
-            creditAccountId: $payableAccount->id,
-            amount: $amount,
-            date: self::resolveDate($supplier->opening_balance_date ?? $supplier->created_at ?? now()),
-            reference: $reference,
-            description: 'Opening balance: ' . $supplierName,
-            transactionType: Transaction::TYPE_OPENING_BALANCE,
-            relatedId: (int) $supplier->id,
-            relatedType: Supplier::class,
-            userId: $supplier->user_id ?? auth()->id(),
-            branchId: $branchId ?? $supplier->branch_id ?? null,
-            branchName: $branchName ?? $supplier->branch_name ?? null
-        );
-    }
-
-    public static function backfillSupplierOpeningBalanceEntries(
-        ?int $companyId = null,
-        ?int $userId = null,
-        ?string $branchId = null,
-        ?string $branchName = null,
-        ?int $supplierId = null
-    ): int {
-        if (!self::isReady() || !Schema::hasTable('suppliers')) {
-            return 0;
-        }
-
-        $supplierQuery = Supplier::withoutGlobalScopes()->orderBy('id');
-
-        if ($supplierId && $supplierId > 0) {
-            $supplierQuery->where('id', $supplierId);
-        }
-
-        if ($companyId && Schema::hasColumn('suppliers', 'company_id')) {
-            $supplierQuery->where('company_id', $companyId);
-        } elseif ($userId && Schema::hasColumn('suppliers', 'user_id')) {
-            $supplierQuery->where('user_id', $userId);
-        }
-
-        $branchId = trim((string) ($branchId ?? ''));
-        $branchName = trim((string) ($branchName ?? ''));
-        if ($branchId !== '' || $branchName !== '') {
-            $supplierQuery->where(function ($sub) use ($branchId, $branchName) {
-                $matched = false;
-
-                if ($branchId !== '' && Schema::hasColumn('suppliers', 'branch_id')) {
-                    $sub->where('branch_id', $branchId);
-                    $matched = true;
-                }
-                if ($branchName !== '' && Schema::hasColumn('suppliers', 'branch_name')) {
-                    $method = $matched ? 'orWhere' : 'where';
-                    $sub->{$method}('branch_name', $branchName);
-                    $matched = true;
-                }
-
-                if (Schema::hasColumn('suppliers', 'branch_id')) {
-                    $method = $matched ? 'orWhere' : 'where';
-                    $sub->{$method . 'Null'}('branch_id');
-                }
-                if (Schema::hasColumn('suppliers', 'branch_name')) {
-                    $method = $matched ? 'orWhere' : 'where';
-                    $sub->{$method . 'Null'}('branch_name');
-                }
-            });
-        }
-
-        $openingBalancePayments = collect();
-        if (Schema::hasTable('supplier_payments')) {
-            $paymentQuery = SupplierPayment::withoutGlobalScopes()
-                ->selectRaw('supplier_id, SUM(amount) as total_paid')
-                ->whereNull('purchase_id')
-                ->groupBy('supplier_id');
-
-            if ($supplierId && $supplierId > 0) {
-                $paymentQuery->where('supplier_id', $supplierId);
-            }
-
-            if ($companyId && Schema::hasColumn('supplier_payments', 'company_id')) {
-                $paymentQuery->where('company_id', $companyId);
-            } elseif ($userId && Schema::hasColumn('supplier_payments', 'user_id')) {
-                $paymentQuery->where('user_id', $userId);
-            }
-
-            $openingBalancePayments = $paymentQuery
-                ->get()
-                ->keyBy(fn ($row) => (int) $row->supplier_id);
-        }
-
-        $backfilled = 0;
-
-        foreach ($supplierQuery->get() as $supplier) {
-            $paidAmount = (float) ($openingBalancePayments->get((int) $supplier->id)->total_paid ?? 0);
-            $remainingAmount = (float) ($supplier->opening_balance ?? 0);
-            $originalAmount = round(max(0, $remainingAmount + $paidAmount), 2);
-
-            $existing = Transaction::withoutGlobalScopes()
-                ->where('related_id', $supplier->id)
-                ->where('related_type', Supplier::class)
-                ->where('transaction_type', Transaction::TYPE_OPENING_BALANCE)
-                ->where('reference', 'SUPP-OB-' . $supplier->id)
-                ->get();
-
-            if ($originalAmount <= 0) {
-                if ($existing->isNotEmpty()) {
-                    $existing->each->delete();
-                }
-                continue;
-            }
-
-            $expectedBranchId = $supplier->branch_id ? (string) $supplier->branch_id : ($branchId !== '' ? $branchId : null);
-            $expectedBranchName = $supplier->branch_name ? (string) $supplier->branch_name : ($branchName !== '' ? $branchName : null);
-
-            $isBalancedPair = $existing->count() >= 2
-                && abs((float) $existing->sum('debit') - $originalAmount) < 0.01
-                && abs((float) $existing->sum('credit') - $originalAmount) < 0.01;
-            $hasMatchingBranchEntry = $existing->isNotEmpty() && (
-                ($expectedBranchId === null && $expectedBranchName === null)
-                || $existing->contains(function ($entry) use ($expectedBranchId, $expectedBranchName) {
-                    if ($expectedBranchId !== null && isset($entry->branch_id) && (string) $entry->branch_id === $expectedBranchId) {
-                        return true;
-                    }
-
-                    return $expectedBranchName !== null
-                        && isset($entry->branch_name)
-                        && (string) $entry->branch_name === $expectedBranchName;
-                })
-            );
-
-            if ($isBalancedPair && $hasMatchingBranchEntry) {
-                continue;
-            }
-
-            if ($existing->isNotEmpty()) {
-                $existing->each->delete();
-            }
-
-            self::postSupplierOpeningBalance($supplier, $originalAmount, $expectedBranchId, $expectedBranchName);
-            $backfilled++;
-        }
-
-        return $backfilled;
     }
 
     public static function backfillSupplierPaymentLedgerEntries(
@@ -501,16 +327,6 @@ class LedgerService
                     $method = ($branchId !== '' && Schema::hasColumn('supplier_payments', 'branch_id')) ? 'orWhere' : 'where';
                     $sub->{$method}('branch_name', $branchName);
                 }
-
-                // Include older supplier payment rows that were saved before
-                // branch metadata was populated correctly. They will be reposted
-                // using the purchase/payment branch context below.
-                if (Schema::hasColumn('supplier_payments', 'branch_id')) {
-                    $sub->orWhereNull('branch_id')->orWhere('branch_id', '');
-                }
-                if (Schema::hasColumn('supplier_payments', 'branch_name')) {
-                    $sub->orWhereNull('branch_name')->orWhere('branch_name', '');
-                }
             });
         }
 
@@ -520,8 +336,7 @@ class LedgerService
             $reference = trim((string) ($payment->reference ?: $payment->payment_group ?: ''));
             $relatedId = (int) ($payment->purchase_id ?: $payment->supplier_id ?: 0);
             $relatedType = $payment->purchase_id ? Purchase::class : Supplier::class;
-            $expectedBranchId = $payment->branch_id ? (string) $payment->branch_id : null;
-            $expectedBranchName = $payment->branch_name ? (string) $payment->branch_name : null;
+            $desiredSourceAccountId = self::resolveSupplierPaymentSourceAccountId($payment, $companyId, $userId, $branchId, $branchName);
 
             if ($relatedId <= 0) {
                 continue;
@@ -538,20 +353,13 @@ class LedgerService
 
             $isBalancedPair = $existing->count() >= 2
                 && abs((float) $existing->sum('debit') - (float) $existing->sum('credit')) < 0.01;
-            $hasMatchingBranchEntry = $existing->isNotEmpty() && (
-                ($expectedBranchId === null && $expectedBranchName === null)
-                || $existing->contains(function ($entry) use ($expectedBranchId, $expectedBranchName) {
-                    if ($expectedBranchId !== null && isset($entry->branch_id) && (string) $entry->branch_id === $expectedBranchId) {
-                        return true;
-                    }
 
-                    return $expectedBranchName !== null
-                        && isset($entry->branch_name)
-                        && (string) $entry->branch_name === $expectedBranchName;
-                })
-            );
+            $existingCreditAccountId = (int) ($existing->firstWhere('credit', '>', 0)->account_id ?? 0);
+            $needsSourceRepoint = $desiredSourceAccountId > 0
+                && $existingCreditAccountId > 0
+                && $existingCreditAccountId !== $desiredSourceAccountId;
 
-            if ($isBalancedPair && $hasMatchingBranchEntry) {
+            if ($isBalancedPair && !$needsSourceRepoint) {
                 continue;
             }
 
@@ -570,12 +378,8 @@ class LedgerService
                     (float) $payment->amount,
                     $payment->method ?: null,
                     $reference !== '' ? $reference : null,
-                    (int) ($payment->account_id ?? 0) ?: null,
-                    self::bankNameForPayment($payment),
-                    optional($payment->payment_date)->toDateString() ?: optional($payment->created_at)->toDateString(),
-                    (int) ($payment->created_by ?? $payment->user_id ?? auth()->id() ?? 0) ?: null,
-                    $payment->branch_id ? (string) $payment->branch_id : null,
-                    $payment->branch_name ? (string) $payment->branch_name : null
+                    $desiredSourceAccountId ?: ((int) ($payment->account_id ?? 0) ?: null),
+                    optional($payment->payment_date)->toDateString() ?: optional($payment->created_at)->toDateString()
                 );
                 $backfilled++;
                 continue;
@@ -586,8 +390,7 @@ class LedgerService
                 (float) $payment->amount,
                 $payment->method ?: null,
                 $reference !== '' ? $reference : null,
-                (int) ($payment->account_id ?? 0) ?: null,
-                self::bankNameForPayment($payment),
+                $desiredSourceAccountId ?: ((int) ($payment->account_id ?? 0) ?: null),
                 optional($payment->payment_date)->toDateString() ?: optional($payment->created_at)->toDateString(),
                 (int) ($payment->created_by ?? $payment->user_id ?? auth()->id() ?? 0) ?: null,
                 $payment->branch_id ? (string) $payment->branch_id : null,
@@ -597,6 +400,176 @@ class LedgerService
         }
 
         return $backfilled;
+    }
+
+    public static function backfillBankLedgerAccounts(
+        ?int $companyId = null,
+        ?int $userId = null,
+        ?string $branchId = null,
+        ?string $branchName = null
+    ): int {
+        if (!Schema::hasTable('banks') || !Schema::hasTable('accounts')) {
+            return 0;
+        }
+
+        $query = Bank::withoutGlobalScopes()->orderBy('id');
+
+        if ($companyId && Schema::hasColumn('banks', 'company_id')) {
+            $query->where('company_id', $companyId);
+        } elseif ($userId && Schema::hasColumn('banks', 'user_id')) {
+            $query->where('user_id', $userId);
+        }
+
+        $branchId = trim((string) ($branchId ?? ''));
+        $branchName = trim((string) ($branchName ?? ''));
+        if ($branchId !== '' || $branchName !== '') {
+            $query->where(function ($sub) use ($branchId, $branchName) {
+                if ($branchId !== '' && Schema::hasColumn('banks', 'branch_id')) {
+                    $sub->where('branch_id', $branchId);
+                }
+                if ($branchName !== '' && Schema::hasColumn('banks', 'branch_name')) {
+                    $method = ($branchId !== '' && Schema::hasColumn('banks', 'branch_id')) ? 'orWhere' : 'where';
+                    $sub->{$method}('branch_name', $branchName);
+                }
+            });
+        }
+
+        $created = 0;
+        foreach ($query->get() as $bank) {
+            $bankName = trim((string) ($bank->name ?? ''));
+            if ($bankName === '') {
+                continue;
+            }
+
+            $accountQuery = Account::withoutGlobalScopes()
+                ->where('type', Account::TYPE_ASSET)
+                ->where('name', $bankName);
+
+            $bankCompanyId = (int) ($bank->company_id ?? $companyId ?? 0);
+            $bankUserId = (int) ($bank->user_id ?? $userId ?? 0);
+            $bankBranchId = trim((string) ($bank->branch_id ?? $branchId));
+            $bankBranchName = trim((string) ($bank->branch_name ?? $branchName));
+
+            if ($bankCompanyId > 0 && Schema::hasColumn('accounts', 'company_id')) {
+                $accountQuery->where('company_id', $bankCompanyId);
+            } elseif ($bankUserId > 0 && Schema::hasColumn('accounts', 'user_id')) {
+                $accountQuery->where('user_id', $bankUserId);
+            }
+
+            $existing = $accountQuery->first();
+            if ($existing) {
+                continue;
+            }
+
+            $seedBalance = (float) ($bank->balance ?? 0);
+            if (Schema::hasTable('supplier_payments') && Schema::hasColumn('supplier_payments', 'bank_id')) {
+                $paymentsQuery = SupplierPayment::withoutGlobalScopes()->where('bank_id', $bank->id);
+                if ($bankCompanyId > 0 && Schema::hasColumn('supplier_payments', 'company_id')) {
+                    $paymentsQuery->where('company_id', $bankCompanyId);
+                } elseif ($bankUserId > 0 && Schema::hasColumn('supplier_payments', 'user_id')) {
+                    $paymentsQuery->where('user_id', $bankUserId);
+                }
+                if ($bankBranchId !== '' || $bankBranchName !== '') {
+                    $paymentsQuery->where(function ($sub) use ($bankBranchId, $bankBranchName) {
+                        if ($bankBranchId !== '' && Schema::hasColumn('supplier_payments', 'branch_id')) {
+                            $sub->where('branch_id', $bankBranchId);
+                        }
+                        if ($bankBranchName !== '' && Schema::hasColumn('supplier_payments', 'branch_name')) {
+                            $method = ($bankBranchId !== '' && Schema::hasColumn('supplier_payments', 'branch_id')) ? 'orWhere' : 'where';
+                            $sub->{$method}('branch_name', $bankBranchName);
+                        }
+                    });
+                }
+
+                $seedBalance += (float) $paymentsQuery->sum('amount');
+            }
+
+            $payload = [
+                'code' => self::nextCode('AST'),
+                'name' => $bankName,
+                'type' => Account::TYPE_ASSET,
+                'sub_type' => Account::SUBTYPE_CURRENT_ASSET,
+                'opening_balance' => $seedBalance,
+                'current_balance' => $seedBalance,
+                'description' => 'Auto-backfilled bank ledger account.',
+                'is_active' => 1,
+            ];
+
+            if ($bankCompanyId > 0 && Schema::hasColumn('accounts', 'company_id')) {
+                $payload['company_id'] = $bankCompanyId;
+            }
+            if ($bankUserId > 0 && Schema::hasColumn('accounts', 'user_id')) {
+                $payload['user_id'] = $bankUserId;
+            }
+            if ($bankBranchId !== '' && Schema::hasColumn('accounts', 'branch_id')) {
+                $payload['branch_id'] = $bankBranchId;
+            }
+            if ($bankBranchName !== '' && Schema::hasColumn('accounts', 'branch_name')) {
+                $payload['branch_name'] = $bankBranchName;
+            }
+
+            Account::create(self::filterAccountPayload($payload));
+            $created++;
+        }
+
+        return $created;
+    }
+
+    private static function resolveSupplierPaymentSourceAccountId(
+        SupplierPayment $payment,
+        ?int $companyId = null,
+        ?int $userId = null,
+        ?string $branchId = null,
+        ?string $branchName = null
+    ): int {
+        $accountId = (int) ($payment->account_id ?? 0);
+        if ($accountId > 0) {
+            return $accountId;
+        }
+
+        $bankId = (int) ($payment->bank_id ?? 0);
+        if ($bankId <= 0 || !Schema::hasTable('banks')) {
+            return 0;
+        }
+
+        $bank = Bank::withoutGlobalScopes()->find($bankId);
+        if (!$bank) {
+            return 0;
+        }
+
+        $bankName = trim((string) ($bank->name ?? ''));
+        if ($bankName === '') {
+            return 0;
+        }
+
+        $query = Account::withoutGlobalScopes()
+            ->where('type', Account::TYPE_ASSET)
+            ->whereRaw('LOWER(name) = ?', [strtolower($bankName)]);
+
+        $scopeCompanyId = (int) ($bank->company_id ?? $companyId ?? 0);
+        $scopeUserId = (int) ($bank->user_id ?? $userId ?? 0);
+        $scopeBranchId = trim((string) ($bank->branch_id ?? $branchId));
+        $scopeBranchName = trim((string) ($bank->branch_name ?? $branchName));
+
+        if ($scopeCompanyId > 0 && Schema::hasColumn('accounts', 'company_id')) {
+            $query->where('company_id', $scopeCompanyId);
+        } elseif ($scopeUserId > 0 && Schema::hasColumn('accounts', 'user_id')) {
+            $query->where('user_id', $scopeUserId);
+        }
+
+        if ($scopeBranchId !== '' || $scopeBranchName !== '') {
+            $query->where(function ($sub) use ($scopeBranchId, $scopeBranchName) {
+                if ($scopeBranchId !== '' && Schema::hasColumn('accounts', 'branch_id')) {
+                    $sub->where('branch_id', $scopeBranchId);
+                }
+                if ($scopeBranchName !== '' && Schema::hasColumn('accounts', 'branch_name')) {
+                    $method = ($scopeBranchId !== '' && Schema::hasColumn('accounts', 'branch_id')) ? 'orWhere' : 'where';
+                    $sub->{$method}('branch_name', $scopeBranchName);
+                }
+            });
+        }
+
+        return (int) ($query->value('id') ?? 0);
     }
 
     public static function postSalePayment(Sale $sale, Payment $payment, ?string $externalReference = null): void
@@ -1016,29 +989,6 @@ class LedgerService
                 ->first();
     }
 
-    private static function findOrCreateAssetAccountByName(string $name): ?Account
-    {
-        $normalized = trim($name);
-        if ($normalized === '') {
-            return null;
-        }
-
-        return self::resolveAssetAccountByName($normalized)
-            ?? self::resolveAccount($normalized, 'Asset', ['bank', 'cash'], 'AUTO-AST-BANK');
-    }
-
-    private static function bankNameForPayment(SupplierPayment $payment): ?string
-    {
-        $bankId = (int) ($payment->bank_id ?? 0);
-        if ($bankId <= 0 || !Schema::hasTable('banks')) {
-            return null;
-        }
-
-        return Bank::withoutGlobalScopes()
-            ->where('id', $bankId)
-            ->value('name');
-    }
-
     private static function resolveAccount(string $name, string $type, array $keywords, string $autoCodePrefix): Account
     {
         $cid = self::$currentCompanyId;
@@ -1155,7 +1105,7 @@ class LedgerService
     {
         $payload = [];
         $user = Auth::user();
-        $companyId = $user?->company_id ?? session('current_tenant_id') ?? self::$currentCompanyId;
+        $companyId = $user?->company_id ?? session('current_tenant_id');
         $userId = $user?->id;
         $branchId = trim((string) session('active_branch_id', ''));
         $branchName = trim((string) session('active_branch_name', ''));
