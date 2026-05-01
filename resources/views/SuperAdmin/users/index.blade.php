@@ -205,7 +205,7 @@
                     <td class="text-center sticky-right bg-white">
                         <div class="d-flex justify-content-center gap-1">
                             <div class="dropdown">
-                                <button class="btn btn-xs btn-primary dropdown-toggle" data-bs-toggle="dropdown" data-bs-boundary="viewport">Manage</button>
+                                <button class="btn btn-xs btn-primary dropdown-toggle" data-bs-toggle="dropdown" data-bs-display="static" data-bs-boundary="viewport">Manage</button>
                                 <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg">
                                     <li><h6 class="dropdown-header extra-small text-uppercase">User Control</h6></li>
                                     @if($status !== 'active')
@@ -311,7 +311,7 @@
             window.addEventListener('resize', onReposition);
         });
 
-        dropdown.addEventListener('hide.bs.dropdown', () => {
+        dropdown.addEventListener('hidden.bs.dropdown', () => {
             document.body.classList.remove('dropdown-elevated');
             window.removeEventListener('scroll', onReposition, true);
             window.removeEventListener('resize', onReposition);
