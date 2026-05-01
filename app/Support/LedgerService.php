@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\Account;
+use App\Models\Bank;
 use App\Models\Expense;
 use App\Models\Payment;
 use App\Models\Purchase;
@@ -201,6 +202,7 @@ class LedgerService
         ?string $paymentMethod = null,
         ?string $reference = null,
         ?int $paymentAccountId = null,
+        ?string $bankName = null,
         ?string $paymentDate = null,
         ?int $userId = null,
         ?string $branchId = null,
@@ -219,6 +221,9 @@ class LedgerService
         $cashAccount = null;
         if ($paymentAccountId && $paymentAccountId > 0) {
             $cashAccount = Account::withoutGlobalScopes()->find($paymentAccountId);
+        }
+        if (!$cashAccount && $bankName) {
+            $cashAccount = self::findOrCreateAssetAccountByName($bankName);
         }
         if (!$cashAccount && $paymentMethod) {
             $cashAccount = self::resolveAssetAccountByName($paymentMethod);
@@ -255,6 +260,7 @@ class LedgerService
         ?string $paymentMethod = null,
         ?string $reference = null,
         ?int $paymentAccountId = null,
+        ?string $bankName = null,
         ?string $paymentDate = null,
         ?int $userId = null,
         ?string $branchId = null,
@@ -274,6 +280,9 @@ class LedgerService
         $cashAccount = null;
         if ($paymentAccountId && $paymentAccountId > 0) {
             $cashAccount = Account::withoutGlobalScopes()->find($paymentAccountId);
+        }
+        if (!$cashAccount && $bankName) {
+            $cashAccount = self::findOrCreateAssetAccountByName($bankName);
         }
         if (!$cashAccount && $paymentMethod) {
             $cashAccount = self::resolveAssetAccountByName($paymentMethod);
@@ -562,6 +571,7 @@ class LedgerService
                     $payment->method ?: null,
                     $reference !== '' ? $reference : null,
                     (int) ($payment->account_id ?? 0) ?: null,
+                    self::bankNameForPayment($payment),
                     optional($payment->payment_date)->toDateString() ?: optional($payment->created_at)->toDateString(),
                     (int) ($payment->created_by ?? $payment->user_id ?? auth()->id() ?? 0) ?: null,
                     $payment->branch_id ? (string) $payment->branch_id : null,
@@ -577,6 +587,7 @@ class LedgerService
                 $payment->method ?: null,
                 $reference !== '' ? $reference : null,
                 (int) ($payment->account_id ?? 0) ?: null,
+                self::bankNameForPayment($payment),
                 optional($payment->payment_date)->toDateString() ?: optional($payment->created_at)->toDateString(),
                 (int) ($payment->created_by ?? $payment->user_id ?? auth()->id() ?? 0) ?: null,
                 $payment->branch_id ? (string) $payment->branch_id : null,
@@ -1003,6 +1014,29 @@ class LedgerService
                 ->whereRaw('LOWER(name) LIKE ?', ['%' . $normalized . '%'])
                 ->orderBy('id')
                 ->first();
+    }
+
+    private static function findOrCreateAssetAccountByName(string $name): ?Account
+    {
+        $normalized = trim($name);
+        if ($normalized === '') {
+            return null;
+        }
+
+        return self::resolveAssetAccountByName($normalized)
+            ?? self::resolveAccount($normalized, 'Asset', ['bank', 'cash'], 'AUTO-AST-BANK');
+    }
+
+    private static function bankNameForPayment(SupplierPayment $payment): ?string
+    {
+        $bankId = (int) ($payment->bank_id ?? 0);
+        if ($bankId <= 0 || !Schema::hasTable('banks')) {
+            return null;
+        }
+
+        return Bank::withoutGlobalScopes()
+            ->where('id', $bankId)
+            ->value('name');
     }
 
     private static function resolveAccount(string $name, string $type, array $keywords, string $autoCodePrefix): Account

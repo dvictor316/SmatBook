@@ -863,6 +863,7 @@ public function show($id)
             $bank?->name ?: 'Manual Payment',
             $reference,
             null,
+            $bank?->name,
             $request->input('payment_date', now()->toDateString()),
             auth()->id(),
             $purchase->branch_id ?? $activeBranch['id'],
