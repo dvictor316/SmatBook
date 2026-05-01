@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Account;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Support\LedgerService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -70,6 +71,19 @@ class GeneralLedgerController extends Controller
                 'search' => '',
             ]);
         }
+
+        LedgerService::backfillSupplierOpeningBalanceEntries(
+            (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0) ?: null,
+            (int) ($request->user()?->id ?? 0) ?: null,
+            trim((string) session('active_branch_id', '')) ?: null,
+            trim((string) session('active_branch_name', '')) ?: null
+        );
+        LedgerService::backfillSupplierPaymentLedgerEntries(
+            (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0) ?: null,
+            (int) ($request->user()?->id ?? 0) ?: null,
+            trim((string) session('active_branch_id', '')) ?: null,
+            trim((string) session('active_branch_name', '')) ?: null
+        );
 
         $accountsQuery = Account::query()->orderBy('code')->orderBy('name');
         $this->applyTenantScope($accountsQuery, 'accounts');

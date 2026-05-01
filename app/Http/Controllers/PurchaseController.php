@@ -838,8 +838,8 @@ public function show($id)
         $purchase->save();
 
         $reference = $validated['reference'] ?: ($purchase->purchase_no ?: ('PUR-' . $purchase->id)) . '-PAY';
+        $activeBranch = $this->getActiveBranchContext();
         if (Schema::hasTable('supplier_payments') && !empty($purchase->supplier_id)) {
-            $activeBranch = $this->getActiveBranchContext();
             SupplierPayment::create([
                 'supplier_id' => $purchase->supplier_id,
                 'purchase_id' => $purchase->id,
@@ -857,7 +857,17 @@ public function show($id)
                 'created_by' => auth()->id(),
             ]);
         }
-        LedgerService::postPurchasePayment($purchase, $amount, $bank?->name, $reference);
+        LedgerService::postPurchasePayment(
+            $purchase->fresh(),
+            $amount,
+            $bank?->name ?: 'Manual Payment',
+            $reference,
+            null,
+            $request->input('payment_date', now()->toDateString()),
+            auth()->id(),
+            $purchase->branch_id ?? $activeBranch['id'],
+            $purchase->branch_name ?? $activeBranch['name']
+        );
 
         return redirect()
             ->route('purchases.show', $purchase->id)
@@ -911,16 +921,63 @@ public function show($id)
 
         $paidFromPayments = 0.0;
         if (Schema::hasTable('supplier_payments')) {
-            if ($purchase->relationLoaded('supplierPayments')) {
-                $paidFromPayments = (float) $purchase->supplierPayments->sum('amount');
-            } else {
-                $paidFromPayments = (float) SupplierPayment::query()
-                    ->where('purchase_id', $purchase->id)
-                    ->sum('amount');
-            }
+            $paymentsQuery = SupplierPayment::query()->where('purchase_id', $purchase->id);
+            $this->applyTenantScope($paymentsQuery, 'supplier_payments');
+            $this->applySupplierPaymentBranchScopeForPurchase($paymentsQuery, $purchase);
+            $paidFromPayments = (float) $paymentsQuery->sum('amount');
         }
 
         return round(max($paidFromColumn, $paidFromPayments), 2);
+    }
+
+    private function applySupplierPaymentBranchScopeForPurchase($query, Purchase $purchase)
+    {
+        $branchId = trim((string) ($purchase->branch_id ?? $this->getActiveBranchContext()['id'] ?? ''));
+        $branchName = trim((string) ($purchase->branch_name ?? $this->getActiveBranchContext()['name'] ?? ''));
+
+        if ($branchId === '' && $branchName === '') {
+            return $query;
+        }
+
+        $hasBranchId = Schema::hasColumn('supplier_payments', 'branch_id');
+        $hasBranchName = Schema::hasColumn('supplier_payments', 'branch_name');
+        if (!$hasBranchId && !$hasBranchName) {
+            return $query;
+        }
+
+        return $query->where(function ($sub) use ($branchId, $branchName, $hasBranchId, $hasBranchName) {
+            $matched = false;
+
+            if ($branchId !== '' && $hasBranchId) {
+                $sub->where('supplier_payments.branch_id', $branchId);
+                $matched = true;
+            }
+
+            if ($branchName !== '' && $hasBranchName) {
+                $method = $matched ? 'orWhere' : 'where';
+                $sub->{$method}('supplier_payments.branch_name', $branchName);
+                $matched = true;
+            }
+
+            $method = $matched ? 'orWhere' : 'where';
+            $sub->{$method}(function ($fallback) use ($hasBranchId, $hasBranchName) {
+                if ($hasBranchId) {
+                    $fallback->where(function ($branchIdQuery) {
+                        $branchIdQuery
+                            ->whereNull('supplier_payments.branch_id')
+                            ->orWhere('supplier_payments.branch_id', '');
+                    });
+                }
+
+                if ($hasBranchName) {
+                    $fallback->where(function ($branchNameQuery) {
+                        $branchNameQuery
+                            ->whereNull('supplier_payments.branch_name')
+                            ->orWhere('supplier_payments.branch_name', '');
+                    });
+                }
+            });
+        });
     }
 
     private function resolvePurchaseStatus(Purchase $purchase, ?float $paidAmount = null): string
