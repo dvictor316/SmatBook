@@ -432,7 +432,20 @@ class HomeController extends Controller
 
         $cacheKey = 'workspace_https_ready:' . strtolower($host);
 
-        return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($workspaceUrl) {
+        return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($workspaceUrl, $host) {
+            // Step 1: Verify the SSL certificate covers this host with proper SAN entries.
+            // Browsers (Chrome/Firefox) require Subject Alternative Names (SANs) — a CN-only
+            // match is rejected with NET::ERR_CERT_COMMON_NAME_INVALID. We replicate that
+            // check here so we never redirect a user to a subdomain the browser won't trust.
+            if (!$this->sslCertificateIsValidForHost($host)) {
+                Log::warning('Workspace SSL certificate SAN check failed — will not redirect to subdomain', [
+                    'host' => $host,
+                ]);
+                return false;
+            }
+
+            // Step 2: Ping the workspace endpoint with strict SSL options.
+            // Redirects are disabled so an HTTP redirect cannot silently bypass cert validation.
             try {
                 $pingUrl = rtrim($workspaceUrl, '/') . '/session/ping';
 
@@ -440,7 +453,12 @@ class HomeController extends Controller
                     ->connectTimeout(3)
                     ->acceptJson()
                     ->withOptions([
-                        'allow_redirects' => true,
+                        'verify' => true,
+                        'allow_redirects' => false,
+                        'curl' => [
+                            CURLOPT_SSL_VERIFYHOST => 2,
+                            CURLOPT_SSL_VERIFYPEER => 1,
+                        ],
                     ])
                     ->get($pingUrl);
 
@@ -460,6 +478,97 @@ class HomeController extends Controller
                 return false;
             }
         });
+    }
+
+    /**
+     * Open a raw TLS connection to $host:443 and verify that the server's
+     * certificate contains a Subject Alternative Name (SAN) DNS entry that
+     * covers $host (including wildcard matching).
+     *
+     * This mirrors what Chrome and other modern browsers do — they require SANs
+     * and ignore the CN field, so a cert with CN=*.smartprobook.com but no SAN
+     * entries is rejected as NET::ERR_CERT_COMMON_NAME_INVALID.
+     */
+    private function sslCertificateIsValidForHost(string $host): bool
+    {
+        $context = stream_context_create([
+            'ssl' => [
+                'capture_peer_cert' => true,
+                'verify_peer'       => true,
+                'verify_peer_name'  => true,
+                'peer_name'         => $host,
+                'SNI_enabled'       => true,
+                'allow_self_signed' => false,
+            ],
+        ]);
+
+        $socket = @stream_socket_client(
+            'ssl://' . $host . ':443',
+            $errno,
+            $errstr,
+            5,
+            STREAM_CLIENT_CONNECT,
+            $context
+        );
+
+        if (!$socket) {
+            Log::info('SSL socket could not be opened for host', [
+                'host'   => $host,
+                'errno'  => $errno,
+                'errstr' => $errstr,
+            ]);
+            return false;
+        }
+
+        $params = stream_context_get_params($socket);
+        fclose($socket);
+
+        $cert = $params['options']['ssl']['peer_certificate'] ?? null;
+        if (!$cert) {
+            return false;
+        }
+
+        $certInfo = openssl_x509_parse($cert);
+        if (!is_array($certInfo)) {
+            return false;
+        }
+
+        // Browsers require SAN entries. A cert with no SANs will be rejected.
+        $sans = trim((string) ($certInfo['extensions']['subjectAltName'] ?? ''));
+        if ($sans === '') {
+            Log::warning('SSL cert for host has no SAN entries — browsers will reject it', ['host' => $host]);
+            return false;
+        }
+
+        $hostLower = strtolower($host);
+
+        foreach (explode(',', $sans) as $san) {
+            $san = trim($san);
+            if (!str_starts_with($san, 'DNS:')) {
+                continue;
+            }
+
+            $sanHost = strtolower(substr($san, 4));
+
+            // Exact match
+            if ($sanHost === $hostLower) {
+                return true;
+            }
+
+            // Wildcard match: *.example.com covers exactly one level (foo.example.com)
+            if (str_starts_with($sanHost, '*.')) {
+                $wildBase = substr($sanHost, 2); // e.g. "smartprobook.com"
+                if (
+                    str_ends_with($hostLower, '.' . $wildBase)
+                    && !str_contains(substr($hostLower, 0, strlen($hostLower) - strlen($wildBase) - 1), '.')
+                ) {
+                    return true;
+                }
+            }
+        }
+
+        Log::warning('SSL cert SANs do not cover host', ['host' => $host, 'sans' => $sans]);
+        return false;
     }
 
     /*
