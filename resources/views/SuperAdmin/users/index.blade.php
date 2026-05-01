@@ -72,14 +72,29 @@
     .extra-small { font-size: 10px; }
     .sticky-left { position: sticky; left: 0; background: #fff; z-index: 2; }
     .sticky-right { position: sticky; right: 0; background: #fff; z-index: 2001; }
-    .sticky-right .dropdown { position: static; }
-    .sticky-right .dropdown-menu {
-        z-index: 2000;
+
+    /* Global fixed-position action menu */
+    .user-action-menu {
+        display: none;
+        position: fixed;
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        box-shadow: 0 10px 30px -5px rgba(0,0,0,0.15);
+        z-index: 99999;
+        min-width: 170px;
+        padding: 4px 0;
     }
-    body.dropdown-elevated .sidebar,
-    body.dropdown-elevated .header {
-        z-index: 900 !important;
+    .user-action-menu.open { display: block; }
+    .user-action-menu h6 { font-size: 9px; padding: 6px 14px 4px; color: #94a3b8; font-weight: 700; letter-spacing: 0.5px; margin: 0; }
+    .user-action-menu hr { margin: 4px 0; border-color: #f1f5f9; }
+    .user-action-menu .action-item {
+        display: flex; align-items: center; width: 100%;
+        padding: 7px 14px; font-size: 13px; background: none;
+        border: none; cursor: pointer; text-align: left; white-space: nowrap;
+        color: #334155; text-decoration: none;
     }
+    .user-action-menu .action-item:hover { background: #f8fafc; }
 </style>
 
 <div class="master-hub-wrapper">
@@ -204,34 +219,29 @@
                     <td><span class="pill {{ $pillClass }}">{{ strtoupper($status) }}</span></td>
                     <td class="text-center sticky-right bg-white">
                         <div class="d-flex justify-content-center gap-1">
-                            <div class="dropdown">
-                                <button class="btn btn-xs btn-primary dropdown-toggle" data-bs-toggle="dropdown" data-bs-display="static" data-bs-boundary="viewport">Manage</button>
-                                <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg">
-                                    <li><h6 class="dropdown-header extra-small text-uppercase">User Control</h6></li>
+                            <div class="position-relative">
+                                <button type="button" class="btn btn-xs btn-primary js-manage-btn"
+                                    data-menu="user-menu-{{ $user->id }}">
+                                    Manage <i class="fas fa-chevron-down ms-1" style="font-size:9px;"></i>
+                                </button>
+                                <div id="user-menu-{{ $user->id }}" class="user-action-menu">
+                                    <h6>USER CONTROL</h6>
                                     @if($status !== 'active')
-                                    <li>
-                                        <form action="{{ route('super_admin.users.activate', $user->id) }}" method="POST">
-                                            @csrf
-                                            <button type="submit" class="dropdown-item text-success"><i class="fas fa-check-circle me-2"></i>Activate</button>
-                                        </form>
-                                    </li>
+                                    <form action="{{ route('super_admin.users.activate', $user->id) }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="action-item" style="color:#10b981;"><i class="fas fa-check-circle me-2"></i>Activate</button>
+                                    </form>
                                     @endif
                                     @if($status === 'active')
-                                    <li>
-                                        <form action="{{ route('super_admin.users.suspend', $user->id) }}" method="POST">
-                                            @csrf
-                                            <button type="submit" class="dropdown-item text-warning"><i class="fas fa-pause-circle me-2"></i>Suspend</button>
-                                        </form>
-                                    </li>
+                                    <form action="{{ route('super_admin.users.suspend', $user->id) }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="action-item" style="color:#f59e0b;"><i class="fas fa-pause-circle me-2"></i>Suspend</button>
+                                    </form>
                                     @endif
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item" href="{{ route('messages.thread', ['user' => $user->id]) }}"><i class="fas fa-comments text-primary me-2"></i>Chat User</a></li>
-                                    <li>
-                                        <button type="button" class="dropdown-item js-email-user" data-user-id="{{ $user->id }}">
-                                            <i class="fas fa-envelope text-info me-2"></i>Email User
-                                        </button>
-                                    </li>
-                                </ul>
+                                    <hr>
+                                    <a class="action-item" href="{{ route('messages.thread', ['user' => $user->id]) }}"><i class="fas fa-comments me-2" style="color:#6366f1;"></i>Chat User</a>
+                                    <button type="button" class="action-item js-email-user" data-user-id="{{ $user->id }}" style="color:#0ea5e9;"><i class="fas fa-envelope me-2"></i>Email User</button>
+                                </div>
                             </div>
                             <form action="{{ route('super_admin.users.delete', $user->id) }}" method="POST">
                                 @csrf
@@ -265,8 +275,56 @@
 </div>
 
 <script>
-    document.querySelectorAll('.js-email-user').forEach((btn) => {
-        btn.addEventListener('click', () => {
+    (function () {
+        let openMenu = null;
+
+        // Position a menu element fixed below its trigger button
+        function positionMenu(menu, btn) {
+            const r = btn.getBoundingClientRect();
+            menu.style.top  = (r.bottom + 4) + 'px';
+            // Align right edge of menu with right edge of button
+            menu.style.left = Math.max(4, r.right - menu.offsetWidth) + 'px';
+        }
+
+        // Toggle manage menus
+        document.addEventListener('click', function (e) {
+            const btn = e.target.closest('.js-manage-btn');
+            if (btn) {
+                e.stopPropagation();
+                const menuId = btn.dataset.menu;
+                const menu   = document.getElementById(menuId);
+                if (!menu) return;
+
+                if (menu.classList.contains('open')) {
+                    menu.classList.remove('open');
+                    openMenu = null;
+                } else {
+                    if (openMenu) openMenu.classList.remove('open');
+                    // Move menu to body so it escapes sticky/overflow context
+                    document.body.appendChild(menu);
+                    menu.style.position = 'fixed';
+                    menu.style.zIndex   = '99999';
+                    menu.classList.add('open');
+                    positionMenu(menu, btn);
+                    openMenu = menu;
+                    // Re-position on scroll/resize
+                    const repos = () => positionMenu(menu, btn);
+                    window.addEventListener('scroll', repos, { once: true, capture: true });
+                }
+                return;
+            }
+
+            // Click outside → close
+            if (openMenu && !openMenu.contains(e.target)) {
+                openMenu.classList.remove('open');
+                openMenu = null;
+            }
+        });
+
+        // Email user prompt
+        document.addEventListener('click', function (e) {
+            const btn = e.target.closest('.js-email-user');
+            if (!btn) return;
             const userId = btn.dataset.userId;
             const subject = prompt('Email subject:', 'SmartProbook Update');
             if (subject === null) return;
@@ -286,41 +344,6 @@
             .then(data => alert(data.message || 'Email sent.'))
             .catch(() => alert('Email failed. Please check mail settings.'));
         });
-    });
-
-    // Force dropdown menus to render above the sidebar by portaling to body on open
-    document.querySelectorAll('.master-hub-wrapper .dropdown').forEach((dropdown) => {
-        const menu = dropdown.querySelector('.dropdown-menu');
-        if (!menu) return;
-        let onReposition = null;
-
-        const reposition = () => {
-            const rect = dropdown.getBoundingClientRect();
-            menu.style.top = `${rect.bottom + 6}px`;
-            menu.style.left = `${Math.max(12, rect.right - menu.offsetWidth)}px`;
-        };
-
-        dropdown.addEventListener('shown.bs.dropdown', () => {
-            document.body.classList.add('dropdown-elevated');
-            document.body.appendChild(menu);
-            menu.style.position = 'fixed';
-            menu.style.zIndex = '12000';
-            reposition();
-            onReposition = () => reposition();
-            window.addEventListener('scroll', onReposition, true);
-            window.addEventListener('resize', onReposition);
-        });
-
-        dropdown.addEventListener('hidden.bs.dropdown', () => {
-            document.body.classList.remove('dropdown-elevated');
-            window.removeEventListener('scroll', onReposition, true);
-            window.removeEventListener('resize', onReposition);
-            dropdown.appendChild(menu);
-            menu.style.position = '';
-            menu.style.top = '';
-            menu.style.left = '';
-            menu.style.zIndex = '';
-        });
-    });
+    })();
 </script>
 @endsection
