@@ -1272,6 +1272,101 @@ class SettingController extends Controller
         });
     }
 
+    private function syncBankLedgerAccount(Bank $bank, ?string $previousBankName = null, ?float $previousBankBalance = null): void
+    {
+        if (!Schema::hasTable('accounts')) {
+            return;
+        }
+
+        $bankName = trim((string) ($bank->name ?? ''));
+        if ($bankName === '') {
+            return;
+        }
+
+        $companyId = (int) ($bank->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $userId = (int) ($bank->user_id ?? auth()->id() ?? 0);
+        $branchId = trim((string) ($bank->branch_id ?? session('active_branch_id', '')));
+        $branchName = trim((string) ($bank->branch_name ?? session('active_branch_name', '')));
+        $newOpening = (float) ($bank->balance ?? 0);
+        $oldOpening = $previousBankBalance !== null ? (float) $previousBankBalance : $newOpening;
+
+        $account = Account::withoutGlobalScopes()
+            ->when($companyId > 0 && Schema::hasColumn('accounts', 'company_id'), fn ($query) => $query->where('company_id', $companyId))
+            ->where('name', $bankName)
+            ->where('type', Account::TYPE_ASSET)
+            ->first();
+
+        if (!$account && $previousBankName !== null && trim($previousBankName) !== '') {
+            $account = Account::withoutGlobalScopes()
+                ->when($companyId > 0 && Schema::hasColumn('accounts', 'company_id'), fn ($query) => $query->where('company_id', $companyId))
+                ->where('name', trim($previousBankName))
+                ->where('type', Account::TYPE_ASSET)
+                ->first();
+        }
+
+        if (!$account) {
+            $this->createBankLedgerAccount($bankName, $companyId, $userId, $branchId, $branchName, $newOpening);
+            return;
+        }
+
+        $currentBalance = (float) ($account->current_balance ?? 0);
+        $payload = [
+            'name' => $bankName,
+            'opening_balance' => $newOpening,
+            'current_balance' => $currentBalance - $oldOpening + $newOpening,
+        ];
+
+        if (Schema::hasColumn('accounts', 'sub_type') && empty($account->sub_type)) {
+            $payload['sub_type'] = Account::SUBTYPE_CURRENT_ASSET;
+        }
+        if (Schema::hasColumn('accounts', 'branch_id') && $branchId !== '' && empty($account->branch_id)) {
+            $payload['branch_id'] = $branchId;
+        }
+        if (Schema::hasColumn('accounts', 'branch_name') && $branchName !== '' && empty($account->branch_name)) {
+            $payload['branch_name'] = $branchName;
+        }
+        if (Schema::hasColumn('accounts', 'is_active')) {
+            $payload['is_active'] = true;
+        }
+
+        $account->update($payload);
+    }
+
+    private function createBankLedgerAccount(
+        string $bankName,
+        int $companyId,
+        int $userId,
+        string $branchId,
+        string $branchName,
+        float $openingBalance
+    ): Account {
+        $payload = [
+            'code' => $this->generateChartAccountCode(Account::TYPE_ASSET, $companyId),
+            'name' => $bankName,
+            'type' => Account::TYPE_ASSET,
+            'sub_type' => Account::SUBTYPE_CURRENT_ASSET,
+            'opening_balance' => $openingBalance,
+            'current_balance' => $openingBalance,
+            'description' => 'Auto-created bank ledger account for bank settings sync.',
+            'is_active' => true,
+        ];
+
+        if ($companyId > 0 && Schema::hasColumn('accounts', 'company_id')) {
+            $payload['company_id'] = $companyId;
+        }
+        if ($userId > 0 && Schema::hasColumn('accounts', 'user_id')) {
+            $payload['user_id'] = $userId;
+        }
+        if ($branchId !== '' && Schema::hasColumn('accounts', 'branch_id')) {
+            $payload['branch_id'] = $branchId;
+        }
+        if ($branchName !== '' && Schema::hasColumn('accounts', 'branch_name')) {
+            $payload['branch_name'] = $branchName;
+        }
+
+        return Account::create($payload);
+    }
+
     private function suggestTransactionsForStatementLine(BankStatementLine $line, $transactions)
     {
         $lineAmount = round((float) ($line->amount ?? 0), 2);
@@ -1802,7 +1897,8 @@ class SettingController extends Controller
             $payload['branch_name'] = session('active_branch_name');
         }
 
-        Bank::create($payload);
+        $bank = Bank::create($payload);
+        $this->syncBankLedgerAccount($bank, null, (float) ($payload['balance'] ?? 0));
 
         return redirect()->route('bank-account')->with('success', 'Bank account added successfully.');
     }
@@ -1840,7 +1936,10 @@ class SettingController extends Controller
             $payload['swift_code'] = $validated['ifsc_code'] ?? null;
         }
 
+        $oldBankName = (string) ($bank->name ?? '');
+        $oldBankBalance = (float) ($bank->balance ?? 0);
         $bank->update($payload);
+        $this->syncBankLedgerAccount($bank->fresh(), $oldBankName, $oldBankBalance);
 
         return redirect()->route('bank-account')->with('success', 'Bank account updated successfully.');
     }
