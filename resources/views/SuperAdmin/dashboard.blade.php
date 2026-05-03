@@ -1173,7 +1173,9 @@
 
                                         {{-- Recent Payouts --}}
                                         @php
-                                            $recentPayouts = \App\Models\PlatformPayout::latest()->limit(5)->get();
+                                            $recentPayouts = \Illuminate\Support\Facades\Schema::hasTable('platform_payouts')
+                                                ? \App\Models\PlatformPayout::latest()->limit(5)->get()
+                                                : collect();
                                         @endphp
                                         @if($recentPayouts->isNotEmpty())
                                             <div class="mt-4">
