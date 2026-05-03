@@ -8,6 +8,7 @@ use App\Models\Subscription;
 use App\Models\Product; 
 use App\Models\Sale;
 use App\Models\DeploymentManager;
+use App\Models\PlatformPayout;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -124,6 +125,10 @@ class SuperAdminDashboardController extends Controller
             $paidSubscriptionsCount = $paidSubscriptionsQuery
                 ? (int) ((clone $paidSubscriptionsQuery)->count() ?? 0)
                 : 0;
+            // Distinct buying companies (not transaction count)
+            $paidBuyersCount = $paidSubscriptionsQuery
+                ? (int) ((clone $paidSubscriptionsQuery)->distinct()->count('company_id') ?? 0)
+                : 0;
             $platformRevenue = !empty($activeBranch['id']) || !empty($activeBranch['name'])
                 ? $salesRevenue
                 : ($subscriptionRevenue > 0 ? $subscriptionRevenue : $salesRevenue);
@@ -213,11 +218,11 @@ class SuperAdminDashboardController extends Controller
                     });
 
                 $deploymentSubscriptionRevenue = (float) ($deploymentSubscriptionsQuery->sum('subscriptions.amount') ?? 0);
-                $deploymentPaidSubs = (int) ($deploymentSubscriptionsQuery->distinct()->count('subscriptions.id') ?? 0);
+                $deploymentPaidSubs = (int) ($deploymentSubscriptionsQuery->distinct()->count('subscriptions.company_id') ?? 0);
             }
 
             $directSubscriptionRevenue = max(0, $subscriptionRevenue - $deploymentSubscriptionRevenue);
-            $directPaidSubs = max(0, $paidSubscriptionsCount - $deploymentPaidSubs);
+            $directPaidSubs = max(0, $paidBuyersCount - $deploymentPaidSubs);
 
             $stockValue = 0;
             $lowStockItems = 0;
@@ -254,7 +259,8 @@ class SuperAdminDashboardController extends Controller
             $planSalesToday = $planSalesBaseQuery ? (clone $planSalesBaseQuery)->whereDate('created_at', today())->count() : 0;
             $planSalesMonth = $planSalesBaseQuery ? (clone $planSalesBaseQuery)->whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->count() : 0;
             $planSalesValueMonth = $planSalesBaseQuery ? (float) ((clone $planSalesBaseQuery)->whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->sum('amount') ?? 0) : 0;
-            $avgPlanSale = $planSalesMonth > 0 ? ($planSalesValueMonth / $planSalesMonth) : 0;
+            // All-time average per transaction (not monthly)
+            $avgPlanSale = $paidSubscriptionsCount > 0 ? ($subscriptionRevenue / $paidSubscriptionsCount) : 0;
 
             // METRICS
             $metrics = [
@@ -266,7 +272,7 @@ class SuperAdminDashboardController extends Controller
                                       ? (clone $customerUsersBaseQuery)->where('is_verified', 1)->count()
                                       : 0,
                 'active_subs'      => $activeSubs > 0 ? $activeSubs : $activeCompanies,
-                'paid_subs'        => $paidSubscriptionsCount,
+                'paid_subs'        => $paidBuyersCount,
                 'direct_paid_subs' => $directPaidSubs,
                 'deployment_paid_subs' => $deploymentPaidSubs,
                 'total_subs'       => Schema::hasTable('subscriptions')
@@ -307,6 +313,12 @@ class SuperAdminDashboardController extends Controller
                 'expired_subs'       => Schema::hasTable('subscriptions')
                                       ? $this->platformSubscriptionsQuery()->whereRaw("LOWER(COALESCE(status, '')) = 'expired'")->count()
                                       : 0,
+                'total_payouts'      => Schema::hasTable('platform_payouts')
+                                      ? (float) PlatformPayout::sum('amount')
+                                      : 0,
+                'net_platform_balance' => $subscriptionRevenue - (Schema::hasTable('platform_payouts')
+                                      ? (float) PlatformPayout::sum('amount')
+                                      : 0),
             ];
 
             $stats = $metrics;
@@ -1332,5 +1344,36 @@ public function pendingManagers()
             'type' => 'revenue',
             'format' => 'csv',
         ]));
+    }
+
+    public function storePayout(Request $request)
+    {
+        $validated = $request->validate([
+            'recipient_name' => 'required|string|max:255',
+            'amount'         => 'required|numeric|min:0.01',
+            'payout_type'    => 'required|in:dividend,commission,salary,refund,other',
+            'description'    => 'nullable|string|max:500',
+            'notes'          => 'nullable|string|max:1000',
+            'paid_at'        => 'nullable|date',
+        ]);
+
+        PlatformPayout::create([
+            'recipient_name' => $validated['recipient_name'],
+            'amount'         => $validated['amount'],
+            'payout_type'    => $validated['payout_type'],
+            'description'    => $validated['description'] ?? null,
+            'notes'          => $validated['notes'] ?? null,
+            'recorded_by'    => Auth::id(),
+            'paid_at'        => $validated['paid_at'] ?? now(),
+        ]);
+
+        return redirect()->back()->with('payout_success', 'Payout of ₦' . number_format($validated['amount'], 2) . ' to ' . $validated['recipient_name'] . ' recorded successfully.');
+    }
+
+    public function payoutHistory()
+    {
+        $payouts = PlatformPayout::latest()->paginate(20);
+        $totalPayouts = (float) PlatformPayout::sum('amount');
+        return view('SuperAdmin.payout-history', compact('payouts', 'totalPayouts'));
     }
 }

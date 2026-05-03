@@ -416,6 +416,8 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('superadmin')->name('sup
     
     Route::get('/dashboard', [SuperAdminDashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/export', [SuperAdminDashboardController::class, 'exportStats'])->name('dashboard.export');
+    Route::post('/platform-payouts', [SuperAdminDashboardController::class, 'storePayout'])->name('platform_payouts.store');
+    Route::get('/platform-payouts', [SuperAdminDashboardController::class, 'payoutHistory'])->name('platform_payouts.index');
     
     // User Management
     Route::controller(UserController::class)->group(function () {

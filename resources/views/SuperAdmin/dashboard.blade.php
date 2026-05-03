@@ -1125,6 +1125,148 @@
                             </div>
                         </div>
 
+                        {{-- Platform Treasury --}}
+                        @if(session('payout_success'))
+                            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                <i class="fas fa-check-circle me-2"></i>{{ session('payout_success') }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        @endif
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <div class="card border-0 shadow-sm">
+                                    <div class="card-body p-4">
+                                        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                                            <div>
+                                                <h5 class="fw-bold mb-0 text-dark"><i class="fas fa-vault me-2 text-warning"></i>Platform Treasury</h5>
+                                                <small class="text-muted">Gross revenue, investor payouts, and net balance</small>
+                                            </div>
+                                            <button class="btn btn-sm btn-warning fw-semibold" data-bs-toggle="modal" data-bs-target="#recordPayoutModal">
+                                                <i class="fas fa-plus me-1"></i> Record Payout
+                                            </button>
+                                        </div>
+                                        <div class="row g-3">
+                                            <div class="col-md-4">
+                                                <div class="p-3 rounded-3 bg-light text-center">
+                                                    <div class="text-muted small mb-1">Gross Revenue</div>
+                                                    <div class="fw-bold fs-5 text-success">₦{{ number_format($metrics['owner_subscription_revenue'] ?? 0, 2) }}</div>
+                                                    <div class="text-muted" style="font-size:0.75rem;">Total subscription income</div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="p-3 rounded-3 bg-light text-center">
+                                                    <div class="text-muted small mb-1">Total Paid Out</div>
+                                                    <div class="fw-bold fs-5 text-danger">₦{{ number_format($metrics['total_payouts'] ?? 0, 2) }}</div>
+                                                    <div class="text-muted" style="font-size:0.75rem;">Dividends, commissions &amp; more</div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="p-3 rounded-3 {{ ($metrics['net_platform_balance'] ?? 0) >= 0 ? 'bg-success bg-opacity-10' : 'bg-danger bg-opacity-10' }} text-center">
+                                                    <div class="text-muted small mb-1">Net Platform Balance</div>
+                                                    <div class="fw-bold fs-5 {{ ($metrics['net_platform_balance'] ?? 0) >= 0 ? 'text-success' : 'text-danger' }}">
+                                                        ₦{{ number_format($metrics['net_platform_balance'] ?? 0, 2) }}
+                                                    </div>
+                                                    <div class="text-muted" style="font-size:0.75rem;">Gross minus all payouts</div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {{-- Recent Payouts --}}
+                                        @php
+                                            $recentPayouts = \App\Models\PlatformPayout::latest()->limit(5)->get();
+                                        @endphp
+                                        @if($recentPayouts->isNotEmpty())
+                                            <div class="mt-4">
+                                                <h6 class="text-muted mb-2 small fw-semibold text-uppercase">Recent Payouts</h6>
+                                                <div class="table-responsive">
+                                                    <table class="table table-sm align-middle mb-0">
+                                                        <thead class="table-light">
+                                                            <tr>
+                                                                <th>Recipient</th>
+                                                                <th>Type</th>
+                                                                <th>Amount</th>
+                                                                <th>Description</th>
+                                                                <th>Date</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            @foreach($recentPayouts as $payout)
+                                                                <tr>
+                                                                    <td class="fw-semibold">{{ $payout->recipient_name }}</td>
+                                                                    <td><span class="badge bg-secondary text-capitalize">{{ $payout->payout_type }}</span></td>
+                                                                    <td class="text-danger fw-semibold">₦{{ number_format($payout->amount, 2) }}</td>
+                                                                    <td class="text-muted small">{{ $payout->description ?: '—' }}</td>
+                                                                    <td class="text-muted small">{{ $payout->paid_at ? $payout->paid_at->format('d M Y') : $payout->created_at->format('d M Y') }}</td>
+                                                                </tr>
+                                                            @endforeach
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                                <div class="mt-2 text-end">
+                                                    <a href="{{ route('super_admin.platform_payouts.index') }}" class="text-decoration-none small text-primary">View all payouts &rarr;</a>
+                                                </div>
+                                            </div>
+                                        @else
+                                            <p class="text-muted small mt-3 mb-0">No payouts recorded yet. Use "Record Payout" to log investor dividends or commissions.</p>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Record Payout Modal --}}
+                        <div class="modal fade" id="recordPayoutModal" tabindex="-1" aria-labelledby="recordPayoutModalLabel" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content">
+                                    <form method="POST" action="{{ route('super_admin.platform_payouts.store') }}">
+                                        @csrf
+                                        <div class="modal-header">
+                                            <h5 class="modal-title fw-bold" id="recordPayoutModalLabel"><i class="fas fa-money-bill-wave me-2 text-warning"></i>Record Payout</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold">Recipient Name <span class="text-danger">*</span></label>
+                                                <input type="text" name="recipient_name" class="form-control" placeholder="e.g. John Investor" required maxlength="255">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold">Amount (₦) <span class="text-danger">*</span></label>
+                                                <input type="number" name="amount" class="form-control" placeholder="0.00" step="0.01" min="0.01" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold">Payout Type <span class="text-danger">*</span></label>
+                                                <select name="payout_type" class="form-select" required>
+                                                    <option value="dividend">Dividend</option>
+                                                    <option value="commission">Commission</option>
+                                                    <option value="salary">Salary</option>
+                                                    <option value="refund">Refund</option>
+                                                    <option value="other">Other</option>
+                                                </select>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold">Description</label>
+                                                <input type="text" name="description" class="form-control" placeholder="Brief description (optional)" maxlength="500">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold">Payment Date</label>
+                                                <input type="date" name="paid_at" class="form-control" value="{{ date('Y-m-d') }}">
+                                            </div>
+                                            <div class="mb-1">
+                                                <label class="form-label fw-semibold">Notes</label>
+                                                <textarea name="notes" class="form-control" rows="2" placeholder="Additional notes (optional)" maxlength="1000"></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <button type="submit" class="btn btn-warning fw-semibold">
+                                                <i class="fas fa-save me-1"></i> Record Payout
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="row mt-2">
                             <div class="col-12 grid-margin stretch-card">
                                 <div class="card card-rounded shadow-sm border-0">
