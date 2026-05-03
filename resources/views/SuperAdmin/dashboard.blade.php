@@ -1161,12 +1161,12 @@
                                                 </div>
                                             </div>
                                             <div class="col-md-4">
-                                                <div class="p-3 rounded-3 {{ ($metrics['net_platform_balance'] ?? 0) >= 0 ? 'bg-success bg-opacity-10' : 'bg-danger bg-opacity-10' }} text-center">
-                                                    <div class="text-muted small mb-1">Net Platform Balance</div>
-                                                    <div class="fw-bold fs-5 {{ ($metrics['net_platform_balance'] ?? 0) >= 0 ? 'text-success' : 'text-danger' }}">
+                                                <div class="p-3 rounded-3 {{ ($metrics['net_platform_balance'] ?? 0) >= 0 ? 'bg-success' : 'bg-danger' }} text-center">
+                                                    <div class="small mb-1" style="color:#fff;">Net Platform Balance</div>
+                                                    <div class="fw-bold fs-5" style="color:#fff;">
                                                         ₦{{ number_format($metrics['net_platform_balance'] ?? 0, 2) }}
                                                     </div>
-                                                    <div class="text-muted" style="font-size:0.75rem;">Gross minus all payouts</div>
+                                                    <div style="font-size:0.75rem;color:#fff;">Gross minus all payouts</div>
                                                 </div>
                                             </div>
                                         </div>
