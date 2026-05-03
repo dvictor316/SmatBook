@@ -1348,6 +1348,10 @@ public function pendingManagers()
 
     public function storePayout(Request $request)
     {
+        if (!Schema::hasTable('platform_payouts')) {
+            return redirect()->back()->with('payout_error', 'Platform payouts table not found. Please run: php artisan migrate --force on the server.');
+        }
+
         $validated = $request->validate([
             'recipient_name' => 'required|string|max:255',
             'amount'         => 'required|numeric|min:0.01',
@@ -1357,15 +1361,19 @@ public function pendingManagers()
             'paid_at'        => 'nullable|date',
         ]);
 
-        PlatformPayout::create([
-            'recipient_name' => $validated['recipient_name'],
-            'amount'         => $validated['amount'],
-            'payout_type'    => $validated['payout_type'],
-            'description'    => $validated['description'] ?? null,
-            'notes'          => $validated['notes'] ?? null,
-            'recorded_by'    => Auth::id(),
-            'paid_at'        => $validated['paid_at'] ?? now(),
-        ]);
+        try {
+            PlatformPayout::create([
+                'recipient_name' => $validated['recipient_name'],
+                'amount'         => $validated['amount'],
+                'payout_type'    => $validated['payout_type'],
+                'description'    => $validated['description'] ?? null,
+                'notes'          => $validated['notes'] ?? null,
+                'recorded_by'    => Auth::id(),
+                'paid_at'        => $validated['paid_at'] ?? now(),
+            ]);
+        } catch (\Exception $e) {
+            return redirect()->back()->with('payout_error', 'Failed to save payout: ' . $e->getMessage());
+        }
 
         return redirect()->back()->with('payout_success', 'Payout of ₦' . number_format($validated['amount'], 2) . ' to ' . $validated['recipient_name'] . ' recorded successfully.');
     }

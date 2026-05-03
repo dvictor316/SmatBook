@@ -1132,6 +1132,12 @@
                                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                             </div>
                         @endif
+                        @if(session('payout_error'))
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                <i class="fas fa-exclamation-circle me-2"></i>{{ session('payout_error') }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        @endif
                         <div class="row mb-3">
                             <div class="col-12">
                                 <div class="card border-0 shadow-sm">
@@ -1227,35 +1233,44 @@
                                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                         </div>
                                         <div class="modal-body">
+                                            @if($errors->any())
+                                                <div class="alert alert-danger py-2 mb-3">
+                                                    <ul class="mb-0 ps-3 small">
+                                                        @foreach($errors->all() as $error)
+                                                            <li>{{ $error }}</li>
+                                                        @endforeach
+                                                    </ul>
+                                                </div>
+                                            @endif
                                             <div class="mb-3">
                                                 <label class="form-label fw-semibold">Recipient Name <span class="text-danger">*</span></label>
-                                                <input type="text" name="recipient_name" class="form-control" placeholder="e.g. John Investor" required maxlength="255">
+                                                <input type="text" name="recipient_name" class="form-control @error('recipient_name') is-invalid @enderror" placeholder="e.g. John Investor" required maxlength="255" value="{{ old('recipient_name') }}">
                                             </div>
                                             <div class="mb-3">
                                                 <label class="form-label fw-semibold">Amount (₦) <span class="text-danger">*</span></label>
-                                                <input type="number" name="amount" class="form-control" placeholder="0.00" step="0.01" min="0.01" required>
+                                                <input type="number" name="amount" class="form-control @error('amount') is-invalid @enderror" placeholder="0.00" step="0.01" min="0.01" required value="{{ old('amount') }}">
                                             </div>
                                             <div class="mb-3">
                                                 <label class="form-label fw-semibold">Payout Type <span class="text-danger">*</span></label>
-                                                <select name="payout_type" class="form-select" required>
-                                                    <option value="dividend">Dividend</option>
-                                                    <option value="commission">Commission</option>
-                                                    <option value="salary">Salary</option>
-                                                    <option value="refund">Refund</option>
-                                                    <option value="other">Other</option>
+                                                <select name="payout_type" class="form-select @error('payout_type') is-invalid @enderror" required>
+                                                    <option value="dividend" {{ old('payout_type') == 'dividend' ? 'selected' : '' }}>Dividend</option>
+                                                    <option value="commission" {{ old('payout_type') == 'commission' ? 'selected' : '' }}>Commission</option>
+                                                    <option value="salary" {{ old('payout_type') == 'salary' ? 'selected' : '' }}>Salary</option>
+                                                    <option value="refund" {{ old('payout_type') == 'refund' ? 'selected' : '' }}>Refund</option>
+                                                    <option value="other" {{ old('payout_type') == 'other' ? 'selected' : '' }}>Other</option>
                                                 </select>
                                             </div>
                                             <div class="mb-3">
                                                 <label class="form-label fw-semibold">Description</label>
-                                                <input type="text" name="description" class="form-control" placeholder="Brief description (optional)" maxlength="500">
+                                                <input type="text" name="description" class="form-control" placeholder="Brief description (optional)" maxlength="500" value="{{ old('description') }}">
                                             </div>
                                             <div class="mb-3">
                                                 <label class="form-label fw-semibold">Payment Date</label>
-                                                <input type="date" name="paid_at" class="form-control" value="{{ date('Y-m-d') }}">
+                                                <input type="date" name="paid_at" class="form-control" value="{{ old('paid_at', date('Y-m-d')) }}">
                                             </div>
                                             <div class="mb-1">
                                                 <label class="form-label fw-semibold">Notes</label>
-                                                <textarea name="notes" class="form-control" rows="2" placeholder="Additional notes (optional)" maxlength="1000"></textarea>
+                                                <textarea name="notes" class="form-control" rows="2" placeholder="Additional notes (optional)" maxlength="1000">{{ old('notes') }}</textarea>
                                             </div>
                                         </div>
                                         <div class="modal-footer">
@@ -1268,6 +1283,14 @@
                                 </div>
                             </div>
                         </div>
+                        @if($errors->any())
+                        <script>
+                            document.addEventListener('DOMContentLoaded', function () {
+                                var modal = new bootstrap.Modal(document.getElementById('recordPayoutModal'));
+                                modal.show();
+                            });
+                        </script>
+                        @endif
 
                         <div class="row mt-2">
                             <div class="col-12 grid-margin stretch-card">
