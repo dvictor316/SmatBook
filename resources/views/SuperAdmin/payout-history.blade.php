@@ -3,7 +3,8 @@
 @section('title', 'Platform Payout History')
 
 @section('content')
-<div class="container-fluid px-4 py-4">
+<div class="page-wrapper">
+<div class="content container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
             <h4 class="fw-bold mb-0"><i class="fas fa-vault me-2 text-warning"></i>Platform Payout History</h4>
@@ -92,7 +93,8 @@
             @endif
         </div>
     </div>
-</div>
+</div>{{-- /.content.container-fluid --}}
+</div>{{-- /.page-wrapper --}}
 
 {{-- Record Payout Modal --}}
 <div class="modal fade" id="recordPayoutModal" tabindex="-1" aria-labelledby="recordPayoutModalLabel" aria-hidden="true">
