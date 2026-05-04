@@ -484,6 +484,29 @@ class BalanceSheetController extends Controller
             $compareData = $this->computeComparisonSnapshot($request, $compareDate, $activeBranch, $method);
         }
 
+        // Debug: log any hidden/system equity accounts injected by the controller.
+        // These are excluded from line-item display in the blade but their balances
+        // are silently included in Total Equity to preserve Assets = L + E.
+        $systemEquityCheck = $equity->filter(function ($a) {
+            $code = strtoupper(trim((string) ($a->code ?? '')));
+            $name = strtolower(trim((string) ($a->name ?? '')));
+            return in_array($code, ['SYS-BS-RECON'], true)
+                || str_contains($name, 'reconciliation reserve')
+                || str_contains($name, 'reconciliation suspense');
+        });
+        if ($systemEquityCheck->isNotEmpty()) {
+            \Illuminate\Support\Facades\Log::debug('BalanceSheet: hidden system equity accounts', [
+                'report_date'    => $reportDate->toDateString(),
+                'accounts'       => $systemEquityCheck->map(fn ($a) => [
+                    'code'    => $a->code ?? null,
+                    'name'    => $a->name ?? null,
+                    'balance' => round((float) ($a->balance ?? 0), 2),
+                ])->values()->toArray(),
+                'total_plugging' => round($systemEquityCheck->sum('balance'), 2),
+                'pre_plug_diff'  => $statementDifference ?? 0,
+            ]);
+        }
+
         // 7. Map variables to match your Blade @foreach calls exactly
         return view('Reports.Reports.balance-sheet', compact(
             'reportDate',

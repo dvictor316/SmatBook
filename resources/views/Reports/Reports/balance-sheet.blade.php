@@ -47,14 +47,18 @@ foreach ($presets as $key => $p) {
 /* ─────────────────────────────────────────────────────────────────
  *  SYSTEM / INTERNAL ACCOUNT FILTER
  * ──────────────────────────────────────────────────────────────── */
-$systemCodes = ['SYS-BS-RECON', 'SYS-OPENING-EQUITY', 'SYS-CUST-AR', 'SYS-SUPP-AP', 'SYS-INV'];
+// Only pure plugging/reconciliation entries are hidden from line-item display.
+// SYS-CUST-AR (AR), SYS-SUPP-AP (AP), SYS-INV (Inventory), and
+// SYS-OPENING-EQUITY (Opening Balance Equity) are legitimate CoA accounts —
+// excluding them drops their balances from totals and breaks Assets = L + E.
+$systemHiddenCodes = ['SYS-BS-RECON'];
 
-$isSystemAccount = function ($account) use ($systemCodes): bool {
+$isSystemAccount = function ($account) use ($systemHiddenCodes): bool {
     $name = strtolower(trim((string) ($account->name ?? '')));
     $code = strtoupper(trim((string) ($account->code ?? '')));
-    if (in_array($code, $systemCodes, true)) return true;
+    if (in_array($code, $systemHiddenCodes, true)) return true;
+    // Do NOT hide "Opening Balance Equity" — it is a real account.
     $patterns = [
-        'opening balance equity',
         'balance sheet reconciliation',
         'bank reconciliation suspense',
         'reconciliation reserve',
@@ -135,10 +139,42 @@ if ($overdraftLines->isNotEmpty()) {
 }
 
 /* ─────────────────────────────────────────────────────────────────
- *  PROCESS EQUITY
+ *  VENDOR CREDIT RECLASSIFICATION
+ *  A payable account with a debit balance (balance < 0 in credit-normal
+ *  convention) represents a vendor overpayment or supplier prepayment.
+ *  Economically it is an asset, not a liability. Reclassify to Current
+ *  Assets to match GAAP presentation.
  * ──────────────────────────────────────────────────────────────── */
-$visibleEquity    = collect($equity ?? [])->reject(fn ($a) => $isSystemAccount($a))->values();
-$displayNetIncome = (float) ($netIncome ?? $retainedEarnings ?? 0);
+$vendorCreditLines = collect();
+
+$currentLiabilityLines = $currentLiabilityLines->filter(function ($account) use (&$vendorCreditLines) {
+    $bal  = (float) ($account->balance ?? 0);
+    $name = strtolower(trim((string) ($account->name ?? '')));
+    if ($bal < -0.005 && (str_contains($name, 'payable') || str_contains($name, 'accounts pay'))) {
+        $vc = (object) (method_exists($account, 'toArray') ? $account->toArray() : (array) $account);
+        $vc->balance        = abs($bal);
+        $vc->_vendor_credit = true;
+        $vendorCreditLines->push($vc);
+        return false;
+    }
+    return true;
+})->values();
+
+if ($vendorCreditLines->isNotEmpty()) {
+    $processedCurrentAssets = $processedCurrentAssets->concat($vendorCreditLines);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+ *  PROCESS EQUITY
+ *  Hidden accounts (plugging entries) are excluded from line rendering
+ *  but their balances are captured in $hiddenEquityBalance and added to
+ *  equity totals so the accounting equation is never broken by filtering.
+ * ──────────────────────────────────────────────────────────────── */
+$allEquityItems       = collect($equity ?? []);
+$visibleEquity        = $allEquityItems->reject(fn ($a) => $isSystemAccount($a))->values();
+$hiddenEquityAccounts = $allEquityItems->filter(fn ($a) => $isSystemAccount($a))->values();
+$hiddenEquityBalance  = $hiddenEquityAccounts->sum(fn ($a) => (float) ($a->balance ?? 0));
+$displayNetIncome     = (float) ($netIncome ?? $retainedEarnings ?? 0);
 
 /* ─────────────────────────────────────────────────────────────────
  *  DISPLAY TOTALS  (after reclassifications and system-account removal)
@@ -152,7 +188,8 @@ $visTotalLongTermLiab   = $longTermLiabilityLines->sum(fn ($a) => (float) ($a->b
 $visTotalLiabilities    = $visTotalCurrentLiab + $visTotalLongTermLiab;
 
 $visTotalEquityAccounts = $visibleEquity->sum(fn ($a) => (float) ($a->balance ?? 0));
-$visTotalEquity         = $visTotalEquityAccounts + $displayNetIncome;
+// Include hidden plugging-entry balance so the accounting equation holds.
+$visTotalEquity         = $visTotalEquityAccounts + $displayNetIncome + $hiddenEquityBalance;
 
 $visTotalLiabEquity     = $visTotalLiabilities + $visTotalEquity;
 $equationDiff           = round($visTotalAssets - $visTotalLiabEquity, 2);
@@ -187,7 +224,7 @@ if ($accountingMethod === 'cash') {
     $visTotalAssets        = $visTotalCurrentAssets + $visTotalFixedAssets;
     $visTotalCurrentLiab   = $currentLiabilityLines->sum(fn ($a) => (float) ($a->balance ?? 0));
     $visTotalLiabilities   = $visTotalCurrentLiab + $visTotalLongTermLiab;
-    $visTotalEquity        = $visTotalEquityAccounts + $displayNetIncome;
+    $visTotalEquity        = $visTotalEquityAccounts + $displayNetIncome + $hiddenEquityBalance;
     $visTotalLiabEquity    = $visTotalLiabilities + $visTotalEquity;
     $equationDiff          = round($visTotalAssets - $visTotalLiabEquity, 2);
     $isBalanced            = abs($equationDiff) < 0.01;
@@ -224,10 +261,11 @@ if ($hasCmp) {
         ->values();
     $cmpCurrentLiabVis   = $cmpLiabilitiesVis->reject($isLongTermLiability)->values();
     $cmpLongTermLiabVis  = $cmpLiabilitiesVis->filter($isLongTermLiability)->values();
-    $cmpEquityVis = collect($compareData['equity'] ?? [])
-        ->reject(fn ($a) => $isSystemAccount($a))
-        ->values();
-    $cmpDisplayNetIncome = (float) ($compareData['netIncome'] ?? 0);
+    $cmpAllEquity           = collect($compareData['equity'] ?? []);
+    $cmpEquityVis           = $cmpAllEquity->reject(fn ($a) => $isSystemAccount($a))->values();
+    $cmpHiddenEquityBalance = $cmpAllEquity->filter(fn ($a) => $isSystemAccount($a))
+                                ->sum(fn ($a) => (float) ($a->balance ?? 0));
+    $cmpDisplayNetIncome    = (float) ($compareData['netIncome'] ?? 0);
 
     $cmpTotalCurrentAssets = $cmpCurrentAssetsVis->sum(fn ($a) => (float) ($a->balance ?? 0));
     $cmpTotalFixedAssets   = $cmpFixedAssetsVis->sum(fn ($a) => (float) ($a->balance ?? 0));
@@ -236,7 +274,7 @@ if ($hasCmp) {
     $cmpTotalLongTermLiab  = $cmpLongTermLiabVis->sum(fn ($a) => (float) ($a->balance ?? 0));
     $cmpTotalLiabilities   = $cmpTotalCurrentLiab + $cmpTotalLongTermLiab;
     $cmpTotalEquityAcc     = $cmpEquityVis->sum(fn ($a) => (float) ($a->balance ?? 0));
-    $cmpTotalEquity        = $cmpTotalEquityAcc + $cmpDisplayNetIncome;
+    $cmpTotalEquity        = $cmpTotalEquityAcc + $cmpDisplayNetIncome + $cmpHiddenEquityBalance;
     $cmpTotalLiabEquity    = $cmpTotalLiabilities + $cmpTotalEquity;
 
     // Name-keyed lookup for per-account comparison amounts
@@ -536,6 +574,39 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
     text-transform: uppercase;
     letter-spacing: 0.04em;
 }
+/* Vendor credit badge (AP with debit balance reclassified to current assets) */
+.bs-vendor-credit-tag {
+    display: inline-block;
+    background: #f0f9ff;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+    border-radius: 4px;
+    font-size: 0.66rem;
+    font-weight: 700;
+    padding: 1px 5px;
+    vertical-align: middle;
+    margin-left: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+/* Hidden-equity debug panel (?debug=1) */
+.bs-hidden-debug {
+    margin-top: 12px;
+    padding: 12px 16px;
+    background: #fefce8;
+    border: 1px solid #fde68a;
+    border-radius: 8px;
+    font-size: 0.79rem;
+    color: #713f12;
+}
+.bs-hidden-debug summary {
+    cursor: pointer;
+    font-weight: 700;
+    color: #92400e;
+}
+.bs-hidden-debug table { width: 100%; margin-top: 8px; border-collapse: collapse; }
+.bs-hidden-debug td { padding: 3px 6px; border-bottom: 1px solid #fde68a; }
+.bs-hidden-debug td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
 
 /* Accounting equation result */
 .bs-balanced {
@@ -717,7 +788,12 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
                             @foreach($group['items'] as $account)
                                 @php $cv = $cmpAmt($account); @endphp
                                 <tr class="{{ $caGroups->count() > 1 ? 'bs-line bs-line-indented' : 'bs-line' }}">
-                                    <td>{{ $account->name }}</td>
+                                    <td>
+                                        {{ $account->name }}
+                                        @if(!empty($account->_vendor_credit))
+                                            <span class="bs-vendor-credit-tag">Vendor Credit</span>
+                                        @endif
+                                    </td>
                                     <td class="bs-amt {{ (float)($account->balance ?? 0) < 0 ? 'bs-amt-neg' : '' }}">
                                         {{ $fmt((float)($account->balance ?? 0)) }}
                                     </td>
@@ -982,6 +1058,35 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
                             @endforeach
                         </tbody>
                     </table>
+                </details>
+            @endif
+
+            {{-- Hidden-equity debug panel — only visible at ?debug=1 --}}
+            @if(request()->boolean('debug') && $hiddenEquityAccounts->isNotEmpty())
+                <details class="bs-hidden-debug no-print">
+                    <summary>
+                        Dev: {{ $hiddenEquityAccounts->count() }} hidden equity account(s) &mdash; balance excluded from display but included in equity total
+                    </summary>
+                    <table>
+                        <thead>
+                            <tr style="background:#fef9c3;font-weight:700;">
+                                <td>Code</td><td>Name</td><td>Balance</td>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($hiddenEquityAccounts as $ha)
+                                <tr>
+                                    <td>{{ $ha->code ?? '—' }}</td>
+                                    <td>{{ $ha->name ?? '—' }}</td>
+                                    <td>{{ $fmt((float)($ha->balance ?? 0)) }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                    <p style="margin-top:8px;">
+                        Hidden equity total (included silently in Total Equity):
+                        <strong>{{ $fmt($hiddenEquityBalance) }}</strong>
+                    </p>
                 </details>
             @endif
 
