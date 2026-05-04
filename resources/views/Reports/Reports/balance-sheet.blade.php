@@ -89,7 +89,9 @@ $processedCurrentAssets = collect($currentAssets ?? [])
     ->filter(function ($account) use ($isBankOrCash, &$overdraftLines) {
         $bal = (float) ($account->balance ?? 0);
         if ($isBankOrCash($account) && $bal < -0.005) {
-            $od            = (object) (array) $account;
+            // toArray() preserves Eloquent attribute names; (array) on an Eloquent
+            // model gives mangled PHP class property keys, losing ->name etc.
+            $od = (object) $account->toArray();
             $od->balance   = abs($bal);
             $od->_overdraft = true;
             $overdraftLines->push($od);
