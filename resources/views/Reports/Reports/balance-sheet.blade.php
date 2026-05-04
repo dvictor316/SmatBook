@@ -715,6 +715,19 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
                 <option value="previous_year"   {{ $activeCompareTo === 'previous_year'   ? 'selected' : '' }}>Previous Year</option>
             </select>
         </div>
+        @if(isset($allBranches) && $allBranches->count() > 1)
+        <div class="bs-filter-group">
+            <span class="bs-filter-label">Branch</span>
+            <select name="branch_id" onchange="this.form.submit()">
+                <option value="all" {{ ($activeBranch['scope'] ?? '') === 'all' ? 'selected' : '' }}>All Branches</option>
+                @foreach($allBranches as $br)
+                    <option value="{{ $br['id'] }}" {{ ($activeBranch['id'] ?? '') == $br['id'] ? 'selected' : '' }}>
+                        {{ $br['name'] }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+        @endif
         <div class="bs-filter-actions">
             <button type="submit" class="bs-btn-run">Run Report</button>
         </div>

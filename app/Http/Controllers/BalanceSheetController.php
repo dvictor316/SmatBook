@@ -266,28 +266,33 @@ class BalanceSheetController extends Controller
                 // that does not reset when transactions are deleted.
                 $query->orWhere('opening_balance', '!=', 0);
             })
-            ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
+            ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch, $accountIds) {
                 $branchId = trim((string) ($activeBranch['id'] ?? ''));
                 $branchName = trim((string) ($activeBranch['name'] ?? ''));
 
                 // No branch resolved → show all accounts (same as transaction query).
-                // Without this guard the query degrades to WHERE (branch_id IS NULL OR branch_id = '')
-                // which silently excludes every COA account that has a branch assigned.
                 if ($branchId === '' && $branchName === '') {
                     return;
                 }
 
-                return $query->where(function ($sub) use ($branchId, $branchName) {
+                return $query->where(function ($sub) use ($branchId, $branchName, $accountIds) {
                     if ($branchId !== '') {
                         $sub->where('branch_id', $branchId);
                     }
                     if ($branchName !== '') {
                         $sub->orWhere('branch_name', $branchName);
                     }
-                    // Always include global/system accounts with no branch assignment
-                    // (Accounts Receivable, Sales Revenue, Petty Cash, etc.)
-                    $sub->orWhereNull('branch_id')
-                        ->orWhere('branch_id', '');
+                    // Include global/system accounts (branch_id IS NULL or '') ONLY when
+                    // they already appear in the branch-scoped transaction totals.
+                    // This prevents all un-branched COA accounts from bleeding into
+                    // every branch's balance sheet with identical opening balances.
+                    if (!empty($accountIds)) {
+                        $sub->orWhere(function ($inner) use ($accountIds) {
+                            $inner->where(function ($b) {
+                                $b->whereNull('branch_id')->orWhere('branch_id', '');
+                            })->whereIn('id', $accountIds);
+                        });
+                    }
                 });
             });
 
@@ -384,7 +389,7 @@ class BalanceSheetController extends Controller
         // This covers all existing customers (pre-dating the journal workflow) AND
         // ensures every future record with a balance reflects on the balance sheet.
         if ($method === 'accrual') {
-            $customerOBUnposted = $this->getUnpostedCustomerOpeningBalanceSum($request, $reportDate);
+            $customerOBUnposted = $this->getUnpostedCustomerOpeningBalanceSum($request, $reportDate, $activeBranch);
             if ($customerOBUnposted > 0.01) {
                 // Add to Accounts Receivable (current assets side)
                 $arInCurrentAssets = $currentAssets->first(
@@ -406,7 +411,7 @@ class BalanceSheetController extends Controller
                 $mergeIntoOpeningEquity($customerOBUnposted);
             }
 
-            $supplierOBUnposted = $this->getUnpostedSupplierOpeningBalanceSum($request, $reportDate);
+            $supplierOBUnposted = $this->getUnpostedSupplierOpeningBalanceSum($request, $reportDate, $activeBranch);
             if ($supplierOBUnposted > 0.01) {
                 $apInLiabilities = $currentLiabilities->first(
                     fn ($a) => strtolower(trim((string) ($a->name ?? ''))) === 'accounts payable'
@@ -428,7 +433,7 @@ class BalanceSheetController extends Controller
             }
         }
 
-        $inventoryBridge = $this->getLegacyInventoryBridgeAmount($request, $reportDate, $accounts);
+        $inventoryBridge = $this->getLegacyInventoryBridgeAmount($request, $reportDate, $accounts, $activeBranch);
         if ($inventoryBridge > 0.01) {
             $inventoryInCurrentAssets = $currentAssets->first(
                 fn ($a) => str_contains(strtolower((string) ($a->name ?? '')), 'inventory')
@@ -508,6 +513,13 @@ class BalanceSheetController extends Controller
         }
 
         // 7. Map variables to match your Blade @foreach calls exactly
+        // Load branch list for the branch selector in the filter bar
+        $companyIdForBranches = (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $branchesJson = $companyIdForBranches > 0 && Schema::hasTable('settings')
+            ? (string) (DB::table('settings')->where('key', 'branches_json_company_' . $companyIdForBranches)->value('value') ?? '')
+            : '';
+        $allBranches = collect(json_decode($branchesJson, true) ?: []);
+
         return view('Reports.Reports.balance-sheet', compact(
             'reportDate',
             'currentAssets',
@@ -526,6 +538,7 @@ class BalanceSheetController extends Controller
             'ledgerDifference',
             'imbalancedEntries',
             'activeBranch',
+            'allBranches',
             'method',
             'compareTo',
             'compareData',
@@ -624,14 +637,21 @@ class BalanceSheetController extends Controller
                 if (!empty($accountIds)) $q->whereIn('id', $accountIds);
                 $q->orWhere('opening_balance', '!=', 0);
             })
-            ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($q) use ($activeBranch) {
+            ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($q) use ($activeBranch, $accountIds) {
                 $branchId   = trim((string) ($activeBranch['id']   ?? ''));
                 $branchName = trim((string) ($activeBranch['name'] ?? ''));
                 if ($branchId === '' && $branchName === '') return;
-                return $q->where(function ($sub) use ($branchId, $branchName) {
+                return $q->where(function ($sub) use ($branchId, $branchName, $accountIds) {
                     if ($branchId   !== '') $sub->where('branch_id',   $branchId);
                     if ($branchName !== '') $sub->orWhere('branch_name', $branchName);
-                    $sub->orWhereNull('branch_id')->orWhere('branch_id', '');
+                    // Global accounts (no branch) only if they have branch-tagged transactions.
+                    if (!empty($accountIds)) {
+                        $sub->orWhere(function ($inner) use ($accountIds) {
+                            $inner->where(function ($b) {
+                                $b->whereNull('branch_id')->orWhere('branch_id', '');
+                            })->whereIn('id', $accountIds);
+                        });
+                    }
                 });
             });
         $this->applyAccountScope($accountsQuery, $request);
@@ -744,7 +764,7 @@ class BalanceSheetController extends Controller
      * have a journal entry in the transactions table (reference CUST-OB-*).
      * This bridges existing customers who pre-date the journal-entry workflow.
      */
-    private function getUnpostedCustomerOpeningBalanceSum(Request $request, $reportDate): float
+    private function getUnpostedCustomerOpeningBalanceSum(Request $request, $reportDate, array $activeBranch = []): float
     {
         if (!Schema::hasTable('customers') || !Schema::hasColumn('customers', 'balance')) {
             return 0.0;
@@ -752,6 +772,9 @@ class BalanceSheetController extends Controller
 
         $companyId = (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0);
         $userId    = (int) ($request->user()?->id ?? 0);
+        $branchId  = trim((string) ($activeBranch['id'] ?? ''));
+        $branchName = trim((string) ($activeBranch['name'] ?? ''));
+        $isAllBranches = ($activeBranch['scope'] ?? 'branch') === 'all';
 
         // Find customer IDs that already have journal entries posted (DR leg only).
         // Only exclude IDs that still exist as active customers — orphaned CUST-OB-*
@@ -790,6 +813,20 @@ class BalanceSheetController extends Controller
             $customerQuery->where('user_id', $userId);
         }
 
+        // Branch scope: filter by branch_id/branch_name if customers table supports it.
+        if (!$isAllBranches && ($branchId !== '' || $branchName !== '') && Schema::hasColumn('customers', 'branch_id')) {
+            $customerQuery->where(function ($q) use ($branchId, $branchName) {
+                if ($branchId !== '') {
+                    $q->where('branch_id', $branchId);
+                }
+                if ($branchName !== '' && Schema::hasColumn('customers', 'branch_name')) {
+                    $q->orWhere('branch_name', $branchName);
+                }
+                // Include customers with no branch assignment (set before branch feature)
+                $q->orWhereNull('branch_id')->orWhere('branch_id', '');
+            });
+        }
+
         if (!empty($postedCustomerIds)) {
             $customerQuery->whereNotIn('id', $postedCustomerIds);
         }
@@ -797,14 +834,17 @@ class BalanceSheetController extends Controller
         return (float) $customerQuery->sum('balance');
     }
 
-    private function getUnpostedSupplierOpeningBalanceSum(Request $request, $reportDate): float
+    private function getUnpostedSupplierOpeningBalanceSum(Request $request, $reportDate, array $activeBranch = []): float
     {
         if (!Schema::hasTable('suppliers') || !Schema::hasColumn('suppliers', 'opening_balance')) {
             return 0.0;
         }
 
-        $companyId = (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0);
-        $userId = (int) ($request->user()?->id ?? 0);
+        $companyId  = (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $userId     = (int) ($request->user()?->id ?? 0);
+        $branchId   = trim((string) ($activeBranch['id']   ?? ''));
+        $branchName = trim((string) ($activeBranch['name'] ?? ''));
+        $isAllBranches = ($activeBranch['scope'] ?? 'branch') === 'all';
 
         $postedSupplierIds = [];
         if (Schema::hasTable('transactions') && Schema::hasColumn('transactions', 'reference')) {
@@ -832,6 +872,21 @@ class BalanceSheetController extends Controller
         } elseif ($userId > 0 && Schema::hasColumn('suppliers', 'user_id')) {
             $supplierQuery->where('user_id', $userId);
         }
+
+        // Branch scope: filter by branch_id/branch_name if suppliers table supports it.
+        if (!$isAllBranches && ($branchId !== '' || $branchName !== '') && Schema::hasColumn('suppliers', 'branch_id')) {
+            $supplierQuery->where(function ($q) use ($branchId, $branchName) {
+                if ($branchId !== '') {
+                    $q->where('branch_id', $branchId);
+                }
+                if ($branchName !== '' && Schema::hasColumn('suppliers', 'branch_name')) {
+                    $q->orWhere('branch_name', $branchName);
+                }
+                // Include suppliers with no branch assignment (set before branch feature)
+                $q->orWhereNull('branch_id')->orWhere('branch_id', '');
+            });
+        }
+
         if (!empty($postedSupplierIds)) {
             $supplierQuery->whereNotIn('id', $postedSupplierIds);
         }
@@ -839,7 +894,7 @@ class BalanceSheetController extends Controller
         return (float) $supplierQuery->sum('opening_balance');
     }
 
-    private function getLegacyInventoryBridgeAmount(Request $request, $reportDate, $accounts): float
+    private function getLegacyInventoryBridgeAmount(Request $request, $reportDate, $accounts, array $activeBranch = []): float
     {
         if (!Schema::hasTable('products') || !Schema::hasColumn('products', 'stock')) {
             return 0.0;
@@ -852,8 +907,11 @@ class BalanceSheetController extends Controller
             return 0.0;
         }
 
-        $companyId = (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0);
-        $userId = (int) ($request->user()?->id ?? 0);
+        $companyId  = (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $userId     = (int) ($request->user()?->id ?? 0);
+        $branchId   = trim((string) ($activeBranch['id']   ?? ''));
+        $branchName = trim((string) ($activeBranch['name'] ?? ''));
+        $isAllBranches = ($activeBranch['scope'] ?? 'branch') === 'all';
         $productQuery = DB::table('products')
             ->where('stock', '>', 0)
             ->selectRaw("SUM(COALESCE(stock, 0) * COALESCE({$priceColumn}, 0)) as inventory_value");
@@ -862,6 +920,20 @@ class BalanceSheetController extends Controller
             $productQuery->where('company_id', $companyId);
         } elseif ($userId > 0 && Schema::hasColumn('products', 'user_id')) {
             $productQuery->where('user_id', $userId);
+        }
+
+        // Branch scope: filter products by branch_id if the column exists.
+        if (!$isAllBranches && ($branchId !== '' || $branchName !== '') && Schema::hasColumn('products', 'branch_id')) {
+            $productQuery->where(function ($q) use ($branchId, $branchName) {
+                if ($branchId !== '') {
+                    $q->where('branch_id', $branchId);
+                }
+                if ($branchName !== '' && Schema::hasColumn('products', 'branch_name')) {
+                    $q->orWhere('branch_name', $branchName);
+                }
+                // Include products with no branch assignment
+                $q->orWhereNull('branch_id')->orWhere('branch_id', '');
+            });
         }
 
         $inventoryValue = (float) ($productQuery->value('inventory_value') ?? 0);
