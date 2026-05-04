@@ -3224,49 +3224,58 @@ public function destroy($id)
         };
 
         // ── Revenue: query sales table directly ───────────────────────────────
-        $salesDateCol = Schema::hasColumn('sales', 'order_date') ? 'order_date' : 'created_at';
+        // order_date is nullable (added later), so fall back to created_at for records that don't have it set
+        $salesDateExpr = Schema::hasColumn('sales', 'order_date')
+            ? 'COALESCE(DATE(sales.order_date), DATE(sales.created_at))'
+            : 'DATE(sales.created_at)';
 
         $salesQuery = DB::table('sales')
             ->when($companyId > 0 && Schema::hasColumn('sales', 'company_id'),
                 fn ($q) => $q->where('sales.company_id', $companyId))
             ->whereNull('sales.deleted_at')
-            ->whereBetween(DB::raw("DATE(sales.{$salesDateCol})"), [$startDate, $endDate]);
+            ->whereBetween(DB::raw($salesDateExpr), [$startDate, $endDate]);
         $applyBranch($salesQuery, 'sales');
 
         $salesByDate = $salesQuery
-            ->selectRaw("DATE(sales.{$salesDateCol}) as txn_date, SUM(COALESCE(sales.total, 0)) as total")
-            ->groupByRaw("DATE(sales.{$salesDateCol})")
+            ->selectRaw("{$salesDateExpr} as txn_date, SUM(COALESCE(sales.total, 0)) as total")
+            ->groupByRaw($salesDateExpr)
             ->get()->keyBy('txn_date');
 
         // ── Purchase Cost: query purchases table directly ─────────────────────
-        $purchDateCol = Schema::hasColumn('purchases', 'purchase_date') ? 'purchase_date' : 'created_at';
+        // purchase_date may not exist or be null; fall back to created_at
+        $purchDateExpr = Schema::hasColumn('purchases', 'purchase_date')
+            ? 'COALESCE(DATE(purchases.purchase_date), DATE(purchases.created_at))'
+            : 'DATE(purchases.created_at)';
 
         $purchQuery = DB::table('purchases')
             ->when($companyId > 0 && Schema::hasColumn('purchases', 'company_id'),
                 fn ($q) => $q->where('purchases.company_id', $companyId))
-            ->whereBetween(DB::raw("DATE(purchases.{$purchDateCol})"), [$startDate, $endDate]);
+            ->whereBetween(DB::raw($purchDateExpr), [$startDate, $endDate]);
         $applyBranch($purchQuery, 'purchases');
 
         $purchasesByDate = $purchQuery
-            ->selectRaw("DATE(purchases.{$purchDateCol}) as txn_date, SUM(COALESCE(purchases.total_amount, 0)) as total")
-            ->groupByRaw("DATE(purchases.{$purchDateCol})")
+            ->selectRaw("{$purchDateExpr} as txn_date, SUM(COALESCE(purchases.total_amount, 0)) as total")
+            ->groupByRaw($purchDateExpr)
             ->get()->keyBy('txn_date');
 
         // ── Operating Expenses: query expenses table directly ─────────────────
         $expensesByDate = collect();
         if (Schema::hasTable('expenses') && Schema::hasColumn('expenses', 'amount')) {
-            $expDateCol = Schema::hasColumn('expenses', 'expense_date') ? 'expense_date' : 'created_at';
+            // expense_date may not exist or be null; fall back to created_at
+            $expDateExpr = Schema::hasColumn('expenses', 'expense_date')
+                ? 'COALESCE(DATE(expenses.expense_date), DATE(expenses.created_at))'
+                : 'DATE(expenses.created_at)';
 
             $expQuery = DB::table('expenses')
                 ->when($companyId > 0 && Schema::hasColumn('expenses', 'company_id'),
                     fn ($q) => $q->where('expenses.company_id', $companyId))
                 ->where(DB::raw('LOWER(COALESCE(expenses.status, \'pending\'))'), '!=', 'rejected')
-                ->whereBetween(DB::raw("DATE(expenses.{$expDateCol})"), [$startDate, $endDate]);
+                ->whereBetween(DB::raw($expDateExpr), [$startDate, $endDate]);
             $applyBranch($expQuery, 'expenses');
 
             $expensesByDate = $expQuery
-                ->selectRaw("DATE(expenses.{$expDateCol}) as txn_date, SUM(COALESCE(expenses.amount, 0)) as total")
-                ->groupByRaw("DATE(expenses.{$expDateCol})")
+                ->selectRaw("{$expDateExpr} as txn_date, SUM(COALESCE(expenses.amount, 0)) as total")
+                ->groupByRaw($expDateExpr)
                 ->get()->keyBy('txn_date');
         }
 
