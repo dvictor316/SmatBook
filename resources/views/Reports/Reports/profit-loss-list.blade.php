@@ -201,8 +201,69 @@
             font-size: 1rem;
         }
     }
+    /* ── P&L Filter Bar ───────────────────────────────────── */
+    .pl-filter-bar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: 10px 14px;
+        background: #fff;
+        border: 1px solid #dbe2ea;
+        border-radius: 10px;
+        padding: 14px 18px;
+        margin-bottom: 18px;
+        box-shadow: 0 2px 8px rgba(15,23,42,0.04);
+    }
+    .pl-filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 130px;
+    }
+    .pl-filter-label {
+        font-size: 0.67rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #64748b;
+    }
+    .pl-filter-bar select,
+    .pl-filter-bar input[type="date"] {
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-size: 0.84rem;
+        color: #1e293b;
+        background: #f8fafc;
+        height: 36px;
+        outline: none;
+    }
+    .pl-filter-bar select:focus,
+    .pl-filter-bar input[type="date"]:focus {
+        border-color: #6366f1;
+        background: #fff;
+    }
+    .pl-filter-actions {
+        display: flex;
+        align-items: flex-end;
+        gap: 8px;
+        padding-bottom: 0;
+    }
+    .pl-btn-run {
+        height: 36px;
+        padding: 0 18px;
+        border-radius: 6px;
+        background: #4f46e5;
+        color: #fff;
+        border: none;
+        font-size: 0.84rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background .15s;
+    }
+    .pl-btn-run:hover { background: #4338ca; }
     @media print {
-        .no-print, .filter-card, .dataTables_filter, .dt-buttons, .pagination-wrapper { display: none !important; }
+        .no-print, .pl-filter-bar, .dataTables_filter, .dt-buttons, .pagination-wrapper { display: none !important; }
         .page-wrapper { margin: 0; padding: 0; background: white; }
         .pl-page {
             max-width: none;
@@ -245,32 +306,49 @@
                 : 'Current Business Performance',
         ])
 
-        <div class="card mb-4 filter-card no-print">
-            <div class="card-body">
-
-                <form method="GET" action="{{ route('reports.profit-loss', $routeParams) }}">
-                    <div class="row align-items-end g-3">
-                        <div class="col-lg-4 col-md-6">
-                            <label class="form-label fw-bold small text-muted text-uppercase">{{ __('Start Date') }}</label>
-                            <input type="date" name="start_date" class="form-control form-control-sm" value="{{ request('start_date') }}">
-                        </div>
-                        <div class="col-lg-4 col-md-6">
-                            <label class="form-label fw-bold small text-muted text-uppercase">{{ __('End Date') }}</label>
-                            <input type="date" name="end_date" class="form-control form-control-sm" value="{{ request('end_date') }}">
-                        </div>
-                        <div class="col-lg-4 col-md-12 d-flex gap-2">
-                            <button type="submit" class="btn btn-primary btn-sm flex-fill">
-                                <i class="fas fa-filter"></i> {{ __('Apply Filter') }}
-                            </button>
-
-                            <a href="{{ route('reports.profit-loss', $routeParams) }}" class="btn btn-light btn-sm border">
-                                <i class="fas fa-redo"></i>
-                            </a>
-                        </div>
-                    </div>
-                </form>
+        <form method="GET" action="{{ route('reports.profit-loss', $routeParams) }}" class="pl-filter-bar no-print" id="plFilterForm">
+            {{-- Period preset --}}
+            <div class="pl-filter-group">
+                <span class="pl-filter-label">Report Period</span>
+                <select id="plPreset" name="preset" onchange="plApplyPreset(this.value)">
+                    @foreach($presets as $key => $p)
+                        <option value="{{ $key }}"
+                            data-from="{{ $p['from'] }}"
+                            data-to="{{ $p['to'] }}"
+                            {{ ($activePreset ?? 'this_month') === $key ? 'selected' : '' }}>
+                            {{ $p['label'] }}
+                        </option>
+                    @endforeach
+                </select>
             </div>
-        </div>
+            {{-- From date --}}
+            <div class="pl-filter-group">
+                <span class="pl-filter-label">From</span>
+                <input type="date" name="start_date" id="plFrom" value="{{ $startDate ?? '' }}">
+            </div>
+            {{-- To date --}}
+            <div class="pl-filter-group">
+                <span class="pl-filter-label">To</span>
+                <input type="date" name="end_date" id="plTo" value="{{ $endDate ?? '' }}">
+            </div>
+            {{-- Branch selector (only shown when company has multiple branches) --}}
+            @if(isset($allBranches) && $allBranches->count() > 1)
+            <div class="pl-filter-group">
+                <span class="pl-filter-label">Branch</span>
+                <select name="branch_id" onchange="this.form.submit()">
+                    <option value="all" {{ ($activeBranch['scope'] ?? '') === 'all' ? 'selected' : '' }}>All Branches</option>
+                    @foreach($allBranches as $br)
+                        <option value="{{ $br['id'] }}" {{ ($activeBranch['id'] ?? '') == $br['id'] ? 'selected' : '' }}>
+                            {{ $br['name'] }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            @endif
+            <div class="pl-filter-actions">
+                <button type="submit" class="pl-btn-run">Run Report</button>
+            </div>
+        </form>
 
         <div class="pl-page mb-4">
             <div class="pl-toolbar no-print">
@@ -283,12 +361,12 @@
                     <h1 class="pl-title">Profit and Loss Statement</h1>
                     <div class="pl-company">{{ $reportCompanyName }}</div>
                     <div class="pl-date">
-                        {{ request('start_date') || request('end_date')
-                            ? 'For the period ' . (request('start_date') ? \Carbon\Carbon::parse(request('start_date'))->format('d M Y') : 'Start') . ' to ' . (request('end_date') ? \Carbon\Carbon::parse(request('end_date'))->format('d M Y') : 'Date')
-                            : 'As at ' . \Carbon\Carbon::parse($reportDate)->format('d M Y') }}
+                        For the period {{ \Carbon\Carbon::parse($startDate)->format('d M Y') }} to {{ \Carbon\Carbon::parse($endDate)->format('d M Y') }}
                     </div>
-                    @if($activeBranchName !== '')
-                        <div class="pl-branch">Branch: {{ $activeBranchName }}</div>
+                    @if(($activeBranch['scope'] ?? 'branch') !== 'all' && !empty($activeBranch['name']))
+                        <div class="pl-branch">Branch: {{ $activeBranch['name'] }}</div>
+                    @elseif(($activeBranch['scope'] ?? '') === 'all')
+                        <div class="pl-branch">All Branches</div>
                     @endif
                 </div>
 
@@ -417,7 +495,7 @@ $(document).ready(function() {
                     text: '<i class="fas fa-table me-1"></i> Excel',
                     title: 'Profit_Loss_Statement_{{ $reportDate }}',
                     footer: true
-                }
+                },
                 {
                     extend: 'pdfHtml5',
                     className: 'dt-button',
@@ -470,6 +548,18 @@ $(document).ready(function() {
         .finally(() => $('#emailReportBtn').prop('disabled', false).html('<i class="fas fa-envelope"></i> {{ __('Email Summary') }}'));
     });
 });
+
+/** P&L Preset Switcher **/
+function plApplyPreset(preset) {
+    const sel = document.getElementById('plPreset');
+    const opt = sel ? sel.querySelector('option[value="' + preset + '"]') : null;
+    if (opt && preset !== 'custom') {
+        document.getElementById('plFrom').value = opt.dataset.from || '';
+        document.getElementById('plTo').value   = opt.dataset.to   || '';
+        document.getElementById('plFilterForm').submit();
+    }
+    // custom: user sets dates manually and clicks Run Report
+}
 
 /** Shared Printing Script **/
 function printPage() {

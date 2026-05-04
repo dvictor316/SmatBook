@@ -3174,55 +3174,140 @@ public function destroy($id)
         return view($viewPath, compact('purchasereturns', 'totalRefunded'));
     }
 
-    /** 11. Profit & Loss List (Full Grand Totals + No Repeats) **/
+    /** 11. Profit & Loss List — queries source tables directly (purchases are an Asset/Inventory debit, not an Expense ledger entry) **/
     public function profit_loss_list(Request $request)
     {
-        $start_date = $request->input('start_date');
-        $end_date = $request->input('end_date');
-        if (!$start_date || !$end_date) {
-            $latestTxnDate = DB::table('transactions')
-                ->tap(fn ($query) => $this->applyTenantScope($query, 'transactions'))
-                ->tap(fn ($query) => $this->applyGenericBranchFilter($query, 'transactions'))
-                ->max('transaction_date');
+        $activeBranch  = $this->getActiveBranchContext();
+        $branchId      = trim((string) ($activeBranch['id']   ?? ''));
+        $branchName    = trim((string) ($activeBranch['name'] ?? ''));
+        $isAllBranches = ($activeBranch['scope'] ?? 'branch') === 'all';
+        $companyId     = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
 
-            $effectiveEnd = $latestTxnDate
-                ? Carbon::parse($latestTxnDate)->endOfDay()
-                : now()->endOfDay();
-
-            $end_date = $end_date ?: $effectiveEnd->toDateString();
-            $start_date = $start_date ?: $effectiveEnd->copy()->startOfMonth()->toDateString();
-        }
-
-        $entries = $this->profitLossLedgerEntries($start_date, $end_date);
-
-        $dailyRows = $entries
-            ->groupBy('report_date')
-            ->map(function ($rows, $reportDate) {
-                $income = (float) $rows->where('stream', 'income')->sum('amount');
-                $operatingExpense = (float) $rows->where('stream', 'operating_expense')->sum('amount');
-                $purchaseExpense = (float) $rows->where('stream', 'purchase_expense')->sum('amount');
-
-                return (object) [
-                    'report_date' => $reportDate,
-                    'income' => $income,
-                    'operating_expense' => $operatingExpense,
-                    'purchase_expense' => $purchaseExpense,
-                    'expense' => $operatingExpense + $purchaseExpense,
-                ];
-            })
-            ->sortByDesc('report_date')
-            ->values();
-
-        $totals = (object) [
-            'total_income' => (float) $dailyRows->sum('income'),
-            'total_operating_expense' => (float) $dailyRows->sum('operating_expense'),
-            'total_purchase_expense' => (float) $dailyRows->sum('purchase_expense'),
-            'total_expense' => (float) $dailyRows->sum('expense'),
+        // ── Date presets ──────────────────────────────────────────────────────
+        $now = Carbon::now();
+        $presets = [
+            'today'      => ['label' => 'Today',      'from' => $now->toDateString(),                                                       'to' => $now->toDateString()],
+            'this_week'  => ['label' => 'This Week',  'from' => $now->copy()->startOfWeek()->toDateString(),                                 'to' => $now->toDateString()],
+            'this_month' => ['label' => 'This Month', 'from' => $now->copy()->startOfMonth()->toDateString(),                                'to' => $now->toDateString()],
+            'last_month' => ['label' => 'Last Month', 'from' => $now->copy()->subMonthNoOverflow()->startOfMonth()->toDateString(),          'to' => $now->copy()->subMonthNoOverflow()->endOfMonth()->toDateString()],
+            'this_year'  => ['label' => 'This Year',  'from' => $now->copy()->startOfYear()->toDateString(),                                 'to' => $now->toDateString()],
+            'custom'     => ['label' => 'Custom',     'from' => $request->get('start_date', $now->copy()->startOfMonth()->toDateString()),   'to' => $request->get('end_date', $now->toDateString())],
         ];
 
+        $activePreset = $request->get('preset', 'this_month');
+        if (!array_key_exists($activePreset, $presets)) {
+            $activePreset = 'this_month';
+        }
+        if ($request->filled('start_date') || $request->filled('end_date')) {
+            $activePreset = 'custom';
+        }
+
+        $startDate = $presets[$activePreset]['from'];
+        $endDate   = $presets[$activePreset]['to'];
+
+        // ── Inline branch filter helper ───────────────────────────────────────
+        $applyBranch = function ($q, string $table) use ($isAllBranches, $branchId, $branchName) {
+            if ($isAllBranches || ($branchId === '' && $branchName === '')) {
+                return;
+            }
+            $q->where(function ($sub) use ($table, $branchId, $branchName) {
+                $added = false;
+                if ($branchId !== '' && Schema::hasColumn($table, 'branch_id')) {
+                    $sub->where("{$table}.branch_id", $branchId);
+                    $added = true;
+                }
+                if ($branchName !== '' && Schema::hasColumn($table, 'branch_name')) {
+                    $added ? $sub->orWhere("{$table}.branch_name", $branchName)
+                           : $sub->where("{$table}.branch_name", $branchName);
+                }
+            });
+        };
+
+        // ── Revenue: query sales table directly ───────────────────────────────
+        $salesDateCol = Schema::hasColumn('sales', 'order_date') ? 'order_date' : 'created_at';
+
+        $salesQuery = DB::table('sales')
+            ->when($companyId > 0 && Schema::hasColumn('sales', 'company_id'),
+                fn ($q) => $q->where('sales.company_id', $companyId))
+            ->whereNull('sales.deleted_at')
+            ->whereBetween(DB::raw("DATE(sales.{$salesDateCol})"), [$startDate, $endDate]);
+        $applyBranch($salesQuery, 'sales');
+
+        $salesByDate = $salesQuery
+            ->selectRaw("DATE(sales.{$salesDateCol}) as txn_date, SUM(COALESCE(sales.total, 0)) as total")
+            ->groupByRaw("DATE(sales.{$salesDateCol})")
+            ->get()->keyBy('txn_date');
+
+        // ── Purchase Cost: query purchases table directly ─────────────────────
+        $purchDateCol = Schema::hasColumn('purchases', 'purchase_date') ? 'purchase_date' : 'created_at';
+
+        $purchQuery = DB::table('purchases')
+            ->when($companyId > 0 && Schema::hasColumn('purchases', 'company_id'),
+                fn ($q) => $q->where('purchases.company_id', $companyId))
+            ->whereBetween(DB::raw("DATE(purchases.{$purchDateCol})"), [$startDate, $endDate]);
+        $applyBranch($purchQuery, 'purchases');
+
+        $purchasesByDate = $purchQuery
+            ->selectRaw("DATE(purchases.{$purchDateCol}) as txn_date, SUM(COALESCE(purchases.total_amount, 0)) as total")
+            ->groupByRaw("DATE(purchases.{$purchDateCol})")
+            ->get()->keyBy('txn_date');
+
+        // ── Operating Expenses: query expenses table directly ─────────────────
+        $expensesByDate = collect();
+        if (Schema::hasTable('expenses') && Schema::hasColumn('expenses', 'amount')) {
+            $expDateCol = Schema::hasColumn('expenses', 'expense_date') ? 'expense_date' : 'created_at';
+
+            $expQuery = DB::table('expenses')
+                ->when($companyId > 0 && Schema::hasColumn('expenses', 'company_id'),
+                    fn ($q) => $q->where('expenses.company_id', $companyId))
+                ->whereBetween(DB::raw("DATE(expenses.{$expDateCol})"), [$startDate, $endDate]);
+            $applyBranch($expQuery, 'expenses');
+
+            $expensesByDate = $expQuery
+                ->selectRaw("DATE(expenses.{$expDateCol}) as txn_date, SUM(COALESCE(expenses.amount, 0)) as total")
+                ->groupByRaw("DATE(expenses.{$expDateCol})")
+                ->get()->keyBy('txn_date');
+        }
+
+        // ── Merge all dates and build daily rows ──────────────────────────────
+        $allDates = collect($salesByDate->keys())
+            ->merge($purchasesByDate->keys())
+            ->merge($expensesByDate->keys())
+            ->unique()->sort()->values();
+
+        $dailyRows = $allDates->map(function ($date) use ($salesByDate, $purchasesByDate, $expensesByDate) {
+            $income    = (float) ($salesByDate[$date]->total     ?? 0);
+            $purchases = (float) ($purchasesByDate[$date]->total ?? 0);
+            $opex      = (float) ($expensesByDate[$date]->total  ?? 0);
+            return (object) [
+                'report_date'       => $date,
+                'income'            => $income,
+                'purchase_expense'  => $purchases,
+                'operating_expense' => $opex,
+                'expense'           => $purchases + $opex,
+            ];
+        })->sortByDesc('report_date')->values();
+
+        $totals = (object) [
+            'total_income'            => (float) $dailyRows->sum('income'),
+            'total_purchase_expense'  => (float) $dailyRows->sum('purchase_expense'),
+            'total_operating_expense' => (float) $dailyRows->sum('operating_expense'),
+            'total_expense'           => (float) $dailyRows->sum('expense'),
+        ];
+
+        // ── Load branches for the branch selector ─────────────────────────────
+        $allBranches = collect();
+        if ($companyId > 0 && Schema::hasTable('settings')) {
+            $raw = (string) (DB::table('settings')
+                ->where('key', 'branches_json_company_' . $companyId)
+                ->value('value') ?? '');
+            $allBranches = collect(json_decode($raw, true) ?: []);
+        }
+
+        // ── Paginate ──────────────────────────────────────────────────────────
         $currentPage = LengthAwarePaginator::resolveCurrentPage();
-        $perPage = 15;
-        $pageItems = $dailyRows->forPage($currentPage, $perPage)->values();
+        $perPage     = 15;
+        $pageItems   = $dailyRows->forPage($currentPage, $perPage)->values();
         $profitLossData = new LengthAwarePaginator(
             $pageItems,
             $dailyRows->count(),
@@ -3231,7 +3316,10 @@ public function destroy($id)
             ['path' => request()->url(), 'query' => request()->query()]
         );
 
-        return $this->renderReportView('profit-loss-list', compact('profitLossData', 'totals'));
+        return $this->renderReportView('profit-loss-list', compact(
+            'profitLossData', 'totals', 'presets', 'activePreset',
+            'activeBranch', 'allBranches', 'startDate', 'endDate'
+        ));
     }
 
         /** 12. Tax Purchase **/
