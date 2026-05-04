@@ -57,6 +57,7 @@ $isSystemAccount = function ($account) use ($systemHiddenCodes): bool {
     $name = strtolower(trim((string) ($account->name ?? '')));
     $code = strtoupper(trim((string) ($account->code ?? '')));
     if (in_array($code, $systemHiddenCodes, true)) return true;
+    // Do NOT hide "Opening Balance Equity" — it is a real account.
     $patterns = [
         'balance sheet reconciliation',
         'bank reconciliation suspense',
@@ -68,20 +69,6 @@ $isSystemAccount = function ($account) use ($systemHiddenCodes): bool {
     }
     return false;
 };
-
-// Internal/technical equity accounts (OBE family + plugging entries) that are
-// collapsed into a single "Opening / Adjustment Equity" summary line.
-$isInternalEquityAccount = function ($account) use ($isSystemAccount): bool {
-    if ($isSystemAccount($account)) return true;
-    $name = strtolower(trim((string) ($account->name ?? '')));
-    $code = strtoupper(trim((string) ($account->code ?? '')));
-    if (in_array($code, ['SYS-OPENING-EQUITY'], true)) return true;
-    return str_contains($name, 'opening balance equity');
-};
-
-// Consolidation state (passed from controller when all-branches mode)
-$consolidate   = (bool) ($consolidate   ?? false);
-$isAllBranches = (bool) ($isAllBranches ?? (($activeBranch['scope'] ?? '') === 'all'));
 
 /* ─────────────────────────────────────────────────────────────────
  *  BANK OVERDRAFT RECLASSIFICATION
@@ -103,7 +90,6 @@ $overdraftLines = collect();
  * ──────────────────────────────────────────────────────────────── */
 $processedCurrentAssets = collect($currentAssets ?? [])
     ->reject(fn ($a) => $isSystemAccount($a))
-    ->reject(fn ($a) => abs((float)($a->balance ?? 0)) < 0.005)
     ->filter(function ($account) use ($isBankOrCash, &$overdraftLines) {
         $bal = (float) ($account->balance ?? 0);
         if ($isBankOrCash($account) && $bal < -0.005) {
@@ -124,7 +110,6 @@ $processedCurrentAssets = collect($currentAssets ?? [])
  * ──────────────────────────────────────────────────────────────── */
 $processedFixedAssets = collect($fixedAssets ?? [])
     ->reject(fn ($a) => $isSystemAccount($a))
-    ->reject(fn ($a) => abs((float)($a->balance ?? 0)) < 0.005)
     ->values();
 
 /* ─────────────────────────────────────────────────────────────────
@@ -145,9 +130,7 @@ $isLongTermLiability = function ($account): bool {
         || str_contains($name, 'mortgage');
 };
 
-$allLiabilities         = collect($currentLiabilities ?? [])
-    ->reject(fn ($a) => $isSystemAccount($a))
-    ->reject(fn ($a) => abs((float)($a->balance ?? 0)) < 0.005);
+$allLiabilities         = collect($currentLiabilities ?? [])->reject(fn ($a) => $isSystemAccount($a));
 $currentLiabilityLines  = $allLiabilities->reject($isLongTermLiability)->values();
 $longTermLiabilityLines = $allLiabilities->filter($isLongTermLiability)->values();
 
@@ -171,7 +154,6 @@ $currentLiabilityLines = $currentLiabilityLines->filter(function ($account) use 
         $vc = (object) (method_exists($account, 'toArray') ? $account->toArray() : (array) $account);
         $vc->balance        = abs($bal);
         $vc->_vendor_credit = true;
-        $vc->_display_name  = 'Supplier Advance';
         $vendorCreditLines->push($vc);
         return false;
     }
@@ -188,20 +170,11 @@ if ($vendorCreditLines->isNotEmpty()) {
  *  but their balances are captured in $hiddenEquityBalance and added to
  *  equity totals so the accounting equation is never broken by filtering.
  * ──────────────────────────────────────────────────────────────── */
-$allEquityItems = collect($equity ?? []);
-// Collapse the OBE family (Opening Balance Equity, OBE-Customers, OBE-Inventory,
-// Balance Sheet Reconciliation Reserve) into ONE summary line so the equity section
-// looks clean while preserving Assets = L + E arithmetic.
-$visibleEquity          = $allEquityItems
-    ->reject(fn ($a) => $isInternalEquityAccount($a))
-    ->reject(fn ($a) => abs((float) ($a->balance ?? 0)) < 0.005)
-    ->values();
-$internalEquityAccounts = $allEquityItems->filter(fn ($a) => $isInternalEquityAccount($a))->values();
-$openingAdjBalance      = $internalEquityAccounts->sum(fn ($a) => (float) ($a->balance ?? 0));
-// Keep hiddenEquityBalance = openingAdjBalance so the visTotalEquity formula still balances.
-$hiddenEquityAccounts   = $internalEquityAccounts;
-$hiddenEquityBalance    = $openingAdjBalance;
-$displayNetIncome       = (float) ($netIncome ?? $retainedEarnings ?? 0);
+$allEquityItems       = collect($equity ?? []);
+$visibleEquity        = $allEquityItems->reject(fn ($a) => $isSystemAccount($a))->values();
+$hiddenEquityAccounts = $allEquityItems->filter(fn ($a) => $isSystemAccount($a))->values();
+$hiddenEquityBalance  = $hiddenEquityAccounts->sum(fn ($a) => (float) ($a->balance ?? 0));
+$displayNetIncome     = (float) ($netIncome ?? $retainedEarnings ?? 0);
 
 /* ─────────────────────────────────────────────────────────────────
  *  DISPLAY TOTALS  (after reclassifications and system-account removal)
@@ -586,22 +559,6 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
 
 .bs-spacer td { padding: 5px 0; }
 
-/* Deficit / accumulated loss badge */
-.bs-deficit-tag {
-    display: inline-block;
-    background: #fef2f2;
-    color: #b91c1c;
-    border: 1px solid #fecaca;
-    border-radius: 4px;
-    font-size: 0.66rem;
-    font-weight: 700;
-    padding: 1px 5px;
-    vertical-align: middle;
-    margin-left: 5px;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-}
-
 /* Overdraft badge */
 .bs-overdraft-tag {
     display: inline-block;
@@ -752,31 +709,6 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
                 <option value="previous_year"   {{ $activeCompareTo === 'previous_year'   ? 'selected' : '' }}>Previous Year</option>
             </select>
         </div>
-        @if(isset($allBranches) && $allBranches->count() > 1)
-        <div class="bs-filter-group">
-            <span class="bs-filter-label">Branch</span>
-            <select name="branch_id" onchange="this.form.submit()">
-                <option value="all" {{ ($activeBranch['scope'] ?? '') === 'all' ? 'selected' : '' }}>All Branches</option>
-                @foreach($allBranches as $br)
-                    <option value="{{ $br['id'] }}" {{ ($activeBranch['id'] ?? '') == $br['id'] ? 'selected' : '' }}>
-                        {{ $br['name'] }}
-                    </option>
-                @endforeach
-            </select>
-        </div>
-        @endif
-        @if($isAllBranches)
-        <div class="bs-filter-group">
-            <span class="bs-filter-label">Account View</span>
-            <input type="hidden" name="consolidate" id="bsConsolidate" value="{{ $consolidate ? '1' : '0' }}">
-            <div class="bs-method-toggle">
-                <a href="#" data-val="0" onclick="bsSetConsolidate(0); return false;"
-                   class="{{ !$consolidate ? 'active' : '' }}">By Branch</a>
-                <a href="#" data-val="1" onclick="bsSetConsolidate(1); return false;"
-                   class="{{ $consolidate ? 'active' : '' }}">Consolidated</a>
-            </div>
-        </div>
-        @endif
         <div class="bs-filter-actions">
             <button type="submit" class="bs-btn-run">Run Report</button>
         </div>
@@ -817,18 +749,8 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
                 @if($accountingMethod === 'cash')
                     <span class="bs-cash-badge">Cash Basis</span>
                 @endif
-                @php
-                    $headerBranchLabel = '';
-                    if ($isAllBranches) {
-                        $headerBranchLabel = $consolidate
-                            ? 'Consolidated — All Branches'
-                            : 'All Branches — Branch Detail View';
-                    } elseif ($activeBranchName !== '') {
-                        $headerBranchLabel = 'Branch: ' . $activeBranchName;
-                    }
-                @endphp
-                @if($headerBranchLabel !== '')
-                    <p class="bs-report-branch">{{ $headerBranchLabel }}</p>
+                @if($activeBranchName !== '')
+                    <p class="bs-report-branch">Branch: {{ $activeBranchName }}</p>
                 @endif
             </div>
 
@@ -856,11 +778,7 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
                         <tr class="bs-sub-head"><td colspan="{{ $colCount }}">Current Assets</td></tr>
                         @php $caGroups = $groupAccounts($processedCurrentAssets, 'Other Current Assets'); @endphp
                         @foreach($caGroups as $group)
-                            @php
-                            $trivialCaLabels = ['current assets', 'current asset', 'other current assets', 'current', 'assets', 'asset'];
-                            $showCaGroupHead = $caGroups->count() > 1 && !in_array(strtolower(trim($group['label'])), $trivialCaLabels, true);
-                            @endphp
-                            @if($showCaGroupHead)
+                            @if($caGroups->count() > 1)
                                 <tr class="bs-group-head">
                                     <td>{{ $group['label'] }}</td>
                                     <td></td>
@@ -869,9 +787,12 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
                             @endif
                             @foreach($group['items'] as $account)
                                 @php $cv = $cmpAmt($account); @endphp
-                                <tr class="{{ $showCaGroupHead ? 'bs-line bs-line-indented' : 'bs-line' }}">
+                                <tr class="{{ $caGroups->count() > 1 ? 'bs-line bs-line-indented' : 'bs-line' }}">
                                     <td>
-                                        {{ !empty($account->_vendor_credit) ? ($account->_display_name ?? 'Supplier Advance') : $account->name }}
+                                        {{ $account->name }}
+                                        @if(!empty($account->_vendor_credit))
+                                            <span class="bs-vendor-credit-tag">Vendor Credit</span>
+                                        @endif
                                     </td>
                                     <td class="bs-amt {{ (float)($account->balance ?? 0) < 0 ? 'bs-amt-neg' : '' }}">
                                         {{ $fmt((float)($account->balance ?? 0)) }}
@@ -885,7 +806,7 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
                                     @endif
                                 </tr>
                             @endforeach
-                            @if($showCaGroupHead)
+                            @if($caGroups->count() > 1)
                                 <tr class="bs-sub-total">
                                     <td>Total {{ $group['label'] }}</td>
                                     <td class="bs-amt">{{ $fmt($group['total']) }}</td>
@@ -906,11 +827,7 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
                         <tr class="bs-sub-head"><td colspan="{{ $colCount }}">Fixed Assets</td></tr>
                         @php $faGroups = $groupAccounts($processedFixedAssets, 'Fixed Assets'); @endphp
                         @foreach($faGroups as $group)
-                            @php
-                            $trivialFaLabels = ['fixed assets', 'fixed asset', 'non-current assets', 'non-current asset', 'property plant and equipment', 'ppe'];
-                            $showFaGroupHead = $faGroups->count() > 1 && !in_array(strtolower(trim($group['label'])), $trivialFaLabels, true);
-                            @endphp
-                            @if($showFaGroupHead)
+                            @if($faGroups->count() > 1)
                                 <tr class="bs-group-head">
                                     <td>{{ $group['label'] }}</td>
                                     <td></td>
@@ -919,7 +836,7 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
                             @endif
                             @foreach($group['items'] as $account)
                                 @php $cv = $cmpAmt($account); @endphp
-                                <tr class="{{ $showFaGroupHead ? 'bs-line bs-line-indented' : 'bs-line' }}">
+                                <tr class="{{ $faGroups->count() > 1 ? 'bs-line bs-line-indented' : 'bs-line' }}">
                                     <td>{{ $account->name }}</td>
                                     <td class="bs-amt {{ (float)($account->balance ?? 0) < 0 ? 'bs-amt-neg' : '' }}">
                                         {{ $fmt((float)($account->balance ?? 0)) }}
@@ -933,7 +850,7 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
                                     @endif
                                 </tr>
                             @endforeach
-                            @if($showFaGroupHead)
+                            @if($faGroups->count() > 1)
                                 <tr class="bs-sub-total">
                                     <td>Total {{ $group['label'] }}</td>
                                     <td class="bs-amt">{{ $fmt($group['total']) }}</td>
@@ -1045,34 +962,14 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
                                 @if($cv !== null)
                                     <td class="bs-cmp-amt {{ $cv < 0 ? 'bs-cmp-amt-neg' : '' }}">{{ $fmt($cv) }}</td>
                                 @else
-                                    <td class="bs-amt-dash">&mdash;</td>
+                                    <td class="bs-amt-dash">—</td>
                                 @endif
                             @endif
                         </tr>
                     @endforeach
 
-                    {{-- Opening / Adjustment Equity: OBE family + reconciliation entries collapsed to one line --}}
-                    @if(abs($openingAdjBalance) >= 0.01)
                     <tr class="bs-line">
-                        <td>Opening / Adjustment Equity
-                            <span style="font-size:0.68rem;color:#94a3b8;font-weight:400;margin-left:5px;">(Opening balances &amp; adjustments)</span>
-                        </td>
-                        <td class="bs-amt {{ $openingAdjBalance < 0 ? 'bs-amt-neg' : '' }}">
-                            {{ $fmt($openingAdjBalance) }}
-                        </td>
-                        @if($hasCmp)<td class="bs-amt-dash">&mdash;</td>@endif
-                    </tr>
-                    @endif
-
-                    <tr class="bs-line">
-                        <td>
-                            @if($displayNetIncome < 0)
-                                Current Year Deficit
-                                <span class="bs-deficit-tag">Accumulated Loss</span>
-                            @else
-                                Current Year Earnings
-                            @endif
-                        </td>
+                        <td>Retained Earnings (Net Income)</td>
                         <td class="bs-amt {{ $displayNetIncome < 0 ? 'bs-amt-neg' : '' }}">
                             {{ $fmt($displayNetIncome) }}
                         </td>
@@ -1213,26 +1110,6 @@ function bsSetMethod(val) {
     document.getElementById('bsMethod').value = val;
     document.getElementById('bsMethodAccrual').classList.toggle('active', val === 'accrual');
     document.getElementById('bsMethodCash').classList.toggle('active', val === 'cash');
-}
-
-function bsSetConsolidate(val) {
-    var el = document.getElementById('bsConsolidate');
-    if (el) el.value = val;
-    document.querySelectorAll('[data-val]').forEach(function(a) {
-        if (a.closest && a.closest('.bs-method-toggle')) {
-            a.classList.toggle('active', parseInt(a.dataset.val) === val);
-        }
-    });
-}
-
-function bsSetConsolidate(val) {
-    var el = document.getElementById('bsConsolidate');
-    if (el) el.value = val;
-    document.querySelectorAll('[data-val="0"],[data-val="1"]').forEach(function(a) {
-        if (a.closest('.bs-method-toggle')) {
-            a.classList.toggle('active', parseInt(a.dataset.val) === val);
-        }
-    });
 }
 
 function bsExportExcel() {

@@ -456,6 +456,60 @@ class BalanceSheetController extends Controller
             $mergeIntoOpeningEquity($inventoryBridge);
         }
 
+        // ── Multi-branch disambiguation / consolidation ────────────────────────
+        $isAllBranches = ($activeBranch['scope'] ?? 'branch') === 'all';
+        $consolidate   = $request->boolean('consolidate');
+
+        if ($isAllBranches) {
+            if ($consolidate) {
+                // Merge accounts with the same normalised name + type across branches.
+                // Produces one summarised line item per unique account, branch-agnostic.
+                $consolidateGroup = function ($collection) {
+                    return $collection
+                        ->groupBy(function ($a) {
+                            return strtolower(trim((string) ($a->name ?? '')))
+                                . '|' . strtolower(trim((string) ($a->type ?? '')));
+                        })
+                        ->map(function ($group) {
+                            $first = clone $group->first();
+                            $first->balance     = $group->sum(fn ($a) => (float) ($a->balance ?? 0));
+                            $first->branch_id   = null;
+                            $first->branch_name = null;
+                            return $first;
+                        })
+                        ->values();
+                };
+                $currentAssets      = $consolidateGroup($currentAssets);
+                $fixedAssets        = $consolidateGroup($fixedAssets);
+                $currentLiabilities = $consolidateGroup($currentLiabilities);
+                $equity             = $consolidateGroup($equity);
+            } else {
+                // Append branch suffix to disambiguate duplicate account names.
+                // Example: "GTBank" becomes "GTBank — New Heaven" / "GTBank — Main Branch".
+                $disambiguate = function ($collection) {
+                    $counts = $collection->countBy(function ($a) {
+                        return strtolower(trim((string) ($a->name ?? '')))
+                            . '|' . strtolower(trim((string) ($a->type ?? '')));
+                    });
+                    return $collection->map(function ($a) use ($counts) {
+                        $key = strtolower(trim((string) ($a->name ?? '')))
+                            . '|' . strtolower(trim((string) ($a->type ?? '')));
+                        if (($counts[$key] ?? 1) > 1) {
+                            $branchLabel = trim((string) ($a->branch_name ?? $a->branch_id ?? ''));
+                            if ($branchLabel !== '') {
+                                $a->name = $a->name . ' — ' . $branchLabel;
+                            }
+                        }
+                        return $a;
+                    });
+                };
+                $currentAssets      = $disambiguate($currentAssets);
+                $fixedAssets        = $disambiguate($fixedAssets);
+                $currentLiabilities = $disambiguate($currentLiabilities);
+                $equity             = $disambiguate($equity);
+            }
+        }
+
         // 5. Final Totals
         $totalCurrentAssets = $currentAssets->sum('balance');
         $totalFixedAssets = $fixedAssets->sum('balance');
@@ -543,7 +597,9 @@ class BalanceSheetController extends Controller
             'compareTo',
             'compareData',
             'compareDate',
-            'comparePeriodLabel'
+            'comparePeriodLabel',
+            'consolidate',
+            'isAllBranches'
         ));
     }
 
