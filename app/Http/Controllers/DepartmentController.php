@@ -109,12 +109,13 @@ class DepartmentController extends Controller
 
     public function create()
     {
-        $companyId = Auth::user()->company_id;
-        $branchId = $this->resolveDepartmentBranchId();
-        $employees = $this->employeeOptionsForCompany($companyId, $branchId);
-        $departments = $this->departmentOptionsForCompany($companyId, $branchId);
+        $companyId       = Auth::user()->company_id;
+        $branchId        = $this->resolveDepartmentBranchId();
+        $activeBranch    = $this->getActiveBranchContext();
+        $employees       = $this->employeeOptionsForCompany($companyId, $branchId);
+        $departments     = $this->departmentOptionsForCompany($companyId, $branchId);
 
-        return view('departments.create', compact('employees', 'departments'));
+        return view('departments.create', compact('employees', 'departments', 'activeBranch'));
     }
 
     public function store(Request $request)
@@ -130,8 +131,14 @@ class DepartmentController extends Controller
                 'max:50',
                 Rule::unique('departments', 'code')->where(fn ($query) => $query->where('company_id', $companyId)),
             ],
-            'parent_id'         => 'nullable|exists:departments,id',
-            'head_employee_id'  => 'nullable|exists:employees,id',
+            'parent_id'         => [
+                'nullable',
+                Rule::exists('departments', 'id')->where(fn ($q) => $q->where('company_id', $companyId)),
+            ],
+            'head_employee_id'  => [
+                'nullable',
+                Rule::exists('employees', 'id')->where(fn ($q) => $q->where('company_id', $companyId)),
+            ],
             'is_active'         => 'boolean',
             'description'       => 'nullable|string',
         ]);
@@ -150,12 +157,13 @@ class DepartmentController extends Controller
     public function edit(Department $department)
     {
         $this->authorizeDepartmentAccess($department);
-        $companyId   = Auth::user()->company_id;
-        $branchId = $this->resolveDepartmentBranchId();
-        $employees   = $this->employeeOptionsForCompany($companyId, $branchId);
-        $departments = $this->departmentOptionsForCompany($companyId, $branchId, $department->id);
+        $companyId    = Auth::user()->company_id;
+        $branchId     = $this->resolveDepartmentBranchId();
+        $activeBranch = $this->getActiveBranchContext();
+        $employees    = $this->employeeOptionsForCompany($companyId, $branchId);
+        $departments  = $this->departmentOptionsForCompany($companyId, $branchId, $department->id);
 
-        return view('departments.edit', compact('department', 'employees', 'departments'));
+        return view('departments.edit', compact('department', 'employees', 'departments', 'activeBranch'));
     }
 
     public function update(Request $request, Department $department)
@@ -172,8 +180,14 @@ class DepartmentController extends Controller
                     ->where(fn ($query) => $query->where('company_id', $department->company_id))
                     ->ignore($department->id),
             ],
-            'parent_id'        => 'nullable|exists:departments,id',
-            'head_employee_id' => 'nullable|exists:employees,id',
+            'parent_id'        => [
+                'nullable',
+                Rule::exists('departments', 'id')->where(fn ($q) => $q->where('company_id', $department->company_id)),
+            ],
+            'head_employee_id' => [
+                'nullable',
+                Rule::exists('employees', 'id')->where(fn ($q) => $q->where('company_id', $department->company_id)),
+            ],
             'is_active'        => 'boolean',
             'description'      => 'nullable|string',
         ]);

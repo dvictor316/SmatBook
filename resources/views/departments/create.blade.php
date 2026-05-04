@@ -8,6 +8,17 @@
                 <div>
                     <h5 class="mb-1">New Department</h5>
                     <p class="text-muted mb-0">Create a department for the active branch and assign an optional head.</p>
+                    @php $branchLabel = trim((string) ($activeBranch['name'] ?? '')); @endphp
+                    @if($branchLabel !== '')
+                        <span class="badge bg-primary-subtle text-primary mt-1"
+                              title="This department will be saved under the currently active branch">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" fill="currentColor"
+                                 viewBox="0 0 16 16" class="me-1" style="vertical-align:-.1em">
+                                <path d="M8 1a2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5A2.5 2.5 0 0 1 5.5 3.5 2.5 2.5 0 0 1 8 1zm0 1a1.5 1.5 0 1 0 0 3A1.5 1.5 0 0 0 8 2zm0 6c-2.67 0-8 1.34-8 4v1h16v-1c0-2.66-5.33-4-8-4z"/>
+                            </svg>
+                            Branch: {{ $branchLabel }}
+                        </span>
+                    @endif
                 </div>
                 <div>
                     <a href="{{ route('departments.index') }}" class="btn btn-outline-primary">Back to Departments</a>
