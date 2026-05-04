@@ -461,7 +461,8 @@ class DashboardController extends Controller
         if (!Schema::hasTable('expenses')) return 0;
         return $this->scopeExpensesByContext(Expense::query(), $company, $activeBranch, 'expenses')
             ->where(function ($q) {
-                $q->whereRaw('LOWER(status) = ?', ['approved'])->orWhereNull('status');
+                // Count all expenses except explicitly rejected ones
+                $q->whereRaw('LOWER(COALESCE(status, \'pending\')) != ?', ['rejected']);
             })
             ->sum('amount') ?? 0;
     }

@@ -3260,6 +3260,7 @@ public function destroy($id)
             $expQuery = DB::table('expenses')
                 ->when($companyId > 0 && Schema::hasColumn('expenses', 'company_id'),
                     fn ($q) => $q->where('expenses.company_id', $companyId))
+                ->where(DB::raw('LOWER(COALESCE(expenses.status, \'pending\'))'), '!=', 'rejected')
                 ->whereBetween(DB::raw("DATE(expenses.{$expDateCol})"), [$startDate, $endDate]);
             $applyBranch($expQuery, 'expenses');
 
