@@ -820,6 +820,10 @@ class ReportController extends Controller
                 if (Schema::hasColumn($table, 'branch_name') && $branchName !== '') {
                     $sub->orWhere("{$table}.branch_name", $branchName);
                 }
+                // Include records created before the branch feature (branch_id not yet assigned)
+                if (Schema::hasColumn($table, 'branch_id')) {
+                    $sub->orWhereNull("{$table}.branch_id");
+                }
             });
 
             return $query;
@@ -3211,14 +3215,15 @@ public function destroy($id)
                 return;
             }
             $q->where(function ($sub) use ($table, $branchId, $branchName) {
-                $added = false;
                 if ($branchId !== '' && Schema::hasColumn($table, 'branch_id')) {
                     $sub->where("{$table}.branch_id", $branchId);
-                    $added = true;
                 }
                 if ($branchName !== '' && Schema::hasColumn($table, 'branch_name')) {
-                    $added ? $sub->orWhere("{$table}.branch_name", $branchName)
-                           : $sub->where("{$table}.branch_name", $branchName);
+                    $sub->orWhere("{$table}.branch_name", $branchName);
+                }
+                // Include records created before the branch feature (branch_id not yet assigned)
+                if (Schema::hasColumn($table, 'branch_id')) {
+                    $sub->orWhereNull("{$table}.branch_id");
                 }
             });
         };
