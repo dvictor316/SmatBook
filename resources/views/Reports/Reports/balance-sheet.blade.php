@@ -23,6 +23,8 @@ $companyName     = $reportCompany?->company_name
 $activeBranchName = trim((string) ($activeBranch['name'] ?? ''));
 $asOfDate        = Carbon::parse($reportDate ?? now());
 $asOfStr         = $asOfDate->toDateString();
+$accountingMethod = $method ?? 'accrual';
+$activeCompareTo  = $compareTo ?? 'none';
 
 /* ─────────────────────────────────────────────────────────────────
  *  DATE FILTER PRESETS
@@ -44,8 +46,6 @@ foreach ($presets as $key => $p) {
 
 /* ─────────────────────────────────────────────────────────────────
  *  SYSTEM / INTERNAL ACCOUNT FILTER
- *  These accounts are created for internal bookkeeping only and
- *  must NOT appear on a published financial statement.
  * ──────────────────────────────────────────────────────────────── */
 $systemCodes = ['SYS-BS-RECON', 'SYS-OPENING-EQUITY', 'SYS-CUST-AR', 'SYS-SUPP-AP', 'SYS-INV'];
 
@@ -68,8 +68,6 @@ $isSystemAccount = function ($account) use ($systemCodes): bool {
 
 /* ─────────────────────────────────────────────────────────────────
  *  BANK OVERDRAFT RECLASSIFICATION
- *  A bank/cash account with a negative balance is an overdraft —
- *  it belongs under Current Liabilities, not under Assets.
  * ──────────────────────────────────────────────────────────────── */
 $isBankOrCash = function ($account): bool {
     $name    = strtolower(trim((string) ($account->name    ?? '')));
@@ -159,7 +157,97 @@ $equationDiff           = round($visTotalAssets - $visTotalLiabEquity, 2);
 $isBalanced             = abs($equationDiff) < 0.01;
 
 /* ─────────────────────────────────────────────────────────────────
- *  GROUPING HELPER  (groups accounts by sub_type within a section)
+ *  CASH BASIS ADJUSTMENT
+ *  Remove AR (reduces assets) and AP (reduces liabilities) and
+ *  adjust net income to keep the accounting equation balanced.
+ *  NI_cash = NI_accrual − AR_balance + AP_balance
+ * ──────────────────────────────────────────────────────────────── */
+if ($accountingMethod === 'cash') {
+    $arAdj = $processedCurrentAssets
+        ->filter(fn ($a) => str_contains(strtolower((string) ($a->name ?? '')), 'receivable'))
+        ->sum(fn ($a) => (float) ($a->balance ?? 0));
+    $processedCurrentAssets = $processedCurrentAssets
+        ->reject(fn ($a) => str_contains(strtolower((string) ($a->name ?? '')), 'receivable'))
+        ->values();
+
+    $apAdj = $currentLiabilityLines
+        ->filter(fn ($a) => str_contains(strtolower((string) ($a->name ?? '')), 'payable'))
+        ->sum(fn ($a) => (float) ($a->balance ?? 0));
+    $currentLiabilityLines = $currentLiabilityLines
+        ->reject(fn ($a) => str_contains(strtolower((string) ($a->name ?? '')), 'payable'))
+        ->values();
+
+    $displayNetIncome -= $arAdj;
+    $displayNetIncome += $apAdj;
+
+    // Recalculate display totals after cash-basis filtering
+    $visTotalCurrentAssets = $processedCurrentAssets->sum(fn ($a) => (float) ($a->balance ?? 0));
+    $visTotalAssets        = $visTotalCurrentAssets + $visTotalFixedAssets;
+    $visTotalCurrentLiab   = $currentLiabilityLines->sum(fn ($a) => (float) ($a->balance ?? 0));
+    $visTotalLiabilities   = $visTotalCurrentLiab + $visTotalLongTermLiab;
+    $visTotalEquity        = $visTotalEquityAccounts + $displayNetIncome;
+    $visTotalLiabEquity    = $visTotalLiabilities + $visTotalEquity;
+    $equationDiff          = round($visTotalAssets - $visTotalLiabEquity, 2);
+    $isBalanced            = abs($equationDiff) < 0.01;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+ *  COMPARISON PERIOD DATA
+ * ──────────────────────────────────────────────────────────────── */
+$hasCmp  = !empty($compareData);
+$colCount = $hasCmp ? 3 : 2;
+
+$cmpTotalCurrentAssets = 0.0;
+$cmpTotalFixedAssets   = 0.0;
+$cmpTotalAssets        = 0.0;
+$cmpTotalCurrentLiab   = 0.0;
+$cmpTotalLongTermLiab  = 0.0;
+$cmpTotalLiabilities   = 0.0;
+$cmpDisplayNetIncome   = 0.0;
+$cmpTotalEquity        = 0.0;
+$cmpTotalLiabEquity    = 0.0;
+$cmpLookup             = collect();
+
+if ($hasCmp) {
+    // Apply the same visual filters to comparison collections
+    $cmpCurrentAssetsVis = collect($compareData['currentAssets'] ?? [])
+        ->reject(fn ($a) => $isSystemAccount($a))
+        ->filter(fn ($a) => !($isBankOrCash($a) && (float) ($a->balance ?? 0) < -0.005))
+        ->values();
+    $cmpFixedAssetsVis = collect($compareData['fixedAssets'] ?? [])
+        ->reject(fn ($a) => $isSystemAccount($a))
+        ->values();
+    $cmpLiabilitiesVis = collect($compareData['liabilities'] ?? [])
+        ->reject(fn ($a) => $isSystemAccount($a))
+        ->values();
+    $cmpCurrentLiabVis   = $cmpLiabilitiesVis->reject($isLongTermLiability)->values();
+    $cmpLongTermLiabVis  = $cmpLiabilitiesVis->filter($isLongTermLiability)->values();
+    $cmpEquityVis = collect($compareData['equity'] ?? [])
+        ->reject(fn ($a) => $isSystemAccount($a))
+        ->values();
+    $cmpDisplayNetIncome = (float) ($compareData['netIncome'] ?? 0);
+
+    $cmpTotalCurrentAssets = $cmpCurrentAssetsVis->sum(fn ($a) => (float) ($a->balance ?? 0));
+    $cmpTotalFixedAssets   = $cmpFixedAssetsVis->sum(fn ($a) => (float) ($a->balance ?? 0));
+    $cmpTotalAssets        = $cmpTotalCurrentAssets + $cmpTotalFixedAssets;
+    $cmpTotalCurrentLiab   = $cmpCurrentLiabVis->sum(fn ($a) => (float) ($a->balance ?? 0));
+    $cmpTotalLongTermLiab  = $cmpLongTermLiabVis->sum(fn ($a) => (float) ($a->balance ?? 0));
+    $cmpTotalLiabilities   = $cmpTotalCurrentLiab + $cmpTotalLongTermLiab;
+    $cmpTotalEquityAcc     = $cmpEquityVis->sum(fn ($a) => (float) ($a->balance ?? 0));
+    $cmpTotalEquity        = $cmpTotalEquityAcc + $cmpDisplayNetIncome;
+    $cmpTotalLiabEquity    = $cmpTotalLiabilities + $cmpTotalEquity;
+
+    // Name-keyed lookup for per-account comparison amounts
+    $cmpLookup = collect()
+        ->concat($compareData['currentAssets'] ?? [])
+        ->concat($compareData['fixedAssets']   ?? [])
+        ->concat($compareData['liabilities']   ?? [])
+        ->concat($compareData['equity']        ?? [])
+        ->keyBy(fn ($a) => strtolower(trim((string) ($a->name ?? ''))));
+}
+
+/* ─────────────────────────────────────────────────────────────────
+ *  GROUPING HELPER
  * ──────────────────────────────────────────────────────────────── */
 $groupAccounts = function ($items, string $fallback) {
     return collect($items)
@@ -174,6 +262,11 @@ $groupAccounts = function ($items, string $fallback) {
         ])
         ->values();
 };
+
+// Helper: comparison amount for a single account by name
+$cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->name ?? '')))])
+    ? (float) ($cmpLookup[strtolower(trim((string) ($account->name ?? '')))]->balance ?? 0)
+    : null;
 @endphp
 
 {{-- ══════════════════════════════════════════════════════════════
@@ -232,6 +325,7 @@ $groupAccounts = function ($items, string $fallback) {
     color: #475569;
     text-decoration: none;
     background: #f8fafc;
+    user-select: none;
 }
 .bs-method-toggle a.active { background: #6366f1; color: #fff; }
 .bs-filter-actions { align-self: flex-end; }
@@ -267,7 +361,7 @@ $groupAccounts = function ($items, string $fallback) {
 .bs-action-btn svg { width: 14px; height: 14px; }
 
 /* ── Report wrapper ──────────────────────────────────────── */
-.bs-page  { max-width: 940px; margin: 0 auto 30px; }
+.bs-page  { max-width: 960px; margin: 0 auto 30px; }
 .bs-sheet {
     background: #fff;
     border: 1px solid #e2e8f0;
@@ -299,6 +393,19 @@ $groupAccounts = function ($items, string $fallback) {
 }
 .bs-report-date   { font-size: 0.92rem; color: #475569; margin: 0; }
 .bs-report-branch { font-size: 0.84rem; color: #64748b; margin-top: 3px; }
+.bs-cash-badge {
+    display: inline-block;
+    background: #fef9c3;
+    color: #854d0e;
+    border: 1px solid #fde68a;
+    border-radius: 4px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    margin-top: 5px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
 
 /* ── Main table ──────────────────────────────────────────── */
 .bs-table {
@@ -308,8 +415,8 @@ $groupAccounts = function ($items, string $fallback) {
     color: #1e293b;
     margin-top: 4px;
 }
-.bs-table col.col-label  { width: 70%; }
-.bs-table col.col-amount { width: 30%; }
+.bs-table col.col-label  { width: 60%; }
+.bs-table col.col-amount { width: 20%; }
 .bs-table td { padding: 0; vertical-align: middle; }
 
 /* Column header */
@@ -322,7 +429,8 @@ $groupAccounts = function ($items, string $fallback) {
     color: #64748b;
     border-bottom: 1.5px solid #cbd5e1;
 }
-.bs-col-head td:last-child { text-align: right; padding-right: 2px; }
+.bs-col-head td:not(:first-child) { text-align: right; padding-right: 2px; }
+.bs-col-head td.col-cmp { color: #94a3b8; }
 
 /* ASSETS / LIABILITIES / EQUITY label */
 .bs-section-head td {
@@ -342,7 +450,7 @@ $groupAccounts = function ($items, string $fallback) {
     color: #1e293b;
 }
 
-/* Sub-group header (e.g. "Accounts Receivable" parent grouping) */
+/* Sub-group header */
 .bs-group-head td:first-child {
     padding: 5px 0 3px 24px;
     font-size: 0.875rem;
@@ -362,9 +470,21 @@ $groupAccounts = function ($items, string $fallback) {
     padding-right: 2px;
     color: #1e293b;
 }
-.bs-amt-neg { color: #dc2626; }
+.bs-amt-neg  { color: #dc2626; }
+.bs-amt-dash { color: #94a3b8; text-align: right; padding-right: 2px; font-size: 0.85rem; }
 
-/* Sub-total (e.g. "Total Current Assets") */
+/* Comparison column */
+.bs-cmp-amt {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    padding-right: 2px;
+    color: #64748b;
+    font-size: 0.875rem;
+}
+.bs-cmp-amt-neg { color: #f87171; }
+
+/* Sub-total */
 .bs-sub-total td {
     padding: 6px 0 6px 24px;
     font-weight: 700;
@@ -373,9 +493,9 @@ $groupAccounts = function ($items, string $fallback) {
     border-top: 1px solid #e2e8f0;
     background: #f8fafc;
 }
-.bs-sub-total td:last-child { padding-right: 2px; }
+.bs-sub-total td:not(:first-child) { padding-right: 2px; }
 
-/* Section total (e.g. "Total Assets") */
+/* Section total */
 .bs-section-total td {
     padding: 8px 0;
     font-size: 0.94rem;
@@ -384,9 +504,9 @@ $groupAccounts = function ($items, string $fallback) {
     border-top: 2px solid #334155;
     border-bottom: 1px solid #334155;
 }
-.bs-section-total td:last-child { padding-right: 2px; }
+.bs-section-total td:not(:first-child) { padding-right: 2px; }
 
-/* Grand total ("Total Liabilities & Equity") */
+/* Grand total */
 .bs-grand-total td {
     padding: 10px 0;
     font-size: 0.97rem;
@@ -395,7 +515,7 @@ $groupAccounts = function ($items, string $fallback) {
     border-top: 3px double #111827;
     border-bottom: 2px solid #111827;
 }
-.bs-grand-total td:last-child { padding-right: 2px; }
+.bs-grand-total td:not(:first-child) { padding-right: 2px; }
 
 .bs-spacer td { padding: 5px 0; }
 
@@ -498,10 +618,23 @@ $groupAccounts = function ($items, string $fallback) {
         </div>
         <div class="bs-filter-group">
             <span class="bs-filter-label">Accounting Method</span>
+            <input type="hidden" name="accounting_method" id="bsMethod" value="{{ $accountingMethod }}">
             <div class="bs-method-toggle">
-                <a href="#" class="active" onclick="return false;">Accrual</a>
-                <a href="#" onclick="return false;">Cash</a>
+                <a href="#" id="bsMethodAccrual"
+                   onclick="bsSetMethod('accrual'); return false;"
+                   class="{{ $accountingMethod === 'accrual' ? 'active' : '' }}">Accrual</a>
+                <a href="#" id="bsMethodCash"
+                   onclick="bsSetMethod('cash'); return false;"
+                   class="{{ $accountingMethod === 'cash' ? 'active' : '' }}">Cash</a>
             </div>
+        </div>
+        <div class="bs-filter-group">
+            <span class="bs-filter-label">Compare to</span>
+            <select name="compare_to">
+                <option value="none"            {{ $activeCompareTo === 'none'            ? 'selected' : '' }}>None</option>
+                <option value="previous_period" {{ $activeCompareTo === 'previous_period' ? 'selected' : '' }}>Previous Period</option>
+                <option value="previous_year"   {{ $activeCompareTo === 'previous_year'   ? 'selected' : '' }}>Previous Year</option>
+            </select>
         </div>
         <div class="bs-filter-actions">
             <button type="submit" class="bs-btn-run">Run Report</button>
@@ -540,6 +673,9 @@ $groupAccounts = function ($items, string $fallback) {
                 <p class="bs-company-name">{{ $companyName }}</p>
                 <h1 class="bs-report-title">Balance Sheet</h1>
                 <p class="bs-report-date">As of {{ $asOfDate->format('F j, Y') }}</p>
+                @if($accountingMethod === 'cash')
+                    <span class="bs-cash-badge">Cash Basis</span>
+                @endif
                 @if($activeBranchName !== '')
                     <p class="bs-report-branch">Branch: {{ $activeBranchName }}</p>
                 @endif
@@ -549,97 +685,129 @@ $groupAccounts = function ($items, string $fallback) {
                 <colgroup>
                     <col class="col-label">
                     <col class="col-amount">
+                    @if($hasCmp)<col class="col-amount">@endif
                 </colgroup>
                 <tbody>
 
                     <tr class="bs-col-head">
                         <td></td>
-                        <td>TOTAL</td>
+                        <td>{{ $asOfDate->format('M j, Y') }}</td>
+                        @if($hasCmp)<td class="col-cmp">{{ $comparePeriodLabel }}</td>@endif
                     </tr>
 
                     {{-- ════════════════════════════════════════
                          ASSETS
                     ════════════════════════════════════════════ --}}
-                    <tr class="bs-section-head"><td colspan="2">Assets</td></tr>
+                    <tr class="bs-section-head"><td colspan="{{ $colCount }}">Assets</td></tr>
 
                     {{-- Current Assets --}}
                     @if($processedCurrentAssets->isNotEmpty())
-                        <tr class="bs-sub-head"><td colspan="2">Current Assets</td></tr>
+                        <tr class="bs-sub-head"><td colspan="{{ $colCount }}">Current Assets</td></tr>
                         @php $caGroups = $groupAccounts($processedCurrentAssets, 'Other Current Assets'); @endphp
                         @foreach($caGroups as $group)
                             @if($caGroups->count() > 1)
-                                <tr class="bs-group-head"><td>{{ $group['label'] }}</td><td></td></tr>
+                                <tr class="bs-group-head">
+                                    <td>{{ $group['label'] }}</td>
+                                    <td></td>
+                                    @if($hasCmp)<td></td>@endif
+                                </tr>
                             @endif
                             @foreach($group['items'] as $account)
+                                @php $cv = $cmpAmt($account); @endphp
                                 <tr class="{{ $caGroups->count() > 1 ? 'bs-line bs-line-indented' : 'bs-line' }}">
                                     <td>{{ $account->name }}</td>
                                     <td class="bs-amt {{ (float)($account->balance ?? 0) < 0 ? 'bs-amt-neg' : '' }}">
                                         {{ $fmt((float)($account->balance ?? 0)) }}
                                     </td>
+                                    @if($hasCmp)
+                                        @if($cv !== null)
+                                            <td class="bs-cmp-amt {{ $cv < 0 ? 'bs-cmp-amt-neg' : '' }}">{{ $fmt($cv) }}</td>
+                                        @else
+                                            <td class="bs-amt-dash">—</td>
+                                        @endif
+                                    @endif
                                 </tr>
                             @endforeach
                             @if($caGroups->count() > 1)
                                 <tr class="bs-sub-total">
                                     <td>Total {{ $group['label'] }}</td>
                                     <td class="bs-amt">{{ $fmt($group['total']) }}</td>
+                                    @if($hasCmp)<td></td>@endif
                                 </tr>
                             @endif
                         @endforeach
                         <tr class="bs-sub-total">
                             <td>Total Current Assets</td>
                             <td class="bs-amt">{{ $fmt($visTotalCurrentAssets) }}</td>
+                            @if($hasCmp)<td class="bs-cmp-amt">{{ $fmt($cmpTotalCurrentAssets) }}</td>@endif
                         </tr>
                     @endif
 
                     {{-- Fixed / Non-Current Assets --}}
                     @if($processedFixedAssets->isNotEmpty())
-                        <tr class="bs-spacer"><td colspan="2"></td></tr>
-                        <tr class="bs-sub-head"><td colspan="2">Fixed Assets</td></tr>
+                        <tr class="bs-spacer"><td colspan="{{ $colCount }}"></td></tr>
+                        <tr class="bs-sub-head"><td colspan="{{ $colCount }}">Fixed Assets</td></tr>
                         @php $faGroups = $groupAccounts($processedFixedAssets, 'Fixed Assets'); @endphp
                         @foreach($faGroups as $group)
                             @if($faGroups->count() > 1)
-                                <tr class="bs-group-head"><td>{{ $group['label'] }}</td><td></td></tr>
+                                <tr class="bs-group-head">
+                                    <td>{{ $group['label'] }}</td>
+                                    <td></td>
+                                    @if($hasCmp)<td></td>@endif
+                                </tr>
                             @endif
                             @foreach($group['items'] as $account)
+                                @php $cv = $cmpAmt($account); @endphp
                                 <tr class="{{ $faGroups->count() > 1 ? 'bs-line bs-line-indented' : 'bs-line' }}">
                                     <td>{{ $account->name }}</td>
                                     <td class="bs-amt {{ (float)($account->balance ?? 0) < 0 ? 'bs-amt-neg' : '' }}">
                                         {{ $fmt((float)($account->balance ?? 0)) }}
                                     </td>
+                                    @if($hasCmp)
+                                        @if($cv !== null)
+                                            <td class="bs-cmp-amt {{ $cv < 0 ? 'bs-cmp-amt-neg' : '' }}">{{ $fmt($cv) }}</td>
+                                        @else
+                                            <td class="bs-amt-dash">—</td>
+                                        @endif
+                                    @endif
                                 </tr>
                             @endforeach
                             @if($faGroups->count() > 1)
                                 <tr class="bs-sub-total">
                                     <td>Total {{ $group['label'] }}</td>
                                     <td class="bs-amt">{{ $fmt($group['total']) }}</td>
+                                    @if($hasCmp)<td></td>@endif
                                 </tr>
                             @endif
                         @endforeach
                         <tr class="bs-sub-total">
                             <td>Total Fixed Assets</td>
                             <td class="bs-amt">{{ $fmt($visTotalFixedAssets) }}</td>
+                            @if($hasCmp)<td class="bs-cmp-amt">{{ $fmt($cmpTotalFixedAssets) }}</td>@endif
                         </tr>
                     @endif
 
                     {{-- Total Assets --}}
-                    <tr class="bs-spacer"><td colspan="2"></td></tr>
+                    <tr class="bs-spacer"><td colspan="{{ $colCount }}"></td></tr>
                     <tr class="bs-section-total">
                         <td>Total Assets</td>
                         <td class="bs-amt">{{ $fmt($visTotalAssets) }}</td>
+                        @if($hasCmp)<td class="bs-cmp-amt">{{ $fmt($cmpTotalAssets) }}</td>@endif
                     </tr>
 
-                    <tr class="bs-spacer"><td colspan="2"></td></tr>
-                    <tr class="bs-spacer"><td colspan="2"></td></tr>
+                    <tr class="bs-spacer"><td colspan="{{ $colCount }}"></td></tr>
+                    <tr class="bs-spacer"><td colspan="{{ $colCount }}"></td></tr>
 
                     {{-- ════════════════════════════════════════
                          LIABILITIES
                     ════════════════════════════════════════════ --}}
-                    <tr class="bs-section-head"><td colspan="2">Liabilities</td></tr>
+                    <tr class="bs-section-head"><td colspan="{{ $colCount }}">Liabilities</td></tr>
 
                     {{-- Current Liabilities --}}
                     @if($currentLiabilityLines->isNotEmpty())
-                        <tr class="bs-sub-head"><td colspan="2">Current Liabilities</td></tr>
+                        <tr class="bs-sub-head"><td colspan="{{ $colCount }}">Current Liabilities</td></tr>
                         @foreach($currentLiabilityLines as $account)
+                            @php $cv = $cmpAmt($account); @endphp
                             <tr class="bs-line">
                                 <td>
                                     {{ $account->name }}
@@ -648,51 +816,77 @@ $groupAccounts = function ($items, string $fallback) {
                                     @endif
                                 </td>
                                 <td class="bs-amt">{{ $fmt((float)($account->balance ?? 0)) }}</td>
+                                @if($hasCmp)
+                                    @if($cv !== null)
+                                        <td class="bs-cmp-amt {{ $cv < 0 ? 'bs-cmp-amt-neg' : '' }}">{{ $fmt($cv) }}</td>
+                                    @else
+                                        <td class="bs-amt-dash">—</td>
+                                    @endif
+                                @endif
                             </tr>
                         @endforeach
                         <tr class="bs-sub-total">
                             <td>Total Current Liabilities</td>
                             <td class="bs-amt">{{ $fmt($visTotalCurrentLiab) }}</td>
+                            @if($hasCmp)<td class="bs-cmp-amt">{{ $fmt($cmpTotalCurrentLiab) }}</td>@endif
                         </tr>
                     @endif
 
                     {{-- Long-Term Liabilities --}}
                     @if($longTermLiabilityLines->isNotEmpty())
-                        <tr class="bs-spacer"><td colspan="2"></td></tr>
-                        <tr class="bs-sub-head"><td colspan="2">Long-Term Liabilities</td></tr>
+                        <tr class="bs-spacer"><td colspan="{{ $colCount }}"></td></tr>
+                        <tr class="bs-sub-head"><td colspan="{{ $colCount }}">Long-Term Liabilities</td></tr>
                         @foreach($longTermLiabilityLines as $account)
+                            @php $cv = $cmpAmt($account); @endphp
                             <tr class="bs-line">
                                 <td>{{ $account->name }}</td>
                                 <td class="bs-amt">{{ $fmt((float)($account->balance ?? 0)) }}</td>
+                                @if($hasCmp)
+                                    @if($cv !== null)
+                                        <td class="bs-cmp-amt {{ $cv < 0 ? 'bs-cmp-amt-neg' : '' }}">{{ $fmt($cv) }}</td>
+                                    @else
+                                        <td class="bs-amt-dash">—</td>
+                                    @endif
+                                @endif
                             </tr>
                         @endforeach
                         <tr class="bs-sub-total">
                             <td>Total Long-Term Liabilities</td>
                             <td class="bs-amt">{{ $fmt($visTotalLongTermLiab) }}</td>
+                            @if($hasCmp)<td class="bs-cmp-amt">{{ $fmt($cmpTotalLongTermLiab) }}</td>@endif
                         </tr>
                     @endif
 
                     {{-- Total Liabilities --}}
-                    <tr class="bs-spacer"><td colspan="2"></td></tr>
+                    <tr class="bs-spacer"><td colspan="{{ $colCount }}"></td></tr>
                     <tr class="bs-section-total">
                         <td>Total Liabilities</td>
                         <td class="bs-amt">{{ $fmt($visTotalLiabilities) }}</td>
+                        @if($hasCmp)<td class="bs-cmp-amt">{{ $fmt($cmpTotalLiabilities) }}</td>@endif
                     </tr>
 
-                    <tr class="bs-spacer"><td colspan="2"></td></tr>
-                    <tr class="bs-spacer"><td colspan="2"></td></tr>
+                    <tr class="bs-spacer"><td colspan="{{ $colCount }}"></td></tr>
+                    <tr class="bs-spacer"><td colspan="{{ $colCount }}"></td></tr>
 
                     {{-- ════════════════════════════════════════
                          EQUITY
                     ════════════════════════════════════════════ --}}
-                    <tr class="bs-section-head"><td colspan="2">Equity</td></tr>
+                    <tr class="bs-section-head"><td colspan="{{ $colCount }}">Equity</td></tr>
 
                     @foreach($visibleEquity as $account)
+                        @php $cv = $cmpAmt($account); @endphp
                         <tr class="bs-line">
                             <td>{{ $account->name }}</td>
                             <td class="bs-amt {{ (float)($account->balance ?? 0) < 0 ? 'bs-amt-neg' : '' }}">
                                 {{ $fmt((float)($account->balance ?? 0)) }}
                             </td>
+                            @if($hasCmp)
+                                @if($cv !== null)
+                                    <td class="bs-cmp-amt {{ $cv < 0 ? 'bs-cmp-amt-neg' : '' }}">{{ $fmt($cv) }}</td>
+                                @else
+                                    <td class="bs-amt-dash">—</td>
+                                @endif
+                            @endif
                         </tr>
                     @endforeach
 
@@ -701,6 +895,11 @@ $groupAccounts = function ($items, string $fallback) {
                         <td class="bs-amt {{ $displayNetIncome < 0 ? 'bs-amt-neg' : '' }}">
                             {{ $fmt($displayNetIncome) }}
                         </td>
+                        @if($hasCmp)
+                            <td class="bs-cmp-amt {{ $cmpDisplayNetIncome < 0 ? 'bs-cmp-amt-neg' : '' }}">
+                                {{ $fmt($cmpDisplayNetIncome) }}
+                            </td>
+                        @endif
                     </tr>
 
                     <tr class="bs-sub-total">
@@ -708,9 +907,14 @@ $groupAccounts = function ($items, string $fallback) {
                         <td class="bs-amt {{ $visTotalEquity < 0 ? 'bs-amt-neg' : '' }}">
                             {{ $fmt($visTotalEquity) }}
                         </td>
+                        @if($hasCmp)
+                            <td class="bs-cmp-amt {{ $cmpTotalEquity < 0 ? 'bs-cmp-amt-neg' : '' }}">
+                                {{ $fmt($cmpTotalEquity) }}
+                            </td>
+                        @endif
                     </tr>
 
-                    <tr class="bs-spacer"><td colspan="2"></td></tr>
+                    <tr class="bs-spacer"><td colspan="{{ $colCount }}"></td></tr>
 
                     {{-- ════════════════════════════════════════
                          GRAND TOTAL
@@ -718,6 +922,9 @@ $groupAccounts = function ($items, string $fallback) {
                     <tr class="bs-grand-total">
                         <td>Total Liabilities &amp; Equity</td>
                         <td class="bs-amt">{{ $fmt($visTotalLiabEquity) }}</td>
+                        @if($hasCmp)
+                            <td class="bs-cmp-amt">{{ $fmt($cmpTotalLiabEquity) }}</td>
+                        @endif
                     </tr>
 
                 </tbody>
@@ -740,32 +947,67 @@ $groupAccounts = function ($items, string $fallback) {
                         <tr><td>Total Liabilities + Equity</td><td>{{ $fmt($visTotalLiabEquity) }}</td></tr>
                         <tr><td><strong>Difference</strong></td><td><strong>{{ $fmt(abs($equationDiff)) }}</strong></td></tr>
                     </table>
-                    @if(isset($ledgerDifference) && abs((float)$ledgerDifference) >= 0.01)
-                        <div style="margin-top:8px;font-size:0.80rem;color:#7f1d1d;">
-                            Ledger &mdash;
-                            Debits: {{ $fmt($ledgerDebits ?? 0) }}&nbsp;|&nbsp;
-                            Credits: {{ $fmt($ledgerCredits ?? 0) }}&nbsp;|&nbsp;
-                            Difference: {{ $fmt(abs((float)$ledgerDifference)) }}
-                        </div>
-                    @endif
                 </div>
+            @endif
+
+            {{-- Detailed imbalance entries (debug panel) --}}
+            @if(isset($imbalancedEntries) && $imbalancedEntries->isNotEmpty() && !$isBalanced)
+                <details style="margin-top:16px;">
+                    <summary style="cursor:pointer;font-size:0.80rem;color:#64748b;font-weight:600;">
+                        Show Imbalanced Journal Entries ({{ $imbalancedEntries->count() }})
+                    </summary>
+                    <table style="width:100%;margin-top:8px;font-size:0.79rem;border-collapse:collapse;">
+                        <thead>
+                            <tr style="background:#f1f5f9;color:#475569;">
+                                <th style="padding:5px 8px;text-align:left;font-weight:700;">Type</th>
+                                <th style="padding:5px 8px;text-align:left;font-weight:700;">Reference</th>
+                                <th style="padding:5px 8px;text-align:right;font-weight:700;">Debit</th>
+                                <th style="padding:5px 8px;text-align:right;font-weight:700;">Credit</th>
+                                <th style="padding:5px 8px;text-align:right;font-weight:700;">Gap</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($imbalancedEntries as $entry)
+                                <tr style="border-top:1px solid #e2e8f0;">
+                                    <td style="padding:4px 8px;">{{ $entry->transaction_type ?? '—' }}</td>
+                                    <td style="padding:4px 8px;">{{ $entry->reference ?? ($entry->related_type . '#' . $entry->related_id) }}</td>
+                                    <td style="padding:4px 8px;text-align:right;font-variant-numeric:tabular-nums;">{{ $fmt((float)$entry->total_debit) }}</td>
+                                    <td style="padding:4px 8px;text-align:right;font-variant-numeric:tabular-nums;">{{ $fmt((float)$entry->total_credit) }}</td>
+                                    <td style="padding:4px 8px;text-align:right;font-variant-numeric:tabular-nums;color:#dc2626;font-weight:700;">
+                                        {{ $fmt(abs((float)$entry->total_debit - (float)$entry->total_credit)) }}
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </details>
             @endif
 
         </div>{{-- /.bs-sheet --}}
     </div>{{-- /.bs-page --}}
 
-</div>
-</div>
+</div>{{-- /.content --}}
+</div>{{-- /.page-wrapper --}}
 
 <script>
-const bsPresets = @json(collect($presets)->map(fn($p) => $p['date']));
 function bsApplyPreset(key) {
-    if (key !== 'custom' && bsPresets[key]) {
-        document.getElementById('bsDate').value = bsPresets[key];
-    }
+    const opts = document.querySelectorAll('#bsPreset option');
+    opts.forEach(opt => {
+        if (opt.value === key) {
+            document.getElementById('bsDate').value = opt.dataset.date;
+        }
+    });
 }
+
+function bsSetMethod(val) {
+    document.getElementById('bsMethod').value = val;
+    document.getElementById('bsMethodAccrual').classList.toggle('active', val === 'accrual');
+    document.getElementById('bsMethodCash').classList.toggle('active', val === 'cash');
+}
+
 function bsExportExcel() {
-    window.location.href = '{{ route("balance-sheet.export") }}?date={{ $asOfStr }}';
+    const date = document.getElementById('bsDate').value;
+    window.location.href = '{{ route("balance-sheet.export") }}?date=' + date;
 }
 </script>
 @endsection

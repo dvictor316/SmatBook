@@ -135,6 +135,10 @@ class BalanceSheetController extends Controller
     {
         $activeBranch = $this->resolveActiveBranch($request);
         $reportDate = $request->date ? Carbon::parse($request->date) : Carbon::now();
+        $method    = in_array($request->input('accounting_method'), ['cash', 'accrual'], true)
+            ? $request->input('accounting_method') : 'accrual';
+        $compareTo = in_array($request->input('compare_to'), ['previous_period', 'previous_year'], true)
+            ? $request->input('compare_to') : 'none';
 
         LedgerService::backfillBankLedgerAccounts(
             (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0) ?: null,
@@ -379,47 +383,49 @@ class BalanceSheetController extends Controller
         // Include customer opening balances not yet posted as journal entries.
         // This covers all existing customers (pre-dating the journal workflow) AND
         // ensures every future record with a balance reflects on the balance sheet.
-        $customerOBUnposted = $this->getUnpostedCustomerOpeningBalanceSum($request, $reportDate);
-        if ($customerOBUnposted > 0.01) {
-            // Add to Accounts Receivable (current assets side)
-            $arInCurrentAssets = $currentAssets->first(
-                fn ($a) => str_contains(strtolower((string) ($a->name ?? '')), 'receivable')
-            );
-            if ($arInCurrentAssets) {
-                $arInCurrentAssets->balance = (float) ($arInCurrentAssets->balance ?? 0) + $customerOBUnposted;
-            } else {
-                $currentAssets = $currentAssets->concat([(object) [
-                    'id'       => null,
-                    'code'     => 'SYS-CUST-AR',
-                    'name'     => 'Accounts Receivable',
-                    'type'     => 'Asset',
-                    'sub_type' => 'Current Asset',
-                    'balance'  => $customerOBUnposted,
-                ]]);
+        if ($method === 'accrual') {
+            $customerOBUnposted = $this->getUnpostedCustomerOpeningBalanceSum($request, $reportDate);
+            if ($customerOBUnposted > 0.01) {
+                // Add to Accounts Receivable (current assets side)
+                $arInCurrentAssets = $currentAssets->first(
+                    fn ($a) => str_contains(strtolower((string) ($a->name ?? '')), 'receivable')
+                );
+                if ($arInCurrentAssets) {
+                    $arInCurrentAssets->balance = (float) ($arInCurrentAssets->balance ?? 0) + $customerOBUnposted;
+                } else {
+                    $currentAssets = $currentAssets->concat([(object) [
+                        'id'       => null,
+                        'code'     => 'SYS-CUST-AR',
+                        'name'     => 'Accounts Receivable',
+                        'type'     => 'Asset',
+                        'sub_type' => 'Current Asset',
+                        'balance'  => $customerOBUnposted,
+                    ]]);
+                }
+                // Credit Opening Balance Equity (not Net Income) for unposted customer balances.
+                $mergeIntoOpeningEquity($customerOBUnposted);
             }
-            // Credit Opening Balance Equity (not Net Income) for unposted customer balances.
-            $mergeIntoOpeningEquity($customerOBUnposted);
-        }
 
-        $supplierOBUnposted = $this->getUnpostedSupplierOpeningBalanceSum($request, $reportDate);
-        if ($supplierOBUnposted > 0.01) {
-            $apInLiabilities = $currentLiabilities->first(
-                fn ($a) => strtolower(trim((string) ($a->name ?? ''))) === 'accounts payable'
-            );
-            if ($apInLiabilities) {
-                $apInLiabilities->balance = (float) ($apInLiabilities->balance ?? 0) + $supplierOBUnposted;
-            } else {
-                $currentLiabilities = $currentLiabilities->concat([(object) [
-                    'id'       => null,
-                    'code'     => 'SYS-SUPP-AP',
-                    'name'     => 'Accounts Payable',
-                    'type'     => 'Liability',
-                    'sub_type' => 'Current Liability',
-                    'balance'  => $supplierOBUnposted,
-                ]]);
+            $supplierOBUnposted = $this->getUnpostedSupplierOpeningBalanceSum($request, $reportDate);
+            if ($supplierOBUnposted > 0.01) {
+                $apInLiabilities = $currentLiabilities->first(
+                    fn ($a) => strtolower(trim((string) ($a->name ?? ''))) === 'accounts payable'
+                );
+                if ($apInLiabilities) {
+                    $apInLiabilities->balance = (float) ($apInLiabilities->balance ?? 0) + $supplierOBUnposted;
+                } else {
+                    $currentLiabilities = $currentLiabilities->concat([(object) [
+                        'id'       => null,
+                        'code'     => 'SYS-SUPP-AP',
+                        'name'     => 'Accounts Payable',
+                        'type'     => 'Liability',
+                        'sub_type' => 'Current Liability',
+                        'balance'  => $supplierOBUnposted,
+                    ]]);
+                }
+                // Debit Opening Balance Equity (not Net Income) for unposted supplier balances.
+                $mergeIntoOpeningEquity(-$supplierOBUnposted);
             }
-            // Debit Opening Balance Equity (not Net Income) for unposted supplier balances.
-            $mergeIntoOpeningEquity(-$supplierOBUnposted);
         }
 
         $inventoryBridge = $this->getLegacyInventoryBridgeAmount($request, $reportDate, $accounts);
@@ -466,7 +472,19 @@ class BalanceSheetController extends Controller
             $totalEquity = $equity->sum('balance') + $netIncome;
         }
 
-        // 6. Map variables to match your Blade @foreach calls exactly
+        // 6. Comparison period snapshot (if requested)
+        $compareData        = null;
+        $compareDate        = null;
+        $comparePeriodLabel = null;
+        if ($compareTo !== 'none') {
+            $compareDate = $compareTo === 'previous_year'
+                ? $reportDate->copy()->subYear()
+                : $reportDate->copy()->startOfMonth()->subDay();
+            $comparePeriodLabel = $compareDate->format('F j, Y');
+            $compareData = $this->computeComparisonSnapshot($request, $compareDate, $activeBranch, $method);
+        }
+
+        // 7. Map variables to match your Blade @foreach calls exactly
         return view('Reports.Reports.balance-sheet', compact(
             'reportDate',
             'currentAssets',
@@ -484,7 +502,12 @@ class BalanceSheetController extends Controller
             'ledgerCredits',
             'ledgerDifference',
             'imbalancedEntries',
-            'activeBranch'
+            'activeBranch',
+            'method',
+            'compareTo',
+            'compareData',
+            'compareDate',
+            'comparePeriodLabel'
         ));
     }
 
@@ -550,6 +573,134 @@ class BalanceSheetController extends Controller
 
     return view('Finance.balance_sheet', compact('assets', 'liabilities', 'equity', 'netProfit'));
 }
+
+    private function computeComparisonSnapshot(Request $request, Carbon $date, array $activeBranch, string $method): array
+    {
+        if (!Schema::hasTable('accounts') || !Schema::hasTable('transactions')) {
+            return $this->emptySnapshot();
+        }
+
+        $txnQuery = Transaction::query()
+            ->selectRaw('account_id, SUM(debit) as total_debit, SUM(credit) as total_credit')
+            ->where('transaction_date', '<=', $date)
+            ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($q) use ($activeBranch) {
+                $branchId   = trim((string) ($activeBranch['id']   ?? ''));
+                $branchName = trim((string) ($activeBranch['name'] ?? ''));
+                return $q->where(function ($sub) use ($branchId, $branchName) {
+                    if ($branchId   !== '') $sub->where('branch_id',   $branchId);
+                    if ($branchName !== '') $sub->orWhere('branch_name', $branchName);
+                });
+            });
+        $this->applyTransactionScope($txnQuery, $request);
+        $txnTotals = $txnQuery->groupBy('account_id')->get()->keyBy('account_id');
+
+        $accountIds   = $txnTotals->keys()->all();
+        $accountsQuery = Account::withoutGlobalScopes()
+            ->whereNull('deleted_at')
+            ->where(function ($q) use ($accountIds) {
+                if (!empty($accountIds)) $q->whereIn('id', $accountIds);
+                $q->orWhere('opening_balance', '!=', 0);
+            })
+            ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($q) use ($activeBranch) {
+                $branchId   = trim((string) ($activeBranch['id']   ?? ''));
+                $branchName = trim((string) ($activeBranch['name'] ?? ''));
+                if ($branchId === '' && $branchName === '') return;
+                return $q->where(function ($sub) use ($branchId, $branchName) {
+                    if ($branchId   !== '') $sub->where('branch_id',   $branchId);
+                    if ($branchName !== '') $sub->orWhere('branch_name', $branchName);
+                    $sub->orWhereNull('branch_id')->orWhere('branch_id', '');
+                });
+            });
+        $this->applyAccountScope($accountsQuery, $request);
+        $accounts = $accountsQuery->get();
+
+        $accounts->transform(function ($account) use ($txnTotals) {
+            $totals  = $txnTotals->get($account->id);
+            $opening = (float) ($account->opening_balance ?? 0);
+            $dr      = (float) ($totals->total_debit  ?? 0);
+            $cr      = (float) ($totals->total_credit ?? 0);
+            $type    = $this->normalizeAccountType($account->type ?? null);
+            $isDebitNormal = in_array($type, ['asset', 'expense'], true);
+            $account->balance = $isDebitNormal ? ($opening + $dr) - $cr : ($opening + $cr) - $dr;
+            return $account;
+        });
+
+        $totalRevenue  = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type ?? null) === 'revenue')->sum('balance');
+        $totalExpenses = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type ?? null) === 'expense')->sum('balance');
+        $cmpNetIncome  = $totalRevenue - $totalExpenses;
+
+        $assetAccounts    = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type ?? null) === 'asset');
+        $cmpCurrentAssets = $assetAccounts->filter(function ($a) {
+            $sub = strtolower(trim((string) ($a->sub_type ?? '')));
+            return $sub !== '' && str_contains($sub, 'current');
+        });
+        $cmpFixedAssets = $assetAccounts->filter(function ($a) {
+            $sub = strtolower(trim((string) ($a->sub_type ?? '')));
+            return $sub !== '' && (str_contains($sub, 'fixed') || str_contains($sub, 'non-current') || str_contains($sub, 'non current'));
+        });
+        $cmpUncategorized = $assetAccounts->reject(
+            fn ($a) => $cmpCurrentAssets->contains('id', $a->id) || $cmpFixedAssets->contains('id', $a->id)
+        );
+        if ($cmpCurrentAssets->isEmpty() && $cmpFixedAssets->isEmpty()) {
+            $cmpCurrentAssets = $assetAccounts;
+        } elseif ($cmpUncategorized->isNotEmpty()) {
+            $cmpCurrentAssets = $cmpCurrentAssets->concat($cmpUncategorized)->unique('id')->values();
+        }
+
+        $cmpLiabilities = $accounts->filter(fn ($a) => $this->accountLooksLikeLiability($a));
+        $cmpEquity      = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type ?? null) === 'equity');
+
+        // Cash basis: exclude AR and AP accounts, adjust net income accordingly
+        if ($method === 'cash') {
+            $arBal = $cmpCurrentAssets
+                ->filter(fn ($a) => str_contains(strtolower((string) ($a->name ?? '')), 'receivable'))
+                ->sum('balance');
+            $cmpCurrentAssets = $cmpCurrentAssets
+                ->reject(fn ($a) => str_contains(strtolower((string) ($a->name ?? '')), 'receivable'));
+            $apBal = $cmpLiabilities
+                ->filter(fn ($a) => str_contains(strtolower((string) ($a->name ?? '')), 'payable'))
+                ->sum('balance');
+            $cmpLiabilities = $cmpLiabilities
+                ->reject(fn ($a) => str_contains(strtolower((string) ($a->name ?? '')), 'payable'));
+            $cmpNetIncome = $cmpNetIncome - $arBal + $apBal;
+        }
+
+        $cmpTotalCurrentAssets = (float) $cmpCurrentAssets->sum('balance');
+        $cmpTotalFixedAssets   = (float) $cmpFixedAssets->sum('balance');
+        $cmpTotalAssets        = $cmpTotalCurrentAssets + $cmpTotalFixedAssets;
+        $cmpTotalLiabilities   = (float) $cmpLiabilities->sum('balance');
+        $cmpTotalEquity        = (float) $cmpEquity->sum('balance') + $cmpNetIncome;
+
+        return [
+            'currentAssets'      => $cmpCurrentAssets,
+            'fixedAssets'        => $cmpFixedAssets,
+            'liabilities'        => $cmpLiabilities,
+            'equity'             => $cmpEquity,
+            'netIncome'          => $cmpNetIncome,
+            'totalCurrentAssets' => $cmpTotalCurrentAssets,
+            'totalFixedAssets'   => $cmpTotalFixedAssets,
+            'totalAssets'        => $cmpTotalAssets,
+            'totalLiabilities'   => $cmpTotalLiabilities,
+            'totalEquity'        => $cmpTotalEquity,
+        ];
+    }
+
+    private function emptySnapshot(): array
+    {
+        $empty = collect();
+        return [
+            'currentAssets'      => $empty,
+            'fixedAssets'        => $empty,
+            'liabilities'        => $empty,
+            'equity'             => $empty,
+            'netIncome'          => 0.0,
+            'totalCurrentAssets' => 0.0,
+            'totalFixedAssets'   => 0.0,
+            'totalAssets'        => 0.0,
+            'totalLiabilities'   => 0.0,
+            'totalEquity'        => 0.0,
+        ];
+    }
 
     private function applyAccountScope($query, Request $request)
     {
