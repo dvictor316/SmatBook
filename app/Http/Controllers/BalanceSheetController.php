@@ -510,6 +510,21 @@ class BalanceSheetController extends Controller
             }
         }
 
+        // ── Unassigned-branch notice (All Branches view only) ─────────────────
+        // Transactions entered before branches were configured have branch_id = NULL.
+        // They appear in the consolidated view but not in any individual branch view,
+        // which causes the consolidated total to exceed the sum of individual branches.
+        $unassignedTxnCount = 0;
+        if ($isAllBranches) {
+            $unassignedQ = Transaction::query()
+                ->where('transaction_date', '<=', $reportDate)
+                ->where(function ($q) {
+                    $q->whereNull('branch_id')->orWhere('branch_id', '');
+                });
+            $this->applyTransactionScope($unassignedQ, $request);
+            $unassignedTxnCount = $unassignedQ->count();
+        }
+
         // 5. Final Totals
         $totalCurrentAssets = $currentAssets->sum('balance');
         $totalFixedAssets = $fixedAssets->sum('balance');
@@ -599,7 +614,8 @@ class BalanceSheetController extends Controller
             'compareDate',
             'comparePeriodLabel',
             'consolidate',
-            'isAllBranches'
+            'isAllBranches',
+            'unassignedTxnCount'
         ));
     }
 

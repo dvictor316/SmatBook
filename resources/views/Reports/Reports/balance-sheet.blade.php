@@ -785,6 +785,38 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
     {{-- ─── Report Page ─────────────────────────────────────────── --}}
     <div class="bs-page">
 
+        {{-- Unassigned-branch notice: shown when consolidated view has pre-branch data --}}
+        @if($isAllBranches && ($unassignedTxnCount ?? 0) > 0)
+        <div class="no-print" style="
+            background:#fffbeb;
+            border:1px solid #fcd34d;
+            border-left:4px solid #f59e0b;
+            border-radius:6px;
+            padding:12px 16px;
+            margin-bottom:18px;
+            font-size:0.875rem;
+            color:#78350f;
+            display:flex;
+            align-items:flex-start;
+            gap:10px;
+        ">
+            <svg style="flex-shrink:0;margin-top:1px" width="18" height="18" fill="none" stroke="#f59e0b" stroke-width="2" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/>
+            </svg>
+            <div>
+                <strong>Consolidated total includes pre-branch data</strong><br>
+                <span style="font-size:0.82rem;">
+                    {{ number_format($unassignedTxnCount) }} transaction{{ $unassignedTxnCount == 1 ? '' : 's' }}
+                    in this report have <em>no branch assigned</em> — they were recorded before
+                    branch tracking was set up. These appear here in the consolidated view but are
+                    <strong>not visible</strong> when you view any individual branch, which is why
+                    the consolidated total is higher than the sum of your individual branch totals.
+                    To resolve: reassign those transactions to the correct branch.
+                </span>
+            </div>
+        </div>
+        @endif
+
         <div class="bs-toolbar no-print">
             <button type="button" class="bs-action-btn" onclick="window.print()">
                 <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
