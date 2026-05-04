@@ -202,6 +202,11 @@ public function store(Request $request)
         $payload['branch_name'] = session('active_branch_name');
     }
 
+    // Categories created from the product-category management page are product-type
+    if (Schema::hasColumn('categories', 'type')) {
+        $payload['type'] = 'product';
+    }
+
     try {
         $category = \App\Models\Category::create($payload);
     } catch (QueryException $exception) {

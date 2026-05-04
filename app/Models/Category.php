@@ -13,14 +13,15 @@ class Category extends Model
     use HasFactory, TenantScoped;
 
     protected $fillable = [
-        'name', 
+        'name',
+        'type',
         'company_id',
         'user_id',
         'branch_id',
         'branch_name',
-        'description', 
-        'image', 
-        'status'
+        'description',
+        'image',
+        'status',
     ];
 
     /**

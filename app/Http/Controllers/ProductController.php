@@ -267,6 +267,10 @@ class ProductController extends Controller
 
         $payload = ['name' => $categoryName];
 
+        if (Schema::hasColumn('categories', 'type')) {
+            $payload['type'] = 'product';
+        }
+
         if (Schema::hasColumn('categories', 'description')) {
             $payload['description'] = 'Auto-created during product import';
         }
@@ -335,6 +339,15 @@ class ProductController extends Controller
 
         $query = Category::withoutGlobalScopes()->newQuery();
         $this->applyTenantScope($query, 'categories');
+
+        // Only show product-typed categories (or unclassified legacy rows).
+        // Expense-typed categories must never appear in the product dropdown.
+        if (Schema::hasColumn('categories', 'type')) {
+            $query->where(function ($q) {
+                $q->where('categories.type', 'product')
+                  ->orWhereNull('categories.type');
+            });
+        }
 
         $activeBranch = $this->getActiveBranchContext();
         $branchId = trim((string) ($activeBranch['id'] ?? ''));

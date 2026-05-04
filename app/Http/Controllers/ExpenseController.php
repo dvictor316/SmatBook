@@ -26,6 +26,11 @@ class ExpenseController extends Controller
 
         if (Schema::hasTable('categories')) {
             $categoryQuery = $this->applyTenantScope(Category::query()->orderBy('name'), 'categories');
+            // Only show expense-typed categories; if the type column does not exist yet,
+            // fall back to showing all (pre-migration safety).
+            if (Schema::hasColumn('categories', 'type')) {
+                $categoryQuery->where('categories.type', 'expense');
+            }
             $options = $options->merge(
                 $categoryQuery->get(['id', 'name'])->map(function ($category) {
                     return [
@@ -711,6 +716,9 @@ class ExpenseController extends Controller
             return DB::transaction(function () use ($validated) {
             $categoryAttributes = ['name' => $validated['name']];
             $categoryValues = ['description' => null, 'image' => null, 'status' => 1];
+            if (Schema::hasColumn('categories', 'type')) {
+                $categoryAttributes['type'] = 'expense';
+            }
             if (Schema::hasColumn('categories', 'company_id')) {
                 $categoryAttributes['company_id'] = Auth::user()?->company_id ?: null;
             }
