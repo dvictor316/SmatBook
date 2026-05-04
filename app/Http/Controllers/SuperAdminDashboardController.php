@@ -1378,10 +1378,23 @@ public function pendingManagers()
         return redirect()->back()->with('payout_success', 'Payout of ₦' . number_format($validated['amount'], 2) . ' to ' . $validated['recipient_name'] . ' recorded successfully.');
     }
 
-    public function payoutHistory()
+    public function payoutHistory(\Illuminate\Http\Request $request)
     {
-        $payouts = PlatformPayout::latest()->paginate(20);
-        $totalPayouts = (float) PlatformPayout::sum('amount');
-        return view('SuperAdmin.payout-history', compact('payouts', 'totalPayouts'));
+        $from      = $request->filled('from')      ? \Carbon\Carbon::parse($request->from)->startOfDay()      : null;
+        $to        = $request->filled('to')        ? \Carbon\Carbon::parse($request->to)->endOfDay()          : null;
+        $type      = $request->input('payout_type');
+        $recipient = $request->input('recipient');
+
+        $query = PlatformPayout::query()
+            ->when($from,      fn ($q) => $q->where('paid_at', '>=', $from))
+            ->when($to,        fn ($q) => $q->where('paid_at', '<=', $to))
+            ->when($type,      fn ($q) => $q->where('payout_type', $type))
+            ->when($recipient, fn ($q) => $q->where('recipient_name', 'like', '%' . $recipient . '%'))
+            ->latest();
+
+        $payouts      = $query->paginate(20)->withQueryString();
+        $totalPayouts = (float) $query->sum('amount');
+
+        return view('SuperAdmin.payout-history', compact('payouts', 'totalPayouts', 'from', 'to', 'type', 'recipient'));
     }
 }

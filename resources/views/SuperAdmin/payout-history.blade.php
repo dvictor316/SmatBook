@@ -27,10 +27,49 @@
         </div>
     @endif
 
+    {{-- Filter Bar --}}
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body py-3">
+            <form method="GET" action="{{ route('super_admin.platform_payouts.index') }}" class="row g-2 align-items-end">
+                <div class="col-sm-6 col-md-3">
+                    <label class="form-label small fw-semibold mb-1">From Date</label>
+                    <input type="date" name="from" class="form-control form-control-sm" value="{{ request('from') }}">
+                </div>
+                <div class="col-sm-6 col-md-3">
+                    <label class="form-label small fw-semibold mb-1">To Date</label>
+                    <input type="date" name="to" class="form-control form-control-sm" value="{{ request('to') }}">
+                </div>
+                <div class="col-sm-6 col-md-2">
+                    <label class="form-label small fw-semibold mb-1">Payout Type</label>
+                    <select name="payout_type" class="form-select form-select-sm">
+                        <option value="">All Types</option>
+                        @foreach(['dividend','commission','salary','refund','other'] as $t)
+                            <option value="{{ $t }}" {{ request('payout_type') === $t ? 'selected' : '' }}>{{ ucfirst($t) }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-sm-6 col-md-3">
+                    <label class="form-label small fw-semibold mb-1">Recipient</label>
+                    <input type="text" name="recipient" class="form-control form-control-sm" placeholder="Search name..." value="{{ request('recipient') }}">
+                </div>
+                <div class="col-sm-12 col-md-1 d-flex gap-1">
+                    <button type="submit" class="btn btn-primary btn-sm w-100"><i class="fas fa-filter"></i></button>
+                    <a href="{{ route('super_admin.platform_payouts.index') }}" class="btn btn-outline-secondary btn-sm w-100" title="Clear"><i class="fas fa-times"></i></a>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="row mb-3">
         <div class="col-md-4">
             <div class="card border-0 shadow-sm text-center p-3">
-                <div class="text-muted small mb-1">Total Paid Out (All Time)</div>
+                <div class="text-muted small mb-1">
+                    @if(request()->hasAny(['from','to','payout_type','recipient']))
+                        Total for Filtered Period
+                    @else
+                        Total Paid Out (All Time)
+                    @endif
+                </div>
                 <div class="fw-bold fs-4 text-danger">₦{{ number_format($totalPayouts, 2) }}</div>
             </div>
         </div>
