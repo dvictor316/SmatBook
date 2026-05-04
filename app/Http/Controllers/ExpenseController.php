@@ -112,6 +112,56 @@ class ExpenseController extends Controller
         });
     }
 
+    private function applyBranchScopeWithFallback($query, string $table): void
+    {
+        $activeBranch = $this->getActiveBranchContext();
+        $branchId = trim((string) ($activeBranch['id'] ?? ''));
+        $branchName = trim((string) ($activeBranch['name'] ?? ''));
+
+        if ($branchId === '' && $branchName === '') {
+            return;
+        }
+
+        $hasBranchId = Schema::hasColumn($table, 'branch_id');
+        $hasBranchName = Schema::hasColumn($table, 'branch_name');
+        if (!$hasBranchId && !$hasBranchName) {
+            return;
+        }
+
+        $query->where(function ($sub) use ($table, $branchId, $branchName, $hasBranchId, $hasBranchName) {
+            $matched = false;
+
+            if ($branchId !== '' && $hasBranchId) {
+                $sub->where("{$table}.branch_id", $branchId);
+                $matched = true;
+            }
+            if ($branchName !== '' && $hasBranchName) {
+                $method = $matched ? 'orWhere' : 'where';
+                $sub->{$method}("{$table}.branch_name", $branchName);
+                $matched = true;
+            }
+
+            $method = $matched ? 'orWhere' : 'where';
+            $sub->{$method}(function ($fallback) use ($table, $hasBranchId, $hasBranchName) {
+                if ($hasBranchId) {
+                    $fallback->where(function ($branchIdQuery) use ($table) {
+                        $branchIdQuery
+                            ->whereNull("{$table}.branch_id")
+                            ->orWhere("{$table}.branch_id", '');
+                    });
+                }
+
+                if ($hasBranchName) {
+                    $fallback->where(function ($branchNameQuery) use ($table) {
+                        $branchNameQuery
+                            ->whereNull("{$table}.branch_name")
+                            ->orWhere("{$table}.branch_name", '');
+                    });
+                }
+            });
+        });
+    }
+
     private function getActiveBranchContext(): array
     {
         $branchId = session('active_branch_id') ? (string) session('active_branch_id') : null;
@@ -853,7 +903,7 @@ class ExpenseController extends Controller
         }
 
         $banksQuery = $this->applyTenantScope(Bank::query(), 'banks');
-        $this->applyBranchScope($banksQuery, 'banks');
+        $this->applyBranchScopeWithFallback($banksQuery, 'banks');
         $banks = $banksQuery->get();
         foreach ($banks as $bank) {
             if (!$bank->name) {
@@ -884,7 +934,7 @@ class ExpenseController extends Controller
                 $accountValues['branch_name'] = $bank->branch_name ?? session('active_branch_name');
             }
 
-            Account::firstOrCreate($accountAttributes, $accountValues);
+            Account::updateOrCreate($accountAttributes, $accountValues);
         }
     }
 
@@ -893,29 +943,7 @@ class ExpenseController extends Controller
         $query = $this->applyTenantScope(Account::where('type', 'Asset')->orderBy('name'), 'accounts');
 
         if (Schema::hasColumn('accounts', 'branch_id') || Schema::hasColumn('accounts', 'branch_name')) {
-            $branchId = trim((string) session('active_branch_id', ''));
-            $branchName = trim((string) session('active_branch_name', ''));
-            if ($branchId !== '' || $branchName !== '') {
-                $query->where(function ($sub) use ($branchId, $branchName) {
-                    if ($branchId !== '' && Schema::hasColumn('accounts', 'branch_id')) {
-                        $sub->where('branch_id', $branchId);
-                    }
-                    if ($branchName !== '' && Schema::hasColumn('accounts', 'branch_name')) {
-                        $sub->orWhere('branch_name', $branchName);
-                    }
-                    if (Schema::hasColumn('accounts', 'branch_id') || Schema::hasColumn('accounts', 'branch_name')) {
-                        $sub->orWhere(function ($fallback) {
-                            if (Schema::hasColumn('accounts', 'branch_id')) {
-                                $fallback->whereNull('branch_id');
-                            }
-                            if (Schema::hasColumn('accounts', 'branch_name')) {
-                                $method = Schema::hasColumn('accounts', 'branch_id') ? 'whereNull' : 'orWhereNull';
-                                $fallback->{$method}('branch_name');
-                            }
-                        });
-                    }
-                });
-            }
+            $this->applyBranchScopeWithFallback($query, 'accounts');
         }
 
         return $query->where(function ($sub) {
