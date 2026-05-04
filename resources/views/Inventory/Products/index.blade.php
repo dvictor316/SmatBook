@@ -853,7 +853,7 @@
 
 <script>
     $(document).ready(function() {
-        const categoryIndexUrl = @json(route('ajax.inventory.categories.index', [], false));
+        const categoryIndexUrl = @json(route('ajax.inventory.categories.index', [], false)) + '?type=product';
         const categoryStoreUrl = @json(route('ajax.inventory.categories.store', [], false));
         const shouldReopenProductModal = @json($errors->any() || session()->has('error'));
         const serverProductError = @json(session('error') ?: ($errors->any() ? $errors->first() : ''));

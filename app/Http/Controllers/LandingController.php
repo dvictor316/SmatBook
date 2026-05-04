@@ -345,7 +345,10 @@ class LandingController extends Controller
 
         $category = Category::query()->firstOrCreate(
             ['name' => 'Demo Essentials'],
-            ['description' => 'Sample inventory used for the SmartProbook live demo.']
+            [
+                'description' => 'Sample inventory used for the SmartProbook live demo.',
+                'type'        => 'product',
+            ]
         );
 
         return $category->id;

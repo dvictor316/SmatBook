@@ -90,6 +90,27 @@ public function index(Request $request)
         $query->withCount('products');
     }
 
+    // Determine the type scope:
+    //  - JSON/AJAX callers may pass ?type=product|expense|... to get only that type
+    //  - The HTML management page (/inventory/products/category) is always product-scoped
+    //  - Legacy rows (type IS NULL) are included for both 'product' and the HTML page
+    if (Schema::hasColumn('categories', 'type')) {
+        $typeFilter = $request->get('type');
+        if ($typeFilter !== null && $typeFilter !== '') {
+            // Explicit type requested (e.g. ?type=product from product views)
+            $query->where(function ($q) use ($typeFilter) {
+                $q->where('categories.type', $typeFilter)
+                  ->orWhereNull('categories.type');
+            });
+        } else {
+            // HTML management page — always show product categories (+ legacy nulls)
+            $query->where(function ($q) {
+                $q->where('categories.type', 'product')
+                  ->orWhereNull('categories.type');
+            });
+        }
+    }
+
     $orderColumn = Schema::hasColumn('categories', 'created_at') ? 'created_at' : 'id';
     $categories = $query->orderByDesc($orderColumn)->get();
 

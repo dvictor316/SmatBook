@@ -431,7 +431,7 @@
 @push('scripts')
 <script>
 $(document).ready(function () {
-    var categoryIndexUrl = @json(route('ajax.inventory.categories.index', [], false));
+    var categoryIndexUrl = @json(route('ajax.inventory.categories.index', [], false)) + '?type=product';
     var categoryStoreUrl = @json(route('ajax.inventory.categories.store', [], false));
     var quickCategoryError   = $('#quick_category_error_message');
     var quickCategorySuccess = $('#quick_category_success_message');
