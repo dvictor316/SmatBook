@@ -249,16 +249,19 @@
 
         <div class="filter-card no-print">
             <form action="" method="GET" class="row g-2 align-items-end">
-                <div class="col-md-4">
-                    <label class="form-label small fw-bold text-muted">Start Date</label>
-                    <input type="date" name="start_date" class="form-control form-control-sm" value="{{ $startDate }}">
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label small fw-bold text-muted">End Date</label>
+                <div class="col-md-5">
+                    <label class="form-label small fw-bold text-muted">As of Date</label>
                     <input type="date" name="end_date" class="form-control form-control-sm" value="{{ $endDate }}">
+                    <input type="hidden" name="start_date" value="{{ $startDate }}">
                 </div>
                 <div class="col-md-2">
                     <button type="submit" class="btn btn-dark btn-sm w-100 fw-bold">Refresh</button>
+                </div>
+                <div class="col-12">
+                    <p class="mb-0 text-muted" style="font-size:0.72rem;">
+                        <i class="feather-info me-1"></i>
+                        A Trial Balance is cumulative — it shows all account balances from inception up to the selected date.
+                    </p>
                 </div>
             </form>
         </div>

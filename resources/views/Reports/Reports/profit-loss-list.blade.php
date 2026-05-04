@@ -21,6 +21,7 @@
     $grandOperatingExpense = $totals->total_operating_expense ?? 0;
     $grandPurchaseExpense = $totals->total_purchase_expense ?? 0;
     $grandExpense = $totals->total_expense ?? ($grandOperatingExpense + $grandPurchaseExpense);
+    $grandGrossProfit = $grandIncome - $grandPurchaseExpense;
     $grandNet = $grandIncome - $grandExpense;
 
     // Current Page Totals for Table Footer
@@ -393,20 +394,28 @@
                             <td class="pl-amount">{{ $fmt($grandIncome) }}</td>
                         </tr>
                         <tr class="pl-section">
-                            <td>Expenses</td>
+                            <td>Cost of Sales</td>
                             <td></td>
                         </tr>
                         <tr class="pl-line">
-                            <td>Purchase Cost</td>
+                            <td>Cost of Purchases</td>
                             <td class="pl-amount">{{ $fmt($grandPurchaseExpense) }}</td>
+                        </tr>
+                        <tr class="pl-total" style="font-weight:700;">
+                            <td>Gross Profit</td>
+                            <td class="pl-amount">{{ $fmt($grandGrossProfit) }}</td>
+                        </tr>
+                        <tr class="pl-section">
+                            <td>Operating Expenses</td>
+                            <td></td>
                         </tr>
                         <tr class="pl-line">
                             <td>Operating Expenses</td>
                             <td class="pl-amount">{{ $fmt($grandOperatingExpense) }}</td>
                         </tr>
                         <tr class="pl-total">
-                            <td>Total Expenses</td>
-                            <td class="pl-amount">{{ $fmt($grandExpense) }}</td>
+                            <td>Total Operating Expenses</td>
+                            <td class="pl-amount">{{ $fmt($grandOperatingExpense) }}</td>
                         </tr>
                         <tr class="pl-grand">
                             <td>Net Profit / Loss</td>
