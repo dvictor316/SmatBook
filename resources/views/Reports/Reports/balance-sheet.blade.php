@@ -154,6 +154,7 @@ $currentLiabilityLines = $currentLiabilityLines->filter(function ($account) use 
         $vc = (object) (method_exists($account, 'toArray') ? $account->toArray() : (array) $account);
         $vc->balance        = abs($bal);
         $vc->_vendor_credit = true;
+        $vc->_display_name  = 'Supplier Advance';
         $vendorCreditLines->push($vc);
         return false;
     }
@@ -171,7 +172,12 @@ if ($vendorCreditLines->isNotEmpty()) {
  *  equity totals so the accounting equation is never broken by filtering.
  * ──────────────────────────────────────────────────────────────── */
 $allEquityItems       = collect($equity ?? []);
-$visibleEquity        = $allEquityItems->reject(fn ($a) => $isSystemAccount($a))->values();
+$visibleEquity        = $allEquityItems->reject(fn ($a) => $isSystemAccount($a))
+    ->reject(function ($a) {
+        // Hide Opening Balance Equity when balance is zero — adds no information
+        $isObe = str_contains(strtolower(trim((string) ($a->name ?? ''))), 'opening balance equity');
+        return $isObe && abs((float) ($a->balance ?? 0)) < 0.01;
+    })->values();
 $hiddenEquityAccounts = $allEquityItems->filter(fn ($a) => $isSystemAccount($a))->values();
 $hiddenEquityBalance  = $hiddenEquityAccounts->sum(fn ($a) => (float) ($a->balance ?? 0));
 $displayNetIncome     = (float) ($netIncome ?? $retainedEarnings ?? 0);
@@ -778,7 +784,11 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
                         <tr class="bs-sub-head"><td colspan="{{ $colCount }}">Current Assets</td></tr>
                         @php $caGroups = $groupAccounts($processedCurrentAssets, 'Other Current Assets'); @endphp
                         @foreach($caGroups as $group)
-                            @if($caGroups->count() > 1)
+                            @php
+                            $trivialCaLabels = ['current assets', 'current asset', 'other current assets', 'current', 'assets', 'asset'];
+                            $showCaGroupHead = $caGroups->count() > 1 && !in_array(strtolower(trim($group['label'])), $trivialCaLabels, true);
+                            @endphp
+                            @if($showCaGroupHead)
                                 <tr class="bs-group-head">
                                     <td>{{ $group['label'] }}</td>
                                     <td></td>
@@ -787,12 +797,9 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
                             @endif
                             @foreach($group['items'] as $account)
                                 @php $cv = $cmpAmt($account); @endphp
-                                <tr class="{{ $caGroups->count() > 1 ? 'bs-line bs-line-indented' : 'bs-line' }}">
+                                <tr class="{{ $showCaGroupHead ? 'bs-line bs-line-indented' : 'bs-line' }}">
                                     <td>
-                                        {{ $account->name }}
-                                        @if(!empty($account->_vendor_credit))
-                                            <span class="bs-vendor-credit-tag">Vendor Credit</span>
-                                        @endif
+                                        {{ !empty($account->_vendor_credit) ? ($account->_display_name ?? 'Supplier Advance') : $account->name }}
                                     </td>
                                     <td class="bs-amt {{ (float)($account->balance ?? 0) < 0 ? 'bs-amt-neg' : '' }}">
                                         {{ $fmt((float)($account->balance ?? 0)) }}
@@ -806,7 +813,7 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
                                     @endif
                                 </tr>
                             @endforeach
-                            @if($caGroups->count() > 1)
+                            @if($showCaGroupHead)
                                 <tr class="bs-sub-total">
                                     <td>Total {{ $group['label'] }}</td>
                                     <td class="bs-amt">{{ $fmt($group['total']) }}</td>
@@ -827,7 +834,11 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
                         <tr class="bs-sub-head"><td colspan="{{ $colCount }}">Fixed Assets</td></tr>
                         @php $faGroups = $groupAccounts($processedFixedAssets, 'Fixed Assets'); @endphp
                         @foreach($faGroups as $group)
-                            @if($faGroups->count() > 1)
+                            @php
+                            $trivialFaLabels = ['fixed assets', 'fixed asset', 'non-current assets', 'non-current asset', 'property plant and equipment', 'ppe'];
+                            $showFaGroupHead = $faGroups->count() > 1 && !in_array(strtolower(trim($group['label'])), $trivialFaLabels, true);
+                            @endphp
+                            @if($showFaGroupHead)
                                 <tr class="bs-group-head">
                                     <td>{{ $group['label'] }}</td>
                                     <td></td>
@@ -836,7 +847,7 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
                             @endif
                             @foreach($group['items'] as $account)
                                 @php $cv = $cmpAmt($account); @endphp
-                                <tr class="{{ $faGroups->count() > 1 ? 'bs-line bs-line-indented' : 'bs-line' }}">
+                                <tr class="{{ $showFaGroupHead ? 'bs-line bs-line-indented' : 'bs-line' }}">
                                     <td>{{ $account->name }}</td>
                                     <td class="bs-amt {{ (float)($account->balance ?? 0) < 0 ? 'bs-amt-neg' : '' }}">
                                         {{ $fmt((float)($account->balance ?? 0)) }}
@@ -850,7 +861,7 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
                                     @endif
                                 </tr>
                             @endforeach
-                            @if($faGroups->count() > 1)
+                            @if($showFaGroupHead)
                                 <tr class="bs-sub-total">
                                     <td>Total {{ $group['label'] }}</td>
                                     <td class="bs-amt">{{ $fmt($group['total']) }}</td>
@@ -969,7 +980,7 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
                     @endforeach
 
                     <tr class="bs-line">
-                        <td>Retained Earnings (Net Income)</td>
+                        <td>Current Year Earnings</td>
                         <td class="bs-amt {{ $displayNetIncome < 0 ? 'bs-amt-neg' : '' }}">
                             {{ $fmt($displayNetIncome) }}
                         </td>
