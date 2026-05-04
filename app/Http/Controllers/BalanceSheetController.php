@@ -352,16 +352,28 @@ class BalanceSheetController extends Controller
         $equity = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type ?? null) === 'equity'); // Changed from equityAccounts to equity
         $openingDifference = round($openingTotals['debit'] - $openingTotals['credit'], 2);
 
+        // Helper: find the single Opening Balance Equity line and accumulate into it,
+        // or create a new one. Prevents duplicate OBE rows on the balance sheet.
+        $mergeIntoOpeningEquity = function (float $amount) use (&$equity): void {
+            $line = $equity->first(function ($account) {
+                $name = strtolower(trim((string) ($account->name ?? '')));
+                return $name === 'opening balance equity' || str_contains($name, 'opening balance');
+            });
+            if ($line) {
+                $line->balance = (float) ($line->balance ?? 0) + $amount;
+            } else {
+                $equity = $equity->concat([(object) [
+                    'id'      => null,
+                    'code'    => 'SYS-OPENING-EQUITY',
+                    'name'    => 'Opening Balance Equity',
+                    'type'    => 'Equity',
+                    'balance' => $amount,
+                ]]);
+            }
+        };
+
         if (abs($openingDifference) >= 0.01) {
-            $equity = $equity->concat([
-                (object) [
-                    'id' => null,
-                    'code' => 'SYS-OPENING-EQUITY',
-                    'name' => 'Opening Balance Equity',
-                    'type' => 'Equity',
-                    'balance' => $openingDifference,
-                ],
-            ]);
+            $mergeIntoOpeningEquity($openingDifference);
         }
 
         // Include customer opening balances not yet posted as journal entries.
@@ -385,7 +397,8 @@ class BalanceSheetController extends Controller
                     'balance'  => $customerOBUnposted,
                 ]]);
             }
-            $netIncome += $customerOBUnposted;
+            // Credit Opening Balance Equity (not Net Income) for unposted customer balances.
+            $mergeIntoOpeningEquity($customerOBUnposted);
         }
 
         $supplierOBUnposted = $this->getUnpostedSupplierOpeningBalanceSum($request, $reportDate);
@@ -405,7 +418,8 @@ class BalanceSheetController extends Controller
                     'balance'  => $supplierOBUnposted,
                 ]]);
             }
-            $netIncome -= $supplierOBUnposted;
+            // Debit Opening Balance Equity (not Net Income) for unposted supplier balances.
+            $mergeIntoOpeningEquity(-$supplierOBUnposted);
         }
 
         $inventoryBridge = $this->getLegacyInventoryBridgeAmount($request, $reportDate, $accounts);
@@ -428,25 +442,7 @@ class BalanceSheetController extends Controller
             }
 
             // Legacy stock bridge belongs to opening equity support, not current liabilities.
-            // Showing it as "Inventory Offset" under liabilities inflates payable totals and
-            // makes the balance sheet look incorrect compared with standard accounting output.
-            $openingEquityLine = $equity->first(function ($account) {
-                $name = strtolower(trim((string) ($account->name ?? '')));
-                return $name === 'opening balance equity' || str_contains($name, 'opening balance');
-            });
-
-            if ($openingEquityLine) {
-                $openingEquityLine->balance = (float) ($openingEquityLine->balance ?? 0) + $inventoryBridge;
-            } else {
-                $equity = $equity->concat([(object) [
-                    'id'       => null,
-                    'code'     => 'SYS-INV-EQUITY',
-                    'name'     => 'Opening Balance Equity',
-                    'type'     => 'Equity',
-                    'sub_type' => 'Equity',
-                    'balance'  => $inventoryBridge,
-                ]]);
-            }
+            $mergeIntoOpeningEquity($inventoryBridge);
         }
 
         // 5. Final Totals

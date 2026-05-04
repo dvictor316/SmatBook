@@ -294,20 +294,24 @@
                             <td></td>
                         </tr>
                         @forelse($currentAssetGroups as $group)
+                            @if($loop->count > 1)
                             <tr class="bs-group">
                                 <td>{{ $group['label'] }}</td>
                                 <td></td>
                             </tr>
+                            @endif
                             @foreach($group['items'] as $account)
                                 <tr class="bs-line">
                                     <td>{{ $account->name }}</td>
                                     <td class="bs-amount">{{ $fmt($account->balance ?? 0) }}</td>
                                 </tr>
                             @endforeach
+                            @if($loop->count > 1)
                             <tr class="bs-total">
                                 <td>Total for {{ $group['label'] }}</td>
                                 <td class="bs-amount">{{ $fmt($group['total']) }}</td>
                             </tr>
+                            @endif
                         @empty
                             <tr class="bs-empty">
                                 <td>No current asset accounts found for the selected date.</td>
@@ -363,20 +367,24 @@
                             <td></td>
                         </tr>
                         @forelse($currentLiabilityGroups as $group)
+                            @if($loop->count > 1)
                             <tr class="bs-group">
                                 <td>{{ $group['label'] }}</td>
                                 <td></td>
                             </tr>
+                            @endif
                             @foreach($group['items'] as $account)
                                 <tr class="bs-line">
                                     <td>{{ $account->name }}</td>
                                     <td class="bs-amount">{{ $fmt($account->balance ?? 0) }}</td>
                                 </tr>
                             @endforeach
+                            @if($loop->count > 1)
                             <tr class="bs-total">
                                 <td>Total for {{ $group['label'] }}</td>
                                 <td class="bs-amount">{{ $fmt($group['total']) }}</td>
                             </tr>
+                            @endif
                         @empty
                             <tr class="bs-empty">
                                 <td>No current liability accounts found for the selected date.</td>
