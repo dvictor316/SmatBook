@@ -1696,6 +1696,9 @@ class SettingController extends Controller
         $companyId = (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0);
         $branchId = trim((string) session('active_branch_id', ''));
         $branchName = trim((string) session('active_branch_name', ''));
+        if ($branchId === '' && $branchName === '') {
+            return redirect()->back()->withInput()->with('error', 'Select an active branch before posting a manual journal.');
+        }
 
         DB::transaction(function () use ($validated, $lines, $reference, $request, $companyId, $branchId, $branchName) {
             $transactionColumns = Schema::getColumnListing('transactions');
@@ -1753,8 +1756,13 @@ class SettingController extends Controller
         $description = $memo !== ''
             ? $memo
             : 'Bank reconciliation adjustment for ' . ($bank->name ?: 'Bank Account');
+        $branchId = trim((string) ($bank->branch_id ?? session('active_branch_id', '')));
+        $branchName = trim((string) ($bank->branch_name ?? session('active_branch_name', '')));
+        if ($branchId === '' && $branchName === '') {
+            return redirect()->back()->withInput()->with('error', 'A valid branch is required before posting reconciliation adjustments.');
+        }
 
-        DB::transaction(function () use ($validated, $difference, $bankAccount, $suspenseAccount, $reference, $description, $request) {
+        DB::transaction(function () use ($validated, $difference, $bankAccount, $suspenseAccount, $reference, $description, $request, $branchId, $branchName) {
             $debitToBank = $difference > 0 ? abs($difference) : 0;
             $creditToBank = $difference < 0 ? abs($difference) : 0;
 
@@ -1770,6 +1778,9 @@ class SettingController extends Controller
                 'related_id' => null,
                 'related_type' => null,
                 'user_id' => $request->user()?->id,
+                'company_id' => $request->user()?->company_id ?? session('current_tenant_id'),
+                'branch_id' => $branchId,
+                'branch_name' => $branchName,
             ]);
 
             Transaction::create([
@@ -1784,6 +1795,9 @@ class SettingController extends Controller
                 'related_id' => null,
                 'related_type' => null,
                 'user_id' => $request->user()?->id,
+                'company_id' => $request->user()?->company_id ?? session('current_tenant_id'),
+                'branch_id' => $branchId,
+                'branch_name' => $branchName,
             ]);
         });
 

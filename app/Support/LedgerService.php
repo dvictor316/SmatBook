@@ -7,14 +7,17 @@ use App\Models\Bank;
 use App\Models\Expense;
 use App\Models\Payment;
 use App\Models\Purchase;
+use App\Models\PurchaseReturn;
 use App\Models\Sale;
 use App\Models\Supplier;
 use App\Models\SupplierPayment;
 use App\Models\Transaction;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use InvalidArgumentException;
 
 class LedgerService
 {
@@ -763,6 +766,8 @@ class LedgerService
         );
         $cashAccount = self::resolveCashAccount($expense->payment_mode ?? null);
         $reference = $expense->reference ?: ($expense->expense_id ?: ('EXP-' . $expense->id));
+        $branchId = $expense->branch_id ?? null;
+        $branchName = $expense->branch_name ?? null;
 
         self::postDoubleEntry(
             debitAccountId: $expenseAccount->id,
@@ -774,7 +779,9 @@ class LedgerService
             transactionType: 'Expense',
             relatedId: (int) $expense->id,
             relatedType: Expense::class,
-            userId: $expense->created_by ?? auth()->id()
+            userId: $expense->created_by ?? auth()->id(),
+            branchId: $branchId,
+            branchName: $branchName
         );
     }
 
@@ -796,6 +803,8 @@ class LedgerService
             ->where('transaction_type', Transaction::TYPE_ADJUSTMENT)
             ->delete();
 
+        $branch = self::resolveRelatedBranchContext($relatedId, $relatedType);
+
         $payableAccount = self::resolveAccount('Accounts Payable', 'Liability', ['payable', 'creditor'], 'AUTO-LIB-AP');
         $inventoryAccount = self::resolveAccount('Inventory', 'Asset', ['inventory', 'stock'], 'AUTO-AST-INV');
 
@@ -809,7 +818,9 @@ class LedgerService
             transactionType: Transaction::TYPE_ADJUSTMENT,
             relatedId: $relatedId,
             relatedType: $relatedType,
-            userId: $userId
+            userId: $userId,
+            branchId: $branch['id'] ?? null,
+            branchName: $branch['name'] ?? null
         );
     }
 
@@ -831,6 +842,8 @@ class LedgerService
             ->where('transaction_type', Transaction::TYPE_ADJUSTMENT)
             ->delete();
 
+        $branch = self::resolveRelatedBranchContext($relatedId, $relatedType);
+
         $salesRevenueAccount = self::resolveAccount('Sales Revenue', 'Revenue', ['sales', 'income'], 'AUTO-REV-SALES');
         $receivableAccount = self::resolveAccount('Accounts Receivable', 'Asset', ['receivable', 'debtor'], 'AUTO-AST-AR');
 
@@ -844,7 +857,9 @@ class LedgerService
             transactionType: Transaction::TYPE_ADJUSTMENT,
             relatedId: $relatedId,
             relatedType: $relatedType,
-            userId: $userId
+            userId: $userId,
+            branchId: $branch['id'] ?? null,
+            branchName: $branch['name'] ?? null
         );
     }
 
@@ -876,6 +891,8 @@ class LedgerService
             return;
         }
 
+        [$branchId, $branchName] = self::validatedBranchContext($branchId, $branchName, $transactionType, $relatedType, $reference);
+
         $payload = [
             'transaction_date' => $date,
             'reference' => $reference,
@@ -906,6 +923,88 @@ class LedgerService
             'debit' => 0,
             'credit' => $amount,
         ])));
+    }
+
+    private static function validatedBranchContext(
+        ?string $branchId,
+        ?string $branchName,
+        string $transactionType,
+        string $relatedType,
+        string $reference
+    ): array {
+        if (!Schema::hasColumn('transactions', 'branch_id')) {
+            return [$branchId, $branchName];
+        }
+
+        if ($relatedType === \App\Models\IntercompanyTransaction::class) {
+            return [$branchId, $branchName];
+        }
+
+        $resolvedId = trim((string) $branchId);
+        $resolvedName = trim((string) $branchName);
+
+        if ($resolvedId === '' && $resolvedName === '') {
+            throw new InvalidArgumentException(
+                sprintf('Branch context is required for %s posting [%s].', $transactionType, $reference)
+            );
+        }
+
+        return [
+            $resolvedId !== '' ? $resolvedId : null,
+            $resolvedName !== '' ? $resolvedName : null,
+        ];
+    }
+
+    private static function resolveRelatedBranchContext(int $relatedId, string $relatedType): array
+    {
+        if ($relatedId <= 0) {
+            return ['id' => null, 'name' => null];
+        }
+
+        if ($relatedType === PurchaseReturn::class && class_exists(PurchaseReturn::class)) {
+            $purchaseReturn = PurchaseReturn::query()->with('purchase')->find($relatedId);
+            if ($purchaseReturn?->purchase) {
+                return [
+                    'id' => $purchaseReturn->purchase->branch_id ?? null,
+                    'name' => $purchaseReturn->purchase->branch_name ?? $purchaseReturn->purchase->branch_label ?? null,
+                ];
+            }
+        }
+
+        if ($relatedType === 'credit_note' && Schema::hasTable('credit_notes')) {
+            $creditNote = DB::table('credit_notes')->where('id', $relatedId)->first();
+            if ($creditNote) {
+                if (!empty($creditNote->branch_id) || !empty($creditNote->branch_name)) {
+                    return [
+                        'id' => $creditNote->branch_id ?: null,
+                        'name' => $creditNote->branch_name ?: null,
+                    ];
+                }
+
+                $saleId = (int) ($creditNote->sale_id ?? 0);
+                if ($saleId > 0 && class_exists(Sale::class)) {
+                    $sale = Sale::query()->find($saleId);
+                    if ($sale) {
+                        return [
+                            'id' => $sale->branch_id ?? null,
+                            'name' => $sale->branch_name ?? $sale->branch_label ?? null,
+                        ];
+                    }
+                }
+            }
+        }
+
+        if (class_exists($relatedType) && is_subclass_of($relatedType, Model::class)) {
+            $record = $relatedType::query()->find($relatedId);
+            if ($record) {
+                return [
+                    'id' => $record->branch_id ?? null,
+                    'name' => $record->branch_name ?? $record->branch_label ?? null,
+                ];
+            }
+        }
+
+        return ['id' => null, 'name' => null];
     }
 
     private static function filterTransactionPayload(array $payload): array

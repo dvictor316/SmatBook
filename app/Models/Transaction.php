@@ -7,10 +7,24 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Support\GeoCurrency;
 use App\Models\Traits\TenantScoped;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\ValidationException;
 
 class Transaction extends Model
 {
     use HasFactory, SoftDeletes, TenantScoped;
+
+    private const BRANCH_TOLERANCE_TYPES = [
+        self::TYPE_SALE,
+        self::TYPE_PURCHASE,
+        self::TYPE_PAYMENT,
+        self::TYPE_RECEIPT,
+        self::TYPE_JOURNAL,
+        self::TYPE_ADJUSTMENT,
+        self::TYPE_OPENING_BALANCE,
+        'Expense',
+    ];
 
     protected $fillable = [
         'account_id',
@@ -136,6 +150,10 @@ class Transaction extends Model
     {
         parent::boot();
 
+        static::saving(function ($transaction) {
+            self::guardBranchIntegrity($transaction);
+        });
+
         static::created(function ($transaction) {
             $account = $transaction->account()->withoutGlobalScopes()->first();
             $account?->updateBalance();
@@ -150,5 +168,87 @@ class Transaction extends Model
             $account = $transaction->account()->withoutGlobalScopes()->first();
             $account?->updateBalance();
         });
+    }
+
+    private static function guardBranchIntegrity(self $transaction): void
+    {
+        if (!Schema::hasColumn('transactions', 'branch_id')) {
+            return;
+        }
+
+        if (!self::requiresBranchContext($transaction)) {
+            return;
+        }
+
+        $companyId = (int) ($transaction->company_id ?? 0);
+        $branchId = trim((string) ($transaction->branch_id ?? ''));
+        $branchName = trim((string) ($transaction->branch_name ?? ''));
+
+        if ($branchId === '' && $branchName === '') {
+            throw ValidationException::withMessages([
+                'branch_id' => 'Branch is required for accounting transactions.',
+            ]);
+        }
+
+        $validBranches = self::configuredBranches($companyId);
+        if ($validBranches->isEmpty()) {
+            return;
+        }
+
+        if ($branchId !== '') {
+            $match = $validBranches->first(fn ($branch) => (string) $branch['id'] === $branchId);
+            if (!$match) {
+                throw ValidationException::withMessages([
+                    'branch_id' => 'The selected branch is invalid for this company.',
+                ]);
+            }
+
+            if (Schema::hasColumn('transactions', 'branch_name')) {
+                $transaction->branch_name = (string) $match['name'];
+            }
+            return;
+        }
+
+        if ($branchName !== '') {
+            $match = $validBranches->first(fn ($branch) => (string) $branch['name_lc'] === strtolower($branchName));
+            if (!$match) {
+                throw ValidationException::withMessages([
+                    'branch_name' => 'The selected branch name is invalid for this company.',
+                ]);
+            }
+
+            $transaction->branch_id = (string) $match['id'];
+            $transaction->branch_name = (string) $match['name'];
+        }
+    }
+
+    private static function requiresBranchContext(self $transaction): bool
+    {
+        $type = trim((string) ($transaction->transaction_type ?? ''));
+        $relatedType = trim((string) ($transaction->related_type ?? ''));
+
+        if ($relatedType === \App\Models\IntercompanyTransaction::class) {
+            return false;
+        }
+
+        return in_array($type, self::BRANCH_TOLERANCE_TYPES, true) || $type !== '';
+    }
+
+    private static function configuredBranches(int $companyId)
+    {
+        if ($companyId <= 0 || !Schema::hasTable('settings')) {
+            return collect();
+        }
+
+        $raw = (string) (DB::table('settings')->where('key', 'branches_json_company_' . $companyId)->value('value') ?? '');
+
+        return collect(json_decode($raw, true) ?: [])
+            ->filter(fn ($branch) => !empty($branch['id']) || !empty($branch['name']))
+            ->map(fn ($branch) => [
+                'id' => trim((string) ($branch['id'] ?? '')),
+                'name' => trim((string) ($branch['name'] ?? '')),
+                'name_lc' => strtolower(trim((string) ($branch['name'] ?? ''))),
+            ])
+            ->values();
     }
 }
