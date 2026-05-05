@@ -239,12 +239,7 @@
                         </div>
 
                         <div class="col-md-6">
-                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                <label class="form-label fw-bold text-dark mb-0">Paid From (Credit Account) *</label>
-                                <a href="javascript:void(0);" class="small fw-semibold" data-bs-toggle="modal" data-bs-target="#quick_add_bank_modal">
-                                    <i class="fas fa-plus-circle me-1"></i>Add Bank/Cash
-                                </a>
-                            </div>
+                            <label class="form-label fw-bold text-dark mb-1">Paid From (Credit Account) *</label>
                             <select class="form-select border-success" name="payment_account_id" required>
                                 <option value="">-- Choose Bank/Cash --</option>
                                 @foreach($assetAccounts as $acc)
@@ -318,38 +313,6 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-primary">Save Supplier</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="quick_add_bank_modal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Add Bank / Cash Account</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form action="{{ route('expenses.quick-add-bank') }}" method="POST">
-                @csrf
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Name *</label>
-                        <input type="text" name="name" class="form-control" placeholder="e.g. GTBank Current" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Account Number</label>
-                        <input type="text" name="account_number" class="form-control" placeholder="Optional">
-                    </div>
-                    <div class="mb-0">
-                        <label class="form-label fw-bold">Opening Balance</label>
-                        <input type="number" step="0.01" min="0" name="balance" class="form-control" value="0">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save Bank</button>
                 </div>
             </form>
         </div>
