@@ -655,7 +655,7 @@ class BalanceSheetController extends Controller
         });
 
         // 2. Transform balances based strictly on posted ledger movement
-        $accounts->transform(function ($account) {
+        $accounts = $accounts->transform(function ($account) {
             $dr = ($account->total_debit ?? 0);
             $cr = ($account->total_credit ?? 0);
             $type = $this->normalizeAccountType($account->type ?? null);
@@ -753,6 +753,9 @@ class BalanceSheetController extends Controller
             : '';
         $allBranches = collect(json_decode($branchesJson, true) ?: []);
 
+        $geoCurrency       = \App\Support\GeoCurrency::currentCurrency();
+        $geoCurrencyLocale = \App\Support\GeoCurrency::currentLocale();
+
         return view('Reports.Reports.balance-sheet', compact(
             'reportDate',
             'currentAssets',
@@ -792,7 +795,9 @@ class BalanceSheetController extends Controller
             'reconciliationReserveThreshold',
             'reconciliationReserveNeedsReview',
             'reserveSuspenseDiagnostics',
-            'openingBalanceValidation'
+            'openingBalanceValidation',
+            'geoCurrency',
+            'geoCurrencyLocale'
         ));
     }
 
@@ -819,45 +824,7 @@ class BalanceSheetController extends Controller
 
 
 
-    public function balanceSheet()
-{
-    // 1. Get balances for ALL accounts
-    $allBalances = Transaction::join('accounts', 'transactions.account_id', '=', 'accounts.id')
-        ->select('accounts.name', 'accounts.type', 'accounts.category')
-        ->selectRaw('SUM(debit) as total_debit')
-        ->selectRaw('SUM(credit) as total_credit')
-        ->groupBy('accounts.id', 'accounts.name', 'accounts.type', 'accounts.category')
-        ->get();
-
-    // 2. Filter for Balance Sheet Accounts (Permanent)
-    // Assets usually = Debit - Credit
-    $assets = $allBalances->where('type', 'Asset')->map(function($item) {
-        $item->balance = $item->total_debit - $item->total_credit;
-        return $item;
-    });
-
-    // Liabilities/Equity usually = Credit - Debit
-    $liabilities = $allBalances->where('type', 'Liability')->map(function($item) {
-        $item->balance = $item->total_credit - $item->total_debit;
-        return $item;
-    });
-
-    $equity = $allBalances->where('type', 'Equity')->map(function($item) {
-        $item->balance = $item->total_credit - $item->total_debit;
-        return $item;
-    });
-
-    // 3. CALCULATE NET PROFIT (This is the key!)
-    $totalRevenue = $allBalances->where('type', 'Revenue')->sum('total_credit') - 
-                     $allBalances->where('type', 'Revenue')->sum('total_debit');
-                     
-    $totalExpenses = $allBalances->where('type', 'Expense')->sum('total_debit') - 
-                      $allBalances->where('type', 'Expense')->sum('total_credit');
-                      
-    $netProfit = $totalRevenue - $totalExpenses;
-
-    return view('Finance.balance_sheet', compact('assets', 'liabilities', 'equity', 'netProfit'));
-}
+    // Legacy balanceSheet() removed — use index() which produces the full statement.
 
     private function computeComparisonSnapshot(Request $request, Carbon $date, array $activeBranch, string $method): array
     {
@@ -1421,8 +1388,16 @@ class BalanceSheetController extends Controller
                 ->tap(fn ($q) => $this->applyTransactionScope($q, $request))
                 ->groupBy('account_id')->get()->keyBy('account_id');
 
+            $accountIds = $txnTotals->keys()->all();
             $accounts = Account::withoutGlobalScopes()
                 ->whereNull('deleted_at')
+                ->where(function ($q) use ($accountIds) {
+                    if (!empty($accountIds)) {
+                        $q->whereIn('id', $accountIds);
+                    } else {
+                        $q->whereRaw('1 = 0');
+                    }
+                })
                 ->tap(fn ($q) => $this->applyAccountScope($q, $request))->get()
                 ->transform(function ($a) use ($txnTotals) {
                     $t = $txnTotals->get($a->id);

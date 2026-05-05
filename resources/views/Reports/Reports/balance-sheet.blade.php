@@ -89,7 +89,7 @@ $isBalanced             = abs($equationDiff) < 0.01;
  *  COMPARISON PERIOD DATA
  * ──────────────────────────────────────────────────────────────── */
 $hasCmp  = !empty($compareData);
-$colCount = $hasCmp ? 3 : 2;
+$colCount = $hasCmp ? 4 : 2;
 
 $cmpTotalCurrentAssets = 0.0;
 $cmpTotalFixedAssets   = 0.0;
@@ -161,6 +161,20 @@ $groupAccounts = function ($items, string $fallback) {
 $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->name ?? '')))])
     ? (float) ($cmpLookup[strtolower(trim((string) ($account->name ?? '')))]->balance ?? 0)
     : null;
+
+// Helper: render change column — $ change and optional % for comparison
+$changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
+    if (!$hasCmp || $compare === null) return '';
+    $delta = $current - $compare;
+    $cls   = $delta < 0 ? 'bs-amt-neg' : ($delta > 0 ? 'bs-amt-pos' : '');
+    $prefix = $delta > 0 ? '+' : '';
+    $pct   = '';
+    if (abs($compare) >= 0.01) {
+        $pctVal = round(($delta / abs($compare)) * 100, 1);
+        $pct = ' <span class="bs-change-pct">(' . ($pctVal > 0 ? '+' : '') . $pctVal . '%)</span>';
+    }
+    return '<td class="bs-chg-amt ' . $cls . '">' . $prefix . number_format($delta, 2) . $pct . '</td>';
+};
 @endphp
 
 {{-- ══════════════════════════════════════════════════════════════
@@ -377,6 +391,24 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
     font-size: 0.875rem;
 }
 .bs-cmp-amt-neg { color: #f87171; }
+
+/* Change / variance column */
+.bs-chg-amt {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    padding-right: 2px;
+    font-size: 0.82rem;
+    color: #475569;
+    font-weight: 600;
+}
+.bs-chg-amt.bs-amt-pos { color: #16a34a; }
+.bs-chg-amt.bs-amt-neg { color: #dc2626; }
+.bs-change-pct {
+    font-size: 0.73rem;
+    font-weight: 500;
+    opacity: 0.80;
+}
 
 /* Sub-total */
 .bs-sub-total td {
@@ -647,21 +679,14 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
                 <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2m-8 0v4h8v-4H8z"/>
                 </svg>
-                Print
-            </button>
-            <button type="button" class="bs-action-btn" onclick="window.print()">
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z"/>
-                    <path d="M14 2v6h6"/>
-                </svg>
-                PDF
+                Print / PDF
             </button>
             <button type="button" class="bs-action-btn" onclick="bsExportExcel()">
                 <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <rect x="3" y="3" width="18" height="18" rx="2"/>
                     <path d="M8 12h8M12 8v8"/>
                 </svg>
-                Excel
+                Export Excel
             </button>
         </div>
 
@@ -693,14 +718,17 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
                 <colgroup>
                     <col class="col-label">
                     <col class="col-amount">
-                    @if($hasCmp)<col class="col-amount">@endif
+                    @if($hasCmp)<col class="col-amount"><col style="width:18%">@endif
                 </colgroup>
                 <tbody>
 
                     <tr class="bs-col-head">
                         <td></td>
                         <td>{{ $asOfDate->format('M j, Y') }}</td>
-                        @if($hasCmp)<td class="col-cmp">{{ $comparePeriodLabel }}</td>@endif
+                        @if($hasCmp)
+                            <td class="col-cmp">{{ $comparePeriodLabel }}</td>
+                            <td class="col-cmp" style="text-align:right;padding-right:2px;">Change ($)</td>
+                        @endif
                     </tr>
 
                     {{-- ════════════════════════════════════════
@@ -721,17 +749,18 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
                                 <tr class="bs-group-head">
                                     <td>{{ $group['label'] }}</td>
                                     <td></td>
-                                    @if($hasCmp)<td></td>@endif
+                                    @if($hasCmp)<td></td><td></td>@endif
                                 </tr>
                             @endif
                             @foreach($group['items'] as $account)
-                                @php $cv = $cmpAmt($account); @endphp
+                                @php $cv = $cmpAmt($account); $bal = (float)($account->balance ?? 0); @endphp
                                 <tr class="{{ $showCaGroupHead ? 'bs-line bs-line-indented' : 'bs-line' }}">
                                     <td>
                                         {{ !empty($account->_vendor_credit) ? ($account->_display_name ?? 'Supplier Advance') : $account->name }}
+                                        @if(!empty($account->_vendor_credit))<span class="bs-vendor-credit-tag">Prepaid</span>@endif
                                     </td>
-                                    <td class="bs-amt {{ (float)($account->balance ?? 0) < 0 ? 'bs-amt-neg' : '' }}">
-                                        {{ $fmt((float)($account->balance ?? 0)) }}
+                                    <td class="bs-amt {{ $bal < 0 ? 'bs-amt-neg' : '' }}">
+                                        {{ $fmt($bal) }}
                                     </td>
                                     @if($hasCmp)
                                         @if($cv !== null)
@@ -739,6 +768,7 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
                                         @else
                                             <td class="bs-amt-dash">—</td>
                                         @endif
+                                        {!! $changeCell($bal, $cv) !!}
                                     @endif
                                 </tr>
                             @endforeach
@@ -746,14 +776,17 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
                                 <tr class="bs-sub-total">
                                     <td>Total {{ $group['label'] }}</td>
                                     <td class="bs-amt">{{ $fmt($group['total']) }}</td>
-                                    @if($hasCmp)<td></td>@endif
+                                    @if($hasCmp)<td></td><td></td>@endif
                                 </tr>
                             @endif
                         @endforeach
                         <tr class="bs-sub-total">
                             <td>Total Current Assets</td>
                             <td class="bs-amt">{{ $fmt($visTotalCurrentAssets) }}</td>
-                            @if($hasCmp)<td class="bs-cmp-amt">{{ $fmt($cmpTotalCurrentAssets) }}</td>@endif
+                            @if($hasCmp)
+                                <td class="bs-cmp-amt">{{ $fmt($cmpTotalCurrentAssets) }}</td>
+                                {!! $changeCell($visTotalCurrentAssets, $cmpTotalCurrentAssets) !!}
+                            @endif
                         </tr>
                     @endif
 
@@ -771,15 +804,15 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
                                 <tr class="bs-group-head">
                                     <td>{{ $group['label'] }}</td>
                                     <td></td>
-                                    @if($hasCmp)<td></td>@endif
+                                    @if($hasCmp)<td></td><td></td>@endif
                                 </tr>
                             @endif
                             @foreach($group['items'] as $account)
-                                @php $cv = $cmpAmt($account); @endphp
+                                @php $cv = $cmpAmt($account); $bal = (float)($account->balance ?? 0); @endphp
                                 <tr class="{{ $showFaGroupHead ? 'bs-line bs-line-indented' : 'bs-line' }}">
                                     <td>{{ $account->name }}</td>
-                                    <td class="bs-amt {{ (float)($account->balance ?? 0) < 0 ? 'bs-amt-neg' : '' }}">
-                                        {{ $fmt((float)($account->balance ?? 0)) }}
+                                    <td class="bs-amt {{ $bal < 0 ? 'bs-amt-neg' : '' }}">
+                                        {{ $fmt($bal) }}
                                     </td>
                                     @if($hasCmp)
                                         @if($cv !== null)
@@ -787,6 +820,7 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
                                         @else
                                             <td class="bs-amt-dash">—</td>
                                         @endif
+                                        {!! $changeCell($bal, $cv) !!}
                                     @endif
                                 </tr>
                             @endforeach
@@ -794,14 +828,17 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
                                 <tr class="bs-sub-total">
                                     <td>Total {{ $group['label'] }}</td>
                                     <td class="bs-amt">{{ $fmt($group['total']) }}</td>
-                                    @if($hasCmp)<td></td>@endif
+                                    @if($hasCmp)<td></td><td></td>@endif
                                 </tr>
                             @endif
                         @endforeach
                         <tr class="bs-sub-total">
                             <td>Total Fixed Assets</td>
                             <td class="bs-amt">{{ $fmt($visTotalFixedAssets) }}</td>
-                            @if($hasCmp)<td class="bs-cmp-amt">{{ $fmt($cmpTotalFixedAssets) }}</td>@endif
+                            @if($hasCmp)
+                                <td class="bs-cmp-amt">{{ $fmt($cmpTotalFixedAssets) }}</td>
+                                {!! $changeCell($visTotalFixedAssets, $cmpTotalFixedAssets) !!}
+                            @endif
                         </tr>
                     @endif
 
@@ -810,7 +847,10 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
                     <tr class="bs-section-total">
                         <td>Total Assets</td>
                         <td class="bs-amt">{{ $fmt($visTotalAssets) }}</td>
-                        @if($hasCmp)<td class="bs-cmp-amt">{{ $fmt($cmpTotalAssets) }}</td>@endif
+                        @if($hasCmp)
+                            <td class="bs-cmp-amt">{{ $fmt($cmpTotalAssets) }}</td>
+                            {!! $changeCell($visTotalAssets, $cmpTotalAssets) !!}
+                        @endif
                     </tr>
 
                     <tr class="bs-spacer"><td colspan="{{ $colCount }}"></td></tr>
@@ -825,7 +865,7 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
                     @if($currentLiabilityLines->isNotEmpty())
                         <tr class="bs-sub-head"><td colspan="{{ $colCount }}">Current Liabilities</td></tr>
                         @foreach($currentLiabilityLines as $account)
-                            @php $cv = $cmpAmt($account); @endphp
+                            @php $cv = $cmpAmt($account); $bal = (float)($account->balance ?? 0); @endphp
                             <tr class="bs-line">
                                 <td>
                                     {{ $account->name }}
@@ -833,20 +873,24 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
                                         <span class="bs-overdraft-tag">Overdraft</span>
                                     @endif
                                 </td>
-                                <td class="bs-amt">{{ $fmt((float)($account->balance ?? 0)) }}</td>
+                                <td class="bs-amt">{{ $fmt($bal) }}</td>
                                 @if($hasCmp)
                                     @if($cv !== null)
                                         <td class="bs-cmp-amt {{ $cv < 0 ? 'bs-cmp-amt-neg' : '' }}">{{ $fmt($cv) }}</td>
                                     @else
                                         <td class="bs-amt-dash">—</td>
                                     @endif
+                                    {!! $changeCell($bal, $cv) !!}
                                 @endif
                             </tr>
                         @endforeach
                         <tr class="bs-sub-total">
                             <td>Total Current Liabilities</td>
                             <td class="bs-amt">{{ $fmt($visTotalCurrentLiab) }}</td>
-                            @if($hasCmp)<td class="bs-cmp-amt">{{ $fmt($cmpTotalCurrentLiab) }}</td>@endif
+                            @if($hasCmp)
+                                <td class="bs-cmp-amt">{{ $fmt($cmpTotalCurrentLiab) }}</td>
+                                {!! $changeCell($visTotalCurrentLiab, $cmpTotalCurrentLiab) !!}
+                            @endif
                         </tr>
                     @endif
 
@@ -855,23 +899,27 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
                         <tr class="bs-spacer"><td colspan="{{ $colCount }}"></td></tr>
                         <tr class="bs-sub-head"><td colspan="{{ $colCount }}">Long-Term Liabilities</td></tr>
                         @foreach($longTermLiabilityLines as $account)
-                            @php $cv = $cmpAmt($account); @endphp
+                            @php $cv = $cmpAmt($account); $bal = (float)($account->balance ?? 0); @endphp
                             <tr class="bs-line">
                                 <td>{{ $account->name }}</td>
-                                <td class="bs-amt">{{ $fmt((float)($account->balance ?? 0)) }}</td>
+                                <td class="bs-amt">{{ $fmt($bal) }}</td>
                                 @if($hasCmp)
                                     @if($cv !== null)
                                         <td class="bs-cmp-amt {{ $cv < 0 ? 'bs-cmp-amt-neg' : '' }}">{{ $fmt($cv) }}</td>
                                     @else
                                         <td class="bs-amt-dash">—</td>
                                     @endif
+                                    {!! $changeCell($bal, $cv) !!}
                                 @endif
                             </tr>
                         @endforeach
                         <tr class="bs-sub-total">
                             <td>Total Long-Term Liabilities</td>
                             <td class="bs-amt">{{ $fmt($visTotalLongTermLiab) }}</td>
-                            @if($hasCmp)<td class="bs-cmp-amt">{{ $fmt($cmpTotalLongTermLiab) }}</td>@endif
+                            @if($hasCmp)
+                                <td class="bs-cmp-amt">{{ $fmt($cmpTotalLongTermLiab) }}</td>
+                                {!! $changeCell($visTotalLongTermLiab, $cmpTotalLongTermLiab) !!}
+                            @endif
                         </tr>
                     @endif
 
@@ -880,7 +928,10 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
                     <tr class="bs-section-total">
                         <td>Total Liabilities</td>
                         <td class="bs-amt">{{ $fmt($visTotalLiabilities) }}</td>
-                        @if($hasCmp)<td class="bs-cmp-amt">{{ $fmt($cmpTotalLiabilities) }}</td>@endif
+                        @if($hasCmp)
+                            <td class="bs-cmp-amt">{{ $fmt($cmpTotalLiabilities) }}</td>
+                            {!! $changeCell($visTotalLiabilities, $cmpTotalLiabilities) !!}
+                        @endif
                     </tr>
 
                     <tr class="bs-spacer"><td colspan="{{ $colCount }}"></td></tr>
@@ -894,82 +945,113 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
                     @if($equityCapitalLines->isNotEmpty())
                         <tr class="bs-sub-head"><td colspan="{{ $colCount }}">Capital</td></tr>
                         @foreach($equityCapitalLines as $account)
-                            @php $cv = $cmpAmt($account); @endphp
+                            @php $cv = $cmpAmt($account); $bal = (float)($account->balance ?? 0); @endphp
                             <tr class="bs-line">
                                 <td>{{ $account->name }}</td>
-                                <td class="bs-amt {{ (float)($account->balance ?? 0) < 0 ? 'bs-amt-neg' : '' }}">
-                                    {{ $fmt((float)($account->balance ?? 0)) }}
-                                </td>
+                                <td class="bs-amt {{ $bal < 0 ? 'bs-amt-neg' : '' }}">{{ $fmt($bal) }}</td>
                                 @if($hasCmp)
                                     @if($cv !== null)
                                         <td class="bs-cmp-amt {{ $cv < 0 ? 'bs-cmp-amt-neg' : '' }}">{{ $fmt($cv) }}</td>
                                     @else
                                         <td class="bs-amt-dash">&mdash;</td>
                                     @endif
+                                    {!! $changeCell($bal, $cv) !!}
                                 @endif
                             </tr>
                         @endforeach
+                        @php $cmpCapTotal = $cmpEquityCapitalVis->sum(fn ($a) => (float)($a->balance ?? 0)); @endphp
+                        <tr class="bs-sub-total">
+                            <td>Total Capital</td>
+                            <td class="bs-amt {{ $visTotalEquityCapital < 0 ? 'bs-amt-neg' : '' }}">{{ $fmt($visTotalEquityCapital) }}</td>
+                            @if($hasCmp)
+                                <td class="bs-cmp-amt {{ $cmpCapTotal < 0 ? 'bs-cmp-amt-neg' : '' }}">{{ $fmt($cmpCapTotal) }}</td>
+                                {!! $changeCell($visTotalEquityCapital, $cmpCapTotal) !!}
+                            @endif
+                        </tr>
                     @endif
 
                     @if($equityRetainedLines->isNotEmpty() || $retainedEarningsLines->isNotEmpty())
                         <tr class="bs-spacer"><td colspan="{{ $colCount }}"></td></tr>
                         <tr class="bs-sub-head"><td colspan="{{ $colCount }}">Retained Earnings</td></tr>
                         @foreach($equityRetainedLines as $account)
-                            @php $cv = $cmpAmt($account); @endphp
+                            @php $cv = $cmpAmt($account); $bal = (float)($account->balance ?? 0); @endphp
                             <tr class="bs-line">
                                 <td>{{ $account->name }}</td>
-                                <td class="bs-amt {{ (float)($account->balance ?? 0) < 0 ? 'bs-amt-neg' : '' }}">
-                                    {{ $fmt((float)($account->balance ?? 0)) }}
-                                </td>
+                                <td class="bs-amt {{ $bal < 0 ? 'bs-amt-neg' : '' }}">{{ $fmt($bal) }}</td>
                                 @if($hasCmp)
                                     @if($cv !== null)
                                         <td class="bs-cmp-amt {{ $cv < 0 ? 'bs-cmp-amt-neg' : '' }}">{{ $fmt($cv) }}</td>
                                     @else
                                         <td class="bs-amt-dash">&mdash;</td>
                                     @endif
+                                    {!! $changeCell($bal, $cv) !!}
                                 @endif
                             </tr>
                         @endforeach
                         @foreach($retainedEarningsLines as $account)
-                            @php $cv = $cmpAmt($account); @endphp
+                            @php $cv = $cmpAmt($account); $bal = (float)($account->balance ?? 0); @endphp
                             <tr class="bs-line">
-                                <td>{{ $account->name }}</td>
-                                <td class="bs-amt {{ (float)($account->balance ?? 0) < 0 ? 'bs-amt-neg' : '' }}">
-                                    {{ $fmt((float)($account->balance ?? 0)) }}
+                                <td>
+                                    {{ $account->name }}
+                                    @if(!empty($account->_deficit))<span class="bs-deficit-tag">Deficit</span>@endif
                                 </td>
+                                <td class="bs-amt {{ $bal < 0 ? 'bs-amt-neg' : '' }}">{{ $fmt($bal) }}</td>
                                 @if($hasCmp)
                                     @if($cv !== null)
                                         <td class="bs-cmp-amt {{ $cv < 0 ? 'bs-cmp-amt-neg' : '' }}">{{ $fmt($cv) }}</td>
                                     @else
                                         <td class="bs-amt-dash">&mdash;</td>
                                     @endif
+                                    {!! $changeCell($bal, $cv) !!}
                                 @endif
                             </tr>
                         @endforeach
+                        @php
+                            $visTotalRE  = $visTotalEquityRetained + $visTotalCurrentEarnings;
+                            $cmpRETotal  = $cmpEquityRetainedVis->sum(fn ($a) => (float)($a->balance ?? 0))
+                                         + $cmpRetainedEarningsVis->sum(fn ($a) => (float)($a->balance ?? 0));
+                        @endphp
+                        <tr class="bs-sub-total">
+                            <td>Total Retained Earnings</td>
+                            <td class="bs-amt {{ $visTotalRE < 0 ? 'bs-amt-neg' : '' }}">{{ $fmt($visTotalRE) }}</td>
+                            @if($hasCmp)
+                                <td class="bs-cmp-amt {{ $cmpRETotal < 0 ? 'bs-cmp-amt-neg' : '' }}">{{ $fmt($cmpRETotal) }}</td>
+                                {!! $changeCell($visTotalRE, $cmpRETotal) !!}
+                            @endif
+                        </tr>
                     @endif
 
                     @if($equityReserveLines->isNotEmpty())
                         <tr class="bs-spacer"><td colspan="{{ $colCount }}"></td></tr>
                         <tr class="bs-sub-head"><td colspan="{{ $colCount }}">Reserves</td></tr>
                         @foreach($equityReserveLines as $account)
-                            @php $cv = $cmpAmt($account); @endphp
+                            @php $cv = $cmpAmt($account); $bal = (float)($account->balance ?? 0); @endphp
                             <tr class="bs-line">
                                 <td>{{ $account->name }}</td>
-                                <td class="bs-amt {{ (float)($account->balance ?? 0) < 0 ? 'bs-amt-neg' : '' }}">
-                                    {{ $fmt((float)($account->balance ?? 0)) }}
-                                </td>
+                                <td class="bs-amt {{ $bal < 0 ? 'bs-amt-neg' : '' }}">{{ $fmt($bal) }}</td>
                                 @if($hasCmp)
                                     @if($cv !== null)
                                         <td class="bs-cmp-amt {{ $cv < 0 ? 'bs-cmp-amt-neg' : '' }}">{{ $fmt($cv) }}</td>
                                     @else
                                         <td class="bs-amt-dash">&mdash;</td>
                                     @endif
+                                    {!! $changeCell($bal, $cv) !!}
                                 @endif
                             </tr>
                         @endforeach
+                        @php $cmpResTotal = $cmpEquityReserveVis->sum(fn ($a) => (float)($a->balance ?? 0)); @endphp
+                        <tr class="bs-sub-total">
+                            <td>Total Reserves</td>
+                            <td class="bs-amt {{ $visTotalEquityReserves < 0 ? 'bs-amt-neg' : '' }}">{{ $fmt($visTotalEquityReserves) }}</td>
+                            @if($hasCmp)
+                                <td class="bs-cmp-amt {{ $cmpResTotal < 0 ? 'bs-cmp-amt-neg' : '' }}">{{ $fmt($cmpResTotal) }}</td>
+                                {!! $changeCell($visTotalEquityReserves, $cmpResTotal) !!}
+                            @endif
+                        </tr>
                     @endif
 
-                    <tr class="bs-sub-total">
+                    <tr class="bs-spacer"><td colspan="{{ $colCount }}"></td></tr>
+                    <tr class="bs-section-total">
                         <td>Total Equity</td>
                         <td class="bs-amt {{ $visTotalEquity < 0 ? 'bs-amt-neg' : '' }}">
                             {{ $fmt($visTotalEquity) }}
@@ -978,6 +1060,7 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
                             <td class="bs-cmp-amt {{ $cmpTotalEquity < 0 ? 'bs-cmp-amt-neg' : '' }}">
                                 {{ $fmt($cmpTotalEquity) }}
                             </td>
+                            {!! $changeCell($visTotalEquity, $cmpTotalEquity) !!}
                         @endif
                     </tr>
 
@@ -991,6 +1074,7 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
                         <td class="bs-amt">{{ $fmt($visTotalLiabEquity) }}</td>
                         @if($hasCmp)
                             <td class="bs-cmp-amt">{{ $fmt($cmpTotalLiabEquity) }}</td>
+                            {!! $changeCell($visTotalLiabEquity, $cmpTotalLiabEquity) !!}
                         @endif
                     </tr>
 
@@ -1195,16 +1279,6 @@ function bsSetMethod(val) {
     document.getElementById('bsMethod').value = val;
     document.getElementById('bsMethodAccrual').classList.toggle('active', val === 'accrual');
     document.getElementById('bsMethodCash').classList.toggle('active', val === 'cash');
-}
-
-function bsSetConsolidate(val) {
-    var el = document.getElementById('bsConsolidate');
-    if (el) el.value = val;
-    document.querySelectorAll('[data-val]').forEach(function(a) {
-        if (a.closest && a.closest('.bs-method-toggle')) {
-            a.classList.toggle('active', parseInt(a.dataset.val) === val);
-        }
-    });
 }
 
 function bsSetConsolidate(val) {
