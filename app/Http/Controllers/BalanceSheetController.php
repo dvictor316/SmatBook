@@ -16,8 +16,6 @@ use Illuminate\Support\Collection;
 
 class BalanceSheetController extends Controller
 {
-    private const BALANCE_TOLERANCE = 0.005;
-
     private function calculateSideBalances(float $amount, bool $isDebitNormal): array
     {
         if ($isDebitNormal) {
@@ -44,54 +42,23 @@ class BalanceSheetController extends Controller
 
         $activeBranch = $this->resolveActiveBranch($request);
         if (($activeBranch['scope'] ?? 'branch') === 'all') {
-            $this->applyConfiguredBranchUniverse($query, 'transactions', $companyId);
+            $query->where(function ($branchScoped) {
+                if (Schema::hasColumn('transactions', 'branch_id')) {
+                    $branchScoped->whereNotNull('branch_id')
+                        ->where('branch_id', '<>', '');
+                }
+
+                if (Schema::hasColumn('transactions', 'branch_name')) {
+                    $method = Schema::hasColumn('transactions', 'branch_id') ? 'orWhere' : 'where';
+                    $branchScoped->{$method}(function ($named) {
+                        $named->whereNotNull('branch_name')
+                            ->where('branch_name', '<>', '');
+                    });
+                }
+            });
         }
 
         return $query;
-    }
-
-    private function loadConfiguredBranches(int $companyId): Collection
-    {
-        if ($companyId <= 0 || !Schema::hasTable('settings')) {
-            return collect();
-        }
-
-        $rawBranches = (string) (DB::table('settings')
-            ->where('key', 'branches_json_company_' . $companyId)
-            ->value('value') ?? '');
-
-        return collect(json_decode($rawBranches, true) ?: [])
-            ->map(function ($branch) {
-                return [
-                    'id' => trim((string) ($branch['id'] ?? '')),
-                    'name' => trim((string) ($branch['name'] ?? '')),
-                ];
-            })
-            ->filter(fn ($branch) => $branch['id'] !== '' || $branch['name'] !== '')
-            ->values();
-    }
-
-    private function applyConfiguredBranchUniverse($query, string $table, int $companyId): void
-    {
-        $branches = $this->loadConfiguredBranches($companyId);
-        if ($branches->isEmpty()) {
-            $query->whereRaw('1 = 0');
-            return;
-        }
-
-        $branchIds = $branches->pluck('id')->filter()->unique()->values()->all();
-        $branchNames = $branches->pluck('name')->filter()->unique()->values()->all();
-
-        $query->where(function ($branchScoped) use ($table, $branchIds, $branchNames) {
-            if (!empty($branchIds) && Schema::hasColumn($table, 'branch_id')) {
-                $branchScoped->whereIn("{$table}.branch_id", $branchIds);
-            }
-
-            if (!empty($branchNames) && Schema::hasColumn($table, 'branch_name')) {
-                $method = (!empty($branchIds) && Schema::hasColumn($table, 'branch_id')) ? 'orWhereIn' : 'whereIn';
-                $branchScoped->{$method}("{$table}.branch_name", $branchNames);
-            }
-        });
     }
 
     private function resolveActiveBranch(Request $request): array
@@ -568,7 +535,6 @@ class BalanceSheetController extends Controller
         $totalEquity = round((float) $equity->sum('balance'), 2);
         $statementDifference = round($totalAssets - ($totalLiabilities + $totalEquity), 2);
         $reviewThreshold = max(1000.0, round(abs($totalAssets) * 0.02, 2));
-        $isBalanced = abs($statementDifference) <= self::BALANCE_TOLERANCE;
 
         return [
             'currentAssets' => $currentAssets,
@@ -590,8 +556,7 @@ class BalanceSheetController extends Controller
             'retainedEarnings' => $retainedEarnings,
             'netIncome' => $retainedEarnings,
             'statementDifference' => $statementDifference,
-            'isBalanced' => $isBalanced,
-            'balanceTolerance' => self::BALANCE_TOLERANCE,
+            'isBalanced' => abs($statementDifference) < 0.01,
             'reconciliationReserveDiagnostic' => $statementDifference,
             'reconciliationReserveThreshold' => $reviewThreshold,
             'reconciliationReserveNeedsReview' => abs($statementDifference) >= $reviewThreshold,
@@ -711,13 +676,45 @@ class BalanceSheetController extends Controller
         // system-generated accounts (AR, Revenue, Cash) created without a branch.
         // We apply our own branch filter below that also includes those global accounts.
         $accountsQuery = Account::withoutGlobalScopes()
-            ->whereNull('deleted_at')
+            // Do NOT filter by deleted_at here. Soft-deleted accounts still have real
+            // ledger transactions. Excluding them makes $ledgerTotalsQuery (which counts
+            // ALL transactions) exceed the classified total, creating a phantom gap equal
+            // to the net balance of those deleted accounts.
             ->where(function ($query) use ($accountIds) {
                 if (!empty($accountIds)) {
                     $query->whereIn('id', $accountIds);
                 } else {
                     $query->whereRaw('1 = 0');
                 }
+            })
+            ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch, $accountIds) {
+                $branchId = trim((string) ($activeBranch['id'] ?? ''));
+                $branchName = trim((string) ($activeBranch['name'] ?? ''));
+
+                // No branch resolved → show all accounts (same as transaction query).
+                if ($branchId === '' && $branchName === '') {
+                    return;
+                }
+
+                return $query->where(function ($sub) use ($branchId, $branchName, $accountIds) {
+                    if ($branchId !== '') {
+                        $sub->where('branch_id', $branchId);
+                    }
+                    if ($branchName !== '') {
+                        $sub->orWhere('branch_name', $branchName);
+                    }
+                    // Include global/system accounts (branch_id IS NULL or '') ONLY when
+                    // they already appear in the branch-scoped transaction totals.
+                    // This prevents all un-branched COA accounts from bleeding into
+                    // every branch's balance sheet with identical opening balances.
+                    if (!empty($accountIds)) {
+                        $sub->orWhere(function ($inner) use ($accountIds) {
+                            $inner->where(function ($b) {
+                                $b->whereNull('branch_id')->orWhere('branch_id', '');
+                            })->whereIn('id', $accountIds);
+                        });
+                    }
+                });
             });
 
         $this->applyAccountScope($accountsQuery, $request);
@@ -726,8 +723,10 @@ class BalanceSheetController extends Controller
 
         $accounts->transform(function ($account) use ($txnTotals) {
             $totals = $txnTotals->get($account->id);
-            $account->total_debit = (float) ($totals->total_debit ?? 0);
+            $account->total_debit  = (float) ($totals->total_debit  ?? 0);
             $account->total_credit = (float) ($totals->total_credit ?? 0);
+            // Flag soft-deleted accounts so the UI can render a visual indicator.
+            $account->_is_deleted  = !is_null($account->deleted_at ?? null);
             return $account;
         });
 
@@ -778,7 +777,6 @@ class BalanceSheetController extends Controller
         $totalEquity = $presentation['totalEquity'];
         $statementDifference = $presentation['statementDifference'];
         $isBalanced = $presentation['isBalanced'];
-        $balanceTolerance = $presentation['balanceTolerance'];
         $reconciliationReserveDiagnostic = $presentation['reconciliationReserveDiagnostic'];
         $reconciliationReserveThreshold = $presentation['reconciliationReserveThreshold'];
         $reconciliationReserveNeedsReview = $presentation['reconciliationReserveNeedsReview'];
@@ -840,7 +838,10 @@ class BalanceSheetController extends Controller
 
         // ── Opening-equity gap ──────────────────────────────────────────────────────
         // In a balanced ledger, Assets must equal Liabilities + RealEquity + RetainedEarnings.
-        // Any positive remainder is owner's capital / opening equity that was never posted.
+        //  > 0 : Assets exceed Liab+Equity → missing owner's capital entry
+        //  < 0 : Liab+Equity exceed Assets → some asset accounts are off-statement
+        //         (e.g. soft-deleted accounts whose transactions still flow through ledger)
+        //  = 0 : balanced ✓
         $realEquityPosted = round(
             $equityCapital->sum('balance')
             + $equityRetained->sum('balance')
@@ -851,6 +852,16 @@ class BalanceSheetController extends Controller
             $totalAssets - $totalLiabilities - $realEquityPosted - $retainedEarnings,
             2
         );
+
+        // ── Orphaned-transaction gap ────────────────────────────────────────────────
+        // Transactions whose account_id refers to a NULL account (data integrity issue)
+        // can't be resolved by including soft-deleted accounts. Compute residual gap
+        // between the ledger total and the sum of all fetched account totals.
+        $classifiedLedgerDr  = round($accounts->sum('total_debit'),  2);
+        $classifiedLedgerCr  = round($accounts->sum('total_credit'), 2);
+        $orphanedLedgerDr    = round($ledgerDebits  - $classifiedLedgerDr, 2);
+        $orphanedLedgerCr    = round($ledgerCredits - $classifiedLedgerCr, 2);
+        $orphanedLedgerGap   = round($orphanedLedgerDr - $orphanedLedgerCr, 2);
         // ──────────────────────────────────────────────────────────────────────────────
 
         // ── Unassigned-branch notice (All Branches view only) ─────────────────
@@ -895,10 +906,6 @@ class BalanceSheetController extends Controller
         $reserveSuspenseDiagnostics = $this->reserveAndSuspenseDiagnostics($request, $reportDate, $activeBranch);
         $openingBalanceValidation = $this->openingBalanceValidationReport($request, $reportDate, $activeBranch);
         $openingBalanceAudit = $this->branchOpeningBalanceAudit($request, $reportDate, $activeBranch);
-        $role = strtolower(trim((string) ($request->user()?->role ?? '')));
-        $isAdminDiagnosticMode = in_array($role, ['super_admin', 'superadmin', 'administrator', 'admin'], true)
-            && $request->boolean('debug');
-        $showBalanceDiagnostics = !$isBalanced || $isAdminDiagnosticMode;
 
         // 7. Map variables to match your Blade @foreach calls exactly
         // Load branch list for the branch selector in the filter bar
@@ -945,11 +952,7 @@ class BalanceSheetController extends Controller
             'retainedEarningsLines',
             'totalCurrentLiabilities',
             'totalLongTermLiabilities',
-            'statementDifference',
             'isBalanced',
-            'balanceTolerance',
-            'showBalanceDiagnostics',
-            'isAdminDiagnosticMode',
             'reconciliationReserveDiagnostic',
             'reconciliationReserveThreshold',
             'reconciliationReserveNeedsReview',
@@ -960,6 +963,9 @@ class BalanceSheetController extends Controller
             'unplacedAccounts',
             'fullLedgerBreakdown',
             'openingEquityGap',
+            'orphanedLedgerDr',
+            'orphanedLedgerCr',
+            'orphanedLedgerGap',
             'openingBalanceAudit'
         ));
     }
@@ -1210,6 +1216,23 @@ class BalanceSheetController extends Controller
                 } else {
                     $q->whereRaw('1 = 0');
                 }
+            })
+            ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($q) use ($activeBranch, $accountIds) {
+                $branchId   = trim((string) ($activeBranch['id']   ?? ''));
+                $branchName = trim((string) ($activeBranch['name'] ?? ''));
+                if ($branchId === '' && $branchName === '') return;
+                return $q->where(function ($sub) use ($branchId, $branchName, $accountIds) {
+                    if ($branchId   !== '') $sub->where('branch_id',   $branchId);
+                    if ($branchName !== '') $sub->orWhere('branch_name', $branchName);
+                    // Global accounts (no branch) only if they have branch-tagged transactions.
+                    if (!empty($accountIds)) {
+                        $sub->orWhere(function ($inner) use ($accountIds) {
+                            $inner->where(function ($b) {
+                                $b->whereNull('branch_id')->orWhere('branch_id', '');
+                            })->whereIn('id', $accountIds);
+                        });
+                    }
+                });
             });
         $this->applyAccountScope($accountsQuery, $request);
         $accounts = $accountsQuery->get();
@@ -1280,9 +1303,6 @@ class BalanceSheetController extends Controller
             'totalLongTermLiabilities' => 0.0,
             'totalLiabilities'   => 0.0,
             'totalEquity'        => 0.0,
-            'statementDifference' => 0.0,
-            'isBalanced'         => true,
-            'balanceTolerance'   => self::BALANCE_TOLERANCE,
             'reconciliationReserveDiagnostic' => 0.0,
             'reconciliationReserveNeedsReview' => false,
         ];
@@ -1420,6 +1440,24 @@ class BalanceSheetController extends Controller
             $query->where('company_id', $companyId);
         } elseif ($userId > 0 && Schema::hasColumn('accounts', 'user_id')) {
             $query->where('user_id', $userId);
+        }
+
+        $activeBranch = $this->resolveActiveBranch($request);
+        if (($activeBranch['scope'] ?? 'branch') === 'all') {
+            $query->where(function ($branchScoped) {
+                if (Schema::hasColumn('accounts', 'branch_id')) {
+                    $branchScoped->whereNotNull('branch_id')
+                        ->where('branch_id', '<>', '');
+                }
+
+                if (Schema::hasColumn('accounts', 'branch_name')) {
+                    $method = Schema::hasColumn('accounts', 'branch_id') ? 'orWhere' : 'where';
+                    $branchScoped->{$method}(function ($named) {
+                        $named->whereNotNull('branch_name')
+                            ->where('branch_name', '<>', '');
+                    });
+                }
+            });
         }
 
         return $query;

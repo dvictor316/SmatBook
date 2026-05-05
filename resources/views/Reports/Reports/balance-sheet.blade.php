@@ -82,11 +82,8 @@ $visTotalCurrentEarnings = $retainedEarningsLines->sum(fn ($a) => (float) ($a->b
 $visTotalEquity         = $visTotalEquityCapital + $visTotalEquityRetained + $visTotalEquityReserves + $visTotalCurrentEarnings;
 
 $visTotalLiabEquity     = $visTotalLiabilities + $visTotalEquity;
-$equationDiff           = round((float) ($statementDifference ?? ($visTotalAssets - $visTotalLiabEquity)), 2);
-$balanceTolerance       = (float) ($balanceTolerance ?? 0.005);
-$isBalanced             = abs($equationDiff) <= $balanceTolerance;
-$showBalanceDiagnostics = (bool) ($showBalanceDiagnostics ?? !$isBalanced);
-$showInlineDiagnostics  = $showBalanceDiagnostics || (bool) ($isAdminDiagnosticMode ?? false);
+$equationDiff           = round($visTotalAssets - $visTotalLiabEquity, 2);
+$isBalanced             = abs($equationDiff) < 0.01;
 
 /* ─────────────────────────────────────────────────────────────────
  *  COMPARISON PERIOD DATA
@@ -648,7 +645,7 @@ $changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
     <div class="bs-page">
 
         {{-- Unassigned-branch notice: excluded from the all-branches statement --}}
-        @if($showInlineDiagnostics && $isAllBranches && ($unassignedTxnCount ?? 0) > 0)
+        @if($isAllBranches && ($unassignedTxnCount ?? 0) > 0)
         <div class="no-print" style="
             background:#fffbeb;
             border:1px solid #fcd34d;
@@ -1090,7 +1087,7 @@ $changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
                     </svg>
                     Statement in balance &mdash; Assets = Liabilities + Equity
                 </div>
-            @elseif($showInlineDiagnostics)
+            @else
                 <div class="bs-imbalance">
                     <strong>&#9888;&nbsp; Statement Review Required</strong>
                     The accounting equation is currently out of balance. Review the breakdown below and expand the panels to investigate.
@@ -1137,7 +1134,7 @@ $changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
                 </div>
             @endif
 
-            @if($showInlineDiagnostics && abs((float) ($reconciliationReserveDiagnostic ?? 0)) >= $balanceTolerance)
+            @if(abs((float) ($reconciliationReserveDiagnostic ?? 0)) >= 0.01)
                 <div class="bs-hidden-debug">
                     <strong>Diagnostic Reconciliation Gap</strong><br>
                     A temporary balancing amount of {{ $fmt((float) ($reconciliationReserveDiagnostic ?? 0)) }}
@@ -1159,7 +1156,7 @@ $changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
                 $reserveSuspenseDiagnostics = collect($reserveSuspenseDiagnostics ?? []);
             @endphp
 
-            @if($showInlineDiagnostics && (
+            @if(
                 abs((float) ($openingBalanceValidation['unposted_customer_opening_balance'] ?? 0)) >= 0.01 ||
                 abs((float) ($openingBalanceValidation['unposted_supplier_opening_balance'] ?? 0)) >= 0.01 ||
                 abs((float) ($openingBalanceValidation['legacy_inventory_bridge'] ?? 0)) >= 0.01 ||
@@ -1168,7 +1165,7 @@ $changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
                 $imbalancedCustomerRefs->isNotEmpty() ||
                 $imbalancedSupplierRefs->isNotEmpty() ||
                 $reserveSuspenseDiagnostics->isNotEmpty()
-            ))
+            )
                 <details class="bs-hidden-debug no-print" style="margin-top:16px;">
                     <summary>Validation & Diagnostics</summary>
                     <table>
@@ -1263,7 +1260,7 @@ $changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
             @endif
 
             {{-- Detailed imbalance entries (auto-expanded when unbalanced) --}}
-            @if($showInlineDiagnostics && isset($imbalancedEntries) && $imbalancedEntries->isNotEmpty() && !$isBalanced)
+            @if(isset($imbalancedEntries) && $imbalancedEntries->isNotEmpty() && !$isBalanced)
                 <details style="margin-top:16px;" open>
                     <summary style="cursor:pointer;font-size:0.80rem;color:#64748b;font-weight:600;">
                         &#9888; Imbalanced Journal Entries ({{ $imbalancedEntries->count() }}) — fix these first
@@ -1300,7 +1297,7 @@ $changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
             @endif
 
             {{-- Unclassified / orphaned accounts panel --}}
-            @if($showInlineDiagnostics && isset($unplacedAccounts) && $unplacedAccounts->isNotEmpty())
+            @if(isset($unplacedAccounts) && $unplacedAccounts->isNotEmpty())
                 <details style="margin-top:16px;" {{ !$isBalanced ? 'open' : '' }}>
                     <summary style="cursor:pointer;font-size:0.80rem;color:#92400e;font-weight:600;">
                         &#9888; Unclassified Accounts ({{ $unplacedAccounts->count() }}) — not appearing on the balance sheet
@@ -1410,7 +1407,7 @@ $changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
             @endif
 
             {{-- ── Full account classification diagnostic ────────────────────────────── --}}
-            @if($showInlineDiagnostics && !empty($fullLedgerBreakdown) && $fullLedgerBreakdown->isNotEmpty())
+            @if(!empty($fullLedgerBreakdown) && $fullLedgerBreakdown->isNotEmpty())
             @php
                 // Equity gap: amount of missing opening equity (data gap, not a code bug).
                 // Positive = assets exceed liabilities + all recorded equity + RE.
@@ -1466,7 +1463,12 @@ $changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
                                 @endif
                                 <tr style="{{ $daRowBg }}{{ $daIsUnknown ? 'border-left:3px solid #dc2626;' : '' }}">
                                     <td style="padding:3px 7px;color:#9ca3af;">{{ $diagIdx }}</td>
-                                    <td style="padding:3px 7px;font-weight:600;">{{ $da->name ?? '—' }}</td>
+                                    <td style="padding:3px 7px;font-weight:600;">
+                                        {{ $da->name ?? '—' }}
+                                        @if(!empty($da->_is_deleted))
+                                            <span style="background:#fca5a5;color:#7f1d1d;border-radius:9px;padding:0 5px;font-size:0.68rem;font-weight:700;margin-left:4px;">DELETED</span>
+                                        @endif
+                                    </td>
                                     <td style="padding:3px 7px;color:{{ $daIsUnknown ? '#dc2626' : '#374151' }};font-family:monospace;font-size:0.75rem;">
                                         {{ $da->type ?? '(none)' }}
                                     </td>
@@ -1492,8 +1494,11 @@ $changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
 
                 {{-- Equity gap analysis ------------------------------------------------- --}}
                 @if(abs($diagEquityGap) >= 1)
-                <div style="margin-top:12px;padding:12px 16px;background:#fef3c7;border-left:4px solid #d97706;border-radius:4px;font-size:0.81rem;line-height:1.6;">
-                    <strong style="color:#92400e;font-size:0.86rem;">&#9888; Opening Equity Gap Detected: {{ $fmt(abs($diagEquityGap)) }}</strong>
+                @php $diagGapPositive = $diagEquityGap > 0; @endphp
+                <div style="margin-top:12px;padding:12px 16px;background:{{ $diagGapPositive ? '#fef3c7' : '#fef9f0' }};border-left:4px solid {{ $diagGapPositive ? '#d97706' : '#ea580c' }};border-radius:4px;font-size:0.81rem;line-height:1.6;">
+                    <strong style="color:#92400e;font-size:0.86rem;">
+                        &#9888; {{ $diagGapPositive ? 'Opening Equity Gap Detected' : 'Statement Gap Detected (Liab+Equity exceeds Assets)' }}: {{ $fmt(abs($diagEquityGap)) }}
+                    </strong>
                     <table style="margin-top:8px;border-collapse:collapse;width:100%;max-width:520px;font-size:0.79rem;">
                         <tr>
                             <td style="padding:2px 6px;color:#78350f;">Total Assets</td>
@@ -1512,10 +1517,13 @@ $changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
                             <td style="padding:2px 6px;text-align:right;font-variant-numeric:tabular-nums;font-weight:700;">({{ $fmt($visTotalCurrentEarnings) }})</td>
                         </tr>
                         <tr style="border-top:2px solid #d97706;">
-                            <td style="padding:4px 6px;color:#92400e;font-weight:700;">Opening Equity Gap (unrecorded capital)</td>
+                            <td style="padding:4px 6px;color:#92400e;font-weight:700;">
+                                {{ $diagGapPositive ? 'Opening Equity Gap (unrecorded capital)' : 'Statement Gap (Liab+Equity − Assets)' }}
+                            </td>
                             <td style="padding:4px 6px;text-align:right;font-variant-numeric:tabular-nums;font-weight:700;color:#b45309;">{{ $fmt(abs($diagEquityGap)) }}</td>
                         </tr>
                     </table>
+                    @if($diagGapPositive)
                     <p style="margin:8px 0 4px;color:#78350f;">
                         The ledger is <strong>balanced</strong> (debits = credits), so no journal entries are missing or duplicated.
                         However, <strong>{{ $fmt(abs($diagEquityGap)) }}</strong> of assets were funded without a corresponding
@@ -1526,6 +1534,25 @@ $changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
                         <li>Post a journal entry: <code style="background:#fde68a;padding:1px 4px;border-radius:3px;">Dr Opening Balance Clearing &nbsp;{{ $fmt(abs($diagEquityGap)) }}&nbsp;/&nbsp;Cr Owner's Capital &nbsp;{{ $fmt(abs($diagEquityGap)) }}</code></li>
                         <li>After posting, refresh this report — the gap should be zero.</li>
                     </ul>
+                    @else
+                    <p style="margin:8px 0 4px;color:#78350f;">
+                        The ledger is <strong>balanced</strong> (debits = credits), so no transactions are missing.
+                        The gap of <strong>{{ $fmt(abs($diagEquityGap)) }}</strong> means Liabilities + Equity exceed Assets —
+                        typically caused by <strong>asset-type accounts that were soft-deleted</strong> after posting.
+                        Their transactions still flow through the ledger total but the account no longer appears on the statement.
+                    </p>
+                    <ul style="margin:4px 0 0 18px;color:#78350f;padding:0;">
+                        <li>Look for any accounts marked <span style="background:#fca5a5;color:#7f1d1d;border-radius:9px;padding:0 5px;font-size:0.75rem;font-weight:700;">DELETED</span> in the Full Account Classification above — those are the accounts hiding <strong>{{ $fmt(abs($diagEquityGap)) }}</strong> of assets.</li>
+                        <li>Restore the deleted account (un-delete it) to make it reappear on the balance sheet.</li>
+                        <li>Or re-post those transactions against the correct active account.</li>
+                        @if(isset($orphanedLedgerGap) && abs($orphanedLedgerGap) >= 1)
+                        <li style="color:#b91c1c;">
+                            &#9888; <strong>{{ $fmt(abs($orphanedLedgerGap)) }}</strong> of the gap is from transactions with a <em>NULL account_id</em>
+                            (data integrity issue — those transactions can't be shown on any statement). Contact support or check your import data.
+                        </li>
+                        @endif
+                    </ul>
+                    @endif
                 </div>
                 @endif
             </details>
@@ -1534,7 +1561,7 @@ $changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
             {{-- ══════════════════════════════════════════════════════════════════════ --}}
             {{-- Opening Balance & Equity Migration Audit                               --}}
             {{-- ══════════════════════════════════════════════════════════════════════ --}}
-            @if($showInlineDiagnostics && !empty($openingBalanceAudit) && ($openingBalanceAudit['available'] ?? false))
+            @if(!empty($openingBalanceAudit) && ($openingBalanceAudit['available'] ?? false))
             @php
                 $oba           = $openingBalanceAudit;
                 $obaHasData    = $oba['has_opening_journals'] ?? false;
