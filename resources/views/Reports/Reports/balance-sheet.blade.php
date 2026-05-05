@@ -959,11 +959,11 @@ $changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
                                 @endif
                             </tr>
                         @endforeach
-                        @php $cmpCapTotal = $cmpEquityCapitalVis->sum(fn ($a) => (float)($a->balance ?? 0)); @endphp
                         <tr class="bs-sub-total">
                             <td>Total Capital</td>
                             <td class="bs-amt {{ $visTotalEquityCapital < 0 ? 'bs-amt-neg' : '' }}">{{ $fmt($visTotalEquityCapital) }}</td>
                             @if($hasCmp)
+                                @php $cmpCapTotal = $cmpEquityCapitalVis->sum(fn ($a) => (float)($a->balance ?? 0)); @endphp
                                 <td class="bs-cmp-amt {{ $cmpCapTotal < 0 ? 'bs-cmp-amt-neg' : '' }}">{{ $fmt($cmpCapTotal) }}</td>
                                 {!! $changeCell($visTotalEquityCapital, $cmpCapTotal) !!}
                             @endif
@@ -1006,15 +1006,13 @@ $changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
                                 @endif
                             </tr>
                         @endforeach
-                        @php
-                            $visTotalRE  = $visTotalEquityRetained + $visTotalCurrentEarnings;
-                            $cmpRETotal  = $cmpEquityRetainedVis->sum(fn ($a) => (float)($a->balance ?? 0))
-                                         + $cmpRetainedEarningsVis->sum(fn ($a) => (float)($a->balance ?? 0));
-                        @endphp
+                        @php $visTotalRE = $visTotalEquityRetained + $visTotalCurrentEarnings; @endphp
                         <tr class="bs-sub-total">
                             <td>Total Retained Earnings</td>
                             <td class="bs-amt {{ $visTotalRE < 0 ? 'bs-amt-neg' : '' }}">{{ $fmt($visTotalRE) }}</td>
                             @if($hasCmp)
+                                @php $cmpRETotal = $cmpEquityRetainedVis->sum(fn ($a) => (float)($a->balance ?? 0))
+                                                + $cmpRetainedEarningsVis->sum(fn ($a) => (float)($a->balance ?? 0)); @endphp
                                 <td class="bs-cmp-amt {{ $cmpRETotal < 0 ? 'bs-cmp-amt-neg' : '' }}">{{ $fmt($cmpRETotal) }}</td>
                                 {!! $changeCell($visTotalRE, $cmpRETotal) !!}
                             @endif
@@ -1039,11 +1037,11 @@ $changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
                                 @endif
                             </tr>
                         @endforeach
-                        @php $cmpResTotal = $cmpEquityReserveVis->sum(fn ($a) => (float)($a->balance ?? 0)); @endphp
                         <tr class="bs-sub-total">
                             <td>Total Reserves</td>
                             <td class="bs-amt {{ $visTotalEquityReserves < 0 ? 'bs-amt-neg' : '' }}">{{ $fmt($visTotalEquityReserves) }}</td>
                             @if($hasCmp)
+                                @php $cmpResTotal = $cmpEquityReserveVis->sum(fn ($a) => (float)($a->balance ?? 0)); @endphp
                                 <td class="bs-cmp-amt {{ $cmpResTotal < 0 ? 'bs-cmp-amt-neg' : '' }}">{{ $fmt($cmpResTotal) }}</td>
                                 {!! $changeCell($visTotalEquityReserves, $cmpResTotal) !!}
                             @endif
