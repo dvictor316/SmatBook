@@ -270,14 +270,18 @@ private function applyBranchScope($query, string $table = 'purchases')
         if ($search !== '') {
             $purchaseQuery->where(function ($query) use ($search) {
                 $query->where('purchase_no', 'like', '%' . $search . '%')
-                    ->orWhereHas('supplier', fn ($supplierQuery) => $supplierQuery->where('name', 'like', '%' . $search . '%'))
-                    ->orWhereHas('vendor', fn ($vendorQuery) => $vendorQuery->where('name', 'like', '%' . $search . '%'))
-                    ->orWhereHas('items.product', function ($productQuery) use ($search) {
-                        $productQuery->where('name', 'like', '%' . $search . '%');
-                        if (Schema::hasColumn('products', 'sku')) {
-                            $productQuery->orWhere('sku', 'like', '%' . $search . '%');
-                        }
-                    });
+                    ->orWhereHas('supplier', fn ($supplierQuery) => $supplierQuery->where('name', 'like', '%' . $search . '%'));
+
+                if (Schema::hasColumn('purchases', 'vendor_id')) {
+                    $query->orWhereHas('vendor', fn ($vendorQuery) => $vendorQuery->where('name', 'like', '%' . $search . '%'));
+                }
+
+                $query->orWhereHas('items.product', function ($productQuery) use ($search) {
+                    $productQuery->where('name', 'like', '%' . $search . '%');
+                    if (Schema::hasColumn('products', 'sku')) {
+                        $productQuery->orWhere('sku', 'like', '%' . $search . '%');
+                    }
+                });
             });
         }
         if ($dateFrom !== '') {
