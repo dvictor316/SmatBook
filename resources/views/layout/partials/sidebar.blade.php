@@ -21,7 +21,13 @@
 
     // PRIORITY 3: Determine plan for regular tenants
     $plan = 'basic'; // default
-    $shouldResolveBusinessPlan = !$isDeploymentManager && (!$isSuperAdmin || $workspaceContext === 'business');
+
+    // Super admins always get enterprise sidebar — no subscription lookup needed
+    if ($isSuperAdmin) {
+        $plan = 'enterprise';
+    }
+
+    $shouldResolveBusinessPlan = !$isDeploymentManager && !$isSuperAdmin;
 
     if ($shouldResolveBusinessPlan) {
         $companyId = $user->company_id ?? optional($user->company)->id;
