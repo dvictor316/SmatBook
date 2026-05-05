@@ -18,6 +18,7 @@ use App\Http\Controllers\{
 };
 use App\Http\Controllers\SuperAdmin\DeploymentManagerController;
 use App\Http\Controllers\FinancialResetController;
+use App\Http\Controllers\DatabaseResetController;
 
 /*
 |--------------------------------------------------------------------------
@@ -538,6 +539,10 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('superadmin')->name('sup
     // Financial Reset (super-admin only — wipes all transactional data for the company)
     Route::get('/financial-reset',  [FinancialResetController::class, 'index'])  ->name('financial.reset');
     Route::post('/financial-reset', [FinancialResetController::class, 'execute'])->name('financial.reset.execute');
+
+    // Full Database Reset (super-admin only — wipes ALL business data, preserves super admin)
+    Route::get('/database-reset',  [DatabaseResetController::class, 'index'])  ->name('database.reset');
+    Route::post('/database-reset', [DatabaseResetController::class, 'execute'])->name('database.reset.execute');
 });
 
 // TEMP: Exit impersonation and restore superadmin session
