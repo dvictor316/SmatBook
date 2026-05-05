@@ -115,11 +115,53 @@ class BalanceSheetController extends Controller
         }
 
         $map = [
-            'asset' => ['asset', 'assets'],
-            'liability' => ['liability', 'liabilities', 'payable', 'payables', 'current liability', 'long term liability', 'long-term liability'],
-            'equity' => ['equity', 'capital', 'owner equity', 'owners equity', "owner's equity", 'share capital', 'shareholder equity'],
-            'revenue' => ['revenue', 'income', 'sales', 'turnover'],
-            'expense' => ['expense', 'expenses', 'cost', 'cogs', 'cost of sales', 'cost of goods sold'],
+            'asset' => [
+                'asset', 'assets',
+                'bank', 'bank account', 'bank accounts', 'cash', 'cash and bank', 'cash and cash equivalent',
+                'cash and cash equivalents', 'petty cash', 'wallet',
+                'receivable', 'receivables', 'accounts receivable', 'trade receivable', 'trade receivables',
+                'debtor', 'debtors', 'trade debtor', 'trade debtors',
+                'inventory', 'inventories', 'stock', 'stocks',
+                'prepaid', 'prepaid expense', 'prepaid expenses', 'prepayment', 'prepayments',
+                'fixed asset', 'fixed assets', 'non-current asset', 'non-current assets',
+                'property plant and equipment', 'ppe', 'intangible asset', 'intangible assets',
+                'investment', 'investments', 'long-term investment',
+                'other asset', 'other assets', 'sundry debtor', 'sundry debtors',
+            ],
+            'liability' => [
+                'liability', 'liabilities',
+                'payable', 'payables', 'accounts payable', 'trade payable', 'trade payables',
+                'creditor', 'creditors', 'trade creditor', 'trade creditors', 'sundry creditor', 'sundry creditors',
+                'current liability', 'current liabilities',
+                'long term liability', 'long-term liability', 'long term liabilities', 'long-term liabilities',
+                'loan', 'loans', 'loan payable', 'bank loan', 'overdraft', 'bank overdraft',
+                'borrowing', 'borrowings', 'term loan', 'mortgage',
+                'tax', 'tax payable', 'vat', 'vat payable', 'paye', 'withholding tax',
+                'accrual', 'accruals', 'accrued expense', 'accrued expenses', 'accrued liability',
+                'deferred revenue', 'deferred income', 'unearned revenue',
+                'customer deposit', 'customer deposits', 'advance from customer',
+            ],
+            'equity' => [
+                'equity', 'equities',
+                'capital', 'share capital', 'paid-up capital', 'paid up capital',
+                'owner equity', 'owners equity', "owner's equity", 'shareholders equity', 'shareholder equity',
+                'retained earnings', 'retained profit', 'retained profits', 'accumulated profit',
+                'profit', 'net profit', 'profit and loss', 'p&l', 'profit & loss',
+                'reserve', 'reserves', 'general reserve', 'statutory reserve', 'revaluation reserve',
+                'dividend', 'dividends', 'drawings', 'proprietors fund', "proprietor's fund",
+                'fund', 'funds',
+            ],
+            'revenue' => [
+                'revenue', 'revenues', 'income', 'sales', 'turnover',
+                'other income', 'interest income', 'fee income', 'service income',
+                'rental income', 'commission income', 'grant income',
+            ],
+            'expense' => [
+                'expense', 'expenses', 'cost', 'costs',
+                'cogs', 'cost of sales', 'cost of goods sold', 'direct cost', 'direct costs',
+                'operating expense', 'operating expenses', 'administration', 'administrative expense',
+                'selling expense', 'selling expenses', 'overhead', 'overheads',
+            ],
         ];
 
         foreach ($map as $key => $aliases) {
@@ -430,6 +472,25 @@ class BalanceSheetController extends Controller
             ),
         ]);
 
+        // ── Detect orphaned accounts ─────────────────────────────────────────────
+        // Accounts that have ledger activity but whose type is not recognised as
+        // asset / liability / equity / revenue / expense.  Revenue and expense are
+        // intentionally excluded from the face of the statement (they roll up into
+        // Current Year Earnings), so only flag the remaining "other" accounts.
+        $placedIds = $assetAccounts->pluck('id')
+            ->concat($liabilityAccounts->pluck('id'))
+            ->concat($equityAccounts->pluck('id'))
+            ->filter()
+            ->unique();
+        $unplacedAccounts = $accounts->filter(function ($a) use ($placedIds) {
+            $type = $this->normalizeAccountType($a->type ?? null);
+            if (in_array($type, ['revenue', 'expense'], true)) {
+                return false;   // intentionally off the face of the statement
+            }
+            return !$placedIds->contains($a->id);
+        })->sortByDesc(fn ($a) => abs((float) ($a->balance ?? 0)))->values();
+        // ────────────────────────────────────────────────────────────────────────
+
         [
             'currentAssets' => $currentAssets,
             'fixedAssets' => $fixedAssets,
@@ -490,6 +551,7 @@ class BalanceSheetController extends Controller
             'reconciliationReserveDiagnostic' => $statementDifference,
             'reconciliationReserveThreshold' => $reviewThreshold,
             'reconciliationReserveNeedsReview' => abs($statementDifference) >= $reviewThreshold,
+            'unplacedAccounts' => $unplacedAccounts,
         ];
     }
 
@@ -702,6 +764,7 @@ class BalanceSheetController extends Controller
         $reconciliationReserveDiagnostic = $presentation['reconciliationReserveDiagnostic'];
         $reconciliationReserveThreshold = $presentation['reconciliationReserveThreshold'];
         $reconciliationReserveNeedsReview = $presentation['reconciliationReserveNeedsReview'];
+        $unplacedAccounts = $presentation['unplacedAccounts'];
 
         // ── Unassigned-branch notice (All Branches view only) ─────────────────
         // Transactions entered before branches were configured have branch_id = NULL.
@@ -797,7 +860,8 @@ class BalanceSheetController extends Controller
             'reserveSuspenseDiagnostics',
             'openingBalanceValidation',
             'geoCurrency',
-            'geoCurrencyLocale'
+            'geoCurrencyLocale',
+            'unplacedAccounts'
         ));
     }
 

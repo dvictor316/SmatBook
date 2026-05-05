@@ -1090,12 +1090,47 @@ $changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
             @else
                 <div class="bs-imbalance">
                     <strong>&#9888;&nbsp; Statement Review Required</strong>
-                    The accounting equation is currently out of balance. Review the source journals, opening balances, and branch assignments below.
+                    The accounting equation is currently out of balance. Review the breakdown below and expand the panels to investigate.
                     <table class="bs-recon-rows">
                         <tr><td>Total Assets</td><td>{{ $fmt($visTotalAssets) }}</td></tr>
                         <tr><td>Total Liabilities + Equity</td><td>{{ $fmt($visTotalLiabEquity) }}</td></tr>
-                        <tr><td><strong>Difference</strong></td><td><strong>{{ $fmt(abs($equationDiff)) }}</strong></td></tr>
+                        <tr><td><strong>Statement Gap</strong></td><td><strong style="color:#dc2626;">{{ $fmt(abs($equationDiff)) }}</strong></td></tr>
                     </table>
+                    @php
+                        $ldDiff = (float) ($ledgerDifference ?? 0);
+                        $ldDr   = (float) ($ledgerDebits   ?? 0);
+                        $ldCr   = (float) ($ledgerCredits  ?? 0);
+                    @endphp
+                    <table class="bs-recon-rows" style="margin-top:8px;">
+                        <tr>
+                            <td colspan="2" style="font-weight:700;color:#374151;padding-bottom:2px;">Ledger Double-Entry Check</td>
+                        </tr>
+                        <tr><td>Total Debits Posted</td><td>{{ $fmt($ldDr) }}</td></tr>
+                        <tr><td>Total Credits Posted</td><td>{{ $fmt($ldCr) }}</td></tr>
+                        <tr>
+                            <td><strong>Ledger Imbalance</strong></td>
+                            <td>
+                                @if(abs($ldDiff) < 0.01)
+                                    <span style="color:#16a34a;font-weight:700;">Balanced ✓</span>
+                                @else
+                                    <strong style="color:#dc2626;">{{ $fmt(abs($ldDiff)) }}
+                                        ({{ $ldDiff > 0 ? 'excess Debits' : 'excess Credits' }})</strong>
+                                @endif
+                            </td>
+                        </tr>
+                    </table>
+                    @if(abs($ldDiff) < 0.01 && abs($equationDiff) >= 0.01)
+                        <div style="margin-top:8px;font-size:0.82rem;color:#92400e;background:#fef3c7;padding:6px 10px;border-radius:4px;">
+                            <strong>Tip:</strong> Your journal entries are balanced (Debits = Credits), but the statement still disagrees.
+                            This usually means some accounts have an unrecognised <em>type</em> and are missing from the face of the report.
+                            Expand <em>Unclassified Accounts</em> below to see which accounts are affected.
+                        </div>
+                    @elseif(abs($ldDiff) >= 0.01)
+                        <div style="margin-top:8px;font-size:0.82rem;color:#7f1d1d;background:#fee2e2;padding:6px 10px;border-radius:4px;">
+                            <strong>Tip:</strong> Your journal entries are themselves out of balance by {{ $fmt(abs($ldDiff)) }}.
+                            Expand <em>Imbalanced Journal Entries</em> below and fix those entries first.
+                        </div>
+                    @endif
                 </div>
             @endif
 
@@ -1224,12 +1259,16 @@ $changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
                 </details>
             @endif
 
-            {{-- Detailed imbalance entries (debug panel) --}}
+            {{-- Detailed imbalance entries (auto-expanded when unbalanced) --}}
             @if(isset($imbalancedEntries) && $imbalancedEntries->isNotEmpty() && !$isBalanced)
-                <details style="margin-top:16px;">
+                <details style="margin-top:16px;" open>
                     <summary style="cursor:pointer;font-size:0.80rem;color:#64748b;font-weight:600;">
-                        Show Imbalanced Journal Entries ({{ $imbalancedEntries->count() }})
+                        &#9888; Imbalanced Journal Entries ({{ $imbalancedEntries->count() }}) — fix these first
                     </summary>
+                    <p style="font-size:0.79rem;color:#64748b;margin:6px 0 8px;">
+                        Each row below shows a transaction group where Debits ≠ Credits.
+                        Navigate to the original transaction and add the missing leg to correct it.
+                    </p>
                     <table style="width:100%;margin-top:8px;font-size:0.79rem;border-collapse:collapse;">
                         <thead>
                             <tr style="background:#f1f5f9;color:#475569;">
@@ -1252,6 +1291,73 @@ $changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
                                     </td>
                                 </tr>
                             @endforeach
+                        </tbody>
+                    </table>
+                </details>
+            @endif
+
+            {{-- Unclassified / orphaned accounts panel --}}
+            @if(isset($unplacedAccounts) && $unplacedAccounts->isNotEmpty())
+                <details style="margin-top:16px;" {{ !$isBalanced ? 'open' : '' }}>
+                    <summary style="cursor:pointer;font-size:0.80rem;color:#92400e;font-weight:600;">
+                        &#9888; Unclassified Accounts ({{ $unplacedAccounts->count() }}) — not appearing on the balance sheet
+                    </summary>
+                    <p style="font-size:0.79rem;color:#64748b;margin:6px 0 8px;">
+                        These accounts have posted transactions but their <strong>Account Type</strong> is not
+                        recognised as Asset, Liability, or Equity, so they are excluded from the statement.
+                        Open each account in your Chart of Accounts and set the correct type.
+                    </p>
+                    <table style="width:100%;font-size:0.79rem;border-collapse:collapse;">
+                        <thead>
+                            <tr style="background:#fef9c3;color:#78350f;">
+                                <th style="padding:5px 8px;text-align:left;font-weight:700;">#</th>
+                                <th style="padding:5px 8px;text-align:left;font-weight:700;">Account Name</th>
+                                <th style="padding:5px 8px;text-align:left;font-weight:700;">Current Type</th>
+                                <th style="padding:5px 8px;text-align:left;font-weight:700;">Sub-type</th>
+                                <th style="padding:5px 8px;text-align:right;font-weight:700;">Balance</th>
+                                <th style="padding:5px 8px;text-align:left;font-weight:700;">Suggested Fix</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($unplacedAccounts as $uaIdx => $ua)
+                                @php
+                                    $uaType = strtolower(trim((string) ($ua->type ?? '')));
+                                    $uaName = strtolower(trim((string) ($ua->name ?? '')));
+                                    // Give a human hint based on the raw type/name
+                                    if (str_contains($uaType, 'income') || str_contains($uaType, 'revenue') || str_contains($uaName, 'income') || str_contains($uaName, 'revenue') || str_contains($uaName, 'sales')) {
+                                        $uaSuggest = 'Set type → Revenue / Income';
+                                    } elseif (str_contains($uaType, 'expense') || str_contains($uaType, 'cost') || str_contains($uaName, 'expense') || str_contains($uaName, 'cost')) {
+                                        $uaSuggest = 'Set type → Expense';
+                                    } elseif (str_contains($uaType, 'loan') || str_contains($uaType, 'payable') || str_contains($uaType, 'liability') || str_contains($uaName, 'loan') || str_contains($uaName, 'payable') || str_contains($uaName, 'liability')) {
+                                        $uaSuggest = 'Set type → Liability';
+                                    } elseif (str_contains($uaType, 'equity') || str_contains($uaType, 'capital') || str_contains($uaType, 'reserve') || str_contains($uaName, 'capital') || str_contains($uaName, 'equity')) {
+                                        $uaSuggest = 'Set type → Equity';
+                                    } elseif (str_contains($uaType, 'bank') || str_contains($uaType, 'cash') || str_contains($uaName, 'bank') || str_contains($uaName, 'cash')) {
+                                        $uaSuggest = 'Set type → Asset (Bank/Cash)';
+                                    } elseif (str_contains($uaType, 'receivable') || str_contains($uaType, 'debtor') || str_contains($uaName, 'receivable') || str_contains($uaName, 'debtor')) {
+                                        $uaSuggest = 'Set type → Asset (Receivable)';
+                                    } else {
+                                        $uaSuggest = 'Review and set correct type';
+                                    }
+                                @endphp
+                                <tr style="border-top:1px solid #e2e8f0;{{ abs((float)($ua->balance ?? 0)) > 100000 ? 'background:#fffbeb;' : '' }}">
+                                    <td style="padding:4px 8px;color:#9ca3af;">{{ $uaIdx + 1 }}</td>
+                                    <td style="padding:4px 8px;font-weight:600;">{{ $ua->name ?? '—' }}</td>
+                                    <td style="padding:4px 8px;color:#dc2626;font-weight:700;">{{ $ua->type ?? '(none)' }}</td>
+                                    <td style="padding:4px 8px;color:#6b7280;">{{ $ua->sub_type ?? '—' }}</td>
+                                    <td style="padding:4px 8px;text-align:right;font-variant-numeric:tabular-nums;font-weight:600;">
+                                        {{ $fmt((float) ($ua->balance ?? 0)) }}
+                                    </td>
+                                    <td style="padding:4px 8px;color:#047857;font-size:0.77rem;">{{ $uaSuggest }}</td>
+                                </tr>
+                            @endforeach
+                            <tr style="background:#fef9c3;font-weight:700;border-top:2px solid #d97706;">
+                                <td colspan="4" style="padding:5px 8px;">Total unclassified balance</td>
+                                <td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;">
+                                    {{ $fmt($unplacedAccounts->sum(fn($a) => (float)($a->balance ?? 0))) }}
+                                </td>
+                                <td></td>
+                            </tr>
                         </tbody>
                     </table>
                 </details>
