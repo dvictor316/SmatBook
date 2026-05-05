@@ -488,6 +488,13 @@ class BalanceSheetController extends Controller
                 return false;   // intentionally off the face of the statement
             }
             return !$placedIds->contains($a->id);
+        })->map(function ($a) {
+            // Tag WHY the account is unplaced so the view can give the right suggestion
+            $type = $this->normalizeAccountType($a->type ?? null);
+            $a->_unplaced_reason = ($type !== 'other' && $this->isDiagnosticReserveAccount($a))
+                ? 'system_reserve'   // type IS recognised, but excluded as a system/suspense account
+                : 'unrecognized_type'; // raw type string not in any normalisation alias list
+            return $a;
         })->sortByDesc(fn ($a) => abs((float) ($a->balance ?? 0)))->values();
         // ────────────────────────────────────────────────────────────────────────
 
@@ -637,7 +644,7 @@ class BalanceSheetController extends Controller
         $ledgerDifference = $ledgerDebits - $ledgerCredits;
 
         $imbalancedEntriesQuery = Transaction::query()
-            ->selectRaw('related_type, related_id, transaction_type, reference, SUM(debit) as total_debit, SUM(credit) as total_credit')
+            ->selectRaw('related_type, related_id, transaction_type, MIN(reference) as reference, SUM(debit) as total_debit, SUM(credit) as total_credit')
             ->where('transaction_date', '<=', $reportDate)
             ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
                 $branchId = trim((string) ($activeBranch['id'] ?? ''));
@@ -655,7 +662,7 @@ class BalanceSheetController extends Controller
         $this->applyTransactionScope($imbalancedEntriesQuery, $request);
 
         $imbalancedEntries = $imbalancedEntriesQuery
-            ->groupBy('related_type', 'related_id', 'transaction_type', 'reference')
+            ->groupBy('related_type', 'related_id', 'transaction_type')
             ->havingRaw('ABS(SUM(debit) - SUM(credit)) > 0.01')
             ->orderByRaw('ABS(SUM(debit) - SUM(credit)) DESC')
             ->limit(10)

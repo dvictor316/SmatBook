@@ -1321,45 +1321,88 @@ $changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
                         <tbody>
                             @foreach($unplacedAccounts as $uaIdx => $ua)
                                 @php
-                                    $uaType = strtolower(trim((string) ($ua->type ?? '')));
-                                    $uaName = strtolower(trim((string) ($ua->name ?? '')));
-                                    // Give a human hint based on the raw type/name
-                                    if (str_contains($uaType, 'income') || str_contains($uaType, 'revenue') || str_contains($uaName, 'income') || str_contains($uaName, 'revenue') || str_contains($uaName, 'sales')) {
-                                        $uaSuggest = 'Set type → Revenue / Income';
+                                    $uaType     = strtolower(trim((string) ($ua->type ?? '')));
+                                    $uaName     = strtolower(trim((string) ($ua->name ?? '')));
+                                    $uaReason   = $ua->_unplaced_reason ?? 'unrecognized_type';
+
+                                    if ($uaReason === 'system_reserve') {
+                                        // Account type IS recognised (e.g. Equity) but it is a
+                                        // system-generated reconciliation/suspense account excluded
+                                        // from the face of the statement by design.
+                                        $uaSuggest  = 'System reconciliation account — type is correct. Balance represents an outstanding bank-rec difference.';
+                                        $uaSugColor = '#6b7280';
+                                    } elseif (str_contains($uaType, 'income') || str_contains($uaType, 'revenue') || str_contains($uaName, 'income') || str_contains($uaName, 'revenue') || str_contains($uaName, 'sales')) {
+                                        $uaSuggest  = 'Set type → Revenue / Income';
+                                        $uaSugColor = '#047857';
                                     } elseif (str_contains($uaType, 'expense') || str_contains($uaType, 'cost') || str_contains($uaName, 'expense') || str_contains($uaName, 'cost')) {
-                                        $uaSuggest = 'Set type → Expense';
+                                        $uaSuggest  = 'Set type → Expense';
+                                        $uaSugColor = '#047857';
                                     } elseif (str_contains($uaType, 'loan') || str_contains($uaType, 'payable') || str_contains($uaType, 'liability') || str_contains($uaName, 'loan') || str_contains($uaName, 'payable') || str_contains($uaName, 'liability')) {
-                                        $uaSuggest = 'Set type → Liability';
-                                    } elseif (str_contains($uaType, 'equity') || str_contains($uaType, 'capital') || str_contains($uaType, 'reserve') || str_contains($uaName, 'capital') || str_contains($uaName, 'equity')) {
-                                        $uaSuggest = 'Set type → Equity';
+                                        $uaSuggest  = 'Set type → Liability';
+                                        $uaSugColor = '#047857';
+                                    } elseif (str_contains($uaType, 'equity') || str_contains($uaType, 'capital') || str_contains($uaName, 'capital') || str_contains($uaName, 'equity')) {
+                                        $uaSuggest  = 'Set type → Equity';
+                                        $uaSugColor = '#047857';
                                     } elseif (str_contains($uaType, 'bank') || str_contains($uaType, 'cash') || str_contains($uaName, 'bank') || str_contains($uaName, 'cash')) {
-                                        $uaSuggest = 'Set type → Asset (Bank/Cash)';
+                                        $uaSuggest  = 'Set type → Asset (Bank/Cash)';
+                                        $uaSugColor = '#047857';
                                     } elseif (str_contains($uaType, 'receivable') || str_contains($uaType, 'debtor') || str_contains($uaName, 'receivable') || str_contains($uaName, 'debtor')) {
-                                        $uaSuggest = 'Set type → Asset (Receivable)';
+                                        $uaSuggest  = 'Set type → Asset (Receivable)';
+                                        $uaSugColor = '#047857';
                                     } else {
-                                        $uaSuggest = 'Review and set correct type';
+                                        $uaSuggest  = 'Open Chart of Accounts and set the correct type';
+                                        $uaSugColor = '#b45309';
                                     }
                                 @endphp
                                 <tr style="border-top:1px solid #e2e8f0;{{ abs((float)($ua->balance ?? 0)) > 100000 ? 'background:#fffbeb;' : '' }}">
                                     <td style="padding:4px 8px;color:#9ca3af;">{{ $uaIdx + 1 }}</td>
                                     <td style="padding:4px 8px;font-weight:600;">{{ $ua->name ?? '—' }}</td>
-                                    <td style="padding:4px 8px;color:#dc2626;font-weight:700;">{{ $ua->type ?? '(none)' }}</td>
+                                    <td style="padding:4px 8px;{{ $uaReason === 'system_reserve' ? 'color:#6b7280;' : 'color:#dc2626;font-weight:700;' }}">
+                                        {{ $ua->type ?? '(none)' }}
+                                        @if($uaReason === 'system_reserve')
+                                            <span style="font-size:0.73rem;color:#16a34a;">✓ recognised</span>
+                                        @endif
+                                    </td>
                                     <td style="padding:4px 8px;color:#6b7280;">{{ $ua->sub_type ?? '—' }}</td>
                                     <td style="padding:4px 8px;text-align:right;font-variant-numeric:tabular-nums;font-weight:600;">
                                         {{ $fmt((float) ($ua->balance ?? 0)) }}
                                     </td>
-                                    <td style="padding:4px 8px;color:#047857;font-size:0.77rem;">{{ $uaSuggest }}</td>
+                                    <td style="padding:4px 8px;color:{{ $uaSugColor }};font-size:0.77rem;">{{ $uaSuggest }}</td>
                                 </tr>
                             @endforeach
+                            @php
+                                $unplacedTotal   = $unplacedAccounts->sum(fn($a) => (float)($a->balance ?? 0));
+                                $unexplainedGap  = round(abs($equationDiff) - abs($unplacedTotal), 2);
+                            @endphp
                             <tr style="background:#fef9c3;font-weight:700;border-top:2px solid #d97706;">
                                 <td colspan="4" style="padding:5px 8px;">Total unclassified balance</td>
                                 <td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;">
-                                    {{ $fmt($unplacedAccounts->sum(fn($a) => (float)($a->balance ?? 0))) }}
+                                    {{ $fmt($unplacedTotal) }}
                                 </td>
                                 <td></td>
                             </tr>
                         </tbody>
                     </table>
+
+                    @if($unexplainedGap >= 1)
+                        <div style="margin-top:10px;padding:10px 14px;background:#fef3c7;border-left:4px solid #f59e0b;border-radius:4px;font-size:0.81rem;line-height:1.55;">
+                            <strong style="color:#92400e;">&#9888; Unexplained gap after accounting for unclassified accounts: {{ $fmt($unexplainedGap) }}</strong><br>
+                            <span style="color:#78350f;">
+                                The unclassified accounts above explain only {{ $fmt(abs($unplacedTotal)) }} of the {{ $fmt(abs($equationDiff)) }} gap.
+                                The remaining <strong>{{ $fmt($unexplainedGap) }}</strong> is most likely caused by one of the following:
+                            </span>
+                            <ul style="margin:6px 0 0 18px;color:#78350f;padding:0;">
+                                <li><strong>Owner's capital or share capital</strong> was never posted as a journal entry (e.g., Dr Bank / Cr Capital).</li>
+                                <li><strong>Opening retained earnings</strong> from periods before this system was set up were not migrated into an equity account.</li>
+                                <li><strong>Opening balances</strong> for assets (receivables, inventory) were entered without a corresponding credit to equity.</li>
+                            </ul>
+                            <div style="margin-top:6px;color:#92400e;">
+                                <strong>Action:</strong> Create an <em>Owner's Capital</em> (or <em>Retained Earnings</em>) account with type <em>Equity</em>,
+                                then post a journal entry:
+                                <code style="background:#fde68a;padding:1px 5px;border-radius:3px;">Dr Opening Balance Clearing &nbsp;{{ $fmt($unexplainedGap) }} / Cr Owner's Capital &nbsp;{{ $fmt($unexplainedGap) }}</code>
+                            </div>
+                        </div>
+                    @endif
                 </details>
             @endif
 
