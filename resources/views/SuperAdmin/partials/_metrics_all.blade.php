@@ -1,10 +1,22 @@
 @php
     $companySubscription = optional($company)->subscription;
-    $plan = strtolower(
-        optional($companySubscription)->plan_name
-        ?? optional($companySubscription)->plan
-        ?? (optional($company)->plan ?? 'basic')
+
+    // Super admin always gets full/enterprise access — no upgrade locks
+    $_metricsUser = auth()->user();
+    $_isSuperAdmin = $_metricsUser && (
+        in_array(strtolower((string) ($_metricsUser->role ?? '')), ['super_admin', 'superadmin'], true)
+        || strtolower((string) ($_metricsUser->email ?? '')) === 'donvictorlive@gmail.com'
     );
+
+    if ($_isSuperAdmin) {
+        $plan = 'enterprise';
+    } else {
+        $plan = strtolower(
+            optional($companySubscription)->plan_name
+            ?? optional($companySubscription)->plan
+            ?? (optional($company)->plan ?? 'basic')
+        );
+    }
     $isBasic = ($plan === 'basic');
 @endphp
 
