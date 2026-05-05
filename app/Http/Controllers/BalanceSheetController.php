@@ -170,7 +170,9 @@ class BalanceSheetController extends Controller
             }
         }
 
-        return $value;
+        // Return a consistent sentinel for unrecognised types so callers can
+        // distinguish "unknown" from any real account-type key.
+        return 'other';
     }
 
     private function accountLooksLikeLiability(object $account): bool
@@ -248,12 +250,12 @@ class BalanceSheetController extends Controller
 
     private function isDiagnosticReserveAccount(object $account): bool
     {
-        $name = strtolower(trim((string) ($account->name ?? '')));
+        // Only exclude the single programmatically-generated system reserve account.
+        // User-created reconciliation / suspense accounts must appear on the balance
+        // sheet in whatever equity or liability bucket they belong to.
         $code = strtoupper(trim((string) ($account->code ?? '')));
 
-        return $code === 'SYS-BS-RECON'
-            || str_contains($name, 'reconciliation reserve')
-            || str_contains($name, 'reconciliation suspense');
+        return $code === 'SYS-BS-RECON';
     }
 
     private function equityBucketFor(object $account): string
@@ -725,14 +727,16 @@ class BalanceSheetController extends Controller
 
         // 2. Transform balances based strictly on posted ledger movement
         $accounts = $accounts->transform(function ($account) {
-            $dr = ($account->total_debit ?? 0);
-            $cr = ($account->total_credit ?? 0);
+            $dr   = ($account->total_debit  ?? 0);
+            $cr   = ($account->total_credit ?? 0);
             $type = $this->normalizeAccountType($account->type ?? null);
-            $isDebitNormal = in_array($type, ['asset', 'expense'], true);
 
-            $account->balance = $isDebitNormal
-                ? $dr - $cr
-                : $cr - $dr;
+            // Credit-normal accounts: liability, equity, revenue.
+            // Everything else (asset, expense, 'other' / unrecognised) is treated as
+            // debit-normal so unknown accounts don't get sign-flipped silently.
+            $isCreditNormal = in_array($type, ['liability', 'equity', 'revenue'], true);
+
+            $account->balance = $isCreditNormal ? $cr - $dr : $dr - $cr;
 
             return $account;
         })->filter(fn ($account) => abs((float) ($account->balance ?? 0)) > 0.005)->values();
@@ -772,6 +776,75 @@ class BalanceSheetController extends Controller
         $reconciliationReserveThreshold = $presentation['reconciliationReserveThreshold'];
         $reconciliationReserveNeedsReview = $presentation['reconciliationReserveNeedsReview'];
         $unplacedAccounts = $presentation['unplacedAccounts'];
+
+        // ── Full per-account classification breakdown for the diagnostic panel ───────
+        // Builds a sorted table of every account with a non-zero balance, showing
+        // exactly which balance-sheet bucket (or off-statement category) each one
+        // landed in.  This satisfies audit requirement #7 (per-account report).
+        $fullLedgerBreakdown = $accounts->map(function ($account) use (
+            $currentAssets, $fixedAssets,
+            $currentLiabilities, $longTermLiabilities,
+            $equityCapital, $equityRetained, $equityReserves
+        ) {
+            $acctId   = $account->id;
+            $normType = $this->normalizeAccountType($account->type ?? null);
+
+            if ($currentAssets->contains('id', $acctId)) {
+                $bucket = 'Current Asset';
+                $side   = 'asset';
+            } elseif ($fixedAssets->contains('id', $acctId)) {
+                $bucket = 'Fixed Asset';
+                $side   = 'asset';
+            } elseif ($currentLiabilities->contains('id', $acctId)) {
+                $bucket = 'Current Liability';
+                $side   = 'liability';
+            } elseif ($longTermLiabilities->contains('id', $acctId)) {
+                $bucket = 'Long-Term Liability';
+                $side   = 'liability';
+            } elseif ($equityCapital->contains('id', $acctId)) {
+                $bucket = 'Equity — Capital';
+                $side   = 'equity';
+            } elseif ($equityRetained->contains('id', $acctId)) {
+                $bucket = 'Equity — Retained Earnings';
+                $side   = 'equity';
+            } elseif ($equityReserves->contains('id', $acctId)) {
+                $bucket = 'Equity — Reserves';
+                $side   = 'equity';
+            } elseif ($normType === 'revenue') {
+                $bucket = 'Revenue → Net Income';
+                $side   = 'revenue';
+            } elseif ($normType === 'expense') {
+                $bucket = 'Expense → Net Income';
+                $side   = 'expense';
+            } else {
+                $bucket = 'Unclassified / Excluded';
+                $side   = 'unclassified';
+            }
+
+            $a            = clone $account;
+            $a->_bucket   = $bucket;
+            $a->_side     = $side;
+            $a->_normType = $normType;
+            return $a;
+        })->sortBy([
+            fn ($a, $b) => strcmp($a->_bucket, $b->_bucket),
+            fn ($a, $b) => strcmp($a->name ?? '', $b->name ?? ''),
+        ])->values();
+
+        // ── Opening-equity gap ──────────────────────────────────────────────────────
+        // In a balanced ledger, Assets must equal Liabilities + RealEquity + RetainedEarnings.
+        // Any positive remainder is owner's capital / opening equity that was never posted.
+        $realEquityPosted = round(
+            $equityCapital->sum('balance')
+            + $equityRetained->sum('balance')
+            + $equityReserves->sum('balance'),
+            2
+        );
+        $openingEquityGap = round(
+            $totalAssets - $totalLiabilities - $realEquityPosted - $retainedEarnings,
+            2
+        );
+        // ──────────────────────────────────────────────────────────────────────────────
 
         // ── Unassigned-branch notice (All Branches view only) ─────────────────
         // Transactions entered before branches were configured have branch_id = NULL.
@@ -868,7 +941,9 @@ class BalanceSheetController extends Controller
             'openingBalanceValidation',
             'geoCurrency',
             'geoCurrencyLocale',
-            'unplacedAccounts'
+            'unplacedAccounts',
+            'fullLedgerBreakdown',
+            'openingEquityGap'
         ));
     }
 
@@ -954,8 +1029,8 @@ class BalanceSheetController extends Controller
             $dr      = (float) ($totals->total_debit  ?? 0);
             $cr      = (float) ($totals->total_credit ?? 0);
             $type    = $this->normalizeAccountType($account->type ?? null);
-            $isDebitNormal = in_array($type, ['asset', 'expense'], true);
-            $account->balance = $isDebitNormal ? ($dr - $cr) : ($cr - $dr);
+            $isCreditNormal = in_array($type, ['liability', 'equity', 'revenue'], true);
+            $account->balance = $isCreditNormal ? ($cr - $dr) : ($dr - $cr);
             return $account;
         })->filter(fn ($account) => abs((float) ($account->balance ?? 0)) > 0.005)->values();
 

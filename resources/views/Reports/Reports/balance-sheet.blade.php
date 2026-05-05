@@ -1406,6 +1406,128 @@ $changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
                 </details>
             @endif
 
+            {{-- ── Full account classification diagnostic ────────────────────────────── --}}
+            @if(!empty($fullLedgerBreakdown) && $fullLedgerBreakdown->isNotEmpty())
+            @php
+                // Equity gap: amount of missing opening equity (data gap, not a code bug).
+                // Positive = assets exceed liabilities + all recorded equity + RE.
+                $diagEquityGap = $openingEquityGap ?? 0.0;
+            @endphp
+            <details style="margin-top:14px;" id="bsFullLedger">
+                <summary style="cursor:pointer;font-weight:700;font-size:0.88rem;color:#1e40af;padding:4px 0;">
+                    &#128202; Full Account Classification — {{ $fullLedgerBreakdown->count() }} account(s) with ledger activity
+                </summary>
+                <div style="overflow-x:auto;margin-top:8px;">
+                    <table style="width:100%;border-collapse:collapse;font-size:0.78rem;">
+                        <thead>
+                            <tr style="background:#eff6ff;font-size:0.75rem;text-transform:uppercase;letter-spacing:.04em;color:#1e40af;">
+                                <th style="padding:5px 7px;text-align:left;">#</th>
+                                <th style="padding:5px 7px;text-align:left;">Account</th>
+                                <th style="padding:5px 7px;text-align:left;">DB&nbsp;Type</th>
+                                <th style="padding:5px 7px;text-align:left;">Normalised</th>
+                                <th style="padding:5px 7px;text-align:left;">Sub-type</th>
+                                <th style="padding:5px 7px;text-align:right;">Dr&nbsp;Total</th>
+                                <th style="padding:5px 7px;text-align:right;">Cr&nbsp;Total</th>
+                                <th style="padding:5px 7px;text-align:right;">Balance</th>
+                                <th style="padding:5px 7px;text-align:left;">BS&nbsp;Bucket</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @php $diagIdx = 0; $lastBucket = null; @endphp
+                            @foreach($fullLedgerBreakdown as $da)
+                                @php
+                                    $daBucket   = $da->_bucket   ?? '?';
+                                    $daSide     = $da->_side     ?? 'unclassified';
+                                    $daNorm     = $da->_normType ?? '?';
+                                    $daDr       = (float)($da->total_debit  ?? 0);
+                                    $daCr       = (float)($da->total_credit ?? 0);
+                                    $daBal      = (float)($da->balance      ?? 0);
+                                    $daIsUnknown= ($daSide === 'unclassified');
+                                    $daRowBg    = match($daSide) {
+                                        'asset'         => 'background:#f0fdf4;',
+                                        'liability'     => 'background:#fff7ed;',
+                                        'equity'        => 'background:#eff6ff;',
+                                        'revenue'       => 'background:#fdf4ff;',
+                                        'expense'       => 'background:#fefce8;',
+                                        default         => 'background:#fef2f2;',
+                                    };
+                                    $diagIdx++;
+                                @endphp
+                                @if($daBucket !== $lastBucket)
+                                    @php $lastBucket = $daBucket; @endphp
+                                    <tr>
+                                        <td colspan="9" style="padding:4px 7px 2px;font-weight:700;font-size:0.73rem;letter-spacing:.05em;text-transform:uppercase;color:#374151;border-top:2px solid #d1d5db;background:#f9fafb;">
+                                            {{ $daBucket }}
+                                        </td>
+                                    </tr>
+                                @endif
+                                <tr style="{{ $daRowBg }}{{ $daIsUnknown ? 'border-left:3px solid #dc2626;' : '' }}">
+                                    <td style="padding:3px 7px;color:#9ca3af;">{{ $diagIdx }}</td>
+                                    <td style="padding:3px 7px;font-weight:600;">{{ $da->name ?? '—' }}</td>
+                                    <td style="padding:3px 7px;color:{{ $daIsUnknown ? '#dc2626' : '#374151' }};font-family:monospace;font-size:0.75rem;">
+                                        {{ $da->type ?? '(none)' }}
+                                    </td>
+                                    <td style="padding:3px 7px;font-family:monospace;font-size:0.75rem;color:{{ $daNorm==='other'?'#dc2626':'#374151' }};">
+                                        {{ $daNorm }}
+                                    </td>
+                                    <td style="padding:3px 7px;color:#6b7280;font-size:0.74rem;">{{ $da->sub_type ?? '—' }}</td>
+                                    <td style="padding:3px 7px;text-align:right;font-variant-numeric:tabular-nums;color:#374151;">
+                                        {{ $daDr > 0.005 ? $fmt($daDr) : '—' }}
+                                    </td>
+                                    <td style="padding:3px 7px;text-align:right;font-variant-numeric:tabular-nums;color:#374151;">
+                                        {{ $daCr > 0.005 ? $fmt($daCr) : '—' }}
+                                    </td>
+                                    <td style="padding:3px 7px;text-align:right;font-variant-numeric:tabular-nums;font-weight:700;color:{{ $daBal < 0 ? '#dc2626' : '#059669' }};">
+                                        {{ $fmt($daBal) }}
+                                    </td>
+                                    <td style="padding:3px 7px;font-size:0.74rem;color:{{ $daIsUnknown?'#dc2626':'#374151' }};">{{ $daBucket }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+
+                {{-- Equity gap analysis ------------------------------------------------- --}}
+                @if(abs($diagEquityGap) >= 1)
+                <div style="margin-top:12px;padding:12px 16px;background:#fef3c7;border-left:4px solid #d97706;border-radius:4px;font-size:0.81rem;line-height:1.6;">
+                    <strong style="color:#92400e;font-size:0.86rem;">&#9888; Opening Equity Gap Detected: {{ $fmt(abs($diagEquityGap)) }}</strong>
+                    <table style="margin-top:8px;border-collapse:collapse;width:100%;max-width:520px;font-size:0.79rem;">
+                        <tr>
+                            <td style="padding:2px 6px;color:#78350f;">Total Assets</td>
+                            <td style="padding:2px 6px;text-align:right;font-variant-numeric:tabular-nums;font-weight:700;">{{ $fmt($visTotalAssets) }}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding:2px 6px;color:#78350f;">Total Liabilities</td>
+                            <td style="padding:2px 6px;text-align:right;font-variant-numeric:tabular-nums;font-weight:700;">({{ $fmt($visTotalLiabilities) }})</td>
+                        </tr>
+                        <tr>
+                            <td style="padding:2px 6px;color:#78350f;">Real Equity Accounts (Capital / Reserves / Retained)</td>
+                            <td style="padding:2px 6px;text-align:right;font-variant-numeric:tabular-nums;font-weight:700;">({{ $fmt($visTotalEquityCapital + $visTotalEquityRetained + $visTotalEquityReserves) }})</td>
+                        </tr>
+                        <tr>
+                            <td style="padding:2px 6px;color:#78350f;">Current Year Net Income (Earnings / Deficit)</td>
+                            <td style="padding:2px 6px;text-align:right;font-variant-numeric:tabular-nums;font-weight:700;">({{ $fmt($visTotalCurrentEarnings) }})</td>
+                        </tr>
+                        <tr style="border-top:2px solid #d97706;">
+                            <td style="padding:4px 6px;color:#92400e;font-weight:700;">Opening Equity Gap (unrecorded capital)</td>
+                            <td style="padding:4px 6px;text-align:right;font-variant-numeric:tabular-nums;font-weight:700;color:#b45309;">{{ $fmt(abs($diagEquityGap)) }}</td>
+                        </tr>
+                    </table>
+                    <p style="margin:8px 0 4px;color:#78350f;">
+                        The ledger is <strong>balanced</strong> (debits = credits), so no journal entries are missing or duplicated.
+                        However, <strong>{{ $fmt(abs($diagEquityGap)) }}</strong> of assets were funded without a corresponding
+                        credit to an equity account (owner's capital injection or opening retained earnings).
+                    </p>
+                    <ul style="margin:4px 0 0 18px;color:#78350f;padding:0;">
+                        <li>Create an <em>Owner's Capital</em> account (type: Equity) if one does not exist.</li>
+                        <li>Post a journal entry: <code style="background:#fde68a;padding:1px 4px;border-radius:3px;">Dr Opening Balance Clearing &nbsp;{{ $fmt(abs($diagEquityGap)) }}&nbsp;/&nbsp;Cr Owner's Capital &nbsp;{{ $fmt(abs($diagEquityGap)) }}</code></li>
+                        <li>After posting, refresh this report — the gap should be zero.</li>
+                    </ul>
+                </div>
+                @endif
+            </details>
+            @endif
+
         </div>{{-- /.bs-sheet --}}
     </div>{{-- /.bs-page --}}
 
