@@ -387,57 +387,6 @@ class BalanceSheetController extends Controller
             $currentAssets = $currentAssets->concat($vendorAdvanceLines)->values();
         }
 
-        $openingEquitySupport = abs($openingDifference) >= 0.01 ? $openingDifference : 0.0;
-
-        $customerOBUnposted = 0.0;
-        $supplierOBUnposted = 0.0;
-        $inventoryBridge = 0.0;
-        if ($method === 'accrual') {
-            $customerOBUnposted = round($this->getUnpostedCustomerOpeningBalanceSum($request, $reportDate, $activeBranch), 2);
-            if ($customerOBUnposted > 0.01) {
-                $currentAssets = $currentAssets->concat([
-                    $this->syntheticLine('Accounts Receivable', 'Asset', $customerOBUnposted, [
-                        'sub_type' => 'Current Asset',
-                        '_bs_group' => 'Current Assets',
-                    ]),
-                ])->values();
-                $openingEquitySupport += $customerOBUnposted;
-            }
-
-            $supplierOBUnposted = round($this->getUnpostedSupplierOpeningBalanceSum($request, $reportDate, $activeBranch), 2);
-            if ($supplierOBUnposted > 0.01) {
-                $currentLiabilities = $currentLiabilities->concat([
-                    $this->syntheticLine('Accounts Payable', 'Liability', $supplierOBUnposted, [
-                        'sub_type' => 'Current Liability',
-                        '_bs_group' => 'Current Liabilities',
-                    ]),
-                ])->values();
-                $openingEquitySupport -= $supplierOBUnposted;
-            }
-        }
-
-        $inventoryBridge = round($this->getLegacyInventoryBridgeAmount($request, $reportDate, $accounts, $activeBranch), 2);
-        if ($inventoryBridge > 0.01) {
-            $currentAssets = $currentAssets->concat([
-                $this->syntheticLine('Inventory', 'Asset', $inventoryBridge, [
-                    'sub_type' => 'Current Asset',
-                    '_bs_group' => 'Current Assets',
-                ]),
-            ])->values();
-            $openingEquitySupport += $inventoryBridge;
-        }
-
-        $openingBalanceEquity = round(
-            $equityAccounts
-                ->filter(fn ($account) => $this->isOpeningBalanceEquityAccount($account))
-                ->sum(fn ($account) => (float) ($account->balance ?? 0))
-            + $openingEquitySupport,
-            2
-        );
-        $equityAccounts = $equityAccounts
-            ->reject(fn ($account) => $this->isOpeningBalanceEquityAccount($account))
-            ->values();
-
         $equityCapital = $equityAccounts->filter(
             fn ($account) => $this->equityBucketFor($account) === 'Capital'
         )->values();
@@ -447,14 +396,6 @@ class BalanceSheetController extends Controller
         $equityReserves = $equityAccounts->filter(
             fn ($account) => $this->equityBucketFor($account) === 'Reserves'
         )->values();
-
-        if (abs($openingBalanceEquity) >= 0.01) {
-            $equityReserves = $equityReserves->concat([
-                $this->syntheticLine('Opening Balance Equity', 'Equity', $openingBalanceEquity, [
-                    '_bs_group' => 'Reserves',
-                ]),
-            ])->values();
-        }
 
         $retainedEarningsLines = collect([
             $this->syntheticLine(
@@ -804,6 +745,9 @@ class BalanceSheetController extends Controller
             ]);
         }
 
+        $reserveSuspenseDiagnostics = $this->reserveAndSuspenseDiagnostics($request, $reportDate, $activeBranch);
+        $openingBalanceValidation = $this->openingBalanceValidationReport($request, $reportDate, $activeBranch);
+
         // 7. Map variables to match your Blade @foreach calls exactly
         // Load branch list for the branch selector in the filter bar
         $companyIdForBranches = (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0);
@@ -849,7 +793,9 @@ class BalanceSheetController extends Controller
             'isBalanced',
             'reconciliationReserveDiagnostic',
             'reconciliationReserveThreshold',
-            'reconciliationReserveNeedsReview'
+            'reconciliationReserveNeedsReview',
+            'reserveSuspenseDiagnostics',
+            'openingBalanceValidation'
         ));
     }
 
@@ -1041,6 +987,129 @@ class BalanceSheetController extends Controller
             'totalEquity'        => 0.0,
             'reconciliationReserveDiagnostic' => 0.0,
             'reconciliationReserveNeedsReview' => false,
+        ];
+    }
+
+    private function applyBranchScopeToTransactionsQuery($query, array $activeBranch): void
+    {
+        if (($activeBranch['scope'] ?? 'branch') === 'all') {
+            return;
+        }
+
+        $branchId = trim((string) ($activeBranch['id'] ?? ''));
+        $branchName = trim((string) ($activeBranch['name'] ?? ''));
+        if ($branchId === '' && $branchName === '') {
+            return;
+        }
+
+        $query->where(function ($sub) use ($branchId, $branchName) {
+            if ($branchId !== '') {
+                $sub->where('branch_id', $branchId);
+            }
+            if ($branchName !== '') {
+                $method = $branchId !== '' ? 'orWhere' : 'where';
+                $sub->{$method}('branch_name', $branchName);
+            }
+        });
+    }
+
+    private function reserveAndSuspenseDiagnostics(Request $request, Carbon $reportDate, array $activeBranch): Collection
+    {
+        if (!Schema::hasTable('transactions') || !Schema::hasTable('accounts')) {
+            return collect();
+        }
+
+        $query = Transaction::query()
+            ->join('accounts', 'transactions.account_id', '=', 'accounts.id')
+            ->where('transactions.transaction_date', '<=', $reportDate)
+            ->where(function ($sub) {
+                $sub->whereRaw('LOWER(accounts.name) like ?', ['%reconciliation%'])
+                    ->orWhereRaw('LOWER(accounts.name) like ?', ['%suspense%'])
+                    ->orWhereRaw('LOWER(accounts.sub_type) like ?', ['%reconciliation%'])
+                    ->orWhereRaw('LOWER(accounts.sub_type) like ?', ['%suspense%'])
+                    ->orWhereRaw('LOWER(accounts.code) like ?', ['%recon%'])
+                    ->orWhereRaw('LOWER(accounts.code) like ?', ['%susp%']);
+            })
+            ->select([
+                'transactions.id',
+                'transactions.transaction_date',
+                'transactions.reference',
+                'transactions.transaction_type',
+                'transactions.related_id',
+                'transactions.related_type',
+                'transactions.description',
+                'transactions.debit',
+                'transactions.credit',
+                'transactions.branch_id',
+                'transactions.branch_name',
+                'accounts.name as account_name',
+                'accounts.code as account_code',
+            ])
+            ->orderBy('transactions.transaction_date')
+            ->orderBy('transactions.id');
+
+        $companyId = (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $userId = (int) ($request->user()?->id ?? 0);
+        if ($companyId > 0 && Schema::hasColumn('transactions', 'company_id')) {
+            $query->where('transactions.company_id', $companyId);
+        } elseif ($userId > 0 && Schema::hasColumn('transactions', 'user_id')) {
+            $query->where('transactions.user_id', $userId);
+        }
+
+        if (($activeBranch['scope'] ?? 'branch') !== 'all') {
+            $branchId = trim((string) ($activeBranch['id'] ?? ''));
+            $branchName = trim((string) ($activeBranch['name'] ?? ''));
+            if ($branchId !== '' || $branchName !== '') {
+                $query->where(function ($sub) use ($branchId, $branchName) {
+                    if ($branchId !== '') {
+                        $sub->where('transactions.branch_id', $branchId);
+                    }
+                    if ($branchName !== '') {
+                        $method = $branchId !== '' ? 'orWhere' : 'where';
+                        $sub->{$method}('transactions.branch_name', $branchName);
+                    }
+                });
+            }
+        }
+
+        return $query->get();
+    }
+
+    private function openingBalanceValidationReport(Request $request, Carbon $reportDate, array $activeBranch): array
+    {
+        $customerPostedRows = collect();
+        $supplierPostedRows = collect();
+
+        if (Schema::hasTable('transactions')) {
+            $customerPostedQuery = Transaction::withoutGlobalScopes()
+                ->selectRaw('reference, related_id, COUNT(*) as entry_count, SUM(debit) as total_debit, SUM(credit) as total_credit')
+                ->where('transaction_type', Transaction::TYPE_OPENING_BALANCE)
+                ->where('reference', 'like', 'CUST-OB-%')
+                ->where('transaction_date', '<=', $reportDate)
+                ->groupBy('reference', 'related_id');
+            $this->applyTransactionScope($customerPostedQuery, $request);
+            $this->applyBranchScopeToTransactionsQuery($customerPostedQuery, $activeBranch);
+            $customerPostedRows = $customerPostedQuery->get();
+
+            $supplierPostedQuery = Transaction::withoutGlobalScopes()
+                ->selectRaw('reference, related_id, COUNT(*) as entry_count, SUM(debit) as total_debit, SUM(credit) as total_credit')
+                ->where('transaction_type', Transaction::TYPE_OPENING_BALANCE)
+                ->where('reference', 'like', 'SUPP-OB-%')
+                ->where('transaction_date', '<=', $reportDate)
+                ->groupBy('reference', 'related_id');
+            $this->applyTransactionScope($supplierPostedQuery, $request);
+            $this->applyBranchScopeToTransactionsQuery($supplierPostedQuery, $activeBranch);
+            $supplierPostedRows = $supplierPostedQuery->get();
+        }
+
+        return [
+            'unposted_customer_opening_balance' => round($this->getUnpostedCustomerOpeningBalanceSum($request, $reportDate, $activeBranch), 2),
+            'unposted_supplier_opening_balance' => round($this->getUnpostedSupplierOpeningBalanceSum($request, $reportDate, $activeBranch), 2),
+            'legacy_inventory_bridge' => round($this->getLegacyInventoryBridgeAmount($request, $reportDate, collect(), $activeBranch), 2),
+            'duplicate_customer_refs' => $customerPostedRows->filter(fn ($row) => (int) ($row->entry_count ?? 0) > 2)->values(),
+            'duplicate_supplier_refs' => $supplierPostedRows->filter(fn ($row) => (int) ($row->entry_count ?? 0) > 2)->values(),
+            'imbalanced_customer_refs' => $customerPostedRows->filter(fn ($row) => abs((float) ($row->total_debit ?? 0) - (float) ($row->total_credit ?? 0)) >= 0.01)->values(),
+            'imbalanced_supplier_refs' => $supplierPostedRows->filter(fn ($row) => abs((float) ($row->total_debit ?? 0) - (float) ($row->total_credit ?? 0)) >= 0.01)->values(),
         ];
     }
 

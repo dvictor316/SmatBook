@@ -55,71 +55,7 @@ class BalanceSheetExport implements FromArray, WithHeadings
             $currentAssets = $accounts->filter(fn ($account) => $this->normalizeAccountType($account->type ?? null) === 'asset');
         }
 
-        $customerOB = $this->customerOpeningBalance();
-        if ($customerOB > 0.01) {
-            $currentAssets = $currentAssets->concat([(object) [
-                'name' => 'Accounts Receivable',
-                'type' => 'Asset',
-                'sub_type' => 'Current Asset',
-                'balance' => $customerOB,
-            ]]);
-            $equity = $equity->concat([(object) [
-                'name' => 'Opening Balance Equity (Customers)',
-                'type' => 'Equity',
-                'balance' => $customerOB,
-            ]]);
-        }
-
-        $supplierOB = $this->supplierOpeningBalance();
-        if ($supplierOB > 0.01) {
-            $apInLiabilities = $currentLiabilities->first(
-                fn ($account) => strtolower(trim((string) ($account->name ?? ''))) === 'accounts payable'
-            );
-            if ($apInLiabilities) {
-                $apInLiabilities->balance = (float) ($apInLiabilities->balance ?? 0) + $supplierOB;
-            } else {
-                $currentLiabilities = $currentLiabilities->concat([(object) [
-                    'name' => 'Accounts Payable',
-                    'type' => 'Liability',
-                    'sub_type' => 'Accounts Payable',
-                    'balance' => $supplierOB,
-                ]]);
-            }
-            $equity = $equity->concat([(object) [
-                'name' => 'Opening Balance Equity (Suppliers)',
-                'type' => 'Equity',
-                'balance' => -1 * $supplierOB,
-            ]]);
-        }
-
-        $inventoryBridge = $this->inventoryBridge($accounts);
-        if ($inventoryBridge > 0.01) {
-            $currentAssets = $currentAssets->concat([(object) [
-                'name' => 'Inventory',
-                'type' => 'Asset',
-                'sub_type' => 'Current Asset',
-                'balance' => $inventoryBridge,
-            ]]);
-            $equity = $equity->concat([(object) [
-                'name' => 'Opening Balance Equity (Inventory)',
-                'type' => 'Equity',
-                'balance' => $inventoryBridge,
-            ]]);
-        }
-
         $retainedEarnings = $this->calculateRetainedEarnings($this->reportDate);
-        $totalAssetsForCheck = $currentAssets->sum('balance') + $fixedAssets->sum('balance');
-        $totalLiabilitiesForCheck = $currentLiabilities->sum('balance') + $longTermLiabilities->sum('balance');
-        $totalEquityForCheck = $equity->sum('balance') + $retainedEarnings;
-        $statementDifference = round($totalAssetsForCheck - ($totalLiabilitiesForCheck + $totalEquityForCheck), 2);
-
-        if (abs($statementDifference) >= 0.01) {
-            $equity = $equity->concat([(object) [
-                'name' => 'Balance Sheet Reconciliation Reserve',
-                'type' => 'Equity',
-                'balance' => $statementDifference,
-            ]]);
-        }
 
         // Prepare data rows
         $rows = [];

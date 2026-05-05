@@ -105,50 +105,6 @@ class TrialBalanceExport implements FromCollection, WithHeadings
             ];
         })->filter(fn ($row) => ($row[3] > 0 || $row[4] > 0))->values();
 
-        $openingDifference = round((float) $openingTotals['debit'] - (float) $openingTotals['credit'], 2);
-        if (abs($openingDifference) >= 0.01) {
-            $rows->push([
-                'SYS-OPENING-EQUITY',
-                'Opening Balance Equity',
-                'Equity',
-                $openingDifference < 0 ? abs($openingDifference) : 0.0,
-                $openingDifference > 0 ? abs($openingDifference) : 0.0,
-            ]);
-        }
-
-        $customerOB = $this->customerOpeningBalance();
-        if ($customerOB > 0.01) {
-            $this->mergeBalanceIntoRows($rows, 'Accounts Receivable', 'Asset', $customerOB, 0.0, 'SYS-CUST-AR');
-            $rows->push(['SYS-CUST-OBE', 'Opening Balance Equity (Customers)', 'Equity', 0.0, $customerOB]);
-        }
-
-        $supplierOB = $this->supplierOpeningBalance();
-        if ($supplierOB > 0.01) {
-            $this->mergeBalanceIntoRows($rows, 'Accounts Payable', 'Liability', 0.0, $supplierOB, 'SYS-SUPP-AP');
-            $rows->push(['SYS-SUPP-OBE', 'Opening Balance Equity (Suppliers)', 'Equity', $supplierOB, 0.0]);
-        }
-
-        $inventoryBridge = $this->inventoryBridge($rows);
-        if ($inventoryBridge > 0.01) {
-            $rows->push(['SYS-INV', 'Inventory', 'Asset', $inventoryBridge, 0.0]);
-            $rows->push(['SYS-INV-OBE', 'Opening Balance Equity (Inventory)', 'Equity', 0.0, $inventoryBridge]);
-        }
-
-        $trialDifference = round(
-            (float) $rows->sum(fn ($row) => (float) ($row[3] ?? 0))
-            - (float) $rows->sum(fn ($row) => (float) ($row[4] ?? 0)),
-            2
-        );
-        if (abs($trialDifference) >= 0.01) {
-            $rows->push([
-                'SYS-TB-RECON',
-                'Trial Balance Reconciliation Reserve',
-                'Equity',
-                $trialDifference < 0 ? abs($trialDifference) : 0.0,
-                $trialDifference > 0 ? abs($trialDifference) : 0.0,
-            ]);
-        }
-
         return $rows->sortBy(fn ($row) => $row[0])->values();
     }
 

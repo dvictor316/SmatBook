@@ -1418,6 +1418,12 @@ class CustomerController extends Controller
                     $customer->fill($payload);
                     $customer->save();
 
+                    $this->reverseCustomerOpeningBalanceJournal((int) $customer->id);
+                    $freshImportedBalance = (float) ($customer->fresh()->balance ?? 0);
+                    if ($freshImportedBalance > 0) {
+                        $this->postCustomerOpeningBalanceJournal($customer->fresh(), $freshImportedBalance);
+                    }
+
                     if ($isNew) {
                         $created++;
                     } else {

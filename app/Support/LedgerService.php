@@ -461,28 +461,10 @@ class LedgerService
                 continue;
             }
 
+            // Seed from the bank master balance only. Historical supplier payments are
+            // posted into the ledger separately and must not be folded into the opening
+            // balance here, otherwise the asset balance gets counted twice.
             $seedBalance = (float) ($bank->balance ?? 0);
-            if (Schema::hasTable('supplier_payments') && Schema::hasColumn('supplier_payments', 'bank_id')) {
-                $paymentsQuery = SupplierPayment::withoutGlobalScopes()->where('bank_id', $bank->id);
-                if ($bankCompanyId > 0 && Schema::hasColumn('supplier_payments', 'company_id')) {
-                    $paymentsQuery->where('company_id', $bankCompanyId);
-                } elseif ($bankUserId > 0 && Schema::hasColumn('supplier_payments', 'user_id')) {
-                    $paymentsQuery->where('user_id', $bankUserId);
-                }
-                if ($bankBranchId !== '' || $bankBranchName !== '') {
-                    $paymentsQuery->where(function ($sub) use ($bankBranchId, $bankBranchName) {
-                        if ($bankBranchId !== '' && Schema::hasColumn('supplier_payments', 'branch_id')) {
-                            $sub->where('branch_id', $bankBranchId);
-                        }
-                        if ($bankBranchName !== '' && Schema::hasColumn('supplier_payments', 'branch_name')) {
-                            $method = ($bankBranchId !== '' && Schema::hasColumn('supplier_payments', 'branch_id')) ? 'orWhere' : 'where';
-                            $sub->{$method}('branch_name', $bankBranchName);
-                        }
-                    });
-                }
-
-                $seedBalance += (float) $paymentsQuery->sum('amount');
-            }
 
             $payload = [
                 'code' => self::nextCode('AST'),

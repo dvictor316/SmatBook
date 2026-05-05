@@ -1037,6 +1037,118 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
                 </div>
             @endif
 
+            @php
+                $openingBalanceValidation = $openingBalanceValidation ?? [];
+                $duplicateCustomerRefs = collect($openingBalanceValidation['duplicate_customer_refs'] ?? []);
+                $duplicateSupplierRefs = collect($openingBalanceValidation['duplicate_supplier_refs'] ?? []);
+                $imbalancedCustomerRefs = collect($openingBalanceValidation['imbalanced_customer_refs'] ?? []);
+                $imbalancedSupplierRefs = collect($openingBalanceValidation['imbalanced_supplier_refs'] ?? []);
+                $reserveSuspenseDiagnostics = collect($reserveSuspenseDiagnostics ?? []);
+            @endphp
+
+            @if(
+                abs((float) ($openingBalanceValidation['unposted_customer_opening_balance'] ?? 0)) >= 0.01 ||
+                abs((float) ($openingBalanceValidation['unposted_supplier_opening_balance'] ?? 0)) >= 0.01 ||
+                abs((float) ($openingBalanceValidation['legacy_inventory_bridge'] ?? 0)) >= 0.01 ||
+                $duplicateCustomerRefs->isNotEmpty() ||
+                $duplicateSupplierRefs->isNotEmpty() ||
+                $imbalancedCustomerRefs->isNotEmpty() ||
+                $imbalancedSupplierRefs->isNotEmpty() ||
+                $reserveSuspenseDiagnostics->isNotEmpty()
+            )
+                <details class="bs-hidden-debug no-print" style="margin-top:16px;">
+                    <summary>Validation Report</summary>
+                    <table>
+                        <tbody>
+                            <tr>
+                                <td>Unposted Customer Opening Balances</td>
+                                <td>{{ $fmt((float) ($openingBalanceValidation['unposted_customer_opening_balance'] ?? 0)) }}</td>
+                            </tr>
+                            <tr>
+                                <td>Unposted Supplier Opening Balances</td>
+                                <td>{{ $fmt((float) ($openingBalanceValidation['unposted_supplier_opening_balance'] ?? 0)) }}</td>
+                            </tr>
+                            <tr>
+                                <td>Legacy Inventory Bridge Still Outside Ledger</td>
+                                <td>{{ $fmt((float) ($openingBalanceValidation['legacy_inventory_bridge'] ?? 0)) }}</td>
+                            </tr>
+                            <tr>
+                                <td>Duplicate Customer Opening Refs</td>
+                                <td>{{ number_format($duplicateCustomerRefs->count()) }}</td>
+                            </tr>
+                            <tr>
+                                <td>Duplicate Supplier Opening Refs</td>
+                                <td>{{ number_format($duplicateSupplierRefs->count()) }}</td>
+                            </tr>
+                            <tr>
+                                <td>Reserve / Suspense Ledger Rows</td>
+                                <td>{{ number_format($reserveSuspenseDiagnostics->count()) }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    @if($duplicateCustomerRefs->isNotEmpty() || $duplicateSupplierRefs->isNotEmpty() || $imbalancedCustomerRefs->isNotEmpty() || $imbalancedSupplierRefs->isNotEmpty())
+                        <div style="margin-top:12px;font-weight:700;">Opening Balance Reference Exceptions</div>
+                        <table style="width:100%;margin-top:8px;border-collapse:collapse;font-size:0.79rem;">
+                            <thead>
+                                <tr style="background:#fef9c3;">
+                                    <td style="padding:4px 6px;">Type</td>
+                                    <td style="padding:4px 6px;">Reference</td>
+                                    <td style="padding:4px 6px;">Related ID</td>
+                                    <td style="padding:4px 6px;text-align:right;">Entries</td>
+                                    <td style="padding:4px 6px;text-align:right;">Debit</td>
+                                    <td style="padding:4px 6px;text-align:right;">Credit</td>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($duplicateCustomerRefs->concat($duplicateSupplierRefs)->concat($imbalancedCustomerRefs)->concat($imbalancedSupplierRefs) as $row)
+                                    <tr>
+                                        <td style="padding:4px 6px;">
+                                            {{ str_starts_with((string) ($row->reference ?? ''), 'CUST-OB-') ? 'Customer OB' : 'Supplier OB' }}
+                                        </td>
+                                        <td style="padding:4px 6px;">{{ $row->reference ?? '—' }}</td>
+                                        <td style="padding:4px 6px;">{{ $row->related_id ?? '—' }}</td>
+                                        <td style="padding:4px 6px;text-align:right;">{{ (int) ($row->entry_count ?? 0) }}</td>
+                                        <td style="padding:4px 6px;text-align:right;">{{ $fmt((float) ($row->total_debit ?? 0)) }}</td>
+                                        <td style="padding:4px 6px;text-align:right;">{{ $fmt((float) ($row->total_credit ?? 0)) }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    @endif
+
+                    @if($reserveSuspenseDiagnostics->isNotEmpty())
+                        <div style="margin-top:12px;font-weight:700;">Reserve / Suspense Source Transactions</div>
+                        <table style="width:100%;margin-top:8px;border-collapse:collapse;font-size:0.79rem;">
+                            <thead>
+                                <tr style="background:#fef9c3;">
+                                    <td style="padding:4px 6px;">Date</td>
+                                    <td style="padding:4px 6px;">Account</td>
+                                    <td style="padding:4px 6px;">Reference</td>
+                                    <td style="padding:4px 6px;">Type</td>
+                                    <td style="padding:4px 6px;">Branch</td>
+                                    <td style="padding:4px 6px;text-align:right;">Debit</td>
+                                    <td style="padding:4px 6px;text-align:right;">Credit</td>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($reserveSuspenseDiagnostics as $row)
+                                    <tr>
+                                        <td style="padding:4px 6px;">{{ \Carbon\Carbon::parse($row->transaction_date)->format('d M Y') }}</td>
+                                        <td style="padding:4px 6px;">{{ $row->account_name }}{{ !empty($row->account_code) ? ' (' . $row->account_code . ')' : '' }}</td>
+                                        <td style="padding:4px 6px;">{{ $row->reference ?? '—' }}</td>
+                                        <td style="padding:4px 6px;">{{ $row->transaction_type ?? '—' }}</td>
+                                        <td style="padding:4px 6px;">{{ $row->branch_name ?: ($row->branch_id ?: 'Shared') }}</td>
+                                        <td style="padding:4px 6px;text-align:right;">{{ $fmt((float) ($row->debit ?? 0)) }}</td>
+                                        <td style="padding:4px 6px;text-align:right;">{{ $fmt((float) ($row->credit ?? 0)) }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    @endif
+                </details>
+            @endif
+
             {{-- Detailed imbalance entries (debug panel) --}}
             @if(isset($imbalancedEntries) && $imbalancedEntries->isNotEmpty() && !$isBalanced)
                 <details style="margin-top:16px;">
