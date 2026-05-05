@@ -1528,6 +1528,225 @@ $changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
             </details>
             @endif
 
+            {{-- ══════════════════════════════════════════════════════════════════════ --}}
+            {{-- Opening Balance & Equity Migration Audit                               --}}
+            {{-- ══════════════════════════════════════════════════════════════════════ --}}
+            @if(!empty($openingBalanceAudit) && ($openingBalanceAudit['available'] ?? false))
+            @php
+                $oba           = $openingBalanceAudit;
+                $obaHasData    = $oba['has_opening_journals'] ?? false;
+                $obaAsset      = (float) ($oba['opening_asset_total']        ?? 0);
+                $obaLiab       = (float) ($oba['opening_liability_total']    ?? 0);
+                $obaEquity     = (float) ($oba['opening_equity_total']       ?? 0);
+                $obaNetAssets  = (float) ($oba['opening_net_assets']         ?? 0);
+                $obaReqAdj     = (float) ($oba['required_equity_adjustment'] ?? 0);
+                $obaFlagged    = $oba['flagged_refs']   ?? collect();
+                $obaByRef      = $oba['by_reference']   ?? collect();
+                $obaTypeTotals = $oba['type_totals']    ?? collect();
+                $obaHasGap     = abs($obaReqAdj) >= 1;
+                $obaFlagCount  = $obaFlagged instanceof \Illuminate\Support\Collection ? $obaFlagged->count() : count($obaFlagged);
+            @endphp
+            <details style="margin-top:14px;" id="bsOpeningAudit" {{ (!$obaHasData || $obaHasGap) && !$isBalanced ? 'open' : '' }}>
+                <summary style="cursor:pointer;font-weight:700;font-size:0.88rem;color:#7c3aed;padding:4px 0;">
+                    &#128269; Opening Balance &amp; Equity Migration Audit
+                    @if(!$obaHasData)
+                        <span style="font-weight:400;color:#6b7280;font-size:0.8rem;"> — no Opening Balance journals found for this branch</span>
+                    @elseif($obaHasGap)
+                        <span style="font-weight:400;color:#b91c1c;font-size:0.8rem;"> — &#9888; equity shortfall {{ $fmt(abs($obaReqAdj)) }} detected</span>
+                    @else
+                        <span style="font-weight:400;color:#059669;font-size:0.8rem;"> — &#10003; opening equity symmetric</span>
+                    @endif
+                </summary>
+
+                @if(!$obaHasData)
+                    <div style="padding:10px 12px;background:#f3f4f6;border-radius:4px;font-size:0.82rem;color:#6b7280;margin-top:8px;">
+                        No transactions with type <strong>"Opening Balance"</strong> were found for this branch
+                        up to {{ $reportDate->format('j M Y') }}.<br>
+                        If opening balances exist but were posted with a different transaction type (e.g. "Journal Entry"),
+                        they will not appear here. Check the <em>Full Account Classification</em> panel above for those ledger movements.
+                    </div>
+                @else
+
+                    {{-- ── Task 1–3: Net assets vs equity summary ── --}}
+                    <div style="margin-top:10px;overflow-x:auto;">
+                        <table style="border-collapse:collapse;font-size:0.8rem;min-width:420px;max-width:600px;">
+                            <caption style="text-align:left;font-weight:700;color:#374151;padding:0 0 6px;font-size:0.82rem;">
+                                Opening Balance Type Summary (up to {{ $reportDate->format('j M Y') }})
+                            </caption>
+                            <thead>
+                                <tr style="background:#ede9fe;font-size:0.73rem;text-transform:uppercase;letter-spacing:.04em;color:#4c1d95;">
+                                    <th style="padding:5px 10px;text-align:left;">Account Type</th>
+                                    <th style="padding:5px 10px;text-align:right;">Dr Total</th>
+                                    <th style="padding:5px 10px;text-align:right;">Cr Total</th>
+                                    <th style="padding:5px 10px;text-align:right;">Net Effect</th>
+                                    <th style="padding:5px 10px;text-align:right;">Entries</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($obaTypeTotals as $obaType => $obaRow)
+                                @php
+                                    $obaRowBg = match($obaType) {
+                                        'asset'     => '#f0fdf4',
+                                        'liability' => '#fff7ed',
+                                        'equity'    => '#eff6ff',
+                                        'revenue'   => '#fdf4ff',
+                                        'expense'   => '#fefce8',
+                                        default     => '#fef2f2',
+                                    };
+                                    $obaNetBal = (float)($obaRow['net_balance'] ?? 0);
+                                @endphp
+                                <tr style="background:{{ $obaRowBg }};border-top:1px solid #e5e7eb;">
+                                    <td style="padding:4px 10px;font-weight:600;text-transform:capitalize;">{{ $obaType }}</td>
+                                    <td style="padding:4px 10px;text-align:right;font-variant-numeric:tabular-nums;">{{ $fmt((float)($obaRow['total_debit'] ?? 0)) }}</td>
+                                    <td style="padding:4px 10px;text-align:right;font-variant-numeric:tabular-nums;">{{ $fmt((float)($obaRow['total_credit'] ?? 0)) }}</td>
+                                    <td style="padding:4px 10px;text-align:right;font-variant-numeric:tabular-nums;font-weight:700;color:{{ $obaNetBal < 0 ? '#dc2626' : '#059669' }};">
+                                        {{ $fmt($obaNetBal) }}
+                                    </td>
+                                    <td style="padding:4px 10px;text-align:right;color:#6b7280;">{{ $obaRow['count'] ?? 0 }}</td>
+                                </tr>
+                                @endforeach
+                                {{-- Derived rows ──────────────────────────────────── --}}
+                                <tr style="border-top:2px solid #a78bfa;background:#f5f3ff;">
+                                    <td colspan="3" style="padding:5px 10px;font-weight:700;color:#4c1d95;">Net Assets via Opening Balances (Assets − Liabilities)</td>
+                                    <td style="padding:5px 10px;text-align:right;font-variant-numeric:tabular-nums;font-weight:700;color:{{ $obaNetAssets < 0 ? '#dc2626' : '#374151' }};">
+                                        {{ $fmt($obaNetAssets) }}
+                                    </td>
+                                    <td></td>
+                                </tr>
+                                <tr style="background:#f5f3ff;">
+                                    <td colspan="3" style="padding:3px 10px;color:#4c1d95;">Equity posted via Opening Balances</td>
+                                    <td style="padding:3px 10px;text-align:right;font-variant-numeric:tabular-nums;color:#374151;">{{ $fmt($obaEquity) }}</td>
+                                    <td></td>
+                                </tr>
+                                <tr style="border-top:2px solid {{ $obaHasGap ? '#dc2626' : '#059669' }};background:{{ $obaHasGap ? '#fef2f2' : '#f0fdf4' }};">
+                                    <td colspan="3" style="padding:6px 10px;font-weight:700;color:{{ $obaHasGap ? '#b91c1c' : '#059669' }};">
+                                        Required Equity Adjustment (Task 7)
+                                        @if(!$obaHasGap)
+                                            &nbsp;&#10003;
+                                        @endif
+                                    </td>
+                                    <td style="padding:6px 10px;text-align:right;font-variant-numeric:tabular-nums;font-weight:700;font-size:1.05em;color:{{ $obaHasGap ? '#b91c1c' : '#059669' }};">
+                                        {{ $fmt(abs($obaReqAdj)) }}
+                                        @if($obaHasGap) &nbsp;&#9650; MISSING @endif
+                                    </td>
+                                    <td></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    @if($obaHasGap)
+                    <div style="margin-top:10px;padding:10px 14px;background:#fef2f2;border-left:4px solid #dc2626;border-radius:4px;font-size:0.81rem;line-height:1.6;">
+                        <strong style="color:#991b1b;">&#9888; Equity shortfall confirmed: {{ $fmt(abs($obaReqAdj)) }}</strong><br>
+                        <span style="color:#7f1d1d;">
+                            Opening balance journals introduced <strong>{{ $fmt($obaAsset) }}</strong> of assets
+                            and <strong>{{ $fmt($obaLiab) }}</strong> of liabilities (net {{ $fmt($obaNetAssets) }}),
+                            but only <strong>{{ $fmt($obaEquity) }}</strong> was posted to equity accounts.
+                            The <strong>{{ $fmt(abs($obaReqAdj)) }}</strong> difference must be covered by a
+                            journal entry to <em>Owner's Capital</em> (or similar equity account).
+                        </span>
+                        <div style="margin-top:6px;">
+                            <strong style="color:#991b1b;">Missing journal entry:</strong><br>
+                            <code style="background:#fee2e2;padding:2px 6px;border-radius:3px;display:inline-block;margin-top:3px;">
+                                Dr &nbsp;Opening Balance Clearing &nbsp;{{ $fmt(abs($obaReqAdj)) }}&nbsp;&nbsp;/&nbsp;&nbsp;Cr &nbsp;Owner's Capital &nbsp;{{ $fmt(abs($obaReqAdj)) }}
+                            </code>
+                        </div>
+                    </div>
+                    @endif
+
+                    {{-- ── Tasks 5–6: Per-journal-reference audit (flagged first) ── --}}
+                    <details style="margin-top:14px;" {{ $obaFlagCount > 0 ? 'open' : '' }}>
+                        <summary style="cursor:pointer;font-size:0.83rem;font-weight:700;color:#374151;padding:3px 0;">
+                            Journal-by-Journal Audit
+                            @if($obaFlagCount > 0)
+                                &nbsp;<span style="background:#dc2626;color:#fff;border-radius:9px;padding:1px 8px;font-size:0.75rem;">{{ $obaFlagCount }} flagged</span>
+                            @else
+                                &nbsp;<span style="background:#059669;color:#fff;border-radius:9px;padding:1px 8px;font-size:0.75rem;">all symmetric</span>
+                            @endif
+                        </summary>
+                        <div style="overflow-x:auto;margin-top:8px;">
+                            @foreach($obaByRef as $obaJournal)
+                            @php
+                                $jFlagged   = $obaJournal->flag;
+                                $jImbal     = $obaJournal->is_imbalanced;
+                                $jRef       = $obaJournal->reference ?? '—';
+                                $jDate      = $obaJournal->date instanceof \Carbon\Carbon
+                                    ? $obaJournal->date->format('j M Y')
+                                    : (string) $obaJournal->date;
+                            @endphp
+                            <div style="margin-bottom:10px;border:1px solid {{ $jFlagged ? '#fca5a5' : ($jImbal ? '#fcd34d' : '#d1d5db') }};border-radius:5px;overflow:hidden;">
+                                <div style="padding:5px 10px;background:{{ $jFlagged ? '#fef2f2' : ($jImbal ? '#fffbeb' : '#f9fafb') }};display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+                                    <span style="font-weight:700;font-size:0.8rem;color:#374151;">{{ $jRef }}</span>
+                                    <span style="color:#6b7280;font-size:0.77rem;">{{ $jDate }}</span>
+                                    @if($jFlagged)
+                                        <span style="background:#dc2626;color:#fff;border-radius:9px;padding:0 7px;font-size:0.72rem;">&#9888; no equity leg — missing {{ $fmt(abs($obaJournal->missing_equity)) }}</span>
+                                    @elseif($jImbal)
+                                        <span style="background:#d97706;color:#fff;border-radius:9px;padding:0 7px;font-size:0.72rem;">&#9888; imbalanced Dr/Cr</span>
+                                    @else
+                                        <span style="background:#059669;color:#fff;border-radius:9px;padding:0 7px;font-size:0.72rem;">&#10003; equity matched</span>
+                                    @endif
+                                    @if($jFlagged)
+                                    <span style="font-size:0.76rem;color:#6b7280;margin-left:auto;">
+                                        Asset net: {{ $fmt($obaJournal->asset_net) }} &nbsp;|&nbsp;
+                                        Liab net: {{ $fmt($obaJournal->liab_net) }} &nbsp;|&nbsp;
+                                        Equity posted: {{ $fmt($obaJournal->equity_net) }}
+                                    </span>
+                                    @endif
+                                </div>
+                                <table style="width:100%;border-collapse:collapse;font-size:0.77rem;">
+                                    <thead>
+                                        <tr style="background:#f3f4f6;color:#4b5563;font-size:0.72rem;text-transform:uppercase;letter-spacing:.04em;">
+                                            <th style="padding:3px 8px;text-align:left;">Account</th>
+                                            <th style="padding:3px 8px;text-align:left;">Type</th>
+                                            <th style="padding:3px 8px;text-align:left;">Norm.</th>
+                                            <th style="padding:3px 8px;text-align:right;">Debit</th>
+                                            <th style="padding:3px 8px;text-align:right;">Credit</th>
+                                            <th style="padding:3px 8px;text-align:left;">Branch</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($obaJournal->legs as $obaLeg)
+                                        @php
+                                            $legNorm = $obaLeg->_norm_type ?? 'other';
+                                            $legBg   = match($legNorm) {
+                                                'asset'     => '#f0fdf4',
+                                                'liability' => '#fff7ed',
+                                                'equity'    => '#eff6ff',
+                                                default     => '#fef9f9',
+                                            };
+                                        @endphp
+                                        <tr style="border-top:1px solid #f3f4f6;background:{{ $legBg }};">
+                                            <td style="padding:3px 8px;font-weight:600;">{{ $obaLeg->account_name ?? '—' }}</td>
+                                            <td style="padding:3px 8px;color:#374151;font-family:monospace;font-size:0.73rem;">{{ $obaLeg->account_type ?? '(none)' }}</td>
+                                            <td style="padding:3px 8px;font-family:monospace;font-size:0.73rem;color:{{ $legNorm === 'other' ? '#dc2626' : '#374151' }};">{{ $legNorm }}</td>
+                                            <td style="padding:3px 8px;text-align:right;font-variant-numeric:tabular-nums;">
+                                                {{ (float)($obaLeg->debit ?? 0) > 0.005 ? $fmt((float)$obaLeg->debit) : '—' }}
+                                            </td>
+                                            <td style="padding:3px 8px;text-align:right;font-variant-numeric:tabular-nums;">
+                                                {{ (float)($obaLeg->credit ?? 0) > 0.005 ? $fmt((float)$obaLeg->credit) : '—' }}
+                                            </td>
+                                            <td style="padding:3px 8px;color:#9ca3af;font-size:0.72rem;">
+                                                {{ $obaLeg->branch_name ?? ($obaLeg->branch_id ? 'ID:'.$obaLeg->branch_id : 'global') }}
+                                            </td>
+                                        </tr>
+                                        @endforeach
+                                        <tr style="background:#f9fafb;font-weight:700;border-top:1px solid #d1d5db;">
+                                            <td colspan="3" style="padding:3px 8px;color:#374151;">Totals</td>
+                                            <td style="padding:3px 8px;text-align:right;font-variant-numeric:tabular-nums;">{{ $fmt($obaJournal->total_debit) }}</td>
+                                            <td style="padding:3px 8px;text-align:right;font-variant-numeric:tabular-nums;">{{ $fmt($obaJournal->total_credit) }}</td>
+                                            <td></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            @endforeach
+                        </div>
+                    </details>
+
+                @endif {{-- has_opening_journals --}}
+            </details>
+            @endif {{-- openingBalanceAudit available --}}
+
         </div>{{-- /.bs-sheet --}}
     </div>{{-- /.bs-page --}}
 

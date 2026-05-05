@@ -887,6 +887,7 @@ class BalanceSheetController extends Controller
 
         $reserveSuspenseDiagnostics = $this->reserveAndSuspenseDiagnostics($request, $reportDate, $activeBranch);
         $openingBalanceValidation = $this->openingBalanceValidationReport($request, $reportDate, $activeBranch);
+        $openingBalanceAudit = $this->branchOpeningBalanceAudit($request, $reportDate, $activeBranch);
 
         // 7. Map variables to match your Blade @foreach calls exactly
         // Load branch list for the branch selector in the filter bar
@@ -943,7 +944,8 @@ class BalanceSheetController extends Controller
             'geoCurrencyLocale',
             'unplacedAccounts',
             'fullLedgerBreakdown',
-            'openingEquityGap'
+            'openingEquityGap',
+            'openingBalanceAudit'
         ));
     }
 
@@ -971,6 +973,196 @@ class BalanceSheetController extends Controller
 
 
     // Legacy balanceSheet() removed — use index() which produces the full statement.
+
+    /**
+     * Audit branch opening balance journals and detect missing equity offsets.
+     *
+     * Returns a structured array with:
+     *  - Every "Opening Balance" transaction leg for this branch (up to $reportDate)
+     *  - Per-type totals (asset, liability, equity)
+     *  - Per-reference journal groups flagged when no equity leg was posted
+     *  - The exact required equity adjustment to balance the branch
+     */
+    private function branchOpeningBalanceAudit(Request $request, Carbon $reportDate, array $activeBranch): array
+    {
+        if (!Schema::hasTable('transactions') || !Schema::hasTable('accounts')) {
+            return ['available' => false];
+        }
+
+        $companyId     = (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $userId        = (int) ($request->user()?->id ?? 0);
+        $isAllBranches = ($activeBranch['scope'] ?? 'branch') === 'all';
+        $branchId      = trim((string) ($activeBranch['id']   ?? ''));
+        $branchName    = trim((string) ($activeBranch['name'] ?? ''));
+
+        // ── 1. Pull every opening-balance leg for this branch ─────────────────────
+        $legsQuery = Transaction::withoutGlobalScopes()
+            ->join('accounts', 'transactions.account_id', '=', 'accounts.id')
+            ->whereNull('transactions.deleted_at')
+            ->where('transactions.transaction_type', Transaction::TYPE_OPENING_BALANCE)
+            ->where('transactions.transaction_date', '<=', $reportDate)
+            ->select([
+                'transactions.id',
+                'transactions.reference',
+                'transactions.transaction_date',
+                'transactions.description',
+                'transactions.debit',
+                'transactions.credit',
+                'transactions.branch_id',
+                'transactions.branch_name',
+                'transactions.account_id',
+                'accounts.name  as account_name',
+                'accounts.type  as account_type',
+                'accounts.sub_type as account_sub_type',
+                'accounts.code  as account_code',
+            ])
+            ->orderBy('transactions.transaction_date')
+            ->orderBy('transactions.reference')
+            ->orderBy('transactions.id');
+
+        // Tenant scope
+        if ($companyId > 0 && Schema::hasColumn('transactions', 'company_id')) {
+            $legsQuery->where('transactions.company_id', $companyId);
+        } elseif ($userId > 0 && Schema::hasColumn('transactions', 'user_id')) {
+            $legsQuery->where('transactions.user_id', $userId);
+        }
+
+        // Branch scope
+        if (!$isAllBranches && ($branchId !== '' || $branchName !== '')) {
+            $legsQuery->where(function ($sub) use ($branchId, $branchName) {
+                if ($branchId !== '') {
+                    $sub->where('transactions.branch_id', $branchId);
+                }
+                if ($branchName !== '') {
+                    $method = $branchId !== '' ? 'orWhere' : 'where';
+                    $sub->{$method}('transactions.branch_name', $branchName);
+                }
+                // Include opening-balance journals that were posted to accounts
+                // with no branch tag (e.g. AR, Equity created centrally) but whose
+                // reference ties them to this branch's setup.
+                // These are captured by the reference GROUP at step 3 — no need to
+                // widen the query here.
+            });
+        }
+
+        $allLegs = $legsQuery->get();
+
+        if ($allLegs->isEmpty()) {
+            return [
+                'available'                  => true,
+                'has_opening_journals'        => false,
+                'legs'                        => collect(),
+                'by_reference'                => collect(),
+                'type_totals'                 => collect(),
+                'opening_asset_total'         => 0.0,
+                'opening_liability_total'     => 0.0,
+                'opening_equity_total'        => 0.0,
+                'opening_net_assets'          => 0.0,
+                'required_equity_adjustment'  => 0.0,
+                'flagged_refs'                => collect(),
+            ];
+        }
+
+        // ── 2. Classify and annotate each leg ─────────────────────────────────────
+        $allLegs = $allLegs->map(function ($leg) {
+            $leg->_norm_type = $this->normalizeAccountType($leg->account_type ?? null);
+            return $leg;
+        });
+
+        // ── 3. Aggregate totals by normalised account type ────────────────────────
+        $typeTotals = $allLegs->groupBy('_norm_type')->map(function ($legs, $type) {
+            $totalDr       = round($legs->sum(fn ($l) => (float) ($l->debit  ?? 0)), 2);
+            $totalCr       = round($legs->sum(fn ($l) => (float) ($l->credit ?? 0)), 2);
+            $isCreditNormal = in_array($type, ['liability', 'equity', 'revenue'], true);
+            $netBalance    = $isCreditNormal ? ($totalCr - $totalDr) : ($totalDr - $totalCr);
+
+            return [
+                'type'         => $type,
+                'total_debit'  => $totalDr,
+                'total_credit' => $totalCr,
+                'net_balance'  => round($netBalance, 2),
+                'count'        => $legs->count(),
+            ];
+        });
+
+        $openingAssetTotal     = (float) ($typeTotals->get('asset')['net_balance']     ?? 0.0);
+        $openingLiabilityTotal = (float) ($typeTotals->get('liability')['net_balance'] ?? 0.0);
+        $openingEquityTotal    = (float) ($typeTotals->get('equity')['net_balance']    ?? 0.0);
+
+        // Net assets introduced through opening journals (before equity): Assets − Liabilities
+        $openingNetAssets = round($openingAssetTotal - $openingLiabilityTotal, 2);
+
+        // How much of that net injection was covered by an equity credit?
+        $requiredEquityAdjustment = round($openingNetAssets - $openingEquityTotal, 2);
+
+        // ── 4. Group legs by (reference + date) to audit individual journals ──────
+        $byReference = $allLegs
+            ->groupBy(fn ($l) => ($l->reference ?: 'NO-REF') . '||' . $l->transaction_date)
+            ->map(function ($legs) {
+                $hasEquityLeg = $legs->contains(fn ($l) => $l->_norm_type === 'equity');
+                $hasAssetLeg  = $legs->contains(fn ($l) => $l->_norm_type === 'asset');
+                $hasLiabLeg   = $legs->contains(fn ($l) => $l->_norm_type === 'liability');
+
+                $totalDr  = round($legs->sum(fn ($l) => (float) ($l->debit  ?? 0)), 2);
+                $totalCr  = round($legs->sum(fn ($l) => (float) ($l->credit ?? 0)), 2);
+
+                $assetNet   = round(
+                    $legs->filter(fn ($l) => $l->_norm_type === 'asset')
+                         ->sum(fn ($l) => (float) $l->debit - (float) $l->credit),
+                    2
+                );
+                $liabNet    = round(
+                    $legs->filter(fn ($l) => $l->_norm_type === 'liability')
+                         ->sum(fn ($l) => (float) $l->credit - (float) $l->debit),
+                    2
+                );
+                $equityNet  = round(
+                    $legs->filter(fn ($l) => $l->_norm_type === 'equity')
+                         ->sum(fn ($l) => (float) $l->credit - (float) $l->debit),
+                    2
+                );
+                // Net assets introduced by this journal; equity must cover this amount
+                $netAssetIntro  = round($assetNet - $liabNet, 2);
+                $missingEquity  = round($netAssetIntro - $equityNet, 2);
+
+                return (object) [
+                    'reference'      => $legs->first()->reference ?? '—',
+                    'date'           => $legs->first()->transaction_date,
+                    'description'    => $legs->first()->description ?? '',
+                    'legs'           => $legs->values(),
+                    'leg_count'      => $legs->count(),
+                    'has_equity_leg' => $hasEquityLeg,
+                    'has_asset_leg'  => $hasAssetLeg,
+                    'has_liab_leg'   => $hasLiabLeg,
+                    'total_debit'    => $totalDr,
+                    'total_credit'   => $totalCr,
+                    'is_imbalanced'  => abs($totalDr - $totalCr) >= 0.01,
+                    'asset_net'      => $assetNet,
+                    'liab_net'       => $liabNet,
+                    'equity_net'     => $equityNet,
+                    'net_asset_intro'=> $netAssetIntro,
+                    'missing_equity' => $missingEquity,
+                    // Flag journals that introduced net assets but posted no equity credit
+                    'flag'           => abs($missingEquity) >= 0.01,
+                ];
+            })
+            ->sortByDesc(fn ($g) => abs($g->missing_equity))
+            ->values();
+
+        return [
+            'available'                  => true,
+            'has_opening_journals'        => true,
+            'legs'                        => $allLegs,
+            'by_reference'                => $byReference,
+            'type_totals'                 => $typeTotals,
+            'opening_asset_total'         => round($openingAssetTotal, 2),
+            'opening_liability_total'     => round($openingLiabilityTotal, 2),
+            'opening_equity_total'        => round($openingEquityTotal, 2),
+            'opening_net_assets'          => $openingNetAssets,
+            'required_equity_adjustment'  => $requiredEquityAdjustment,
+            'flagged_refs'                => $byReference->filter(fn ($g) => $g->flag)->values(),
+        ];
+    }
 
     private function computeComparisonSnapshot(Request $request, Carbon $date, array $activeBranch, string $method): array
     {
