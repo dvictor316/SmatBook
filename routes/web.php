@@ -17,6 +17,7 @@ use App\Http\Controllers\{
     , AiQuickAgentController, RecurringTransactionController, FinanceApprovalController, FixedAssetController, BudgetController
 };
 use App\Http\Controllers\SuperAdmin\DeploymentManagerController;
+use App\Http\Controllers\FinancialResetController;
 
 /*
 |--------------------------------------------------------------------------
@@ -533,6 +534,10 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('superadmin')->name('sup
     Route::get('/backups', [BackupController::class, 'index'])->name('backups.index');
     Route::post('/backups/create', [BackupController::class, 'create'])->name('backups.create');
     Route::get('/backups/{id}/download', [BackupController::class, 'download'])->name('backups.download');
+
+    // Financial Reset (super-admin only — wipes all transactional data for the company)
+    Route::get('/financial-reset',  [FinancialResetController::class, 'index'])  ->name('financial.reset');
+    Route::post('/financial-reset', [FinancialResetController::class, 'execute'])->name('financial.reset.execute');
 });
 
 // TEMP: Exit impersonation and restore superadmin session
