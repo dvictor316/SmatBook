@@ -260,7 +260,25 @@ class ProductController extends Controller
 
     private function firstOrCreateImportCategory(string $categoryName): Category
     {
-        $existing = Category::withoutGlobalScopes()->where('name', $categoryName)->first();
+        $query = Category::withoutGlobalScopes()->newQuery()->where('name', $categoryName);
+        $this->applyTenantScope($query, 'categories');
+
+        $activeBranch = $this->getActiveBranchContext();
+        $activeBranchId = trim((string) ($activeBranch['id'] ?? ''));
+        $activeBranchName = trim((string) ($activeBranch['name'] ?? ''));
+        if ($activeBranchId !== '' || $activeBranchName !== '') {
+            $query->where(function ($branchQuery) use ($activeBranchId, $activeBranchName) {
+                if ($activeBranchId !== '' && Schema::hasColumn('categories', 'branch_id')) {
+                    $branchQuery->where('categories.branch_id', $activeBranchId);
+                }
+                if ($activeBranchName !== '' && Schema::hasColumn('categories', 'branch_name')) {
+                    $method = ($activeBranchId !== '' && Schema::hasColumn('categories', 'branch_id')) ? 'orWhere' : 'where';
+                    $branchQuery->{$method}('categories.branch_name', $activeBranchName);
+                }
+            });
+        }
+
+        $existing = $query->first();
         if ($existing) {
             return $existing;
         }
@@ -285,6 +303,14 @@ class ProductController extends Controller
 
         if (Schema::hasColumn('categories', 'user_id')) {
             $payload['user_id'] = auth()->id();
+        }
+
+        if (Schema::hasColumn('categories', 'branch_id')) {
+            $payload['branch_id'] = $activeBranchId !== '' ? $activeBranchId : null;
+        }
+
+        if (Schema::hasColumn('categories', 'branch_name')) {
+            $payload['branch_name'] = $activeBranchName !== '' ? $activeBranchName : null;
         }
 
         return Category::query()->create($payload);
@@ -628,7 +654,6 @@ class ProductController extends Controller
         try {
             $search = $request->input('search');
             $activeBranch = $this->getActiveBranchContext();
-            $this->branchInventory->backfillMissingBranchStocks($activeBranch, $this->tenantCompanyId());
             $hasCategories = Schema::hasTable('categories') && Schema::hasColumn('products', 'category_id');
             $hasBranchStocksTable = Schema::hasTable('product_branch_stocks');
             $hasBranchStocksBranchId = $hasBranchStocksTable && Schema::hasColumn('product_branch_stocks', 'branch_id');
@@ -1960,9 +1985,22 @@ public function inventory(Request $request)
             $rowErrors = [];
             $updateExisting = $request->boolean('update_existing');
             $createdIds = [];
+            $sessionBranch = $this->getActiveBranchContext();
+            $requestedBranchId = trim((string) $request->input('branch_id', ''));
+            if (
+                $requestedBranchId !== ''
+                && trim((string) ($sessionBranch['id'] ?? '')) !== ''
+                && $requestedBranchId !== trim((string) ($sessionBranch['id'] ?? ''))
+            ) {
+                return redirect()->back()->with(
+                    'error',
+                    'Product imports are restricted to the active branch. Switch to the target branch before importing.'
+                );
+            }
 
             DB::transaction(function () use ($file, $header, &$created, &$updated, &$updatedExisting, &$skipped, &$duplicates, &$missingRequired, &$rowErrors, $updateExisting, $request) {
                 $activeBranch = $this->resolveBranchContext($request->input('branch_id'));
+                $activeBranchName = trim((string) ($activeBranch['name'] ?? ''));
 
                 foreach ($this->spreadsheetRowIterator($file) as $rowNumber => $row) {
                     if ($rowNumber === 0) {
@@ -1994,6 +2032,15 @@ public function inventory(Request $request)
                     }
 
                     try {
+                        $csvBranchName = trim((string) ($rowData['branch_name'] ?? ''));
+                        if ($csvBranchName !== '' && $activeBranchName !== '' && strcasecmp($csvBranchName, $activeBranchName) !== 0) {
+                            $skipped++;
+                            if (count($rowErrors) < 10) {
+                                $rowErrors[] = 'Row ' . ($rowNumber + 1) . ': branch_name does not match the active branch';
+                            }
+                            continue;
+                        }
+
                         $categoryName = ($rowData['category'] ?? '') !== '' ? $rowData['category'] : 'Uncategorized';
                         $category = $this->firstOrCreateImportCategory($categoryName);
 

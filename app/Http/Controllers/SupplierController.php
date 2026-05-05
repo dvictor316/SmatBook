@@ -988,6 +988,9 @@ class SupplierController extends Controller
             $companyId = (int) (auth()->user()?->company_id ?? 0);
             $userId = (int) (auth()->id() ?? 0);
             $updateExisting = $request->boolean('update_existing');
+            $activeBranch = $this->getActiveBranchContext();
+            $activeBranchId = trim((string) ($activeBranch['id'] ?? ''));
+            $activeBranchName = trim((string) ($activeBranch['name'] ?? ''));
 
             foreach ($this->spreadsheetRowIterator($file) as $rowNumber => $row) {
                 if ($rowNumber === 0) {
@@ -1011,12 +1014,33 @@ class SupplierController extends Controller
                 try {
                     $lookupEmail = $rowData['email'] ?? '';
                     $lookupPhone = $rowData['phone'] ?? '';
+                    $csvBranchName = trim((string) ($rowData['branch_name'] ?? ''));
+
+                    if ($csvBranchName !== '' && $activeBranchName !== '' && strcasecmp($csvBranchName, $activeBranchName) !== 0) {
+                        $skipped++;
+                        if (count($rowErrors) < 10) {
+                            $rowErrors[] = 'Row ' . ($rowNumber + 1) . ': branch_name does not match the active branch';
+                        }
+                        continue;
+                    }
 
                     $supplierQuery = $this->newSupplierQuery();
                     if ($companyId > 0 && Schema::hasColumn('suppliers', 'company_id')) {
                         $supplierQuery->where('company_id', $companyId);
                     } elseif ($userId > 0 && Schema::hasColumn('suppliers', 'user_id')) {
                         $supplierQuery->where('user_id', $userId);
+                    }
+
+                    if ($activeBranchId !== '' || $activeBranchName !== '') {
+                        $supplierQuery->where(function ($branchQuery) use ($activeBranchId, $activeBranchName) {
+                            if ($activeBranchId !== '' && Schema::hasColumn('suppliers', 'branch_id')) {
+                                $branchQuery->where('branch_id', $activeBranchId);
+                            }
+                            if ($activeBranchName !== '' && Schema::hasColumn('suppliers', 'branch_name')) {
+                                $method = ($activeBranchId !== '' && Schema::hasColumn('suppliers', 'branch_id')) ? 'orWhere' : 'where';
+                                $branchQuery->{$method}('branch_name', $activeBranchName);
+                            }
+                        });
                     }
 
                     if ($lookupEmail !== '' && Schema::hasColumn('suppliers', 'email')) {
@@ -1060,6 +1084,8 @@ class SupplierController extends Controller
                                 : null,
                         'company_id' => $companyId > 0 ? $companyId : null,
                         'user_id' => $userId > 0 ? $userId : null,
+                        'branch_id' => $activeBranchId !== '' ? $activeBranchId : null,
+                        'branch_name' => $activeBranchName !== '' ? $activeBranchName : null,
                     ]);
                     $payload[$nameColumn] = $rowData['name'];
 

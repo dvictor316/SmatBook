@@ -430,6 +430,9 @@ class VendorController extends Controller
             $companyId = (int) (auth()->user()?->company_id ?? 0);
             $userId = (int) (auth()->id() ?? 0);
             $updateExisting = $request->boolean('update_existing');
+            $activeBranch = $this->getActiveBranchContext();
+            $activeBranchId = trim((string) ($activeBranch['id'] ?? ''));
+            $activeBranchName = trim((string) ($activeBranch['name'] ?? ''));
 
             foreach ($this->spreadsheetRowIterator($file) as $rowNumber => $row) {
                 if ($rowNumber === 0) {
@@ -459,12 +462,33 @@ class VendorController extends Controller
                 try {
                     $lookupEmail = $rowData['email'] ?? '';
                     $lookupPhone = $rowData['phone'] ?? '';
+                    $csvBranchName = trim((string) ($rowData['branch_name'] ?? ''));
+
+                    if ($csvBranchName !== '' && $activeBranchName !== '' && strcasecmp($csvBranchName, $activeBranchName) !== 0) {
+                        $skipped++;
+                        if (count($rowErrors) < 10) {
+                            $rowErrors[] = 'Row ' . ($rowNumber + 1) . ': branch_name does not match the active branch';
+                        }
+                        continue;
+                    }
 
                     $vendorQuery = Vendor::query();
                     if ($companyId > 0 && Schema::hasColumn('vendors', 'company_id')) {
                         $vendorQuery->where('company_id', $companyId);
                     } elseif ($userId > 0 && Schema::hasColumn('vendors', 'user_id')) {
                         $vendorQuery->where('user_id', $userId);
+                    }
+
+                    if ($activeBranchId !== '' || $activeBranchName !== '') {
+                        $vendorQuery->where(function ($branchQuery) use ($activeBranchId, $activeBranchName) {
+                            if ($activeBranchId !== '' && Schema::hasColumn('vendors', 'branch_id')) {
+                                $branchQuery->where('branch_id', $activeBranchId);
+                            }
+                            if ($activeBranchName !== '' && Schema::hasColumn('vendors', 'branch_name')) {
+                                $method = ($activeBranchId !== '' && Schema::hasColumn('vendors', 'branch_id')) ? 'orWhere' : 'where';
+                                $branchQuery->{$method}('branch_name', $activeBranchName);
+                            }
+                        });
                     }
 
                     if ($lookupEmail !== '' && Schema::hasColumn('vendors', 'email')) {
@@ -501,6 +525,8 @@ class VendorController extends Controller
                         'notes' => $rowData['notes'] ?? null,
                         'company_id' => $companyId > 0 ? $companyId : null,
                         'user_id' => $userId > 0 ? $userId : null,
+                        'branch_id' => $activeBranchId !== '' ? $activeBranchId : null,
+                        'branch_name' => $activeBranchName !== '' ? $activeBranchName : null,
                     ]);
 
                     $vendor->fill($payload);

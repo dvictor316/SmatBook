@@ -72,9 +72,6 @@ class PurchaseController extends Controller
     {
         $this->applyTenantScope($query, 'products');
 
-        $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
-        $this->branchInventory->backfillMissingBranchStocks($activeBranch, $companyId > 0 ? $companyId : null);
-
         if (!empty($activeBranch['id']) && Schema::hasTable('product_branch_stocks')) {
             $branchId = (string) $activeBranch['id'];
             $query->where(function ($productQuery) use ($branchId) {

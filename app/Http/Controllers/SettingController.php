@@ -13,7 +13,6 @@ use App\Models\Transaction;
 use App\Models\Subscription;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
@@ -815,47 +814,18 @@ class SettingController extends Controller
 
     public function ledger_backfill(Request $request)
     {
-        $user = Auth::user();
-        $role = strtolower((string) ($user->role ?? ''));
-        if (!in_array($role, ['super_admin', 'superadmin', 'administrator', 'admin'], true)) {
-            return redirect()->back()->with('error', 'Unauthorized: only super admin can run ledger backfill.');
-        }
-
-        try {
-            $chunk = (int) $request->input('chunk', 100);
-            $chunk = max(50, min(1000, $chunk));
-
-            Artisan::call('ledger:backfill-operations', [
-                '--chunk' => $chunk,
-            ]);
-
-            $output = trim((string) Artisan::output());
-            $message = $output !== '' ? $output : 'Ledger backfill completed.';
-
-            return redirect()->back()->with('success', $message);
-        } catch (\Throwable $e) {
-            return redirect()->back()->with('error', 'Ledger backfill failed: ' . $e->getMessage());
-        }
+        return redirect()->back()->with(
+            'error',
+            'Automatic ledger backfill has been disabled. Post corrections from the original tenant and branch transaction source instead.'
+        );
     }
 
     public function openingBalanceBackfill(Request $request)
     {
-        $user = Auth::user();
-        $role = strtolower((string) ($user->role ?? ''));
-        if (!in_array($role, ['super_admin', 'superadmin', 'administrator', 'admin'], true)) {
-            return redirect()->back()->with('error', 'Unauthorized: only super admin can run opening-balance backfill.');
-        }
-
-        try {
-            Artisan::call('accounts:backfill-opening-balance');
-
-            $output = trim((string) Artisan::output());
-            $message = $output !== '' ? $output : 'Opening balance backfill completed.';
-
-            return redirect()->back()->with('success', $message);
-        } catch (\Throwable $e) {
-            return redirect()->back()->with('error', 'Opening balance backfill failed: ' . $e->getMessage());
-        }
+        return redirect()->back()->with(
+            'error',
+            'Automatic opening-balance backfill has been disabled. Opening balances must be corrected within the owning tenant and branch ledger.'
+        );
     }
 
     public function storeChartAccount(Request $request)

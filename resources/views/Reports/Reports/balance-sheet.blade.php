@@ -612,7 +612,7 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
     {{-- ─── Report Page ─────────────────────────────────────────── --}}
     <div class="bs-page">
 
-        {{-- Unassigned-branch notice: shown when consolidated view has pre-branch data --}}
+        {{-- Unassigned-branch notice: excluded from the all-branches statement --}}
         @if($isAllBranches && ($unassignedTxnCount ?? 0) > 0)
         <div class="no-print" style="
             background:#fffbeb;
@@ -631,14 +631,12 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
                 <circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/>
             </svg>
             <div>
-                <strong>Consolidated total includes pre-branch data</strong><br>
+                <strong>Unassigned legacy transactions were excluded</strong><br>
                 <span style="font-size:0.82rem;">
                     {{ number_format($unassignedTxnCount) }} transaction{{ $unassignedTxnCount == 1 ? '' : 's' }}
-                    in this report have <em>no branch assigned</em> — they were recorded before
-                    branch tracking was set up. These appear here in the consolidated view but are
-                    <strong>not visible</strong> when you view any individual branch, which is why
-                    the consolidated total is higher than the sum of your individual branch totals.
-                    To resolve: reassign those transactions to the correct branch.
+                    with <em>no branch assigned</em> were left out of the all-branches statement so
+                    this report reflects only branch-owned activity. Review and reassign those
+                    legacy entries if they should appear in branch reporting.
                 </span>
             </div>
         </div>
@@ -1014,8 +1012,8 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
                 </div>
             @else
                 <div class="bs-imbalance">
-                    <strong>&#9888;&nbsp; Accounting Equation Imbalance Detected</strong>
-                    The balance sheet does not balance. Please review your chart of accounts and journal entries.
+                    <strong>&#9888;&nbsp; Statement Review Required</strong>
+                    The accounting equation is currently out of balance. Review the source journals, opening balances, and branch assignments below.
                     <table class="bs-recon-rows">
                         <tr><td>Total Assets</td><td>{{ $fmt($visTotalAssets) }}</td></tr>
                         <tr><td>Total Liabilities + Equity</td><td>{{ $fmt($visTotalLiabEquity) }}</td></tr>
@@ -1026,12 +1024,12 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
 
             @if(abs((float) ($reconciliationReserveDiagnostic ?? 0)) >= 0.01)
                 <div class="bs-hidden-debug">
-                    <strong>Reconciliation diagnostic only</strong><br>
-                    A temporary reconciliation reserve of {{ $fmt((float) ($reconciliationReserveDiagnostic ?? 0)) }}
-                    would be needed to force balance, but it has not been posted into Equity.
+                    <strong>Diagnostic Reconciliation Gap</strong><br>
+                    A temporary balancing amount of {{ $fmt((float) ($reconciliationReserveDiagnostic ?? 0)) }}
+                    would be required to force agreement, but no reserve entry has been posted automatically.
                     @if(!empty($reconciliationReserveNeedsReview))
                         <div style="margin-top:6px;color:#991b1b;font-weight:700;">
-                            Review required: diagnostic exceeds threshold of {{ $fmt((float) ($reconciliationReserveThreshold ?? 0)) }}.
+                            Review required: the diagnostic gap exceeds {{ $fmt((float) ($reconciliationReserveThreshold ?? 0)) }}.
                         </div>
                     @endif
                 </div>
@@ -1057,7 +1055,7 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
                 $reserveSuspenseDiagnostics->isNotEmpty()
             )
                 <details class="bs-hidden-debug no-print" style="margin-top:16px;">
-                    <summary>Validation Report</summary>
+                    <summary>Validation & Diagnostics</summary>
                     <table>
                         <tbody>
                             <tr>

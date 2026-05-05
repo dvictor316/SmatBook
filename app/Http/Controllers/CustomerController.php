@@ -1330,8 +1330,9 @@ class CustomerController extends Controller
             $companyId = (int) (auth()->user()?->company_id ?? 0);
             $userId = (int) (auth()->id() ?? 0);
             $updateExisting = $request->boolean('update_existing');
-            $availableBranches = collect($this->getAvailableBranches());
             $activeBranch = $this->getActiveBranchContext();
+            $activeBranchId = trim((string) ($activeBranch['id'] ?? ''));
+            $activeBranchName = trim((string) ($activeBranch['name'] ?? ''));
 
             foreach ($this->spreadsheetRowIterator($file) as $rowNumber => $row) {
                 if ($rowNumber <= (int) $headerRowNumber) {
@@ -1355,12 +1356,33 @@ class CustomerController extends Controller
                 try {
                     $lookupEmail = $rowData['email'] ?? '';
                     $lookupPhone = $rowData['phone'] ?? '';
+                    $csvBranchName = trim((string) ($rowData['branch_name'] ?? ''));
+
+                    if ($csvBranchName !== '' && $activeBranchName !== '' && strcasecmp($csvBranchName, $activeBranchName) !== 0) {
+                        $skipped++;
+                        if (count($rowErrors) < 10) {
+                            $rowErrors[] = 'Row ' . ($rowNumber + 1) . ': branch_name does not match the active branch';
+                        }
+                        continue;
+                    }
 
                     $customerQuery = Customer::query();
                     if ($companyId > 0 && Schema::hasColumn('customers', 'company_id')) {
                         $customerQuery->where('company_id', $companyId);
                     } elseif ($userId > 0 && Schema::hasColumn('customers', 'user_id')) {
                         $customerQuery->where('user_id', $userId);
+                    }
+
+                    if ($activeBranchId !== '' || $activeBranchName !== '') {
+                        $customerQuery->where(function ($branchQuery) use ($activeBranchId, $activeBranchName) {
+                            if ($activeBranchId !== '' && Schema::hasColumn('customers', 'branch_id')) {
+                                $branchQuery->where('branch_id', $activeBranchId);
+                            }
+                            if ($activeBranchName !== '' && Schema::hasColumn('customers', 'branch_name')) {
+                                $method = ($activeBranchId !== '' && Schema::hasColumn('customers', 'branch_id')) ? 'orWhere' : 'where';
+                                $branchQuery->{$method}('branch_name', $activeBranchName);
+                            }
+                        });
                     }
 
                     if ($lookupEmail !== '' && Schema::hasColumn('customers', 'email')) {
@@ -1389,12 +1411,6 @@ class CustomerController extends Controller
                     }
                     $customer = $customer ?: new Customer();
 
-                    $csvBranchName = trim((string) ($rowData['branch_name'] ?? ''));
-                    $branchMatch = $csvBranchName !== ''
-                        ? $availableBranches->first(fn ($b) => strtolower(trim((string) ($b['name'] ?? ''))) === strtolower($csvBranchName))
-                        : null;
-                    $rowBranchId = $branchMatch ? ($branchMatch['id'] ?? null) : ($activeBranch['id'] ?? null);
-                    $rowBranchName = $branchMatch ? ($branchMatch['name'] ?? null) : ($activeBranch['name'] ?? null);
                     $payload = $this->sanitizeForCustomerColumns([
                         'customer_name' => $rowData['customer_name'],
                         'email' => $lookupEmail !== '' ? $lookupEmail : null,
@@ -1411,8 +1427,8 @@ class CustomerController extends Controller
                         'notes' => $rowData['notes'] ?? null,
                         'company_id' => $companyId > 0 ? $companyId : null,
                         'user_id' => $userId > 0 ? $userId : null,
-                        'branch_id' => $rowBranchId,
-                        'branch_name' => $rowBranchName,
+                        'branch_id' => $activeBranchId !== '' ? $activeBranchId : null,
+                        'branch_name' => $activeBranchName !== '' ? $activeBranchName : null,
                     ]);
 
                     $customer->fill($payload);

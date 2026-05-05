@@ -8,7 +8,6 @@ use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
 use App\Models\Account;
 use App\Models\Transaction;
-use App\Support\LedgerService;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\TrialBalanceExport;
 
@@ -105,6 +104,24 @@ class TrialBalanceController extends Controller
             $query->where('user_id', $userId);
         }
 
+        $activeBranch = $this->resolveActiveBranch($request);
+        if (($activeBranch['scope'] ?? 'branch') === 'all') {
+            $query->where(function ($branchScoped) {
+                if (Schema::hasColumn('transactions', 'branch_id')) {
+                    $branchScoped->whereNotNull('branch_id')
+                        ->where('branch_id', '<>', '');
+                }
+
+                if (Schema::hasColumn('transactions', 'branch_name')) {
+                    $method = Schema::hasColumn('transactions', 'branch_id') ? 'orWhere' : 'where';
+                    $branchScoped->{$method}(function ($named) {
+                        $named->whereNotNull('branch_name')
+                            ->where('branch_name', '<>', '');
+                    });
+                }
+            });
+        }
+
         return $query;
     }
 
@@ -117,6 +134,24 @@ class TrialBalanceController extends Controller
             $query->where('company_id', $companyId);
         } elseif ($userId > 0 && Schema::hasColumn('accounts', 'user_id')) {
             $query->where('user_id', $userId);
+        }
+
+        $activeBranch = $this->resolveActiveBranch($request);
+        if (($activeBranch['scope'] ?? 'branch') === 'all') {
+            $query->where(function ($branchScoped) {
+                if (Schema::hasColumn('accounts', 'branch_id')) {
+                    $branchScoped->whereNotNull('branch_id')
+                        ->where('branch_id', '<>', '');
+                }
+
+                if (Schema::hasColumn('accounts', 'branch_name')) {
+                    $method = Schema::hasColumn('accounts', 'branch_id') ? 'orWhere' : 'where';
+                    $branchScoped->{$method}(function ($named) {
+                        $named->whereNotNull('branch_name')
+                            ->where('branch_name', '<>', '');
+                    });
+                }
+            });
         }
 
         return $query;
@@ -174,19 +209,6 @@ class TrialBalanceController extends Controller
     public function index(Request $request)
     {
         $activeBranch = $this->resolveActiveBranch($request);
-        LedgerService::backfillBankLedgerAccounts(
-            (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0) ?: null,
-            (int) ($request->user()?->id ?? 0) ?: null,
-            ($activeBranch['scope'] ?? 'branch') === 'all' ? null : ($activeBranch['id'] ?? null),
-            ($activeBranch['scope'] ?? 'branch') === 'all' ? null : ($activeBranch['name'] ?? null)
-        );
-        LedgerService::backfillSupplierPaymentLedgerEntries(
-            (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0) ?: null,
-            (int) ($request->user()?->id ?? 0) ?: null,
-            ($activeBranch['scope'] ?? 'branch') === 'all' ? null : ($activeBranch['id'] ?? null),
-            ($activeBranch['scope'] ?? 'branch') === 'all' ? null : ($activeBranch['name'] ?? null)
-        );
-
         // 1. Set Date Range (Default: latest transaction month)
         $start = $request->start_date ? Carbon::parse($request->start_date) : null;
         $end = $request->end_date ? Carbon::parse($request->end_date) : null;

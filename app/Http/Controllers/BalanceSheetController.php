@@ -8,7 +8,6 @@ use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
 use App\Models\Account;
 use App\Models\Transaction;
-use App\Support\LedgerService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
@@ -39,6 +38,24 @@ class BalanceSheetController extends Controller
             $query->where('company_id', $companyId);
         } elseif ($userId > 0 && Schema::hasColumn('transactions', 'user_id')) {
             $query->where('user_id', $userId);
+        }
+
+        $activeBranch = $this->resolveActiveBranch($request);
+        if (($activeBranch['scope'] ?? 'branch') === 'all') {
+            $query->where(function ($branchScoped) {
+                if (Schema::hasColumn('transactions', 'branch_id')) {
+                    $branchScoped->whereNotNull('branch_id')
+                        ->where('branch_id', '<>', '');
+                }
+
+                if (Schema::hasColumn('transactions', 'branch_name')) {
+                    $method = Schema::hasColumn('transactions', 'branch_id') ? 'orWhere' : 'where';
+                    $branchScoped->{$method}(function ($named) {
+                        $named->whereNotNull('branch_name')
+                            ->where('branch_name', '<>', '');
+                    });
+                }
+            });
         }
 
         return $query;
@@ -478,20 +495,6 @@ class BalanceSheetController extends Controller
         $compareTo = in_array($request->input('compare_to'), ['previous_period', 'previous_year'], true)
             ? $request->input('compare_to') : 'none';
         $consolidate = $request->boolean('consolidate');
-
-        LedgerService::backfillBankLedgerAccounts(
-            (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0) ?: null,
-            (int) ($request->user()?->id ?? 0) ?: null,
-            ($activeBranch['scope'] ?? 'branch') === 'all' ? null : ($activeBranch['id'] ?? null),
-            ($activeBranch['scope'] ?? 'branch') === 'all' ? null : ($activeBranch['name'] ?? null)
-        );
-
-        LedgerService::backfillSupplierPaymentLedgerEntries(
-            (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0) ?: null,
-            (int) ($request->user()?->id ?? 0) ?: null,
-            ($activeBranch['scope'] ?? 'branch') === 'all' ? null : ($activeBranch['id'] ?? null),
-            ($activeBranch['scope'] ?? 'branch') === 'all' ? null : ($activeBranch['name'] ?? null)
-        );
 
         Log::info('Balance sheet accessed', [
             'host' => $request->getHost(),
@@ -1122,6 +1125,24 @@ class BalanceSheetController extends Controller
             $query->where('company_id', $companyId);
         } elseif ($userId > 0 && Schema::hasColumn('accounts', 'user_id')) {
             $query->where('user_id', $userId);
+        }
+
+        $activeBranch = $this->resolveActiveBranch($request);
+        if (($activeBranch['scope'] ?? 'branch') === 'all') {
+            $query->where(function ($branchScoped) {
+                if (Schema::hasColumn('accounts', 'branch_id')) {
+                    $branchScoped->whereNotNull('branch_id')
+                        ->where('branch_id', '<>', '');
+                }
+
+                if (Schema::hasColumn('accounts', 'branch_name')) {
+                    $method = Schema::hasColumn('accounts', 'branch_id') ? 'orWhere' : 'where';
+                    $branchScoped->{$method}(function ($named) {
+                        $named->whereNotNull('branch_name')
+                            ->where('branch_name', '<>', '');
+                    });
+                }
+            });
         }
 
         return $query;
