@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\BalanceSheetExport;
+use Illuminate\Support\Collection;
 
 class BalanceSheetController extends Controller
 {
@@ -131,6 +132,402 @@ class BalanceSheetController extends Controller
             || str_contains($name, 'paye');
     }
 
+    private function accountLooksLikeCurrentAsset(object $account): bool
+    {
+        $subType = strtolower(trim((string) ($account->sub_type ?? '')));
+
+        return str_contains($subType, 'current') || $subType === '';
+    }
+
+    private function accountLooksLikeFixedAsset(object $account): bool
+    {
+        $subType = strtolower(trim((string) ($account->sub_type ?? '')));
+
+        return str_contains($subType, 'fixed')
+            || str_contains($subType, 'non-current')
+            || str_contains($subType, 'non current');
+    }
+
+    private function accountLooksLikeLongTermLiability(object $account): bool
+    {
+        $subType = strtolower(trim((string) ($account->sub_type ?? '')));
+        $name = strtolower(trim((string) ($account->name ?? '')));
+
+        return str_contains($subType, 'long')
+            || str_contains($subType, 'non-current')
+            || str_contains($subType, 'non current')
+            || str_contains($subType, 'term loan')
+            || str_contains($subType, 'mortgage')
+            || str_contains($subType, 'deferred')
+            || str_contains($name, 'long-term')
+            || str_contains($name, 'long term')
+            || str_contains($name, 'deferred revenue')
+            || str_contains($name, 'mortgage');
+    }
+
+    private function isBankOrCashAccount(object $account): bool
+    {
+        $name = strtolower(trim((string) ($account->name ?? '')));
+        $subType = strtolower(trim((string) ($account->sub_type ?? '')));
+
+        return str_contains($name, 'bank')
+            || str_contains($name, 'cash')
+            || str_contains($name, 'wallet')
+            || str_contains($name, 'petty')
+            || str_contains($subType, 'bank')
+            || str_contains($subType, 'cash');
+    }
+
+    private function isOpeningBalanceEquityAccount(object $account): bool
+    {
+        $name = strtolower(trim((string) ($account->name ?? '')));
+        $code = strtoupper(trim((string) ($account->code ?? '')));
+
+        return $code === 'SYS-OPENING-EQUITY'
+            || str_contains($name, 'opening balance equity');
+    }
+
+    private function isDiagnosticReserveAccount(object $account): bool
+    {
+        $name = strtolower(trim((string) ($account->name ?? '')));
+        $code = strtoupper(trim((string) ($account->code ?? '')));
+
+        return $code === 'SYS-BS-RECON'
+            || str_contains($name, 'reconciliation reserve')
+            || str_contains($name, 'reconciliation suspense');
+    }
+
+    private function equityBucketFor(object $account): string
+    {
+        $name = strtolower(trim((string) ($account->name ?? '')));
+        $subType = strtolower(trim((string) ($account->sub_type ?? '')));
+
+        if (str_contains($name, 'retained') || str_contains($name, 'earnings')) {
+            return 'Retained Earnings';
+        }
+
+        if (str_contains($name, 'reserve')
+            || str_contains($name, 'revaluation')
+            || str_contains($name, 'appropriation')
+            || str_contains($name, 'opening balance')
+            || str_contains($subType, 'reserve')
+        ) {
+            return 'Reserves';
+        }
+
+        return 'Capital';
+    }
+
+    private function duplicateAccountKey(object $account): string
+    {
+        return strtolower(trim((string) ($account->name ?? '')))
+            . '|' . strtolower(trim((string) ($account->type ?? '')))
+            . '|' . strtolower(trim((string) ($account->_bs_group ?? '')));
+    }
+
+    private function branchDisplayLabel(object $account): string
+    {
+        $branchName = trim((string) ($account->branch_name ?? ''));
+        if ($branchName !== '') {
+            return $branchName;
+        }
+
+        $branchId = trim((string) ($account->branch_id ?? ''));
+        if ($branchId !== '') {
+            return $branchId;
+        }
+
+        return 'Shared';
+    }
+
+    private function withBalance(object $account, float $balance, array $extra = []): object
+    {
+        foreach ($extra as $key => $value) {
+            $account->{$key} = $value;
+        }
+
+        $account->balance = round($balance, 2);
+
+        return $account;
+    }
+
+    private function syntheticLine(string $name, string $type, float $balance, array $extra = []): object
+    {
+        return (object) array_merge([
+            'id' => null,
+            'code' => null,
+            'name' => $name,
+            'type' => $type,
+            'sub_type' => null,
+            'branch_id' => null,
+            'branch_name' => null,
+            'balance' => round($balance, 2),
+        ], $extra);
+    }
+
+    private function applyBranchPresentation(array $collections, bool $isAllBranches, bool $consolidate): array
+    {
+        if (!$isAllBranches) {
+            return $collections;
+        }
+
+        if ($consolidate) {
+            return array_map(function (Collection $items) {
+                return $items
+                    ->groupBy(fn ($account) => $this->duplicateAccountKey($account))
+                    ->map(function (Collection $group) {
+                        $first = clone $group->first();
+                        $first->balance = round((float) $group->sum(fn ($account) => (float) ($account->balance ?? 0)), 2);
+                        $first->branch_id = null;
+                        $first->branch_name = null;
+                        return $first;
+                    })
+                    ->values();
+            }, $collections);
+        }
+
+        $allItems = collect($collections)->reduce(
+            fn (Collection $carry, Collection $items) => $carry->concat($items),
+            collect()
+        );
+        $counts = $allItems->countBy(fn ($account) => $this->duplicateAccountKey($account));
+
+        return array_map(function (Collection $items) use ($counts) {
+            return $items->map(function ($account) use ($counts) {
+                $key = $this->duplicateAccountKey($account);
+                if (($counts[$key] ?? 0) > 1) {
+                    $account->name = trim((string) ($account->name ?? '')) . ' — ' . $this->branchDisplayLabel($account);
+                }
+
+                return $account;
+            })->values();
+        }, $collections);
+    }
+
+    private function prepareStatementPresentation(
+        Collection $accounts,
+        Request $request,
+        Carbon $reportDate,
+        array $activeBranch,
+        string $method,
+        float $openingDifference,
+        bool $consolidate
+    ): array {
+        $isAllBranches = ($activeBranch['scope'] ?? 'branch') === 'all';
+        $totalRevenue = $accounts->filter(fn ($account) => $this->normalizeAccountType($account->type ?? null) === 'revenue')->sum('balance');
+        $totalExpenses = $accounts->filter(fn ($account) => $this->normalizeAccountType($account->type ?? null) === 'expense')->sum('balance');
+        $retainedEarnings = round($totalRevenue - $totalExpenses, 2);
+        $netIncome = $retainedEarnings;
+
+        $assetAccounts = $accounts
+            ->filter(fn ($account) => $this->normalizeAccountType($account->type ?? null) === 'asset')
+            ->reject(fn ($account) => $this->isDiagnosticReserveAccount($account))
+            ->values();
+        $liabilityAccounts = $accounts
+            ->filter(fn ($account) => $this->accountLooksLikeLiability($account))
+            ->reject(fn ($account) => $this->isDiagnosticReserveAccount($account))
+            ->values();
+        $equityAccounts = $accounts
+            ->filter(fn ($account) => $this->normalizeAccountType($account->type ?? null) === 'equity')
+            ->reject(fn ($account) => $this->isDiagnosticReserveAccount($account))
+            ->values();
+
+        $currentAssets = $assetAccounts->filter(fn ($account) => $this->accountLooksLikeCurrentAsset($account))->values();
+        $fixedAssets = $assetAccounts->filter(fn ($account) => $this->accountLooksLikeFixedAsset($account))->values();
+        $uncategorizedAssets = $assetAccounts->reject(
+            fn ($account) => $currentAssets->contains('id', $account->id) || $fixedAssets->contains('id', $account->id)
+        )->values();
+        if ($currentAssets->isEmpty() && $fixedAssets->isEmpty()) {
+            $currentAssets = $assetAccounts->values();
+        } elseif ($uncategorizedAssets->isNotEmpty()) {
+            $currentAssets = $currentAssets->concat($uncategorizedAssets)->values();
+        }
+
+        $currentLiabilities = $liabilityAccounts
+            ->reject(fn ($account) => $this->accountLooksLikeLongTermLiability($account))
+            ->values();
+        $longTermLiabilities = $liabilityAccounts
+            ->filter(fn ($account) => $this->accountLooksLikeLongTermLiability($account))
+            ->values();
+
+        $overdraftLines = collect();
+        $currentAssets = $currentAssets->filter(function ($account) use (&$overdraftLines) {
+            $balance = (float) ($account->balance ?? 0);
+            if ($this->isBankOrCashAccount($account) && $balance < -0.005) {
+                $overdraftLines->push($this->withBalance(
+                    clone $account,
+                    abs($balance),
+                    ['_overdraft' => true, '_bs_group' => 'Current Liabilities']
+                ));
+                return false;
+            }
+
+            return true;
+        })->values();
+        if ($overdraftLines->isNotEmpty()) {
+            $currentLiabilities = $currentLiabilities->concat($overdraftLines)->values();
+        }
+
+        $vendorAdvanceLines = collect();
+        $currentLiabilities = $currentLiabilities->filter(function ($account) use (&$vendorAdvanceLines) {
+            $balance = (float) ($account->balance ?? 0);
+            $name = strtolower(trim((string) ($account->name ?? '')));
+            if ($balance < -0.005 && (str_contains($name, 'payable') || str_contains($name, 'accounts pay'))) {
+                $vendorAdvanceLines->push($this->withBalance(
+                    clone $account,
+                    abs($balance),
+                    ['_vendor_credit' => true, '_display_name' => 'Supplier Advance', '_bs_group' => 'Current Assets']
+                ));
+                return false;
+            }
+
+            return true;
+        })->values();
+        if ($vendorAdvanceLines->isNotEmpty()) {
+            $currentAssets = $currentAssets->concat($vendorAdvanceLines)->values();
+        }
+
+        $openingEquitySupport = abs($openingDifference) >= 0.01 ? $openingDifference : 0.0;
+
+        $customerOBUnposted = 0.0;
+        $supplierOBUnposted = 0.0;
+        $inventoryBridge = 0.0;
+        if ($method === 'accrual') {
+            $customerOBUnposted = round($this->getUnpostedCustomerOpeningBalanceSum($request, $reportDate, $activeBranch), 2);
+            if ($customerOBUnposted > 0.01) {
+                $currentAssets = $currentAssets->concat([
+                    $this->syntheticLine('Accounts Receivable', 'Asset', $customerOBUnposted, [
+                        'sub_type' => 'Current Asset',
+                        '_bs_group' => 'Current Assets',
+                    ]),
+                ])->values();
+                $openingEquitySupport += $customerOBUnposted;
+            }
+
+            $supplierOBUnposted = round($this->getUnpostedSupplierOpeningBalanceSum($request, $reportDate, $activeBranch), 2);
+            if ($supplierOBUnposted > 0.01) {
+                $currentLiabilities = $currentLiabilities->concat([
+                    $this->syntheticLine('Accounts Payable', 'Liability', $supplierOBUnposted, [
+                        'sub_type' => 'Current Liability',
+                        '_bs_group' => 'Current Liabilities',
+                    ]),
+                ])->values();
+                $openingEquitySupport -= $supplierOBUnposted;
+            }
+        }
+
+        $inventoryBridge = round($this->getLegacyInventoryBridgeAmount($request, $reportDate, $accounts, $activeBranch), 2);
+        if ($inventoryBridge > 0.01) {
+            $currentAssets = $currentAssets->concat([
+                $this->syntheticLine('Inventory', 'Asset', $inventoryBridge, [
+                    'sub_type' => 'Current Asset',
+                    '_bs_group' => 'Current Assets',
+                ]),
+            ])->values();
+            $openingEquitySupport += $inventoryBridge;
+        }
+
+        $openingBalanceEquity = round(
+            $equityAccounts
+                ->filter(fn ($account) => $this->isOpeningBalanceEquityAccount($account))
+                ->sum(fn ($account) => (float) ($account->balance ?? 0))
+            + $openingEquitySupport,
+            2
+        );
+        $equityAccounts = $equityAccounts
+            ->reject(fn ($account) => $this->isOpeningBalanceEquityAccount($account))
+            ->values();
+
+        $equityCapital = $equityAccounts->filter(
+            fn ($account) => $this->equityBucketFor($account) === 'Capital'
+        )->values();
+        $equityRetained = $equityAccounts->filter(
+            fn ($account) => $this->equityBucketFor($account) === 'Retained Earnings'
+        )->values();
+        $equityReserves = $equityAccounts->filter(
+            fn ($account) => $this->equityBucketFor($account) === 'Reserves'
+        )->values();
+
+        if (abs($openingBalanceEquity) >= 0.01) {
+            $equityReserves = $equityReserves->concat([
+                $this->syntheticLine('Opening Balance Equity', 'Equity', $openingBalanceEquity, [
+                    '_bs_group' => 'Reserves',
+                ]),
+            ])->values();
+        }
+
+        $retainedEarningsLines = collect([
+            $this->syntheticLine(
+                $retainedEarnings < 0 ? 'Current Year Deficit' : 'Current Year Earnings',
+                'Equity',
+                $retainedEarnings,
+                ['_bs_group' => 'Retained Earnings', '_deficit' => $retainedEarnings < 0]
+            ),
+        ]);
+
+        [
+            'currentAssets' => $currentAssets,
+            'fixedAssets' => $fixedAssets,
+            'currentLiabilities' => $currentLiabilities,
+            'longTermLiabilities' => $longTermLiabilities,
+            'equityCapital' => $equityCapital,
+            'equityRetained' => $equityRetained,
+            'equityReserves' => $equityReserves,
+            'retainedEarningsLines' => $retainedEarningsLines,
+        ] = $this->applyBranchPresentation([
+            'currentAssets' => $currentAssets,
+            'fixedAssets' => $fixedAssets,
+            'currentLiabilities' => $currentLiabilities,
+            'longTermLiabilities' => $longTermLiabilities,
+            'equityCapital' => $equityCapital,
+            'equityRetained' => $equityRetained,
+            'equityReserves' => $equityReserves,
+            'retainedEarningsLines' => $retainedEarningsLines,
+        ], $isAllBranches, $consolidate);
+
+        $equity = $equityCapital
+            ->concat($equityRetained)
+            ->concat($equityReserves)
+            ->concat($retainedEarningsLines)
+            ->values();
+
+        $totalCurrentAssets = round((float) $currentAssets->sum('balance'), 2);
+        $totalFixedAssets = round((float) $fixedAssets->sum('balance'), 2);
+        $totalAssets = round($totalCurrentAssets + $totalFixedAssets, 2);
+        $totalCurrentLiabilities = round((float) $currentLiabilities->sum('balance'), 2);
+        $totalLongTermLiabilities = round((float) $longTermLiabilities->sum('balance'), 2);
+        $totalLiabilities = round($totalCurrentLiabilities + $totalLongTermLiabilities, 2);
+        $totalEquity = round((float) $equity->sum('balance'), 2);
+        $statementDifference = round($totalAssets - ($totalLiabilities + $totalEquity), 2);
+        $reviewThreshold = max(1000.0, round(abs($totalAssets) * 0.02, 2));
+
+        return [
+            'currentAssets' => $currentAssets,
+            'fixedAssets' => $fixedAssets,
+            'currentLiabilities' => $currentLiabilities,
+            'longTermLiabilities' => $longTermLiabilities,
+            'equity' => $equity,
+            'equityCapital' => $equityCapital,
+            'equityRetained' => $equityRetained,
+            'equityReserves' => $equityReserves,
+            'retainedEarningsLines' => $retainedEarningsLines,
+            'totalCurrentAssets' => $totalCurrentAssets,
+            'totalFixedAssets' => $totalFixedAssets,
+            'totalAssets' => $totalAssets,
+            'totalCurrentLiabilities' => $totalCurrentLiabilities,
+            'totalLongTermLiabilities' => $totalLongTermLiabilities,
+            'totalLiabilities' => $totalLiabilities,
+            'totalEquity' => $totalEquity,
+            'retainedEarnings' => $retainedEarnings,
+            'netIncome' => $retainedEarnings,
+            'statementDifference' => $statementDifference,
+            'isBalanced' => abs($statementDifference) < 0.01,
+            'reconciliationReserveDiagnostic' => $statementDifference,
+            'reconciliationReserveThreshold' => $reviewThreshold,
+            'reconciliationReserveNeedsReview' => abs($statementDifference) >= $reviewThreshold,
+        ];
+    }
+
     public function index(Request $request)
     {
         $activeBranch = $this->resolveActiveBranch($request);
@@ -139,6 +536,7 @@ class BalanceSheetController extends Controller
             ? $request->input('accounting_method') : 'accrual';
         $compareTo = in_array($request->input('compare_to'), ['previous_period', 'previous_year'], true)
             ? $request->input('compare_to') : 'none';
+        $consolidate = $request->boolean('consolidate');
 
         LedgerService::backfillBankLedgerAccounts(
             (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0) ?: null,
@@ -332,183 +730,40 @@ class BalanceSheetController extends Controller
             return $account;
         });
 
-        // 3. Calculate Retained Earnings (Revenue - Expenses)
-        $totalRevenue = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type ?? null) === 'revenue')->sum('balance');
-        $totalExpenses = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type ?? null) === 'expense')->sum('balance');
-        $retainedEarnings = $totalRevenue - $totalExpenses;
-        $netIncome = $retainedEarnings;
-
-        // 4. Group Accounts specifically for your View variables
-        $assetAccounts = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type ?? null) === 'asset');
-        $currentAssets = $assetAccounts->filter(function ($a) {
-            $subType = strtolower(trim((string) ($a->sub_type ?? '')));
-            return $subType !== '' && str_contains($subType, 'current');
-        });
-        $fixedAssets = $assetAccounts->filter(function ($a) {
-            $subType = strtolower(trim((string) ($a->sub_type ?? '')));
-            return $subType !== '' && (str_contains($subType, 'fixed') || str_contains($subType, 'non-current') || str_contains($subType, 'non current'));
-        });
-        $uncategorizedAssets = $assetAccounts->reject(function ($account) use ($currentAssets, $fixedAssets) {
-            return $currentAssets->contains('id', $account->id) || $fixedAssets->contains('id', $account->id);
-        });
-
-        if ($currentAssets->isEmpty() && $fixedAssets->isEmpty()) {
-            $currentAssets = $assetAccounts;
-        } elseif ($uncategorizedAssets->isNotEmpty()) {
-            $currentAssets = $currentAssets->concat($uncategorizedAssets)->unique('id')->values();
-        }
-        $currentLiabilities = $accounts->filter(fn ($a) => $this->accountLooksLikeLiability($a));
-        $equity = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type ?? null) === 'equity'); // Changed from equityAccounts to equity
-        $openingDifference = round($openingTotals['debit'] - $openingTotals['credit'], 2);
-
-        // Helper: find the single Opening Balance Equity line and accumulate into it,
-        // or create a new one. Prevents duplicate OBE rows on the balance sheet.
-        $mergeIntoOpeningEquity = function (float $amount) use (&$equity): void {
-            $line = $equity->first(function ($account) {
-                $name = strtolower(trim((string) ($account->name ?? '')));
-                return $name === 'opening balance equity' || str_contains($name, 'opening balance');
-            });
-            if ($line) {
-                $line->balance = (float) ($line->balance ?? 0) + $amount;
-            } else {
-                $equity = $equity->concat([(object) [
-                    'id'      => null,
-                    'code'    => 'SYS-OPENING-EQUITY',
-                    'name'    => 'Opening Balance Equity',
-                    'type'    => 'Equity',
-                    'balance' => $amount,
-                ]]);
-            }
-        };
-
-        if (abs($openingDifference) >= 0.01) {
-            $mergeIntoOpeningEquity($openingDifference);
-        }
-
-        // Include customer opening balances not yet posted as journal entries.
-        // This covers all existing customers (pre-dating the journal workflow) AND
-        // ensures every future record with a balance reflects on the balance sheet.
-        if ($method === 'accrual') {
-            $customerOBUnposted = $this->getUnpostedCustomerOpeningBalanceSum($request, $reportDate, $activeBranch);
-            if ($customerOBUnposted > 0.01) {
-                // Add to Accounts Receivable (current assets side)
-                $arInCurrentAssets = $currentAssets->first(
-                    fn ($a) => str_contains(strtolower((string) ($a->name ?? '')), 'receivable')
-                );
-                if ($arInCurrentAssets) {
-                    $arInCurrentAssets->balance = (float) ($arInCurrentAssets->balance ?? 0) + $customerOBUnposted;
-                } else {
-                    $currentAssets = $currentAssets->concat([(object) [
-                        'id'       => null,
-                        'code'     => 'SYS-CUST-AR',
-                        'name'     => 'Accounts Receivable',
-                        'type'     => 'Asset',
-                        'sub_type' => 'Current Asset',
-                        'balance'  => $customerOBUnposted,
-                    ]]);
-                }
-                // Credit Opening Balance Equity (not Net Income) for unposted customer balances.
-                $mergeIntoOpeningEquity($customerOBUnposted);
-            }
-
-            $supplierOBUnposted = $this->getUnpostedSupplierOpeningBalanceSum($request, $reportDate, $activeBranch);
-            if ($supplierOBUnposted > 0.01) {
-                $apInLiabilities = $currentLiabilities->first(
-                    fn ($a) => strtolower(trim((string) ($a->name ?? ''))) === 'accounts payable'
-                );
-                if ($apInLiabilities) {
-                    $apInLiabilities->balance = (float) ($apInLiabilities->balance ?? 0) + $supplierOBUnposted;
-                } else {
-                    $currentLiabilities = $currentLiabilities->concat([(object) [
-                        'id'       => null,
-                        'code'     => 'SYS-SUPP-AP',
-                        'name'     => 'Accounts Payable',
-                        'type'     => 'Liability',
-                        'sub_type' => 'Current Liability',
-                        'balance'  => $supplierOBUnposted,
-                    ]]);
-                }
-                // Debit Opening Balance Equity (not Net Income) for unposted supplier balances.
-                $mergeIntoOpeningEquity(-$supplierOBUnposted);
-            }
-        }
-
-        $inventoryBridge = $this->getLegacyInventoryBridgeAmount($request, $reportDate, $accounts, $activeBranch);
-        if ($inventoryBridge > 0.01) {
-            $inventoryInCurrentAssets = $currentAssets->first(
-                fn ($a) => str_contains(strtolower((string) ($a->name ?? '')), 'inventory')
-                    || str_contains(strtolower((string) ($a->name ?? '')), 'stock')
-            );
-            if ($inventoryInCurrentAssets) {
-                $inventoryInCurrentAssets->balance = (float) ($inventoryInCurrentAssets->balance ?? 0) + $inventoryBridge;
-            } else {
-                $currentAssets = $currentAssets->concat([(object) [
-                    'id'       => null,
-                    'code'     => 'SYS-INV',
-                    'name'     => 'Inventory',
-                    'type'     => 'Asset',
-                    'sub_type' => 'Current Asset',
-                    'balance'  => $inventoryBridge,
-                ]]);
-            }
-
-            // Legacy stock bridge belongs to opening equity support, not current liabilities.
-            $mergeIntoOpeningEquity($inventoryBridge);
-        }
-
-        // ── Multi-branch disambiguation / consolidation ────────────────────────
         $isAllBranches = ($activeBranch['scope'] ?? 'branch') === 'all';
-        $consolidate   = $request->boolean('consolidate');
+        $presentation = $this->prepareStatementPresentation(
+            $accounts,
+            $request,
+            $reportDate,
+            $activeBranch,
+            $method,
+            round($openingTotals['debit'] - $openingTotals['credit'], 2),
+            $consolidate
+        );
 
-        if ($isAllBranches) {
-            if ($consolidate) {
-                // Merge accounts with the same normalised name + type across branches.
-                // Produces one summarised line item per unique account, branch-agnostic.
-                $consolidateGroup = function ($collection) {
-                    return $collection
-                        ->groupBy(function ($a) {
-                            return strtolower(trim((string) ($a->name ?? '')))
-                                . '|' . strtolower(trim((string) ($a->type ?? '')));
-                        })
-                        ->map(function ($group) {
-                            $first = clone $group->first();
-                            $first->balance     = $group->sum(fn ($a) => (float) ($a->balance ?? 0));
-                            $first->branch_id   = null;
-                            $first->branch_name = null;
-                            return $first;
-                        })
-                        ->values();
-                };
-                $currentAssets      = $consolidateGroup($currentAssets);
-                $fixedAssets        = $consolidateGroup($fixedAssets);
-                $currentLiabilities = $consolidateGroup($currentLiabilities);
-                $equity             = $consolidateGroup($equity);
-            } else {
-                // Append branch suffix to disambiguate duplicate account names.
-                // Example: "GTBank" becomes "GTBank — New Heaven" / "GTBank — Main Branch".
-                $disambiguate = function ($collection) {
-                    $counts = $collection->countBy(function ($a) {
-                        return strtolower(trim((string) ($a->name ?? '')))
-                            . '|' . strtolower(trim((string) ($a->type ?? '')));
-                    });
-                    return $collection->map(function ($a) use ($counts) {
-                        $key = strtolower(trim((string) ($a->name ?? '')))
-                            . '|' . strtolower(trim((string) ($a->type ?? '')));
-                        if (($counts[$key] ?? 1) > 1) {
-                            $branchLabel = trim((string) ($a->branch_name ?? $a->branch_id ?? ''));
-                            if ($branchLabel !== '') {
-                                $a->name = $a->name . ' — ' . $branchLabel;
-                            }
-                        }
-                        return $a;
-                    });
-                };
-                $currentAssets      = $disambiguate($currentAssets);
-                $fixedAssets        = $disambiguate($fixedAssets);
-                $currentLiabilities = $disambiguate($currentLiabilities);
-                $equity             = $disambiguate($equity);
-            }
-        }
+        $currentAssets = $presentation['currentAssets'];
+        $fixedAssets = $presentation['fixedAssets'];
+        $currentLiabilities = $presentation['currentLiabilities'];
+        $longTermLiabilities = $presentation['longTermLiabilities'];
+        $equity = $presentation['equity'];
+        $equityCapital = $presentation['equityCapital'];
+        $equityRetained = $presentation['equityRetained'];
+        $equityReserves = $presentation['equityReserves'];
+        $retainedEarningsLines = $presentation['retainedEarningsLines'];
+        $retainedEarnings = $presentation['retainedEarnings'];
+        $netIncome = $presentation['netIncome'];
+        $totalCurrentAssets = $presentation['totalCurrentAssets'];
+        $totalFixedAssets = $presentation['totalFixedAssets'];
+        $totalAssets = $presentation['totalAssets'];
+        $totalCurrentLiabilities = $presentation['totalCurrentLiabilities'];
+        $totalLongTermLiabilities = $presentation['totalLongTermLiabilities'];
+        $totalLiabilities = $presentation['totalLiabilities'];
+        $totalEquity = $presentation['totalEquity'];
+        $statementDifference = $presentation['statementDifference'];
+        $isBalanced = $presentation['isBalanced'];
+        $reconciliationReserveDiagnostic = $presentation['reconciliationReserveDiagnostic'];
+        $reconciliationReserveThreshold = $presentation['reconciliationReserveThreshold'];
+        $reconciliationReserveNeedsReview = $presentation['reconciliationReserveNeedsReview'];
 
         // ── Unassigned-branch notice (All Branches view only) ─────────────────
         // Transactions entered before branches were configured have branch_id = NULL.
@@ -525,27 +780,6 @@ class BalanceSheetController extends Controller
             $unassignedTxnCount = $unassignedQ->count();
         }
 
-        // 5. Final Totals
-        $totalCurrentAssets = $currentAssets->sum('balance');
-        $totalFixedAssets = $fixedAssets->sum('balance');
-        $totalAssets = $totalCurrentAssets + $totalFixedAssets;
-        
-        $totalLiabilities = $currentLiabilities->sum('balance');
-        $totalEquity = $equity->sum('balance') + $netIncome;
-        $statementDifference = round($totalAssets - ($totalLiabilities + $totalEquity), 2);
-
-        if (abs($statementDifference) >= 0.01) {
-            $equity = $equity->concat([(object) [
-                'id' => null,
-                'code' => 'SYS-BS-RECON',
-                'name' => 'Balance Sheet Reconciliation Reserve',
-                'type' => 'Equity',
-                'balance' => $statementDifference,
-            ]]);
-
-            $totalEquity = $equity->sum('balance') + $netIncome;
-        }
-
         // 6. Comparison period snapshot (if requested)
         $compareData        = null;
         $compareDate        = null;
@@ -558,26 +792,15 @@ class BalanceSheetController extends Controller
             $compareData = $this->computeComparisonSnapshot($request, $compareDate, $activeBranch, $method);
         }
 
-        // Debug: log any hidden/system equity accounts injected by the controller.
-        // These are excluded from line-item display in the blade but their balances
-        // are silently included in Total Equity to preserve Assets = L + E.
-        $systemEquityCheck = $equity->filter(function ($a) {
-            $code = strtoupper(trim((string) ($a->code ?? '')));
-            $name = strtolower(trim((string) ($a->name ?? '')));
-            return in_array($code, ['SYS-BS-RECON'], true)
-                || str_contains($name, 'reconciliation reserve')
-                || str_contains($name, 'reconciliation suspense');
-        });
-        if ($systemEquityCheck->isNotEmpty()) {
-            \Illuminate\Support\Facades\Log::debug('BalanceSheet: hidden system equity accounts', [
-                'report_date'    => $reportDate->toDateString(),
-                'accounts'       => $systemEquityCheck->map(fn ($a) => [
-                    'code'    => $a->code ?? null,
-                    'name'    => $a->name ?? null,
-                    'balance' => round((float) ($a->balance ?? 0), 2),
-                ])->values()->toArray(),
-                'total_plugging' => round($systemEquityCheck->sum('balance'), 2),
-                'pre_plug_diff'  => $statementDifference ?? 0,
+        if (abs($reconciliationReserveDiagnostic) >= 0.01) {
+            Log::warning('BalanceSheet reconciliation diagnostic detected', [
+                'report_date' => $reportDate->toDateString(),
+                'difference' => $reconciliationReserveDiagnostic,
+                'threshold' => $reconciliationReserveThreshold,
+                'needs_review' => $reconciliationReserveNeedsReview,
+                'branch_scope' => $activeBranch['scope'] ?? 'branch',
+                'branch_id' => $activeBranch['id'] ?? null,
+                'branch_name' => $activeBranch['name'] ?? null,
             ]);
         }
 
@@ -615,7 +838,18 @@ class BalanceSheetController extends Controller
             'comparePeriodLabel',
             'consolidate',
             'isAllBranches',
-            'unassignedTxnCount'
+            'unassignedTxnCount',
+            'longTermLiabilities',
+            'equityCapital',
+            'equityRetained',
+            'equityReserves',
+            'retainedEarningsLines',
+            'totalCurrentLiabilities',
+            'totalLongTermLiabilities',
+            'isBalanced',
+            'reconciliationReserveDiagnostic',
+            'reconciliationReserveThreshold',
+            'reconciliationReserveNeedsReview'
         ));
     }
 
@@ -688,6 +922,8 @@ class BalanceSheetController extends Controller
             return $this->emptySnapshot();
         }
 
+        $consolidate = $request->boolean('consolidate');
+
         $txnQuery = Transaction::query()
             ->selectRaw('account_id, SUM(debit) as total_debit, SUM(credit) as total_credit')
             ->where('transaction_date', '<=', $date)
@@ -729,74 +965,55 @@ class BalanceSheetController extends Controller
         $this->applyAccountScope($accountsQuery, $request);
         $accounts = $accountsQuery->get();
 
-        $accounts->transform(function ($account) use ($txnTotals) {
+        $openingTotals = ['debit' => 0.0, 'credit' => 0.0];
+
+        $accounts->transform(function ($account) use ($txnTotals, &$openingTotals) {
             $totals  = $txnTotals->get($account->id);
             $opening = (float) ($account->opening_balance ?? 0);
             $dr      = (float) ($totals->total_debit  ?? 0);
             $cr      = (float) ($totals->total_credit ?? 0);
             $type    = $this->normalizeAccountType($account->type ?? null);
             $isDebitNormal = in_array($type, ['asset', 'expense'], true);
+            if (abs($opening) > 0.0001) {
+                $openingSide = $this->calculateSideBalances($opening, $isDebitNormal);
+                $openingTotals['debit'] += $openingSide['debit'];
+                $openingTotals['credit'] += $openingSide['credit'];
+            }
             $account->balance = $isDebitNormal ? ($opening + $dr) - $cr : ($opening + $cr) - $dr;
             return $account;
         });
 
-        $totalRevenue  = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type ?? null) === 'revenue')->sum('balance');
-        $totalExpenses = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type ?? null) === 'expense')->sum('balance');
-        $cmpNetIncome  = $totalRevenue - $totalExpenses;
-
-        $assetAccounts    = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type ?? null) === 'asset');
-        $cmpCurrentAssets = $assetAccounts->filter(function ($a) {
-            $sub = strtolower(trim((string) ($a->sub_type ?? '')));
-            return $sub !== '' && str_contains($sub, 'current');
-        });
-        $cmpFixedAssets = $assetAccounts->filter(function ($a) {
-            $sub = strtolower(trim((string) ($a->sub_type ?? '')));
-            return $sub !== '' && (str_contains($sub, 'fixed') || str_contains($sub, 'non-current') || str_contains($sub, 'non current'));
-        });
-        $cmpUncategorized = $assetAccounts->reject(
-            fn ($a) => $cmpCurrentAssets->contains('id', $a->id) || $cmpFixedAssets->contains('id', $a->id)
+        $snapshot = $this->prepareStatementPresentation(
+            $accounts,
+            $request,
+            $date,
+            $activeBranch,
+            $method,
+            round($openingTotals['debit'] - $openingTotals['credit'], 2),
+            $consolidate
         );
-        if ($cmpCurrentAssets->isEmpty() && $cmpFixedAssets->isEmpty()) {
-            $cmpCurrentAssets = $assetAccounts;
-        } elseif ($cmpUncategorized->isNotEmpty()) {
-            $cmpCurrentAssets = $cmpCurrentAssets->concat($cmpUncategorized)->unique('id')->values();
-        }
-
-        $cmpLiabilities = $accounts->filter(fn ($a) => $this->accountLooksLikeLiability($a));
-        $cmpEquity      = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type ?? null) === 'equity');
-
-        // Cash basis: exclude AR and AP accounts, adjust net income accordingly
-        if ($method === 'cash') {
-            $arBal = $cmpCurrentAssets
-                ->filter(fn ($a) => str_contains(strtolower((string) ($a->name ?? '')), 'receivable'))
-                ->sum('balance');
-            $cmpCurrentAssets = $cmpCurrentAssets
-                ->reject(fn ($a) => str_contains(strtolower((string) ($a->name ?? '')), 'receivable'));
-            $apBal = $cmpLiabilities
-                ->filter(fn ($a) => str_contains(strtolower((string) ($a->name ?? '')), 'payable'))
-                ->sum('balance');
-            $cmpLiabilities = $cmpLiabilities
-                ->reject(fn ($a) => str_contains(strtolower((string) ($a->name ?? '')), 'payable'));
-            $cmpNetIncome = $cmpNetIncome - $arBal + $apBal;
-        }
-
-        $cmpTotalCurrentAssets = (float) $cmpCurrentAssets->sum('balance');
-        $cmpTotalFixedAssets   = (float) $cmpFixedAssets->sum('balance');
-        $cmpTotalAssets        = $cmpTotalCurrentAssets + $cmpTotalFixedAssets;
-        $cmpTotalLiabilities   = (float) $cmpLiabilities->sum('balance');
-        $cmpTotalEquity        = (float) $cmpEquity->sum('balance') + $cmpNetIncome;
 
         return [
-            'currentAssets'      => $cmpCurrentAssets,
-            'fixedAssets'        => $cmpFixedAssets,
-            'liabilities'        => $cmpLiabilities,
-            'equity'             => $cmpEquity,
-            'netIncome'          => $cmpNetIncome,
-            'totalCurrentAssets' => $cmpTotalCurrentAssets,
-            'totalFixedAssets'   => $cmpTotalFixedAssets,
-            'totalAssets'        => $cmpTotalAssets,
-            'totalLiabilities'   => $cmpTotalLiabilities,
-            'totalEquity'        => $cmpTotalEquity,
+            'currentAssets' => $snapshot['currentAssets'],
+            'fixedAssets' => $snapshot['fixedAssets'],
+            'currentLiabilities' => $snapshot['currentLiabilities'],
+            'longTermLiabilities' => $snapshot['longTermLiabilities'],
+            'liabilities' => $snapshot['currentLiabilities']->concat($snapshot['longTermLiabilities'])->values(),
+            'equity' => $snapshot['equity'],
+            'equityCapital' => $snapshot['equityCapital'],
+            'equityRetained' => $snapshot['equityRetained'],
+            'equityReserves' => $snapshot['equityReserves'],
+            'retainedEarningsLines' => $snapshot['retainedEarningsLines'],
+            'netIncome' => $snapshot['netIncome'],
+            'totalCurrentAssets' => $snapshot['totalCurrentAssets'],
+            'totalFixedAssets' => $snapshot['totalFixedAssets'],
+            'totalAssets' => $snapshot['totalAssets'],
+            'totalCurrentLiabilities' => $snapshot['totalCurrentLiabilities'],
+            'totalLongTermLiabilities' => $snapshot['totalLongTermLiabilities'],
+            'totalLiabilities' => $snapshot['totalLiabilities'],
+            'totalEquity' => $snapshot['totalEquity'],
+            'reconciliationReserveDiagnostic' => $snapshot['reconciliationReserveDiagnostic'],
+            'reconciliationReserveNeedsReview' => $snapshot['reconciliationReserveNeedsReview'],
         ];
     }
 
@@ -807,13 +1024,23 @@ class BalanceSheetController extends Controller
             'currentAssets'      => $empty,
             'fixedAssets'        => $empty,
             'liabilities'        => $empty,
+            'currentLiabilities' => $empty,
+            'longTermLiabilities' => $empty,
             'equity'             => $empty,
+            'equityCapital'      => $empty,
+            'equityRetained'     => $empty,
+            'equityReserves'     => $empty,
+            'retainedEarningsLines' => $empty,
             'netIncome'          => 0.0,
             'totalCurrentAssets' => 0.0,
             'totalFixedAssets'   => 0.0,
             'totalAssets'        => 0.0,
+            'totalCurrentLiabilities' => 0.0,
+            'totalLongTermLiabilities' => 0.0,
             'totalLiabilities'   => 0.0,
             'totalEquity'        => 0.0,
+            'reconciliationReserveDiagnostic' => 0.0,
+            'reconciliationReserveNeedsReview' => false,
         ];
     }
 

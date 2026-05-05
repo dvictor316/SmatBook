@@ -44,164 +44,25 @@ foreach ($presets as $key => $p) {
     if ($key !== 'custom' && $p['date'] === $asOfStr) { $activePreset = $key; break; }
 }
 
-/* ─────────────────────────────────────────────────────────────────
- *  SYSTEM / INTERNAL ACCOUNT FILTER
- * ──────────────────────────────────────────────────────────────── */
-// Only pure plugging/reconciliation entries are hidden from line-item display.
-// SYS-CUST-AR (AR), SYS-SUPP-AP (AP), SYS-INV (Inventory), and
-// SYS-OPENING-EQUITY (Opening Balance Equity) are legitimate CoA accounts —
-// excluding them drops their balances from totals and breaks Assets = L + E.
-$systemHiddenCodes = ['SYS-BS-RECON'];
-
-$isSystemAccount = function ($account) use ($systemHiddenCodes): bool {
-    $name = strtolower(trim((string) ($account->name ?? '')));
-    $code = strtoupper(trim((string) ($account->code ?? '')));
-    if (in_array($code, $systemHiddenCodes, true)) return true;
-    $patterns = [
-        'balance sheet reconciliation',
-        'bank reconciliation suspense',
-        'reconciliation reserve',
-        'reconciliation suspense',
-    ];
-    foreach ($patterns as $p) {
-        if (str_contains($name, $p)) return true;
-    }
-    return false;
-};
-
-// Internal/technical equity accounts (OBE family + plugging entries) that are
-// collapsed into a single "Opening / Adjustment Equity" summary line.
-$isInternalEquityAccount = function ($account) use ($isSystemAccount): bool {
-    if ($isSystemAccount($account)) return true;
-    $name = strtolower(trim((string) ($account->name ?? '')));
-    $code = strtoupper(trim((string) ($account->code ?? '')));
-    if (in_array($code, ['SYS-OPENING-EQUITY'], true)) return true;
-    return str_contains($name, 'opening balance equity');
-};
-
 // Consolidation state (passed from controller when all-branches mode)
 $consolidate   = (bool) ($consolidate   ?? false);
 $isAllBranches = (bool) ($isAllBranches ?? (($activeBranch['scope'] ?? '') === 'all'));
 
 /* ─────────────────────────────────────────────────────────────────
- *  BANK OVERDRAFT RECLASSIFICATION
- * ──────────────────────────────────────────────────────────────── */
-$isBankOrCash = function ($account): bool {
-    $name    = strtolower(trim((string) ($account->name    ?? '')));
-    $subType = strtolower(trim((string) ($account->sub_type ?? '')));
-    return str_contains($name, 'bank')
-        || str_contains($name, 'cash')
-        || str_contains($name, 'petty')
-        || str_contains($subType, 'bank')
-        || str_contains($subType, 'cash');
-};
-
-$overdraftLines = collect();
-
-/* ─────────────────────────────────────────────────────────────────
- *  PROCESS CURRENT ASSETS
+ *  DISPLAY COLLECTIONS
  * ──────────────────────────────────────────────────────────────── */
 $processedCurrentAssets = collect($currentAssets ?? [])
-    ->reject(fn ($a) => $isSystemAccount($a))
     ->reject(fn ($a) => abs((float)($a->balance ?? 0)) < 0.005)
-    ->filter(function ($account) use ($isBankOrCash, &$overdraftLines) {
-        $bal = (float) ($account->balance ?? 0);
-        if ($isBankOrCash($account) && $bal < -0.005) {
-            // toArray() preserves Eloquent attribute names; (array) on an Eloquent
-            // model gives mangled PHP class property keys, losing ->name etc.
-            $od = (object) $account->toArray();
-            $od->balance   = abs($bal);
-            $od->_overdraft = true;
-            $overdraftLines->push($od);
-            return false;
-        }
-        return true;
-    })
     ->values();
-
-/* ─────────────────────────────────────────────────────────────────
- *  PROCESS FIXED ASSETS
- * ──────────────────────────────────────────────────────────────── */
 $processedFixedAssets = collect($fixedAssets ?? [])
-    ->reject(fn ($a) => $isSystemAccount($a))
     ->reject(fn ($a) => abs((float)($a->balance ?? 0)) < 0.005)
     ->values();
-
-/* ─────────────────────────────────────────────────────────────────
- *  SPLIT LIABILITIES → CURRENT vs LONG-TERM
- * ──────────────────────────────────────────────────────────────── */
-$isLongTermLiability = function ($account): bool {
-    $subType = strtolower(trim((string) ($account->sub_type ?? '')));
-    $name    = strtolower(trim((string) ($account->name    ?? '')));
-    return str_contains($subType, 'long')
-        || str_contains($subType, 'non-current')
-        || str_contains($subType, 'non current')
-        || str_contains($subType, 'term loan')
-        || str_contains($subType, 'mortgage')
-        || str_contains($subType, 'deferred')
-        || str_contains($name, 'long-term')
-        || str_contains($name, 'long term')
-        || str_contains($name, 'deferred revenue')
-        || str_contains($name, 'mortgage');
-};
-
-$allLiabilities         = collect($currentLiabilities ?? [])
-    ->reject(fn ($a) => $isSystemAccount($a))
-    ->reject(fn ($a) => abs((float)($a->balance ?? 0)) < 0.005);
-$currentLiabilityLines  = $allLiabilities->reject($isLongTermLiability)->values();
-$longTermLiabilityLines = $allLiabilities->filter($isLongTermLiability)->values();
-
-if ($overdraftLines->isNotEmpty()) {
-    $currentLiabilityLines = $currentLiabilityLines->concat($overdraftLines);
-}
-
-/* ─────────────────────────────────────────────────────────────────
- *  VENDOR CREDIT RECLASSIFICATION
- *  A payable account with a debit balance (balance < 0 in credit-normal
- *  convention) represents a vendor overpayment or supplier prepayment.
- *  Economically it is an asset, not a liability. Reclassify to Current
- *  Assets to match GAAP presentation.
- * ──────────────────────────────────────────────────────────────── */
-$vendorCreditLines = collect();
-
-$currentLiabilityLines = $currentLiabilityLines->filter(function ($account) use (&$vendorCreditLines) {
-    $bal  = (float) ($account->balance ?? 0);
-    $name = strtolower(trim((string) ($account->name ?? '')));
-    if ($bal < -0.005 && (str_contains($name, 'payable') || str_contains($name, 'accounts pay'))) {
-        $vc = (object) (method_exists($account, 'toArray') ? $account->toArray() : (array) $account);
-        $vc->balance        = abs($bal);
-        $vc->_vendor_credit = true;
-        $vc->_display_name  = 'Supplier Advance';
-        $vendorCreditLines->push($vc);
-        return false;
-    }
-    return true;
-})->values();
-
-if ($vendorCreditLines->isNotEmpty()) {
-    $processedCurrentAssets = $processedCurrentAssets->concat($vendorCreditLines);
-}
-
-/* ─────────────────────────────────────────────────────────────────
- *  PROCESS EQUITY
- *  Hidden accounts (plugging entries) are excluded from line rendering
- *  but their balances are captured in $hiddenEquityBalance and added to
- *  equity totals so the accounting equation is never broken by filtering.
- * ──────────────────────────────────────────────────────────────── */
-$allEquityItems = collect($equity ?? []);
-// Collapse the OBE family (Opening Balance Equity, OBE-Customers, OBE-Inventory,
-// Balance Sheet Reconciliation Reserve) into ONE summary line so the equity section
-// looks clean while preserving Assets = L + E arithmetic.
-$visibleEquity          = $allEquityItems
-    ->reject(fn ($a) => $isInternalEquityAccount($a))
-    ->reject(fn ($a) => abs((float) ($a->balance ?? 0)) < 0.005)
-    ->values();
-$internalEquityAccounts = $allEquityItems->filter(fn ($a) => $isInternalEquityAccount($a))->values();
-$openingAdjBalance      = $internalEquityAccounts->sum(fn ($a) => (float) ($a->balance ?? 0));
-// Keep hiddenEquityBalance = openingAdjBalance so the visTotalEquity formula still balances.
-$hiddenEquityAccounts   = $internalEquityAccounts;
-$hiddenEquityBalance    = $openingAdjBalance;
-$displayNetIncome       = (float) ($netIncome ?? $retainedEarnings ?? 0);
+$currentLiabilityLines  = collect($currentLiabilities ?? [])->reject(fn ($a) => abs((float)($a->balance ?? 0)) < 0.005)->values();
+$longTermLiabilityLines = collect($longTermLiabilities ?? [])->reject(fn ($a) => abs((float)($a->balance ?? 0)) < 0.005)->values();
+$equityCapitalLines     = collect($equityCapital ?? [])->reject(fn ($a) => abs((float)($a->balance ?? 0)) < 0.005)->values();
+$equityRetainedLines    = collect($equityRetained ?? [])->reject(fn ($a) => abs((float)($a->balance ?? 0)) < 0.005)->values();
+$equityReserveLines     = collect($equityReserves ?? [])->reject(fn ($a) => abs((float)($a->balance ?? 0)) < 0.005)->values();
+$retainedEarningsLines  = collect($retainedEarningsLines ?? [])->reject(fn ($a) => abs((float)($a->balance ?? 0)) < 0.005)->values();
 
 /* ─────────────────────────────────────────────────────────────────
  *  DISPLAY TOTALS  (after reclassifications and system-account removal)
@@ -214,48 +75,15 @@ $visTotalCurrentLiab    = $currentLiabilityLines->sum(fn ($a) => (float) ($a->ba
 $visTotalLongTermLiab   = $longTermLiabilityLines->sum(fn ($a) => (float) ($a->balance ?? 0));
 $visTotalLiabilities    = $visTotalCurrentLiab + $visTotalLongTermLiab;
 
-$visTotalEquityAccounts = $visibleEquity->sum(fn ($a) => (float) ($a->balance ?? 0));
-// Include hidden plugging-entry balance so the accounting equation holds.
-$visTotalEquity         = $visTotalEquityAccounts + $displayNetIncome + $hiddenEquityBalance;
+$visTotalEquityCapital  = $equityCapitalLines->sum(fn ($a) => (float) ($a->balance ?? 0));
+$visTotalEquityRetained = $equityRetainedLines->sum(fn ($a) => (float) ($a->balance ?? 0));
+$visTotalEquityReserves = $equityReserveLines->sum(fn ($a) => (float) ($a->balance ?? 0));
+$visTotalCurrentEarnings = $retainedEarningsLines->sum(fn ($a) => (float) ($a->balance ?? 0));
+$visTotalEquity         = $visTotalEquityCapital + $visTotalEquityRetained + $visTotalEquityReserves + $visTotalCurrentEarnings;
 
 $visTotalLiabEquity     = $visTotalLiabilities + $visTotalEquity;
 $equationDiff           = round($visTotalAssets - $visTotalLiabEquity, 2);
 $isBalanced             = abs($equationDiff) < 0.01;
-
-/* ─────────────────────────────────────────────────────────────────
- *  CASH BASIS ADJUSTMENT
- *  Remove AR (reduces assets) and AP (reduces liabilities) and
- *  adjust net income to keep the accounting equation balanced.
- *  NI_cash = NI_accrual − AR_balance + AP_balance
- * ──────────────────────────────────────────────────────────────── */
-if ($accountingMethod === 'cash') {
-    $arAdj = $processedCurrentAssets
-        ->filter(fn ($a) => str_contains(strtolower((string) ($a->name ?? '')), 'receivable'))
-        ->sum(fn ($a) => (float) ($a->balance ?? 0));
-    $processedCurrentAssets = $processedCurrentAssets
-        ->reject(fn ($a) => str_contains(strtolower((string) ($a->name ?? '')), 'receivable'))
-        ->values();
-
-    $apAdj = $currentLiabilityLines
-        ->filter(fn ($a) => str_contains(strtolower((string) ($a->name ?? '')), 'payable'))
-        ->sum(fn ($a) => (float) ($a->balance ?? 0));
-    $currentLiabilityLines = $currentLiabilityLines
-        ->reject(fn ($a) => str_contains(strtolower((string) ($a->name ?? '')), 'payable'))
-        ->values();
-
-    $displayNetIncome -= $arAdj;
-    $displayNetIncome += $apAdj;
-
-    // Recalculate display totals after cash-basis filtering
-    $visTotalCurrentAssets = $processedCurrentAssets->sum(fn ($a) => (float) ($a->balance ?? 0));
-    $visTotalAssets        = $visTotalCurrentAssets + $visTotalFixedAssets;
-    $visTotalCurrentLiab   = $currentLiabilityLines->sum(fn ($a) => (float) ($a->balance ?? 0));
-    $visTotalLiabilities   = $visTotalCurrentLiab + $visTotalLongTermLiab;
-    $visTotalEquity        = $visTotalEquityAccounts + $displayNetIncome + $hiddenEquityBalance;
-    $visTotalLiabEquity    = $visTotalLiabilities + $visTotalEquity;
-    $equationDiff          = round($visTotalAssets - $visTotalLiabEquity, 2);
-    $isBalanced            = abs($equationDiff) < 0.01;
-}
 
 /* ─────────────────────────────────────────────────────────────────
  *  COMPARISON PERIOD DATA
@@ -269,30 +97,19 @@ $cmpTotalAssets        = 0.0;
 $cmpTotalCurrentLiab   = 0.0;
 $cmpTotalLongTermLiab  = 0.0;
 $cmpTotalLiabilities   = 0.0;
-$cmpDisplayNetIncome   = 0.0;
 $cmpTotalEquity        = 0.0;
 $cmpTotalLiabEquity    = 0.0;
 $cmpLookup             = collect();
 
 if ($hasCmp) {
-    // Apply the same visual filters to comparison collections
-    $cmpCurrentAssetsVis = collect($compareData['currentAssets'] ?? [])
-        ->reject(fn ($a) => $isSystemAccount($a))
-        ->filter(fn ($a) => !($isBankOrCash($a) && (float) ($a->balance ?? 0) < -0.005))
-        ->values();
-    $cmpFixedAssetsVis = collect($compareData['fixedAssets'] ?? [])
-        ->reject(fn ($a) => $isSystemAccount($a))
-        ->values();
-    $cmpLiabilitiesVis = collect($compareData['liabilities'] ?? [])
-        ->reject(fn ($a) => $isSystemAccount($a))
-        ->values();
-    $cmpCurrentLiabVis   = $cmpLiabilitiesVis->reject($isLongTermLiability)->values();
-    $cmpLongTermLiabVis  = $cmpLiabilitiesVis->filter($isLongTermLiability)->values();
-    $cmpAllEquity           = collect($compareData['equity'] ?? []);
-    $cmpEquityVis           = $cmpAllEquity->reject(fn ($a) => $isSystemAccount($a))->values();
-    $cmpHiddenEquityBalance = $cmpAllEquity->filter(fn ($a) => $isSystemAccount($a))
-                                ->sum(fn ($a) => (float) ($a->balance ?? 0));
-    $cmpDisplayNetIncome    = (float) ($compareData['netIncome'] ?? 0);
+    $cmpCurrentAssetsVis = collect($compareData['currentAssets'] ?? [])->values();
+    $cmpFixedAssetsVis = collect($compareData['fixedAssets'] ?? [])->values();
+    $cmpCurrentLiabVis = collect($compareData['currentLiabilities'] ?? [])->values();
+    $cmpLongTermLiabVis = collect($compareData['longTermLiabilities'] ?? [])->values();
+    $cmpEquityCapitalVis = collect($compareData['equityCapital'] ?? [])->values();
+    $cmpEquityRetainedVis = collect($compareData['equityRetained'] ?? [])->values();
+    $cmpEquityReserveVis = collect($compareData['equityReserves'] ?? [])->values();
+    $cmpRetainedEarningsVis = collect($compareData['retainedEarningsLines'] ?? [])->values();
 
     $cmpTotalCurrentAssets = $cmpCurrentAssetsVis->sum(fn ($a) => (float) ($a->balance ?? 0));
     $cmpTotalFixedAssets   = $cmpFixedAssetsVis->sum(fn ($a) => (float) ($a->balance ?? 0));
@@ -300,16 +117,22 @@ if ($hasCmp) {
     $cmpTotalCurrentLiab   = $cmpCurrentLiabVis->sum(fn ($a) => (float) ($a->balance ?? 0));
     $cmpTotalLongTermLiab  = $cmpLongTermLiabVis->sum(fn ($a) => (float) ($a->balance ?? 0));
     $cmpTotalLiabilities   = $cmpTotalCurrentLiab + $cmpTotalLongTermLiab;
-    $cmpTotalEquityAcc     = $cmpEquityVis->sum(fn ($a) => (float) ($a->balance ?? 0));
-    $cmpTotalEquity        = $cmpTotalEquityAcc + $cmpDisplayNetIncome + $cmpHiddenEquityBalance;
+    $cmpTotalEquity        = $cmpEquityCapitalVis->sum(fn ($a) => (float) ($a->balance ?? 0))
+                            + $cmpEquityRetainedVis->sum(fn ($a) => (float) ($a->balance ?? 0))
+                            + $cmpEquityReserveVis->sum(fn ($a) => (float) ($a->balance ?? 0))
+                            + $cmpRetainedEarningsVis->sum(fn ($a) => (float) ($a->balance ?? 0));
     $cmpTotalLiabEquity    = $cmpTotalLiabilities + $cmpTotalEquity;
 
     // Name-keyed lookup for per-account comparison amounts
     $cmpLookup = collect()
         ->concat($compareData['currentAssets'] ?? [])
         ->concat($compareData['fixedAssets']   ?? [])
-        ->concat($compareData['liabilities']   ?? [])
-        ->concat($compareData['equity']        ?? [])
+        ->concat($compareData['currentLiabilities'] ?? [])
+        ->concat($compareData['longTermLiabilities'] ?? [])
+        ->concat($compareData['equityCapital'] ?? [])
+        ->concat($compareData['equityRetained'] ?? [])
+        ->concat($compareData['equityReserves'] ?? [])
+        ->concat($compareData['retainedEarningsLines'] ?? [])
         ->keyBy(fn ($a) => strtolower(trim((string) ($a->name ?? ''))));
 }
 
@@ -319,6 +142,10 @@ if ($hasCmp) {
 $groupAccounts = function ($items, string $fallback) {
     return collect($items)
         ->groupBy(function ($item) use ($fallback) {
+            $forced = trim((string) ($item->_bs_group ?? ''));
+            if ($forced !== '') {
+                return $forced;
+            }
             $sub = trim((string) ($item->sub_type ?? ''));
             return $sub !== '' ? $sub : $fallback;
         })
@@ -1066,54 +893,88 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
                     ════════════════════════════════════════════ --}}
                     <tr class="bs-section-head"><td colspan="{{ $colCount }}">Equity</td></tr>
 
-                    @foreach($visibleEquity as $account)
-                        @php $cv = $cmpAmt($account); @endphp
-                        <tr class="bs-line">
-                            <td>{{ $account->name }}</td>
-                            <td class="bs-amt {{ (float)($account->balance ?? 0) < 0 ? 'bs-amt-neg' : '' }}">
-                                {{ $fmt((float)($account->balance ?? 0)) }}
-                            </td>
-                            @if($hasCmp)
-                                @if($cv !== null)
-                                    <td class="bs-cmp-amt {{ $cv < 0 ? 'bs-cmp-amt-neg' : '' }}">{{ $fmt($cv) }}</td>
-                                @else
-                                    <td class="bs-amt-dash">&mdash;</td>
+                    @if($equityCapitalLines->isNotEmpty())
+                        <tr class="bs-sub-head"><td colspan="{{ $colCount }}">Capital</td></tr>
+                        @foreach($equityCapitalLines as $account)
+                            @php $cv = $cmpAmt($account); @endphp
+                            <tr class="bs-line">
+                                <td>{{ $account->name }}</td>
+                                <td class="bs-amt {{ (float)($account->balance ?? 0) < 0 ? 'bs-amt-neg' : '' }}">
+                                    {{ $fmt((float)($account->balance ?? 0)) }}
+                                </td>
+                                @if($hasCmp)
+                                    @if($cv !== null)
+                                        <td class="bs-cmp-amt {{ $cv < 0 ? 'bs-cmp-amt-neg' : '' }}">{{ $fmt($cv) }}</td>
+                                    @else
+                                        <td class="bs-amt-dash">&mdash;</td>
+                                    @endif
                                 @endif
-                            @endif
-                        </tr>
-                    @endforeach
-
-                    {{-- Opening / Adjustment Equity: OBE family + reconciliation entries collapsed to one line --}}
-                    @if(abs($openingAdjBalance) >= 0.01)
-                    <tr class="bs-line">
-                        <td>Opening / Adjustment Equity
-                            <span style="font-size:0.68rem;color:#94a3b8;font-weight:400;margin-left:5px;">(Opening balances &amp; adjustments)</span>
-                        </td>
-                        <td class="bs-amt {{ $openingAdjBalance < 0 ? 'bs-amt-neg' : '' }}">
-                            {{ $fmt($openingAdjBalance) }}
-                        </td>
-                        @if($hasCmp)<td class="bs-amt-dash">&mdash;</td>@endif
-                    </tr>
+                            </tr>
+                        @endforeach
                     @endif
 
-                    <tr class="bs-line">
-                        <td>
-                            @if($displayNetIncome < 0)
-                                Current Year Deficit
-                                <span class="bs-deficit-tag">Accumulated Loss</span>
-                            @else
-                                Current Year Earnings
-                            @endif
-                        </td>
-                        <td class="bs-amt {{ $displayNetIncome < 0 ? 'bs-amt-neg' : '' }}">
-                            {{ $fmt($displayNetIncome) }}
-                        </td>
-                        @if($hasCmp)
-                            <td class="bs-cmp-amt {{ $cmpDisplayNetIncome < 0 ? 'bs-cmp-amt-neg' : '' }}">
-                                {{ $fmt($cmpDisplayNetIncome) }}
-                            </td>
-                        @endif
-                    </tr>
+                    @if($equityRetainedLines->isNotEmpty() || $retainedEarningsLines->isNotEmpty())
+                        <tr class="bs-spacer"><td colspan="{{ $colCount }}"></td></tr>
+                        <tr class="bs-sub-head"><td colspan="{{ $colCount }}">Retained Earnings</td></tr>
+                        @foreach($equityRetainedLines as $account)
+                            @php $cv = $cmpAmt($account); @endphp
+                            <tr class="bs-line">
+                                <td>{{ $account->name }}</td>
+                                <td class="bs-amt {{ (float)($account->balance ?? 0) < 0 ? 'bs-amt-neg' : '' }}">
+                                    {{ $fmt((float)($account->balance ?? 0)) }}
+                                </td>
+                                @if($hasCmp)
+                                    @if($cv !== null)
+                                        <td class="bs-cmp-amt {{ $cv < 0 ? 'bs-cmp-amt-neg' : '' }}">{{ $fmt($cv) }}</td>
+                                    @else
+                                        <td class="bs-amt-dash">&mdash;</td>
+                                    @endif
+                                @endif
+                            </tr>
+                        @endforeach
+                        @foreach($retainedEarningsLines as $account)
+                            @php $cv = $cmpAmt($account); @endphp
+                            <tr class="bs-line">
+                                <td>
+                                    {{ $account->name }}
+                                    @if(!empty($account->_deficit))
+                                        <span class="bs-deficit-tag">Accumulated Loss</span>
+                                    @endif
+                                </td>
+                                <td class="bs-amt {{ (float)($account->balance ?? 0) < 0 ? 'bs-amt-neg' : '' }}">
+                                    {{ $fmt((float)($account->balance ?? 0)) }}
+                                </td>
+                                @if($hasCmp)
+                                    @if($cv !== null)
+                                        <td class="bs-cmp-amt {{ $cv < 0 ? 'bs-cmp-amt-neg' : '' }}">{{ $fmt($cv) }}</td>
+                                    @else
+                                        <td class="bs-amt-dash">&mdash;</td>
+                                    @endif
+                                @endif
+                            </tr>
+                        @endforeach
+                    @endif
+
+                    @if($equityReserveLines->isNotEmpty())
+                        <tr class="bs-spacer"><td colspan="{{ $colCount }}"></td></tr>
+                        <tr class="bs-sub-head"><td colspan="{{ $colCount }}">Reserves</td></tr>
+                        @foreach($equityReserveLines as $account)
+                            @php $cv = $cmpAmt($account); @endphp
+                            <tr class="bs-line">
+                                <td>{{ $account->name }}</td>
+                                <td class="bs-amt {{ (float)($account->balance ?? 0) < 0 ? 'bs-amt-neg' : '' }}">
+                                    {{ $fmt((float)($account->balance ?? 0)) }}
+                                </td>
+                                @if($hasCmp)
+                                    @if($cv !== null)
+                                        <td class="bs-cmp-amt {{ $cv < 0 ? 'bs-cmp-amt-neg' : '' }}">{{ $fmt($cv) }}</td>
+                                    @else
+                                        <td class="bs-amt-dash">&mdash;</td>
+                                    @endif
+                                @endif
+                            </tr>
+                        @endforeach
+                    @endif
 
                     <tr class="bs-sub-total">
                         <td>Total Equity</td>
@@ -1163,6 +1024,19 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
                 </div>
             @endif
 
+            @if(abs((float) ($reconciliationReserveDiagnostic ?? 0)) >= 0.01)
+                <div class="bs-hidden-debug">
+                    <strong>Reconciliation diagnostic only</strong><br>
+                    A temporary reconciliation reserve of {{ $fmt((float) ($reconciliationReserveDiagnostic ?? 0)) }}
+                    would be needed to force balance, but it has not been posted into Equity.
+                    @if(!empty($reconciliationReserveNeedsReview))
+                        <div style="margin-top:6px;color:#991b1b;font-weight:700;">
+                            Review required: diagnostic exceeds threshold of {{ $fmt((float) ($reconciliationReserveThreshold ?? 0)) }}.
+                        </div>
+                    @endif
+                </div>
+            @endif
+
             {{-- Detailed imbalance entries (debug panel) --}}
             @if(isset($imbalancedEntries) && $imbalancedEntries->isNotEmpty() && !$isBalanced)
                 <details style="margin-top:16px;">
@@ -1193,35 +1067,6 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
                             @endforeach
                         </tbody>
                     </table>
-                </details>
-            @endif
-
-            {{-- Hidden-equity debug panel — only visible at ?debug=1 --}}
-            @if(request()->boolean('debug') && $hiddenEquityAccounts->isNotEmpty())
-                <details class="bs-hidden-debug no-print">
-                    <summary>
-                        Dev: {{ $hiddenEquityAccounts->count() }} hidden equity account(s) &mdash; balance excluded from display but included in equity total
-                    </summary>
-                    <table>
-                        <thead>
-                            <tr style="background:#fef9c3;font-weight:700;">
-                                <td>Code</td><td>Name</td><td>Balance</td>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($hiddenEquityAccounts as $ha)
-                                <tr>
-                                    <td>{{ $ha->code ?? '—' }}</td>
-                                    <td>{{ $ha->name ?? '—' }}</td>
-                                    <td>{{ $fmt((float)($ha->balance ?? 0)) }}</td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                    <p style="margin-top:8px;">
-                        Hidden equity total (included silently in Total Equity):
-                        <strong>{{ $fmt($hiddenEquityBalance) }}</strong>
-                    </p>
                 </details>
             @endif
 
