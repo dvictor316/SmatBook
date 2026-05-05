@@ -265,8 +265,8 @@ class DatabaseReset extends Command
         $this->error('└─────────────────────────────────────────────────────────┘');
         $this->newLine();
 
-        $phrase = $this->ask('Type  FULL DATABASE RESET  to confirm (case-sensitive)');
-        if ($phrase !== 'FULL DATABASE RESET') {
+        $phrase = $this->ask('Type FULL DATABASE RESET to confirm (case-sensitive)');
+        if (trim($phrase) !== 'FULL DATABASE RESET') {
             $this->error('Confirmation phrase did not match. Aborting.');
             return false;
         }
