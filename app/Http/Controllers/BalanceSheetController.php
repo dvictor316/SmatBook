@@ -602,11 +602,9 @@ class BalanceSheetController extends Controller
             ->where(function ($query) use ($accountIds) {
                 if (!empty($accountIds)) {
                     $query->whereIn('id', $accountIds);
+                } else {
+                    $query->whereRaw('1 = 0');
                 }
-                // Include accounts with an opening balance (set at account creation).
-                // Do NOT use current_balance here — it is a stale denormalized cache
-                // that does not reset when transactions are deleted.
-                $query->orWhere('opening_balance', '!=', 0);
             })
             ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch, $accountIds) {
                 $branchId = trim((string) ($activeBranch['id'] ?? ''));
@@ -649,30 +647,19 @@ class BalanceSheetController extends Controller
             return $account;
         });
 
-        // 2. Transform balances based on Account Type
-        $openingTotals = ['debit' => 0.0, 'credit' => 0.0];
-
-        $accounts->transform(function ($account) use (&$openingTotals) {
+        // 2. Transform balances based strictly on posted ledger movement
+        $accounts->transform(function ($account) {
             $dr = ($account->total_debit ?? 0);
             $cr = ($account->total_credit ?? 0);
-            // Balance = opening_balance + live transaction movement.
-            // current_balance (DB column) is a stale cache — never used here.
-            $opening = (float) ($account->opening_balance ?? 0);
             $type = $this->normalizeAccountType($account->type ?? null);
             $isDebitNormal = in_array($type, ['asset', 'expense'], true);
 
-            if (abs($opening) > 0.0001) {
-                $openingSide = $this->calculateSideBalances($opening, $isDebitNormal);
-                $openingTotals['debit'] += $openingSide['debit'];
-                $openingTotals['credit'] += $openingSide['credit'];
-            }
-
             $account->balance = $isDebitNormal
-                ? ($opening + $dr) - $cr
-                : ($opening + $cr) - $dr;
+                ? $dr - $cr
+                : $cr - $dr;
 
             return $account;
-        });
+        })->filter(fn ($account) => abs((float) ($account->balance ?? 0)) > 0.005)->values();
 
         $isAllBranches = ($activeBranch['scope'] ?? 'branch') === 'all';
         $presentation = $this->prepareStatementPresentation(
@@ -681,7 +668,7 @@ class BalanceSheetController extends Controller
             $reportDate,
             $activeBranch,
             $method,
-            round($openingTotals['debit'] - $openingTotals['credit'], 2),
+            0.0,
             $consolidate
         );
 
@@ -891,8 +878,11 @@ class BalanceSheetController extends Controller
         $accountsQuery = Account::withoutGlobalScopes()
             ->whereNull('deleted_at')
             ->where(function ($q) use ($accountIds) {
-                if (!empty($accountIds)) $q->whereIn('id', $accountIds);
-                $q->orWhere('opening_balance', '!=', 0);
+                if (!empty($accountIds)) {
+                    $q->whereIn('id', $accountIds);
+                } else {
+                    $q->whereRaw('1 = 0');
+                }
             })
             ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($q) use ($activeBranch, $accountIds) {
                 $branchId   = trim((string) ($activeBranch['id']   ?? ''));
@@ -914,23 +904,15 @@ class BalanceSheetController extends Controller
         $this->applyAccountScope($accountsQuery, $request);
         $accounts = $accountsQuery->get();
 
-        $openingTotals = ['debit' => 0.0, 'credit' => 0.0];
-
-        $accounts->transform(function ($account) use ($txnTotals, &$openingTotals) {
+        $accounts->transform(function ($account) use ($txnTotals) {
             $totals  = $txnTotals->get($account->id);
-            $opening = (float) ($account->opening_balance ?? 0);
             $dr      = (float) ($totals->total_debit  ?? 0);
             $cr      = (float) ($totals->total_credit ?? 0);
             $type    = $this->normalizeAccountType($account->type ?? null);
             $isDebitNormal = in_array($type, ['asset', 'expense'], true);
-            if (abs($opening) > 0.0001) {
-                $openingSide = $this->calculateSideBalances($opening, $isDebitNormal);
-                $openingTotals['debit'] += $openingSide['debit'];
-                $openingTotals['credit'] += $openingSide['credit'];
-            }
-            $account->balance = $isDebitNormal ? ($opening + $dr) - $cr : ($opening + $cr) - $dr;
+            $account->balance = $isDebitNormal ? ($dr - $cr) : ($cr - $dr);
             return $account;
-        });
+        })->filter(fn ($account) => abs((float) ($account->balance ?? 0)) > 0.005)->values();
 
         $snapshot = $this->prepareStatementPresentation(
             $accounts,
@@ -938,7 +920,7 @@ class BalanceSheetController extends Controller
             $date,
             $activeBranch,
             $method,
-            round($openingTotals['debit'] - $openingTotals['credit'], 2),
+            0.0,
             $consolidate
         );
 
@@ -1211,8 +1193,6 @@ class BalanceSheetController extends Controller
                 if ($branchName !== '' && Schema::hasColumn('customers', 'branch_name')) {
                     $q->orWhere('branch_name', $branchName);
                 }
-                // Include customers with no branch assignment (set before branch feature)
-                $q->orWhereNull('branch_id')->orWhere('branch_id', '');
             });
         }
 
@@ -1271,8 +1251,6 @@ class BalanceSheetController extends Controller
                 if ($branchName !== '' && Schema::hasColumn('suppliers', 'branch_name')) {
                     $q->orWhere('branch_name', $branchName);
                 }
-                // Include suppliers with no branch assignment (set before branch feature)
-                $q->orWhereNull('branch_id')->orWhere('branch_id', '');
             });
         }
 
@@ -1391,8 +1369,9 @@ class BalanceSheetController extends Controller
             ->where(function ($q) use ($txnTotals) {
                 if (!$txnTotals->isEmpty()) {
                     $q->whereIn('id', $txnTotals->keys()->all());
+                } else {
+                    $q->whereRaw('1 = 0');
                 }
-                $q->orWhere('opening_balance', '!=', 0);
             })
             ->tap(fn ($q) => $this->applyAccountScope($q, $request))->get()
             ->transform(function ($a) use ($txnTotals) {
@@ -1401,12 +1380,11 @@ class BalanceSheetController extends Controller
                 $a->total_credit = (float)($t->total_credit ?? 0);
                 $type = $this->normalizeAccountType($a->type ?? null);
                 $isDebit = in_array($type, ['asset', 'expense'], true);
-                $ob = (float)($a->opening_balance ?? 0);
                 $a->balance = $isDebit
-                    ? ($ob + $a->total_debit) - $a->total_credit
-                    : ($ob + $a->total_credit) - $a->total_debit;
+                    ? ($a->total_debit - $a->total_credit)
+                    : ($a->total_credit - $a->total_debit);
                 return $a;
-            });
+            })->filter(fn ($a) => abs((float) ($a->balance ?? 0)) > 0.005)->values();
 
         $totalRevenue    = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type ?? null) === 'revenue')->sum('balance');
         $totalExpenses   = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type ?? null) === 'expense')->sum('balance');
@@ -1444,10 +1422,9 @@ class BalanceSheetController extends Controller
                     $type    = $this->normalizeAccountType($a->type ?? null);
                     $isDebit = in_array($type, ['asset', 'expense'], true);
                     $dr = (float)($t->td ?? 0); $cr = (float)($t->tc ?? 0);
-                    $ob = (float)($a->opening_balance ?? 0);
-                    $a->balance = $isDebit ? ($ob + $dr) - $cr : ($ob + $cr) - $dr;
+                    $a->balance = $isDebit ? ($dr - $cr) : ($cr - $dr);
                     return $a;
-                });
+                })->filter(fn ($a) => abs((float) ($a->balance ?? 0)) > 0.005)->values();
 
             $revenue  = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type) === 'revenue')->sum('balance');
             $expenses = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type) === 'expense')->sum('balance');

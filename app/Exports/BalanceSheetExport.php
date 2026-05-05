@@ -134,8 +134,9 @@ class BalanceSheetExport implements FromArray, WithHeadings
             ->where(function ($query) use ($accountIds) {
                 if (!empty($accountIds)) {
                     $query->whereIn('id', $accountIds);
+                } else {
+                    $query->whereRaw('1 = 0');
                 }
-                $query->orWhere('opening_balance', '!=', 0);
             });
         $this->applyCompanyScope($accountsQuery, 'accounts');
         $accounts = $accountsQuery->get();
@@ -144,13 +145,12 @@ class BalanceSheetExport implements FromArray, WithHeadings
             $totals = $txnTotals->get($account->id);
             $debits = (float) ($totals->total_debit ?? 0);
             $credits = (float) ($totals->total_credit ?? 0);
-            $opening = (float) ($account->opening_balance ?? 0);
 
             $type = $this->normalizeAccountType($account->type ?? null);
             if (in_array($type, ['asset', 'expense'], true)) {
-                $balance = $opening + $debits - $credits;
+                $balance = $debits - $credits;
             } else {
-                $balance = $opening + $credits - $debits;
+                $balance = $credits - $debits;
             }
 
             $account->balance = $balance;
