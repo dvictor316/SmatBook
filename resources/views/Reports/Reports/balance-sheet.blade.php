@@ -86,7 +86,7 @@ $equationDiff           = round((float) ($statementDifference ?? ($visTotalAsset
 $balanceTolerance       = (float) ($balanceTolerance ?? 0.005);
 $isBalanced             = abs($equationDiff) <= $balanceTolerance;
 $showBalanceDiagnostics = (bool) ($showBalanceDiagnostics ?? !$isBalanced);
-$showInlineDiagnostics  = (bool) ($isAdminDiagnosticMode ?? false);
+$showInlineDiagnostics  = $showBalanceDiagnostics || (bool) ($isAdminDiagnosticMode ?? false);
 
 /* ─────────────────────────────────────────────────────────────────
  *  COMPARISON PERIOD DATA
