@@ -153,6 +153,56 @@ private function applyBranchScope($query, string $table = 'purchases')
         });
     }
 
+    private function applyBranchScopeWithFallback($query, string $table = 'purchases')
+    {
+        $activeBranch = $this->getActiveBranchContext();
+        $branchId = trim((string) ($activeBranch['id'] ?? ''));
+        $branchName = trim((string) ($activeBranch['name'] ?? ''));
+
+        if ($branchId === '' && $branchName === '') {
+            return $query;
+        }
+
+        $hasBranchId = Schema::hasColumn($table, 'branch_id');
+        $hasBranchName = Schema::hasColumn($table, 'branch_name');
+        if (!$hasBranchId && !$hasBranchName) {
+            return $query;
+        }
+
+        return $query->where(function ($sub) use ($table, $branchId, $branchName, $hasBranchId, $hasBranchName) {
+            $matched = false;
+
+            if ($branchId !== '' && $hasBranchId) {
+                $sub->where("{$table}.branch_id", $branchId);
+                $matched = true;
+            }
+            if ($branchName !== '' && $hasBranchName) {
+                $method = $matched ? 'orWhere' : 'where';
+                $sub->{$method}("{$table}.branch_name", $branchName);
+                $matched = true;
+            }
+
+            $method = $matched ? 'orWhere' : 'where';
+            $sub->{$method}(function ($fallback) use ($table, $hasBranchId, $hasBranchName) {
+                if ($hasBranchId) {
+                    $fallback->where(function ($branchIdQuery) use ($table) {
+                        $branchIdQuery
+                            ->whereNull("{$table}.branch_id")
+                            ->orWhere("{$table}.branch_id", '');
+                    });
+                }
+
+                if ($hasBranchName) {
+                    $fallback->where(function ($branchNameQuery) use ($table) {
+                        $branchNameQuery
+                            ->whereNull("{$table}.branch_name")
+                            ->orWhere("{$table}.branch_name", '');
+                    });
+                }
+            });
+        });
+    }
+
     private function findScopedPurchase(int|string $purchaseId, array $with = [])
     {
         $baseQuery = Purchase::query()->with($with);
@@ -171,7 +221,7 @@ private function applyBranchScope($query, string $table = 'purchases')
         // 1. Fetch Purchases (using 'vendor' or 'supplier' based on your model relation)
         $purchaseQuery = Purchase::with(['supplier', 'items.product']);
         $this->applyTenantScope($purchaseQuery, 'purchases');
-        $this->applyBranchScope($purchaseQuery, 'purchases');
+        $this->applyBranchScopeWithFallback($purchaseQuery, 'purchases');
         $purchases = $purchaseQuery->orderBy('created_at', 'desc')->paginate(10);
         $purchases->getCollection()->transform(function (Purchase $purchase) {
             $normalizedTotalAmount = abs((float) ($purchase->total_amount ?? 0));
@@ -199,7 +249,10 @@ private function applyBranchScope($query, string $table = 'purchases')
     public function purchaseReport(Request $request)
     {
         $activeBranch = $this->getActiveBranchContext();
-        $search = $request->input('search');
+        $search = trim((string) $request->input('search', ''));
+        $dateFrom = trim((string) $request->input('date_from', ''));
+        $dateTo = trim((string) $request->input('date_to', ''));
+        $purchaseDateColumn = Schema::hasColumn('purchases', 'purchase_date') ? 'purchase_date' : 'created_at';
 
         $productQuery = Product::with('category');
         $this->scopeProductsForActiveBranch($productQuery, $activeBranch);
@@ -213,8 +266,28 @@ private function applyBranchScope($query, string $table = 'purchases')
 
         $purchaseQuery = Purchase::with(['supplier', 'items.product']);
         $this->applyTenantScope($purchaseQuery, 'purchases');
-        $this->applyBranchScope($purchaseQuery, 'purchases');
-        $purchases = $purchaseQuery->latest()->paginate(10);
+        $this->applyBranchScopeWithFallback($purchaseQuery, 'purchases');
+        if ($search !== '') {
+            $purchaseQuery->where(function ($query) use ($search) {
+                $query->where('purchase_no', 'like', '%' . $search . '%')
+                    ->orWhereHas('supplier', fn ($supplierQuery) => $supplierQuery->where('name', 'like', '%' . $search . '%'))
+                    ->orWhereHas('vendor', fn ($vendorQuery) => $vendorQuery->where('name', 'like', '%' . $search . '%'))
+                    ->orWhereHas('items.product', function ($productQuery) use ($search) {
+                        $productQuery->where('name', 'like', '%' . $search . '%');
+                        if (Schema::hasColumn('products', 'sku')) {
+                            $productQuery->orWhere('sku', 'like', '%' . $search . '%');
+                        }
+                    });
+            });
+        }
+        if ($dateFrom !== '') {
+            $purchaseQuery->whereDate($purchaseDateColumn, '>=', $dateFrom);
+        }
+        if ($dateTo !== '') {
+            $purchaseQuery->whereDate($purchaseDateColumn, '<=', $dateTo);
+        }
+
+        $purchases = $purchaseQuery->latest()->paginate(10)->withQueryString();
         $purchases->getCollection()->transform(function (Purchase $purchase) {
             $normalizedTotalAmount = abs((float) ($purchase->total_amount ?? 0));
             $paidAmount = $this->resolvePurchasePaidAmount($purchase);
@@ -230,6 +303,8 @@ private function applyBranchScope($query, string $table = 'purchases')
             'products'  => $products,
             'purchases' => $purchases,
             'search'    => $search,
+            'dateFrom'  => $dateFrom,
+            'dateTo'    => $dateTo,
             'page'      => 'products',
             'activeBranch' => $activeBranch,
         ]);
@@ -267,7 +342,6 @@ private function applyBranchScope($query, string $table = 'purchases')
         }
         $banksQuery = Bank::orderBy('name');
         $this->applyTenantScope($banksQuery, 'banks');
-        $this->applyBranchScope($banksQuery, 'banks');
         $banks = $banksQuery->get();
         
         // Generate a unique purchase ID
@@ -401,6 +475,24 @@ private function applyBranchScope($query, string $table = 'purchases')
             }
             if (Schema::hasColumn('purchases', 'vendor_id')) {
                 $purchasePayload['vendor_id'] = $validated['vendor_id'] ?? null;
+            }
+            if (Schema::hasColumn('purchases', 'purchase_date')) {
+                $purchasePayload['purchase_date'] = $validated['purchase_date'] ?? now()->toDateString();
+            }
+            if (Schema::hasColumn('purchases', 'due_date')) {
+                $purchasePayload['due_date'] = $validated['due_date'] ?? null;
+            }
+            if (Schema::hasColumn('purchases', 'reference_no')) {
+                $purchasePayload['reference_no'] = $validated['reference_no'] ?? null;
+            }
+            if (Schema::hasColumn('purchases', 'invoice_serial_no')) {
+                $purchasePayload['invoice_serial_no'] = $validated['invoice_serial_no'] ?? null;
+            }
+            if (Schema::hasColumn('purchases', 'bank_id')) {
+                $purchasePayload['bank_id'] = $validated['bank_id'] ?? null;
+            }
+            if (Schema::hasColumn('purchases', 'notes')) {
+                $purchasePayload['notes'] = $validated['notes'] ?? null;
             }
             if (Schema::hasColumn('purchases', 'company_id')) {
                 $purchasePayload['company_id'] = auth()->user()?->company_id ?? session('current_tenant_id');

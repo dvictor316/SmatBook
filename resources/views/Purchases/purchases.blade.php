@@ -66,7 +66,7 @@
 
     .purchase-report-shell .purchase-filter-grid {
         display: grid;
-        grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 0.7fr));
+        grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr)) repeat(2, minmax(0, 0.8fr));
         gap: 0.85rem;
         align-items: end;
     }
@@ -217,6 +217,14 @@
                         <div>
                             <label class="filter-label mb-2">Search Purchases</label>
                             <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="Search by name, SKU, or Purchase No...">
+                        </div>
+                        <div>
+                            <label class="filter-label mb-2">From Date</label>
+                            <input type="date" name="date_from" value="{{ request('date_from', $dateFrom ?? '') }}" class="form-control">
+                        </div>
+                        <div>
+                            <label class="filter-label mb-2">To Date</label>
+                            <input type="date" name="date_to" value="{{ request('date_to', $dateTo ?? '') }}" class="form-control">
                         </div>
                         <div>
                             <button type="submit" class="btn btn-primary w-100">

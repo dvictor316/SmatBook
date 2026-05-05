@@ -19,12 +19,17 @@ class Purchase extends Model
         'user_id',
         'supplier_id',
         'vendor_id', 
+        'purchase_date',
+        'due_date',
+        'reference_no',
+        'invoice_serial_no',
         'bank_id',      // Added this
         'tax_id',       // Added this
         'total_amount', 
         'tax_amount', 
         'paid_amount',  // Added this based on your tinker output
         'paid_at',      // Added this based on your tinker output
+        'notes',
         'status'
     ];
 

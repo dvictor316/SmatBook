@@ -781,23 +781,33 @@ class ExpenseController extends Controller
     {
         $validated = $request->validate([
             'name'    => 'required|string|max:191',
-            'email'   => 'required|email|max:191',
+            'email'   => 'nullable|email|max:191',
             'phone'   => 'nullable|string|max:50',
             'address' => 'nullable|string|max:255',
         ]);
 
         try {
             if (Schema::hasTable('vendors')) {
-                $attributes = ['email' => $validated['email']];
+                $attributes = ['name' => $validated['name']];
+                if (!empty($validated['email'])) {
+                    $attributes['email'] = $validated['email'];
+                }
+                if (Schema::hasColumn('vendors', 'company_id')) {
+                    $attributes['company_id'] = Auth::user()?->company_id ?? session('current_tenant_id');
+                }
+                if (Schema::hasColumn('vendors', 'branch_id')) {
+                    $attributes['branch_id'] = session('active_branch_id');
+                }
+                if (Schema::hasColumn('vendors', 'branch_name')) {
+                    $attributes['branch_name'] = session('active_branch_name');
+                }
+
                 $values = [
-                    'name'    => $validated['name'],
+                    'email'   => $validated['email'] ?? null,
                     'phone'   => $validated['phone'] ?? null,
                     'address' => $validated['address'] ?? null,
                     'balance' => 0,
                 ];
-                if (Schema::hasColumn('vendors', 'company_id')) {
-                    $attributes['company_id'] = Auth::user()?->company_id ?? session('current_tenant_id');
-                }
                 if (Schema::hasColumn('vendors', 'user_id')) {
                     $values['user_id'] = Auth::id();
                 }
@@ -911,7 +921,6 @@ class ExpenseController extends Controller
         }
 
         $banksQuery = $this->applyTenantScope(Bank::query(), 'banks');
-        $this->applyBranchScopeWithFallback($banksQuery, 'banks');
         $banks = $banksQuery->get();
         foreach ($banks as $bank) {
             if (!$bank->name) {
@@ -949,20 +958,11 @@ class ExpenseController extends Controller
     private function paymentSourceAccountsQuery()
     {
         $query = $this->applyTenantScope(Account::where('type', 'Asset')->orderBy('name'), 'accounts');
-
-        if (Schema::hasColumn('accounts', 'branch_id') || Schema::hasColumn('accounts', 'branch_name')) {
-            $this->applyBranchScopeWithFallback($query, 'accounts');
+        if (Schema::hasColumn('accounts', 'is_active')) {
+            $query->where('is_active', 1);
         }
 
-        return $query->where(function ($sub) {
-            if (Schema::hasColumn('accounts', 'sub_type')) {
-                $sub->where('sub_type', 'Current Asset');
-            }
-            $sub->orWhere('name', 'like', '%bank%')
-                ->orWhere('name', 'like', '%cash%')
-                ->orWhere('name', 'like', '%wallet%')
-                ->orWhere('name', 'like', '%pos%');
-        });
+        return $query;
     }
 
     private function resolveExpenseAttachmentPath(?string $filename): ?string

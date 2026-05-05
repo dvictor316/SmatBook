@@ -303,8 +303,8 @@
                         <input type="text" name="name" class="form-control" placeholder="e.g. ABC Supplies Ltd" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Email *</label>
-                        <input type="email" name="email" class="form-control" placeholder="supplier@example.com" required>
+                        <label class="form-label fw-bold">Email</label>
+                        <input type="email" name="email" class="form-control" placeholder="Optional">
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Phone</label>
