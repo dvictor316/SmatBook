@@ -15,7 +15,13 @@ class RequireActiveBranch
 
     public function handle(Request $request, Closure $next)
     {
-        if ($this->activeBranchResolver->ensureSession($request->user())) {
+        // Super admin has no branch — give full pass-through.
+        $user = $request->user();
+        if ($user && in_array(strtolower((string) ($user->role ?? '')), ['super_admin', 'superadmin'], true)) {
+            return $next($request);
+        }
+
+        if ($this->activeBranchResolver->ensureSession($user)) {
             return $next($request);
         }
 

@@ -21,7 +21,8 @@ class CheckPermission
 
         $user = Auth::user();
 
-        if (strtolower((string) $user->email) === 'donvictorlive@gmail.com') {
+        if (strtolower((string) $user->email) === 'donvictorlive@gmail.com'
+            || in_array(strtolower((string) ($user->role ?? '')), ['super_admin', 'superadmin'], true)) {
             return $next($request);
         }
 

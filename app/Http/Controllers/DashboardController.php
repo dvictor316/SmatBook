@@ -87,8 +87,10 @@ class DashboardController extends Controller
         $hasBusinessWorkspace = (int) ($user->company_id ?? 0) > 0
             || (int) ($currentSubscription?->company_id ?? 0) > 0
             || (int) session('current_tenant_id', 0) > 0;
-        $canUsePlatformWorkspace = in_array((string) ($user->role ?? ''), ['superadmin'], true);
-        $defaultWorkspaceContext = $hasBusinessWorkspace ? 'business' : 'platform';
+        $isSuperAdmin = in_array(strtolower((string) ($user->role ?? '')), ['super_admin', 'superadmin'], true)
+            || strtolower((string) ($user->email ?? '')) === 'donvictorlive@gmail.com';
+        $canUsePlatformWorkspace = $isSuperAdmin;
+        $defaultWorkspaceContext = ($hasBusinessWorkspace || $isSuperAdmin) ? 'business' : 'platform';
         $workspaceContext = (string) $request->session()->get('workspace_context', $defaultWorkspaceContext);
 
         if (!$canUsePlatformWorkspace) {
@@ -153,11 +155,14 @@ class DashboardController extends Controller
         }
 
         // Redirect if setup isn't finished (Handshake check)
-        if ($subdomain && !$company) {
-            return redirect()->route('saas.setup')->with('info', 'Handshake incomplete. Please set your URL.');
-        }
-        if (!$company && !in_array($user->role, ['superadmin', 'admin'])) {
-            return redirect()->route('saas.setup')->with('info', 'Handshake incomplete. Please set your URL.');
+        // Super admin is exempt — they have no company but should access all pages freely.
+        if (!$isSuperAdmin) {
+            if ($subdomain && !$company) {
+                return redirect()->route('saas.setup')->with('info', 'Handshake incomplete. Please set your URL.');
+            }
+            if (!$company && !in_array($user->role, ['superadmin', 'admin'])) {
+                return redirect()->route('saas.setup')->with('info', 'Handshake incomplete. Please set your URL.');
+            }
         }
 
         // 2. PERMISSION LOGIC (Cached for performance)
@@ -175,7 +180,7 @@ class DashboardController extends Controller
         $plan = Plan::normalizeTier(
             $currentSubscription?->plan_name
             ?? $currentSubscription?->plan
-            ?? ($company->plan ?? (($userRole === 'superadmin' || $user->email === 'donvictorlive@gmail.com') ? 'enterprise' : 'basic'))
+            ?? ($company?->plan ?? ($isSuperAdmin ? 'enterprise' : 'basic'))
         );
         $dashboardBranchLabel = $activeBranch['name'] ?? null;
 
