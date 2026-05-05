@@ -65,6 +65,12 @@ class SubscriptionController extends Controller
     {
         $user = Auth::user();
 
+        // Super admin has no subscription — redirect to the platform dashboard.
+        if ($user && in_array(strtolower((string) ($user->role ?? '')), ['super_admin', 'superadmin'], true)) {
+            return redirect()->route('super_admin.dashboard')
+                ->with('info', 'Super admin accounts do not require a subscription.');
+        }
+
         if (! $user) {
             // Store plan selection in session so the registration flow picks it up automatically.
             // Also store url.intended so after login the user lands directly on the upgrade page.
@@ -180,9 +186,16 @@ class SubscriptionController extends Controller
     */
     public function create(Request $request, $id = null)
     {
+        $user = auth()->user();
+
+        // Super admin has no subscription — send straight to platform dashboard.
+        if ($user && in_array(strtolower((string) ($user->role ?? '')), ['super_admin', 'superadmin'], true)) {
+            return redirect()->route('super_admin.dashboard');
+        }
+
         $subscription = $id
-            ? Subscription::where('id', $id)->where('user_id', auth()->id())->first()
-            : Subscription::where('user_id', auth()->id())
+            ? Subscription::where('id', $id)->where('user_id', $user->id)->first()
+            : Subscription::where('user_id', $user->id)
                 ->where('status', 'Pending')
                 ->latest()
                 ->first();
