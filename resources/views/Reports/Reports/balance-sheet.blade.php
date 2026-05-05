@@ -933,12 +933,7 @@ $cmpAmt = fn ($account) => isset($cmpLookup[strtolower(trim((string) ($account->
                         @foreach($retainedEarningsLines as $account)
                             @php $cv = $cmpAmt($account); @endphp
                             <tr class="bs-line">
-                                <td>
-                                    {{ $account->name }}
-                                    @if(!empty($account->_deficit))
-                                        <span class="bs-deficit-tag">Accumulated Loss</span>
-                                    @endif
-                                </td>
+                                <td>{{ $account->name }}</td>
                                 <td class="bs-amt {{ (float)($account->balance ?? 0) < 0 ? 'bs-amt-neg' : '' }}">
                                     {{ $fmt((float)($account->balance ?? 0)) }}
                                 </td>

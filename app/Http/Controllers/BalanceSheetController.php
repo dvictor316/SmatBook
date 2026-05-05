@@ -237,7 +237,9 @@ class BalanceSheetController extends Controller
 
     private function duplicateAccountKey(object $account): string
     {
-        return strtolower(trim((string) ($account->name ?? '')))
+        $displayName = trim((string) ($account->_display_name ?? $account->name ?? ''));
+
+        return strtolower($displayName)
             . '|' . strtolower(trim((string) ($account->type ?? '')))
             . '|' . strtolower(trim((string) ($account->_bs_group ?? '')));
     }
@@ -313,7 +315,12 @@ class BalanceSheetController extends Controller
             return $items->map(function ($account) use ($counts) {
                 $key = $this->duplicateAccountKey($account);
                 if (($counts[$key] ?? 0) > 1) {
-                    $account->name = trim((string) ($account->name ?? '')) . ' — ' . $this->branchDisplayLabel($account);
+                    $suffix = ' — ' . $this->branchDisplayLabel($account);
+                    if (isset($account->_display_name) && trim((string) $account->_display_name) !== '') {
+                        $account->_display_name = trim((string) $account->_display_name) . $suffix;
+                    } else {
+                        $account->name = trim((string) ($account->name ?? '')) . $suffix;
+                    }
                 }
 
                 return $account;
