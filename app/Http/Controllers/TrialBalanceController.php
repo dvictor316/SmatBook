@@ -10,6 +10,7 @@ use App\Models\Account;
 use App\Models\Transaction;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\TrialBalanceExport;
+use Illuminate\Support\Collection;
 
 class TrialBalanceController extends Controller
 {
@@ -106,23 +107,54 @@ class TrialBalanceController extends Controller
 
         $activeBranch = $this->resolveActiveBranch($request);
         if (($activeBranch['scope'] ?? 'branch') === 'all') {
-            $query->where(function ($branchScoped) {
-                if (Schema::hasColumn('transactions', 'branch_id')) {
-                    $branchScoped->whereNotNull('branch_id')
-                        ->where('branch_id', '<>', '');
-                }
-
-                if (Schema::hasColumn('transactions', 'branch_name')) {
-                    $method = Schema::hasColumn('transactions', 'branch_id') ? 'orWhere' : 'where';
-                    $branchScoped->{$method}(function ($named) {
-                        $named->whereNotNull('branch_name')
-                            ->where('branch_name', '<>', '');
-                    });
-                }
-            });
+            $this->applyConfiguredBranchUniverse($query, 'transactions', $companyId);
         }
 
         return $query;
+    }
+
+    private function loadConfiguredBranches(int $companyId): Collection
+    {
+        if ($companyId <= 0 || !Schema::hasTable('settings')) {
+            return collect();
+        }
+
+        $rawBranches = (string) (DB::table('settings')
+            ->where('key', 'branches_json_company_' . $companyId)
+            ->value('value') ?? '');
+
+        return collect(json_decode($rawBranches, true) ?: [])
+            ->map(function ($branch) {
+                return [
+                    'id' => trim((string) ($branch['id'] ?? '')),
+                    'name' => trim((string) ($branch['name'] ?? '')),
+                ];
+            })
+            ->filter(fn ($branch) => $branch['id'] !== '' || $branch['name'] !== '')
+            ->values();
+    }
+
+    private function applyConfiguredBranchUniverse($query, string $table, int $companyId): void
+    {
+        $branches = $this->loadConfiguredBranches($companyId);
+        if ($branches->isEmpty()) {
+            $query->whereRaw('1 = 0');
+            return;
+        }
+
+        $branchIds = $branches->pluck('id')->filter()->unique()->values()->all();
+        $branchNames = $branches->pluck('name')->filter()->unique()->values()->all();
+
+        $query->where(function ($branchScoped) use ($table, $branchIds, $branchNames) {
+            if (!empty($branchIds) && Schema::hasColumn($table, 'branch_id')) {
+                $branchScoped->whereIn("{$table}.branch_id", $branchIds);
+            }
+
+            if (!empty($branchNames) && Schema::hasColumn($table, 'branch_name')) {
+                $method = (!empty($branchIds) && Schema::hasColumn($table, 'branch_id')) ? 'orWhereIn' : 'whereIn';
+                $branchScoped->{$method}("{$table}.branch_name", $branchNames);
+            }
+        });
     }
 
     private function applyAccountScope($query, Request $request)
@@ -134,24 +166,6 @@ class TrialBalanceController extends Controller
             $query->where('company_id', $companyId);
         } elseif ($userId > 0 && Schema::hasColumn('accounts', 'user_id')) {
             $query->where('user_id', $userId);
-        }
-
-        $activeBranch = $this->resolveActiveBranch($request);
-        if (($activeBranch['scope'] ?? 'branch') === 'all') {
-            $query->where(function ($branchScoped) {
-                if (Schema::hasColumn('accounts', 'branch_id')) {
-                    $branchScoped->whereNotNull('branch_id')
-                        ->where('branch_id', '<>', '');
-                }
-
-                if (Schema::hasColumn('accounts', 'branch_name')) {
-                    $method = Schema::hasColumn('accounts', 'branch_id') ? 'orWhere' : 'where';
-                    $branchScoped->{$method}(function ($named) {
-                        $named->whereNotNull('branch_name')
-                            ->where('branch_name', '<>', '');
-                    });
-                }
-            });
         }
 
         return $query;
@@ -310,55 +324,30 @@ class TrialBalanceController extends Controller
             ->where(function ($query) use ($accountIds) {
                 if (!empty($accountIds)) {
                     $query->whereIn('id', $accountIds);
+                } else {
+                    $query->whereRaw('1 = 0');
                 }
-                $query->orWhere('opening_balance', '!=', 0);
-            })
-            ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
-                $branchId = trim((string) ($activeBranch['id'] ?? ''));
-                $branchName = trim((string) ($activeBranch['name'] ?? ''));
-
-                return $query->where(function ($sub) use ($branchId, $branchName) {
-                    if ($branchId !== '') {
-                        $sub->where('branch_id', $branchId);
-                    }
-                    if ($branchName !== '') {
-                        $sub->orWhere('branch_name', $branchName);
-                    }
-                    // Include global accounts with no branch assignment
-                    $sub->orWhereNull('branch_id')
-                        ->orWhere('branch_id', '');
-                });
             });
         $this->applyAccountScope($accountsQuery, $request);
 
         $accounts = $accountsQuery->get();
-        $openingTotals = ['debit' => 0.0, 'credit' => 0.0];
 
-        // 4. Calculate Net Position for each account
-        $accounts = $accounts->map(function ($account) use ($txnTotals, &$openingTotals) {
+        // 4. Calculate Net Position for each account strictly from posted ledger totals
+        $accounts = $accounts->map(function ($account) use ($txnTotals) {
             $totals = $txnTotals->get($account->id);
             $dr = (float) ($totals->total_debit ?? 0);
             $cr = (float) ($totals->total_credit ?? 0);
-            $openingBalance = (float) ($account->opening_balance ?? 0);
             $isDebitNormal = $this->isDebitNormalAccount($account);
 
             $account->debit_balance = 0;
             $account->credit_balance = 0;
 
-            if (abs($openingBalance) > 0.0001) {
-                $openingSide = $this->calculateSideBalances($openingBalance, $isDebitNormal);
-                $openingTotals['debit'] += $openingSide['debit'];
-                $openingTotals['credit'] += $openingSide['credit'];
-            }
-
-            $net = $isDebitNormal
-                ? $openingBalance + $dr - $cr
-                : $openingBalance + $cr - $dr;
+            $net = $isDebitNormal ? ($dr - $cr) : ($cr - $dr);
 
             $netSide = $this->calculateSideBalances($net, $isDebitNormal);
             $account->debit_balance = $netSide['debit'];
             $account->credit_balance = $netSide['credit'];
-            $account->has_activity = ($dr > 0) || ($cr > 0) || (abs($openingBalance) > 0);
+            $account->has_activity = ($dr > 0) || ($cr > 0);
             return $account;
         })
         ->filter(fn($acc) => $acc->has_activity)

@@ -45,50 +45,32 @@ class TrialBalanceExport implements FromCollection, WithHeadings
             ->where(function ($query) use ($accountIds) {
                 if (!empty($accountIds)) {
                     $query->whereIn('id', $accountIds);
+                } else {
+                    $query->whereRaw('1 = 0');
                 }
-                $query->orWhere('opening_balance', '!=', 0);
             });
         $this->applyCompanyScope($accountsQuery, 'accounts');
         $accounts = $accountsQuery->get();
 
-        $openingTotals = ['debit' => 0.0, 'credit' => 0.0];
-
-        $rows = $accounts->map(function ($account) use ($txnTotals, &$openingTotals) {
+        $rows = $accounts->map(function ($account) use ($txnTotals) {
             $totals = $txnTotals->get($account->id);
             $dr = (float) ($totals->total_debit ?? 0);
             $cr = (float) ($totals->total_credit ?? 0);
-            $opening = (float) ($account->opening_balance ?? 0);
 
             $debitBalance = 0.0;
             $creditBalance = 0.0;
 
             $isDebitNormal = in_array($account->type, ['Asset', 'Expense'], true);
 
-            if (abs($opening) > 0.0001) {
-                if ($isDebitNormal) {
-                    if ($opening >= 0) {
-                        $openingTotals['debit'] += $opening;
-                    } else {
-                        $openingTotals['credit'] += abs($opening);
-                    }
-                } else {
-                    if ($opening >= 0) {
-                        $openingTotals['credit'] += $opening;
-                    } else {
-                        $openingTotals['debit'] += abs($opening);
-                    }
-                }
-            }
-
             if ($isDebitNormal) {
-                $net = $opening + $dr - $cr;
+                $net = $dr - $cr;
                 if ($net >= 0) {
                     $debitBalance = $net;
                 } else {
                     $creditBalance = abs($net);
                 }
             } else {
-                $net = $opening + $cr - $dr;
+                $net = $cr - $dr;
                 if ($net >= 0) {
                     $creditBalance = $net;
                 } else {
@@ -148,6 +130,7 @@ class TrialBalanceExport implements FromCollection, WithHeadings
     private function applyBranchTransactionVisibility($query): void
     {
         if ($this->branchScope === 'all') {
+            $this->applyConfiguredBranchUniverse($query, 'transactions');
             return;
         }
 
@@ -165,11 +148,50 @@ class TrialBalanceExport implements FromCollection, WithHeadings
                 $method = $branchId !== '' ? 'orWhere' : 'where';
                 $sub->{$method}('branch_name', $branchName);
             }
+        });
+    }
 
-            $sub->orWhereNull('branch_id')
-                ->orWhere('branch_id', '')
-                ->orWhereNull('branch_name')
-                ->orWhere('branch_name', '');
+    private function configuredBranches(): \Illuminate\Support\Collection
+    {
+        if ($this->companyId <= 0 || !\Schema::hasTable('settings')) {
+            return collect();
+        }
+
+        $rawBranches = (string) (\DB::table('settings')
+            ->where('key', 'branches_json_company_' . $this->companyId)
+            ->value('value') ?? '');
+
+        return collect(json_decode($rawBranches, true) ?: [])
+            ->map(function ($branch) {
+                return [
+                    'id' => trim((string) ($branch['id'] ?? '')),
+                    'name' => trim((string) ($branch['name'] ?? '')),
+                ];
+            })
+            ->filter(fn ($branch) => $branch['id'] !== '' || $branch['name'] !== '')
+            ->values();
+    }
+
+    private function applyConfiguredBranchUniverse($query, string $table): void
+    {
+        $branches = $this->configuredBranches();
+        if ($branches->isEmpty()) {
+            $query->whereRaw('1 = 0');
+            return;
+        }
+
+        $branchIds = $branches->pluck('id')->filter()->unique()->values()->all();
+        $branchNames = $branches->pluck('name')->filter()->unique()->values()->all();
+
+        $query->where(function ($branchScoped) use ($table, $branchIds, $branchNames) {
+            if (!empty($branchIds) && \Schema::hasColumn($table, 'branch_id')) {
+                $branchScoped->whereIn('branch_id', $branchIds);
+            }
+
+            if (!empty($branchNames) && \Schema::hasColumn($table, 'branch_name')) {
+                $method = (!empty($branchIds) && \Schema::hasColumn($table, 'branch_id')) ? 'orWhereIn' : 'whereIn';
+                $branchScoped->{$method}('branch_name', $branchNames);
+            }
         });
     }
 

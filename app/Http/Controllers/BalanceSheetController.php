@@ -44,23 +44,54 @@ class BalanceSheetController extends Controller
 
         $activeBranch = $this->resolveActiveBranch($request);
         if (($activeBranch['scope'] ?? 'branch') === 'all') {
-            $query->where(function ($branchScoped) {
-                if (Schema::hasColumn('transactions', 'branch_id')) {
-                    $branchScoped->whereNotNull('branch_id')
-                        ->where('branch_id', '<>', '');
-                }
-
-                if (Schema::hasColumn('transactions', 'branch_name')) {
-                    $method = Schema::hasColumn('transactions', 'branch_id') ? 'orWhere' : 'where';
-                    $branchScoped->{$method}(function ($named) {
-                        $named->whereNotNull('branch_name')
-                            ->where('branch_name', '<>', '');
-                    });
-                }
-            });
+            $this->applyConfiguredBranchUniverse($query, 'transactions', $companyId);
         }
 
         return $query;
+    }
+
+    private function loadConfiguredBranches(int $companyId): Collection
+    {
+        if ($companyId <= 0 || !Schema::hasTable('settings')) {
+            return collect();
+        }
+
+        $rawBranches = (string) (DB::table('settings')
+            ->where('key', 'branches_json_company_' . $companyId)
+            ->value('value') ?? '');
+
+        return collect(json_decode($rawBranches, true) ?: [])
+            ->map(function ($branch) {
+                return [
+                    'id' => trim((string) ($branch['id'] ?? '')),
+                    'name' => trim((string) ($branch['name'] ?? '')),
+                ];
+            })
+            ->filter(fn ($branch) => $branch['id'] !== '' || $branch['name'] !== '')
+            ->values();
+    }
+
+    private function applyConfiguredBranchUniverse($query, string $table, int $companyId): void
+    {
+        $branches = $this->loadConfiguredBranches($companyId);
+        if ($branches->isEmpty()) {
+            $query->whereRaw('1 = 0');
+            return;
+        }
+
+        $branchIds = $branches->pluck('id')->filter()->unique()->values()->all();
+        $branchNames = $branches->pluck('name')->filter()->unique()->values()->all();
+
+        $query->where(function ($branchScoped) use ($table, $branchIds, $branchNames) {
+            if (!empty($branchIds) && Schema::hasColumn($table, 'branch_id')) {
+                $branchScoped->whereIn("{$table}.branch_id", $branchIds);
+            }
+
+            if (!empty($branchNames) && Schema::hasColumn($table, 'branch_name')) {
+                $method = (!empty($branchIds) && Schema::hasColumn($table, 'branch_id')) ? 'orWhereIn' : 'whereIn';
+                $branchScoped->{$method}("{$table}.branch_name", $branchNames);
+            }
+        });
     }
 
     private function resolveActiveBranch(Request $request): array
@@ -687,35 +718,6 @@ class BalanceSheetController extends Controller
                 } else {
                     $query->whereRaw('1 = 0');
                 }
-            })
-            ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch, $accountIds) {
-                $branchId = trim((string) ($activeBranch['id'] ?? ''));
-                $branchName = trim((string) ($activeBranch['name'] ?? ''));
-
-                // No branch resolved → show all accounts (same as transaction query).
-                if ($branchId === '' && $branchName === '') {
-                    return;
-                }
-
-                return $query->where(function ($sub) use ($branchId, $branchName, $accountIds) {
-                    if ($branchId !== '') {
-                        $sub->where('branch_id', $branchId);
-                    }
-                    if ($branchName !== '') {
-                        $sub->orWhere('branch_name', $branchName);
-                    }
-                    // Include global/system accounts (branch_id IS NULL or '') ONLY when
-                    // they already appear in the branch-scoped transaction totals.
-                    // This prevents all un-branched COA accounts from bleeding into
-                    // every branch's balance sheet with identical opening balances.
-                    if (!empty($accountIds)) {
-                        $sub->orWhere(function ($inner) use ($accountIds) {
-                            $inner->where(function ($b) {
-                                $b->whereNull('branch_id')->orWhere('branch_id', '');
-                            })->whereIn('id', $accountIds);
-                        });
-                    }
-                });
             });
 
         $this->applyAccountScope($accountsQuery, $request);
@@ -1208,23 +1210,6 @@ class BalanceSheetController extends Controller
                 } else {
                     $q->whereRaw('1 = 0');
                 }
-            })
-            ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($q) use ($activeBranch, $accountIds) {
-                $branchId   = trim((string) ($activeBranch['id']   ?? ''));
-                $branchName = trim((string) ($activeBranch['name'] ?? ''));
-                if ($branchId === '' && $branchName === '') return;
-                return $q->where(function ($sub) use ($branchId, $branchName, $accountIds) {
-                    if ($branchId   !== '') $sub->where('branch_id',   $branchId);
-                    if ($branchName !== '') $sub->orWhere('branch_name', $branchName);
-                    // Global accounts (no branch) only if they have branch-tagged transactions.
-                    if (!empty($accountIds)) {
-                        $sub->orWhere(function ($inner) use ($accountIds) {
-                            $inner->where(function ($b) {
-                                $b->whereNull('branch_id')->orWhere('branch_id', '');
-                            })->whereIn('id', $accountIds);
-                        });
-                    }
-                });
             });
         $this->applyAccountScope($accountsQuery, $request);
         $accounts = $accountsQuery->get();
@@ -1435,24 +1420,6 @@ class BalanceSheetController extends Controller
             $query->where('company_id', $companyId);
         } elseif ($userId > 0 && Schema::hasColumn('accounts', 'user_id')) {
             $query->where('user_id', $userId);
-        }
-
-        $activeBranch = $this->resolveActiveBranch($request);
-        if (($activeBranch['scope'] ?? 'branch') === 'all') {
-            $query->where(function ($branchScoped) {
-                if (Schema::hasColumn('accounts', 'branch_id')) {
-                    $branchScoped->whereNotNull('branch_id')
-                        ->where('branch_id', '<>', '');
-                }
-
-                if (Schema::hasColumn('accounts', 'branch_name')) {
-                    $method = Schema::hasColumn('accounts', 'branch_id') ? 'orWhere' : 'where';
-                    $branchScoped->{$method}(function ($named) {
-                        $named->whereNotNull('branch_name')
-                            ->where('branch_name', '<>', '');
-                    });
-                }
-            });
         }
 
         return $query;

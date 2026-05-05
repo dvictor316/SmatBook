@@ -243,6 +243,7 @@ class BalanceSheetExport implements FromArray, WithHeadings
     private function applyBranchTransactionVisibility($query): void
     {
         if ($this->branchScope === 'all') {
+            $this->applyConfiguredBranchUniverse($query, 'transactions');
             return;
         }
 
@@ -260,11 +261,50 @@ class BalanceSheetExport implements FromArray, WithHeadings
                 $method = $branchId !== '' ? 'orWhere' : 'where';
                 $sub->{$method}('branch_name', $branchName);
             }
+        });
+    }
 
-            $sub->orWhereNull('branch_id')
-                ->orWhere('branch_id', '')
-                ->orWhereNull('branch_name')
-                ->orWhere('branch_name', '');
+    private function configuredBranches(): \Illuminate\Support\Collection
+    {
+        if ($this->companyId <= 0 || !\Schema::hasTable('settings')) {
+            return collect();
+        }
+
+        $rawBranches = (string) (DB::table('settings')
+            ->where('key', 'branches_json_company_' . $this->companyId)
+            ->value('value') ?? '');
+
+        return collect(json_decode($rawBranches, true) ?: [])
+            ->map(function ($branch) {
+                return [
+                    'id' => trim((string) ($branch['id'] ?? '')),
+                    'name' => trim((string) ($branch['name'] ?? '')),
+                ];
+            })
+            ->filter(fn ($branch) => $branch['id'] !== '' || $branch['name'] !== '')
+            ->values();
+    }
+
+    private function applyConfiguredBranchUniverse($query, string $table): void
+    {
+        $branches = $this->configuredBranches();
+        if ($branches->isEmpty()) {
+            $query->whereRaw('1 = 0');
+            return;
+        }
+
+        $branchIds = $branches->pluck('id')->filter()->unique()->values()->all();
+        $branchNames = $branches->pluck('name')->filter()->unique()->values()->all();
+
+        $query->where(function ($branchScoped) use ($table, $branchIds, $branchNames) {
+            if (!empty($branchIds) && \Schema::hasColumn($table, 'branch_id')) {
+                $branchScoped->whereIn('branch_id', $branchIds);
+            }
+
+            if (!empty($branchNames) && \Schema::hasColumn($table, 'branch_name')) {
+                $method = (!empty($branchIds) && \Schema::hasColumn($table, 'branch_id')) ? 'orWhereIn' : 'whereIn';
+                $branchScoped->{$method}('branch_name', $branchNames);
+            }
         });
     }
 
