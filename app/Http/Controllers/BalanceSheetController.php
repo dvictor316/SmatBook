@@ -16,6 +16,8 @@ use Illuminate\Support\Collection;
 
 class BalanceSheetController extends Controller
 {
+    private const BALANCE_TOLERANCE = 0.005;
+
     private function calculateSideBalances(float $amount, bool $isDebitNormal): array
     {
         if ($isDebitNormal) {
@@ -535,6 +537,7 @@ class BalanceSheetController extends Controller
         $totalEquity = round((float) $equity->sum('balance'), 2);
         $statementDifference = round($totalAssets - ($totalLiabilities + $totalEquity), 2);
         $reviewThreshold = max(1000.0, round(abs($totalAssets) * 0.02, 2));
+        $isBalanced = abs($statementDifference) <= self::BALANCE_TOLERANCE;
 
         return [
             'currentAssets' => $currentAssets,
@@ -556,7 +559,8 @@ class BalanceSheetController extends Controller
             'retainedEarnings' => $retainedEarnings,
             'netIncome' => $retainedEarnings,
             'statementDifference' => $statementDifference,
-            'isBalanced' => abs($statementDifference) < 0.01,
+            'isBalanced' => $isBalanced,
+            'balanceTolerance' => self::BALANCE_TOLERANCE,
             'reconciliationReserveDiagnostic' => $statementDifference,
             'reconciliationReserveThreshold' => $reviewThreshold,
             'reconciliationReserveNeedsReview' => abs($statementDifference) >= $reviewThreshold,
@@ -772,6 +776,7 @@ class BalanceSheetController extends Controller
         $totalEquity = $presentation['totalEquity'];
         $statementDifference = $presentation['statementDifference'];
         $isBalanced = $presentation['isBalanced'];
+        $balanceTolerance = $presentation['balanceTolerance'];
         $reconciliationReserveDiagnostic = $presentation['reconciliationReserveDiagnostic'];
         $reconciliationReserveThreshold = $presentation['reconciliationReserveThreshold'];
         $reconciliationReserveNeedsReview = $presentation['reconciliationReserveNeedsReview'];
@@ -888,6 +893,10 @@ class BalanceSheetController extends Controller
         $reserveSuspenseDiagnostics = $this->reserveAndSuspenseDiagnostics($request, $reportDate, $activeBranch);
         $openingBalanceValidation = $this->openingBalanceValidationReport($request, $reportDate, $activeBranch);
         $openingBalanceAudit = $this->branchOpeningBalanceAudit($request, $reportDate, $activeBranch);
+        $role = strtolower(trim((string) ($request->user()?->role ?? '')));
+        $isAdminDiagnosticMode = in_array($role, ['super_admin', 'superadmin', 'administrator', 'admin'], true)
+            && $request->boolean('debug');
+        $showBalanceDiagnostics = !$isBalanced || $isAdminDiagnosticMode;
 
         // 7. Map variables to match your Blade @foreach calls exactly
         // Load branch list for the branch selector in the filter bar
@@ -934,7 +943,11 @@ class BalanceSheetController extends Controller
             'retainedEarningsLines',
             'totalCurrentLiabilities',
             'totalLongTermLiabilities',
+            'statementDifference',
             'isBalanced',
+            'balanceTolerance',
+            'showBalanceDiagnostics',
+            'isAdminDiagnosticMode',
             'reconciliationReserveDiagnostic',
             'reconciliationReserveThreshold',
             'reconciliationReserveNeedsReview',
@@ -1282,6 +1295,9 @@ class BalanceSheetController extends Controller
             'totalLongTermLiabilities' => 0.0,
             'totalLiabilities'   => 0.0,
             'totalEquity'        => 0.0,
+            'statementDifference' => 0.0,
+            'isBalanced'         => true,
+            'balanceTolerance'   => self::BALANCE_TOLERANCE,
             'reconciliationReserveDiagnostic' => 0.0,
             'reconciliationReserveNeedsReview' => false,
         ];
