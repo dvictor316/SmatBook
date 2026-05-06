@@ -828,6 +828,7 @@
                 @csrf
                 <div class="modal-header">
                     <h5 class="modal-title">Quick Category</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div id="quick_category_success_message" class="alert alert-success d-none" role="alert"></div>
@@ -1013,26 +1014,34 @@
             };
         }
 
-        // PREVENT RE-INITIALIZATION ERROR
-        if ($.fn.DataTable.isDataTable('#products-table')) {
-            $('#products-table').DataTable().destroy();
+        // PREVENT RE-INITIALIZATION ERROR — wrapped in try/catch so a DataTables
+        // CDN failure never aborts the rest of the ready block (which registers
+        // the modal event handlers and backdrop cleanup).
+        var table = null;
+        try {
+            if ($.fn.DataTable && $.fn.DataTable.isDataTable('#products-table')) {
+                $('#products-table').DataTable().destroy();
+            }
+            if ($.fn.DataTable) {
+                table = $('#products-table').DataTable({
+                    dom: 'Bfrtip',
+                    buttons: [
+                        { extend: 'excelHtml5', className: 'dt-excel d-none', title: 'Product_Inventory_List', exportOptions: { columns: ':not(.no-print)' } },
+                        { extend: 'pdfHtml5', className: 'dt-pdf d-none', title: 'Product Inventory List', exportOptions: { columns: ':not(.no-print)' } },
+                        { extend: 'print', className: 'dt-print d-none', title: 'Product Inventory', exportOptions: { columns: ':not(.no-print)' } }
+                    ],
+                    pageLength: 25,
+                    language: { search: "" , searchPlaceholder: "Search..." }
+                });
+            }
+        } catch (dtError) {
+            console.warn('DataTables init warning (export buttons unavailable):', dtError);
         }
 
-        var table = $('#products-table').DataTable({
-            dom: 'Bfrtip',
-            buttons: [
-                { extend: 'excelHtml5', className: 'dt-excel d-none', title: 'Product_Inventory_List', exportOptions: { columns: ':not(.no-print)' } },
-                { extend: 'pdfHtml5', className: 'dt-pdf d-none', title: 'Product Inventory List', exportOptions: { columns: ':not(.no-print)' } },
-                { extend: 'print', className: 'dt-print d-none', title: 'Product Inventory', exportOptions: { columns: ':not(.no-print)' } }
-            ],
-            pageLength: 25,
-            language: { search: "" , searchPlaceholder: "Search..." }
-        });
-
         // Trigger Exports from Custom Dropdown
-        $('#export_excel').on('click', function(e) { e.preventDefault(); table.button('.dt-excel').trigger(); });
-        $('#export_pdf').on('click', function(e) { e.preventDefault(); table.button('.dt-pdf').trigger(); });
-        $('#export_print').on('click', function(e) { e.preventDefault(); table.button('.dt-print').trigger(); });
+        $('#export_excel').on('click', function(e) { e.preventDefault(); if (table) table.button('.dt-excel').trigger(); });
+        $('#export_pdf').on('click', function(e) { e.preventDefault(); if (table) table.button('.dt-pdf').trigger(); });
+        $('#export_print').on('click', function(e) { e.preventDefault(); if (table) table.button('.dt-print').trigger(); });
         reloadQuickCategoryOptions().finally(() => {
             initializeQuickCategorySelect();
         });
@@ -1053,6 +1062,16 @@
             clearQuickCategorySuccess();
             clearQuickCategoryError();
             clearQuickProductMessages();
+            // Permanent fix: remove any stuck backdrop divs and body modal state.
+            // Leftover backdrops block ALL page clicks, making the Add button
+            // appear non-responsive. This happens when nested modals (e.g. Quick
+            // Category) leave an extra backdrop behind when closed.
+            if (!document.querySelectorAll('.modal.show').length) {
+                document.querySelectorAll('.modal-backdrop').forEach(function(el) { el.remove(); });
+                document.body.classList.remove('modal-open');
+                document.body.style.overflow = '';
+                document.body.style.paddingRight = '';
+            }
         });
 
         if (shouldReopenProductModal) {
