@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use App\Models\LandedCost;
 
 class LandedCostController extends Controller
@@ -32,7 +34,27 @@ class LandedCostController extends Controller
 
     public function create()
     {
-        return view('landed-costs.create');
+        $grns = collect();
+        $user = auth()->user();
+        $branch = $this->getActiveBranchContext();
+
+        if (Schema::hasTable('goods_received_notes')) {
+            $grnsQuery = DB::table('goods_received_notes')
+                ->where('company_id', $user->company_id)
+                ->whereNull('deleted_at')
+                ->orderByDesc('received_date')
+                ->orderByDesc('id');
+
+            if (Schema::hasColumn('goods_received_notes', 'branch_id') && !empty($branch['id'])) {
+                $grnsQuery->where('branch_id', $branch['id']);
+            }
+
+            $grns = $grnsQuery
+                ->limit(100)
+                ->get(['id', 'grn_number', 'received_date']);
+        }
+
+        return view('landed-costs.create', compact('grns'));
     }
 
     public function store(Request $request)
@@ -48,15 +70,22 @@ class LandedCostController extends Controller
         ]);
 
         $user = auth()->user();
-
         $branch = $this->getActiveBranchContext();
-        LandedCost::create($validated + [
+        $payload = $validated + [
             'company_id' => $user->company_id,
-            'branch_id'  => $branch['id'],
-            'branch_name'=> $branch['name'],
             'created_by' => $user->id,
             'status'     => 'pending',
-        ]);
+        ];
+
+        if (Schema::hasColumn('landed_costs', 'branch_id') && !empty($branch['id'])) {
+            $payload['branch_id'] = $branch['id'];
+        }
+
+        if (Schema::hasColumn('landed_costs', 'branch_name') && !empty($branch['name'])) {
+            $payload['branch_name'] = $branch['name'];
+        }
+
+        LandedCost::create($payload);
 
         return redirect()->route('landed-costs.index')
             ->with('success', 'Landed cost recorded.');
