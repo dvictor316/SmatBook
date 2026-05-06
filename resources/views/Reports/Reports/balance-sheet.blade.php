@@ -1090,14 +1090,71 @@ $changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
                     Statement in balance &mdash; Assets = Liabilities + Equity
                 </div>
             @else
+                @php
+                    $ledgerIsBalanced  = abs($ledgerDifference ?? 0) < 0.01;
+                    $stmtGap           = abs($equationDiff ?? 0);
+                    $netIncomeAmt      = abs($netIncome ?? 0);
+                    $earningsWithNoAsset = $ledgerIsBalanced && ($visTotalAssets ?? 0) == 0 && $netIncomeAmt >= 0.01;
+                @endphp
                 <div class="bs-imbalance">
                     <strong>&#9888;&nbsp; Statement Review Required</strong>
                     The accounting equation is currently out of balance.
                     <table class="bs-recon-rows">
                         <tr><td>Total Assets</td><td>{{ $fmt($visTotalAssets) }}</td></tr>
                         <tr><td>Total Liabilities + Equity</td><td>{{ $fmt($visTotalLiabEquity) }}</td></tr>
-                        <tr><td><strong>Statement Gap</strong></td><td><strong style="color:#dc2626;">{{ $fmt(abs($equationDiff)) }}</strong></td></tr>
+                        <tr><td><strong>Statement Gap</strong></td><td><strong style="color:#dc2626;">{{ $fmt($stmtGap) }}</strong></td></tr>
                     </table>
+
+                    @if(!$ledgerIsBalanced)
+                        <div style="margin-top:10px;padding:8px 12px;background:#fef9c3;border:1px solid #fde047;border-radius:6px;font-size:0.82rem;">
+                            <strong>Cause: Unbalanced journal entries in the ledger.</strong><br>
+                            Total debits {{ $fmt($ledgerDebits ?? 0) }} ≠ total credits {{ $fmt($ledgerCredits ?? 0) }}
+                            (difference {{ $fmt(abs($ledgerDifference ?? 0)) }}).
+                            One or more transactions are missing their debit or credit leg.
+                            @if(!empty($imbalancedEntries) && $imbalancedEntries->isNotEmpty())
+                                <ul style="margin:6px 0 0;padding-left:16px;">
+                                @foreach($imbalancedEntries as $ie)
+                                    <li>
+                                        <strong>{{ $ie->transaction_type ?? 'Entry' }}</strong>
+                                        Ref: {{ $ie->reference ?: 'N/A' }}
+                                        · {{ $ie->description ?: 'No description' }}
+                                        · DR {{ $fmt((float)($ie->total_debit ?? 0)) }}
+                                        · CR {{ $fmt((float)($ie->total_credit ?? 0)) }}
+                                        · Gap {{ $fmt(abs(((float)($ie->total_debit ?? 0)) - ((float)($ie->total_credit ?? 0)))) }}
+                                    </li>
+                                @endforeach
+                                </ul>
+                            @endif
+                        </div>
+                    @elseif($earningsWithNoAsset)
+                        <div style="margin-top:10px;padding:8px 12px;background:#fef9c3;border:1px solid #fde047;border-radius:6px;font-size:0.82rem;">
+                            <strong>Cause: Asset accounts not matching scope filters.</strong><br>
+                            The ledger is balanced (DR = CR), and Current Year Earnings of {{ $fmt($netIncomeAmt) }}
+                            means revenue/expense transactions exist. However, the debit side of those transactions
+                            (Cash, Bank, Accounts Receivable) is not appearing under Assets.<br><br>
+                            <strong>Likely reasons:</strong>
+                            <ul style="margin:4px 0 0;padding-left:16px;">
+                                <li>The Cash/Bank account in your Chart of Accounts has a different branch or tenant scope than the revenue transaction.</li>
+                                <li>The account type for Cash/Bank is not set to <em>Asset</em> — check Accounts settings.</li>
+                                <li>The debit transaction leg was posted without a <code>branch_id</code> while this report is filtered to a specific branch.</li>
+                            </ul>
+                            @if(!empty($unplacedAccounts) && $unplacedAccounts->isNotEmpty())
+                                <div style="margin-top:6px;"><strong>Unclassified accounts with balances:</strong>
+                                <ul style="margin:4px 0 0;padding-left:16px;">
+                                @foreach($unplacedAccounts as $ua)
+                                    <li>{{ $ua->name }} (type: {{ $ua->type ?? 'null' }}) — {{ $fmt(abs((float)($ua->balance ?? 0))) }}</li>
+                                @endforeach
+                                </ul></div>
+                            @endif
+                        </div>
+                    @else
+                        <div style="margin-top:10px;padding:8px 12px;background:#fef9c3;border:1px solid #fde047;border-radius:6px;font-size:0.82rem;">
+                            <strong>Cause: Possible account classification or opening-balance mismatch.</strong><br>
+                            The ledger is balanced but some accounts may be classified under the wrong type,
+                            or opening balance equity adjustments are needed. Review the Chart of Accounts
+                            and ensure every debit account is typed as Asset or Expense.
+                        </div>
+                    @endif
                 </div>
             @endif
 

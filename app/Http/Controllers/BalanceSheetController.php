@@ -1611,12 +1611,24 @@ class BalanceSheetController extends Controller
     private function applyAccountScope($query, Request $request)
     {
         $companyId = (int) ($request->user()?->company_id ?? 0);
-        $userId = (int) ($request->user()?->id ?? 0);
+        $userId    = (int) ($request->user()?->id ?? 0);
 
+        // Chart-of-accounts rows created before the tenant-columns migration have
+        // company_id = NULL.  We treat them as "global" accounts belonging to every
+        // company so they are never silently excluded.  Without this, asset accounts
+        // disappear from the balance sheet while Current Year Earnings (computed via
+        // a transaction-side JOIN that never touches accounts.company_id) still shows
+        // the full figure — producing a phantom ₦X gap.
         if ($companyId > 0 && Schema::hasColumn('accounts', 'company_id')) {
-            $query->where('company_id', $companyId);
+            $query->where(function ($q) use ($companyId) {
+                $q->where('company_id', $companyId)
+                  ->orWhereNull('company_id');
+            });
         } elseif ($userId > 0 && Schema::hasColumn('accounts', 'user_id')) {
-            $query->where('user_id', $userId);
+            $query->where(function ($q) use ($userId) {
+                $q->where('user_id', $userId)
+                  ->orWhereNull('user_id');
+            });
         }
 
         return $query;
