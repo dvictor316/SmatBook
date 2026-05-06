@@ -63,10 +63,8 @@ class DashboardController extends Controller
             ->values()
             ->all();
 
-        $userCompany = null;
-        if (!empty($user?->company_id)) {
-            $userCompany = Company::find($user->company_id);
-        }
+        $tenantId = $this->resolvedDashboardCompanyId();
+        $userCompany = $tenantId > 0 ? Company::query()->find($tenantId) : null;
         if ($userCompany && !empty($userCompany->domain_prefix)) {
             $expectedSubdomain = Str::lower($userCompany->domain_prefix);
             $currentSubdomain = null;
@@ -106,41 +104,9 @@ class DashboardController extends Controller
         if ($subdomain) {
             $subscription = Subscription::where('domain_prefix', $subdomain)->first();
 
-            $companyQuery = Company::query()
-                ->when(
-                    $subscription?->company_id,
-                    fn ($q) => $q->where('id', $subscription->company_id),
-                    fn ($q) => $q->where(function ($fallback) use ($subdomain, $user) {
-                        $tenantId = (int) ($user->company_id ?? session('current_tenant_id') ?? 0);
-
-                        if ($tenantId > 0) {
-                            $fallback->where('id', $tenantId);
-                        }
-
-                        $fallback->orWhere('user_id', $user->id)
-                            ->orWhere('owner_id', $user->id)
-                            ->orWhere('subdomain', $subdomain)
-                            ->orWhere('domain_prefix', $subdomain);
-                    })
-                );
-
-            if ($subscription) {
-                $companyQuery->orWhere(function ($q) use ($subdomain, $subscription) {
-                    $q->where('user_id', $subscription->user_id)
-                      ->where(function ($match) use ($subdomain) {
-                          $match->where('subdomain', $subdomain)
-                                ->orWhere('domain_prefix', $subdomain);
-                      });
-                });
-            }
-
-            $company = $companyQuery->first();
+            $company = $this->resolveDashboardCompany($user, $subdomain, $subscription);
         } else {
-            $tenantId = (int) ($user->company_id ?? session('current_tenant_id') ?? 0);
-            $company = Company::where('id', $tenantId)
-                ->orWhere('user_id', $user->id)
-                ->orWhere('owner_id', $user->id)
-                ->first();
+            $company = $this->resolveDashboardCompany($user, null, $currentSubscription);
         }
 
         if (!$company && !empty($currentSubscription?->company_id)) {
@@ -190,7 +156,7 @@ class DashboardController extends Controller
         }
 
         // 3. CACHED ANALYTICS (Scoped to Company)
-        $resolvedCompanyScopeId = (int) (($company?->id ?? null) ?? $currentSubscription?->company_id ?? $user->company_id ?? session('current_tenant_id') ?? 0);
+        $resolvedCompanyScopeId = (int) (($company?->id ?? null) ?: $this->resolvedDashboardCompanyId());
         $branchCacheKey = $isBusinessWorkspace ? ('_branch_' . ($activeBranch['id'] ?? 'all')) : '_global';
         $cacheKey = 'metrics_co_' . ($resolvedCompanyScopeId > 0 ? $resolvedCompanyScopeId : ('user_' . $user->id)) . $branchCacheKey;
         $metrics = Cache::remember($cacheKey, 300, function() use ($company, $activeBranch) {
@@ -832,6 +798,53 @@ class DashboardController extends Controller
         ];
     }
 
+    private function resolvedDashboardCompanyId(): int
+    {
+        return (int) (
+            session('current_tenant_id')
+            ?? Auth::user()?->company_id
+            ?? 0
+        );
+    }
+
+    private function resolveDashboardCompany($user, ?string $subdomain = null, ?Subscription $subscription = null): ?Company
+    {
+        $tenantId = $this->resolvedDashboardCompanyId();
+
+        if ($tenantId > 0) {
+            return Company::query()->find($tenantId);
+        }
+
+        if (!empty($subscription?->company_id)) {
+            $company = Company::query()->find((int) $subscription->company_id);
+            if ($company) {
+                return $company;
+            }
+        }
+
+        $query = Company::query()->where(function ($fallback) use ($user, $subdomain, $subscription) {
+            $fallback->where('user_id', $user->id)
+                ->orWhere('owner_id', $user->id);
+
+            if ($subdomain) {
+                $fallback->orWhere('subdomain', $subdomain)
+                    ->orWhere('domain_prefix', $subdomain);
+            }
+
+            if ($subscription && !empty($subscription->user_id) && $subdomain) {
+                $fallback->orWhere(function ($subQuery) use ($subscription, $subdomain) {
+                    $subQuery->where('user_id', $subscription->user_id)
+                        ->where(function ($match) use ($subdomain) {
+                            $match->where('subdomain', $subdomain)
+                                ->orWhere('domain_prefix', $subdomain);
+                        });
+                });
+            }
+        });
+
+        return $query->orderByDesc('id')->first();
+    }
+
     private function scopeByCompany($query, string $table, $company, ?string $column = null)
     {
         if (!Schema::hasTable($table)) {
@@ -846,7 +859,7 @@ class DashboardController extends Controller
             return $query;
         }
 
-        $fallbackCompanyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $fallbackCompanyId = $this->resolvedDashboardCompanyId();
         $resolvedCompanyId = (int) (($company?->id ?? null) ?? $fallbackCompanyId);
         $targetColumn = $column ?? 'company_id';
         $qualifiedTargetColumn = str_contains($targetColumn, '.') ? $targetColumn : ($table . '.' . $targetColumn);
@@ -924,8 +937,7 @@ class DashboardController extends Controller
         $query = $this->scopeByCompany($query, $table, $company);
 
         if (empty($activeBranch['id']) && empty($activeBranch['name'])) {
-            // Always include POS sales in all metrics
-            return $this->addPosSalesScope($query, $table);
+            return $query;
         }
 
         $branchId = (string) ($activeBranch['id'] ?? '');
@@ -935,15 +947,15 @@ class DashboardController extends Controller
             $query->where(function ($sub) use ($table, $branchId, $branchName) {
                 if ($branchId !== '' && Schema::hasColumn($table, 'branch_id')) {
                     $sub->where($table . '.branch_id', $branchId);
+                    return;
                 }
                 if ($branchName !== '' && Schema::hasColumn($table, 'branch_name')) {
-                    $sub->orWhere($table . '.branch_name', $branchName);
+                    $sub->where($table . '.branch_name', $branchName);
                 }
             });
         }
 
-        // Always include POS sales in all metrics
-        return $this->addPosSalesScope($query, $table);
+        return $query;
     }
 
     private function scopeExpensesByContext($query, $company, ?array $activeBranch = null, string $table = 'expenses')
@@ -960,30 +972,12 @@ class DashboardController extends Controller
         return $query->where(function ($sub) use ($table, $branchId, $branchName) {
             if ($branchId !== '' && Schema::hasColumn($table, 'branch_id')) {
                 $sub->where($table . '.branch_id', $branchId);
+                return;
             }
             if ($branchName !== '' && Schema::hasColumn($table, 'branch_name')) {
-                $sub->orWhere($table . '.branch_name', $branchName);
+                $sub->where($table . '.branch_name', $branchName);
             }
         });
-    }
-
-    /**
-     * Ensures POS sales are always included in dashboard metrics.
-     * Applies to all sales queries for metrics.
-     */
-    private function addPosSalesScope($query, string $table = 'sales')
-    {
-        // If payment_method or payment_details->source is present, include POS
-        if (Schema::hasColumn($table, 'payment_method')) {
-            $query->orWhere($table . '.payment_method', 'pos');
-        }
-        // For JSON payment_details->source
-        if (Schema::hasColumn($table, 'payment_details')) {
-            $query->orWhere(function ($q) use ($table) {
-                $q->where($table . '.payment_details', 'like', '%"source":"pos"%');
-            });
-        }
-        return $query;
     }
 
     private function shouldUseTenantWideDashboardFallback(array $metrics): bool

@@ -20,6 +20,7 @@
             --gray-600: #4b5563;
             --gray-700: #374151;
             --gray-900: #111827;
+            --danger-red: #dc2626;
         }
 
         * {
@@ -265,6 +266,26 @@
             padding: 10px 20px;
         }
 
+        .compact-controls .btn[disabled] {
+            cursor: not-allowed;
+            opacity: 0.8;
+        }
+
+        .compact-feedback {
+            max-width: 780px;
+            margin: 0 auto 14px;
+            display: none;
+        }
+
+        .compact-feedback.is-visible {
+            display: block;
+        }
+
+        .compact-feedback .alert {
+            margin-bottom: 0;
+            border-radius: 10px;
+        }
+
         @media print {
             @page {
                 size: portrait;
@@ -399,6 +420,7 @@
         $balanceDue = (float) ($sale->effective_balance ?? max(0, (float) ($sale->total ?? 0) - $appliedAmount));
         $cashierName = $sale->cashier_name ?? $sale->user?->name ?? 'System';
         $amountInWords = $sale->amount_in_words_display ?? 'Zero Naira Only';
+        $customerEmail = trim((string) ($sale->customer?->email ?? ''));
         $subtotal = (float) ($sale->items->sum('subtotal'));
         $tax = (float) ($sale->tax ?? 0);
         $discount = (float) ($sale->discount ?? 0);
@@ -428,13 +450,21 @@
 
     <div class="container py-4 py-lg-5">
         <div class="compact-invoice-shell">
+            <div id="emailFeedback" class="compact-feedback no-print" aria-live="polite"></div>
             <div class="compact-controls no-print">
                 <button type="button" class="btn btn-primary" onclick="window.print()">
                     <i class="bi bi-printer me-1"></i> Print
                 </button>
-                <a href="{{ route('sales.send', $sale->id) }}" class="btn btn-outline-primary">
+                <button
+                    type="button"
+                    class="btn btn-outline-primary"
+                    id="sendInvoiceEmailButton"
+                    data-send-url="{{ route('sales.send', $sale->id) }}"
+                    data-customer-email="{{ $customerEmail }}"
+                    onclick="sendInvoiceEmail(this)"
+                >
                     <i class="bi bi-envelope me-1"></i> Email
-                </a>
+                </button>
                 <button type="button" class="btn btn-outline-secondary" onclick="window.close()">
                     <i class="bi bi-x-lg me-1"></i> Close
                 </button>
@@ -634,6 +664,62 @@
 <script>
     const autoPrintReceipt = {{ request()->boolean('autoprint') ? 'true' : 'false' }};
     let compactPrintLocked = false;
+    let invoiceEmailInFlight = false;
+
+    function showEmailFeedback(message, type = 'success') {
+        const feedback = document.getElementById('emailFeedback');
+        if (!feedback) {
+            return;
+        }
+
+        const safeType = type === 'error' ? 'danger' : type;
+        feedback.innerHTML = `<div class="alert alert-${safeType}" role="alert">${message}</div>`;
+        feedback.classList.add('is-visible');
+    }
+
+    async function sendInvoiceEmail(button) {
+        if (!button || invoiceEmailInFlight) {
+            return;
+        }
+
+        const recipient = (button.dataset.customerEmail || '').trim();
+        if (recipient === '') {
+            showEmailFeedback('This invoice has no customer email address yet.', 'error');
+            return;
+        }
+
+        invoiceEmailInFlight = true;
+        const originalLabel = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = '<i class="bi bi-envelope-check me-1"></i> Sending...';
+
+        try {
+            const response = await fetch(button.dataset.sendUrl, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+            });
+
+            const payload = await response.json().catch(() => ({
+                ok: false,
+                message: 'Unable to send this invoice email right now.',
+            }));
+
+            showEmailFeedback(
+                payload.message || 'Invoice email request completed.',
+                response.ok && payload.ok !== false ? 'success' : 'error'
+            );
+        } catch (error) {
+            showEmailFeedback('Invoice email failed. Please try again.', 'error');
+        } finally {
+            invoiceEmailInFlight = false;
+            button.disabled = false;
+            button.innerHTML = originalLabel;
+        }
+    }
 
     function releaseCompactPrintLock() {
         compactPrintLocked = false;
