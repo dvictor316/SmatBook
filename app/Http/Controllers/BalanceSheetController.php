@@ -883,47 +883,12 @@ class BalanceSheetController extends Controller
                 } else {
                     $query->whereRaw('1 = 0');
                 }
-            })
-            ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch, $accountIds) {
-                $branchId = trim((string) ($activeBranch['id'] ?? ''));
-                $branchName = trim((string) ($activeBranch['name'] ?? ''));
-
-                // No branch resolved → show all accounts (same as transaction query).
-                if ($branchId === '' && $branchName === '') {
-                    return;
-                }
-
-                return $query->where(function ($sub) use ($branchId, $branchName, $accountIds) {
-                    if ($branchId !== '') {
-                        $sub->where('branch_id', $branchId);
-                        if ($branchName !== '') {
-                            $sub->orWhere(function ($legacy) use ($branchName) {
-                                $legacy->where(function ($b) {
-                                    $b->whereNull('branch_id')->orWhere('branch_id', '');
-                                })->where('branch_name', $branchName);
-                            });
-                        }
-                        if (!empty($accountIds)) {
-                            $sub->orWhere(function ($inner) use ($accountIds) {
-                                $inner->where(function ($b) {
-                                    $b->whereNull('branch_id')->orWhere('branch_id', '');
-                                })->whereIn('id', $accountIds);
-                            });
-                        }
-                        return;
-                    }
-                    if ($branchName !== '') {
-                        $sub->where('branch_name', $branchName);
-                    }
-                    if (!empty($accountIds)) {
-                        $sub->orWhere(function ($inner) use ($accountIds) {
-                            $inner->where(function ($b) {
-                                $b->whereNull('branch_id')->orWhere('branch_id', '');
-                            })->whereIn('id', $accountIds);
-                        });
-                    }
-                });
             });
+
+        // Important: do not re-apply branch filtering to account master rows here.
+        // The account IDs already come from branch-scoped transactions above, so a
+        // second branch filter on accounts can hide valid asset accounts whose COA
+        // row is shared/global or tagged differently from the transaction leg.
 
         $this->applyAccountScope($accountsQuery, $request);
 
@@ -1623,7 +1588,7 @@ class BalanceSheetController extends Controller
 
     private function applyAccountScope($query, Request $request)
     {
-        $companyId = (int) ($request->user()?->company_id ?? 0);
+        $companyId = (int) ($request->user()?->company_id ?? session('current_tenant_id') ?? 0);
         $userId    = (int) ($request->user()?->id ?? 0);
 
         // Chart-of-accounts rows created before the tenant-columns migration have
