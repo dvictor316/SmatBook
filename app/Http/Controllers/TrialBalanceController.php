@@ -254,9 +254,10 @@ class TrialBalanceController extends Controller
                 return $query->where(function ($sub) use ($branchId, $branchName) {
                     if ($branchId !== '') {
                         $sub->where('branch_id', $branchId);
+                        return;
                     }
                     if ($branchName !== '') {
-                        $sub->orWhere('branch_name', $branchName);
+                        $sub->where('branch_name', $branchName);
                     }
                 });
             });
@@ -277,9 +278,10 @@ class TrialBalanceController extends Controller
                 return $query->where(function ($sub) use ($branchId, $branchName) {
                     if ($branchId !== '') {
                         $sub->where('branch_id', $branchId);
+                        return;
                     }
                     if ($branchName !== '') {
-                        $sub->orWhere('branch_name', $branchName);
+                        $sub->where('branch_name', $branchName);
                     }
                 });
             });
@@ -291,7 +293,7 @@ class TrialBalanceController extends Controller
         $ledgerDifference = $ledgerDebits - $ledgerCredits;
 
         $imbalancedEntriesQuery = Transaction::query()
-            ->selectRaw('related_type, related_id, transaction_type, reference, SUM(debit) as total_debit, SUM(credit) as total_credit')
+            ->selectRaw('MIN(id) as transaction_id, related_type, related_id, transaction_type, reference, MIN(description) as description, SUM(debit) as total_debit, SUM(credit) as total_credit')
             ->whereDate('transaction_date', '<=', $end->toDateString())
             ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
                 $branchId = trim((string) ($activeBranch['id'] ?? ''));
@@ -300,9 +302,10 @@ class TrialBalanceController extends Controller
                 return $query->where(function ($sub) use ($branchId, $branchName) {
                     if ($branchId !== '') {
                         $sub->where('branch_id', $branchId);
+                        return;
                     }
                     if ($branchName !== '') {
-                        $sub->orWhere('branch_name', $branchName);
+                        $sub->where('branch_name', $branchName);
                     }
                 });
             });

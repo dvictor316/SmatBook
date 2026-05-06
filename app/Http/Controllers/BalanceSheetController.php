@@ -648,7 +648,7 @@ class BalanceSheetController extends Controller
         $ledgerDifference = $ledgerDebits - $ledgerCredits;
 
         $imbalancedEntriesQuery = Transaction::query()
-            ->selectRaw('related_type, related_id, transaction_type, MIN(reference) as reference, SUM(debit) as total_debit, SUM(credit) as total_credit')
+            ->selectRaw('MIN(id) as transaction_id, related_type, related_id, transaction_type, MIN(reference) as reference, MIN(description) as description, SUM(debit) as total_debit, SUM(credit) as total_credit')
             ->where('transaction_date', '<=', $reportDate)
             ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
                 $branchId = trim((string) ($activeBranch['id'] ?? ''));

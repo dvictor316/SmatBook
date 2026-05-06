@@ -292,9 +292,12 @@
                     <ul class="mb-0 ps-3 small">
                         @foreach ($imbalancedEntries as $entry)
                             <li>
+                                Txn #{{ $entry->transaction_id ?? 'N/A' }}
+                                ·
                                 {{ $entry->transaction_type ?? 'Entry' }}
                                 · Ref: {{ $entry->reference ?: 'N/A' }}
                                 · Related: {{ $entry->related_type ?: 'N/A' }} #{{ $entry->related_id ?: 'N/A' }}
+                                · {{ $entry->description ?: 'No description' }}
                                 · Δ {{ \App\Support\GeoCurrency::format(abs(((float) $entry->total_debit) - ((float) $entry->total_credit)), 'NGN', $currencyCode, $currencyLocale) }}
                             </li>
                         @endforeach

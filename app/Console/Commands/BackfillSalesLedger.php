@@ -14,10 +14,11 @@ class BackfillSalesLedger extends Command
 {
     protected $signature = 'ledger:backfill-sales
                             {--company= : Only backfill sales for this company_id}
+                            {--rebuild-existing : Rebuild ledger entries even for sales that already have postings}
                             {--dry-run : Preview what would be posted without writing anything}
                             {--chunk=100 : Process sales in chunks of this size}';
 
-    protected $description = 'Re-post LedgerService journal entries for all POS sales that have no linked transactions';
+    protected $description = 'Re-post LedgerService journal entries for sales, with optional rebuild of existing postings';
 
     public function handle(): int
     {
@@ -28,23 +29,28 @@ class BackfillSalesLedger extends Command
 
         $isDryRun  = $this->option('dry-run');
         $companyId = $this->option('company') ? (int) $this->option('company') : null;
+        $rebuildExisting = (bool) $this->option('rebuild-existing');
         $chunk     = (int) ($this->option('chunk') ?: 100);
 
         $this->info($isDryRun ? '-- DRY RUN (no writes) --' : 'Starting ledger backfill...');
 
-        // Find sale IDs that already have a TYPE_SALE transaction
-        $alreadyPostedIds = Transaction::query()
-            ->where('related_type', Sale::class)
-            ->where('transaction_type', Transaction::TYPE_SALE)
-            ->pluck('related_id')
-            ->unique()
-            ->toArray();
+        $alreadyPostedIds = [];
+        if (!$rebuildExisting) {
+            $alreadyPostedIds = Transaction::query()
+                ->where('related_type', Sale::class)
+                ->whereIn('transaction_type', [Transaction::TYPE_SALE, Transaction::TYPE_RECEIPT, Transaction::TYPE_JOURNAL])
+                ->pluck('related_id')
+                ->unique()
+                ->toArray();
+        }
 
-        // Build query for sales needing backfill
         $query = Sale::query()
             ->where('total', '>', 0)
-            ->whereNotIn('id', $alreadyPostedIds)
             ->orderBy('id');
+
+        if (!$rebuildExisting) {
+            $query->whereNotIn('id', $alreadyPostedIds);
+        }
 
         if ($companyId) {
             $query->where('company_id', $companyId);
@@ -53,11 +59,15 @@ class BackfillSalesLedger extends Command
         $total = $query->count();
 
         if ($total === 0) {
-            $this->info('All sales already have journal entries. Nothing to backfill.');
+            $this->info($rebuildExisting
+                ? 'No eligible sales found to rebuild.'
+                : 'All sales already have journal entries. Nothing to backfill.');
             return self::SUCCESS;
         }
 
-        $this->info("Found {$total} sales without journal entries.");
+        $this->info($rebuildExisting
+            ? "Found {$total} sales to rebuild."
+            : "Found {$total} sales without journal entries.");
 
         if ($isDryRun) {
             $this->table(['company_id', 'branch_id', 'invoice_no', 'total', 'paid', 'payment_method'], 

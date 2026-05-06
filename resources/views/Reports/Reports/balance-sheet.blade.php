@@ -644,6 +644,31 @@ $changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
     {{-- ─── Report Page ─────────────────────────────────────────── --}}
     <div class="bs-page">
 
+        @if(abs(($ledgerDifference ?? 0)) >= 0.01)
+            <div class="alert alert-danger no-print mb-3">
+                <div class="fw-semibold mb-1">Ledger imbalance detected</div>
+                <div>
+                    Debits: {{ $fmt($ledgerDebits ?? 0) }}
+                    · Credits: {{ $fmt($ledgerCredits ?? 0) }}
+                    · Difference: {{ $fmt(abs($ledgerDifference ?? 0)) }}
+                </div>
+                @if(!empty($imbalancedEntries) && $imbalancedEntries->isNotEmpty())
+                    <ul class="mb-0 mt-2 ps-3 small">
+                        @foreach($imbalancedEntries as $entry)
+                            <li>
+                                Txn #{{ $entry->transaction_id ?? 'N/A' }}
+                                · {{ $entry->transaction_type ?? 'Entry' }}
+                                · Ref: {{ $entry->reference ?: 'N/A' }}
+                                · Related: {{ $entry->related_type ?: 'N/A' }} #{{ $entry->related_id ?: 'N/A' }}
+                                · {{ $entry->description ?: 'No description' }}
+                                · Gap {{ $fmt(abs(((float) $entry->total_debit) - ((float) $entry->total_credit)) ) }}
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+            </div>
+        @endif
+
         <div class="bs-toolbar no-print">
             <button type="button" class="bs-action-btn" onclick="window.print()">
                 <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">

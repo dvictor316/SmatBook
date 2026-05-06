@@ -58,7 +58,7 @@ class LedgerService
         Transaction::query()
             ->where('related_id', $sale->id)
             ->where('related_type', Sale::class)
-            ->whereIn('transaction_type', [Transaction::TYPE_SALE, Transaction::TYPE_RECEIPT])
+            ->whereIn('transaction_type', [Transaction::TYPE_SALE, Transaction::TYPE_RECEIPT, Transaction::TYPE_JOURNAL])
             ->delete();
 
         $receivableAccount = self::resolveAccount('Accounts Receivable', 'Asset', ['receivable', 'debtor'], 'AUTO-AST-AR');
@@ -66,6 +66,8 @@ class LedgerService
         $taxPayableAccount = $tax > 0
             ? self::resolveAccount('Tax Payable', 'Liability', ['tax payable', 'vat payable', 'output vat', 'firs payable'], 'AUTO-LIB-TAX')
             : null;
+        $cogsAccount = self::resolveAccount('Cost of Goods Sold', 'Expense', ['cost of goods sold', 'cogs', 'cost of sales'], 'AUTO-EXP-COGS');
+        $inventoryAccount = self::resolveAccount('Inventory', 'Asset', ['inventory', 'stock'], 'AUTO-AST-INV');
 
         if ($netSales > 0) {
             self::postDoubleEntry(
@@ -92,6 +94,47 @@ class LedgerService
                 date: $date,
                 reference: $reference,
                 description: 'Sales tax posted: ' . $reference,
+                transactionType: Transaction::TYPE_SALE,
+                relatedId: $sale->id,
+                relatedType: Sale::class,
+                userId: $userId,
+                branchId: $branchId,
+                branchName: $branchName
+            );
+        }
+
+        $sale->loadMissing('items.product');
+        $inventoryCost = round($sale->items->sum(function ($item) {
+            $product = $item->product;
+            if (!$product) {
+                return 0;
+            }
+
+            $stockUnits = (float) ($item->stock_units ?? 0);
+            if ($stockUnits <= 0) {
+                $stockUnits = InventoryQuantity::resolveSaleStockUnits(
+                    $product,
+                    (float) ($item->qty ?? 0),
+                    $item->unit_type ?? null,
+                    null
+                );
+            }
+
+            $unitCost = (float) ($product->purchase_price ?? 0);
+
+            return $stockUnits > 0 && $unitCost > 0
+                ? round($stockUnits * $unitCost, 2)
+                : 0;
+        }), 2);
+
+        if ($inventoryCost > 0) {
+            self::postDoubleEntry(
+                debitAccountId: $cogsAccount->id,
+                creditAccountId: $inventoryAccount->id,
+                amount: $inventoryCost,
+                date: $date,
+                reference: $reference,
+                description: 'Cost of goods sold posted: ' . $reference,
                 transactionType: Transaction::TYPE_SALE,
                 relatedId: $sale->id,
                 relatedType: Sale::class,

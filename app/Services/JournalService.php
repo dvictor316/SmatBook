@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Account;
 use App\Models\Sale;
 use App\Models\Transaction;
+use App\Support\LedgerService;
 use Illuminate\Support\Facades\Auth;
 
 class JournalService
@@ -14,7 +15,11 @@ class JournalService
         Transaction::query()
             ->where('related_id', $sale->id)
             ->where('related_type', Sale::class)
-            ->where('transaction_type', Transaction::TYPE_JOURNAL)
+            ->whereIn('transaction_type', [
+                Transaction::TYPE_JOURNAL,
+                Transaction::TYPE_SALE,
+                Transaction::TYPE_RECEIPT,
+            ])
             ->delete();
     }
 
@@ -37,25 +42,7 @@ class JournalService
         }
 
         $this->removeInvoiceJournals($sale);
-
-        $ref  = $sale->invoice_no ?? ('INV-' . $sale->id);
-        $date = $sale->order_date ?? today();
-
-        $arAccount      = $this->getOrCreateAccount($sale, 'Accounts Receivable', '1100', Account::TYPE_ASSET, Account::SUBTYPE_CURRENT_ASSET);
-        $revenueAccount = $this->getOrCreateAccount($sale, 'Sales Revenue',       '4001', Account::TYPE_REVENUE);
-
-        // DR Accounts Receivable — customer now owes us
-        $this->postLine($sale, $arAccount,      $totalAmount, 0,            $ref, "Invoice {$ref} – Accounts Receivable", $date);
-        // CR Sales Revenue — revenue recognised
-        $this->postLine($sale, $revenueAccount, 0,            $totalAmount, $ref, "Invoice {$ref} – Sales Revenue",        $date);
-
-        // If already fully/partially paid at creation, clear the AR leg
-        $paidAmount = (float) ($sale->amount_paid ?? 0);
-        if ($paidAmount > 0) {
-            // Default to Petty Cash as the deposit account for invoices created as paid
-            $depositAccount = $this->getOrCreateAccount($sale, 'Petty Cash', '1002', Account::TYPE_ASSET, Account::SUBTYPE_CURRENT_ASSET);
-            $this->postPaymentJournal($sale, $paidAmount, $depositAccount, $date);
-        }
+        LedgerService::postSale($sale->fresh(['customer', 'items.product']));
     }
 
     /**
@@ -70,16 +57,13 @@ class JournalService
         if ($amount <= 0) {
             return;
         }
-
         $date = $date ?? today();
         $ref  = $sale->invoice_no ?? ('INV-' . $sale->id);
 
         $arAccount = $this->getOrCreateAccount($sale, 'Accounts Receivable', '1100', Account::TYPE_ASSET, Account::SUBTYPE_CURRENT_ASSET);
 
-        // DR: chosen deposit account increases (cash/bank/etc.)
-        $this->postLine($sale, $depositAccount, $amount, 0,      $ref, "Payment received – {$ref} – {$depositAccount->name}", $date);
-        // CR: accounts receivable decreases
-        $this->postLine($sale, $arAccount,      0,      $amount, $ref, "Payment received – {$ref} (AR cleared)",               $date);
+        $this->postLine($sale, $depositAccount, $amount, 0, $ref, "Payment received – {$ref} – {$depositAccount->name}", $date, Transaction::TYPE_RECEIPT);
+        $this->postLine($sale, $arAccount, 0, $amount, $ref, "Payment received – {$ref} (AR cleared)", $date, Transaction::TYPE_RECEIPT);
     }
 
     // -------------------------------------------------------------------------
@@ -142,7 +126,8 @@ class JournalService
         float   $credit,
         string  $reference,
         string  $description,
-                $date
+                $date,
+        string  $transactionType = Transaction::TYPE_JOURNAL
     ): void {
         $branch = $this->resolveBranchContext($sale);
 
@@ -154,7 +139,7 @@ class JournalService
             'debit'            => $debit,
             'credit'           => $credit,
             'balance'          => 0, // recalculated by Transaction::boot() via account->updateBalance()
-            'transaction_type' => Transaction::TYPE_JOURNAL,
+            'transaction_type' => $transactionType,
             'related_id'       => $sale->id,
             'related_type'     => Sale::class,
             'user_id'          => (int) (Auth::id() ?? $sale->user_id ?? 0),
