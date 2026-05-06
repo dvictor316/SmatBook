@@ -429,8 +429,15 @@
     <div class="container py-4 py-lg-5">
         <div class="compact-invoice-shell">
             <div class="compact-controls no-print">
-                <a href="{{ $backUrl ?? url()->previous() }}" class="btn btn-outline-secondary">Back</a>
-                <button type="button" class="btn btn-primary" onclick="window.print()">Print</button>
+                <button type="button" class="btn btn-primary" onclick="window.print()">
+                    <i class="bi bi-printer me-1"></i> Print
+                </button>
+                <a href="{{ route('sales.send', $sale->id) }}" class="btn btn-outline-primary">
+                    <i class="bi bi-envelope me-1"></i> Email
+                </a>
+                <button type="button" class="btn btn-outline-secondary" onclick="window.close()">
+                    <i class="bi bi-x-lg me-1"></i> Close
+                </button>
             </div>
 
             <div class="compact-invoice-card p-3 p-lg-4">
