@@ -1675,6 +1675,10 @@ class SettingController extends Controller
         parse_str((string) ($parts['query'] ?? ''), $query);
         unset($query['all_branches'], $query['branch_scope']);
 
+        if (isset($query['branch_id']) && strtolower(trim((string) $query['branch_id'])) === 'all') {
+            unset($query['branch_id']);
+        }
+
         $rebuilt = '';
 
         if (isset($parts['scheme'])) {

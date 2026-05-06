@@ -99,6 +99,16 @@ trait TenantScoped
                 $builder->where(function ($q) use ($table, $hasBranchId, $hasBranchName, $activeBranchId, $activeBranchName) {
                     if ($hasBranchId && $activeBranchId !== '') {
                         $q->where("{$table}.branch_id", $activeBranchId);
+
+                        if ($hasBranchName && $activeBranchName !== '') {
+                            $q->orWhere(function ($legacy) use ($table, $activeBranchName) {
+                                $legacy->where(function ($emptyBranchId) use ($table) {
+                                    $emptyBranchId->whereNull("{$table}.branch_id")
+                                        ->orWhere("{$table}.branch_id", '');
+                                })->where("{$table}.branch_name", $activeBranchName);
+                            });
+                        }
+
                         return;
                     }
 
