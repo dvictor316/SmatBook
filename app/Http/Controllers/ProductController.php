@@ -1734,7 +1734,17 @@ public function inventory(Request $request)
             ->sortByDesc(fn ($row) => strtotime((string) ($row->created_at ?? '1970-01-01 00:00:00')))
             ->values();
 
-        $currentStock = max(0, $this->branchInventory->getAvailableStock($product, $activeBranch));
+        // Calculate totalIn and totalOut FIRST from history records.
+        $totalIn  = $inventoryHistories->filter(fn ($row) => in_array(strtolower(trim((string) ($row->type ?? ''))), ['in', 'stock in'], true))->sum('quantity');
+        $totalOut = $inventoryHistories->filter(fn ($row) => !in_array(strtolower(trim((string) ($row->type ?? ''))), ['in', 'stock in'], true))->sum(fn ($row) => (float) ($row->stock_quantity ?? $row->quantity ?? 0));
+
+        // Derive currentStock from history so all three summary cards are
+        // internally consistent: totalIn - totalOut = currentStock.
+        // Using the product-table stock as the starting point caused a mismatch
+        // whenever stock was adjusted outside this history (e.g. direct edits,
+        // branch-scoping gaps) — making 30 − 1 show as 19 instead of 29.
+        $currentStock = round(max(0, $totalIn - $totalOut), 2);
+
         $runningBalance = $currentStock;
         $inventoryHistories = $inventoryHistories
             ->map(function ($row) use (&$runningBalance) {
@@ -1750,9 +1760,6 @@ public function inventory(Request $request)
                 return $row;
             })
             ->values();
-
-        $totalIn = $inventoryHistories->filter(fn ($row) => in_array(strtolower(trim((string) ($row->type ?? ''))), ['in', 'stock in'], true))->sum('quantity');
-        $totalOut = $inventoryHistories->filter(fn ($row) => !in_array(strtolower(trim((string) ($row->type ?? ''))), ['in', 'stock in'], true))->sum(fn ($row) => (float) ($row->stock_quantity ?? $row->quantity ?? 0));
 
         return view('Inventory.inventory-history', compact('inventoryHistories', 'activeBranch', 'product', 'currentStock', 'totalIn', 'totalOut'));
     }
