@@ -107,18 +107,19 @@
     @media (max-width: 767.98px) {
         .purchase-page-actions {
             display: flex;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
             gap: 0.5rem;
             justify-content: flex-start;
+            align-items: center;
         }
 
         .purchase-page-actions > * {
-            flex: 1 1 calc(50% - 0.5rem);
+            flex: 0 1 auto;
             min-width: 0;
         }
 
         .purchase-mobile-full {
-            flex-basis: 100%;
+            flex-basis: auto;
         }
 
         .purchase-report-shell .purchase-filter-grid {
