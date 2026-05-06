@@ -26,6 +26,9 @@ use App\Support\BranchInventoryService;
 use App\Support\GeoCurrency;
 use App\Support\InventoryQuantity;
 use App\Support\LedgerService;
+use Maatwebsite\Excel\Facades\Excel;
+use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\WithHeadings;
 
 class SaleController extends Controller
 {
@@ -469,6 +472,51 @@ class SaleController extends Controller
         }
         if ($request->filled('date_to')) {
             $query->whereDate($salesDateColumn, '<=', $request->date_to);
+        }
+
+        if ($request->get('export') === 'xlsx') {
+            $exportSales = (clone $query)->orderByDesc($salesDateColumn)->orderByDesc('created_at')->get();
+
+            return Excel::download(new class($exportSales, $salesDateColumn) implements FromCollection, WithHeadings {
+                public function __construct(
+                    private readonly \Illuminate\Support\Collection $sales,
+                    private readonly string $salesDateColumn
+                ) {
+                }
+
+                public function collection(): \Illuminate\Support\Collection
+                {
+                    return $this->sales->map(function ($sale) {
+                        $saleDate = $sale->{$this->salesDateColumn} ?? $sale->created_at;
+                        $formattedDate = $saleDate instanceof Carbon
+                            ? $saleDate->format('Y-m-d H:i:s')
+                            : (string) $saleDate;
+
+                        return [
+                            'invoice_no' => (string) ($sale->invoice_no ?? ''),
+                            'customer' => (string) ($sale->customer_name ?? optional($sale->customer)->customer_name ?? optional($sale->customer)->name ?? 'Walk-in Customer'),
+                            'items_count' => (int) ($sale->items?->count() ?? 0),
+                            'quantity' => (float) ($sale->items?->sum('qty') ?? 0),
+                            'total_amount' => (float) ($sale->total ?? 0),
+                            'payment_status' => strtoupper((string) ($sale->payment_status ?? '')),
+                            'sale_date' => $formattedDate,
+                        ];
+                    });
+                }
+
+                public function headings(): array
+                {
+                    return [
+                        'Invoice No',
+                        'Customer',
+                        'Items Count',
+                        'Quantity',
+                        'Total Amount',
+                        'Payment Status',
+                        'Sale Date',
+                    ];
+                }
+            }, 'pos-sales-' . now()->format('Y-m-d-His') . '.xlsx');
         }
 
         $totalRevenue = (clone $query)->sum('total');

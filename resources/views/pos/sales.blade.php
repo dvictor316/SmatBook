@@ -88,6 +88,87 @@
         font-size: 0.88rem;
     }
 
+    .summary-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-bottom: 18px;
+    }
+
+    .summary-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .summary-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(255, 255, 255, 0.12);
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        padding: 10px 14px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        text-decoration: none;
+    }
+
+    .summary-btn:hover {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.18);
+    }
+
+    .summary-filter-grid .form-label {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+    }
+
+    .summary-filter-grid .form-control,
+    .summary-filter-grid .input-group-text,
+    .summary-filter-grid .btn {
+        border-radius: 12px;
+        min-height: 42px;
+    }
+
+    .summary-filter-grid .input-group-text,
+    .summary-filter-grid .form-control {
+        border-color: rgba(255, 255, 255, 0.22);
+    }
+
+    .summary-filter-grid .form-control,
+    .summary-filter-grid .input-group-text {
+        background: rgba(255, 255, 255, 0.96);
+    }
+
+    .summary-filter-grid .btn-light {
+        color: #0f172a;
+        font-weight: 700;
+    }
+
+    @media print {
+        .no-print {
+            display: none !important;
+        }
+
+        .pos-content-area {
+            padding: 0;
+            background: #fff;
+        }
+
+        .summary-card,
+        .sales-table-card {
+            box-shadow: none;
+            border: 1px solid #d1d5db;
+        }
+    }
+
     .table thead th {
         background-color: #f5f8ff;
         color: #5b6b87;
@@ -205,6 +286,20 @@
 
     <div class="card summary-card mb-4">
         <div class="card-body p-4 p-lg-5">
+            <div class="summary-toolbar no-print">
+                <div class="summary-label mb-0">Sales Summary & Filters</div>
+                <div class="summary-actions">
+                    <button type="button" class="summary-btn" onclick="window.print()">
+                        <i class="fas fa-print"></i>
+                        <span>Print</span>
+                    </button>
+                    <a href="{{ request()->fullUrlWithQuery(['export' => 'xlsx']) }}" class="summary-btn">
+                        <i class="fas fa-file-excel"></i>
+                        <span>Excel</span>
+                    </a>
+                </div>
+            </div>
+
             <div class="row g-4 align-items-center">
                 <div class="col-lg-8">
                     <div class="summary-label">Total Sales Amount</div>
@@ -217,44 +312,40 @@
                     <div class="summary-subtle mt-2">Filtered POS transactions</div>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <div class="card filter-card mb-4">
-        <div class="card-body p-4">
-            <form action="{{ route('pos.sales') }}" method="GET" class="row g-3 align-items-end">
-                <div class="col-md-3">
-                    <label class="form-label small fw-bold text-muted">Invoice No</label>
+            <form action="{{ route('pos.sales') }}" method="GET" class="row g-3 align-items-end mt-1 summary-filter-grid no-print">
+                <div class="col-lg-3 col-md-6">
+                    <label class="form-label">Invoice No</label>
                     <div class="input-group input-group-sm">
-                        <span class="input-group-text bg-white border-end-0"><i class="fas fa-hashtag text-muted"></i></span>
-                        <input type="text" name="invoice_no" class="form-control border-start-0" placeholder="e.g. INV-100" value="{{ request('invoice_no') }}">
+                        <span class="input-group-text"><i class="fas fa-hashtag text-muted"></i></span>
+                        <input type="text" name="invoice_no" class="form-control" placeholder="e.g. INV-100" value="{{ request('invoice_no') }}">
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label small fw-bold text-muted">Customer</label>
+                <div class="col-lg-3 col-md-6">
+                    <label class="form-label">Customer</label>
                     <div class="input-group input-group-sm">
-                        <span class="input-group-text bg-white border-end-0"><i class="fas fa-user text-muted"></i></span>
-                        <input type="text" name="customer_name" class="form-control border-start-0" placeholder="Name" value="{{ request('customer_name') }}">
+                        <span class="input-group-text"><i class="fas fa-user text-muted"></i></span>
+                        <input type="text" name="customer_name" class="form-control" placeholder="Customer name" value="{{ request('customer_name') }}">
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label small fw-bold text-muted">Specific Date</label>
+                <div class="col-lg-2 col-md-4">
+                    <label class="form-label">Specific Date</label>
                     <input type="date" name="sale_date" class="form-control form-control-sm" value="{{ request('sale_date') }}">
                 </div>
-                <div class="col-md-2">
-                    <label class="form-label small fw-bold text-muted">From Date</label>
+                <div class="col-lg-2 col-md-4">
+                    <label class="form-label">From Date</label>
                     <input type="date" name="date_from" class="form-control form-control-sm" value="{{ request('date_from') }}">
                 </div>
-                <div class="col-md-2">
-                    <label class="form-label small fw-bold text-muted">To Date</label>
+                <div class="col-lg-2 col-md-4">
+                    <label class="form-label">To Date</label>
                     <input type="date" name="date_to" class="form-control form-control-sm" value="{{ request('date_to') }}">
                 </div>
-                <div class="col-md-2 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary btn-sm px-4 flex-grow-1">
+                <div class="col-lg-12 d-flex gap-2 flex-wrap">
+                    <button type="submit" class="btn btn-light btn-sm px-4">
                         <i class="fas fa-filter me-1"></i> Apply Filter
                     </button>
-                    <a href="{{ route('pos.sales') }}" class="btn btn-outline-secondary btn-sm">
-                        <i class="fas fa-sync"></i>
+                    <a href="{{ route('pos.sales') }}" class="btn btn-outline-light btn-sm px-4">
+                        <i class="fas fa-sync me-1"></i> Reset
                     </a>
                 </div>
             </form>
