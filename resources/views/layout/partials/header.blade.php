@@ -79,6 +79,13 @@
     $headerBranchOptions = collect();
     $activeBranchId = session('active_branch_id');
     $activeBranchName = session('active_branch_name');
+    $headerAllBranchesSelected = request()->boolean('all_branches')
+        || strtolower(trim((string) request()->get('branch_scope', ''))) === 'all'
+        || strtolower(trim((string) request()->get('branch_id', ''))) === 'all';
+    $headerDashboardBaseUrl = Route::has('workspace.business.dashboard')
+        ? route('workspace.business.dashboard')
+        : url('/workspace/business/dashboard');
+    $headerAllBranchesUrl = $headerDashboardBaseUrl . '?all_branches=1&branch_scope=all';
 
     if ($user && !empty($user->company_id)) {
         $branchKey = 'branches_json_company_' . $user->company_id;
@@ -91,6 +98,11 @@
             $activeBranchId = $matchedBranch['id'] ?? null;
             $activeBranchName = $matchedBranch['name'] ?? null;
         }
+    }
+
+    if ($headerAllBranchesSelected) {
+        $activeBranchId = null;
+        $activeBranchName = 'All Branches';
     }
 
     $normalizedHeaderPlan = strtolower(trim((string) (
@@ -1165,10 +1177,17 @@
                    class="branch-pill-mobile"
                    data-bs-toggle="dropdown"
                    aria-label="Switch active branch"
-                   title="{{ $activeBranchName ?: 'Select Branch' }}">
+                    title="{{ $activeBranchName ?: 'Select Branch' }}">
                     <i class="fe fe-git-branch"></i>
                 </a>
                 <div class="dropdown-menu dropdown-menu-end">
+                    <a href="{{ $headerAllBranchesUrl }}" class="dropdown-item d-flex justify-content-between align-items-center">
+                        <span>All Branches</span>
+                        @if($headerAllBranchesSelected)
+                            <i class="fe fe-check text-success"></i>
+                        @endif
+                    </a>
+                    <div class="dropdown-divider"></div>
                     @foreach($headerBranchOptions as $branch)
                         <form method="POST" action="{{ route('settings.branches.activate') }}">
                             @csrf
