@@ -4,9 +4,9 @@
     $currencyCode = $geoCurrency ?? \App\Support\GeoCurrency::currentCurrency();
     $currencyLocale = $geoCurrencyLocale ?? \App\Support\GeoCurrency::currentLocale();
     $currencySymbol = $geoCurrencySymbol ?? \App\Support\GeoCurrency::currentSymbol();
-    $reportCompany = auth()->user()?->company;
-    $reportCompanyName = $reportCompany?->company_name
-        ?? $reportCompany?->name
+    $reportCompany = optional(auth()->user())->company;
+    $reportCompanyName = optional($reportCompany)->company_name
+        ?? optional($reportCompany)->name
         ?? \App\Models\Setting::where('key', 'company_name')->value('value')
         ?? 'SmartProbook';
     $activeBranchName = trim((string) (session('active_branch_name') ?? ''));
@@ -33,9 +33,9 @@
 
     $currentUser = auth()->user();
     $currentPlanLabel = strtolower((string) (
-        optional($currentUser?->subscription)->plan_name
-        ?: optional($currentUser?->subscription)->plan
-        ?: optional($currentUser?->company)->plan
+        optional(optional($currentUser)->subscription)->plan_name
+        ?: optional(optional($currentUser)->subscription)->plan
+        ?: optional(optional($currentUser)->company)->plan
         ?: 'basic'
     ));
     $currentRole = strtolower((string) (optional($currentUser)->role ?? ''));

@@ -48,11 +48,15 @@ class ReportController extends Controller
 
         private function allowedReportTabs(string $reportAccess): array
         {
-            return match ($reportAccess) {
-                'full', 'enterprise' => ['standard', 'management', 'custom'],
-                'pro' => ['standard', 'management'],
-                default => ['standard'],
-            };
+            switch ($reportAccess) {
+                case 'full':
+                case 'enterprise':
+                    return ['standard', 'management', 'custom'];
+                case 'pro':
+                    return ['standard', 'management'];
+                default:
+                    return ['standard'];
+            }
         }
 
         private function reportTabSections(array $allowedTabs): array
@@ -88,14 +92,41 @@ class ReportController extends Controller
         {
             $value = strtolower(trim((string) $value));
 
-            return match ($value) {
-                'asset', 'assets' => 'asset',
-                'liability', 'liabilities', 'payable', 'payables', 'current liability', 'long term liability', 'long-term liability' => 'liability',
-                'equity', 'capital', 'owner equity', 'owners equity', "owner's equity", 'share capital', 'shareholder equity' => 'equity',
-                'revenue', 'income', 'sales', 'turnover' => 'revenue',
-                'expense', 'expenses', 'cost', 'cogs', 'cost of sales', 'cost of goods sold' => 'expense',
-                default => $value,
-            };
+            switch ($value) {
+                case 'asset':
+                case 'assets':
+                    return 'asset';
+                case 'liability':
+                case 'liabilities':
+                case 'payable':
+                case 'payables':
+                case 'current liability':
+                case 'long term liability':
+                case 'long-term liability':
+                    return 'liability';
+                case 'equity':
+                case 'capital':
+                case 'owner equity':
+                case 'owners equity':
+                case "owner's equity":
+                case 'share capital':
+                case 'shareholder equity':
+                    return 'equity';
+                case 'revenue':
+                case 'income':
+                case 'sales':
+                case 'turnover':
+                    return 'revenue';
+                case 'expense':
+                case 'expenses':
+                case 'cost':
+                case 'cogs':
+                case 'cost of sales':
+                case 'cost of goods sold':
+                    return 'expense';
+                default:
+                    return $value;
+            }
         }
 
         private function classifyProfitLossEntry(object $entry): ?string
@@ -307,14 +338,14 @@ class ReportController extends Controller
 
         private function customReportsSettingKey(): string
         {
-            $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+            $companyId = (int) (optional(Auth::user())->company_id ?? session('current_tenant_id') ?? 0);
 
             return $companyId > 0 ? 'custom_reports_company_' . $companyId : 'custom_reports';
         }
 
         private function availableCustomReportBranches()
         {
-            $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+            $companyId = (int) (optional(Auth::user())->company_id ?? session('current_tenant_id') ?? 0);
             if ($companyId <= 0) {
                 return collect();
             }
@@ -369,18 +400,25 @@ class ReportController extends Controller
 
         private function resolveTemplateDateRange(string $preset, ?string $customFrom = null, ?string $customTo = null): array
         {
-            return match ($preset) {
-                'today' => [now()->toDateString(), now()->toDateString()],
-                'last_7_days' => [now()->subDays(6)->toDateString(), now()->toDateString()],
-                'last_30_days' => [now()->subDays(29)->toDateString(), now()->toDateString()],
-                'last_month' => [now()->subMonth()->startOfMonth()->toDateString(), now()->subMonth()->endOfMonth()->toDateString()],
-                'current_year' => [now()->startOfYear()->toDateString(), now()->toDateString()],
-                'custom' => [
-                    $customFrom ?: now()->startOfMonth()->toDateString(),
-                    $customTo ?: now()->toDateString(),
-                ],
-                default => [now()->startOfMonth()->toDateString(), now()->toDateString()],
-            };
+            switch ($preset) {
+                case 'today':
+                    return [now()->toDateString(), now()->toDateString()];
+                case 'last_7_days':
+                    return [now()->subDays(6)->toDateString(), now()->toDateString()];
+                case 'last_30_days':
+                    return [now()->subDays(29)->toDateString(), now()->toDateString()];
+                case 'last_month':
+                    return [now()->subMonth()->startOfMonth()->toDateString(), now()->subMonth()->endOfMonth()->toDateString()];
+                case 'current_year':
+                    return [now()->startOfYear()->toDateString(), now()->toDateString()];
+                case 'custom':
+                    return [
+                        $customFrom ?: now()->startOfMonth()->toDateString(),
+                        $customTo ?: now()->toDateString(),
+                    ];
+                default:
+                    return [now()->startOfMonth()->toDateString(), now()->toDateString()];
+            }
         }
 
         public function storeCustomReportTemplate(Request $request)
@@ -615,7 +653,7 @@ class ReportController extends Controller
         // ... rest of the code
         private function isSuperAdmin(): bool
         {
-            $role = strtolower((string) (Auth::user()?->role ?? ''));
+            $role = strtolower((string) (optional(Auth::user())->role ?? ''));
             return in_array($role, ['super_admin', 'superadmin'], true);
         }
 
@@ -648,7 +686,7 @@ class ReportController extends Controller
         {
             // Every user — including super_admin — is scoped to their own company.
             // No role or plan bypasses this. Data must never leak between tenants.
-            $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+            $companyId = (int) (optional(Auth::user())->company_id ?? session('current_tenant_id') ?? 0);
             $userId = (int) (Auth::id() ?? 0);
 
             if ($companyId > 0 && Schema::hasColumn($table, 'company_id')) {
@@ -692,7 +730,7 @@ class ReportController extends Controller
             }
 
             if ((!$branchId || !$branchName) && Schema::hasTable('settings')) {
-            $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+            $companyId = (int) (optional(Auth::user())->company_id ?? session('current_tenant_id') ?? 0);
                 if ($companyId > 0) {
                     $key = 'branches_json_company_' . $companyId;
                     $raw = (string) (DB::table('settings')->where('key', $key)->value('value') ?? '');
@@ -1402,8 +1440,33 @@ public function purchase_report(Request $request)
         public function send_low_stock_email(Request $request)
         {
             $threshold = $request->get('min_qty', 15);
-                ->where('stock', '<=', $threshold)
-                ->get();
+            $activeBranch = $this->getActiveBranchContext();
+            $stockColumn = Schema::hasColumn('products', 'stock')
+                ? 'products.stock'
+                : (Schema::hasColumn('products', 'stock_quantity') ? 'products.stock_quantity' : '0');
+            $reorderColumn = Schema::hasColumn('products', 'reorder_level')
+                ? 'products.reorder_level'
+                : '0';
+
+            $productsQuery = $this->scopedTable('products')
+                ->select(['products.id', 'products.name', 'products.sku', 'products.purchase_price', 'products.unit_type', 'products.reorder_level', 'products.reorder_quantity']);
+
+            if (!empty($activeBranch['id']) && Schema::hasTable('product_branch_stocks')) {
+                $productsQuery->leftJoin('product_branch_stocks', function ($join) use ($activeBranch) {
+                    $join->on('product_branch_stocks.product_id', '=', 'products.id')
+                        ->where('product_branch_stocks.branch_id', (string) $activeBranch['id']);
+                });
+
+                $productsQuery->addSelect(DB::raw("COALESCE(product_branch_stocks.quantity, {$stockColumn}, 0) as stock"));
+                $productsQuery->whereRaw("COALESCE(product_branch_stocks.quantity, {$stockColumn}, 0) <= COALESCE(NULLIF({$reorderColumn}, 0), ?)", [$threshold]);
+                $productsQuery->orderByRaw("COALESCE(product_branch_stocks.quantity, {$stockColumn}, 0) asc");
+            } else {
+                $productsQuery->addSelect(DB::raw("COALESCE({$stockColumn}, 0) as stock"));
+                $productsQuery->whereRaw("COALESCE({$stockColumn}, 0) <= COALESCE(NULLIF({$reorderColumn}, 0), ?)", [$threshold]);
+                $productsQuery->orderByRaw("COALESCE({$stockColumn}, 0) asc");
+            }
+
+            $products = $productsQuery->get();
 
             if ($products->isEmpty()) {
                 return response()->json(['status' => 'error', 'message' => 'No low stock items found to report.'], 400);
@@ -1722,11 +1785,11 @@ private function resolvePaymentStatus(Payment $payment): string
 
 private function resolvePaymentChannel(Payment $payment): string
 {
-    if (!empty($payment->account?->name)) {
-        return (string) $payment->account->name;
+    if (!empty(optional($payment->account)->name)) {
+        return (string) optional($payment->account)->name;
     }
 
-    $details = $payment->sale?->payment_details;
+    $details = optional($payment->sale)->payment_details;
     if (is_string($details)) {
         $decoded = json_decode($details, true);
         $details = is_array($decoded) ? $decoded : [];
@@ -1927,7 +1990,7 @@ private function paymentReportRelations(): array
         foreach ($salesSummary as $row) {
             $customer  = $customerMap->get($row->customer_id);
             $openingSale = $openingSales->get($row->customer_id);
-            $openingBal  = $openingSale ? (float) ($openingSale->balance ?? 0) : (float) ($customer?->balance ?? 0);
+            $openingBal  = $openingSale ? (float) ($openingSale->balance ?? 0) : (float) (optional($customer)->balance ?? 0);
 
             // Use max(stored amount_paid, actual payments-table total) so untracked payments
             // are never under-counted and the balance matches the customer statement.
@@ -1944,16 +2007,16 @@ private function paymentReportRelations(): array
 
             $receivableMap[$row->customer_id] = [
                 'customer_id'    => $row->customer_id,
-                'customer_name'  => $customer?->customer_name ?? $customer?->name ?? 'Walk-in Customer',
-                'email'          => $customer?->email,
-                'phone'          => $customer?->phone,
+                'customer_name'  => optional($customer)->customer_name ?? optional($customer)->name ?? 'Walk-in Customer',
+                'email'          => optional($customer)->email,
+                'phone'          => optional($customer)->phone,
                 'total_invoiced' => (float) $row->total_invoiced,
                 'total_paid'     => $actualPaid,
                 'total_due'      => $totalDue,
                 'invoice_count'  => (int) $row->invoice_count,
                 'opening_balance'=> $openingBal,
-                'sort_at'        => $row->first_activity_at ?: $customer?->created_at,
-                'sort_id'        => (int) ($customer?->id ?? $row->customer_id ?? 0),
+                'sort_at'        => $row->first_activity_at ?: optional($customer)->created_at,
+                'sort_id'        => (int) (optional($customer)->id ?? $row->customer_id ?? 0),
             ];
         }
 
@@ -2075,13 +2138,13 @@ private function paymentReportRelations(): array
         $entries = collect();
         if ($openingOriginal > 0) {
             $openingEventAt = $this->statementEntryTime(
-                $openingSale?->created_at,
-                $customer->opening_balance_date ?: $openingSale?->order_date
+                optional($openingSale)->created_at,
+                $customer->opening_balance_date ?: optional($openingSale)->order_date
             ) ?: ($customer->created_at ? $customer->created_at->copy()->subSecond() : now()->copy()->subSecond());
 
             $entries->push([
                 'date' => $customer->opening_balance_date
-                    ?: ($openingSale?->order_date ?: ($openingSale?->created_at ?: ($customer->created_at ? $customer->created_at->copy()->startOfDay()->subSecond() : now()->copy()->startOfDay()->subSecond()))),
+                    ?: (optional($openingSale)->order_date ?: (optional($openingSale)->created_at ?: ($customer->created_at ? $customer->created_at->copy()->startOfDay()->subSecond() : now()->copy()->startOfDay()->subSecond()))),
                 'sort_at' => $openingEventAt,
                 'sort_id' => 0,
                 'sort_type' => 0,
@@ -2351,7 +2414,7 @@ public function destroy($id)
     {
         // Using the full namespace prevents "Class not found" errors
         $query = \App\Models\Quotation::with('customer');
-        $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId = (int) (optional(Auth::user())->company_id ?? session('current_tenant_id') ?? 0);
         $userId = (int) (Auth::id() ?? 0);
         $activeBranch = $this->getActiveBranchContext();
 
@@ -2529,7 +2592,7 @@ public function destroy($id)
         $productId = $request->input('product_id');
 
         $user = Auth::user();
-        $companyId = (int) ($user?->company_id ?? 0);
+        $companyId = (int) (optional($user)->company_id ?? 0);
 
         $applyTenantScope = function ($query, string $table) use ($companyId, $user) {
             if ($companyId > 0 && Schema::hasColumn($table, 'company_id')) {
@@ -2647,7 +2710,7 @@ public function destroy($id)
         // 3. Send Email
         try {
             $recipient = $request->input('recipient')
-                ?: auth()->user()?->email
+                ?: optional(auth()->user())->email
                 ?: Setting::mailFromAddress();
 
             if (!filter_var((string) $recipient, FILTER_VALIDATE_EMAIL)) {
@@ -2671,7 +2734,7 @@ public function destroy($id)
         ]);
 
         $recipient = $data['recipient']
-            ?? auth()->user()?->email
+            ?? optional(auth()->user())->email
             ?? Setting::mailFromAddress();
 
         if (!filter_var((string) $recipient, FILTER_VALIDATE_EMAIL)) {
@@ -2690,7 +2753,7 @@ public function destroy($id)
                 'intro' => 'Your requested report summary is ready.',
                 'details' => [
                     'Report' => $data['subject'],
-                    'Generated By' => auth()->user()?->email ?? 'System',
+                    'Generated By' => optional(auth()->user())->email ?? 'System',
                     'Generated At' => now()->toDateTimeString(),
                     'Summary' => $data['body'],
                 ],
@@ -2767,7 +2830,7 @@ public function destroy($id)
         }
 
         $generatedAt = now();
-        $generatedBy = auth()->user()?->email ?? 'System';
+        $generatedBy = optional(auth()->user())->email ?? 'System';
 
         try {
             $pdf = Pdf::loadView('emails.report-attachment', [
@@ -2889,7 +2952,7 @@ public function destroy($id)
 
             DB::beginTransaction();
             try {
-                $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+                $companyId = (int) (optional(Auth::user())->company_id ?? session('current_tenant_id') ?? 0);
                 $userId    = (int) (Auth::id() ?? 0);
 
                 $purchase = DB::table('purchases')->where('id', $request->purchase_id)->first();
@@ -2938,12 +3001,12 @@ public function destroy($id)
 
                 if ($totalAmount > 0) {
                     LedgerService::postPurchaseReturn(
-                        relatedId: (int) $returnId,
-                        amount: (float) $totalAmount,
-                        reference: 'RET-' . $returnId,
-                        date: $request->return_date,
-                        userId: Auth::id(),
-                        relatedType: PurchaseReturn::class
+                        (int) $returnId,
+                        (float) $totalAmount,
+                        'RET-' . $returnId,
+                        $request->return_date,
+                        Auth::id(),
+                        PurchaseReturn::class
                     );
                 }
 
@@ -3029,7 +3092,7 @@ public function destroy($id)
 
         DB::beginTransaction();
         try {
-            $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+            $companyId = (int) (optional(Auth::user())->company_id ?? session('current_tenant_id') ?? 0);
             $userId    = (int) (Auth::id() ?? 0);
 
             $invoice = DB::table('sales')->where('id', $request->invoice_id)->first();
@@ -3087,12 +3150,12 @@ public function destroy($id)
 
             if ($totalAmount > 0) {
                 LedgerService::postSalesReturn(
-                    relatedId: (int) $creditNoteId,
-                    amount: (float) $totalAmount,
-                    reference: 'CN-' . $creditNoteId,
-                    date: $request->credit_date,
-                    userId: Auth::id(),
-                    relatedType: 'credit_note'
+                    (int) $creditNoteId,
+                    (float) $totalAmount,
+                    'CN-' . $creditNoteId,
+                    $request->credit_date,
+                    Auth::id(),
+                    'credit_note'
                 );
             }
 
@@ -3198,7 +3261,7 @@ public function destroy($id)
         $branchId      = trim((string) ($activeBranch['id']   ?? ''));
         $branchName    = trim((string) ($activeBranch['name'] ?? ''));
         $isAllBranches = ($activeBranch['scope'] ?? 'branch') === 'all';
-        $companyId     = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $companyId     = (int) (optional(Auth::user())->company_id ?? session('current_tenant_id') ?? 0);
 
         // ── Date presets ──────────────────────────────────────────────────────
         $now = Carbon::now();

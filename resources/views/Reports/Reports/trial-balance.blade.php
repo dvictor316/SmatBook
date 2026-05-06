@@ -212,9 +212,9 @@
 <div class="page-wrapper">
     <div class="content container-fluid">
         @php
-            $reportCompany = auth()->user()?->company;
-            $reportCompanyName = $reportCompany?->company_name
-                ?? $reportCompany?->name
+            $reportCompany = optional(auth()->user())->company;
+            $reportCompanyName = optional($reportCompany)->company_name
+                ?? optional($reportCompany)->name
                 ?? \App\Models\Setting::where('key', 'company_name')->value('value')
                 ?? 'SmartProbook';
         @endphp

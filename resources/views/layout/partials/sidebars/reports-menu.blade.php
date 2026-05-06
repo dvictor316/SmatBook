@@ -3,11 +3,13 @@
     $currentTab = request('tab', 'standard');
     $isReports  = Request::is('reports*');
     $reportAccess = $reportAccess ?? 'basic';
-    $allowedTabs = match ($reportAccess) {
-        'full', 'enterprise' => ['standard', 'management', 'custom'],
-        'pro' => ['standard', 'management'],
-        default => ['standard'],
-    };
+    if (in_array($reportAccess, ['full', 'enterprise'], true)) {
+        $allowedTabs = ['standard', 'management', 'custom'];
+    } elseif ($reportAccess === 'pro') {
+        $allowedTabs = ['standard', 'management'];
+    } else {
+        $allowedTabs = ['standard'];
+    }
 @endphp
 
 <li class="submenu {{ $isReports ? 'active subdrop' : '' }}">

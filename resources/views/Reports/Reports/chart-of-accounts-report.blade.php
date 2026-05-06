@@ -6,9 +6,9 @@
     $currencyCode = $geoCurrency ?? \App\Support\GeoCurrency::currentCurrency();
     $currencyLocale = $geoCurrencyLocale ?? \App\Support\GeoCurrency::currentLocale();
     $currencySymbol = $geoCurrencySymbol ?? \App\Support\GeoCurrency::currentSymbol();
-    $reportCompany = auth()->user()?->company;
-    $reportCompanyName = $reportCompany?->company_name
-        ?? $reportCompany?->name
+    $reportCompany = optional(auth()->user())->company;
+    $reportCompanyName = optional($reportCompany)->company_name
+        ?? optional($reportCompany)->name
         ?? \App\Models\Setting::where('key', 'company_name')->value('value')
         ?? 'SmartProbook';
 @endphp

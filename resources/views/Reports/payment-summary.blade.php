@@ -244,12 +244,15 @@
                                 @php
                                     $rowStatus = $payment->resolved_status ?? $payment->status ?? 'Pending';
                                     $rowStatusKey = strtolower((string) $rowStatus);
-                                    $rowStatusClass = match ($rowStatusKey) {
-                                        'completed' => 'bg-green-100 text-green-700',
-                                        'partial' => 'bg-blue-100 text-blue-700',
-                                        'failed', 'cancelled', 'canceled' => 'bg-red-100 text-red-700',
-                                        default => 'bg-yellow-100 text-yellow-700',
-                                    };
+                                    if ($rowStatusKey === 'completed') {
+                                        $rowStatusClass = 'bg-green-100 text-green-700';
+                                    } elseif ($rowStatusKey === 'partial') {
+                                        $rowStatusClass = 'bg-blue-100 text-blue-700';
+                                    } elseif (in_array($rowStatusKey, ['failed', 'cancelled', 'canceled'], true)) {
+                                        $rowStatusClass = 'bg-red-100 text-red-700';
+                                    } else {
+                                        $rowStatusClass = 'bg-yellow-100 text-yellow-700';
+                                    }
                                 @endphp
                                 <span class="px-2.5 py-1 rounded-md text-[10px] font-black uppercase {{ $rowStatusClass }}">
                                     {{ $rowStatus }}

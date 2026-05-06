@@ -15,9 +15,9 @@ $fmt = fn (float|int $v) => \App\Support\GeoCurrency::format((float) $v, 'NGN', 
 /* ─────────────────────────────────────────────────────────────────
  *  REPORT META
  * ──────────────────────────────────────────────────────────────── */
-$reportCompany   = auth()->user()?->company;
-$companyName     = $reportCompany?->company_name
-                ?? $reportCompany?->name
+$reportCompany   = optional(auth()->user())->company;
+$companyName     = optional($reportCompany)->company_name
+                ?? optional($reportCompany)->name
                 ?? \App\Models\Setting::where('key', 'company_name')->value('value')
                 ?? 'SmartProbook';
 $activeBranchName = trim((string) ($activeBranch['name'] ?? ''));

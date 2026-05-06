@@ -101,9 +101,9 @@
 <div class="page-wrapper">
     <div class="report-container">
         @php
-            $cashFlowCompany = auth()->user()?->company;
-            $cashFlowCompanyName = $cashFlowCompany?->company_name
-                ?? $cashFlowCompany?->name
+            $cashFlowCompany = optional(auth()->user())->company;
+            $cashFlowCompanyName = optional($cashFlowCompany)->company_name
+                ?? optional($cashFlowCompany)->name
                 ?? \App\Models\Setting::where('key', 'company_name')->value('value')
                 ?? 'SmartProbook';
         @endphp

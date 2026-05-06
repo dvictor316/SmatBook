@@ -1,7 +1,7 @@
 @php
-    $stripCompany = auth()->user()?->company;
-    $stripCompanyName = $stripCompany?->company_name
-        ?? $stripCompany?->name
+    $stripCompany = optional(auth()->user())->company;
+    $stripCompanyName = optional($stripCompany)->company_name
+        ?? optional($stripCompany)->name
         ?? \App\Models\Setting::where('key', 'company_name')->value('value')
         ?? 'SmartProbook';
     $activeBranch = $activeBranch ?? [];
@@ -12,7 +12,7 @@
     $stripPeriodLabel = $periodLabel ?? null;
 
     // Load all branches for this company so we can show the switcher
-    $stripCompanyId = (int)(auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+    $stripCompanyId = (int)(optional(auth()->user())->company_id ?? session('current_tenant_id') ?? 0);
     $stripAvailableBranches = [];
     if ($stripCompanyId > 0 && \Illuminate\Support\Facades\Schema::hasTable('settings')) {
         $stripBranchRaw = (string)(\Illuminate\Support\Facades\DB::table('settings')
@@ -233,7 +233,7 @@
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Recipient Email</label>
                     <input type="email" class="form-control" id="emailReportRecipient"
-                        placeholder="{{ auth()->user()?->email ?? 'recipient@example.com' }}">
+                        placeholder="{{ optional(auth()->user())->email ?? 'recipient@example.com' }}">
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Subject</label>
