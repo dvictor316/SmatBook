@@ -344,6 +344,95 @@ class LedgerService
         );
     }
 
+    /**
+     * Post a double-entry opening balance journal for a newly created chart-of-accounts entry.
+     * Bypasses the branch-required guard so it works for company-wide accounts.
+     * Idempotent: calling it twice for the same account is safe.
+     */
+    public static function postAccountOpeningBalance(Account $account): void
+    {
+        if (!self::isReady()) {
+            return;
+        }
+
+        $ob = (float) ($account->opening_balance ?? 0);
+        if (abs($ob) < 0.005) {
+            return;
+        }
+
+        // Idempotent guard — never double-post
+        $alreadyPosted = Transaction::withoutGlobalScopes()
+            ->where('related_id', $account->id)
+            ->where('related_type', Account::class)
+            ->where('transaction_type', Transaction::TYPE_OPENING_BALANCE)
+            ->exists();
+        if ($alreadyPosted) {
+            return;
+        }
+
+        self::$currentCompanyId = (int) (
+            $account->company_id
+            ?? Auth::user()?->company_id
+            ?? session('current_tenant_id')
+            ?? 0
+        ) ?: null;
+
+        // Resolve or auto-create the system Opening Balance Equity counter-account
+        $equityAccount = self::resolveAccount(
+            'Opening Balance Equity',
+            Account::TYPE_EQUITY,
+            ['opening balance equity', 'opening balance'],
+            'SYS-OPENING-EQUITY'
+        );
+
+        $reference  = 'OB-ACCT-' . $account->id;
+        $date       = now()->toDateString();
+        $userId     = (int) ($account->user_id ?? Auth::id() ?? 0) ?: null;
+        $branchId   = trim((string) ($account->branch_id ?? ''));
+        $branchName = trim((string) ($account->branch_name ?? ''));
+
+        // Debit-normal accounts (Asset/Expense): DR this account, CR Opening Balance Equity
+        // Credit-normal accounts (Liability/Equity/Revenue): DR Opening Balance Equity, CR this account
+        $normalizedType  = strtolower(trim((string) ($account->type ?? '')));
+        $isDebitNormal   = in_array($normalizedType, ['asset', 'expense'], true);
+        $debitAccountId  = $isDebitNormal ? $account->id : $equityAccount->id;
+        $creditAccountId = $isDebitNormal ? $equityAccount->id : $account->id;
+
+        // Build base payload without calling validatedBranchContext (branch is optional here)
+        $columns = Schema::getColumnListing('transactions');
+        $base = [
+            'transaction_date' => $date,
+            'reference'        => $reference,
+            'description'      => 'Opening balance: ' . $account->name,
+            'transaction_type' => Transaction::TYPE_OPENING_BALANCE,
+            'related_id'       => $account->id,
+            'related_type'     => Account::class,
+            'user_id'          => $userId,
+            'balance'          => 0,
+        ];
+        if (in_array('company_id', $columns, true)) {
+            $base['company_id'] = $account->company_id ?? null;
+        }
+        if (in_array('branch_id', $columns, true) && $branchId !== '') {
+            $base['branch_id'] = $branchId;
+        }
+        if (in_array('branch_name', $columns, true) && $branchName !== '') {
+            $base['branch_name'] = $branchName;
+        }
+
+        Transaction::create(self::filterTransactionPayload(array_merge($base, [
+            'account_id' => $debitAccountId,
+            'debit'      => $ob,
+            'credit'     => 0,
+        ])));
+
+        Transaction::create(self::filterTransactionPayload(array_merge($base, [
+            'account_id' => $creditAccountId,
+            'debit'      => 0,
+            'credit'     => $ob,
+        ])));
+    }
+
     public static function backfillSupplierPaymentLedgerEntries(
         ?int $companyId = null,
         ?int $userId = null,

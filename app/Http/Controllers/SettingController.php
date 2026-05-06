@@ -877,7 +877,7 @@ class SettingController extends Controller
                 ]);
         }
 
-        Account::create([
+        $account = Account::create([
             'code'            => $validated['code'],
             'name'            => $validated['name'],
             'type'            => $validated['type'],
@@ -891,6 +891,16 @@ class SettingController extends Controller
             'branch_id'       => $branchId !== '' ? $branchId : null,
             'branch_name'     => $branchName !== '' ? $branchName : null,
         ]);
+
+        // Post opening-balance journal so it appears on the balance sheet
+        try {
+            \App\Support\LedgerService::postAccountOpeningBalance($account);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('postAccountOpeningBalance failed', [
+                'account_id' => $account->id,
+                'error'      => $e->getMessage(),
+            ]);
+        }
 
         return redirect()->route('chart-of-accounts')->with('success', 'Account added to chart of accounts.');
     }
@@ -1442,7 +1452,7 @@ class SettingController extends Controller
                 ->with('error', "Cannot delete \"{$account->name}\" — it has {$txnCount} transaction(s) posted against it. Deactivate it instead.");
         }
 
-        $account->delete();
+        $account->forceDelete();
 
         return redirect()->route('chart-of-accounts')->with('success', "Account \"{$account->name}\" deleted successfully.");
     }

@@ -744,7 +744,7 @@ public function customerDetails($id = null)
                     Transaction::query()
                         ->whereIn('related_id', $paymentIds)
                         ->where('related_type', Payment::class)
-                        ->delete();
+                        ->forceDelete();
                     Payment::query()->whereIn('id', $paymentIds)->delete();
                 }
             }
@@ -752,10 +752,10 @@ public function customerDetails($id = null)
             Transaction::query()
                 ->where('related_id', $sale->id)
                 ->where('related_type', Sale::class)
-                ->delete();
+                ->forceDelete();
 
             $sale->items()->delete();
-            $sale->delete();
+            $sale->forceDelete();
 
             DB::commit();
 
