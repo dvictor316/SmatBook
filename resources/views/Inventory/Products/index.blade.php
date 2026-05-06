@@ -1044,6 +1044,9 @@
             reloadQuickCategoryOptions($('#product_category_select').val() || '').finally(() => {
                 initializeQuickCategorySelect();
             });
+            refreshQuickPackagingLabels();
+            calculateQuickCartonContent();
+            calculateQuickStock();
         });
 
         $('#addProductModal').on('hidden.bs.modal', function() {
@@ -1075,14 +1078,14 @@
         });
 
         function refreshQuickPackagingLabels() {
-            var baseUnitName = ($('input[name="base_unit_name"]').val() || 'pcs').trim();
+            var baseUnitName = ($('#addProductModal input[name="base_unit_name"]').val() || 'pcs').trim();
             var unitLabel = baseUnitName.length ? baseUnitName : 'pcs';
             var titleUnit = unitLabel.charAt(0).toUpperCase() + unitLabel.slice(1);
             $('#quick_opening_unit_label').text('Opening ' + titleUnit);
         }
 
         function quickBaseUnitLabel() {
-            var raw = ($('input[name="base_unit_name"]').val() || 'pcs').trim();
+            var raw = ($('#addProductModal input[name="base_unit_name"]').val() || 'pcs').trim();
             return raw.length ? raw : 'pcs';
         }
 
@@ -1151,13 +1154,13 @@
         }
 
         function calculateQuickStock() {
-            var cartons       = parseFloat($('input[name="stock_cartons"]').val()) || 0;
-            var rolls         = parseFloat($('input[name="stock_rolls"]').val()) || 0;
-            var pieces        = parseFloat($('input[name="stock_units"]').val()) || 0;
+            var cartons       = parseFloat($('#addProductModal input[name="stock_cartons"]').val()) || 0;
+            var rolls         = parseFloat($('#addProductModal input[name="stock_rolls"]').val()) || 0;
+            var pieces        = parseFloat($('#addProductModal input[name="stock_units"]').val()) || 0;
             var rollsPerCtn   = parseFloat($('#quick_units_per_carton_input').val()) || 0;
             var pcsPerRoll    = parseFloat($('#quick_units_per_roll_input').val()) || 0;
             var pcsPerCtn     = packagingValue('#quick_pcs_per_carton_helper');
-            var purchasePrice = parseFloat($('input[name="purchase_price"]').val()) || 0;
+            var purchasePrice = parseFloat($('#addProductModal input[name="purchase_price"]').val()) || 0;
             var unitLabel     = quickBaseUnitLabel();
 
             var fromCartons = pcsPerCtn > 0
@@ -1173,7 +1176,7 @@
             $('#quick_final_stock_input').val(Math.round(total));
         }
 
-        $('#quick_rolls_per_carton_helper, #quick_pcs_per_roll_helper, #quick_pcs_per_carton_helper').on('input', function() {
+        $('#addProductModal').on('input', '#quick_rolls_per_carton_helper, #quick_pcs_per_roll_helper, #quick_pcs_per_carton_helper', function() {
             lastPackagingFieldEdited = $(this).attr('id') === 'quick_rolls_per_carton_helper'
                 ? 'rolls'
                 : ($(this).attr('id') === 'quick_pcs_per_roll_helper' ? 'pcs_per_roll' : 'pcs_per_ctn');
@@ -1181,11 +1184,11 @@
             calculateQuickStock();
         });
 
-        $('input[name="stock_cartons"], input[name="stock_rolls"], input[name="stock_units"], input[name="purchase_price"]').on('input', function() {
+        $('#addProductModal').on('input', 'input[name="stock_cartons"], input[name="stock_rolls"], input[name="stock_units"], input[name="purchase_price"]', function() {
             calculateQuickStock();
         });
 
-        $('input[name="base_unit_name"]').on('input', function() {
+        $('#addProductModal').on('input', 'input[name="base_unit_name"]', function() {
             refreshQuickPackagingLabels();
             calculateQuickStock();
         });
