@@ -21,6 +21,11 @@ class RequireActiveBranch
             return $next($request);
         }
 
+        // "All branches" scope is a valid, intentional selection — let it through.
+        if ($request->session()->get('active_branch_scope') === 'all') {
+            return $next($request);
+        }
+
         if ($this->activeBranchResolver->ensureSession($user)) {
             return $next($request);
         }

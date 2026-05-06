@@ -1599,12 +1599,31 @@ class SettingController extends Controller
             'redirect_to' => 'nullable|string',
         ]);
 
+        // Handle "All Branches" selection
+        if (strtolower(trim((string) $validated['branch_id'])) === 'all') {
+            session(['active_branch_scope' => 'all']);
+            $request->session()->forget(['active_branch_id', 'active_branch_name']);
+            $request->session()->regenerate(false);
+
+            $redirectUrl = $request->input('redirect_to') ?: url()->previous();
+            if ($redirectUrl && $this->isSafeRedirectUrl($redirectUrl)) {
+                return redirect()->to($this->stripBranchAggregationParams($redirectUrl))
+                    ->with('success', 'Now viewing all branches.');
+            }
+            return redirect()->to(Route::has('workspace.business.dashboard')
+                ? route('workspace.business.dashboard')
+                : url('/workspace/business/dashboard'))
+                ->with('success', 'Now viewing all branches.');
+        }
+
         $branch = app(ActiveBranchResolver::class)->resolveBranchById($validated['branch_id'], Auth::user());
 
         if (!$branch) {
             return redirect()->back()->with('error', 'Selected branch could not be found.');
         }
 
+        // Clear "all branches" scope and set specific branch
+        $request->session()->forget('active_branch_scope');
         session([
             'active_branch_id' => $branch['id'],
             'active_branch_name' => $branch['name'],

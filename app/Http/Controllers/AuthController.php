@@ -424,6 +424,7 @@ class AuthController extends Controller
             'current_tenant_name',
             'active_branch_id',
             'active_branch_name',
+            'active_branch_scope',
             'selected_plan_id',
             'selected_plan',
             'selected_cycle',

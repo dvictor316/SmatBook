@@ -81,7 +81,8 @@
     $activeBranchName = session('active_branch_name');
     $headerAllBranchesSelected = request()->boolean('all_branches')
         || strtolower(trim((string) request()->get('branch_scope', ''))) === 'all'
-        || strtolower(trim((string) request()->get('branch_id', ''))) === 'all';
+        || strtolower(trim((string) request()->get('branch_id', ''))) === 'all'
+        || session('active_branch_scope') === 'all';
     $headerDashboardBaseUrl = Route::has('workspace.business.dashboard')
         ? route('workspace.business.dashboard')
         : url('/workspace/business/dashboard');
@@ -1190,12 +1191,17 @@
                     <i class="fe fe-git-branch"></i>
                 </a>
                 <div class="dropdown-menu dropdown-menu-end">
-                    <a href="{{ $headerAllBranchesUrl }}" class="dropdown-item d-flex justify-content-between align-items-center">
-                        <span>All Branches</span>
-                        @if($headerAllBranchesSelected)
-                            <i class="fe fe-check text-success"></i>
-                        @endif
-                    </a>
+                    <form method="POST" action="{{ route('settings.branches.activate') }}" style="display:contents;">
+                        @csrf
+                        <input type="hidden" name="branch_id" value="all">
+                        <input type="hidden" name="redirect_to" value="{{ url()->current() }}">
+                        <button type="submit" class="dropdown-item d-flex justify-content-between align-items-center">
+                            <span>All Branches</span>
+                            @if($headerAllBranchesSelected)
+                                <i class="fe fe-check text-success"></i>
+                            @endif
+                        </button>
+                    </form>
                     <div class="dropdown-divider"></div>
                     @foreach($headerBranchOptions as $branch)
                         <form method="POST" action="{{ route('settings.branches.activate') }}">

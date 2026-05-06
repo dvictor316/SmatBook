@@ -425,12 +425,17 @@ class DashboardController extends Controller
     private function getLowStockProducts($company, ?array $activeBranch = null) {
         if (!Schema::hasTable('products')) return collect();
         if (($activeBranch['scope'] ?? 'branch') === 'all' && Schema::hasTable('product_branch_stocks')) {
+            $hasReorderLevel = Schema::hasColumn('products', 'reorder_level');
+            $reorderExpr = $hasReorderLevel ? 'COALESCE(NULLIF(products.reorder_level, 0), 15)' : '15';
+            $groupByCols = $hasReorderLevel
+                ? ['products.id', 'products.name', 'products.reorder_level']
+                : ['products.id', 'products.name'];
             return $this->scopeByCompany(DB::table('products'), 'products', $company)
                 ->join('product_branch_stocks', 'product_branch_stocks.product_id', '=', 'products.id')
                 ->select('products.id', 'products.name')
                 ->selectRaw('SUM(COALESCE(product_branch_stocks.quantity, 0)) as stock')
-                ->groupBy('products.id', 'products.name', 'products.reorder_level')
-                ->havingRaw('SUM(COALESCE(product_branch_stocks.quantity, 0)) <= COALESCE(NULLIF(products.reorder_level, 0), 15)')
+                ->groupBy($groupByCols)
+                ->havingRaw("SUM(COALESCE(product_branch_stocks.quantity, 0)) <= {$reorderExpr}")
                 ->orderByRaw('SUM(COALESCE(product_branch_stocks.quantity, 0)) asc')
                 ->limit(10)
                 ->get();
@@ -468,10 +473,13 @@ class DashboardController extends Controller
     private function getLowStockCount($company, ?array $activeBranch = null) {
         if (!Schema::hasTable('products')) return 0;
         if (($activeBranch['scope'] ?? 'branch') === 'all' && Schema::hasTable('product_branch_stocks')) {
+            $hasReorderLevel = Schema::hasColumn('products', 'reorder_level');
+            $reorderExpr = $hasReorderLevel ? 'COALESCE(NULLIF(products.reorder_level, 0), 15)' : '15';
             return (int) ($this->scopeByCompany(DB::table('products'), 'products', $company)
                 ->join('product_branch_stocks', 'product_branch_stocks.product_id', '=', 'products.id')
-                ->groupBy('products.id', 'products.reorder_level')
-                ->havingRaw('SUM(COALESCE(product_branch_stocks.quantity, 0)) <= COALESCE(NULLIF(products.reorder_level, 0), 15)')
+                ->select('products.id')
+                ->groupBy('products.id')
+                ->havingRaw("SUM(COALESCE(product_branch_stocks.quantity, 0)) <= {$reorderExpr}")
                 ->get()
                 ->count() ?? 0);
         }
@@ -904,9 +912,12 @@ class DashboardController extends Controller
         $requestBranchId = strtolower(trim((string) request()->get('branch_id', '')));
         $allBranches = request()->boolean('all_branches')
             || $branchScope === 'all'
-            || $requestBranchId === 'all';
+            || $requestBranchId === 'all'
+            || session('active_branch_scope') === 'all';
 
         if ($allBranches) {
+            // Persist the "all branches" scope in session so it survives navigation
+            request()->session()->put('active_branch_scope', 'all');
             return [
                 'id' => null,
                 'name' => 'All Branches',
