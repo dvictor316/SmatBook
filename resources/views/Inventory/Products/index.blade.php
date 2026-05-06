@@ -639,6 +639,12 @@
                                         <small class="text-muted">Optional.</small>
                                         @error('image')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Expiry Date <span class="text-muted small">(optional)</span></label>
+                                        <input type="date" name="expiry_date" class="form-control @error('expiry_date') is-invalid @enderror" value="{{ old('expiry_date') }}">
+                                        <small class="text-muted">Use this for perishable or date-sensitive products.</small>
+                                        @error('expiry_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                    </div>
                                 </div>
                             </div>
                         </div>
