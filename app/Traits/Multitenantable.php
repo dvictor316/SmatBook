@@ -22,8 +22,26 @@ trait Multitenantable {
             }
 
             $table = $builder->getModel()->getTable();
+            $requestBranchScope = strtolower(trim((string) request()->get('branch_scope', '')));
+            $requestBranchId = trim((string) request()->get('branch_id', ''));
+            $requestAllBranches = request()->boolean('all_branches')
+                || $requestBranchScope === 'all'
+                || strtolower($requestBranchId) === 'all';
+
+            if ($requestAllBranches) {
+                return;
+            }
+
             $activeBranchId = trim((string) session('active_branch_id', ''));
             $activeBranchName = trim((string) session('active_branch_name', ''));
+
+            if ($requestBranchId !== '') {
+                $requestBranch = app(ActiveBranchResolver::class)->resolveBranchById($requestBranchId, Auth::user());
+                if ($requestBranch) {
+                    $activeBranchId = trim((string) ($requestBranch['id'] ?? ''));
+                    $activeBranchName = trim((string) ($requestBranch['name'] ?? ''));
+                }
+            }
 
             if ($activeBranchId === '' && $activeBranchName === '' && $companyId && Schema::hasTable('settings')) {
                 $branchKey = 'branches_json_company_' . $companyId;
@@ -37,11 +55,29 @@ trait Multitenantable {
             }
 
             if ($activeBranchId !== '' || $activeBranchName !== '') {
-                if ($activeBranchId !== '' && Schema::hasColumn($table, 'branch_id')) {
-                    $builder->where($table . '.branch_id', $activeBranchId);
-                } elseif ($activeBranchName !== '' && Schema::hasColumn($table, 'branch_name')) {
-                    $builder->where($table . '.branch_name', $activeBranchName);
-                }
+                $hasBranchId = Schema::hasColumn($table, 'branch_id');
+                $hasBranchName = Schema::hasColumn($table, 'branch_name');
+
+                $builder->where(function ($q) use ($table, $hasBranchId, $hasBranchName, $activeBranchId, $activeBranchName) {
+                    if ($hasBranchId && $activeBranchId !== '') {
+                        $q->where($table . '.branch_id', $activeBranchId);
+
+                        if ($hasBranchName && $activeBranchName !== '') {
+                            $q->orWhere(function ($legacy) use ($table, $activeBranchName) {
+                                $legacy->where(function ($emptyBranchId) use ($table) {
+                                    $emptyBranchId->whereNull($table . '.branch_id')
+                                        ->orWhere($table . '.branch_id', '');
+                                })->where($table . '.branch_name', $activeBranchName);
+                            });
+                        }
+
+                        return;
+                    }
+
+                    if ($hasBranchName && $activeBranchName !== '') {
+                        $q->where($table . '.branch_name', $activeBranchName);
+                    }
+                });
             }
         });
 
