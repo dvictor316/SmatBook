@@ -9,26 +9,30 @@ use App\Models\LandedCost;
 
 class LandedCostController extends Controller
 {
-    private function landedCostBranchColumnUsesNumericIds(): bool
+    private function branchColumnUsesNumericIds(string $table, string $column = 'branch_id'): bool
     {
-        if (!Schema::hasColumn('landed_costs', 'branch_id')) {
+        if (!Schema::hasColumn($table, $column)) {
             return false;
         }
 
-        $columnType = strtolower((string) Schema::getColumnType('landed_costs', 'branch_id'));
-
-        return in_array($columnType, ['integer', 'bigint', 'biginteger', 'smallint', 'mediumint', 'tinyint'], true);
-    }
-
-    private function goodsReceivedBranchColumnUsesNumericIds(): bool
-    {
-        if (!Schema::hasColumn('goods_received_notes', 'branch_id')) {
+        $databaseName = DB::getDatabaseName();
+        if (!$databaseName) {
             return false;
         }
 
-        $columnType = strtolower((string) Schema::getColumnType('goods_received_notes', 'branch_id'));
+        $columnType = DB::table('information_schema.columns')
+            ->where('table_schema', $databaseName)
+            ->where('table_name', $table)
+            ->where('column_name', $column)
+            ->value('data_type');
 
-        return in_array($columnType, ['integer', 'bigint', 'biginteger', 'smallint', 'mediumint', 'tinyint'], true);
+        if ($columnType === null) {
+            return false;
+        }
+
+        $columnType = strtolower((string) $columnType);
+
+        return in_array($columnType, ['integer', 'bigint', 'smallint', 'mediumint', 'tinyint'], true);
     }
 
     private function persistableLandedCostBranchId($branchId)
@@ -38,7 +42,7 @@ class LandedCostController extends Controller
             return null;
         }
 
-        if ($this->landedCostBranchColumnUsesNumericIds()) {
+        if ($this->branchColumnUsesNumericIds('landed_costs')) {
             return is_numeric($branchId) ? (int) $branchId : null;
         }
 
@@ -52,7 +56,7 @@ class LandedCostController extends Controller
             return null;
         }
 
-        if ($this->goodsReceivedBranchColumnUsesNumericIds()) {
+        if ($this->branchColumnUsesNumericIds('goods_received_notes')) {
             return is_numeric($branchId) ? (int) $branchId : null;
         }
 
