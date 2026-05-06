@@ -104,24 +104,34 @@
         white-space: nowrap;
     }
 
+    .purchase-page-actions {
+        display: inline-flex;
+        flex-wrap: nowrap;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .purchase-page-actions > * {
+        flex: 0 0 auto;
+    }
+
+    .purchase-mobile-full,
+    .purchase-mobile-full .btn {
+        width: auto;
+    }
+
     @media (max-width: 767.98px) {
         .purchase-page-actions {
-            display: flex;
-            flex-wrap: nowrap;
-            gap: 0.5rem;
             justify-content: flex-start;
-            align-items: center;
             width: 100%;
         }
 
         .purchase-page-actions > * {
-            flex: 0 1 auto;
             min-width: 0;
         }
 
         .purchase-mobile-full {
             flex-basis: auto;
-            width: auto;
         }
 
         .purchase-mobile-full .btn {
@@ -157,7 +167,7 @@
                         <i class="fas fa-plus-circle"></i> New Bill
                     </a>
                     <div class="dropdown purchase-mobile-full">
-                        <button class="btn btn-primary dropdown-toggle w-100" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fas fa-download me-2"></i> Export / Print
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
