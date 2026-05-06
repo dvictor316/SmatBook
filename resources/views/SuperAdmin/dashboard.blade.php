@@ -2184,6 +2184,60 @@
                                 <div class="card card-rounded shadow-sm">
                                     <div class="card-body">
                                         <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <div>
+                                                <h5 class="mb-0 fw-bold text-dark">Business Sales Pulse</h5>
+                                                <small class="text-muted">Finalized business sales only, excluding drafts and cancelled rows</small>
+                                            </div>
+                                            <span class="live-badge-soft">Live</span>
+                                        </div>
+                                        <div class="dashboard-side-fill">
+                                            <div class="summary-fill">
+                                                <div class="label">Total Business Sales</div>
+                                                <div class="value">₦{{ number_format($metrics['item_sales_revenue'] ?? 0, 0) }}</div>
+                                            </div>
+                                            <div class="summary-fill">
+                                                <div class="label">Today</div>
+                                                <div class="value">₦{{ number_format($metrics['item_sales_today_revenue'] ?? 0, 0) }}</div>
+                                            </div>
+                                            <div class="summary-fill">
+                                                <div class="label">Finalized Orders</div>
+                                                <div class="value">{{ number_format($metrics['item_sales_orders'] ?? 0) }}</div>
+                                            </div>
+                                            <div class="summary-fill">
+                                                <div class="label">Units Sold</div>
+                                                <div class="value">{{ number_format($metrics['item_sales_units'] ?? 0, 0) }}</div>
+                                            </div>
+                                        </div>
+                                        <div class="row g-2 mt-3">
+                                            <div class="col-sm-6">
+                                                <div class="summary-fill h-100">
+                                                    <div class="label">Revenue per Order</div>
+                                                    <div class="value">
+                                                        ₦{{ number_format(((int) ($metrics['item_sales_orders'] ?? 0)) > 0 ? ((float) ($metrics['item_sales_revenue'] ?? 0) / max(1, (int) ($metrics['item_sales_orders'] ?? 0))) : 0, 0) }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-6">
+                                                <div class="summary-fill h-100">
+                                                    <div class="label">Sales Mix</div>
+                                                    <div class="value">
+                                                        {{ ((float) ($metrics['owner_subscription_revenue'] ?? 0)) > 0 ? number_format((((float) ($metrics['item_sales_revenue'] ?? 0)) / max(1, (float) ($metrics['owner_subscription_revenue'] ?? 0))) * 100, 1) : '0.0' }}%
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="mt-3 p-3 rounded-3 bg-light">
+                                            <p class="small text-muted mb-0">
+                                                <i class="fas fa-info-circle me-1"></i>
+                                                This panel now tracks finalized business sales only, so the platform view stays closer to real posted business activity.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="card card-rounded shadow-sm">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
                                             <h4 class="card-title card-title-dash">Deployment Manager Authorization</h4>
                                             @if($metrics['pending_managers'] > 0)
                                                 <span class="badge rounded-pill bg-danger">{{ $metrics['pending_managers'] }} Pending</span>

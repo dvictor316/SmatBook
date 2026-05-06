@@ -19,12 +19,58 @@ use App\Support\InventoryQuantity;
 
 class SuperAdminDashboardController extends Controller
 {
+    private array $paidSaleStatuses = ['paid', 'completed', 'success', 'successful', 'verified'];
+
     private function resolveDeploymentManager(string|int $id): DeploymentManager
     {
         return DeploymentManager::withoutGlobalScopes()
             ->where('id', $id)
             ->orWhere('user_id', $id)
             ->firstOrFail();
+    }
+
+    private function applyFinalizedSalesFilter($query, string $table = 'sales')
+    {
+        if (Schema::hasColumn($table, 'deleted_at')) {
+            $query->whereNull($table . '.deleted_at');
+        }
+
+        $hasPaymentStatus = Schema::hasColumn($table, 'payment_status');
+        $hasOrderStatus = Schema::hasColumn($table, 'order_status');
+        $hasStatus = Schema::hasColumn($table, 'status');
+
+        if (!$hasPaymentStatus && !$hasOrderStatus && !$hasStatus) {
+            return $query;
+        }
+
+        return $query->where(function ($statusQuery) use ($table, $hasPaymentStatus, $hasOrderStatus, $hasStatus) {
+            $hasAny = false;
+
+            if ($hasPaymentStatus) {
+                $statusQuery->whereIn(
+                    DB::raw("LOWER(COALESCE({$table}.payment_status, ''))"),
+                    $this->paidSaleStatuses
+                );
+                $hasAny = true;
+            }
+
+            if ($hasOrderStatus) {
+                $method = $hasAny ? 'orWhereIn' : 'whereIn';
+                $statusQuery->{$method}(
+                    DB::raw("LOWER(COALESCE({$table}.order_status, ''))"),
+                    ['completed', 'delivered', 'fulfilled']
+                );
+                $hasAny = true;
+            }
+
+            if ($hasStatus) {
+                $method = $hasAny ? 'orWhereIn' : 'whereIn';
+                $statusQuery->{$method}(
+                    DB::raw("LOWER(COALESCE({$table}.status, ''))"),
+                    $this->paidSaleStatuses
+                );
+            }
+        });
     }
 
     private function customerUsersQuery()
@@ -117,7 +163,7 @@ class SuperAdminDashboardController extends Controller
             };
 
             $salesRevenue = Schema::hasTable('sales')
-                ? ((float) ($salesBranchScope(DB::table('sales'))->sum('total') ?? 0))
+                ? ((float) ($this->applyFinalizedSalesFilter($salesBranchScope(DB::table('sales')))->sum('total') ?? 0))
                 : 0.0;
             $subscriptionRevenue = $paidSubscriptionsQuery
                 ? ((float) ((clone $paidSubscriptionsQuery)->sum('amount') ?? 0))
@@ -137,11 +183,15 @@ class SuperAdminDashboardController extends Controller
             $itemSalesOrders = 0;
             $itemSalesUnits = 0.0;
             if (Schema::hasTable('sales')) {
-                $itemSalesTodayRevenue = (float) ($salesBranchScope(DB::table('sales'))
+                $itemSalesTodayRevenueQuery = $salesBranchScope(DB::table('sales'));
+                $this->applyFinalizedSalesFilter($itemSalesTodayRevenueQuery);
+                $itemSalesTodayRevenue = (float) ($itemSalesTodayRevenueQuery
                     ->whereDate('created_at', today())
                     ->sum('total') ?? 0);
-                $itemSalesOrders = (int) ($salesBranchScope(DB::table('sales'))
-                    ->count() ?? 0);
+
+                $itemSalesOrdersQuery = $salesBranchScope(DB::table('sales'));
+                $this->applyFinalizedSalesFilter($itemSalesOrdersQuery);
+                $itemSalesOrders = (int) ($itemSalesOrdersQuery->count() ?? 0);
             }
             if (Schema::hasTable('sale_items') && Schema::hasTable('products') && Schema::hasTable('sales')) {
                 $itemSalesUnitsQuery = DB::table('sale_items')
@@ -150,6 +200,7 @@ class SuperAdminDashboardController extends Controller
                     ->selectRaw('COALESCE(SUM(' . InventoryQuantity::saleStockUnitsExpression('sale_items', 'sale_products') . '), 0) as total_units');
 
                 $salesBranchScope($itemSalesUnitsQuery, 'sales');
+                $this->applyFinalizedSalesFilter($itemSalesUnitsQuery, 'sales');
                 $itemSalesUnits = (float) ($itemSalesUnitsQuery->value('total_units') ?? 0);
             }
 
@@ -339,7 +390,9 @@ class SuperAdminDashboardController extends Controller
                     ->get();
             }
             if ($revenueTrends->isEmpty() && Schema::hasTable('sales')) {
-                $revenueTrends = $salesBranchScope(DB::table('sales'))
+                $salesRevenueTrendsQuery = $salesBranchScope(DB::table('sales'));
+                $this->applyFinalizedSalesFilter($salesRevenueTrendsQuery);
+                $revenueTrends = $salesRevenueTrendsQuery
                     ->select(
                         DB::raw('MONTHNAME(created_at) as month'),
                         DB::raw('SUM(total) as total'),
@@ -557,7 +610,9 @@ class SuperAdminDashboardController extends Controller
                 }
             }
             if (empty($activityHeatmap) && Schema::hasTable('sales')) {
-                $heatRows = $salesBranchScope(DB::table('sales'))
+                $salesHeatRowsQuery = $salesBranchScope(DB::table('sales'));
+                $this->applyFinalizedSalesFilter($salesHeatRowsQuery);
+                $heatRows = $salesHeatRowsQuery
                     ->select(
                         DB::raw('DAYOFWEEK(created_at) as dow'),
                         DB::raw('HOUR(created_at) as hr'),
@@ -611,7 +666,9 @@ class SuperAdminDashboardController extends Controller
                     ->get();
             }
             if ($platformActivity->isEmpty() && Schema::hasTable('sales')) {
-                $platformActivity = $salesBranchScope(Sale::query())
+                $salesActivityQuery = $salesBranchScope(Sale::query());
+                $this->applyFinalizedSalesFilter($salesActivityQuery, 'sales');
+                $platformActivity = $salesActivityQuery
                     ->latest()
                     ->limit(10)
                     ->get()
