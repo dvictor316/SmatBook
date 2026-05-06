@@ -19,11 +19,56 @@ class GoodsReceivedNoteController extends Controller
     {
     }
 
+    private function grnBranchColumnUsesNumericIds(): bool
+    {
+        if (!Schema::hasColumn('goods_received_notes', 'branch_id')) {
+            return false;
+        }
+
+        $columnType = strtolower((string) Schema::getColumnType('goods_received_notes', 'branch_id'));
+
+        return in_array($columnType, ['integer', 'bigint', 'biginteger', 'smallint', 'mediumint', 'tinyint'], true);
+    }
+
+    private function persistableGrnBranchId(?string $branchId)
+    {
+        $branchId = trim((string) $branchId);
+        if ($branchId === '') {
+            return null;
+        }
+
+        if ($this->grnBranchColumnUsesNumericIds()) {
+            return is_numeric($branchId) ? (int) $branchId : null;
+        }
+
+        return $branchId;
+    }
+
+    private function applyGrnScope($query)
+    {
+        $scope = $this->scopeContext();
+
+        if ($scope['company_id'] > 0 && Schema::hasColumn('goods_received_notes', 'company_id')) {
+            $query->where('goods_received_notes.company_id', $scope['company_id']);
+        }
+
+        if (!Schema::hasColumn('goods_received_notes', 'branch_id')) {
+            return $query;
+        }
+
+        $persistableBranchId = $this->persistableGrnBranchId($scope['branch_id'] ?? '');
+        if ($persistableBranchId !== null) {
+            $query->where('goods_received_notes.branch_id', $persistableBranchId);
+        }
+
+        return $query;
+    }
+
     public function index(Request $request)
     {
         $grns = GoodsReceivedNote::query()
             ->with(['supplier', 'purchaseOrder', 'createdBy'])
-            ->tap(fn ($query) => $this->applyTenantBranchScope($query, 'goods_received_notes'))
+            ->tap(fn ($query) => $this->applyGrnScope($query))
             ->latest('received_date')
             ->paginate(25);
 
@@ -75,6 +120,7 @@ class GoodsReceivedNoteController extends Controller
         $scope = $this->scopeContext();
         $companyId = $scope['company_id'];
         $branchId = $scope['branch_id'] !== '' ? $scope['branch_id'] : (Auth::user()->branch_id ?? null);
+        $grnBranchId = $this->persistableGrnBranchId($branchId);
 
         $data = $request->validate([
             'supplier_id'           => 'required|exists:suppliers,id',
@@ -112,13 +158,15 @@ class GoodsReceivedNoteController extends Controller
 
             $grn = GoodsReceivedNote::create([
                 'company_id'        => $companyId,
-                'branch_id'         => $branchId,
-                'grn_number'        => $this->nextGrnNumber($companyId, $branchId),
+                'branch_id'         => $grnBranchId,
+                'grn_number'        => $this->nextGrnNumber($companyId, $grnBranchId),
                 'supplier_id'       => $supplier->id,
                 'purchase_order_id' => $data['purchase_order_id'] ?? null,
                 'received_date'     => $data['received_date'],
                 'status'            => 'received',
                 'notes'             => $data['notes'] ?? null,
+                'received_by'       => Schema::hasColumn('goods_received_notes', 'received_by') ? Auth::id() : null,
+                'received_by_name'  => Schema::hasColumn('goods_received_notes', 'received_by_name') ? (Auth::user()->name ?? null) : null,
                 'created_by'        => Auth::id(),
             ]);
 
@@ -165,8 +213,10 @@ class GoodsReceivedNoteController extends Controller
                 $grn->items()->create([
                     'product_id'          => $product->id,
                     'product_name'        => $item['product_name'] ?: $product->name,
+                    'unit'                => Schema::hasColumn('grn_items', 'unit') ? ($product->unit_type ?? null) : null,
                     'ordered_quantity'    => $orderedQuantity,
                     'received_quantity'   => $receivedQuantity,
+                    'accepted_quantity'   => Schema::hasColumn('grn_items', 'accepted_quantity') ? $receivedQuantity : null,
                     'rejected_quantity'   => 0,
                     'unit_cost'           => $item['unit_cost'] ?? 0,
                     'lot_number'          => $item['lot_number'] ?? null,
@@ -241,6 +291,17 @@ class GoodsReceivedNoteController extends Controller
 
     private function authorizeGrnAccess(GoodsReceivedNote $grn): void
     {
-        $this->authorizeTenantBranchModelAccess($grn);
+        $scope = $this->scopeContext();
+
+        if ($scope['company_id'] > 0 && Schema::hasColumn('goods_received_notes', 'company_id')) {
+            abort_unless((int) $grn->company_id === $scope['company_id'], 403);
+        }
+
+        if (Schema::hasColumn('goods_received_notes', 'branch_id')) {
+            $persistableBranchId = $this->persistableGrnBranchId($scope['branch_id'] ?? '');
+            if ($persistableBranchId !== null) {
+                abort_unless((string) $grn->branch_id === (string) $persistableBranchId, 403);
+            }
+        }
     }
 }

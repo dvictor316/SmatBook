@@ -257,14 +257,27 @@ class BalanceSheetController extends Controller
     private function isBankOrCashAccount(object $account): bool
     {
         $name = strtolower(trim((string) ($account->name ?? '')));
+        $type = strtolower(trim((string) ($account->type ?? '')));
         $subType = strtolower(trim((string) ($account->sub_type ?? '')));
 
         return str_contains($name, 'bank')
             || str_contains($name, 'cash')
             || str_contains($name, 'wallet')
             || str_contains($name, 'petty')
+            || str_contains($name, 'mfb')
+            || str_contains($name, 'microfinance')
+            || str_contains($name, 'moniepoint')
+            || str_contains($name, 'opay')
+            || str_contains($name, 'palmpay')
+            || str_contains($name, 'kuda')
+            || str_contains($name, 'finance')
+            || str_contains($type, 'bank')
+            || str_contains($type, 'cash')
             || str_contains($subType, 'bank')
-            || str_contains($subType, 'cash');
+            || str_contains($subType, 'cash')
+            || str_contains($subType, 'wallet')
+            || str_contains($subType, 'mfb')
+            || str_contains($subType, 'microfinance');
     }
 
     private function isOpeningBalanceEquityAccount(object $account): bool
@@ -312,6 +325,13 @@ class BalanceSheetController extends Controller
         if (str_contains($name, 'prepaid') || str_contains($subType, 'prepaid')) {
             return ['section' => 'current', 'group' => 'Prepaid Expenses', 'display' => (string) ($account->name ?? 'Prepaid Expenses')];
         }
+        if ($this->isBankOrCashAccount($account)) {
+            if (str_contains($name, 'cash') || str_contains($name, 'wallet') || str_contains($name, 'petty') || str_contains($subType, 'cash')) {
+                return ['section' => 'current', 'group' => 'Cash', 'display' => (string) ($account->name ?? 'Cash')];
+            }
+
+            return ['section' => 'current', 'group' => 'Bank Accounts', 'display' => (string) ($account->name ?? 'Bank Accounts')];
+        }
         if (str_contains($name, 'receivable') || str_contains($name, 'debtor')) {
             return ['section' => 'current', 'group' => 'Accounts Receivable', 'display' => (string) ($account->name ?? 'Accounts Receivable')];
         }
@@ -321,13 +341,6 @@ class BalanceSheetController extends Controller
         if (str_contains($name, 'advance') && (str_contains($name, 'supplier') || str_contains($name, 'vendor'))) {
             return ['section' => 'current', 'group' => 'Supplier Advances', 'display' => 'Supplier Advances'];
         }
-        if (str_contains($name, 'bank')) {
-            return ['section' => 'current', 'group' => 'Bank Accounts', 'display' => (string) ($account->name ?? 'Bank Accounts')];
-        }
-        if (str_contains($name, 'cash') || str_contains($name, 'wallet') || str_contains($name, 'petty')) {
-            return ['section' => 'current', 'group' => 'Cash', 'display' => (string) ($account->name ?? 'Cash')];
-        }
-
         return ['section' => 'current', 'group' => 'Other Current Assets', 'display' => (string) ($account->name ?? 'Other Current Assets')];
     }
 
