@@ -139,7 +139,7 @@ class GoodsReceivedNoteController extends Controller
             'items.*.expiry_date'   => 'nullable|date',
         ]);
 
-        DB::transaction(function () use ($data, $companyId, $branchId) {
+        DB::transaction(function () use ($data, $companyId, $branchId, $grnBranchId) {
             $supplier = Supplier::query()
                 ->tap(fn ($query) => $this->applyTenantBranchScope($query, 'suppliers'))
                 ->findOrFail($data['supplier_id']);
