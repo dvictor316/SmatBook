@@ -112,7 +112,7 @@
                                                     <select class="form-select product-select" name="items[{{ $index }}][product_id]" required>
                                                         <option value="">Select product</option>
                                                         @foreach(($products ?? collect()) as $product)
-                                                            <option value="{{ $product->id }}" data-name="{{ $product->name }}" @selected((string) ($item['product_id'] ?? '') === (string) $product->id)>
+                                                            <option value="{{ $product->id }}" data-name="{{ $product->name }}" data-rate="{{ (float) ($product->purchase_price ?? $product->price ?? 0) }}" @selected((string) ($item['product_id'] ?? '') === (string) $product->id)>
                                                                 {{ $product->name }}
                                                             </option>
                                                         @endforeach
@@ -182,7 +182,11 @@
 @push('scripts')
 <script>
 (function () {
-    const products = @json(($products ?? collect())->map(fn ($product) => ['id' => $product->id, 'name' => $product->name])->values());
+    const products = @json(($products ?? collect())->map(fn ($product) => [
+        'id' => $product->id,
+        'name' => $product->name,
+        'rate' => (float) ($product->purchase_price ?? $product->price ?? 0),
+    ])->values());
     const tbody = document.getElementById('po-items-body');
     const addButton = document.getElementById('add-item-row');
     let rowIndex = {{ count($orderItems) }};
@@ -191,7 +195,7 @@
         let options = '<option value="">Select product</option>';
         products.forEach((product) => {
             const selected = String(product.id) === String(selectedId) ? 'selected' : '';
-            options += `<option value="${product.id}" data-name="${product.name}" ${selected}>${product.name}</option>`;
+            options += `<option value="${product.id}" data-name="${product.name}" data-rate="${product.rate}" ${selected}>${product.name}</option>`;
         });
         return options;
     }
@@ -209,6 +213,23 @@
             <td class="text-end fw-semibold line-total-cell">0.00</td>
             <td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger remove-item-row">&times;</button></td>
         </tr>`;
+    }
+
+    function applyProductDefaults(row, forceRate = false) {
+        const productSelect = row.querySelector('.product-select');
+        const descriptionInput = row.querySelector('.description-input');
+        const rateInput = row.querySelector('.rate-input');
+        const selectedOption = productSelect?.options?.[productSelect.selectedIndex];
+        const suggestedRate = parseFloat(selectedOption?.dataset?.rate || 0);
+
+        if (selectedOption?.dataset?.name && !descriptionInput.value.trim()) {
+            descriptionInput.value = selectedOption.dataset.name;
+        }
+
+        const currentRate = parseFloat(rateInput.value || 0);
+        if (forceRate || !rateInput.value || currentRate === 0) {
+            rateInput.value = suggestedRate.toFixed(2);
+        }
     }
 
     function calculateTotals() {
@@ -255,18 +276,15 @@
 
     tbody.addEventListener('change', function (event) {
         if (event.target.classList.contains('product-select')) {
-            const selectedOption = event.target.options[event.target.selectedIndex];
             const row = event.target.closest('tr');
-            const description = row.querySelector('.description-input');
-            if (selectedOption?.dataset?.name && !description.value.trim()) {
-                description.value = selectedOption.dataset.name;
-            }
+            applyProductDefaults(row, true);
         }
 
         calculateTotals();
     });
 
     tbody.addEventListener('input', calculateTotals);
+    tbody.querySelectorAll('.po-item-row').forEach((row) => applyProductDefaults(row, false));
     calculateTotals();
 })();
 </script>
