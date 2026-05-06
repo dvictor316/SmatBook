@@ -1465,24 +1465,6 @@ class BalanceSheetController extends Controller
             $query->where('user_id', $userId);
         }
 
-        $activeBranch = $this->resolveActiveBranch($request);
-        if (($activeBranch['scope'] ?? 'branch') === 'all') {
-            $query->where(function ($branchScoped) {
-                if (Schema::hasColumn('accounts', 'branch_id')) {
-                    $branchScoped->whereNotNull('branch_id')
-                        ->where('branch_id', '<>', '');
-                }
-
-                if (Schema::hasColumn('accounts', 'branch_name')) {
-                    $method = Schema::hasColumn('accounts', 'branch_id') ? 'orWhere' : 'where';
-                    $branchScoped->{$method}(function ($named) {
-                        $named->whereNotNull('branch_name')
-                            ->where('branch_name', '<>', '');
-                    });
-                }
-            });
-        }
-
         return $query;
     }
 

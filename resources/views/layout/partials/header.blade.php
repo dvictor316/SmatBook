@@ -85,7 +85,16 @@
     $headerDashboardBaseUrl = Route::has('workspace.business.dashboard')
         ? route('workspace.business.dashboard')
         : url('/workspace/business/dashboard');
+    $headerAllBranchesQuery = array_merge(request()->query(), [
+        'all_branches' => 1,
+        'branch_scope' => 'all',
+        'branch_id' => 'all',
+    ]);
     $headerAllBranchesUrl = $headerDashboardBaseUrl . '?all_branches=1&branch_scope=all';
+
+    if (request()->routeIs('balance-sheet*')) {
+        $headerAllBranchesUrl = url()->current() . '?' . http_build_query($headerAllBranchesQuery);
+    }
 
     if ($user && !empty($user->company_id)) {
         $branchKey = 'branches_json_company_' . $user->company_id;
