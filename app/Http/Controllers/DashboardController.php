@@ -425,7 +425,7 @@ class DashboardController extends Controller
     private function getLowStockProducts($company, ?array $activeBranch = null) {
         if (!Schema::hasTable('products')) return collect();
         if (($activeBranch['scope'] ?? 'branch') === 'all' && Schema::hasTable('product_branch_stocks')) {
-            return $this->scopeByCompany(Product::query(), 'products', $company)
+            return $this->scopeByCompany(DB::table('products'), 'products', $company)
                 ->join('product_branch_stocks', 'product_branch_stocks.product_id', '=', 'products.id')
                 ->select('products.id', 'products.name')
                 ->selectRaw('SUM(COALESCE(product_branch_stocks.quantity, 0)) as stock')
@@ -468,7 +468,7 @@ class DashboardController extends Controller
     private function getLowStockCount($company, ?array $activeBranch = null) {
         if (!Schema::hasTable('products')) return 0;
         if (($activeBranch['scope'] ?? 'branch') === 'all' && Schema::hasTable('product_branch_stocks')) {
-            return (int) ($this->scopeByCompany(Product::query(), 'products', $company)
+            return (int) ($this->scopeByCompany(DB::table('products'), 'products', $company)
                 ->join('product_branch_stocks', 'product_branch_stocks.product_id', '=', 'products.id')
                 ->groupBy('products.id', 'products.reorder_level')
                 ->havingRaw('SUM(COALESCE(product_branch_stocks.quantity, 0)) <= COALESCE(NULLIF(products.reorder_level, 0), 15)')
@@ -699,7 +699,7 @@ class DashboardController extends Controller
                 return 0;
             }
 
-            return (float) ($this->scopeByCompany(Product::query(), 'products', $company)
+            return (float) ($this->scopeByCompany(DB::table('products'), 'products', $company)
                 ->join('product_branch_stocks', 'product_branch_stocks.product_id', '=', 'products.id')
                 ->selectRaw("SUM(COALESCE(product_branch_stocks.quantity, 0) * COALESCE({$priceColumn}, 0)) as inventory_value")
                 ->value('inventory_value') ?? 0);

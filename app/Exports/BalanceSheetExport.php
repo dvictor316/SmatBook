@@ -119,8 +119,9 @@ class BalanceSheetExport implements FromArray, WithHeadings
             return collect([]);
         }
 
-        $txnQuery = \App\Models\Transaction::query()
+        $txnQuery = \App\Models\Transaction::withoutGlobalScopes()
             ->selectRaw('account_id, SUM(debit) as total_debit, SUM(credit) as total_credit')
+            ->whereNull('deleted_at')
             ->where('transaction_date', '<=', $date)
             ->groupBy('account_id');
         $this->applyCompanyScope($txnQuery, 'transactions');
@@ -130,7 +131,7 @@ class BalanceSheetExport implements FromArray, WithHeadings
         $txnTotals = $txnQuery->get()->keyBy('account_id');
         $accountIds = $txnTotals->keys()->all();
 
-        $accountsQuery = Account::withoutGlobalScope('tenant')
+        $accountsQuery = Account::withoutGlobalScopes()
             ->where(function ($query) use ($accountIds) {
                 if (!empty($accountIds)) {
                     $query->whereIn('id', $accountIds);
@@ -164,8 +165,9 @@ class BalanceSheetExport implements FromArray, WithHeadings
             return 0;
         }
 
-        $txnQuery = \App\Models\Transaction::query()
+        $txnQuery = \App\Models\Transaction::withoutGlobalScopes()
             ->selectRaw('account_id, SUM(debit) as total_debit, SUM(credit) as total_credit')
+            ->whereNull('deleted_at')
             ->where('transaction_date', '<=', $date)
             ->groupBy('account_id');
         $this->applyCompanyScope($txnQuery, 'transactions');
@@ -179,7 +181,7 @@ class BalanceSheetExport implements FromArray, WithHeadings
             return 0;
         }
 
-        $accounts = Account::withoutGlobalScope('tenant')
+        $accounts = Account::withoutGlobalScopes()
             ->whereIn('id', $accountIds)
             ->get();
 
@@ -256,10 +258,20 @@ class BalanceSheetExport implements FromArray, WithHeadings
         $query->where(function ($sub) use ($branchId, $branchName) {
             if ($branchId !== '') {
                 $sub->where('branch_id', $branchId);
+
+                if ($branchName !== '') {
+                    $sub->orWhere(function ($legacy) use ($branchName) {
+                        $legacy->where(function ($emptyBranchId) {
+                            $emptyBranchId->whereNull('branch_id')->orWhere('branch_id', '');
+                        })->where('branch_name', $branchName);
+                    });
+                }
+
+                return;
             }
+
             if ($branchName !== '') {
-                $method = $branchId !== '' ? 'orWhere' : 'where';
-                $sub->{$method}('branch_name', $branchName);
+                $sub->where('branch_name', $branchName);
             }
         });
     }

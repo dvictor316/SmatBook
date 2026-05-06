@@ -261,7 +261,7 @@ class TrialBalanceController extends Controller
         }
 
         if (!$start || !$end) {
-            $latestTransactionQuery = Transaction::query();
+            $latestTransactionQuery = Transaction::withoutGlobalScopes()->whereNull('deleted_at');
             $this->applyTransactionScope($latestTransactionQuery, $request);
             $latestTxnDate = $latestTransactionQuery->max('transaction_date');
             $effectiveEnd = $latestTxnDate
@@ -272,8 +272,9 @@ class TrialBalanceController extends Controller
         }
 
         // 3. Get Account Data with Summed Transactions (Optimized + Branch-safe)
-        $txnTotalsQuery = Transaction::query()
+        $txnTotalsQuery = Transaction::withoutGlobalScopes()
             ->selectRaw('account_id, SUM(debit) as total_debit, SUM(credit) as total_credit')
+            ->whereNull('deleted_at')
             ->whereDate('transaction_date', '<=', $end->toDateString())
             ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
                 $branchId = trim((string) ($activeBranch['id'] ?? ''));
@@ -287,8 +288,9 @@ class TrialBalanceController extends Controller
             ->get()
             ->keyBy('account_id');
 
-        $ledgerTotalsQuery = Transaction::query()
+        $ledgerTotalsQuery = Transaction::withoutGlobalScopes()
             ->selectRaw('SUM(debit) as total_debit, SUM(credit) as total_credit')
+            ->whereNull('deleted_at')
             ->whereDate('transaction_date', '<=', $end->toDateString())
             ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
                 $branchId = trim((string) ($activeBranch['id'] ?? ''));
@@ -302,8 +304,9 @@ class TrialBalanceController extends Controller
         $ledgerCredits = (float) ($ledgerTotals->total_credit ?? 0);
         $ledgerDifference = $ledgerDebits - $ledgerCredits;
 
-        $imbalancedEntriesQuery = Transaction::query()
+        $imbalancedEntriesQuery = Transaction::withoutGlobalScopes()
             ->selectRaw('MIN(id) as transaction_id, related_type, related_id, transaction_type, reference, MIN(description) as description, SUM(debit) as total_debit, SUM(credit) as total_credit')
+            ->whereNull('deleted_at')
             ->whereDate('transaction_date', '<=', $end->toDateString())
             ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
                 $branchId = trim((string) ($activeBranch['id'] ?? ''));

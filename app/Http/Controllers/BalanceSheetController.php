@@ -286,6 +286,164 @@ class BalanceSheetController extends Controller
         return $code === 'SYS-BS-RECON';
     }
 
+    private function assetPresentationFor(object $account): array
+    {
+        $name = strtolower(trim((string) ($account->name ?? '')));
+        $subType = strtolower(trim((string) ($account->sub_type ?? '')));
+
+        if (str_contains($name, 'accumulated depreciation') || str_contains($subType, 'accumulated depreciation')) {
+            return ['section' => 'fixed', 'group' => 'Accumulated Depreciation', 'display' => (string) ($account->name ?? 'Accumulated Depreciation')];
+        }
+        if (str_contains($name, 'furniture') || str_contains($subType, 'furniture')) {
+            return ['section' => 'fixed', 'group' => 'Furniture and Fittings', 'display' => (string) ($account->name ?? 'Furniture and Fittings')];
+        }
+        if (str_contains($name, 'vehicle') || str_contains($subType, 'vehicle')) {
+            return ['section' => 'fixed', 'group' => 'Vehicles', 'display' => (string) ($account->name ?? 'Vehicles')];
+        }
+        if (str_contains($name, 'equipment') || str_contains($subType, 'equipment')) {
+            return ['section' => 'fixed', 'group' => 'Equipment', 'display' => (string) ($account->name ?? 'Equipment')];
+        }
+        if (str_contains($name, 'property') || str_contains($name, 'plant') || str_contains($subType, 'property') || str_contains($subType, 'plant')) {
+            return ['section' => 'fixed', 'group' => 'Property, Plant & Equipment', 'display' => (string) ($account->name ?? 'Property, Plant & Equipment')];
+        }
+        if ($this->accountLooksLikeFixedAsset($account)) {
+            return ['section' => 'fixed', 'group' => 'Other Fixed Assets', 'display' => (string) ($account->name ?? 'Other Fixed Assets')];
+        }
+        if (str_contains($name, 'prepaid') || str_contains($subType, 'prepaid')) {
+            return ['section' => 'current', 'group' => 'Prepaid Expenses', 'display' => (string) ($account->name ?? 'Prepaid Expenses')];
+        }
+        if (str_contains($name, 'receivable') || str_contains($name, 'debtor')) {
+            return ['section' => 'current', 'group' => 'Accounts Receivable', 'display' => (string) ($account->name ?? 'Accounts Receivable')];
+        }
+        if (str_contains($name, 'inventory') || str_contains($name, 'stock')) {
+            return ['section' => 'current', 'group' => 'Inventory', 'display' => (string) ($account->name ?? 'Inventory')];
+        }
+        if (str_contains($name, 'advance') && (str_contains($name, 'supplier') || str_contains($name, 'vendor'))) {
+            return ['section' => 'current', 'group' => 'Supplier Advances', 'display' => 'Supplier Advances'];
+        }
+        if (str_contains($name, 'bank')) {
+            return ['section' => 'current', 'group' => 'Bank Accounts', 'display' => (string) ($account->name ?? 'Bank Accounts')];
+        }
+        if (str_contains($name, 'cash') || str_contains($name, 'wallet') || str_contains($name, 'petty')) {
+            return ['section' => 'current', 'group' => 'Cash', 'display' => (string) ($account->name ?? 'Cash')];
+        }
+
+        return ['section' => 'current', 'group' => 'Other Current Assets', 'display' => (string) ($account->name ?? 'Other Current Assets')];
+    }
+
+    private function liabilityPresentationFor(object $account): array
+    {
+        $name = strtolower(trim((string) ($account->name ?? '')));
+        $subType = strtolower(trim((string) ($account->sub_type ?? '')));
+
+        if (str_contains($name, 'deposit') || str_contains($name, 'unearned') || str_contains($name, 'deferred revenue')) {
+            return ['section' => 'current', 'group' => 'Customer Deposits / Unearned Revenue', 'display' => (string) ($account->name ?? 'Customer Deposits / Unearned Revenue')];
+        }
+        if (str_contains($name, 'overdraft')) {
+            return ['section' => 'current', 'group' => 'Bank Overdraft', 'display' => (string) ($account->name ?? 'Bank Overdraft')];
+        }
+        if (str_contains($name, 'salary') || str_contains($name, 'payroll') || str_contains($name, 'wage')) {
+            return ['section' => 'current', 'group' => 'Salary Payable', 'display' => (string) ($account->name ?? 'Salary Payable')];
+        }
+        if (str_contains($name, 'vat') || str_contains($name, 'sales tax')) {
+            return ['section' => 'current', 'group' => 'VAT Payable / Sales Tax Payable', 'display' => (string) ($account->name ?? 'VAT Payable / Sales Tax Payable')];
+        }
+        if (str_contains($name, 'tax')) {
+            return ['section' => 'current', 'group' => 'Tax Payable', 'display' => (string) ($account->name ?? 'Tax Payable')];
+        }
+        if (str_contains($name, 'payable') || str_contains($name, 'creditor')) {
+            return ['section' => 'current', 'group' => 'Accounts Payable', 'display' => (string) ($account->name ?? 'Accounts Payable')];
+        }
+        if (str_contains($name, 'lease')) {
+            return ['section' => 'long_term', 'group' => 'Lease Liabilities', 'display' => (string) ($account->name ?? 'Lease Liabilities')];
+        }
+        if (str_contains($name, 'loan') || str_contains($subType, 'loan') || str_contains($subType, 'borrowing')) {
+            $section = $this->accountLooksLikeLongTermLiability($account) ? 'long_term' : 'current';
+            $group = $section === 'long_term' ? 'Long-Term Loans' : 'Short-Term Loans';
+            return ['section' => $section, 'group' => $group, 'display' => (string) ($account->name ?? $group)];
+        }
+        if ($this->accountLooksLikeLongTermLiability($account)) {
+            return ['section' => 'long_term', 'group' => 'Other Non-Current Liabilities', 'display' => (string) ($account->name ?? 'Other Non-Current Liabilities')];
+        }
+
+        return ['section' => 'current', 'group' => 'Other Current Liabilities', 'display' => (string) ($account->name ?? 'Other Current Liabilities')];
+    }
+
+    private function equityPresentationFor(object $account): array
+    {
+        $name = strtolower(trim((string) ($account->name ?? '')));
+
+        if ($this->isOpeningBalanceEquityAccount($account)) {
+            return ['group' => 'Opening Balance Equity', 'display' => (string) ($account->name ?? 'Opening Balance Equity')];
+        }
+        if (str_contains($name, 'drawing') || str_contains($name, 'dividend')) {
+            return ['group' => 'Drawings / Dividends', 'display' => (string) ($account->name ?? 'Drawings / Dividends')];
+        }
+        if (str_contains($name, 'retained')) {
+            return ['group' => 'Retained Earnings', 'display' => (string) ($account->name ?? 'Retained Earnings')];
+        }
+        if (str_contains($name, 'reserve')) {
+            return ['group' => 'Reconciliation Reserve', 'display' => (string) ($account->name ?? 'Reconciliation Reserve')];
+        }
+
+        return ['group' => 'Owner’s Capital / Share Capital', 'display' => (string) ($account->name ?? 'Owner’s Capital / Share Capital')];
+    }
+
+    private function computeIncomeExpenseNet(Request $request, Carbon $fromDate, Carbon $toDate, array $activeBranch): float
+    {
+        $query = Transaction::withoutGlobalScopes()
+            ->join('accounts', 'transactions.account_id', '=', 'accounts.id')
+            ->whereNull('transactions.deleted_at')
+            ->whereBetween('transactions.transaction_date', [$fromDate->toDateString(), $toDate->toDateString()]);
+
+        $this->applyTransactionScope($query, $request);
+
+        if (($activeBranch['scope'] ?? 'branch') !== 'all') {
+            $branchId = trim((string) ($activeBranch['id'] ?? ''));
+            $branchName = trim((string) ($activeBranch['name'] ?? ''));
+            if ($branchId !== '' || $branchName !== '') {
+                $this->applyExactBranchScope($query, $branchId, $branchName, 'transactions.branch_id', 'transactions.branch_name');
+            }
+        }
+
+        $rows = $query->select([
+                'accounts.type',
+                DB::raw('SUM(transactions.debit) as total_debit'),
+                DB::raw('SUM(transactions.credit) as total_credit'),
+            ])
+            ->groupBy('accounts.type')
+            ->get();
+
+        $revenue = 0.0;
+        $expenses = 0.0;
+        foreach ($rows as $row) {
+            $type = $this->normalizeAccountType($row->type ?? null);
+            if ($type === 'revenue') {
+                $revenue += (float) ($row->total_credit ?? 0) - (float) ($row->total_debit ?? 0);
+            } elseif ($type === 'expense') {
+                $expenses += (float) ($row->total_debit ?? 0) - (float) ($row->total_credit ?? 0);
+            }
+        }
+
+        return round($revenue - $expenses, 2);
+    }
+
+    private function computeEarningsRollup(Request $request, Carbon $reportDate, array $activeBranch): array
+    {
+        $yearStart = $reportDate->copy()->startOfYear();
+        $priorYearEnd = $yearStart->copy()->subDay();
+
+        $currentYear = $this->computeIncomeExpenseNet($request, $yearStart, $reportDate, $activeBranch);
+        $priorYears = $priorYearEnd->lt($reportDate->copy()->startOfYear())
+            ? $this->computeIncomeExpenseNet($request, Carbon::create(1900, 1, 1), $priorYearEnd, $activeBranch)
+            : 0.0;
+
+        return [
+            'current_year' => round($currentYear, 2),
+            'prior_years' => round($priorYears, 2),
+        ];
+    }
+
     private function equityBucketFor(object $account): string
     {
         $name = strtolower(trim((string) ($account->name ?? '')));
@@ -410,40 +568,50 @@ class BalanceSheetController extends Controller
         bool $consolidate
     ): array {
         $isAllBranches = ($activeBranch['scope'] ?? 'branch') === 'all';
-        $totalRevenue = $accounts->filter(fn ($account) => $this->normalizeAccountType($account->type ?? null) === 'revenue')->sum('balance');
-        $totalExpenses = $accounts->filter(fn ($account) => $this->normalizeAccountType($account->type ?? null) === 'expense')->sum('balance');
-        $retainedEarnings = round($totalRevenue - $totalExpenses, 2);
-        $netIncome = $retainedEarnings;
+        $earningsRollup = $this->computeEarningsRollup($request, $reportDate, $activeBranch);
+        $priorYearRetained = (float) ($earningsRollup['prior_years'] ?? 0);
+        $currentYearEarnings = (float) ($earningsRollup['current_year'] ?? 0);
 
         $assetAccounts = $accounts
             ->filter(fn ($account) => $this->normalizeAccountType($account->type ?? null) === 'asset')
             ->reject(fn ($account) => $this->isDiagnosticReserveAccount($account))
+            ->map(function ($account) {
+                $meta = $this->assetPresentationFor($account);
+                $account->_bs_group = $meta['group'];
+                $account->_display_name = $meta['display'];
+                $account->_bs_section = $meta['section'];
+                return $account;
+            })
             ->values();
         $liabilityAccounts = $accounts
             ->filter(fn ($account) => $this->accountLooksLikeLiability($account))
             ->reject(fn ($account) => $this->isDiagnosticReserveAccount($account))
+            ->map(function ($account) {
+                $meta = $this->liabilityPresentationFor($account);
+                $account->_bs_group = $meta['group'];
+                $account->_display_name = $meta['display'];
+                $account->_bs_section = $meta['section'];
+                return $account;
+            })
             ->values();
         $equityAccounts = $accounts
             ->filter(fn ($account) => $this->normalizeAccountType($account->type ?? null) === 'equity')
-            ->reject(fn ($account) => $this->isDiagnosticReserveAccount($account))
+            ->map(function ($account) {
+                $meta = $this->equityPresentationFor($account);
+                $account->_bs_group = $meta['group'];
+                $account->_display_name = $meta['display'];
+                return $account;
+            })
             ->values();
 
-        $currentAssets = $assetAccounts->filter(fn ($account) => $this->accountLooksLikeCurrentAsset($account))->values();
-        $fixedAssets = $assetAccounts->filter(fn ($account) => $this->accountLooksLikeFixedAsset($account))->values();
-        $uncategorizedAssets = $assetAccounts->reject(
-            fn ($account) => $currentAssets->contains('id', $account->id) || $fixedAssets->contains('id', $account->id)
-        )->values();
-        if ($currentAssets->isEmpty() && $fixedAssets->isEmpty()) {
-            $currentAssets = $assetAccounts->values();
-        } elseif ($uncategorizedAssets->isNotEmpty()) {
-            $currentAssets = $currentAssets->concat($uncategorizedAssets)->values();
-        }
+        $currentAssets = $assetAccounts->filter(fn ($account) => ($account->_bs_section ?? 'current') === 'current')->values();
+        $fixedAssets = $assetAccounts->filter(fn ($account) => ($account->_bs_section ?? '') === 'fixed')->values();
 
         $currentLiabilities = $liabilityAccounts
-            ->reject(fn ($account) => $this->accountLooksLikeLongTermLiability($account))
+            ->filter(fn ($account) => ($account->_bs_section ?? 'current') === 'current')
             ->values();
         $longTermLiabilities = $liabilityAccounts
-            ->filter(fn ($account) => $this->accountLooksLikeLongTermLiability($account))
+            ->filter(fn ($account) => ($account->_bs_section ?? '') === 'long_term')
             ->values();
 
         $overdraftLines = collect();
@@ -484,23 +652,32 @@ class BalanceSheetController extends Controller
         }
 
         $equityCapital = $equityAccounts->filter(
-            fn ($account) => $this->equityBucketFor($account) === 'Capital'
+            fn ($account) => ($account->_bs_group ?? '') === 'Owner’s Capital / Share Capital'
         )->values();
         $equityRetained = $equityAccounts->filter(
-            fn ($account) => $this->equityBucketFor($account) === 'Retained Earnings'
+            fn ($account) => ($account->_bs_group ?? '') === 'Retained Earnings'
         )->values();
         $equityReserves = $equityAccounts->filter(
-            fn ($account) => $this->equityBucketFor($account) === 'Reserves'
+            fn ($account) => in_array(($account->_bs_group ?? ''), ['Opening Balance Equity', 'Drawings / Dividends', 'Reconciliation Reserve'], true)
         )->values();
 
-        $retainedEarningsLines = collect([
-            $this->syntheticLine(
-                $retainedEarnings < 0 ? 'Current Year Deficit' : 'Current Year Earnings',
+        $retainedEarningsLines = collect();
+        if ($equityRetained->isEmpty() && abs($priorYearRetained) >= 0.005) {
+            $retainedEarningsLines->push($this->syntheticLine(
+                $priorYearRetained < 0 ? 'Retained Earnings (Prior Year Deficit)' : 'Retained Earnings',
                 'Equity',
-                $retainedEarnings,
-                ['_bs_group' => 'Retained Earnings', '_deficit' => $retainedEarnings < 0]
-            ),
-        ]);
+                $priorYearRetained,
+                ['_bs_group' => 'Retained Earnings', '_deficit' => $priorYearRetained < 0]
+            ));
+        }
+        if (abs($currentYearEarnings) >= 0.005) {
+            $retainedEarningsLines->push($this->syntheticLine(
+                $currentYearEarnings < 0 ? 'Current Year Deficit' : 'Current Year Earnings',
+                'Equity',
+                $currentYearEarnings,
+                ['_bs_group' => 'Current Year Earnings / Deficit', '_deficit' => $currentYearEarnings < 0]
+            ));
+        }
 
         // ── Detect orphaned accounts ─────────────────────────────────────────────
         // Accounts that have ledger activity but whose type is not recognised as
@@ -581,8 +758,8 @@ class BalanceSheetController extends Controller
             'totalLongTermLiabilities' => $totalLongTermLiabilities,
             'totalLiabilities' => $totalLiabilities,
             'totalEquity' => $totalEquity,
-            'retainedEarnings' => $retainedEarnings,
-            'netIncome' => $retainedEarnings,
+            'retainedEarnings' => round($priorYearRetained, 2),
+            'netIncome' => round($currentYearEarnings, 2),
             'statementDifference' => $statementDifference,
             'isBalanced' => abs($statementDifference) < 0.01,
             'reconciliationReserveDiagnostic' => $statementDifference,
@@ -627,8 +804,9 @@ class BalanceSheetController extends Controller
         }
 
         // 1. Get all accounts with sums up to the report date (branch-safe)
-        $txnTotalsQuery = Transaction::query()
+        $txnTotalsQuery = Transaction::withoutGlobalScopes()
             ->selectRaw('account_id, SUM(debit) as total_debit, SUM(credit) as total_credit')
+            ->whereNull('deleted_at')
             ->where('transaction_date', '<=', $reportDate)
             ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
                 $branchId = trim((string) ($activeBranch['id'] ?? ''));
@@ -642,8 +820,9 @@ class BalanceSheetController extends Controller
             ->get()
             ->keyBy('account_id');
 
-        $ledgerTotalsQuery = Transaction::query()
+        $ledgerTotalsQuery = Transaction::withoutGlobalScopes()
             ->selectRaw('SUM(debit) as total_debit, SUM(credit) as total_credit')
+            ->whereNull('deleted_at')
             ->where('transaction_date', '<=', $reportDate)
             ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
                 $branchId = trim((string) ($activeBranch['id'] ?? ''));
@@ -657,8 +836,9 @@ class BalanceSheetController extends Controller
         $ledgerCredits = (float) ($ledgerTotals->total_credit ?? 0);
         $ledgerDifference = $ledgerDebits - $ledgerCredits;
 
-        $imbalancedEntriesQuery = Transaction::query()
+        $imbalancedEntriesQuery = Transaction::withoutGlobalScopes()
             ->selectRaw('MIN(id) as transaction_id, related_type, related_id, transaction_type, MIN(reference) as reference, MIN(description) as description, SUM(debit) as total_debit, SUM(credit) as total_credit')
+            ->whereNull('deleted_at')
             ->where('transaction_date', '<=', $reportDate)
             ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
                 $branchId = trim((string) ($activeBranch['id'] ?? ''));
@@ -864,7 +1044,7 @@ class BalanceSheetController extends Controller
             2
         );
         $openingEquityGap = round(
-            $totalAssets - $totalLiabilities - $realEquityPosted - $retainedEarnings,
+            $totalAssets - $totalLiabilities - $realEquityPosted - $retainedEarnings - $netIncome,
             2
         );
 
@@ -885,7 +1065,8 @@ class BalanceSheetController extends Controller
         // which causes the consolidated total to exceed the sum of individual branches.
         $unassignedTxnCount = 0;
         if ($isAllBranches) {
-            $unassignedQ = Transaction::query()
+            $unassignedQ = Transaction::withoutGlobalScopes()
+                ->whereNull('deleted_at')
                 ->where('transaction_date', '<=', $reportDate)
                 ->where(function ($q) {
                     $q->whereNull('branch_id')->orWhere('branch_id', '');
@@ -1195,21 +1376,14 @@ class BalanceSheetController extends Controller
 
         $consolidate = $request->boolean('consolidate');
 
-        $txnQuery = Transaction::query()
+        $txnQuery = Transaction::withoutGlobalScopes()
             ->selectRaw('account_id, SUM(debit) as total_debit, SUM(credit) as total_credit')
+            ->whereNull('deleted_at')
             ->where('transaction_date', '<=', $date)
             ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($q) use ($activeBranch) {
                 $branchId   = trim((string) ($activeBranch['id']   ?? ''));
                 $branchName = trim((string) ($activeBranch['name'] ?? ''));
-                return $q->where(function ($sub) use ($branchId, $branchName) {
-                    if ($branchId !== '') {
-                        $sub->where('branch_id', $branchId);
-                        return;
-                    }
-                    if ($branchName !== '') {
-                        $sub->where('branch_name', $branchName);
-                    }
-                });
+                $this->applyExactBranchScope($q, $branchId, $branchName);
             });
         $this->applyTransactionScope($txnQuery, $request);
         $txnTotals = $txnQuery->groupBy('account_id')->get()->keyBy('account_id');
@@ -1347,8 +1521,9 @@ class BalanceSheetController extends Controller
             return collect();
         }
 
-        $query = Transaction::query()
+        $query = Transaction::withoutGlobalScopes()
             ->join('accounts', 'transactions.account_id', '=', 'accounts.id')
+            ->whereNull('transactions.deleted_at')
             ->where('transactions.transaction_date', '<=', $reportDate)
             ->where(function ($sub) {
                 $sub->whereRaw('LOWER(accounts.name) like ?', ['%reconciliation%'])
@@ -1661,10 +1836,16 @@ class BalanceSheetController extends Controller
             ]);
         }
 
-        $txnTotals = Transaction::query()
+        $txnTotals = Transaction::withoutGlobalScopes()
             ->selectRaw('account_id, SUM(debit) as total_debit, SUM(credit) as total_credit')
+            ->whereNull('deleted_at')
             ->where('transaction_date', '<=', $reportDate)
             ->tap(fn ($q) => $this->applyTransactionScope($q, $request))
+            ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($q) use ($activeBranch) {
+                $branchId = trim((string) ($activeBranch['id'] ?? ''));
+                $branchName = trim((string) ($activeBranch['name'] ?? ''));
+                $this->applyExactBranchScope($q, $branchId, $branchName);
+            })
             ->groupBy('account_id')->get()->keyBy('account_id');
 
         $accounts = Account::withoutGlobalScopes()
@@ -1689,14 +1870,14 @@ class BalanceSheetController extends Controller
                 return $a;
             })->filter(fn ($a) => abs((float) ($a->balance ?? 0)) > 0.005)->values();
 
-        $totalRevenue    = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type ?? null) === 'revenue')->sum('balance');
-        $totalExpenses   = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type ?? null) === 'expense')->sum('balance');
-        $retainedEarnings = $totalRevenue - $totalExpenses;
+        $earningsRollup = $this->computeEarningsRollup($request, $reportDate, $activeBranch);
+        $retainedEarnings = (float) ($earningsRollup['prior_years'] ?? 0);
+        $currentYearEarnings = (float) ($earningsRollup['current_year'] ?? 0);
 
         $totalAssets      = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type ?? null) === 'asset')->sum('balance');
         $totalLiabilities = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type ?? null) === 'liability')->sum('balance');
         $equityBase       = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type ?? null) === 'equity')->sum('balance');
-        $totalEquity      = $equityBase + $retainedEarnings;
+        $totalEquity      = $equityBase + $retainedEarnings + $currentYearEarnings;
 
         return view('Reports.Reports.balance-sheet-summary', compact('reportDate', 'totalAssets', 'totalLiabilities', 'totalEquity', 'retainedEarnings', 'activeBranch'));
     }
@@ -1704,17 +1885,24 @@ class BalanceSheetController extends Controller
     /** Balance Sheet Comparison — two dates side by side */
     public function comparison(Request $request)
     {
+        $activeBranch = $this->resolveActiveBranch($request);
         $dateA = $request->input('date_a') ? Carbon::parse($request->input('date_a')) : Carbon::now();
         $dateB = $request->input('date_b') ? Carbon::parse($request->input('date_b')) : Carbon::now()->subYear();
 
-        $build = function (Carbon $reportDate) use ($request) {
+        $build = function (Carbon $reportDate) use ($request, $activeBranch) {
             if (!Schema::hasTable('accounts') || !Schema::hasTable('transactions')) {
                 return ['assets' => 0, 'liabilities' => 0, 'equity' => 0, 'retained' => 0];
             }
-            $txnTotals = Transaction::query()
+            $txnTotals = Transaction::withoutGlobalScopes()
                 ->selectRaw('account_id, SUM(debit) as td, SUM(credit) as tc')
+                ->whereNull('deleted_at')
                 ->where('transaction_date', '<=', $reportDate)
                 ->tap(fn ($q) => $this->applyTransactionScope($q, $request))
+                ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($q) use ($activeBranch) {
+                    $branchId = trim((string) ($activeBranch['id'] ?? ''));
+                    $branchName = trim((string) ($activeBranch['name'] ?? ''));
+                    $this->applyExactBranchScope($q, $branchId, $branchName);
+                })
                 ->groupBy('account_id')->get()->keyBy('account_id');
 
             $accountIds = $txnTotals->keys()->all();
@@ -1737,20 +1925,19 @@ class BalanceSheetController extends Controller
                     return $a;
                 })->filter(fn ($a) => abs((float) ($a->balance ?? 0)) > 0.005)->values();
 
-            $revenue  = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type) === 'revenue')->sum('balance');
-            $expenses = $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type) === 'expense')->sum('balance');
+            $earningsRollup = $this->computeEarningsRollup($request, $reportDate, $activeBranch);
+            $priorYears = (float) ($earningsRollup['prior_years'] ?? 0);
+            $currentYear = (float) ($earningsRollup['current_year'] ?? 0);
             return [
                 'assets'      => $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type) === 'asset')->sum('balance'),
                 'liabilities' => $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type) === 'liability')->sum('balance'),
-                'equity'      => $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type) === 'equity')->sum('balance') + ($revenue - $expenses),
-                'retained'    => $revenue - $expenses,
+                'equity'      => $accounts->filter(fn ($a) => $this->normalizeAccountType($a->type) === 'equity')->sum('balance') + $priorYears + $currentYear,
+                'retained'    => $priorYears + $currentYear,
             ];
         };
 
         $periodA = $build($dateA);
         $periodB = $build($dateB);
-
-        $activeBranch = $this->resolveActiveBranch($request);
         return view('Reports.Reports.balance-sheet-comparison', compact('dateA', 'dateB', 'periodA', 'periodB', 'activeBranch'));
     }
 

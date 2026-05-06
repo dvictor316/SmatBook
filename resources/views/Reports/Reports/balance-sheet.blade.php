@@ -47,22 +47,22 @@ foreach ($presets as $key => $p) {
 // Consolidation state (passed from controller when all-branches mode)
 $consolidate   = (bool) ($consolidate   ?? false);
 $isAllBranches = (bool) ($isAllBranches ?? (($activeBranch['scope'] ?? '') === 'all'));
+$showZeroAccounts = request()->boolean('show_zero_accounts');
 
 /* ─────────────────────────────────────────────────────────────────
  *  DISPLAY COLLECTIONS
  * ──────────────────────────────────────────────────────────────── */
-$processedCurrentAssets = collect($currentAssets ?? [])
-    ->reject(fn ($a) => abs((float)($a->balance ?? 0)) < 0.005)
-    ->values();
-$processedFixedAssets = collect($fixedAssets ?? [])
-    ->reject(fn ($a) => abs((float)($a->balance ?? 0)) < 0.005)
-    ->values();
-$currentLiabilityLines  = collect($currentLiabilities ?? [])->reject(fn ($a) => abs((float)($a->balance ?? 0)) < 0.005)->values();
-$longTermLiabilityLines = collect($longTermLiabilities ?? [])->reject(fn ($a) => abs((float)($a->balance ?? 0)) < 0.005)->values();
-$equityCapitalLines     = collect($equityCapital ?? [])->reject(fn ($a) => abs((float)($a->balance ?? 0)) < 0.005)->values();
-$equityRetainedLines    = collect($equityRetained ?? [])->reject(fn ($a) => abs((float)($a->balance ?? 0)) < 0.005)->values();
-$equityReserveLines     = collect($equityReserves ?? [])->reject(fn ($a) => abs((float)($a->balance ?? 0)) < 0.005)->values();
-$retainedEarningsLines  = collect($retainedEarningsLines ?? [])->reject(fn ($a) => abs((float)($a->balance ?? 0)) < 0.005)->values();
+$visibleOnly = fn ($items) => $showZeroAccounts
+    ? collect($items ?? [])->values()
+    : collect($items ?? [])->reject(fn ($a) => abs((float)($a->balance ?? 0)) < 0.005)->values();
+$processedCurrentAssets = $visibleOnly($currentAssets ?? []);
+$processedFixedAssets = $visibleOnly($fixedAssets ?? []);
+$currentLiabilityLines  = $visibleOnly($currentLiabilities ?? []);
+$longTermLiabilityLines = $visibleOnly($longTermLiabilities ?? []);
+$equityCapitalLines     = $visibleOnly($equityCapital ?? []);
+$equityRetainedLines    = $visibleOnly($equityRetained ?? []);
+$equityReserveLines     = $visibleOnly($equityReserves ?? []);
+$retainedEarningsLines  = $visibleOnly($retainedEarningsLines ?? []);
 
 /* ─────────────────────────────────────────────────────────────────
  *  DISPLAY TOTALS  (after reclassifications and system-account removal)
@@ -636,6 +636,13 @@ $changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
             </div>
         </div>
         @endif
+        <div class="bs-filter-group">
+            <span class="bs-filter-label">Display</span>
+            <label style="display:flex;align-items:center;gap:8px;font-size:.85rem;color:#334155;">
+                <input type="checkbox" name="show_zero_accounts" value="1" {{ $showZeroAccounts ? 'checked' : '' }}>
+                Show zero-balance accounts
+            </label>
+        </div>
         <div class="bs-filter-actions">
             <button type="submit" class="bs-btn-run">Run Report</button>
         </div>
