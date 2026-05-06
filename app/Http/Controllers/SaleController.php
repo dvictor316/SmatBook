@@ -22,6 +22,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Validator;
 use App\Support\BranchInventoryService;
 use App\Support\GeoCurrency;
 use App\Support\InventoryQuantity;
@@ -219,6 +220,58 @@ class SaleController extends Controller
         $this->applyBranchScope($query, 'products');
 
         return $query;
+    }
+
+    private function scopedBanks()
+    {
+        $query = Bank::query()->orderBy($this->bankLabelColumn());
+        $this->applyTenantScope($query, 'banks');
+        $this->applyBranchScope($query, 'banks');
+
+        return $query;
+    }
+
+    private function scopedDepositAccounts()
+    {
+        $query = Account::query()
+            ->where('type', Account::TYPE_ASSET)
+            ->where('is_active', true)
+            ->orderBy('name');
+
+        $this->applyTenantScope($query, 'accounts');
+        $this->applyBranchScope($query, 'accounts');
+
+        // Keep the POS deposit dropdown focused on real collection accounts,
+        // not operational asset ledgers like inventory or receivables.
+        if (Schema::hasColumn('accounts', 'sub_type')) {
+            $query->where(function ($sub) {
+                $sub->whereNull('accounts.sub_type')
+                    ->orWhere('accounts.sub_type', '')
+                    ->orWhereIn('accounts.sub_type', [
+                        'Cash & Bank',
+                        Account::SUBTYPE_CURRENT_ASSET,
+                        'Other Asset',
+                    ]);
+            });
+        }
+
+        if (Schema::hasColumn('accounts', 'name')) {
+            $query->whereRaw(
+                'LOWER(accounts.name) NOT LIKE ? AND LOWER(accounts.name) NOT LIKE ?',
+                ['%inventory%', '%receivable%']
+            );
+        }
+
+        return $query;
+    }
+
+    private function findScopedDepositAccount(?int $accountId): ?Account
+    {
+        if (!$accountId) {
+            return null;
+        }
+
+        return $this->scopedDepositAccounts()->whereKey($accountId)->first();
     }
 
     private function clearDashboardMetricsCache(?string $branchId = null): void
@@ -641,29 +694,15 @@ public function customerDetails($id = null)
                     ->get()
                 : collect();
 
-            $bankAccounts = collect();
-            if (Schema::hasTable('banks')) {
-                $bankOrderColumn = $this->bankLabelColumn();
-                $bankQuery = Bank::query()->orderBy($bankOrderColumn);
-                $this->applyTenantScope($bankQuery, 'banks');
-                $this->applyBranchScope($bankQuery, 'banks');
-                $bankAccounts = $bankQuery->get();
-            }
+            $bankAccounts = Schema::hasTable('banks')
+                ? $this->scopedBanks()->get()
+                : collect();
 
             // Active Asset accounts from Chart of Accounts — used as deposit/collection accounts
             // These drive journal entries (Moniepoint, First Bank, Petty Cash, etc.)
-            $depositAccounts = collect();
-            if (Schema::hasTable('accounts')) {
-                $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
-                $depositQuery = Account::withoutGlobalScopes()
-                    ->where('type', Account::TYPE_ASSET)
-                    ->where('is_active', true)
-                    ->orderBy('name');
-                if ($companyId > 0) {
-                    $depositQuery->where('company_id', $companyId);
-                }
-                $depositAccounts = $depositQuery->get();
-            }
+            $depositAccounts = Schema::hasTable('accounts')
+                ? $this->scopedDepositAccounts()->get()
+                : collect();
 
             return view('pos.index', compact('products', 'customers', 'sales', 'activeBranch', 'bankAccounts', 'depositAccounts'));
         } catch (\Throwable $e) {
@@ -685,7 +724,7 @@ public function customerDetails($id = null)
         abort_if(!$sale, 404);
         $activeBranch = $this->getActiveBranchContext();
         $bankAccounts = Schema::hasTable('banks')
-            ? Bank::query()->orderBy('name')->get()
+            ? $this->scopedBanks()->get()
             : collect();
 
         return view('Sales.show', compact('sale', 'activeBranch', 'bankAccounts'));
@@ -769,24 +808,70 @@ public function customerDetails($id = null)
         }
     }
 
-    public function store(Request $request)
+public function store(Request $request)
 {
-    $request->validate([
-        'customer_id'    => 'nullable|exists:customers,id',
+    $validator = Validator::make($request->all(), [
+        'customer_id'    => 'nullable|integer',
         'payment_method' => 'required|string|in:Cash,cash,Split,split',
         'total'          => 'required|numeric|min:0',
         'paid'           => 'required|numeric|min:0',
         'items'          => 'required|array|min:1',
-        'items.*.id'     => 'required|exists:products,id',
+        'items.*.id'     => 'required|integer',
         'items.*.qty'    => 'required|numeric|gt:0',
         'items.*.unitType' => 'nullable|in:unit,roll,carton',
         'items.*.stockUnits' => 'nullable|numeric|gt:0',
         'items.*.priceLevel' => 'nullable|in:retail,wholesale,special',
-        'deposit_account_id' => 'nullable|exists:accounts,id',
-        'payment_account_id' => 'nullable|exists:accounts,id',
-        'split_details.card_account_id' => 'nullable|exists:accounts,id',
-        'split_details.transfer_account_id' => 'nullable|exists:accounts,id',
+        'deposit_account_id' => 'nullable|integer',
+        'payment_account_id' => 'nullable|integer',
+        'split_details.card_account_id' => 'nullable|integer',
+        'split_details.transfer_account_id' => 'nullable|integer',
     ]);
+    $validator->after(function ($validator) use ($request) {
+        $customerId = (int) ($request->input('customer_id') ?? 0);
+        if ($customerId > 0 && !$this->scopedCustomers()->whereKey($customerId)->exists()) {
+            $validator->errors()->add('customer_id', 'The selected customer does not belong to this tenant/branch.');
+        }
+
+        $productIds = collect($request->input('items', []))
+            ->pluck('id')
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        if ($productIds->isNotEmpty()) {
+            $scopedProductIds = $this->scopedProducts()
+                ->whereIn('id', $productIds)
+                ->pluck('id')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+
+            $invalidProductId = $productIds->first(fn ($id) => !in_array($id, $scopedProductIds, true));
+            if ($invalidProductId) {
+                $validator->errors()->add('items', 'One or more selected products do not belong to this tenant/branch.');
+            }
+        }
+
+        foreach ([
+            'deposit_account_id',
+            'payment_account_id',
+            'split_details.card_account_id',
+            'split_details.transfer_account_id',
+        ] as $field) {
+            $accountId = (int) data_get($request->all(), $field, 0);
+            if ($accountId > 0 && !$this->findScopedDepositAccount($accountId)) {
+                $validator->errors()->add($field, 'The selected deposit account is not available for this tenant/branch.');
+            }
+        }
+    });
+
+    if ($validator->fails()) {
+        return response()->json([
+            'success' => false,
+            'message' => $validator->errors()->first(),
+            'errors' => $validator->errors(),
+        ], 422);
+    }
 
     $paidAmount = (float) $request->paid;
     $totalAmount = (float) $request->total;
@@ -828,7 +913,9 @@ public function customerDetails($id = null)
 
         $paymentStatus = ($balance <= 0) ? 'paid' : (($actualPaymentKept > 0) ? 'partial' : 'unpaid');
 
-        $selectedCustomer = $request->customer_id ? Customer::find($request->customer_id) : null;
+        $selectedCustomer = $request->customer_id
+            ? $this->scopedCustomers()->whereKey((int) $request->customer_id)->first()
+            : null;
         $resolvedCustomerName = $selectedCustomer?->customer_name
             ?? $selectedCustomer?->name
             ?? 'Walk-in Customer';
@@ -837,14 +924,12 @@ public function customerDetails($id = null)
         $splitDetails = $this->normalizeSplitDetails($request->input('split_details', []));
         // Resolve deposit/collection accounts from Chart of Accounts
         $depositAccountId = (int) ($request->deposit_account_id ?? $request->payment_account_id ?? 0);
-        $paymentAccount = $depositAccountId > 0
-            ? Account::withoutGlobalScopes()->find($depositAccountId)
-            : null;
+        $paymentAccount = $this->findScopedDepositAccount($depositAccountId);
         $cardSplitAccount = !empty($splitDetails['card_account_id'])
-            ? Account::withoutGlobalScopes()->find((int) $splitDetails['card_account_id'])
+            ? $this->findScopedDepositAccount((int) $splitDetails['card_account_id'])
             : null;
         $transferSplitAccount = !empty($splitDetails['transfer_account_id'])
-            ? Account::withoutGlobalScopes()->find((int) $splitDetails['transfer_account_id'])
+            ? $this->findScopedDepositAccount((int) $splitDetails['transfer_account_id'])
             : null;
 
         // --- 2. CREATE THE SALE RECORD ---
@@ -889,6 +974,9 @@ $sale = Sale::create([
         // --- 3. PROCESS ITEMS ---
         foreach ($request->items as $itemData) {
             $product = Product::lockForUpdate()->find($itemData['id']);
+            if (!$product) {
+                throw new \RuntimeException('One or more selected products are not available for this tenant/branch.');
+            }
             $availableStock = $this->branchInventory->getAvailableStock($product, $activeBranch);
             $qty = (float) $itemData['qty'];
             $requestedStockUnits = $this->resolveStockUnitsForSale($product, $itemData, $qty);
