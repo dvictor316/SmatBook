@@ -179,9 +179,10 @@ class SaleController extends Controller
         return $query->where(function ($sub) use ($table, $branchId, $branchName) {
             if ($branchId !== '' && Schema::hasColumn($table, 'branch_id')) {
                 $sub->where("{$table}.branch_id", $branchId);
+                return;
             }
             if ($branchName !== '' && Schema::hasColumn($table, 'branch_name')) {
-                $sub->orWhere("{$table}.branch_name", $branchName);
+                $sub->where("{$table}.branch_name", $branchName);
             }
         });
     }
@@ -443,6 +444,7 @@ class SaleController extends Controller
         $activeBranch = $this->getActiveBranchContext();
         $this->applyTenantScope($query, 'sales');
         $this->applyBranchScope($query, 'sales');
+        $salesDateColumn = Schema::hasColumn('sales', 'order_date') ? 'order_date' : 'created_at';
 
         if (Schema::hasColumn('sales', 'terminal_id')) {
             $query->whereNotNull('terminal_id');
@@ -460,12 +462,18 @@ class SaleController extends Controller
             $this->applyCustomerNameFilter($query, (string) $request->customer_name);
         }
         if ($request->sale_date) {
-            $query->whereDate('created_at', $request->sale_date);
+            $query->whereDate($salesDateColumn, $request->sale_date);
+        }
+        if ($request->filled('date_from')) {
+            $query->whereDate($salesDateColumn, '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate($salesDateColumn, '<=', $request->date_to);
         }
 
         $totalRevenue = (clone $query)->sum('total');
         $totalSalesCount = (clone $query)->count();
-        $sales = $query->orderBy('created_at', 'desc')->paginate(15);
+        $sales = $query->orderByDesc($salesDateColumn)->orderByDesc('created_at')->paginate(15)->withQueryString();
 
         return view('pos.sales', compact('sales', 'totalRevenue', 'totalSalesCount', 'activeBranch'));
     }

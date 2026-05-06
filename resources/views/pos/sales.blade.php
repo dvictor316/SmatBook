@@ -61,6 +61,33 @@
         box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
     }
 
+    .summary-card {
+        background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%);
+        border: 0;
+        border-radius: 20px;
+        box-shadow: 0 16px 40px rgba(29, 78, 216, 0.18);
+        color: #fff;
+    }
+
+    .summary-card .summary-label {
+        color: rgba(255, 255, 255, 0.78);
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .summary-card .summary-value {
+        font-size: 2rem;
+        font-weight: 800;
+        line-height: 1.1;
+    }
+
+    .summary-card .summary-subtle {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 0.88rem;
+    }
+
     .table thead th {
         background-color: #f5f8ff;
         color: #5b6b87;
@@ -132,6 +159,26 @@
     }
 </style>
 
+@php
+    $selectedSaleDate = request('sale_date');
+    $dateFrom = request('date_from');
+    $dateTo = request('date_to');
+    $filterDateLabel = 'All recorded sales';
+
+    if ($selectedSaleDate) {
+        $filterDateLabel = 'Sales for ' . \Illuminate\Support\Carbon::parse($selectedSaleDate)->format('D, M d, Y');
+    } elseif ($dateFrom && $dateTo) {
+        $filterDateLabel = 'Sales from '
+            . \Illuminate\Support\Carbon::parse($dateFrom)->format('M d, Y')
+            . ' to '
+            . \Illuminate\Support\Carbon::parse($dateTo)->format('M d, Y');
+    } elseif ($dateFrom) {
+        $filterDateLabel = 'Sales from ' . \Illuminate\Support\Carbon::parse($dateFrom)->format('M d, Y');
+    } elseif ($dateTo) {
+        $filterDateLabel = 'Sales up to ' . \Illuminate\Support\Carbon::parse($dateTo)->format('M d, Y');
+    }
+@endphp
+
 <div class="pos-content-area">
     <div class="report-header">
         <div>
@@ -145,13 +192,31 @@
                 </div>
         </div>
         <div class="d-none d-md-flex gap-3 align-items-center">
+            <span class="badge bg-white text-dark border p-2 shadow-sm">
+                <i class="fas fa-calendar-alt text-primary me-2"></i>
+                {{ $selectedSaleDate ? \Illuminate\Support\Carbon::parse($selectedSaleDate)->format('D, M d, Y') : date('D, M d, Y') }}
+            </span>
             <div class="header-search-container">
                 <i class="fas fa-search header-search-icon"></i>
                 <input type="text" id="quick-invoice-id-search" class="form-control header-search-input" placeholder="Quick Search Invoice ID...">
             </div>
-            <span class="badge bg-white text-dark border p-2 shadow-sm">
-                <i class="fas fa-calendar-alt text-primary me-2"></i>{{ date('D, M d, Y') }}
-            </span>
+        </div>
+    </div>
+
+    <div class="card summary-card mb-4">
+        <div class="card-body p-4 p-lg-5">
+            <div class="row g-4 align-items-center">
+                <div class="col-lg-8">
+                    <div class="summary-label">Total Sales Amount</div>
+                    <div class="summary-value">₦{{ number_format((float) ($totalRevenue ?? 0), 2) }}</div>
+                    <div class="summary-subtle mt-2">{{ $filterDateLabel }}</div>
+                </div>
+                <div class="col-lg-4 text-lg-end">
+                    <div class="summary-label">Sales Count</div>
+                    <div class="fs-2 fw-bold">{{ number_format((int) ($totalSalesCount ?? 0)) }}</div>
+                    <div class="summary-subtle mt-2">Filtered POS transactions</div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -176,7 +241,15 @@
                     <label class="form-label small fw-bold text-muted">Specific Date</label>
                     <input type="date" name="sale_date" class="form-control form-control-sm" value="{{ request('sale_date') }}">
                 </div>
-                <div class="col-md-3 d-flex gap-2">
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-muted">From Date</label>
+                    <input type="date" name="date_from" class="form-control form-control-sm" value="{{ request('date_from') }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-muted">To Date</label>
+                    <input type="date" name="date_to" class="form-control form-control-sm" value="{{ request('date_to') }}">
+                </div>
+                <div class="col-md-2 d-flex gap-2">
                     <button type="submit" class="btn btn-primary btn-sm px-4 flex-grow-1">
                         <i class="fas fa-filter me-1"></i> Apply Filter
                     </button>
