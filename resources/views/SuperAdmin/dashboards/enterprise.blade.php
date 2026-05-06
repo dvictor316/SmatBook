@@ -394,6 +394,68 @@
         </div>
     </div>
 
+    @php
+        $enterpriseExpiredProducts = collect($expiredProducts ?? []);
+        $enterpriseExpiringSoonProducts = collect($expiringSoonProducts ?? []);
+    @endphp
+    @if($enterpriseExpiredProducts->isNotEmpty() || $enterpriseExpiringSoonProducts->isNotEmpty())
+        <div class="row g-4 mb-4">
+            <div class="col-12">
+                <div class="card enterprise-card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold mb-0" style="color: var(--deep-sapphire);">
+                            <i class="fas fa-calendar-times me-2 opacity-50 text-danger"></i> Expiry Watch
+                        </h5>
+                        <a href="{{ route('reports.expiry-report') }}" class="btn btn-sm btn-outline-danger rounded-pill px-3">View Expiry Report</a>
+                    </div>
+
+                    @if($enterpriseExpiredProducts->isNotEmpty())
+                        <div class="alert alert-danger py-2 mb-3 small">
+                            <strong>{{ $enterpriseExpiredProducts->count() }} product(s) have expired</strong> and should be reviewed immediately.
+                        </div>
+                    @endif
+
+                    @if($enterpriseExpiringSoonProducts->isNotEmpty())
+                        <div class="alert alert-warning py-2 mb-3 small">
+                            <strong>{{ $enterpriseExpiringSoonProducts->count() }} product(s) will expire within 30 days</strong>.
+                        </div>
+                    @endif
+
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Status</th>
+                                    <th>Expiry Date</th>
+                                    <th class="text-end">Stock</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($enterpriseExpiredProducts->take(5) as $product)
+                                    <tr>
+                                        <td>{{ $product->name }}</td>
+                                        <td><span class="badge bg-danger text-white">Expired</span></td>
+                                        <td>{{ optional($product->expiry_date)->format('d M Y') }}</td>
+                                        <td class="text-end">{{ number_format((float) ($product->stock ?? 0), 2) }}</td>
+                                    </tr>
+                                @endforeach
+                                @foreach($enterpriseExpiringSoonProducts->take(5) as $product)
+                                    <tr>
+                                        <td>{{ $product->name }}</td>
+                                        <td><span class="badge bg-warning text-dark">Expiring Soon</span></td>
+                                        <td>{{ optional($product->expiry_date)->format('d M Y') }}</td>
+                                        <td class="text-end">{{ number_format((float) ($product->stock ?? 0), 2) }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <div class="row g-4">
         <div class="col-xl-12">
             <div class="card enterprise-card p-4">

@@ -214,6 +214,7 @@ class DashboardController extends Controller
         $monthlyProfitData = $this->getMonthlyProfitData($monthlySalesData, $monthlyExpenseData);
         $salesCountByMonth = $this->getSalesCountByMonth($company, $activeBranch);
         $topCustomers = $this->getTopCustomers($company, $activeBranch);
+        $expiringProducts = $this->getExpiringProducts($company);
 
         $seatLimit = $currentSubscription?->resolvedUserLimit();
         $seatCount = $company?->users()->count() ?? ($user->company_id ? User::where('company_id', $user->company_id)->count() : 1);
@@ -229,7 +230,9 @@ class DashboardController extends Controller
             'topCustomers'     => $topCustomers,
             'latestInvoices'   => $this->getLatestInvoices($company, $activeBranch),
             'lowStockProducts'    => $this->getLowStockProducts($company, $activeBranch),
-            'expiringProducts'   => $this->getExpiringProducts($company),
+            'expiringProducts'   => $expiringProducts,
+            'expiredProducts'    => $expiringProducts['expired'] ?? collect(),
+            'expiringSoonProducts' => $expiringProducts['expiring_soon'] ?? collect(),
             'activities'         => $this->getRecentActivity($company, $activeBranch),
             'dashboardHealth'  => $this->getDashboardHealth($metrics),
             'userRole'         => $userRole,
@@ -530,7 +533,10 @@ class DashboardController extends Controller
                             ->limit(20)
                             ->get();
 
-        return compact('expired', 'expiring_soon');
+        return [
+            'expired' => $expired,
+            'expiring_soon' => $expiringSoon,
+        ];
     }
 
     private function getTotalInvoices($company, ?array $activeBranch = null) {
