@@ -38,7 +38,19 @@
                         <tr>
                             <th>Status</th>
                             <td>
-                                @php $sc = match($grn->status ?? 'draft') { 'posted' => 'success', 'draft' => 'warning', default => 'secondary' }; @endphp
+                                @php
+                                    if (($grn->status ?? 'draft') === 'posted' || ($grn->status ?? 'draft') === 'received') {
+                                        $sc = 'success';
+                                    } elseif (($grn->status ?? 'draft') === 'draft' || ($grn->status ?? 'draft') === 'pending') {
+                                        $sc = 'warning';
+                                    } elseif (($grn->status ?? 'draft') === 'partial') {
+                                        $sc = 'info';
+                                    } elseif (($grn->status ?? 'draft') === 'rejected') {
+                                        $sc = 'danger';
+                                    } else {
+                                        $sc = 'secondary';
+                                    }
+                                @endphp
                                 <span class="badge bg-{{ $sc }}">{{ ucfirst($grn->status ?? 'draft') }}</span>
                             </td>
                         </tr>
@@ -71,7 +83,7 @@
                         </div>
                         <div class="col-4">
                             <div class="text-muted small">Total Value</div>
-                            <div class="fs-5 fw-bold">{{ number_format($grn->items->sum(fn($i) => $i->received_quantity * ($i->unit_cost ?? 0)), 2) }}</div>
+                            <div class="fs-5 fw-bold">{{ number_format($grn->items->sum(function ($item) { return ($item->received_quantity ?? 0) * ($item->unit_cost ?? 0); }), 2) }}</div>
                         </div>
                     </div>
                 </div>

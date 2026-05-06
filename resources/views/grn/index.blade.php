@@ -46,14 +46,24 @@
                                 <td>{{ $grn->received_date->format('d M Y') }}</td>
                                 <td>{{ $grn->createdBy?->name ?? '—' }}</td>
                                 <td>
-                                    <span class="badge bg-{{ match($grn->status) {
-                                        'received' => 'success', 'pending' => 'warning', 'complete' => 'success', 'partial' => 'info', 'rejected' => 'danger', default => 'secondary'
-                                    } }}">{{ ucfirst($grn->status) }}</span>
+                                    @php
+                                        if (in_array($grn->status, ['received', 'complete'], true)) {
+                                            $statusClass = 'success';
+                                        } elseif ($grn->status === 'pending') {
+                                            $statusClass = 'warning';
+                                        } elseif ($grn->status === 'partial') {
+                                            $statusClass = 'info';
+                                        } elseif ($grn->status === 'rejected') {
+                                            $statusClass = 'danger';
+                                        } else {
+                                            $statusClass = 'secondary';
+                                        }
+                                    @endphp
+                                    <span class="badge bg-{{ $statusClass }}">{{ ucfirst($grn->status) }}</span>
                                 </td>
                                 <td class="text-end">
                                     <a href="{{ route('grn.show', $grn) }}" class="btn btn-sm btn-outline-primary me-1">View</a>
                                     @if($grn->status === 'pending' || $grn->status === 'draft')
-                                        <a href="{{ route('grn.edit', $grn) }}" class="btn btn-sm btn-outline-secondary me-1">Edit</a>
                                         <form action="{{ route('grn.destroy', $grn) }}" method="POST" class="d-inline"
                                               onsubmit="return confirm('Delete this GRN?')">
                                             @csrf @method('DELETE')

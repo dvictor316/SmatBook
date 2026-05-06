@@ -126,11 +126,15 @@
 </div>
 </div>
 
-@push('scripts')
-<script>
-(function () {
-    const productsJson = @json($products->map(fn($p) => ['id' => $p->id, 'name' => $p->name]));
-    const purchaseOrders = @json($purchaseOrders->mapWithKeys(function ($purchaseOrder) {
+@php
+    $productPayload = $products->map(function ($product) {
+        return [
+            'id' => $product->id,
+            'name' => $product->name,
+        ];
+    })->values();
+
+    $purchaseOrderPayload = $purchaseOrders->mapWithKeys(function ($purchaseOrder) {
         return [
             $purchaseOrder->id => [
                 'supplier_id' => $purchaseOrder->supplier_id,
@@ -141,17 +145,24 @@
                     return [
                         'purchase_item_id' => $item->id,
                         'product_id' => $item->product_id,
-                        'product_name' => $item->product->name ?? '',
+                        'product_name' => optional($item->product)->name ?? '',
                         'ordered_quantity' => $ordered,
                         'received_so_far' => $received,
                         'outstanding_quantity' => max(0, $ordered - $received),
                         'unit_cost' => (float) ($item->unit_price ?? 0),
                         'description' => $item->description ?? '',
                     ];
-                })->values(),
+                })->values()->all(),
             ],
         ];
-    }));
+    });
+@endphp
+
+@push('scripts')
+<script>
+(function () {
+    const productsJson = @json($productPayload);
+    const purchaseOrders = @json($purchaseOrderPayload);
     let rowIndex = {{ count(old('items', [[]])) }};
     const hasOldItems = {{ old('items') ? 'true' : 'false' }};
     const purchaseOrderSelect = document.querySelector('select[name="purchase_order_id"]');
@@ -183,6 +194,9 @@
     function populateFromPurchaseOrder(purchaseOrderId) {
         const purchaseOrder = purchaseOrders[String(purchaseOrderId)];
         if (!purchaseOrder) {
+            if (!hasOldItems) {
+                itemsBody.innerHTML = buildRow(rowIndex++);
+            }
             return;
         }
 
@@ -192,6 +206,7 @@
 
         const outstandingItems = (purchaseOrder.items || []).filter((item) => Number(item.outstanding_quantity || 0) > 0);
         if (!outstandingItems.length) {
+            itemsBody.innerHTML = buildRow(rowIndex++);
             return;
         }
 

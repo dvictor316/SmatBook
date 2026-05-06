@@ -32,6 +32,7 @@ class GoodsReceivedNoteController extends Controller
 
     public function create()
     {
+        $requestedPurchaseOrderId = (int) request('purchase_order_id', 0);
         $suppliers = Supplier::query()
             ->tap(fn ($query) => $this->applyTenantBranchScope($query, 'suppliers'))
             ->orderBy('name')
@@ -43,9 +44,30 @@ class GoodsReceivedNoteController extends Controller
         $purchaseOrders = Purchase::query()
             ->with(['supplier', 'items.product'])
             ->tap(fn ($query) => $this->applyTenantBranchScope($query, 'purchases'))
+            ->where(function ($query) {
+                $query->whereNull('status')
+                    ->orWhereNotIn('status', ['received', 'closed', 'cancelled', 'canceled']);
+            })
             ->orderByDesc('id')
             ->get();
-        return view('grn.create', compact('suppliers', 'products', 'purchaseOrders'));
+        $purchaseOrders = $purchaseOrders->filter(function ($purchaseOrder) {
+            $items = $purchaseOrder->items ?? collect();
+
+            return $items->contains(function ($item) {
+                $ordered = (float) ($item->qty ?? 0);
+                $received = Schema::hasColumn('purchase_items', 'received_qty')
+                    ? (float) ($item->received_qty ?? 0)
+                    : 0;
+
+                return $ordered - $received > 0.0001;
+            });
+        })->values();
+
+        $selectedPurchaseOrder = $requestedPurchaseOrderId > 0
+            ? $purchaseOrders->firstWhere('id', $requestedPurchaseOrderId)
+            : null;
+
+        return view('grn.create', compact('suppliers', 'products', 'purchaseOrders', 'selectedPurchaseOrder'));
     }
 
     public function store(Request $request)
@@ -82,6 +104,10 @@ class GoodsReceivedNoteController extends Controller
                     ->with('items.product')
                     ->tap(fn ($query) => $this->applyTenantBranchScope($query, 'purchases'))
                     ->findOrFail($data['purchase_order_id']);
+
+                if ((int) $purchaseOrder->supplier_id !== (int) $supplier->id) {
+                    throw new \RuntimeException('Selected supplier does not match the selected purchase order.');
+                }
             }
 
             $grn = GoodsReceivedNote::create([
@@ -168,9 +194,16 @@ class GoodsReceivedNoteController extends Controller
             }
 
             if ($purchaseOrder) {
-                $purchaseOrder->status = in_array('partial', $receiptStatuses, true)
-                    ? 'partially_received'
-                    : 'received';
+                $hasOutstanding = $purchaseOrder->items->contains(function ($item) {
+                    $ordered = (float) ($item->qty ?? 0);
+                    $received = Schema::hasColumn('purchase_items', 'received_qty')
+                        ? (float) ($item->received_qty ?? 0)
+                        : 0;
+
+                    return $ordered - $received > 0.0001;
+                });
+
+                $purchaseOrder->status = $hasOutstanding ? 'partially_received' : 'received';
                 $purchaseOrder->save();
             }
         });
