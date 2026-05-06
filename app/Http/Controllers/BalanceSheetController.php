@@ -35,24 +35,24 @@ class BalanceSheetController extends Controller
         $userId = (int) ($request->user()?->id ?? 0);
 
         if ($companyId > 0 && Schema::hasColumn('transactions', 'company_id')) {
-            $query->where('company_id', $companyId);
+            $query->where('transactions.company_id', $companyId);
         } elseif ($userId > 0 && Schema::hasColumn('transactions', 'user_id')) {
-            $query->where('user_id', $userId);
+            $query->where('transactions.user_id', $userId);
         }
 
         $activeBranch = $this->resolveActiveBranch($request);
         if (($activeBranch['scope'] ?? 'branch') === 'all') {
             $query->where(function ($branchScoped) {
                 if (Schema::hasColumn('transactions', 'branch_id')) {
-                    $branchScoped->whereNotNull('branch_id')
-                        ->where('branch_id', '<>', '');
+                    $branchScoped->whereNotNull('transactions.branch_id')
+                        ->where('transactions.branch_id', '<>', '');
                 }
 
                 if (Schema::hasColumn('transactions', 'branch_name')) {
                     $method = Schema::hasColumn('transactions', 'branch_id') ? 'orWhere' : 'where';
                     $branchScoped->{$method}(function ($named) {
-                        $named->whereNotNull('branch_name')
-                            ->where('branch_name', '<>', '');
+                        $named->whereNotNull('transactions.branch_name')
+                            ->where('transactions.branch_name', '<>', '');
                     });
                 }
             });
