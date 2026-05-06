@@ -107,6 +107,34 @@ class BalanceSheetController extends Controller
         return ['id' => $activeBranchId ?: null, 'name' => $activeBranchName ?: null, 'scope' => 'branch'];
     }
 
+    private function applyExactBranchScope($query, string $branchId, string $branchName, string $branchIdColumn = 'branch_id', string $branchNameColumn = 'branch_name'): void
+    {
+        $branchId = trim($branchId);
+        $branchName = trim($branchName);
+
+        if ($branchId === '' && $branchName === '') {
+            return;
+        }
+
+        $query->where(function ($sub) use ($branchId, $branchName, $branchIdColumn, $branchNameColumn) {
+            if ($branchId !== '') {
+                $sub->where($branchIdColumn, $branchId);
+
+                if ($branchName !== '') {
+                    $sub->orWhere(function ($legacy) use ($branchIdColumn, $branchNameColumn, $branchName) {
+                        $legacy->where(function ($emptyBranchId) use ($branchIdColumn) {
+                            $emptyBranchId->whereNull($branchIdColumn)->orWhere($branchIdColumn, '');
+                        })->where($branchNameColumn, $branchName);
+                    });
+                }
+
+                return;
+            }
+
+            $sub->where($branchNameColumn, $branchName);
+        });
+    }
+
     private function normalizeAccountType(?string $type): string
     {
         $value = strtolower(trim((string) $type));
@@ -605,16 +633,7 @@ class BalanceSheetController extends Controller
             ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
                 $branchId = trim((string) ($activeBranch['id'] ?? ''));
                 $branchName = trim((string) ($activeBranch['name'] ?? ''));
-
-                return $query->where(function ($sub) use ($branchId, $branchName) {
-                    if ($branchId !== '') {
-                        $sub->where('branch_id', $branchId);
-                        return;
-                    }
-                    if ($branchName !== '') {
-                        $sub->where('branch_name', $branchName);
-                    }
-                });
+                $this->applyExactBranchScope($query, $branchId, $branchName);
             });
         $this->applyTransactionScope($txnTotalsQuery, $request);
 
@@ -629,16 +648,7 @@ class BalanceSheetController extends Controller
             ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
                 $branchId = trim((string) ($activeBranch['id'] ?? ''));
                 $branchName = trim((string) ($activeBranch['name'] ?? ''));
-
-                return $query->where(function ($sub) use ($branchId, $branchName) {
-                    if ($branchId !== '') {
-                        $sub->where('branch_id', $branchId);
-                        return;
-                    }
-                    if ($branchName !== '') {
-                        $sub->where('branch_name', $branchName);
-                    }
-                });
+                $this->applyExactBranchScope($query, $branchId, $branchName);
             });
         $this->applyTransactionScope($ledgerTotalsQuery, $request);
 
@@ -653,16 +663,7 @@ class BalanceSheetController extends Controller
             ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
                 $branchId = trim((string) ($activeBranch['id'] ?? ''));
                 $branchName = trim((string) ($activeBranch['name'] ?? ''));
-
-                return $query->where(function ($sub) use ($branchId, $branchName) {
-                    if ($branchId !== '') {
-                        $sub->where('branch_id', $branchId);
-                        return;
-                    }
-                    if ($branchName !== '') {
-                        $sub->where('branch_name', $branchName);
-                    }
-                });
+                $this->applyExactBranchScope($query, $branchId, $branchName);
             });
         $this->applyTransactionScope($imbalancedEntriesQuery, $request);
 
@@ -702,6 +703,13 @@ class BalanceSheetController extends Controller
                 return $query->where(function ($sub) use ($branchId, $branchName, $accountIds) {
                     if ($branchId !== '') {
                         $sub->where('branch_id', $branchId);
+                        if ($branchName !== '') {
+                            $sub->orWhere(function ($legacy) use ($branchName) {
+                                $legacy->where(function ($b) {
+                                    $b->whereNull('branch_id')->orWhere('branch_id', '');
+                                })->where('branch_name', $branchName);
+                            });
+                        }
                         if (!empty($accountIds)) {
                             $sub->orWhere(function ($inner) use ($accountIds) {
                                 $inner->where(function ($b) {
@@ -1057,20 +1065,7 @@ class BalanceSheetController extends Controller
 
         // Branch scope
         if (!$isAllBranches && ($branchId !== '' || $branchName !== '')) {
-            $legsQuery->where(function ($sub) use ($branchId, $branchName) {
-                if ($branchId !== '') {
-                    $sub->where('transactions.branch_id', $branchId);
-                }
-                if ($branchName !== '') {
-                    $method = $branchId !== '' ? 'orWhere' : 'where';
-                    $sub->{$method}('transactions.branch_name', $branchName);
-                }
-                // Include opening-balance journals that were posted to accounts
-                // with no branch tag (e.g. AR, Equity created centrally) but whose
-                // reference ties them to this branch's setup.
-                // These are captured by the reference GROUP at step 3 — no need to
-                // widen the query here.
-            });
+            $this->applyExactBranchScope($legsQuery, $branchId, $branchName, 'transactions.branch_id', 'transactions.branch_name');
         }
 
         $allLegs = $legsQuery->get();
@@ -1343,15 +1338,7 @@ class BalanceSheetController extends Controller
             return;
         }
 
-        $query->where(function ($sub) use ($branchId, $branchName) {
-            if ($branchId !== '') {
-                $sub->where('branch_id', $branchId);
-                return;
-            }
-            if ($branchName !== '') {
-                $sub->where('branch_name', $branchName);
-            }
-        });
+        $this->applyExactBranchScope($query, $branchId, $branchName);
     }
 
     private function reserveAndSuspenseDiagnostics(Request $request, Carbon $reportDate, array $activeBranch): Collection
@@ -1401,15 +1388,7 @@ class BalanceSheetController extends Controller
             $branchId = trim((string) ($activeBranch['id'] ?? ''));
             $branchName = trim((string) ($activeBranch['name'] ?? ''));
             if ($branchId !== '' || $branchName !== '') {
-                $query->where(function ($sub) use ($branchId, $branchName) {
-                    if ($branchId !== '') {
-                        $sub->where('transactions.branch_id', $branchId);
-                        return;
-                    }
-                    if ($branchName !== '') {
-                        $sub->where('transactions.branch_name', $branchName);
-                    }
-                });
+                $this->applyExactBranchScope($query, $branchId, $branchName, 'transactions.branch_id', 'transactions.branch_name');
             }
         }
 
@@ -1524,14 +1503,7 @@ class BalanceSheetController extends Controller
 
         // Branch scope: filter by branch_id/branch_name if customers table supports it.
         if (!$isAllBranches && ($branchId !== '' || $branchName !== '') && Schema::hasColumn('customers', 'branch_id')) {
-            $customerQuery->where(function ($q) use ($branchId, $branchName) {
-                if ($branchId !== '') {
-                    $q->where('branch_id', $branchId);
-                }
-                if ($branchName !== '' && Schema::hasColumn('customers', 'branch_name')) {
-                    $q->orWhere('branch_name', $branchName);
-                }
-            });
+            $this->applyExactBranchScope($customerQuery, $branchId, Schema::hasColumn('customers', 'branch_name') ? $branchName : '', 'branch_id', 'branch_name');
         }
 
         if (!empty($postedCustomerIds)) {
@@ -1582,14 +1554,7 @@ class BalanceSheetController extends Controller
 
         // Branch scope: filter by branch_id/branch_name if suppliers table supports it.
         if (!$isAllBranches && ($branchId !== '' || $branchName !== '') && Schema::hasColumn('suppliers', 'branch_id')) {
-            $supplierQuery->where(function ($q) use ($branchId, $branchName) {
-                if ($branchId !== '') {
-                    $q->where('branch_id', $branchId);
-                }
-                if ($branchName !== '' && Schema::hasColumn('suppliers', 'branch_name')) {
-                    $q->orWhere('branch_name', $branchName);
-                }
-            });
+            $this->applyExactBranchScope($supplierQuery, $branchId, Schema::hasColumn('suppliers', 'branch_name') ? $branchName : '', 'branch_id', 'branch_name');
         }
 
         if (!empty($postedSupplierIds)) {

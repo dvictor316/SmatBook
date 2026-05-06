@@ -217,6 +217,34 @@ class TrialBalanceController extends Controller
         return ['id' => $activeBranchId ?: null, 'name' => $activeBranchName ?: null, 'scope' => 'branch'];
     }
 
+    private function applyExactBranchScope($query, string $branchId, string $branchName, string $branchIdColumn = 'branch_id', string $branchNameColumn = 'branch_name'): void
+    {
+        $branchId = trim($branchId);
+        $branchName = trim($branchName);
+
+        if ($branchId === '' && $branchName === '') {
+            return;
+        }
+
+        $query->where(function ($sub) use ($branchId, $branchName, $branchIdColumn, $branchNameColumn) {
+            if ($branchId !== '') {
+                $sub->where($branchIdColumn, $branchId);
+
+                if ($branchName !== '') {
+                    $sub->orWhere(function ($legacy) use ($branchIdColumn, $branchNameColumn, $branchName) {
+                        $legacy->where(function ($emptyBranchId) use ($branchIdColumn) {
+                            $emptyBranchId->whereNull($branchIdColumn)->orWhere($branchIdColumn, '');
+                        })->where($branchNameColumn, $branchName);
+                    });
+                }
+
+                return;
+            }
+
+            $sub->where($branchNameColumn, $branchName);
+        });
+    }
+
     /**
      * Display the trial balance
      */
@@ -250,16 +278,7 @@ class TrialBalanceController extends Controller
             ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
                 $branchId = trim((string) ($activeBranch['id'] ?? ''));
                 $branchName = trim((string) ($activeBranch['name'] ?? ''));
-
-                return $query->where(function ($sub) use ($branchId, $branchName) {
-                    if ($branchId !== '') {
-                        $sub->where('branch_id', $branchId);
-                        return;
-                    }
-                    if ($branchName !== '') {
-                        $sub->where('branch_name', $branchName);
-                    }
-                });
+                $this->applyExactBranchScope($query, $branchId, $branchName);
             });
         $this->applyTransactionScope($txnTotalsQuery, $request);
 
@@ -274,16 +293,7 @@ class TrialBalanceController extends Controller
             ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
                 $branchId = trim((string) ($activeBranch['id'] ?? ''));
                 $branchName = trim((string) ($activeBranch['name'] ?? ''));
-
-                return $query->where(function ($sub) use ($branchId, $branchName) {
-                    if ($branchId !== '') {
-                        $sub->where('branch_id', $branchId);
-                        return;
-                    }
-                    if ($branchName !== '') {
-                        $sub->where('branch_name', $branchName);
-                    }
-                });
+                $this->applyExactBranchScope($query, $branchId, $branchName);
             });
         $this->applyTransactionScope($ledgerTotalsQuery, $request);
 
@@ -298,16 +308,7 @@ class TrialBalanceController extends Controller
             ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
                 $branchId = trim((string) ($activeBranch['id'] ?? ''));
                 $branchName = trim((string) ($activeBranch['name'] ?? ''));
-
-                return $query->where(function ($sub) use ($branchId, $branchName) {
-                    if ($branchId !== '') {
-                        $sub->where('branch_id', $branchId);
-                        return;
-                    }
-                    if ($branchName !== '') {
-                        $sub->where('branch_name', $branchName);
-                    }
-                });
+                $this->applyExactBranchScope($query, $branchId, $branchName);
             });
         $this->applyTransactionScope($imbalancedEntriesQuery, $request);
 
