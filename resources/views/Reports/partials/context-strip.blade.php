@@ -255,15 +255,30 @@
 </div>
 
 <script>
-// Branch scope switcher — appends/replaces branch_id in the current URL
+// Branch scope switcher — writes a full, strict branch scope into the URL
 function reportSwitchBranch(branchId) {
     try {
         const url = new URL(window.location.href);
-        url.searchParams.set('branch_id', branchId);
+        if (String(branchId).toLowerCase() === 'all') {
+            url.searchParams.set('branch_id', 'all');
+            url.searchParams.set('branch_scope', 'all');
+            url.searchParams.set('all_branches', '1');
+        } else {
+            url.searchParams.set('branch_id', branchId);
+            url.searchParams.set('branch_scope', 'branch');
+            url.searchParams.delete('all_branches');
+        }
         url.searchParams.delete('page'); // reset pagination when switching branch
         window.location.href = url.toString();
     } catch (e) {
-        window.location.href = window.location.pathname + '?branch_id=' + encodeURIComponent(branchId);
+        if (String(branchId).toLowerCase() === 'all') {
+            window.location.href = window.location.pathname + '?branch_id=all&branch_scope=all&all_branches=1';
+            return;
+        }
+
+        window.location.href = window.location.pathname
+            + '?branch_id=' + encodeURIComponent(branchId)
+            + '&branch_scope=branch';
     }
 }
 

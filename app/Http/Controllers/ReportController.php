@@ -711,12 +711,15 @@ class ReportController extends Controller
             $requestBranchId = (string) request()->get('branch_id', '');
             $allBranches = request()->boolean('all_branches')
                 || strtolower($branchScope) === 'all'
-                || strtolower($requestBranchId) === 'all';
+                || strtolower($requestBranchId) === 'all'
+                || session('active_branch_scope') === 'all';
 
             if ($allBranches) {
+                request()->session()->put('active_branch_scope', 'all');
+
                 return [
                     'id' => null,
-                    'name' => null,
+                    'name' => 'All Branches',
                     'scope' => 'all',
                 ];
             }
@@ -730,7 +733,7 @@ class ReportController extends Controller
             }
 
             if ((!$branchId || !$branchName) && Schema::hasTable('settings')) {
-            $companyId = (int) (optional(Auth::user())->company_id ?? session('current_tenant_id') ?? 0);
+                $companyId = (int) (optional(Auth::user())->company_id ?? session('current_tenant_id') ?? 0);
                 if ($companyId > 0) {
                     $key = 'branches_json_company_' . $companyId;
                     $raw = (string) (DB::table('settings')->where('key', $key)->value('value') ?? '');
@@ -748,6 +751,14 @@ class ReportController extends Controller
                     }
                 }
             }
+
+            if ($branchId !== null && $branchId !== '') {
+                request()->session()->put('active_branch_id', $branchId);
+            }
+            if ($branchName !== null && $branchName !== '') {
+                request()->session()->put('active_branch_name', $branchName);
+            }
+            request()->session()->put('active_branch_scope', 'branch');
 
             return [
                 'id' => $branchId,

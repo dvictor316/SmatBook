@@ -177,9 +177,11 @@ class TrialBalanceController extends Controller
         $branchId = (string) $request->get('branch_id', '');
         $allBranches = $request->boolean('all_branches')
             || strtolower($branchScope) === 'all'
-            || strtolower($branchId) === 'all';
+            || strtolower($branchId) === 'all'
+            || session('active_branch_scope') === 'all';
 
         if ($allBranches) {
+            session(['active_branch_scope' => 'all']);
             return ['id' => null, 'name' => null, 'scope' => 'all'];
         }
 
@@ -213,6 +215,7 @@ class TrialBalanceController extends Controller
         if ($activeBranchName !== '') {
             session(['active_branch_name' => $activeBranchName]);
         }
+        session(['active_branch_scope' => 'branch']);
 
         return ['id' => $activeBranchId ?: null, 'name' => $activeBranchName ?: null, 'scope' => 'branch'];
     }

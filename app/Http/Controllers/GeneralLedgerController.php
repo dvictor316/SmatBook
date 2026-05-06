@@ -13,6 +13,66 @@ use Illuminate\Support\Facades\DB;
 
 class GeneralLedgerController extends Controller
 {
+    private function activeBranchContext(Request $request): array
+    {
+        $branchScope = strtolower(trim((string) $request->get('branch_scope', '')));
+        $requestBranchId = trim((string) $request->get('branch_id', ''));
+        $allBranches = $request->boolean('all_branches')
+            || $branchScope === 'all'
+            || strtolower($requestBranchId) === 'all'
+            || session('active_branch_scope') === 'all';
+
+        if ($allBranches) {
+            $request->session()->put('active_branch_scope', 'all');
+
+            return [
+                'id' => null,
+                'name' => 'All Branches',
+                'scope' => 'all',
+            ];
+        }
+
+        $branchId = trim((string) session('active_branch_id', ''));
+        $branchName = trim((string) session('active_branch_name', ''));
+
+        if ($requestBranchId !== '') {
+            $branchId = $requestBranchId;
+            $branchName = '';
+        }
+
+        if (($branchId === '' || $branchName === '') && Schema::hasTable('settings')) {
+            $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+            if ($companyId > 0) {
+                $key = 'branches_json_company_' . $companyId;
+                $raw = (string) (DB::table('settings')->where('key', $key)->value('value') ?? '');
+                $branches = json_decode($raw, true) ?: [];
+
+                if ($branchId !== '') {
+                    $match = collect($branches)->firstWhere('id', $branchId);
+                    $branchName = trim((string) ($match['name'] ?? $branchName));
+                } else {
+                    $first = collect($branches)->first();
+                    $branchId = trim((string) ($first['id'] ?? $branchId));
+                    $branchName = trim((string) ($first['name'] ?? $branchName));
+                }
+            }
+        }
+
+        if ($branchId !== '') {
+            $request->session()->put('active_branch_id', $branchId);
+        }
+        if ($branchName !== '') {
+            $request->session()->put('active_branch_name', $branchName);
+        }
+        $request->session()->put('active_branch_scope', 'branch');
+
+        return [
+            'id' => $branchId !== '' ? $branchId : null,
+            'name' => $branchName !== '' ? $branchName : null,
+            'scope' => 'branch',
+        ];
+    }
+
     private function applyTenantScope($query, string $table)
     {
         $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
@@ -29,10 +89,14 @@ class GeneralLedgerController extends Controller
         return $query;
     }
 
-    private function applyBranchScope($query, string $table)
+    private function applyBranchScope($query, string $table, array $activeBranch)
     {
-        $branchId = trim((string) session('active_branch_id', ''));
-        $branchName = trim((string) session('active_branch_name', ''));
+        if (($activeBranch['scope'] ?? 'branch') === 'all') {
+            return $query;
+        }
+
+        $branchId = trim((string) ($activeBranch['id'] ?? ''));
+        $branchName = trim((string) ($activeBranch['name'] ?? ''));
 
         if ($branchId === '' && $branchName === '') {
             return $query;
@@ -50,6 +114,7 @@ class GeneralLedgerController extends Controller
 
     public function index(Request $request)
     {
+        $activeBranch = $this->activeBranchContext($request);
         $startDate = $request->filled('start_date')
             ? Carbon::parse($request->start_date)->startOfDay()
             : now()->startOfMonth()->startOfDay();
@@ -73,13 +138,13 @@ class GeneralLedgerController extends Controller
 
         $accountsQuery = Account::query()->orderBy('code')->orderBy('name');
         $this->applyTenantScope($accountsQuery, 'accounts');
-        $this->applyBranchScope($accountsQuery, 'accounts');
+        $this->applyBranchScope($accountsQuery, 'accounts', $activeBranch);
         $accounts = $accountsQuery->get(['id', 'code', 'name']);
 
         $query = Transaction::query()->with('account')
             ->whereBetween('transaction_date', [$startDate, $endDate]);
         $this->applyTenantScope($query, 'transactions');
-        $this->applyBranchScope($query, 'transactions');
+        $this->applyBranchScope($query, 'transactions', $activeBranch);
 
         $selectedAccountId = $request->input('account_id');
         if ($selectedAccountId) {
@@ -123,6 +188,7 @@ class GeneralLedgerController extends Controller
             'totals' => $totals,
             'selectedAccountId' => $selectedAccountId,
             'search' => $search,
+            'activeBranch' => $activeBranch,
         ]);
     }
 
