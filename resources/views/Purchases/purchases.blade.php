@@ -146,7 +146,7 @@
                 </div>
                 <div class="col-auto purchase-page-actions">
                     <a href="{{ route('purchases.create') }}" class="btn btn-success me-1">
-                        <i class="fas fa-plus-circle"></i> New Purchase
+                        <i class="fas fa-plus-circle"></i> New Bill
                     </a>
                     <div class="dropdown purchase-mobile-full">
                         <button class="btn btn-primary dropdown-toggle w-100" type="button" data-bs-toggle="dropdown" aria-expanded="false">
