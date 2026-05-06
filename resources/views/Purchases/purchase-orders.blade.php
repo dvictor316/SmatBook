@@ -110,6 +110,9 @@
                     Purchase Orders
                 @endslot
             @endcomponent
+            <div class="alert alert-info border-0 shadow-sm">
+                Purchase orders are for not-yet-fully-received goods or for businesses that want to track the full procurement chain. If goods already arrived, use <a href="{{ route('purchases.create') }}" class="alert-link">Direct Purchase</a>.
+            </div>
             @component('components.search-filter')
             @endcomponent
             <div class="row">
@@ -124,7 +127,11 @@
                                             <th>Purchase ID</th>
                                             <th>Supplier</th>
                                             <th>Amount</th>
+                                            <th>Ordered</th>
+                                            <th>Received</th>
+                                            <th>Outstanding</th>
                                             <th>Payment Mode</th>
+                                            <th>Payment</th>
                                             <th>Date</th>
                                             <th>Status</th>
                                             <th class="no-sort">Action</th>
@@ -147,7 +154,11 @@
                                                     </h2>
                                                 </td>
                                                 <td>{{ $order['Amount'] ?? '0.00' }}</td>
+                                                <td>{{ $order['OrderedQty'] ?? '0.00' }}</td>
+                                                <td>{{ $order['ReceivedQty'] ?? '0.00' }}</td>
+                                                <td>{{ $order['OutstandingQty'] ?? '0.00' }}</td>
                                                 <td>{{ $order['PaymentMode'] ?? 'N/A' }}</td>
+                                                <td>{{ $order['PaymentStatus'] ?? 'Unpaid' }}</td>
                                                 <td>{{ $order['Date'] ?? 'N/A' }}</td>
                                                 <td>
                                                     <span class="{{ $order['Class'] ?? 'badge bg-secondary' }}">
@@ -162,23 +173,18 @@
                                                         <div class="dropdown-menu dropdown-menu-right credit-note-dropdown">
                                                             <ul>
                                                                 <li>
-                                                                    <a class="dropdown-item" href="{{ route('edit-purchases-order', $order['Id']) }}">
-                                                                        <i class="far fa-edit me-2"></i>Edit
-                                                                    </a>
-                                                                </li>
-                                                                <li>
-                                                                    <a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#delete_modal">
-                                                                        <i class="far fa-trash-alt me-2"></i>Delete
-                                                                    </a>
-                                                                </li>
-                                                                <li>
                                                                     <a class="dropdown-item" href="{{ route('purchase-details', $order['Id']) }}">
                                                                         <i class="far fa-eye me-2"></i>View
                                                                     </a>
                                                                 </li>
                                                                 <li>
-                                                                    <a class="dropdown-item" href="{{ url('add-purchase-return') }}">
-                                                                        <i class="fe fe-repeat me-2"></i>Convert To Purchase
+                                                                    <a class="dropdown-item" href="{{ route('grn.create', ['purchase_order_id' => $order['Id']]) }}">
+                                                                        <i class="fe fe-truck me-2"></i>Receive Items
+                                                                    </a>
+                                                                </li>
+                                                                <li>
+                                                                    <a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#delete_modal">
+                                                                        <i class="far fa-trash-alt me-2"></i>Delete
                                                                     </a>
                                                                 </li>
                                                             </ul>
@@ -188,7 +194,7 @@
                                             </tr>
                                         @empty
                                             <tr>
-                                                <td colspan="8" class="text-center">No purchase orders found.</td>
+                                                <td colspan="12" class="text-center">No purchase orders found.</td>
                                             </tr>
                                         @endforelse
                                     </tbody>

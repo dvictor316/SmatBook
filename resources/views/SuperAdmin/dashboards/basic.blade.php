@@ -479,6 +479,14 @@
                         <span><span class="status-dot bg-warning"></span> Low stock alerts</span>
                         <span class="badge bg-light text-dark">{{ number_format($metrics['lowStockCount'] ?? 0) }}</span>
                     </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0 bg-transparent">
+                        <span><span class="status-dot bg-danger"></span> Expired products</span>
+                        <span class="badge bg-danger text-white">{{ ($expiringProducts['expired'] ?? collect())->count() }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0 bg-transparent border-0">
+                        <span><span class="status-dot bg-warning"></span> Expiring in 30 days</span>
+                        <span class="badge bg-warning text-dark">{{ ($expiringProducts['expiring_soon'] ?? collect())->count() }}</span>
+                    </li>
                     <li class="list-group-item d-flex justify-content-between align-items-center px-0 bg-transparent border-0">
                         <span><span class="status-dot bg-success"></span> Profit margin</span>
                         <span class="text-muted small">{{ number_format($metrics['profitMargin'] ?? 0, 1) }}%</span>
@@ -555,6 +563,57 @@
             </div>
         </div>
     </div>
+
+    {{-- Expiry Notification Panel --}}
+    @php
+        $expiredCount      = ($expiringProducts['expired']      ?? collect())->count();
+        $expiringSoonCount = ($expiringProducts['expiring_soon'] ?? collect())->count();
+    @endphp
+    @if($expiredCount > 0 || $expiringSoonCount > 0)
+    <div class="row g-4 mt-1">
+        <div class="col-12">
+            <div class="panel-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0" style="color: var(--deep-sapphire);">
+                        <i class="feather-alert-triangle text-danger me-2"></i>Expiry Notifications
+                    </h5>
+                    <a href="{{ route('reports.expiry-report') }}" class="btn btn-sm btn-outline-danger rounded-pill">View Full Report</a>
+                </div>
+                @if($expiredCount > 0)
+                    <div class="alert alert-danger py-2 mb-2 small"><strong>{{ $expiredCount }} product(s) have expired</strong> — remove or quarantine immediately.</div>
+                @endif
+                @if($expiringSoonCount > 0)
+                    <div class="alert alert-warning py-2 mb-2 small"><strong>{{ $expiringSoonCount }} product(s) expiring within 30 days</strong> — review stock levels.</div>
+                @endif
+                <div class="table-responsive">
+                    <table class="table table-sm table-borderless mb-0">
+                        <thead><tr>
+                            <th class="text-muted small fw-semibold">Product</th>
+                            <th class="text-muted small fw-semibold">Expiry Date</th>
+                            <th class="text-muted small fw-semibold">Status</th>
+                        </tr></thead>
+                        <tbody>
+                        @foreach(collect($expiringProducts['expired'] ?? [])->take(5) as $ep)
+                            <tr>
+                                <td class="small">{{ $ep->name }}</td>
+                                <td class="small">{{ \Carbon\Carbon::parse($ep->expiry_date)->format('d M Y') }}</td>
+                                <td><span class="badge bg-danger-subtle text-danger rounded-pill">Expired</span></td>
+                            </tr>
+                        @endforeach
+                        @foreach(collect($expiringProducts['expiring_soon'] ?? [])->take(5) as $ep)
+                            <tr>
+                                <td class="small">{{ $ep->name }}</td>
+                                <td class="small">{{ \Carbon\Carbon::parse($ep->expiry_date)->format('d M Y') }}</td>
+                                <td><span class="badge bg-warning-subtle text-warning rounded-pill">Expiring</span></td>
+                            </tr>
+                        @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
 </div>
 
 <script>

@@ -228,8 +228,9 @@ class DashboardController extends Controller
             'topProducts'      => $this->getTopProducts($company, $activeBranch),
             'topCustomers'     => $topCustomers,
             'latestInvoices'   => $this->getLatestInvoices($company, $activeBranch),
-            'lowStockProducts' => $this->getLowStockProducts($company, $activeBranch),
-            'activities'       => $this->getRecentActivity($company, $activeBranch),
+            'lowStockProducts'    => $this->getLowStockProducts($company, $activeBranch),
+            'expiringProducts'   => $this->getExpiringProducts($company),
+            'activities'         => $this->getRecentActivity($company, $activeBranch),
             'dashboardHealth'  => $this->getDashboardHealth($metrics),
             'userRole'         => $userRole,
             'permissions'      => $permissions,
@@ -504,6 +505,32 @@ class DashboardController extends Controller
         return $this->scopeByCompany(Product::query(), 'products', $company)
             ->where($stockColumn, '<=', 15)
             ->count();
+    }
+
+    private function getExpiringProducts($company, int $daysAhead = 30): array
+    {
+        if (! Schema::hasTable('products') || ! Schema::hasColumn('products', 'expiry_date')) {
+            return ['expired' => collect(), 'expiring_soon' => collect()];
+        }
+
+        $base = $this->scopeByCompany(Product::query(), 'products', $company)
+            ->whereNotNull('expiry_date')
+            ->select('id', 'name', 'expiry_date',
+                DB::raw(Schema::hasColumn('products', 'stock') ? 'stock' : '0 as stock'));
+
+        $expired    = (clone $base)->whereDate('expiry_date', '<', now()->toDateString())
+                                    ->orderBy('expiry_date')
+                                    ->limit(20)
+                                    ->get();
+
+        $expiringSoon = (clone $base)
+                            ->whereDate('expiry_date', '>=', now()->toDateString())
+                            ->whereDate('expiry_date', '<=', now()->addDays($daysAhead)->toDateString())
+                            ->orderBy('expiry_date')
+                            ->limit(20)
+                            ->get();
+
+        return compact('expired', 'expiring_soon');
     }
 
     private function getTotalInvoices($company, ?array $activeBranch = null) {

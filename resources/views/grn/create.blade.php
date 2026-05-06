@@ -47,8 +47,8 @@
                                 <select name="purchase_order_id" class="form-select @error('purchase_order_id') is-invalid @enderror">
                                     <option value="">-- Select Purchase Order --</option>
                                     @foreach($purchaseOrders as $purchaseOrder)
-                                        <option value="{{ $purchaseOrder->id }}" @selected(old('purchase_order_id') == $purchaseOrder->id)>
-                                            {{ $purchaseOrder->purchase_no ?? ('PO #' . $purchaseOrder->id) }}
+                                        <option value="{{ $purchaseOrder->id }}" @selected(old('purchase_order_id', request('purchase_order_id')) == $purchaseOrder->id)>
+                                            {{ $purchaseOrder->purchase_no ?? ('PO #' . $purchaseOrder->id) }} - {{ $purchaseOrder->supplier->name ?? 'No Supplier' }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -74,7 +74,7 @@
                                     <tr>
                                         <th>Product <span class="text-danger">*</span></th>
                                         <th>Product Name</th>
-                                        <th>Ordered Qty</th>
+                                        <th>Outstanding Qty</th>
                                         <th>Received Qty <span class="text-danger">*</span></th>
                                         <th>Unit Cost</th>
                                         <th>Lot #</th>
@@ -88,6 +88,7 @@
                                     @foreach($grnItems as $i => $item)
                                     <tr class="item-row">
                                         <td>
+                                            <input type="hidden" name="items[{{ $i }}][purchase_item_id]" value="{{ $item['purchase_item_id'] ?? '' }}">
                                             <select name="items[{{ $i }}][product_id]" class="form-select form-select-sm product-select" required>
                                                 <option value="">-- Select --</option>
                                                 @foreach($products as $p)
@@ -129,7 +130,33 @@
 <script>
 (function () {
     const productsJson = @json($products->map(fn($p) => ['id' => $p->id, 'name' => $p->name]));
+    const purchaseOrders = @json($purchaseOrders->mapWithKeys(function ($purchaseOrder) {
+        return [
+            $purchaseOrder->id => [
+                'supplier_id' => $purchaseOrder->supplier_id,
+                'items' => $purchaseOrder->items->map(function ($item) {
+                    $ordered = (float) ($item->qty ?? 0);
+                    $received = (float) ($item->received_qty ?? 0);
+
+                    return [
+                        'purchase_item_id' => $item->id,
+                        'product_id' => $item->product_id,
+                        'product_name' => $item->product->name ?? '',
+                        'ordered_quantity' => $ordered,
+                        'received_so_far' => $received,
+                        'outstanding_quantity' => max(0, $ordered - $received),
+                        'unit_cost' => (float) ($item->unit_price ?? 0),
+                        'description' => $item->description ?? '',
+                    ];
+                })->values(),
+            ],
+        ];
+    }));
     let rowIndex = {{ count(old('items', [[]])) }};
+    const hasOldItems = {{ old('items') ? 'true' : 'false' }};
+    const purchaseOrderSelect = document.querySelector('select[name="purchase_order_id"]');
+    const supplierSelect = document.querySelector('select[name="supplier_id"]');
+    const itemsBody = document.getElementById('itemsBody');
 
     function buildProductOptions(selectedId = '') {
         let opts = '<option value="">-- Select --</option>';
@@ -139,22 +166,43 @@
         return opts;
     }
 
-    function buildRow(idx) {
+    function buildRow(idx, item = {}) {
         return `<tr class="item-row">
-            <td><select name="items[${idx}][product_id]" class="form-select form-select-sm product-select" required>${buildProductOptions()}</select></td>
-            <td><input type="text" name="items[${idx}][product_name]" class="form-control form-control-sm product-name" placeholder="Or type name"></td>
-            <td><input type="number" name="items[${idx}][ordered_quantity]" class="form-control form-control-sm" step="0.01" min="0"></td>
-            <td><input type="number" name="items[${idx}][received_quantity]" class="form-control form-control-sm" step="0.01" min="0.01" required></td>
-            <td><input type="number" name="items[${idx}][unit_cost]" class="form-control form-control-sm" step="0.01" min="0"></td>
-            <td><input type="text" name="items[${idx}][lot_number]" class="form-control form-control-sm"></td>
-            <td><input type="text" name="items[${idx}][serial_number]" class="form-control form-control-sm"></td>
-            <td><input type="date" name="items[${idx}][expiry_date]" class="form-control form-control-sm"></td>
+            <td><input type="hidden" name="items[${idx}][purchase_item_id]" value="${item.purchase_item_id || ''}"><select name="items[${idx}][product_id]" class="form-select form-select-sm product-select" required>${buildProductOptions(item.product_id || '')}</select></td>
+            <td><input type="text" name="items[${idx}][product_name]" class="form-control form-control-sm product-name" value="${item.product_name || ''}" placeholder="Or type name"></td>
+            <td><input type="number" name="items[${idx}][ordered_quantity]" class="form-control form-control-sm ordered-qty" value="${item.outstanding_quantity || item.ordered_quantity || ''}" step="0.01" min="0"></td>
+            <td><input type="number" name="items[${idx}][received_quantity]" class="form-control form-control-sm received-qty" value="${item.received_quantity || ''}" step="0.01" min="0.01" max="${item.outstanding_quantity || ''}" required></td>
+            <td><input type="number" name="items[${idx}][unit_cost]" class="form-control form-control-sm" value="${item.unit_cost || ''}" step="0.01" min="0"></td>
+            <td><input type="text" name="items[${idx}][lot_number]" class="form-control form-control-sm" value="${item.lot_number || ''}"></td>
+            <td><input type="text" name="items[${idx}][serial_number]" class="form-control form-control-sm" value="${item.serial_number || ''}"></td>
+            <td><input type="date" name="items[${idx}][expiry_date]" class="form-control form-control-sm" value="${item.expiry_date || ''}"></td>
             <td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger remove-row">&times;</button></td>
         </tr>`;
     }
 
+    function populateFromPurchaseOrder(purchaseOrderId) {
+        const purchaseOrder = purchaseOrders[String(purchaseOrderId)];
+        if (!purchaseOrder) {
+            return;
+        }
+
+        if (supplierSelect && purchaseOrder.supplier_id) {
+            supplierSelect.value = String(purchaseOrder.supplier_id);
+        }
+
+        const outstandingItems = (purchaseOrder.items || []).filter((item) => Number(item.outstanding_quantity || 0) > 0);
+        if (!outstandingItems.length) {
+            return;
+        }
+
+        itemsBody.innerHTML = '';
+        outstandingItems.forEach((item) => {
+            itemsBody.insertAdjacentHTML('beforeend', buildRow(rowIndex++, item));
+        });
+    }
+
     document.getElementById('addRow').addEventListener('click', function () {
-        document.getElementById('itemsBody').insertAdjacentHTML('beforeend', buildRow(rowIndex++));
+        itemsBody.insertAdjacentHTML('beforeend', buildRow(rowIndex++));
     });
 
     document.getElementById('itemsBody').addEventListener('click', function (e) {
@@ -175,6 +223,16 @@
             }
         }
     });
+
+    if (purchaseOrderSelect) {
+        purchaseOrderSelect.addEventListener('change', function () {
+            populateFromPurchaseOrder(this.value);
+        });
+
+        if (purchaseOrderSelect.value && !hasOldItems) {
+            populateFromPurchaseOrder(purchaseOrderSelect.value);
+        }
+    }
 })();
 </script>
 @endpush

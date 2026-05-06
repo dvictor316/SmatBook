@@ -1358,12 +1358,50 @@ public function purchase_report(Request $request)
             return view('Reports.Reports.low-stock-report', compact('products', 'threshold', 'target'));
         }
 
+    /**
+     * Expiry Date Report — shows expired and expiring products
+     */
+    public function expiry_report(Request $request)
+    {
+        if (! Schema::hasColumn('products', 'expiry_date')) {
+            return view('Reports.Reports.expiry-report', [
+                'expired'      => collect(),
+                'expiring_soon' => collect(),
+                'daysAhead'    => 30,
+            ]);
+        }
+
+        $daysAhead   = (int) $request->get('days_ahead', 30);
+        $stockColumn = Schema::hasColumn('products', 'stock') ? 'stock' : (Schema::hasColumn('products', 'stock_quantity') ? 'stock_quantity' : null);
+        $selectCols  = ['id', 'name', 'sku', 'expiry_date'];
+        if ($stockColumn) {
+            $selectCols[] = DB::raw("{$stockColumn} as stock");
+        } else {
+            $selectCols[] = DB::raw('0 as stock');
+        }
+
+        $expired = $this->scopedTable('products')
+            ->select($selectCols)
+            ->whereNotNull('expiry_date')
+            ->whereDate('expiry_date', '<', now()->toDateString())
+            ->orderBy('expiry_date')
+            ->get();
+
+        $expiring_soon = $this->scopedTable('products')
+            ->select($selectCols)
+            ->whereNotNull('expiry_date')
+            ->whereDate('expiry_date', '>=', now()->toDateString())
+            ->whereDate('expiry_date', '<=', now()->addDays($daysAhead)->toDateString())
+            ->orderBy('expiry_date')
+            ->get();
+
+        return view('Reports.Reports.expiry-report', compact('expired', 'expiring_soon', 'daysAhead'));
+    }
+
         // Email AJAX Logic
         public function send_low_stock_email(Request $request)
         {
             $threshold = $request->get('min_qty', 15);
-            
-            $products = $this->scopedTable('products')
                 ->where('stock', '<=', $threshold)
                 ->get();
 
@@ -2984,7 +3022,7 @@ public function destroy($id)
     public function store_credit_note(Request $request)
     {
         $request->validate([
-            'invoice_id'  => 'required|exists:invoices,id',
+            'invoice_id'  => 'required|exists:sales,id',
             'credit_date' => 'required|date',
             'items'       => 'required|array'
         ]);
@@ -2994,12 +3032,12 @@ public function destroy($id)
             $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
             $userId    = (int) (Auth::id() ?? 0);
 
-            $invoice = DB::table('invoices')->where('id', $request->invoice_id)->first();
+            $invoice = DB::table('sales')->where('id', $request->invoice_id)->first();
 
             // 1. Create the Credit Note Header
             $cnInsert = [
-                'invoice_id'     => $invoice->id,
-                'customer_id'    => $invoice->customer_id,
+                'sale_id'        => $invoice->id,
+                'customer_id'    => $invoice->customer_id ?? null,
                 'credit_note_no' => 'CN-' . strtoupper(Str::random(8)),
                 'credit_date'    => $request->credit_date,
                 'status'         => 'approved',

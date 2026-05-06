@@ -12,7 +12,7 @@ class GrnItem extends Model
     protected $fillable = [
         'grn_id', 'product_id', 'product_name',
         'ordered_quantity', 'received_quantity', 'rejected_quantity',
-        'unit_cost', 'lot_number', 'serial_number', 'expiry_date',
+        'unit_cost', 'lot_number', 'serial_number', 'serial_numbers', 'expiry_date',
     ];
 
     protected $casts = [
@@ -31,5 +31,10 @@ class GrnItem extends Model
     public function product()
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function getSerialNumberAttribute(): ?string
+    {
+        return $this->attributes['serial_number'] ?? $this->attributes['serial_numbers'] ?? null;
     }
 }

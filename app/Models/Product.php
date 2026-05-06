@@ -41,7 +41,8 @@ class Product extends Model
         'status', 
         'image', 
         'description',
-        'barcode'
+        'barcode',
+        'expiry_date',
     ];
 
 

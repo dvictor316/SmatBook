@@ -8,6 +8,14 @@
         $balanceAmount = max(0, $totalAmount - $paidAmount);
         $taxAmount = abs((float) ($purchase->tax_amount ?? 0));
         $subTotalAmount = max(0, $totalAmount - $taxAmount);
+        $orderSummary = $orderSummary ?? [
+            'ordered_quantity' => number_format((float) $purchase->items->sum('qty'), 2),
+            'received_quantity' => number_format((float) $purchase->items->sum('received_qty'), 2),
+            'outstanding_quantity' => number_format(max(0, (float) $purchase->items->sum('qty') - (float) $purchase->items->sum('received_qty')), 2),
+            'receipt_label' => 'Pending Receipt',
+            'payment_label' => $balanceAmount > 0 ? 'Unpaid' : 'Paid',
+            'status_label' => $balanceAmount > 0 ? 'Pending Receipt / Unpaid' : 'Received / Paid',
+        ];
         $currencyCode = \App\Support\GeoCurrency::currentCurrency();
         $currencyLocale = \App\Support\GeoCurrency::currentLocale();
     @endphp
@@ -32,6 +40,9 @@
                     </div>
                     <div class="col-auto">
                         <div class="d-print-none">
+                            <a href="{{ route('grn.create', ['purchase_order_id' => $purchase->id]) }}" class="btn btn-primary me-1">
+                                <i class="fe fe-truck"></i> Receive Items
+                            </a>
                             <button onclick="window.print()" class="btn btn-white text-black border me-1">
                                 <i class="fe fe-printer"></i> Print
                             </button>
@@ -66,8 +77,8 @@
                                                     <p class="mb-0">Ref: <strong>{{ $purchase->purchase_no }}</strong></p>
                                                     <p class="mb-0">Branch: <strong>{{ $purchase->branch_label ?? 'Workspace Default' }}</strong></p>
                                                     <p>Status: 
-                                                        <span class="badge {{ $purchase->status == 'paid' ? 'bg-success-light' : 'bg-warning-light' }}">
-                                                            {{ ucfirst($purchase->status ?? 'Pending') }}
+                                                        <span class="badge {{ str_contains(strtolower($orderSummary['status_label'] ?? ''), 'received') ? 'bg-success-light' : 'bg-warning-light' }}">
+                                                            {{ $orderSummary['status_label'] ?? ucfirst($purchase->status ?? 'Pending') }}
                                                         </span>
                                                     </p>
                                                 </div>
@@ -106,31 +117,59 @@
                                     </div>
 
                                     <div class="invoice-item invoice-table-wrap">
+                                        <div class="row mb-3">
+                                            <div class="col-md-4">
+                                                <div class="border rounded-3 p-3 h-100">
+                                                    <div class="text-muted small mb-1">Receipt Status</div>
+                                                    <div class="fw-semibold">{{ $orderSummary['receipt_label'] ?? 'Pending Receipt' }}</div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="border rounded-3 p-3 h-100">
+                                                    <div class="text-muted small mb-1">Ordered / Received</div>
+                                                    <div class="fw-semibold">{{ $orderSummary['ordered_quantity'] ?? '0.00' }} / {{ $orderSummary['received_quantity'] ?? '0.00' }}</div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="border rounded-3 p-3 h-100">
+                                                    <div class="text-muted small mb-1">Outstanding Qty</div>
+                                                    <div class="fw-semibold">{{ $orderSummary['outstanding_quantity'] ?? '0.00' }}</div>
+                                                </div>
+                                            </div>
+                                        </div>
                                         <div class="table-responsive">
                                             <table class="table table-center table-hover mb-4" id="items-table">
                                                 <thead class="thead-light">
                                                     <tr>
                                                         <th>Product</th>
-                                                        <th class="text-center">Qty</th>
+                                                        <th class="text-center">Ordered</th>
+                                                        <th class="text-center">Received</th>
+                                                        <th class="text-center">Outstanding</th>
                                                         <th>Rate</th>
-                                                        <th>Tax</th>
                                                         <th class="text-end">Amount</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
                                                     @forelse($purchase->items as $item)
+                                                    @php
+                                                        $orderedQty = (float) ($item->qty ?? 0);
+                                                        $receivedQty = (float) ($item->received_qty ?? 0);
+                                                        $outstandingQty = max(0, $orderedQty - $receivedQty);
+                                                        $lineTotal = (float) ($item->line_total ?? ($orderedQty * (float) ($item->unit_price ?? 0)));
+                                                    @endphp
                                                     <tr>
                                                         <td>
                                                             <strong>{{ $item->product->name ?? ($item->product_name ?? 'N/A') }}</strong>
-                                                            <p class="small text-muted mb-0">{{ $item->product->sku ?? '' }}</p>
+                                                            <p class="small text-muted mb-0">{{ $item->description ?? ($item->product->sku ?? '') }}</p>
                                                         </td>
-                                                        <td class="text-center">{{ $item->qty }}</td>
+                                                        <td class="text-center">{{ number_format($orderedQty, 2) }}</td>
+                                                        <td class="text-center">{{ number_format($receivedQty, 2) }}</td>
+                                                        <td class="text-center">{{ number_format($outstandingQty, 2) }}</td>
                                                         <td>{{ \App\Support\GeoCurrency::format((float) ($item->unit_price ?? 0), 'NGN', $currencyCode, $currencyLocale) }}</td>
-                                                        <td>{{ \App\Support\GeoCurrency::format((float) ($item->tax_amount ?? 0), 'NGN', $currencyCode, $currencyLocale) }}</td>
-                                                        <td class="text-end font-weight-bold">{{ \App\Support\GeoCurrency::format((float) ($item->total_amount ?? 0), 'NGN', $currencyCode, $currencyLocale) }}</td>
+                                                        <td class="text-end font-weight-bold">{{ \App\Support\GeoCurrency::format($lineTotal, 'NGN', $currencyCode, $currencyLocale) }}</td>
                                                     </tr>
                                                     @empty
-                                                    <tr><td colspan="5" class="text-center p-4">No items recorded.</td></tr>
+                                                    <tr><td colspan="6" class="text-center p-4">No items recorded.</td></tr>
                                                     @endforelse
                                                 </tbody>
                                             </table>

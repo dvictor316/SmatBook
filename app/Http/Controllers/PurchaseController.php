@@ -601,6 +601,7 @@ public function show($id)
 
     $normalizedTotalAmount = abs((float) ($purchase->total_amount ?? 0));
     $paidAmount = $this->resolvePurchasePaidAmount($purchase);
+    $orderSummary = $this->summarizePurchaseOrder($purchase, $paidAmount);
     $purchase->setAttribute('resolved_total_amount', $normalizedTotalAmount);
     $purchase->setAttribute('paid_amount', $paidAmount);
     $purchase->setAttribute('balance_amount', max(0, $normalizedTotalAmount - $paidAmount));
@@ -612,6 +613,7 @@ public function show($id)
         'page'     => 'purchase-details',
         'activeBranch' => $activeBranch,
         'banks' => $banks,
+        'orderSummary' => $orderSummary,
     ]);
 }
 
@@ -1086,6 +1088,52 @@ public function show($id)
         return $paidAmount >= $totalAmount ? 'paid' : 'partial';
     }
 
+    private function summarizePurchaseOrder(Purchase $purchase, ?float $paidAmount = null): array
+    {
+        $purchase->loadMissing('items');
+
+        $orderedQty = round((float) $purchase->items->sum(fn ($item) => (float) ($item->qty ?? 0)), 2);
+        $receivedQty = round((float) $purchase->items->sum(function ($item) {
+            return Schema::hasColumn('purchase_items', 'received_qty')
+                ? (float) ($item->received_qty ?? 0)
+                : 0;
+        }), 2);
+        $outstandingQty = round(max(0, $orderedQty - $receivedQty), 2);
+
+        if ($orderedQty <= 0) {
+            $receiptLabel = 'Draft';
+        } elseif ($receivedQty <= 0) {
+            $receiptLabel = 'Pending Receipt';
+        } elseif ($outstandingQty > 0) {
+            $receiptLabel = 'Partial Received';
+        } else {
+            $receiptLabel = 'Received';
+        }
+
+        $paidAmount = $paidAmount ?? $this->resolvePurchasePaidAmount($purchase);
+        $totalAmount = abs((float) ($purchase->total_amount ?? 0));
+
+        if ($totalAmount <= 0 || $paidAmount <= 0) {
+            $paymentLabel = 'Unpaid';
+        } elseif ($paidAmount >= $totalAmount) {
+            $paymentLabel = 'Paid';
+        } else {
+            $paymentLabel = 'Part Paid';
+        }
+
+        return [
+            'ordered_quantity' => number_format($orderedQty, 2),
+            'received_quantity' => number_format($receivedQty, 2),
+            'outstanding_quantity' => number_format($outstandingQty, 2),
+            'ordered_quantity_value' => $orderedQty,
+            'received_quantity_value' => $receivedQty,
+            'outstanding_quantity_value' => $outstandingQty,
+            'receipt_label' => $receiptLabel,
+            'payment_label' => $paymentLabel,
+            'status_label' => $receiptLabel . ' / ' . $paymentLabel,
+        ];
+    }
+
     /**
      * Remove the specified purchase from storage.
      */
@@ -1320,26 +1368,72 @@ public function show($id)
         // Get the purchase and vendor
         $purchase = Purchase::findOrFail($request->purchase_id);
 
-        // Create the Purchase Return (Debit Note)
-        $purchaseReturn = PurchaseReturn::create([
-            'purchase_id' => $purchase->id,
-            'vendor_id' => null,
-            'return_no' => 'RTN-' . strtoupper(Str::random(8)),
-            'amount' => $totalAmount,
-            'reason' => $request->reason ?? 'Item Return',
-            'created_at' => $request->return_date ?? now(),
-        ]);
+        DB::beginTransaction();
+        try {
+            $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+            $userId    = (int) (auth()->id() ?? 0);
+            $returnNo  = 'RTN-' . strtoupper(Str::random(8));
 
-        LedgerService::postPurchaseReturn(
-            relatedId: $purchaseReturn->id,
-            amount: (float) $totalAmount,
-            reference: $purchaseReturn->return_no,
-            date: $request->return_date,
-            userId: auth()->id(),
-            relatedType: PurchaseReturn::class
-        );
+            $returnData = [
+                'purchase_id' => $purchase->id,
+                'vendor_id'   => null,
+                'return_no'   => $returnNo,
+                'amount'      => $totalAmount,
+                'reason'      => $request->reason ?? 'Item Return',
+                'return_date' => $request->return_date ?? now()->toDateString(),
+                'total_amount'=> $totalAmount,
+            ];
+            if ($companyId > 0 && Schema::hasColumn('purchase_returns', 'company_id')) {
+                $returnData['company_id'] = $companyId;
+            }
+            if ($userId > 0 && Schema::hasColumn('purchase_returns', 'user_id')) {
+                $returnData['user_id'] = $userId;
+            }
 
-        return redirect()->route('debit-notes')->with('success', 'Return processed successfully!');
+            // Create the Purchase Return (Debit Note)
+            $purchaseReturn = PurchaseReturn::create($returnData);
+
+            // Insert return items and decrement stock (goods leave inventory back to supplier)
+            if (Schema::hasTable('purchase_return_items')) {
+                foreach ($request->items as $productId => $data) {
+                    if (isset($data['qty']) && $data['qty'] > 0) {
+                        $itemRow = [
+                            'purchase_return_id' => $purchaseReturn->id,
+                            'product_id'         => $productId,
+                            'qty'                => $data['qty'],
+                            'unit_price'         => $data['unit_price'],
+                            'subtotal'           => $data['qty'] * $data['unit_price'],
+                        ];
+                        if ($companyId > 0 && Schema::hasColumn('purchase_return_items', 'company_id')) {
+                            $itemRow['company_id'] = $companyId;
+                        }
+                        if ($userId > 0 && Schema::hasColumn('purchase_return_items', 'user_id')) {
+                            $itemRow['user_id'] = $userId;
+                        }
+                        DB::table('purchase_return_items')->insert($itemRow);
+
+                        // Decrement stock — goods sent back to supplier
+                        DB::table('products')->where('id', $productId)->decrement('stock', $data['qty']);
+                    }
+                }
+            }
+
+            LedgerService::postPurchaseReturn(
+                relatedId: $purchaseReturn->id,
+                amount: (float) $totalAmount,
+                reference: $returnNo,
+                date: $request->return_date,
+                userId: auth()->id(),
+                relatedType: PurchaseReturn::class
+            );
+
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Error processing return: ' . $e->getMessage());
+        }
+
+        return redirect()->route('debit-notes')->with('success', 'Return processed and stock updated successfully!');
     }
 
     /**
@@ -1392,7 +1486,7 @@ public function show($id)
      */
     public function purchaseOrders()
     {
-        $ordersQuery = Purchase::with(['vendor', 'supplier', 'bank']);
+        $ordersQuery = Purchase::with(['vendor', 'supplier', 'bank', 'items', 'supplierPayments']);
         $this->applyTenantScope($ordersQuery, 'purchases');
         $this->applyBranchScope($ordersQuery, 'purchases');
 
@@ -1414,12 +1508,13 @@ public function show($id)
                 ?? '';
             $amount = abs((float) ($row->resolved_total_amount ?? $row->total_amount ?? $row->total ?? 0));
             $paidAmount = $this->resolvePurchasePaidAmount($row);
-            $status = $this->resolvePurchaseStatus($row, $paidAmount);
+            $orderSummary = $this->summarizePurchaseOrder($row, $paidAmount);
+            $status = $orderSummary['status_label'];
 
             $statusClass = match (strtolower($status)) {
-                'paid', 'received', 'completed' => 'badge bg-success-light text-success',
-                'partial' => 'badge bg-info-light text-info',
-                'pending', 'draft' => 'badge bg-warning-light text-warning',
+                'received / paid', 'received / unpaid', 'received / part paid' => 'badge bg-success-light text-success',
+                'partial received / unpaid', 'partial received / part paid', 'pending receipt / part paid' => 'badge bg-info-light text-info',
+                'pending receipt / unpaid', 'draft / unpaid', 'draft' => 'badge bg-warning-light text-warning',
                 default => 'badge bg-secondary-light text-secondary',
             };
 
@@ -1438,6 +1533,11 @@ public function show($id)
                 'Vendor' => $vendorName,
                 'Phone' => $vendorPhone,
                 'Amount' => number_format($amount, 2),
+                'OrderedQty' => $orderSummary['ordered_quantity'],
+                'ReceivedQty' => $orderSummary['received_quantity'],
+                'OutstandingQty' => $orderSummary['outstanding_quantity'],
+                'ReceiptStatus' => $orderSummary['receipt_label'],
+                'PaymentStatus' => $orderSummary['payment_label'],
                 'PaymentMode' => $paymentMode,
                 'Date' => $rowDate ? \Carbon\Carbon::parse($rowDate)->format('d M Y') : 'N/A',
                 'Status' => ucfirst($status),
@@ -1456,10 +1556,18 @@ public function show($id)
      */
     public function createOrder()
     {
-        $vendors = Vendor::orderBy('name')->get();
-        $products = Product::orderBy('name')->get();
+        $activeBranch = $this->getActiveBranchContext();
+        $vendorsQuery = Vendor::query()->orderBy('name');
+        $this->applyTenantScope($vendorsQuery, 'vendors');
+        $vendors = $vendorsQuery->get();
+        $suppliersQuery = Supplier::query()->orderBy('name');
+        $this->scopeSuppliersForActiveBranch($suppliersQuery);
+        $suppliers = $suppliersQuery->get();
+        $productsQuery = Product::query()->orderBy('name');
+        $this->scopeProductsForActiveBranch($productsQuery, $activeBranch);
+        $products = $productsQuery->get();
         
-        return view('Purchases.add-purchases-order', compact('vendors', 'products'));
+        return view('Purchases.add-purchases-order', compact('vendors', 'suppliers', 'products'));
     }
 
     public function storeOrder(Request $request)
@@ -1467,19 +1575,37 @@ public function show($id)
         $validated = $request->validate([
             'purchase_id' => 'nullable|string|max:100',
             'vendor_id' => 'nullable|exists:vendors,id',
-            'supplier_id' => 'nullable|exists:suppliers,id',
-            'purchase_date' => 'nullable|date',
+            'supplier_id' => 'required|exists:suppliers,id',
+            'purchase_date' => 'required|date',
             'reference_no' => 'nullable|string|max:100',
-            'product_id' => 'nullable|exists:products,id',
-            'quantity' => 'nullable|numeric|min:0',
-            'rate' => 'nullable|numeric|min:0',
+            'items' => 'required|array|min:1',
+            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.quantity' => 'required|numeric|min:0.01',
+            'items.*.rate' => 'required|numeric|min:0',
+            'items.*.description' => 'nullable|string|max:255',
             'notes' => 'nullable|string|max:1000',
         ]);
 
         $purchaseNo = $validated['purchase_id'] ?? ('PO-' . date('Ymd') . '-' . strtoupper(Str::random(5)));
-        $qty = (float) ($validated['quantity'] ?? 0);
-        $rate = (float) ($validated['rate'] ?? 0);
-        $total = max(0, $qty * $rate);
+        $items = collect($validated['items'] ?? [])
+            ->map(function (array $item) {
+                return [
+                    'product_id' => (int) $item['product_id'],
+                    'quantity' => round((float) $item['quantity'], 4),
+                    'rate' => round((float) $item['rate'], 4),
+                    'description' => trim((string) ($item['description'] ?? '')),
+                ];
+            })
+            ->filter(fn (array $item) => $item['quantity'] > 0)
+            ->values();
+
+        if ($items->isEmpty()) {
+            return back()->withInput()->withErrors([
+                'items' => 'Add at least one purchase order line item.',
+            ]);
+        }
+
+        $total = (float) $items->sum(fn (array $item) => $item['quantity'] * $item['rate']);
 
         DB::beginTransaction();
         try {
@@ -1489,10 +1615,10 @@ public function show($id)
                 $purchase->vendor_id = $validated['vendor_id'] ?? null;
             }
             if (Schema::hasColumn('purchases', 'supplier_id')) {
-                $purchase->supplier_id = $validated['supplier_id'] ?? ($validated['vendor_id'] ?? null);
+                $purchase->supplier_id = $validated['supplier_id'];
             }
             if (Schema::hasColumn('purchases', 'purchase_date')) {
-                $purchase->purchase_date = $validated['purchase_date'] ?? now()->toDateString();
+                $purchase->purchase_date = $validated['purchase_date'];
             }
             if (Schema::hasColumn('purchases', 'reference_no')) {
                 $purchase->reference_no = $validated['reference_no'] ?? null;
@@ -1514,16 +1640,28 @@ public function show($id)
                 $purchase->branch_name = $activeBranch['name'] ?? null;
             }
             $purchase->total_amount = $total;
-            $purchase->status = 'pending';
+            $purchase->status = 'ordered';
+            if (Schema::hasColumn('purchases', 'paid_amount')) {
+                $purchase->paid_amount = 0;
+            }
             $purchase->save();
 
-            if (!empty($validated['product_id']) && $qty > 0 && $rate >= 0) {
+            foreach ($items as $item) {
                 $itemPayload = [
                     'purchase_id' => $purchase->id,
-                    'product_id' => $validated['product_id'],
-                    'qty' => $qty,
-                    'unit_price' => $rate,
+                    'product_id' => $item['product_id'],
+                    'qty' => $item['quantity'],
+                    'unit_price' => $item['rate'],
                 ];
+                if (Schema::hasColumn('purchase_items', 'received_qty')) {
+                    $itemPayload['received_qty'] = 0;
+                }
+                if (Schema::hasColumn('purchase_items', 'description')) {
+                    $itemPayload['description'] = $item['description'] ?: null;
+                }
+                if (Schema::hasColumn('purchase_items', 'line_total')) {
+                    $itemPayload['line_total'] = round($item['quantity'] * $item['rate'], 2);
+                }
                 if (Schema::hasColumn('purchase_items', 'company_id')) {
                     $itemPayload['company_id'] = $purchase->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id');
                 }
@@ -1549,11 +1687,19 @@ public function show($id)
      */
     public function editOrder($id)
     {
-        $vendors = Vendor::orderBy('name')->get();
-        $products = Product::orderBy('name')->get();
-        $order = Purchase::with(['vendor', 'items'])->find($id);
+        $activeBranch = $this->getActiveBranchContext();
+        $vendorsQuery = Vendor::query()->orderBy('name');
+        $this->applyTenantScope($vendorsQuery, 'vendors');
+        $vendors = $vendorsQuery->get();
+        $suppliersQuery = Supplier::query()->orderBy('name');
+        $this->scopeSuppliersForActiveBranch($suppliersQuery);
+        $suppliers = $suppliersQuery->get();
+        $productsQuery = Product::query()->orderBy('name');
+        $this->scopeProductsForActiveBranch($productsQuery, $activeBranch);
+        $products = $productsQuery->get();
+        $order = Purchase::with(['vendor', 'supplier', 'items.product'])->find($id);
 
-        return view('Purchases.edit-purchases-order', compact('order', 'vendors', 'products'));
+        return view('Purchases.edit-purchases-order', compact('order', 'vendors', 'suppliers', 'products'));
     }
 
     // ========== PURCHASE TRANSACTIONS (SUPER ADMIN) ==========

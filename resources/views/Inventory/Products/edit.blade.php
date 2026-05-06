@@ -328,6 +328,12 @@
                                     <input type="text" name="barcode" class="form-control" value="{{ old('barcode', $product->barcode) }}">
                                 </div>
                             </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="field-label">Expiry Date <span class="text-muted small">(optional)</span></label>
+                                    <input type="date" name="expiry_date" class="form-control" value="{{ old('expiry_date', $product->expiry_date ? \Carbon\Carbon::parse($product->expiry_date)->format('Y-m-d') : '') }}">
+                                </div>
+                            </div>
                              <div class="col-md-4">
                                 <div class="form-group">
                                     <label class="field-label">Product Image</label>

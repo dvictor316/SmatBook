@@ -364,6 +364,11 @@
                                         <input type="text" name="barcode" class="form-control @error('barcode') is-invalid @enderror" placeholder="Scan or type barcode" value="{{ old('barcode') }}">
                                         @error('barcode')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Expiry Date <span class="text-muted small">(optional)</span></label>
+                                        <input type="date" name="expiry_date" class="form-control @error('expiry_date') is-invalid @enderror" value="{{ old('expiry_date') }}">
+                                        @error('expiry_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                    </div>
                                     <div class="col-md-4">
                                         <label class="form-label">Wholesale Price</label>
                                         <input type="number" step="0.01" name="wholesale_price" class="form-control @error('wholesale_price') is-invalid @enderror" placeholder="Optional" value="{{ old('wholesale_price') }}">

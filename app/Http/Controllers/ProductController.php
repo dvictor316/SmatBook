@@ -816,6 +816,7 @@ class ProductController extends Controller
                 'reorder_quantity' => 'nullable|integer|min:0',
                 'description'      => 'nullable|string',
                 'barcode'          => 'nullable|string|max:191',
+                'expiry_date'      => 'nullable|date',
             ];
 
             $validator = Validator::make($request->except('image'), $rules, [], [
@@ -1114,6 +1115,7 @@ public function inventory(Request $request)
             'status'           => 'required|in:active,inactive',
             'description'      => 'nullable|string',
             'barcode'          => 'nullable|string|max:191',
+            'expiry_date'      => 'nullable|date',
             'reorder_level'    => 'nullable|integer|min:0',
             'reorder_quantity' => 'nullable|integer|min:0',
         ]);

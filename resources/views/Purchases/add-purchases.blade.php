@@ -5,10 +5,18 @@
     <div class="content container-fluid">
     <div class="container-fluid py-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1>Create Purchase</h1>
-            <a href="{{ route('purchases.index') }}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Back to List
-            </a>
+            <div>
+                <h1 class="mb-1">Create Direct Purchase</h1>
+                <p class="text-muted mb-0">Use this when the supplier has already delivered the goods and they should enter stock immediately.</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ route('add-purchases-order') }}" class="btn btn-outline-primary">
+                    <i class="fe fe-shopping-bag"></i> Use Purchase Order Instead
+                </a>
+                <a href="{{ route('purchases.index') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to List
+                </a>
+            </div>
         </div>
 
         @if(session('success'))
@@ -41,6 +49,14 @@
             @csrf
 
             
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="alert alert-info border-0 shadow-sm">
+                        Direct purchase flow: goods received now, stock updates now, and payment can be made now or left as supplier debt.
+                    </div>
+                </div>
+            </div>
+
             <div class="row mb-4">
                 <div class="col-12">
                     <div class="card p-3">

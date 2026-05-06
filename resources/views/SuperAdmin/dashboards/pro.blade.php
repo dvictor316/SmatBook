@@ -521,6 +521,18 @@
                     </div>
                     <div class="col-6">
                         <div class="insight-item text-start">
+                            <div class="label">Expired Items</div>
+                            <div class="value text-danger">{{ ($expiringProducts['expired'] ?? collect())->count() }}</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="insight-item text-start">
+                            <div class="label">Expiring (30d)</div>
+                            <div class="value text-warning">{{ ($expiringProducts['expiring_soon'] ?? collect())->count() }}</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="insight-item text-start">
                             <div class="label">Sales Growth</div>
                             <div class="value">{{ number_format($salesGrowthRate, 1) }}%</div>
                         </div>
@@ -544,6 +556,36 @@
                     <span class="live-chip">Live</span>
                 </div>
                 @include('SuperAdmin.partials._low_stock')
+            </div>
+        </div>
+        <div class="col-xl-7">
+            <div class="panel-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0" style="color: var(--deep-sapphire);">Expiry Notifications</h5>
+                    <a href="{{ route('reports.expiry-report') }}" class="btn btn-link btn-sm text-decoration-none p-0">View Report</a>
+                </div>
+                @php
+                    $allExpiry = collect($expiringProducts['expired'] ?? [])->map(fn($p) => (object)['name' => $p->name, 'expiry_date' => $p->expiry_date, 'label' => 'Expired', 'cls' => 'danger'])
+                        ->merge(collect($expiringProducts['expiring_soon'] ?? [])->map(fn($p) => (object)['name' => $p->name, 'expiry_date' => $p->expiry_date, 'label' => 'Expiring', 'cls' => 'warning']));
+                @endphp
+                @if($allExpiry->isEmpty())
+                    <p class="text-muted small mb-0"><i class="feather-check-circle me-1 text-success"></i> No expiring or expired products.</p>
+                @else
+                    <div class="table-responsive">
+                        <table class="table table-sm table-borderless mb-0">
+                            <thead><tr><th class="text-muted small fw-semibold">Product</th><th class="text-muted small fw-semibold">Expiry Date</th><th></th></tr></thead>
+                            <tbody>
+                            @foreach($allExpiry->take(8) as $ep)
+                                <tr>
+                                    <td class="small">{{ $ep->name }}</td>
+                                    <td class="small">{{ \Carbon\Carbon::parse($ep->expiry_date)->format('d M Y') }}</td>
+                                    <td><span class="badge bg-{{ $ep->cls }}-subtle text-{{ $ep->cls }} rounded-pill">{{ $ep->label }}</span></td>
+                                </tr>
+                            @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
             </div>
         </div>
         <div class="col-xl-7">
