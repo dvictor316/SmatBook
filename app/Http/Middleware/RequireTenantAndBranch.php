@@ -40,9 +40,7 @@ class RequireTenantAndBranch
                 session()->forget(['active_branch_id', 'active_branch_name']);
             }
 
-            if (!session('active_branch_id')) {
-                app(ActiveBranchResolver::class)->ensureSession($user);
-            }
+            app(ActiveBranchResolver::class)->ensureSession($user);
         }
 
         $tenant = session('current_tenant_id');

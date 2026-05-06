@@ -2,6 +2,7 @@
 
 namespace App\Models\Traits;
 
+use App\Support\ActiveBranchResolver;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
@@ -60,7 +61,7 @@ trait TenantScoped
             }
 
             $requestBranchScope = (string) request()->get('branch_scope', '');
-            $requestBranchId = (string) request()->get('branch_id', '');
+            $requestBranchId = trim((string) request()->get('branch_id', ''));
             $requestAllBranches = request()->boolean('all_branches')
                 || strtolower($requestBranchScope) === 'all'
                 || strtolower($requestBranchId) === 'all';
@@ -73,16 +74,10 @@ trait TenantScoped
             $activeBranchName = trim((string) session('active_branch_name', ''));
 
             if ($requestBranchId !== '') {
-                $activeBranchId = trim($requestBranchId);
-                $activeBranchName = '';
-                if ($activeBranchId !== '' && $companyId > 0 && Schema::hasTable('settings')) {
-                    $branchKey = 'branches_json_company_' . $companyId;
-                    $rawBranches = (string) (DB::table('settings')->where('key', $branchKey)->value('value') ?? '');
-                    $branches = json_decode($rawBranches, true) ?: [];
-                    $branchMatch = collect($branches)->firstWhere('id', $activeBranchId);
-                    if ($branchMatch) {
-                        $activeBranchName = trim((string) ($branchMatch['name'] ?? ''));
-                    }
+                $requestBranch = app(ActiveBranchResolver::class)->resolveBranchById($requestBranchId, $user);
+                if ($requestBranch) {
+                    $activeBranchId = $requestBranch['id'];
+                    $activeBranchName = $requestBranch['name'];
                 }
             }
             if ($activeBranchId === '' && $activeBranchName === '' && $companyId > 0 && Schema::hasTable('settings')) {
@@ -104,9 +99,11 @@ trait TenantScoped
                 $builder->where(function ($q) use ($table, $hasBranchId, $hasBranchName, $activeBranchId, $activeBranchName) {
                     if ($hasBranchId && $activeBranchId !== '') {
                         $q->where("{$table}.branch_id", $activeBranchId);
+                        return;
                     }
+
                     if ($hasBranchName && $activeBranchName !== '') {
-                        $q->orWhere("{$table}.branch_name", $activeBranchName);
+                        $q->where("{$table}.branch_name", $activeBranchName);
                     }
                 });
             }

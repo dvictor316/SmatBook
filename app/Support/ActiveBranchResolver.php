@@ -12,12 +12,11 @@ class ActiveBranchResolver
 {
     public function ensureSession(?Authenticatable $user = null): bool
     {
-        $branchId = trim((string) session('active_branch_id', ''));
-        $branchName = trim((string) session('active_branch_name', ''));
-
-        if ($branchId !== '' || $branchName !== '') {
+        if ($this->sessionBranchIsValid($user)) {
             return true;
         }
+
+        session()->forget(['active_branch_id', 'active_branch_name']);
 
         $branch = $this->resolveDefaultBranch($user);
 
@@ -31,6 +30,43 @@ class ActiveBranchResolver
         ]);
 
         return true;
+    }
+
+    public function sessionBranchIsValid(?Authenticatable $user = null): bool
+    {
+        $branchId = trim((string) session('active_branch_id', ''));
+        $branchName = trim((string) session('active_branch_name', ''));
+
+        if ($branchId === '' && $branchName === '') {
+            return false;
+        }
+
+        if ($branchId !== '') {
+            $branch = $this->resolveBranchById($branchId, $user);
+            if (!$branch) {
+                return false;
+            }
+
+            if ($branchName !== '' && $branchName !== $branch['name']) {
+                return false;
+            }
+
+            return true;
+        }
+
+        return $this->branchesForUser($user)->contains(
+            fn (array $branch) => $branch['name'] === $branchName
+        );
+    }
+
+    public function resolveBranchById(string $branchId, ?Authenticatable $user = null): ?array
+    {
+        $branchId = trim($branchId);
+        if ($branchId === '') {
+            return null;
+        }
+
+        return $this->branchesForUser($user)->firstWhere('id', $branchId);
     }
 
     public function resolveDefaultBranch(?Authenticatable $user = null): ?array
@@ -113,13 +149,7 @@ class ActiveBranchResolver
             }
 
             $branches = collect($decoded)
-                ->map(function ($branch) {
-                    return [
-                        'id' => trim((string) ($branch['id'] ?? '')),
-                        'name' => trim((string) ($branch['name'] ?? '')),
-                        'is_active' => (bool) ($branch['is_active'] ?? true),
-                    ];
-                })
+                ->map(fn ($branch) => $this->normalizeBranch($branch))
                 ->filter(fn (array $branch) => $branch['id'] !== '' && $branch['name'] !== '')
                 ->values();
 
@@ -146,5 +176,14 @@ class ActiveBranchResolver
         $code = strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $name), 0, 4));
 
         return $code !== '' ? $code . '-' . now()->format('Hi') : 'MAIN-' . now()->format('Hi');
+    }
+
+    private function normalizeBranch(array $branch): array
+    {
+        return [
+            'id' => trim((string) ($branch['id'] ?? '')),
+            'name' => trim((string) ($branch['name'] ?? '')),
+            'is_active' => (bool) ($branch['is_active'] ?? true),
+        ];
     }
 }

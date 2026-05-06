@@ -40,11 +40,11 @@ class Controller extends BaseController
                 $query->where(function ($branchQuery) use ($table, $scope, $hasBranchId, $hasBranchName) {
                     if ($hasBranchId && $scope['branch_id'] !== '') {
                         $branchQuery->where("{$table}.branch_id", $scope['branch_id']);
+                        return;
                     }
 
                     if ($hasBranchName && $scope['branch_name'] !== '') {
-                        $method = ($hasBranchId && $scope['branch_id'] !== '') ? 'orWhere' : 'where';
-                        $branchQuery->{$method}("{$table}.branch_name", $scope['branch_name']);
+                        $branchQuery->where("{$table}.branch_name", $scope['branch_name']);
                     }
                 });
             }
@@ -64,6 +64,11 @@ class Controller extends BaseController
 
         if ($scope['branch_id'] !== '' && Schema::hasColumn($table, 'branch_id')) {
             abort_unless((string) $model->getAttribute('branch_id') === $scope['branch_id'], 403);
+            return;
+        }
+
+        if ($scope['branch_name'] !== '' && Schema::hasColumn($table, 'branch_name')) {
+            abort_unless((string) $model->getAttribute('branch_name') === $scope['branch_name'], 403);
         }
     }
 }

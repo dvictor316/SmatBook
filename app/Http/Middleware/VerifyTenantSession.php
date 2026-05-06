@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Middleware;
 
+use App\Support\ActiveBranchResolver;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -23,11 +24,11 @@ class VerifyTenantSession
                 session()->forget(['active_branch_id', 'active_branch_name']);
             }
 
-            // Populate session if it is simply absent (e.g. after session expiry
-            // but auth cookie is still valid).
             if ($userCompanyId > 0 && $sessionTenantId === 0) {
                 session(['current_tenant_id' => $userCompanyId]);
             }
+
+            app(ActiveBranchResolver::class)->ensureSession($user);
         }
 
         return $next($request);

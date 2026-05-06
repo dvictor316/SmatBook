@@ -2,6 +2,7 @@
 
 namespace App\Traits;
 
+use App\Support\ActiveBranchResolver;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
@@ -52,15 +53,26 @@ trait Multitenantable {
             // Auto-stamp branch from session so every new record is always
             // isolated to the correct branch (mirrors company_id stamping above).
             if (empty($model->branch_id)) {
-                $branchId = trim((string) session('active_branch_id', ''));
-                if ($branchId !== '') {
-                    $model->branch_id = $branchId;
+                $branch = app(ActiveBranchResolver::class)->resolveBranchById(
+                    trim((string) session('active_branch_id', '')),
+                    Auth::user()
+                );
+                if ($branch) {
+                    $model->branch_id = $branch['id'];
                 }
             }
             if (empty($model->branch_name)) {
-                $branchName = trim((string) session('active_branch_name', ''));
-                if ($branchName !== '') {
-                    $model->branch_name = $branchName;
+                $branch = app(ActiveBranchResolver::class)->resolveBranchById(
+                    trim((string) session('active_branch_id', '')),
+                    Auth::user()
+                );
+                if ($branch) {
+                    $model->branch_name = $branch['name'];
+                } else {
+                    $branchName = trim((string) session('active_branch_name', ''));
+                    if ($branchName !== '') {
+                        $model->branch_name = $branchName;
+                    }
                 }
             }
         });

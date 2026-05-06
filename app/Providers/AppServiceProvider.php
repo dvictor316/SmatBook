@@ -108,29 +108,14 @@ class AppServiceProvider extends ServiceProvider
 
                 if (($branchId !== '' || $branchName !== '') && ($hasBranchId || $hasBranchName)) {
                     $query->where(function ($scoped) use ($branchId, $branchName, $hasBranchId, $hasBranchName) {
-                        $matched = false;
-
                         if ($hasBranchId && $branchId !== '') {
                             $scoped->where('branch_id', $branchId);
-                            $matched = true;
+                            return;
                         }
 
                         if ($hasBranchName && $branchName !== '') {
-                            $method = $matched ? 'orWhere' : 'where';
-                            $scoped->{$method}('branch_name', $branchName);
-                            $matched = true;
+                            $scoped->where('branch_name', $branchName);
                         }
-
-                        $method = $matched ? 'orWhere' : 'where';
-                        $scoped->{$method}(function ($fallback) use ($hasBranchId, $hasBranchName) {
-                            if ($hasBranchId) {
-                                $fallback->whereNull('branch_id');
-                            }
-
-                            if ($hasBranchName) {
-                                $fallback->whereNull('branch_name');
-                            }
-                        });
                     });
                 }
 

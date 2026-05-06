@@ -11,6 +11,7 @@ use App\Models\BankStatementLine;
 use App\Models\Plan;
 use App\Models\Transaction;
 use App\Models\Subscription;
+use App\Support\ActiveBranchResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -1598,8 +1599,7 @@ class SettingController extends Controller
             'redirect_to' => 'nullable|string',
         ]);
 
-        $branches = collect($this->getCompanyScopedJsonSettingArray('branches_json'));
-        $branch = $branches->firstWhere('id', $validated['branch_id']);
+        $branch = app(ActiveBranchResolver::class)->resolveBranchById($validated['branch_id'], Auth::user());
 
         if (!$branch) {
             return redirect()->back()->with('error', 'Selected branch could not be found.');
