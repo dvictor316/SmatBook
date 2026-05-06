@@ -148,12 +148,9 @@ class DashboardController extends Controller
             ?? $currentSubscription?->plan
             ?? ($company?->plan ?? ($isSuperAdmin ? 'enterprise' : 'basic'))
         );
-        $dashboardBranchLabel = $activeBranch['name'] ?? null;
-
-        if ($isBusinessWorkspace && $plan === 'enterprise' && (!empty($activeBranch['id']) || !empty($activeBranch['name']))) {
-            $activeBranch = ['id' => null, 'name' => null];
-            $dashboardBranchLabel = 'All Branches';
-        }
+        $dashboardBranchLabel = ($activeBranch['scope'] ?? 'branch') === 'all'
+            ? 'All Branches'
+            : ($activeBranch['name'] ?? null);
 
         // 3. CACHED ANALYTICS (Scoped to Company)
         $resolvedCompanyScopeId = (int) (($company?->id ?? null) ?: $this->resolvedDashboardCompanyId());
@@ -210,67 +207,6 @@ class DashboardController extends Controller
                 'countryHeatMap'  => $this->getHeatMapData($company),
             ];
         });
-
-        $shouldFallbackToTenantWide = $isBusinessWorkspace
-            && !empty($activeBranch['id'])
-            && $this->shouldUseTenantWideDashboardFallback($metrics);
-
-        if ($shouldFallbackToTenantWide) {
-            $activeBranch = ['id' => null, 'name' => null];
-            $dashboardBranchLabel = 'All Branches';
-            $fallbackCacheKey = 'metrics_co_' . ($resolvedCompanyScopeId > 0 ? $resolvedCompanyScopeId : ('user_' . $user->id)) . '_branch_all';
-            $metrics = Cache::remember($fallbackCacheKey, 300, function() use ($company) {
-                $todayRevenue = $this->getTodayRevenue($company, null);
-                $totalSales = $this->getTotalSales($company, null);
-                $totalProfit = $this->getTotalProfit($company, null);
-                $totalExpenses = $this->getTotalExpenses($company, null);
-                $activeStock = $this->getTotalStock($company, null);
-                $inventoryValue = $this->getInventoryValue($company, null);
-                $totalInvoices = $this->getTotalInvoices($company, null);
-                $activeCustomers = $this->getActiveCustomers($company);
-                $lowStockCount = $this->getLowStockCount($company, null);
-                $pendingBalance = $this->getPendingBalance($company, null);
-                $itemsSold = $this->getItemsSold($company, null);
-                $todayOrders = $this->getTodayOrders($company, null);
-                $paymentStatus = $this->getPaymentStatusCounts($company, null);
-                $currentMonthSales = $this->getCurrentMonthSales($company, null);
-                $previousMonthSales = $this->getPreviousMonthSales($company, null);
-                $avgOrderValue = $totalInvoices > 0 ? ($totalSales / $totalInvoices) : 0;
-                $profitMargin = $totalSales > 0 ? (($totalProfit / $totalSales) * 100) : 0;
-                $expenseRatio = $totalSales > 0 ? (($totalExpenses / $totalSales) * 100) : 0;
-                $revenueProgress = $this->getRevenueProgress($todayRevenue, $totalSales);
-                $salesGrowthRate = $previousMonthSales > 0
-                    ? (($currentMonthSales - $previousMonthSales) / $previousMonthSales) * 100
-                    : ($currentMonthSales > 0 ? 100 : 0);
-
-                return [
-                    'todayRevenue'    => $todayRevenue,
-                    'totalSales'      => $totalSales,
-                    'totalProfit'     => $totalProfit,
-                    'netProfit'       => $totalProfit,
-                    'totalExpenses'   => $totalExpenses,
-                    'activeStock'     => $activeStock,
-                    'inventoryValue'  => $inventoryValue,
-                    'totalInvoices'   => $totalInvoices,
-                    'activeCustomers' => $activeCustomers,
-                    'lowStockCount'   => $lowStockCount,
-                    'pendingBalance'  => $pendingBalance,
-                    'itemsSoldToday'  => $itemsSold,
-                    'totalOrders'     => $todayOrders,
-                    'avgOrderValue'   => $avgOrderValue,
-                    'profitMargin'    => $profitMargin,
-                    'expenseRatio'    => $expenseRatio,
-                    'currentMonthSales' => $currentMonthSales,
-                    'previousMonthSales' => $previousMonthSales,
-                    'salesGrowthRate' => $salesGrowthRate,
-                    'paidInvoices'    => $paymentStatus['paid'],
-                    'partialInvoices' => $paymentStatus['partial'],
-                    'unpaidInvoices'  => $paymentStatus['unpaid'],
-                    'revenueProgress' => $revenueProgress,
-                    'countryHeatMap'  => $this->getHeatMapData($company),
-                ];
-            });
-        }
 
      // 4. PACKAGING DATA FOR DEEP SAPPHIRE VIEW
         $monthlySalesData = $this->getMonthlySalesData($company, $activeBranch);
@@ -926,15 +862,34 @@ class DashboardController extends Controller
 
     private function activeBranchContext(): array
     {
+        $branchScope = strtolower(trim((string) request()->get('branch_scope', '')));
+        $requestBranchId = strtolower(trim((string) request()->get('branch_id', '')));
+        $allBranches = request()->boolean('all_branches')
+            || $branchScope === 'all'
+            || $requestBranchId === 'all';
+
+        if ($allBranches) {
+            return [
+                'id' => null,
+                'name' => 'All Branches',
+                'scope' => 'all',
+            ];
+        }
+
         return [
             'id' => session('active_branch_id') ? (string) session('active_branch_id') : null,
             'name' => session('active_branch_name') ? (string) session('active_branch_name') : null,
+            'scope' => 'branch',
         ];
     }
 
     private function scopeSalesByContext($query, $company, ?array $activeBranch = null, string $table = 'sales')
     {
         $query = $this->scopeByCompany($query, $table, $company);
+
+        if (($activeBranch['scope'] ?? 'branch') === 'all') {
+            return $query;
+        }
 
         if (empty($activeBranch['id']) && empty($activeBranch['name'])) {
             return $query;
@@ -962,6 +917,10 @@ class DashboardController extends Controller
     {
         $query = $this->scopeByCompany($query, $table, $company);
 
+        if (($activeBranch['scope'] ?? 'branch') === 'all') {
+            return $query;
+        }
+
         if (empty($activeBranch['id']) && empty($activeBranch['name'])) {
             return $query;
         }
@@ -980,15 +939,4 @@ class DashboardController extends Controller
         });
     }
 
-    private function shouldUseTenantWideDashboardFallback(array $metrics): bool
-    {
-        $signals = [
-            (float) ($metrics['totalSales'] ?? 0),
-            (float) ($metrics['totalInvoices'] ?? 0),
-            (float) ($metrics['activeStock'] ?? 0),
-            (float) ($metrics['activeCustomers'] ?? 0),
-        ];
-
-        return collect($signals)->every(fn ($value) => $value <= 0);
-    }
 }

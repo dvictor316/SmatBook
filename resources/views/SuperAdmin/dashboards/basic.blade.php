@@ -275,7 +275,10 @@
         $currentMonthSales = (float) ($metrics['currentMonthSales'] ?? 0);
         $salesGrowthRate = (float) ($metrics['salesGrowthRate'] ?? 0);
         $inventoryValue = (float) ($metrics['inventoryValue'] ?? 0);
-        $branchLabel = $activeBranch['name'] ?? 'Workspace Default';
+        $branchScope = $activeBranch['scope'] ?? 'branch';
+        $branchLabel = $branchScope === 'all' ? 'All Branches' : ($activeBranch['name'] ?? 'Workspace Default');
+        $dashboardBaseUrl = Route::has('workspace.business.dashboard') ? route('workspace.business.dashboard') : url()->current();
+        $allBranchesUrl = $dashboardBaseUrl . '?all_branches=1&branch_scope=all';
     @endphp
 
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -291,6 +294,15 @@
                 <i class="fas fa-code-branch"></i>
                 Active Branch: {{ $branchLabel }}
             </span>
+            @if($branchScope === 'all')
+                <a href="{{ $dashboardBaseUrl }}" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                    <i class="fas fa-filter me-2"></i> Current Branch
+                </a>
+            @else
+                <a href="{{ $allBranchesUrl }}" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                    <i class="fas fa-layer-group me-2"></i> All Branches
+                </a>
+            @endif
             <a href="{{ route('branches.index') }}" class="btn btn-outline-primary btn-sm rounded-pill px-3">
                 <i class="fas fa-code-branch me-2"></i> Manage Branches
             </a>

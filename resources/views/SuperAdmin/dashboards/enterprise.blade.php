@@ -204,7 +204,10 @@
         $expenseRunRate = $expenseTotals->count() ? ($expenseTotals->sum() / max($expenseTotals->count(), 1)) : 0;
         $profitRunRate = $profitTotals->count() ? ($profitTotals->sum() / max($profitTotals->count(), 1)) : 0;
         $inventoryValue = (float) ($metrics['inventoryValue'] ?? 0);
-        $branchLabel = $dashboardBranchLabel ?? ($activeBranch['name'] ?? 'All Branches');
+        $branchScope = $activeBranch['scope'] ?? 'branch';
+        $branchLabel = $dashboardBranchLabel ?? ($branchScope === 'all' ? 'All Branches' : ($activeBranch['name'] ?? 'Workspace Default'));
+        $dashboardBaseUrl = Route::has('workspace.business.dashboard') ? route('workspace.business.dashboard') : url()->current();
+        $allBranchesUrl = $dashboardBaseUrl . '?all_branches=1&branch_scope=all';
     @endphp
 
     <div class="enterprise-header"> 
@@ -223,6 +226,15 @@
                 <i class="fas fa-code-branch"></i>
                 Active Branch: {{ $branchLabel }}
             </span>
+            @if($branchScope === 'all')
+                <a href="{{ $dashboardBaseUrl }}" class="btn btn-white shadow-sm border-0 px-4 py-2 btn-print-action" style="border-radius: 12px; font-weight: 800; color: var(--deep-sapphire);">
+                    <i class="fas fa-filter me-2 text-primary"></i> CURRENT BRANCH
+                </a>
+            @else
+                <a href="{{ $allBranchesUrl }}" class="btn btn-white shadow-sm border-0 px-4 py-2 btn-print-action" style="border-radius: 12px; font-weight: 800; color: var(--deep-sapphire);">
+                    <i class="fas fa-layer-group me-2 text-primary"></i> ALL BRANCHES
+                </a>
+            @endif
             <a href="{{ route('branches.index') }}" class="btn btn-white shadow-sm border-0 px-4 py-2 btn-print-action" style="border-radius: 12px; font-weight: 800; color: var(--deep-sapphire);"> 
                 <i class="fas fa-code-branch me-2 text-primary"></i> MANAGE BRANCHES
             </a> 

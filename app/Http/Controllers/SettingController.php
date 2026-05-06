@@ -1615,6 +1615,8 @@ class SettingController extends Controller
 
         $redirectUrl = $request->input('redirect_to') ?: url()->previous();
         if ($redirectUrl && $this->isSafeRedirectUrl($redirectUrl)) {
+            $redirectUrl = $this->stripBranchAggregationParams($redirectUrl);
+
             // Check if the URL is for a resource that might not exist in the new branch
             if (str_contains($redirectUrl, '/customers/')) {
                 return redirect()->route('customers.index')->with('success', 'Active branch changed to ' . $branch['name'] . '.');
@@ -1659,6 +1661,45 @@ class SettingController extends Controller
         $targetHost = strtolower($parsed['host']);
 
         return $targetHost === $appHost;
+    }
+
+    private function stripBranchAggregationParams(string $url): string
+    {
+        $parts = parse_url($url);
+
+        if ($parts === false) {
+            return $url;
+        }
+
+        $query = [];
+        parse_str((string) ($parts['query'] ?? ''), $query);
+        unset($query['all_branches'], $query['branch_scope']);
+
+        $rebuilt = '';
+
+        if (isset($parts['scheme'])) {
+            $rebuilt .= $parts['scheme'] . '://';
+        }
+
+        if (isset($parts['host'])) {
+            $rebuilt .= $parts['host'];
+        }
+
+        if (isset($parts['port'])) {
+            $rebuilt .= ':' . $parts['port'];
+        }
+
+        $rebuilt .= $parts['path'] ?? '';
+
+        if ($query !== []) {
+            $rebuilt .= '?' . http_build_query($query);
+        }
+
+        if (isset($parts['fragment'])) {
+            $rebuilt .= '#' . $parts['fragment'];
+        }
+
+        return $rebuilt !== '' ? $rebuilt : $url;
     }
 
     public function storeManualJournal(Request $request)
