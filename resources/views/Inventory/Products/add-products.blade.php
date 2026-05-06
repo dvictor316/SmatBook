@@ -262,6 +262,12 @@
                                         <small class="text-muted">Optional.</small>
                                         @error('image')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Expiry Date <span class="text-muted small">(optional)</span></label>
+                                        <input type="date" name="expiry_date" class="form-control @error('expiry_date') is-invalid @enderror" value="{{ old('expiry_date') }}">
+                                        <small class="text-muted">Use this for perishable or date-sensitive products.</small>
+                                        @error('expiry_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -363,11 +369,6 @@
                                         <label class="form-label">Barcode</label>
                                         <input type="text" name="barcode" class="form-control @error('barcode') is-invalid @enderror" placeholder="Scan or type barcode" value="{{ old('barcode') }}">
                                         @error('barcode')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">Expiry Date <span class="text-muted small">(optional)</span></label>
-                                        <input type="date" name="expiry_date" class="form-control @error('expiry_date') is-invalid @enderror" value="{{ old('expiry_date') }}">
-                                        @error('expiry_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                     </div>
                                     <div class="col-md-4">
                                         <label class="form-label">Wholesale Price</label>
