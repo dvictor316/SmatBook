@@ -111,6 +111,7 @@
             gap: 0.5rem;
             justify-content: flex-start;
             align-items: center;
+            width: 100%;
         }
 
         .purchase-page-actions > * {
@@ -120,6 +121,12 @@
 
         .purchase-mobile-full {
             flex-basis: auto;
+            width: auto;
+        }
+
+        .purchase-mobile-full .btn {
+            width: auto !important;
+            white-space: nowrap;
         }
 
         .purchase-report-shell .purchase-filter-grid {
