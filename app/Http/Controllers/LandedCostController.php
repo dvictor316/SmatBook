@@ -9,6 +9,56 @@ use App\Models\LandedCost;
 
 class LandedCostController extends Controller
 {
+    private function landedCostBranchColumnUsesNumericIds(): bool
+    {
+        if (!Schema::hasColumn('landed_costs', 'branch_id')) {
+            return false;
+        }
+
+        $columnType = strtolower((string) Schema::getColumnType('landed_costs', 'branch_id'));
+
+        return in_array($columnType, ['integer', 'bigint', 'biginteger', 'smallint', 'mediumint', 'tinyint'], true);
+    }
+
+    private function goodsReceivedBranchColumnUsesNumericIds(): bool
+    {
+        if (!Schema::hasColumn('goods_received_notes', 'branch_id')) {
+            return false;
+        }
+
+        $columnType = strtolower((string) Schema::getColumnType('goods_received_notes', 'branch_id'));
+
+        return in_array($columnType, ['integer', 'bigint', 'biginteger', 'smallint', 'mediumint', 'tinyint'], true);
+    }
+
+    private function persistableLandedCostBranchId($branchId)
+    {
+        $branchId = trim((string) $branchId);
+        if ($branchId === '') {
+            return null;
+        }
+
+        if ($this->landedCostBranchColumnUsesNumericIds()) {
+            return is_numeric($branchId) ? (int) $branchId : null;
+        }
+
+        return $branchId;
+    }
+
+    private function persistableGoodsReceivedBranchId($branchId)
+    {
+        $branchId = trim((string) $branchId);
+        if ($branchId === '') {
+            return null;
+        }
+
+        if ($this->goodsReceivedBranchColumnUsesNumericIds()) {
+            return is_numeric($branchId) ? (int) $branchId : null;
+        }
+
+        return $branchId;
+    }
+
     /**
      * Get the active branch context (id, name) from session.
      *
@@ -45,8 +95,9 @@ class LandedCostController extends Controller
                 ->orderByDesc('received_date')
                 ->orderByDesc('id');
 
-            if (Schema::hasColumn('goods_received_notes', 'branch_id') && !empty($branch['id'])) {
-                $grnsQuery->where('branch_id', $branch['id']);
+            $grnBranchId = $this->persistableGoodsReceivedBranchId($branch['id'] ?? null);
+            if (Schema::hasColumn('goods_received_notes', 'branch_id') && $grnBranchId !== null) {
+                $grnsQuery->where('branch_id', $grnBranchId);
             }
 
             $grns = $grnsQuery
@@ -77,8 +128,9 @@ class LandedCostController extends Controller
             'status'     => 'pending',
         ];
 
-        if (Schema::hasColumn('landed_costs', 'branch_id') && !empty($branch['id'])) {
-            $payload['branch_id'] = $branch['id'];
+        $landedCostBranchId = $this->persistableLandedCostBranchId($branch['id'] ?? null);
+        if (Schema::hasColumn('landed_costs', 'branch_id') && $landedCostBranchId !== null) {
+            $payload['branch_id'] = $landedCostBranchId;
         }
 
         if (Schema::hasColumn('landed_costs', 'branch_name') && !empty($branch['name'])) {
