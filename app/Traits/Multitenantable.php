@@ -48,6 +48,21 @@ trait Multitenantable {
             if (empty($model->company_id) && !empty(Auth::user()?->company_id)) {
                 $model->company_id = Auth::user()->company_id;
             }
+
+            // Auto-stamp branch from session so every new record is always
+            // isolated to the correct branch (mirrors company_id stamping above).
+            if (empty($model->branch_id)) {
+                $branchId = trim((string) session('active_branch_id', ''));
+                if ($branchId !== '') {
+                    $model->branch_id = $branchId;
+                }
+            }
+            if (empty($model->branch_name)) {
+                $branchName = trim((string) session('active_branch_name', ''));
+                if ($branchName !== '') {
+                    $model->branch_name = $branchName;
+                }
+            }
         });
     }
 }

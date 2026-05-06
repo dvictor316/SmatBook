@@ -1610,8 +1610,11 @@ class SettingController extends Controller
             'active_branch_name' => $branch['name'],
         ]);
 
+        // Regenerate session ID after branch switch to prevent session fixation.
+        $request->session()->regenerate(false);
+
         $redirectUrl = $request->input('redirect_to') ?: url()->previous();
-        if ($redirectUrl && str_starts_with($redirectUrl, url('/'))) {
+        if ($redirectUrl && $this->isSafeRedirectUrl($redirectUrl)) {
             // Check if the URL is for a resource that might not exist in the new branch
             if (str_contains($redirectUrl, '/customers/')) {
                 return redirect()->route('customers.index')->with('success', 'Active branch changed to ' . $branch['name'] . '.');
@@ -1637,6 +1640,25 @@ class SettingController extends Controller
 
         // Fallback to branches index if redirect_to is not safe
         return redirect()->route('branches.index')->with('success', 'Active branch changed to ' . $branch['name'] . '.');
+    }
+
+    /**
+     * Verify that a redirect URL is on the same host as this application.
+     * Prevents open redirect attacks caused by simple prefix matching.
+     */
+    private function isSafeRedirectUrl(string $url): bool
+    {
+        $parsed = parse_url($url);
+
+        // Relative URLs (no host component) are always safe.
+        if (!isset($parsed['host'])) {
+            return true;
+        }
+
+        $appHost = strtolower((string) (parse_url(url('/'), PHP_URL_HOST) ?? ''));
+        $targetHost = strtolower($parsed['host']);
+
+        return $targetHost === $appHost;
     }
 
     public function storeManualJournal(Request $request)

@@ -97,8 +97,11 @@ class ActiveBranchResolver
     {
         $companyId = $this->resolveCompanyId($user);
 
+        // Never fall back to the generic 'branches_json' key when a company_id is
+        // resolved — that unscoped key could hold another tenant's branches and
+        // cause cross-company data leakage.
         $keys = $companyId > 0
-            ? ["branches_json_company_{$companyId}", 'branches_json']
+            ? ["branches_json_company_{$companyId}"]
             : ['branches_json'];
 
         foreach ($keys as $key) {

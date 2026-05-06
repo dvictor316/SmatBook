@@ -3,14 +3,31 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class VerifyTenantSession
 {
     public function handle(Request $request, Closure $next)
     {
-        // Simple verification: ensure current_tenant_id exists in session
-        if (!session()->has('current_tenant_id')) {
-            // Logically handle unauthenticated tenant access here
+        if (Auth::check()) {
+            $user = Auth::user();
+            $userCompanyId = (int) ($user->company_id ?? 0);
+            $sessionTenantId = (int) session('current_tenant_id', 0);
+
+            // If session tenant does not match the authenticated user's company,
+            // correct it immediately to prevent cross-tenant data access via
+            // session manipulation or stale sessions from a previous login.
+            if ($userCompanyId > 0 && $sessionTenantId !== $userCompanyId) {
+                session(['current_tenant_id' => $userCompanyId]);
+                // Also clear any branch session that may belong to the wrong tenant.
+                session()->forget(['active_branch_id', 'active_branch_name']);
+            }
+
+            // Populate session if it is simply absent (e.g. after session expiry
+            // but auth cookie is still valid).
+            if ($userCompanyId > 0 && $sessionTenantId === 0) {
+                session(['current_tenant_id' => $userCompanyId]);
+            }
         }
 
         return $next($request);

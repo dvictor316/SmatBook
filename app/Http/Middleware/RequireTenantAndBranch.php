@@ -20,13 +20,24 @@ class RequireTenantAndBranch
             return $next($request);
         }
 
-        // If session is missing tenant/branch but user is authenticated,
-        // restore from the user model before blocking access.
         if (Auth::check()) {
             $user = Auth::user();
+            $userCompanyId = (int) ($user->company_id ?? 0);
+            $sessionTenantId = (int) session('current_tenant_id', 0);
 
-            if (!session('current_tenant_id') && !empty($user->company_id)) {
-                session(['current_tenant_id' => $user->company_id]);
+            // Restore missing tenant session from the authenticated user's record.
+            if ($sessionTenantId === 0 && $userCompanyId > 0) {
+                session(['current_tenant_id' => $userCompanyId]);
+                $sessionTenantId = $userCompanyId;
+            }
+
+            // Enforce strict match: session must agree with the authenticated
+            // user's company. A mismatch means a stale or manipulated session —
+            // reset it to prevent cross-tenant data access.
+            if ($userCompanyId > 0 && $sessionTenantId !== $userCompanyId) {
+                session(['current_tenant_id' => $userCompanyId]);
+                // Flush branch context too; it may belong to the wrong tenant.
+                session()->forget(['active_branch_id', 'active_branch_name']);
             }
 
             if (!session('active_branch_id')) {
