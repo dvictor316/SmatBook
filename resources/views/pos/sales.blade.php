@@ -77,11 +77,13 @@
         text-transform: uppercase;
     }
 
-    .summary-card .summary-value {
-        font-size: 2rem;
-        font-weight: 800;
-        line-height: 1.1;
-    }
+.summary-card .summary-value {
+    font-size: 2rem;
+    font-weight: 800;
+    line-height: 1.1;
+    color: #fde047;
+    text-shadow: 0 0 16px rgba(253, 224, 71, 0.32);
+}
 
     .summary-card .summary-subtle {
         color: rgba(255, 255, 255, 0.8);
