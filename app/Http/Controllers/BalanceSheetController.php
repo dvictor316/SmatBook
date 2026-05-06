@@ -609,9 +609,10 @@ class BalanceSheetController extends Controller
                 return $query->where(function ($sub) use ($branchId, $branchName) {
                     if ($branchId !== '') {
                         $sub->where('branch_id', $branchId);
+                        return;
                     }
                     if ($branchName !== '') {
-                        $sub->orWhere('branch_name', $branchName);
+                        $sub->where('branch_name', $branchName);
                     }
                 });
             });
@@ -632,9 +633,10 @@ class BalanceSheetController extends Controller
                 return $query->where(function ($sub) use ($branchId, $branchName) {
                     if ($branchId !== '') {
                         $sub->where('branch_id', $branchId);
+                        return;
                     }
                     if ($branchName !== '') {
-                        $sub->orWhere('branch_name', $branchName);
+                        $sub->where('branch_name', $branchName);
                     }
                 });
             });
@@ -655,9 +657,10 @@ class BalanceSheetController extends Controller
                 return $query->where(function ($sub) use ($branchId, $branchName) {
                     if ($branchId !== '') {
                         $sub->where('branch_id', $branchId);
+                        return;
                     }
                     if ($branchName !== '') {
-                        $sub->orWhere('branch_name', $branchName);
+                        $sub->where('branch_name', $branchName);
                     }
                 });
             });
@@ -699,14 +702,18 @@ class BalanceSheetController extends Controller
                 return $query->where(function ($sub) use ($branchId, $branchName, $accountIds) {
                     if ($branchId !== '') {
                         $sub->where('branch_id', $branchId);
+                        if (!empty($accountIds)) {
+                            $sub->orWhere(function ($inner) use ($accountIds) {
+                                $inner->where(function ($b) {
+                                    $b->whereNull('branch_id')->orWhere('branch_id', '');
+                                })->whereIn('id', $accountIds);
+                            });
+                        }
+                        return;
                     }
                     if ($branchName !== '') {
-                        $sub->orWhere('branch_name', $branchName);
+                        $sub->where('branch_name', $branchName);
                     }
-                    // Include global/system accounts (branch_id IS NULL or '') ONLY when
-                    // they already appear in the branch-scoped transaction totals.
-                    // This prevents all un-branched COA accounts from bleeding into
-                    // every branch's balance sheet with identical opening balances.
                     if (!empty($accountIds)) {
                         $sub->orWhere(function ($inner) use ($accountIds) {
                             $inner->where(function ($b) {
@@ -1200,8 +1207,13 @@ class BalanceSheetController extends Controller
                 $branchId   = trim((string) ($activeBranch['id']   ?? ''));
                 $branchName = trim((string) ($activeBranch['name'] ?? ''));
                 return $q->where(function ($sub) use ($branchId, $branchName) {
-                    if ($branchId   !== '') $sub->where('branch_id',   $branchId);
-                    if ($branchName !== '') $sub->orWhere('branch_name', $branchName);
+                    if ($branchId !== '') {
+                        $sub->where('branch_id', $branchId);
+                        return;
+                    }
+                    if ($branchName !== '') {
+                        $sub->where('branch_name', $branchName);
+                    }
                 });
             });
         $this->applyTransactionScope($txnQuery, $request);
@@ -1222,9 +1234,20 @@ class BalanceSheetController extends Controller
                 $branchName = trim((string) ($activeBranch['name'] ?? ''));
                 if ($branchId === '' && $branchName === '') return;
                 return $q->where(function ($sub) use ($branchId, $branchName, $accountIds) {
-                    if ($branchId   !== '') $sub->where('branch_id',   $branchId);
-                    if ($branchName !== '') $sub->orWhere('branch_name', $branchName);
-                    // Global accounts (no branch) only if they have branch-tagged transactions.
+                    if ($branchId !== '') {
+                        $sub->where('branch_id', $branchId);
+                        if (!empty($accountIds)) {
+                            $sub->orWhere(function ($inner) use ($accountIds) {
+                                $inner->where(function ($b) {
+                                    $b->whereNull('branch_id')->orWhere('branch_id', '');
+                                })->whereIn('id', $accountIds);
+                            });
+                        }
+                        return;
+                    }
+                    if ($branchName !== '') {
+                        $sub->where('branch_name', $branchName);
+                    }
                     if (!empty($accountIds)) {
                         $sub->orWhere(function ($inner) use ($accountIds) {
                             $inner->where(function ($b) {
@@ -1323,10 +1346,10 @@ class BalanceSheetController extends Controller
         $query->where(function ($sub) use ($branchId, $branchName) {
             if ($branchId !== '') {
                 $sub->where('branch_id', $branchId);
+                return;
             }
             if ($branchName !== '') {
-                $method = $branchId !== '' ? 'orWhere' : 'where';
-                $sub->{$method}('branch_name', $branchName);
+                $sub->where('branch_name', $branchName);
             }
         });
     }
@@ -1381,10 +1404,10 @@ class BalanceSheetController extends Controller
                 $query->where(function ($sub) use ($branchId, $branchName) {
                     if ($branchId !== '') {
                         $sub->where('transactions.branch_id', $branchId);
+                        return;
                     }
                     if ($branchName !== '') {
-                        $method = $branchId !== '' ? 'orWhere' : 'where';
-                        $sub->{$method}('transactions.branch_name', $branchName);
+                        $sub->where('transactions.branch_name', $branchName);
                     }
                 });
             }
