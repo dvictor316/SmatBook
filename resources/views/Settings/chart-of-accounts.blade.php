@@ -12,6 +12,10 @@
         'Revenue'   => ['bg' => '#dcfce7', 'text' => '#166534', 'dot' => '#22c55e'],
         'Expense'   => ['bg' => '#fee2e2', 'text' => '#991b1b', 'dot' => '#ef4444'],
     ];
+
+    $canManageBankBalance = in_array(strtolower(trim((string) (auth()->user()?->role ?? ''))), ['super_admin', 'superadmin', 'administrator', 'admin'], true)
+        || auth()->user()?->hasPermissionTo('accounting.bank_reconciliation.edit')
+        || auth()->user()?->hasPermissionTo('accounting.chart_of_accounts.edit');
 @endphp
 
 <style>
@@ -539,6 +543,13 @@
                                                         @endif
                                                     </td>
                                                     <td style="white-space:nowrap;">
+                                                        @if(!empty($bankBalanceDiagnostics[$account->id] ?? null))
+                                                            <button type="button" class="coa-action-btn"
+                                                                title="View/Edit Bank Balance"
+                                                                data-bank-balance-open="coaBankBalanceOverlay{{ $account->id }}">
+                                                                <i class="fe fe-credit-card"></i>
+                                                            </button>
+                                                        @endif
                                                         <button type="button" class="coa-action-btn coa-edit-btn"
                                                             title="Edit account"
                                                             data-id="{{ $account->id }}"
@@ -703,6 +714,125 @@ function coaBuildSubtypes(typeValue, selectId, preselect) {
             </div>{{-- /.col-xl-9 --}}
         </div>{{-- /.row --}}
     </div>
+@foreach($accounts as $account)
+    @php $bankDiagnostic = $bankBalanceDiagnostics[$account->id] ?? null; @endphp
+    @if($bankDiagnostic)
+        <div class="coa-modal-overlay" id="coaBankBalanceOverlay{{ $account->id }}">
+            <div class="coa-modal" style="width:min(96vw,760px);">
+                <div class="coa-modal-head">
+                    <p class="coa-modal-title"><i class="fe fe-credit-card me-1"></i> Bank Balance Management</p>
+                    <button type="button" class="coa-modal-close" data-bank-balance-close="coaBankBalanceOverlay{{ $account->id }}"><i class="fe fe-x"></i></button>
+                </div>
+                <div class="coa-modal-body">
+                    <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
+                        <div>
+                            <div style="font-size:.95rem;font-weight:800;color:#0f172a;">{{ $account->name }}</div>
+                            <div style="font-size:.78rem;color:#64748b;">
+                                Scope:
+                                tenant {{ $bankDiagnostic['scope']['company_id'] ?: 'n/a' }}
+                                @if(($bankDiagnostic['scope']['branch_id'] ?? '') !== '')
+                                    • branch {{ $bankDiagnostic['scope']['branch_id'] }}
+                                @elseif(($bankDiagnostic['scope']['branch_name'] ?? '') !== '')
+                                    • branch {{ $bankDiagnostic['scope']['branch_name'] }}
+                                @endif
+                            </div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-size:.78rem;color:#64748b;">Ledger-derived balance</div>
+                            <div style="font-size:1.05rem;font-weight:800;color:#0f172a;">{{ number_format((float) ($bankDiagnostic['derived_ledger_balance'] ?? 0), 2) }}</div>
+                        </div>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:16px;">
+                        <div style="border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;">
+                            <div style="font-size:.72rem;color:#94a3b8;text-transform:uppercase;font-weight:700;">Stored Current</div>
+                            <div style="font-size:.96rem;font-weight:800;color:#0f172a;">{{ number_format((float) ($bankDiagnostic['stored_current_balance'] ?? 0), 2) }}</div>
+                        </div>
+                        <div style="border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;">
+                            <div style="font-size:.72rem;color:#94a3b8;text-transform:uppercase;font-weight:700;">Payment Channel</div>
+                            <div style="font-size:.96rem;font-weight:800;color:#0f172a;">{{ number_format((float) ($bankDiagnostic['linked_bank_balance'] ?? 0), 2) }}</div>
+                        </div>
+                        <div style="border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;">
+                            <div style="font-size:.72rem;color:#94a3b8;text-transform:uppercase;font-weight:700;">Transactions</div>
+                            <div style="font-size:.96rem;font-weight:800;color:#0f172a;">{{ number_format((int) ($bankDiagnostic['transaction_count'] ?? 0)) }}</div>
+                        </div>
+                        <div style="border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;">
+                            <div style="font-size:.72rem;color:#94a3b8;text-transform:uppercase;font-weight:700;">Unmatched Statements</div>
+                            <div style="font-size:.96rem;font-weight:800;color:#0f172a;">{{ number_format((int) ($bankDiagnostic['statement_unmatched_count'] ?? 0)) }}</div>
+                        </div>
+                    </div>
+
+                    <div style="overflow:auto;margin-bottom:16px;">
+                        <table class="table table-sm align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Balance Source</th>
+                                    <th class="text-end">Amount</th>
+                                    <th>Diagnostic</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach(($bankDiagnostic['sources'] ?? []) as $source)
+                                    <tr>
+                                        <td class="fw-semibold text-dark">{{ $source['label'] }}</td>
+                                        <td class="text-end">{{ number_format((float) ($source['value'] ?? 0), 2) }}</td>
+                                        <td class="text-muted">{{ $source['detail'] }}</td>
+                                    </tr>
+                                @endforeach
+                                <tr>
+                                    <td class="fw-semibold text-dark">Linked bank / payment account</td>
+                                    <td class="text-end">-</td>
+                                    <td class="text-muted">{{ $bankDiagnostic['linked_bank_name'] ?: 'No linked bank/payment channel record matched.' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-semibold text-dark">Payment usage</td>
+                                    <td class="text-end">{{ number_format((int) ($bankDiagnostic['payment_usage_count'] ?? 0)) }}</td>
+                                    <td class="text-muted">Recorded payment rows that reference this account.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    @if($bankDiagnostic['blocks_manual_edit'])
+                        <div style="background:#fff7ed;border:1px solid #fdba74;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:.82rem;color:#9a3412;">
+                            Manual opening-balance edits are blocked because posted ledger entries already exist for this account. Use an audited balancing journal instead.
+                        </div>
+                    @endif
+
+                    @if($canManageBankBalance)
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;">
+                            <form method="POST" action="{{ route('settings.chart-of-accounts.bank-balance', $account->id) }}" style="border:1px solid #e2e8f0;border-radius:12px;padding:14px;">
+                                @csrf
+                                <input type="hidden" name="mode" value="journal">
+                                <div style="font-size:.9rem;font-weight:800;color:#0f172a;margin-bottom:6px;">Zero by balancing journal</div>
+                                <div style="font-size:.78rem;color:#64748b;margin-bottom:10px;">Posts an auditable journal entry into the ledger and zeros the linked payment-channel stored balance.</div>
+                                <textarea name="reason" rows="3" class="coa-input" placeholder="Reason for zeroing this balance..." required></textarea>
+                                <button type="submit" class="coa-submit-btn" style="margin-top:10px;">
+                                    <i class="fe fe-file-text me-1"></i> Post Zeroing Journal
+                                </button>
+                            </form>
+
+                            <form method="POST" action="{{ route('settings.chart-of-accounts.bank-balance', $account->id) }}" style="border:1px solid #e2e8f0;border-radius:12px;padding:14px;{{ !($bankDiagnostic['can_direct_reset'] ?? false) ? 'opacity:.6;' : '' }}">
+                                @csrf
+                                <input type="hidden" name="mode" value="direct_clear">
+                                <div style="font-size:.9rem;font-weight:800;color:#0f172a;margin-bottom:6px;">Fresh reset / empty database clear</div>
+                                <div style="font-size:.78rem;color:#64748b;margin-bottom:10px;">Only allowed when no ledger transactions exist. Clears opening balance, payment channel balance, and bank statement imports/lines for this linked bank.</div>
+                                <textarea name="reason" rows="3" class="coa-input" placeholder="Reason for direct reset clear..." required {{ !($bankDiagnostic['can_direct_reset'] ?? false) ? 'disabled' : '' }}></textarea>
+                                <button type="submit" class="coa-submit-btn" style="margin-top:10px;{{ !($bankDiagnostic['can_direct_reset'] ?? false) ? 'background:#94a3b8;cursor:not-allowed;' : '' }}" {{ !($bankDiagnostic['can_direct_reset'] ?? false) ? 'disabled' : '' }}>
+                                    <i class="fe fe-refresh-ccw me-1"></i> Run Safe Direct Clear
+                                </button>
+                            </form>
+                        </div>
+                    @else
+                        <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 14px;font-size:.82rem;color:#1d4ed8;">
+                            Only Super Admin or an explicitly authorized accounting role can zero or clear bank balances.
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    @endif
+@endforeach
 {{-- ── Edit Account Modal ─────────────────────────────────── --}}
 <div class="coa-modal-overlay" id="coaEditOverlay">
     <div class="coa-modal">
@@ -967,6 +1097,28 @@ document.addEventListener('DOMContentLoaded', function () {
     if (deleteClose)     deleteClose.addEventListener('click', closeDeleteModal);
     if (deleteCancelBtn) deleteCancelBtn.addEventListener('click', closeDeleteModal);
     deleteOverlay && deleteOverlay.addEventListener('click', function(e) { if (e.target === deleteOverlay) closeDeleteModal(); });
+
+    document.querySelectorAll('[data-bank-balance-open]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var target = document.getElementById(btn.getAttribute('data-bank-balance-open'));
+            if (target) target.classList.add('active');
+        });
+    });
+
+    document.querySelectorAll('[data-bank-balance-close]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var target = document.getElementById(btn.getAttribute('data-bank-balance-close'));
+            if (target) target.classList.remove('active');
+        });
+    });
+
+    document.querySelectorAll('.coa-modal-overlay[id^="coaBankBalanceOverlay"]').forEach(function(overlay) {
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) {
+                overlay.classList.remove('active');
+            }
+        });
+    });
 });
 </script>
 @endpush

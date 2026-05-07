@@ -11,6 +11,7 @@ use App\Models\BankStatementLine;
 use App\Models\Plan;
 use App\Models\Transaction;
 use App\Models\Subscription;
+use App\Services\BankBalanceManagementService;
 use App\Support\ActiveBranchResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -445,6 +446,7 @@ class SettingController extends Controller
         $accounts = collect();
         $accountGroups = collect();
         $accountSummary = collect();
+        $bankBalanceDiagnostics = [];
         $accountTypes = Account::typeOptions();
         $subtypeOptionsByType = Account::subtypeOptionsByType();
 
@@ -491,6 +493,9 @@ class SettingController extends Controller
                     'balance' => (float) $group->sum(fn ($account) => (float) ($account->current_balance ?? $account->opening_balance ?? 0)),
                 ];
             });
+
+            $bankBalanceDiagnostics = app(BankBalanceManagementService::class)
+                ->diagnosticsForAccounts($accounts);
         }
 
         return view('Settings.chart-of-accounts', compact(
@@ -499,7 +504,8 @@ class SettingController extends Controller
             'accountGroups',
             'accountSummary',
             'accountTypes',
-            'subtypeOptionsByType'
+            'subtypeOptionsByType',
+            'bankBalanceDiagnostics'
         ));
     }
     public function branches()
@@ -573,7 +579,7 @@ class SettingController extends Controller
             $reconciliations = $banks->map(function (Bank $bank) use ($accounts) {
                 $account = $this->resolveBankLedgerAccount($bank, $accounts);
                 $bookBalance = $account
-                    ? (float) ($account->current_balance ?? $account->calculateBalance())
+                    ? (float) $account->calculateBalance()
                     : 0.0;
                 $bankBalance = (float) ($bank->balance ?? 0);
                 $difference = round($bankBalance - $bookBalance, 2);
@@ -1402,6 +1408,14 @@ class SettingController extends Controller
         // Recompute current_balance: new opening_balance + existing transaction movement
         $newOpening = (float) ($validated['opening_balance'] ?? 0);
         $oldOpening = (float) $account->opening_balance;
+        $transactionCount = (int) $account->transactions()->count();
+
+        if ($transactionCount > 0 && abs($newOpening - $oldOpening) >= 0.01) {
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with('error', 'Opening balance cannot be edited directly after ledger entries exist. Use the Bank Balance Management flow or post a balancing journal entry instead.');
+        }
 
         $account->update([
             'name'            => $validated['name'],
@@ -1824,6 +1838,43 @@ class SettingController extends Controller
         return redirect()->route('manual-journal')->with('success', 'Manual journal entry posted successfully.');
     }
 
+    public function zeroChartAccountBankBalance(Request $request, $id)
+    {
+        if (!Schema::hasTable('accounts')) {
+            return redirect()->back()->with('error', 'Accounts table is not available in this installation.');
+        }
+
+        $this->authorizeBankBalanceManagement();
+
+        $companyId = (int) (Auth::user()->company_id ?? session('current_tenant_id') ?? 0);
+        $account = Account::withoutGlobalScopes()
+            ->when($companyId > 0, fn ($query) => $query->where('company_id', $companyId))
+            ->findOrFail($id);
+
+        $this->ensureAccountInActiveBranch($account);
+
+        $validated = $request->validate([
+            'reason' => 'required|string|max:1000',
+            'mode' => 'required|in:journal,direct_clear',
+        ]);
+
+        $service = app(BankBalanceManagementService::class);
+
+        try {
+            if ($validated['mode'] === 'direct_clear') {
+                $result = $service->directClear($account, trim((string) $validated['reason']));
+                return redirect()->route('chart-of-accounts')->with('success', 'Bank/payment balance cleared safely from reset mode. Old balance: ' . number_format((float) ($result['old_balance'] ?? 0), 2) . ', new balance: ' . number_format((float) ($result['new_balance'] ?? 0), 2) . '.');
+            }
+
+            $result = $service->zeroViaJournal($account, trim((string) $validated['reason']));
+            return redirect()->route('chart-of-accounts')->with('success', 'Balancing journal entry posted successfully (' . ($result['reference'] ?? 'n/a') . '). Old balance: ' . number_format((float) ($result['old_balance'] ?? 0), 2) . ', new balance: ' . number_format((float) ($result['new_balance'] ?? 0), 2) . '.');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return redirect()->back()->withInput()->withErrors($e->errors());
+        } catch (\Throwable $e) {
+            return redirect()->back()->withInput()->with('error', 'Bank balance management failed: ' . $e->getMessage());
+        }
+    }
+
     public function storeBankReconciliationAdjustment(Request $request)
     {
         if (!Schema::hasTable('banks') || !Schema::hasTable('accounts') || !Schema::hasTable('transactions')) {
@@ -2018,6 +2069,17 @@ class SettingController extends Controller
 
         $oldBankName = (string) ($bank->name ?? '');
         $oldBankBalance = (float) ($bank->balance ?? 0);
+
+        if (abs(((float) $payload['balance']) - $oldBankBalance) >= 0.01) {
+            $linkedAccount = $this->resolveBankLedgerAccount($bank);
+            if ($linkedAccount && $linkedAccount->transactions()->count() > 0) {
+                return redirect()
+                    ->back()
+                    ->withInput()
+                    ->with('error', 'Opening/payment channel balance cannot be edited directly after ledger entries exist. Use Chart of Accounts → View/Edit Bank Balance for a safe, auditable adjustment.');
+            }
+        }
+
         $bank->update($payload);
         $this->syncBankLedgerAccount($bank->fresh(), $oldBankName, $oldBankBalance);
 
@@ -2029,6 +2091,34 @@ class SettingController extends Controller
         $bank->delete();
 
         return redirect()->route('bank-account')->with('success', 'Bank account deleted successfully.');
+    }
+
+    private function authorizeBankBalanceManagement(): void
+    {
+        $user = Auth::user();
+        $role = strtolower(trim((string) ($user?->role ?? '')));
+
+        $allowedRole = in_array($role, ['super_admin', 'superadmin', 'administrator', 'admin'], true);
+        $allowedPermission = $user?->hasPermissionTo('accounting.bank_reconciliation.edit')
+            || $user?->hasPermissionTo('accounting.chart_of_accounts.edit');
+
+        abort_unless($allowedRole || $allowedPermission, 403, 'You are not allowed to manage bank balances.');
+    }
+
+    private function ensureAccountInActiveBranch(Account $account): void
+    {
+        $activeBranchId = trim((string) session('active_branch_id', ''));
+        $activeBranchName = trim((string) session('active_branch_name', ''));
+        $accountBranchId = trim((string) ($account->branch_id ?? ''));
+        $accountBranchName = trim((string) ($account->branch_name ?? ''));
+
+        if ($activeBranchId !== '' && $accountBranchId !== '' && $activeBranchId !== $accountBranchId) {
+            abort(403, 'This account belongs to another branch.');
+        }
+
+        if ($activeBranchId === '' && $activeBranchName !== '' && $accountBranchName !== '' && strcasecmp($activeBranchName, $accountBranchName) !== 0) {
+            abort(403, 'This account belongs to another branch.');
+        }
     }
 
     public function storeTaxRate(Request $request)

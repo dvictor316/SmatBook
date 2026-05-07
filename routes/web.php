@@ -1022,6 +1022,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::put('/settings/chart-of-accounts/{id}', 'updateChartAccount')->name('settings.chart-of-accounts.update');
         Route::delete('/settings/chart-of-accounts/{id}', 'destroyChartAccount')->name('settings.chart-of-accounts.destroy');
         Route::post('/settings/chart-of-accounts/{id}/deactivate', 'deactivateChartAccount')->name('settings.chart-of-accounts.deactivate');
+        Route::post('/settings/chart-of-accounts/{id}/bank-balance', 'zeroChartAccountBankBalance')->name('settings.chart-of-accounts.bank-balance');
         Route::post('/settings/bank-reconciliation/import', 'storeBankStatementImport')->name('settings.bank-reconciliation.import');
         Route::post('/settings/bank-statement-lines/{line}/match', 'matchBankStatementLine')->name('settings.bank-statement-lines.match');
         Route::post('/settings/bank-statement-lines/{line}/unmatch', 'unmatchBankStatementLine')->name('settings.bank-statement-lines.unmatch');
