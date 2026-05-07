@@ -6520,7 +6520,7 @@
                         <div class="col-lg-12 col-md-12">
                             <div class="input-block mb-0">
                                 <label>Opening Balance</label>
-                                <input type="number" step="0.01" min="0" name="opening_balance" class="form-control" placeholder="0.00">
+                                <input type="text" inputmode="decimal" autocomplete="off" name="opening_balance" class="form-control js-bank-opening-balance" placeholder="0.00">
                             </div>
                         </div>
                     </div>

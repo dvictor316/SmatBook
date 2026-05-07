@@ -26,6 +26,50 @@ use Illuminate\Validation\Rule;
 
 class SettingController extends Controller
 {
+    private function normalizeDecimalMoneyInput(mixed $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $value = trim((string) $value);
+        if ($value === '') {
+            return null;
+        }
+
+        $value = preg_replace('/[^\d,\.\-\s]/', '', $value) ?? '';
+        $value = preg_replace('/\s+/', '', $value) ?? '';
+
+        if ($value === '' || $value === '-' || $value === '.' || $value === ',') {
+            return null;
+        }
+
+        $hasComma = str_contains($value, ',');
+        $hasDot = str_contains($value, '.');
+
+        if ($hasComma && $hasDot) {
+            $value = str_replace(',', '', $value);
+        } elseif ($hasComma) {
+            $commaCount = substr_count($value, ',');
+            $parts = explode(',', $value);
+            $lastPart = end($parts);
+
+            if ($commaCount > 1 || (is_string($lastPart) && strlen($lastPart) === 3)) {
+                $value = str_replace(',', '', $value);
+            } else {
+                $value = str_replace(',', '.', $value);
+            }
+        }
+
+        if (substr_count($value, '.') > 1) {
+            $segments = explode('.', $value);
+            $decimal = array_pop($segments);
+            $value = implode('', $segments) . '.' . $decimal;
+        }
+
+        return $value;
+    }
+
     private function deleteManagedSettingFile(?string $path): void
     {
         $path = trim((string) $path);
@@ -1990,6 +2034,10 @@ class SettingController extends Controller
 
     public function storeBankAccount(Request $request)
     {
+        $request->merge([
+            'opening_balance' => $this->normalizeDecimalMoneyInput($request->input('opening_balance')),
+        ]);
+
         $validated = $request->validate([
             'bank_name' => 'required|string|max:191',
             'account_number' => 'required|string|max:100|unique:banks,account_number',
@@ -2036,6 +2084,10 @@ class SettingController extends Controller
 
     public function updateBankAccount(Request $request, Bank $bank)
     {
+        $request->merge([
+            'opening_balance' => $this->normalizeDecimalMoneyInput($request->input('opening_balance')),
+        ]);
+
         $validated = $request->validate([
             'bank_name' => 'required|string|max:191',
             'account_number' => [

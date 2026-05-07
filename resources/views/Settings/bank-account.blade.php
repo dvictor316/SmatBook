@@ -254,7 +254,8 @@
                             </div>
                             <div class="mb-0">
                                 <label class="form-label">Opening Balance</label>
-                                <input type="number" step="0.01" min="0" class="form-control" name="opening_balance" value="{{ old('opening_balance', (float) ($account->balance ?? 0)) }}">
+                                <input type="text" inputmode="decimal" autocomplete="off" class="form-control js-bank-opening-balance" name="opening_balance" value="{{ old('opening_balance', number_format((float) ($account->balance ?? 0), 2, '.', '')) }}" placeholder="0.00">
+                                <small class="text-muted d-block mt-2">Enter the exact amount only. Large balances will be saved exactly as entered.</small>
                             </div>
                         </div>
                         <div class="modal-footer">
@@ -337,6 +338,15 @@
                 });
 
                 syncSuggestedCode();
+            });
+
+            document.querySelectorAll('.js-bank-opening-balance').forEach((input) => {
+                input.addEventListener('input', () => {
+                    const cleaned = String(input.value || '').replace(/[^\d.,-]/g, '');
+                    if (cleaned !== input.value) {
+                        input.value = cleaned;
+                    }
+                });
             });
         });
     </script>
