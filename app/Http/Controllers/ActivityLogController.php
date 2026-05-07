@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\ActivityLog;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Str;
 
 class ActivityLogController extends Controller
@@ -15,25 +17,27 @@ class ActivityLogController extends Controller
      */
     public function index(Request $request)
     {
+        if (!Schema::hasTable('activity_logs')) {
+            return view('activity-log.index', [
+                'logs' => new LengthAwarePaginator([], 0, 25),
+                'modules' => collect(),
+                'search' => trim((string) $request->input('search', '')),
+                'module' => trim((string) $request->input('module', '')),
+                'stats' => ['total' => 0, 'today' => 0, 'users' => 0, 'modules' => 0],
+                'message' => 'Activity log is not available yet because the activity_logs table has not been created on this environment.',
+            ]);
+        }
+
         $user = Auth::user();
         $query = $this->baseQuery($user);
 
         $search = trim((string) $request->input('search', ''));
         if ($search !== '') {
-            $query->where(function ($q) use ($search) {
-                $q->where('description', 'like', "%{$search}%")
-                    ->orWhere('action', 'like', "%{$search}%")
-                    ->orWhere('module', 'like', "%{$search}%")
-                    ->orWhere('ip_address', 'like', "%{$search}%")
-                    ->orWhereHas('user', function ($userQuery) use ($search) {
-                        $userQuery->where('name', 'like', "%{$search}%")
-                            ->orWhere('email', 'like', "%{$search}%");
-                    });
-            });
+            $this->applySearchConstraint($query, $search);
         }
 
         $module = trim((string) $request->input('module', ''));
-        if ($module !== '') {
+        if ($module !== '' && Schema::hasColumn('activity_logs', 'module')) {
             $query->where('module', $module);
         }
 
@@ -72,8 +76,12 @@ class ActivityLogController extends Controller
         $stats = [
             'total' => (clone $statsQuery)->count(),
             'today' => (clone $statsQuery)->whereDate('created_at', now()->toDateString())->count(),
-            'users' => (clone $statsQuery)->distinct('user_id')->count('user_id'),
-            'modules' => (clone $statsQuery)->whereNotNull('module')->distinct('module')->count('module'),
+            'users' => Schema::hasColumn('activity_logs', 'user_id')
+                ? (clone $statsQuery)->distinct('user_id')->count('user_id')
+                : 0,
+            'modules' => Schema::hasColumn('activity_logs', 'module')
+                ? (clone $statsQuery)->whereNotNull('module')->distinct('module')->count('module')
+                : 0,
         ];
 
         return view('activity-log.index', compact('logs', 'modules', 'search', 'module', 'stats'));
@@ -129,25 +137,21 @@ class ActivityLogController extends Controller
 
     public function export(Request $request)
     {
+        if (!Schema::hasTable('activity_logs')) {
+            return redirect()->route(Route::currentRouteName() === 'activity-log.export' ? 'activity-log.index' : 'activity_log.index')
+                ->with('error', 'Activity log is not available yet because the activity_logs table has not been created on this environment.');
+        }
+
         $user = Auth::user();
         $query = $this->baseQuery($user);
 
         $search = trim((string) $request->input('search', ''));
         if ($search !== '') {
-            $query->where(function ($q) use ($search) {
-                $q->where('description', 'like', "%{$search}%")
-                    ->orWhere('action', 'like', "%{$search}%")
-                    ->orWhere('module', 'like', "%{$search}%")
-                    ->orWhere('ip_address', 'like', "%{$search}%")
-                    ->orWhereHas('user', function ($userQuery) use ($search) {
-                        $userQuery->where('name', 'like', "%{$search}%")
-                            ->orWhere('email', 'like', "%{$search}%");
-                    });
-            });
+            $this->applySearchConstraint($query, $search);
         }
 
         $module = trim((string) $request->input('module', ''));
-        if ($module !== '') {
+        if ($module !== '' && Schema::hasColumn('activity_logs', 'module')) {
             $query->where('module', $module);
         }
 
@@ -222,5 +226,39 @@ class ActivityLogController extends Controller
         }
 
         return $query;
+    }
+
+    private function applySearchConstraint($query, string $search): void
+    {
+        $query->where(function ($q) use ($search) {
+            $applied = false;
+
+            foreach (['description', 'action', 'module', 'ip_address'] as $column) {
+                if (!Schema::hasColumn('activity_logs', $column)) {
+                    continue;
+                }
+
+                if (!$applied) {
+                    $q->where($column, 'like', "%{$search}%");
+                    $applied = true;
+                } else {
+                    $q->orWhere($column, 'like', "%{$search}%");
+                }
+            }
+
+            if (Schema::hasTable('users')) {
+                if ($applied) {
+                    $q->orWhereHas('user', function ($userQuery) use ($search) {
+                        $userQuery->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%");
+                    });
+                } else {
+                    $q->whereHas('user', function ($userQuery) use ($search) {
+                        $userQuery->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%");
+                    });
+                }
+            }
+        });
     }
 }

@@ -37,6 +37,12 @@
             </div>
         </div>
 
+        @if(!empty($message ?? ''))
+            <div class="alert alert-warning">
+                {{ $message }}
+            </div>
+        @endif
+
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-body">
                 <form method="GET" action="{{ route(Route::currentRouteName()) }}">
