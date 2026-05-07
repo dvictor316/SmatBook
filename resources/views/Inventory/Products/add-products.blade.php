@@ -414,6 +414,7 @@
         <div class="modal-content">
             <form id="ajaxAddCategoryForm">
                 @csrf
+                <input type="hidden" name="type" value="product">
                 <div class="modal-header">
                     <h5 class="modal-title">Quick Category</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -674,7 +675,7 @@ $(document).ready(function () {
                 'Accept': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest'
             },
-            body: JSON.stringify({ name: typedName })
+            body: JSON.stringify({ name: typedName, type: 'product' })
         })
         .then(function (res) {
             return parseJsonResponse(res, 'Category save returned HTML instead of JSON.').then(function (data) {

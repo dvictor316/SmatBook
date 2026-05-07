@@ -832,6 +832,7 @@
         <div class="modal-content">
             <form id="ajaxAddCategoryForm" method="POST" action="{{ route('ajax.inventory.categories.store') }}">
                 @csrf
+                <input type="hidden" name="type" value="product">
                 <div class="modal-header">
                     <h5 class="modal-title">Quick Category</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -1247,7 +1248,7 @@
                 method: "POST",
                 credentials: 'same-origin',
                 headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-                body: JSON.stringify({ name: $('#new_category_name').val() })
+                body: JSON.stringify({ name: $('#new_category_name').val(), type: 'product' })
             })
             .then(async (res) => {
                 const data = await parseJsonResponse(res, 'Category save returned HTML instead of JSON.');

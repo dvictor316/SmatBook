@@ -164,6 +164,7 @@
             <div class="modal-content border-0">
                 <form action="{{ route('categories.store') }}" method="POST">
                     @csrf
+                    <input type="hidden" name="type" value="product">
                     <div class="modal-header bg-primary text-white">
                         <h5 class="modal-title">New Category</h5>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>

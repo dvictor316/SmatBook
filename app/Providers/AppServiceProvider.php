@@ -119,6 +119,18 @@ class AppServiceProvider extends ServiceProvider
                     });
                 }
 
+                // The globally shared category list is primarily used by product
+                // forms, so keep it limited to product categories (plus legacy
+                // untyped rows) to avoid suggesting expense categories in
+                // unrelated product fields.
+                if (Schema::hasColumn('categories', 'type')) {
+                    $query->where(function ($typed) {
+                        $typed->where('type', 'product')
+                            ->orWhereNull('type')
+                            ->orWhere('type', '');
+                    });
+                }
+
                 return $query->orderBy('name')->get();
             });
 

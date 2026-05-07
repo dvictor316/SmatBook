@@ -377,6 +377,7 @@
             <div class="modal-content">
                 <form id="editAjaxAddCategoryForm">
                     @csrf
+                    <input type="hidden" name="type" value="product">
                     <div class="modal-header">
                         <h5 class="modal-title">Quick Category</h5>
                     </div>
@@ -462,7 +463,7 @@
                     'Accept': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
                 },
-                body: JSON.stringify({ name: $('#edit_new_category_name').val() })
+                body: JSON.stringify({ name: $('#edit_new_category_name').val(), type: 'product' })
             })
             .then(async (res) => {
                 const data = await res.json();

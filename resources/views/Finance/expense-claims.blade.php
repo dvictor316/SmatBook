@@ -177,7 +177,15 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Category</label>
-                            <input type="text" name="category" class="form-control" placeholder="Travel, logistics, client visit..." required>
+                            <input type="text" name="category" class="form-control" list="expense-claim-category-options" placeholder="Travel, logistics, client visit..." required>
+                            @if(($expenseCategories ?? collect())->isNotEmpty())
+                                <datalist id="expense-claim-category-options">
+                                    @foreach($expenseCategories as $expenseCategory)
+                                        <option value="{{ $expenseCategory->name }}"></option>
+                                    @endforeach
+                                </datalist>
+                                <small class="text-muted">Suggestions are limited to your expense categories for this workspace.</small>
+                            @endif
                         </div>
                         <div class="col-md-12">
                             <label class="form-label">Project</label>

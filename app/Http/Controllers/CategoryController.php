@@ -12,6 +12,8 @@ use Illuminate\Database\QueryException;
 
 class CategoryController extends Controller
 {
+private const ALLOWED_TYPES = ['product', 'expense'];
+
 private function activeTenantScope(): array
 {
     return [
@@ -95,18 +97,23 @@ public function index(Request $request)
     //  - The HTML management page (/inventory/products/category) is always product-scoped
     //  - Legacy rows (type IS NULL) are included for both 'product' and the HTML page
     if (Schema::hasColumn('categories', 'type')) {
-        $typeFilter = $request->get('type');
-        if ($typeFilter !== null && $typeFilter !== '') {
-            // Explicit type requested (e.g. ?type=product from product views)
-            $query->where(function ($q) use ($typeFilter) {
-                $q->where('categories.type', $typeFilter)
-                  ->orWhereNull('categories.type');
-            });
+        $typeFilter = $this->normalizedCategoryType($request->input('type'));
+        if ($typeFilter !== null) {
+            if ($typeFilter === 'product') {
+                $query->where(function ($q) {
+                    $q->where('categories.type', 'product')
+                      ->orWhereNull('categories.type')
+                      ->orWhere('categories.type', '');
+                });
+            } else {
+                $query->where('categories.type', $typeFilter);
+            }
         } else {
             // HTML management page — always show product categories (+ legacy nulls)
             $query->where(function ($q) {
                 $q->where('categories.type', 'product')
-                  ->orWhereNull('categories.type');
+                  ->orWhereNull('categories.type')
+                  ->orWhere('categories.type', '');
             });
         }
     }
@@ -145,6 +152,7 @@ public function store(Request $request)
 
     $validator = Validator::make($request->all(), [
         'name' => 'required|string|max:255',
+        'type' => 'nullable|string|in:product,expense',
         'description' => 'nullable|string',
         'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', 
         'status' => 'nullable',
@@ -163,10 +171,24 @@ public function store(Request $request)
     }
 
     $normalizedName = mb_strtolower(trim((string) $request->name));
+    $categoryType = $this->normalizedCategoryType($request->input('type'));
 
-    $existingCategory = $this->scopedCategoryQuery()
-        ->whereRaw('LOWER(TRIM(name)) = ?', [$normalizedName])
-        ->first();
+    $existingCategoryQuery = $this->scopedCategoryQuery()
+        ->whereRaw('LOWER(TRIM(name)) = ?', [$normalizedName]);
+
+    if (Schema::hasColumn('categories', 'type') && $categoryType !== null) {
+        if ($categoryType === 'product') {
+            $existingCategoryQuery->where(function ($query) {
+                $query->where('type', 'product')
+                    ->orWhereNull('type')
+                    ->orWhere('type', '');
+            });
+        } else {
+            $existingCategoryQuery->where('type', $categoryType);
+        }
+    }
+
+    $existingCategory = $existingCategoryQuery->first();
 
     if ($existingCategory) {
         if ($this->expectsJsonResponse($request)) {
@@ -223,9 +245,8 @@ public function store(Request $request)
         $payload['branch_name'] = session('active_branch_name');
     }
 
-    // Categories created from the product-category management page are product-type
     if (Schema::hasColumn('categories', 'type')) {
-        $payload['type'] = 'product';
+        $payload['type'] = $categoryType ?: 'product';
     }
 
     try {
@@ -277,9 +298,17 @@ public function store(Request $request)
     {
         $request->validate([
             'name' => 'required|string|max:255|unique:categories,name,' . $category->id,
+            'type' => 'nullable|string|in:product,expense',
         ]);
 
         $payload = ['name' => $request->name];
+
+        if (Schema::hasColumn('categories', 'type')) {
+            $requestedType = $this->normalizedCategoryType($request->input('type'));
+            if ($requestedType !== null) {
+                $payload['type'] = $requestedType;
+            }
+        }
 
         if (Schema::hasColumn('categories', 'description')) {
             $payload['description'] = $request->description;
@@ -307,6 +336,13 @@ public function store(Request $request)
 
         $category->delete();
         return redirect()->back()->with('success', 'Category deleted successfully!');
+    }
+
+    private function normalizedCategoryType($rawType): ?string
+    {
+        $type = strtolower(trim((string) $rawType));
+
+        return in_array($type, self::ALLOWED_TYPES, true) ? $type : null;
     }
 
     public function clearProducts(Category $category)

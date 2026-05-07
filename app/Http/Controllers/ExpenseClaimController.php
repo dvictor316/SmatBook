@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Account;
+use App\Models\Category;
 use App\Models\Expense;
 use App\Models\ExpenseClaim;
 use App\Models\Project;
@@ -75,6 +76,7 @@ class ExpenseClaimController extends Controller
         $paymentAccounts = Schema::hasTable('accounts')
             ? Account::query()->where('type', 'Asset')->orderBy('name')->get(['id', 'name'])
             : collect();
+        $expenseCategories = $this->availableExpenseCategories();
 
         $statsBase = clone $claimsQuery;
         $stats = [
@@ -88,6 +90,7 @@ class ExpenseClaimController extends Controller
         return view('Finance.expense-claims', compact(
             'claims',
             'projects',
+            'expenseCategories',
             'paymentAccounts',
             'stats',
             'status',
@@ -266,5 +269,39 @@ class ExpenseClaimController extends Controller
             'id' => session('active_branch_id') ? (string) session('active_branch_id') : null,
             'name' => session('active_branch_name') ? (string) session('active_branch_name') : null,
         ];
+    }
+
+    private function availableExpenseCategories()
+    {
+        if (!Schema::hasTable('categories')) {
+            return collect();
+        }
+
+        $query = Category::query()->orderBy('name');
+
+        if (Schema::hasColumn('categories', 'company_id')) {
+            $companyId = (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
+            if ($companyId > 0) {
+                $query->where('company_id', $companyId);
+            }
+        }
+
+        if (Schema::hasColumn('categories', 'branch_id')) {
+            $branchId = trim((string) session('active_branch_id', ''));
+            if ($branchId !== '') {
+                $query->where('branch_id', $branchId);
+            }
+        } elseif (Schema::hasColumn('categories', 'branch_name')) {
+            $branchName = trim((string) session('active_branch_name', ''));
+            if ($branchName !== '') {
+                $query->where('branch_name', $branchName);
+            }
+        }
+
+        if (Schema::hasColumn('categories', 'type')) {
+            $query->where('type', 'expense');
+        }
+
+        return $query->get(['id', 'name']);
     }
 }
