@@ -410,6 +410,7 @@ class BalanceSheetController extends Controller
         $query = Transaction::withoutGlobalScopes()
             ->join('accounts', 'transactions.account_id', '=', 'accounts.id')
             ->whereNull('transactions.deleted_at')
+            ->whereNull('accounts.deleted_at')
             ->whereBetween('transactions.transaction_date', [$fromDate->toDateString(), $toDate->toDateString()]);
 
         $this->applyTransactionScope($query, $request);
@@ -821,29 +822,33 @@ class BalanceSheetController extends Controller
 
         // 1. Get all accounts with sums up to the report date (branch-safe)
         $txnTotalsQuery = Transaction::withoutGlobalScopes()
-            ->selectRaw('account_id, SUM(debit) as total_debit, SUM(credit) as total_credit')
-            ->whereNull('deleted_at')
-            ->where('transaction_date', '<=', $reportDate)
+            ->join('accounts', 'transactions.account_id', '=', 'accounts.id')
+            ->selectRaw('transactions.account_id, SUM(transactions.debit) as total_debit, SUM(transactions.credit) as total_credit')
+            ->whereNull('transactions.deleted_at')
+            ->whereNull('accounts.deleted_at')
+            ->where('transactions.transaction_date', '<=', $reportDate)
             ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
                 $branchId = trim((string) ($activeBranch['id'] ?? ''));
                 $branchName = trim((string) ($activeBranch['name'] ?? ''));
-                $this->applyExactBranchScope($query, $branchId, $branchName);
+                $this->applyExactBranchScope($query, $branchId, $branchName, 'transactions.branch_id', 'transactions.branch_name');
             });
         $this->applyTransactionScope($txnTotalsQuery, $request);
 
         $txnTotals = $txnTotalsQuery
-            ->groupBy('account_id')
+            ->groupBy('transactions.account_id')
             ->get()
             ->keyBy('account_id');
 
         $ledgerTotalsQuery = Transaction::withoutGlobalScopes()
-            ->selectRaw('SUM(debit) as total_debit, SUM(credit) as total_credit')
-            ->whereNull('deleted_at')
-            ->where('transaction_date', '<=', $reportDate)
+            ->join('accounts', 'transactions.account_id', '=', 'accounts.id')
+            ->selectRaw('SUM(transactions.debit) as total_debit, SUM(transactions.credit) as total_credit')
+            ->whereNull('transactions.deleted_at')
+            ->whereNull('accounts.deleted_at')
+            ->where('transactions.transaction_date', '<=', $reportDate)
             ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
                 $branchId = trim((string) ($activeBranch['id'] ?? ''));
                 $branchName = trim((string) ($activeBranch['name'] ?? ''));
-                $this->applyExactBranchScope($query, $branchId, $branchName);
+                $this->applyExactBranchScope($query, $branchId, $branchName, 'transactions.branch_id', 'transactions.branch_name');
             });
         $this->applyTransactionScope($ledgerTotalsQuery, $request);
 
@@ -853,20 +858,22 @@ class BalanceSheetController extends Controller
         $ledgerDifference = $ledgerDebits - $ledgerCredits;
 
         $imbalancedEntriesQuery = Transaction::withoutGlobalScopes()
-            ->selectRaw('MIN(id) as transaction_id, related_type, related_id, transaction_type, MIN(reference) as reference, MIN(description) as description, SUM(debit) as total_debit, SUM(credit) as total_credit')
-            ->whereNull('deleted_at')
-            ->where('transaction_date', '<=', $reportDate)
+            ->join('accounts', 'transactions.account_id', '=', 'accounts.id')
+            ->selectRaw('MIN(transactions.id) as transaction_id, transactions.related_type, transactions.related_id, transactions.transaction_type, MIN(transactions.reference) as reference, MIN(transactions.description) as description, SUM(transactions.debit) as total_debit, SUM(transactions.credit) as total_credit')
+            ->whereNull('transactions.deleted_at')
+            ->whereNull('accounts.deleted_at')
+            ->where('transactions.transaction_date', '<=', $reportDate)
             ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
                 $branchId = trim((string) ($activeBranch['id'] ?? ''));
                 $branchName = trim((string) ($activeBranch['name'] ?? ''));
-                $this->applyExactBranchScope($query, $branchId, $branchName);
+                $this->applyExactBranchScope($query, $branchId, $branchName, 'transactions.branch_id', 'transactions.branch_name');
             });
         $this->applyTransactionScope($imbalancedEntriesQuery, $request);
 
         $imbalancedEntries = $imbalancedEntriesQuery
-            ->groupBy('related_type', 'related_id', 'transaction_type')
-            ->havingRaw('ABS(SUM(debit) - SUM(credit)) > 0.01')
-            ->orderByRaw('ABS(SUM(debit) - SUM(credit)) DESC')
+            ->groupBy('transactions.related_type', 'transactions.related_id', 'transactions.transaction_type')
+            ->havingRaw('ABS(SUM(transactions.debit) - SUM(transactions.credit)) > 0.01')
+            ->orderByRaw('ABS(SUM(transactions.debit) - SUM(transactions.credit)) DESC')
             ->limit(10)
             ->get();
 
@@ -876,10 +883,7 @@ class BalanceSheetController extends Controller
         // system-generated accounts (AR, Revenue, Cash) created without a branch.
         // We apply our own branch filter below that also includes those global accounts.
         $accountsQuery = Account::withoutGlobalScopes()
-            // Do NOT filter by deleted_at here. Soft-deleted accounts still have real
-            // ledger transactions. Excluding them makes $ledgerTotalsQuery (which counts
-            // ALL transactions) exceed the classified total, creating a phantom gap equal
-            // to the net balance of those deleted accounts.
+            ->whereNull('deleted_at')
             ->where(function ($query) use ($accountIds) {
                 if (!empty($accountIds)) {
                     $query->whereIn('id', $accountIds);
@@ -901,8 +905,6 @@ class BalanceSheetController extends Controller
             $totals = $txnTotals->get($account->id);
             $account->total_debit  = (float) ($totals->total_debit  ?? 0);
             $account->total_credit = (float) ($totals->total_credit ?? 0);
-            // Flag soft-deleted accounts so the UI can render a visual indicator.
-            $account->_is_deleted  = !is_null($account->deleted_at ?? null);
             return $account;
         });
 
@@ -1197,6 +1199,7 @@ class BalanceSheetController extends Controller
         $legsQuery = Transaction::withoutGlobalScopes()
             ->join('accounts', 'transactions.account_id', '=', 'accounts.id')
             ->whereNull('transactions.deleted_at')
+            ->whereNull('accounts.deleted_at')
             ->where('transactions.transaction_type', Transaction::TYPE_OPENING_BALANCE)
             ->where('transactions.transaction_date', '<=', $reportDate)
             ->select([
@@ -1505,6 +1508,7 @@ class BalanceSheetController extends Controller
         $query = Transaction::withoutGlobalScopes()
             ->join('accounts', 'transactions.account_id', '=', 'accounts.id')
             ->whereNull('transactions.deleted_at')
+            ->whereNull('accounts.deleted_at')
             ->where('transactions.transaction_date', '<=', $reportDate)
             ->where(function ($sub) {
                 $sub->whereRaw('LOWER(accounts.name) like ?', ['%reconciliation%'])

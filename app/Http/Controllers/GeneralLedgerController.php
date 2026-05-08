@@ -140,11 +140,18 @@ class GeneralLedgerController extends Controller
         $this->applyTenantScope($accountsQuery, 'accounts');
         $this->applyBranchScope($accountsQuery, 'accounts', $activeBranch);
         $accounts = $accountsQuery->get(['id', 'code', 'name']);
+        $activeAccountIds = $accounts->pluck('id')->map(fn ($id) => (int) $id)->all();
 
         $query = Transaction::query()->with('account')
             ->whereBetween('transaction_date', [$startDate, $endDate]);
         $this->applyTenantScope($query, 'transactions');
         $this->applyBranchScope($query, 'transactions', $activeBranch);
+
+        if (!empty($activeAccountIds)) {
+            $query->whereIn('account_id', $activeAccountIds);
+        } else {
+            $query->whereRaw('1 = 0');
+        }
 
         $selectedAccountId = $request->input('account_id');
         if ($selectedAccountId) {

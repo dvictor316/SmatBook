@@ -160,6 +160,8 @@ class ReportController extends Controller
         {
             $query = DB::table('transactions')
                 ->join('accounts', 'transactions.account_id', '=', 'accounts.id')
+                ->whereNull('transactions.deleted_at')
+                ->whereNull('accounts.deleted_at')
                 ->select([
                     'transactions.transaction_date',
                     'transactions.reference',

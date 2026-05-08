@@ -132,6 +132,7 @@ class BalanceSheetExport implements FromArray, WithHeadings
         $accountIds = $txnTotals->keys()->all();
 
         $accountsQuery = Account::withoutGlobalScopes()
+            ->whereNull('deleted_at')
             ->where(function ($query) use ($accountIds) {
                 if (!empty($accountIds)) {
                     $query->whereIn('id', $accountIds);
@@ -182,6 +183,7 @@ class BalanceSheetExport implements FromArray, WithHeadings
         }
 
         $accounts = Account::withoutGlobalScopes()
+            ->whereNull('deleted_at')
             ->whereIn('id', $accountIds)
             ->get();
 

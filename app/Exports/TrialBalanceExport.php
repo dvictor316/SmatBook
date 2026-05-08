@@ -42,6 +42,7 @@ class TrialBalanceExport implements FromCollection, WithHeadings
         $accountIds = $txnTotals->keys()->all();
 
         $accountsQuery = Account::withoutGlobalScope('tenant')
+            ->whereNull('deleted_at')
             ->where(function ($query) use ($accountIds) {
                 if (!empty($accountIds)) {
                     $query->whereIn('id', $accountIds);
