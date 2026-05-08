@@ -1801,18 +1801,20 @@
            && !str_starts_with((string) $route, 'saas.');
     @endphp
     @php
+        $allBranchesScopeActive = session('active_branch_scope') === 'all';
+
         // If session lost tenant/branch (common on mobile), restore from the user model.
         if ($needsTenantBranch && auth()->check()) {
             $__user = auth()->user();
             if (!session('current_tenant_id') && !empty($__user->company_id)) {
                 session(['current_tenant_id' => $__user->company_id]);
             }
-            if (!session('active_branch_id')) {
+            if (!$allBranchesScopeActive && !session('active_branch_id')) {
                 app(\App\Support\ActiveBranchResolver::class)->ensureSession($__user);
             }
         }
     @endphp
-    @if ($needsTenantBranch && (!session('current_tenant_id') || !session('active_branch_id')))
+    @if ($needsTenantBranch && (!session('current_tenant_id') || (!session('active_branch_id') && !$allBranchesScopeActive)))
         <div class="alert alert-info my-5 text-center" style="font-size:1.2em;">
             <strong>No data available.</strong><br>
             Please complete setup and select a branch to begin using your workspace.
