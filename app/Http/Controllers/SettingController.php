@@ -1506,8 +1506,12 @@ class SettingController extends Controller
         // Block deletion if account has any ledger transactions
         $txnCount = $account->transactions()->count();
         if ($txnCount > 0) {
+            $account->is_active = false;
+            $account->save();
+            $account->delete();
+
             return redirect()->route('chart-of-accounts')
-                ->with('error', "Cannot delete \"{$account->name}\" — it has {$txnCount} transaction(s) posted against it. Deactivate it instead.");
+                ->with('success', "\"{$account->name}\" was archived successfully. Its {$txnCount} linked transaction(s) were preserved for reporting.");
         }
 
         $account->forceDelete();

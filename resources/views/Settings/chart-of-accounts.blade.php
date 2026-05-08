@@ -943,16 +943,16 @@ function coaBuildSubtypes(typeValue, selectId, preselect) {
             <p style="font-size:.86rem;color:#475569;margin-bottom:6px;">
                 Are you sure you want to delete <strong id="deleteAccountName"></strong>?
             </p>
-            <p style="font-size:.78rem;color:#94a3b8;margin-bottom:18px;">
-                This action cannot be undone. Accounts with transactions cannot be deleted.
+            <p id="deleteAccountHelpText" style="font-size:.78rem;color:#94a3b8;margin-bottom:18px;">
+                This action cannot be undone. Accounts with transactions will be archived and hidden while keeping their ledger history intact.
             </p>
             <form method="POST" id="coaDeleteForm">
                 @csrf
                 @method('DELETE')
                 <div style="display:flex;gap:10px;">
-                    <button type="submit"
+                    <button type="submit" id="coaDeleteSubmitBtn"
                         style="flex:1;padding:10px;background:linear-gradient(135deg,#dc2626,#b91c1c);color:#fff;border:none;border-radius:10px;font-size:.85rem;font-weight:700;cursor:pointer;">
-                        <i class="fe fe-trash-2 me-1"></i> Yes, Delete
+                        <i class="fe fe-trash-2 me-1"></i> <span id="coaDeleteSubmitLabel">Yes, Delete</span>
                     </button>
                     <button type="button" id="coaDeleteCancelBtn"
                         style="flex:0 0 auto;padding:10px 18px;border:1.5px solid #e2e8f0;border-radius:10px;background:#f8fafc;color:#64748b;font-size:.85rem;font-weight:700;cursor:pointer;">
@@ -1053,6 +1053,8 @@ document.addEventListener('DOMContentLoaded', function () {
     var deleteOverlay   = document.getElementById('coaDeleteOverlay');
     var deleteForm      = document.getElementById('coaDeleteForm');
     var deleteNameEl    = document.getElementById('deleteAccountName');
+    var deleteHelpEl    = document.getElementById('deleteAccountHelpText');
+    var deleteSubmitLabel = document.getElementById('coaDeleteSubmitLabel');
     var deleteClose     = document.getElementById('coaDeleteClose');
     var deleteCancelBtn = document.getElementById('coaDeleteCancelBtn');
 
@@ -1072,23 +1074,24 @@ document.addEventListener('DOMContentLoaded', function () {
             var id     = btn.dataset.id;
             var name   = btn.dataset.name;
             var txns   = parseInt(btn.dataset.txns || '0', 10);
-            var active = btn.dataset.active; // '1' = active, '0' = inactive/deactivated
 
-            if (txns > 0 && active === '1') {
-                // Active account with transactions → offer to deactivate instead
-                deactivateForm.action = '{{ url("settings/chart-of-accounts") }}/' + id + '/deactivate';
-                deactivateNameEl.textContent = name;
-                deactivateOverlay.classList.add('active');
-                return;
-            }
-            if (txns > 0 && active === '0') {
-                // Deactivated account but still has transactions → cannot delete
-                alert('"' + name + '" is deactivated but still has ' + txns + ' transaction(s) linked to it.\n\nTo permanently delete this account, first remove its transactions from the ledger/journal, then try again.');
-                return;
-            }
-            // No transactions → confirm delete
             deleteForm.action  = '{{ url("settings/chart-of-accounts") }}/' + id;
             deleteNameEl.textContent = name;
+            if (txns > 0) {
+                if (deleteHelpEl) {
+                    deleteHelpEl.textContent = 'This account has ' + txns + ' transaction(s). Deleting it will safely archive and hide it from the Chart of Accounts while preserving its ledger history and reports.';
+                }
+                if (deleteSubmitLabel) {
+                    deleteSubmitLabel.textContent = 'Yes, Archive';
+                }
+            } else {
+                if (deleteHelpEl) {
+                    deleteHelpEl.textContent = 'This action cannot be undone. Since this account has no transactions, it will be permanently deleted.';
+                }
+                if (deleteSubmitLabel) {
+                    deleteSubmitLabel.textContent = 'Yes, Delete';
+                }
+            }
             deleteOverlay.classList.add('active');
         });
     });
