@@ -26,7 +26,8 @@ trait Multitenantable {
             $requestBranchId = trim((string) request()->get('branch_id', ''));
             $requestAllBranches = request()->boolean('all_branches')
                 || $requestBranchScope === 'all'
-                || strtolower($requestBranchId) === 'all';
+                || strtolower($requestBranchId) === 'all'
+                || strtolower(trim((string) session('active_branch_scope', ''))) === 'all';
 
             if ($requestAllBranches) {
                 return;
