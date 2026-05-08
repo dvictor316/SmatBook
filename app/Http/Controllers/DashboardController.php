@@ -885,8 +885,11 @@ class DashboardController extends Controller
 
     private function resolvedDashboardCompanyId(): int
     {
+        $subscriptionCompanyId = (int) (Subscription::resolveCurrentForUser(Auth::user())?->company_id ?? 0);
+
         return (int) (
             session('current_tenant_id')
+            ?? $subscriptionCompanyId
             ?? Auth::user()?->company_id
             ?? 0
         );
@@ -988,6 +991,7 @@ class DashboardController extends Controller
     private function companyUserIds($company): array
     {
         $ids = [];
+        $resolvedCompanyId = (int) (($company?->id ?? null) ?: $this->resolvedDashboardCompanyId());
         
         if (!empty($company?->user_id)) {
             $ids[] = (int) $company->user_id;
@@ -997,8 +1001,8 @@ class DashboardController extends Controller
             $ids[] = (int) $company->owner_id;
         }
 
-        if ($company?->id && Schema::hasColumn('users', 'company_id')) {
-            $memberIds = User::where('company_id', $company->id)->pluck('id')->map(fn ($id) => (int) $id)->toArray();
+        if ($resolvedCompanyId > 0 && Schema::hasColumn('users', 'company_id')) {
+            $memberIds = User::where('company_id', $resolvedCompanyId)->pluck('id')->map(fn ($id) => (int) $id)->toArray();
             $ids = array_merge($ids, $memberIds);
         }
 
