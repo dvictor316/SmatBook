@@ -936,7 +936,7 @@ function coaBuildSubtypes(typeValue, selectId, preselect) {
 <div class="coa-modal-overlay" id="coaDeleteOverlay">
     <div class="coa-modal" style="width:min(94vw,400px);">
         <div class="coa-modal-head">
-            <p class="coa-modal-title" style="color:#dc2626;"><i class="fe fe-trash-2 me-1"></i> Delete Account</p>
+            <p class="coa-modal-title" style="color:#dc2626;"><i class="fe fe-trash-2 me-1"></i> Remove Account</p>
             <button type="button" class="coa-modal-close" id="coaDeleteClose"><i class="fe fe-x"></i></button>
         </div>
         <div class="coa-modal-body">
@@ -944,7 +944,7 @@ function coaBuildSubtypes(typeValue, selectId, preselect) {
                 Are you sure you want to delete <strong id="deleteAccountName"></strong>?
             </p>
             <p id="deleteAccountHelpText" style="font-size:.78rem;color:#94a3b8;margin-bottom:18px;">
-                This action cannot be undone. Accounts with transactions will be archived and hidden while keeping their ledger history intact.
+                This action cannot be undone. If the account has transactions, it will be removed from active use and hidden from the Chart of Accounts while its ledger history stays intact.
             </p>
             <form method="POST" id="coaDeleteForm">
                 @csrf
@@ -1079,10 +1079,10 @@ document.addEventListener('DOMContentLoaded', function () {
             deleteNameEl.textContent = name;
             if (txns > 0) {
                 if (deleteHelpEl) {
-                    deleteHelpEl.textContent = 'This account has ' + txns + ' transaction(s). Deleting it will safely archive and hide it from the Chart of Accounts while preserving its ledger history and reports.';
+                    deleteHelpEl.textContent = 'This account has ' + txns + ' transaction(s). It cannot be permanently erased without damaging accounting history, so it will be removed from active use and hidden from the Chart of Accounts while the ledger remains intact.';
                 }
                 if (deleteSubmitLabel) {
-                    deleteSubmitLabel.textContent = 'Yes, Archive';
+                    deleteSubmitLabel.textContent = 'Yes, Remove from List';
                 }
             } else {
                 if (deleteHelpEl) {

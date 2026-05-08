@@ -1511,7 +1511,7 @@ class SettingController extends Controller
             $account->delete();
 
             return redirect()->route('chart-of-accounts')
-                ->with('success', "\"{$account->name}\" was archived successfully. Its {$txnCount} linked transaction(s) were preserved for reporting.");
+                ->with('success', "\"{$account->name}\" was removed from the active Chart of Accounts. Its {$txnCount} linked transaction(s) remain preserved in the ledger for accounting integrity.");
         }
 
         $account->forceDelete();
