@@ -12,6 +12,12 @@ class ActiveBranchResolver
 {
     public function ensureSession(?Authenticatable $user = null): bool
     {
+        if ($this->allBranchesScopeIsActive()) {
+            session()->forget(['active_branch_id', 'active_branch_name']);
+
+            return true;
+        }
+
         if ($this->sessionBranchIsValid($user)) {
             return true;
         }
@@ -34,6 +40,10 @@ class ActiveBranchResolver
 
     public function sessionBranchIsValid(?Authenticatable $user = null): bool
     {
+        if ($this->allBranchesScopeIsActive()) {
+            return true;
+        }
+
         $branchId = trim((string) session('active_branch_id', ''));
         $branchName = trim((string) session('active_branch_name', ''));
 
@@ -185,5 +195,10 @@ class ActiveBranchResolver
             'name' => trim((string) ($branch['name'] ?? '')),
             'is_active' => (bool) ($branch['is_active'] ?? true),
         ];
+    }
+
+    private function allBranchesScopeIsActive(): bool
+    {
+        return strtolower(trim((string) session('active_branch_scope', ''))) === 'all';
     }
 }
