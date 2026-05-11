@@ -33,59 +33,6 @@
                     </ul>
                 </li>
 
-                <li class="menu-title"><span>Operations</span></li>
-
-                <li class="submenu {{ Request::is('product-list*', 'categories*', 'units*') ? 'active subdrop' : '' }}">
-                    <a href="#"><i class="fe fe-package"></i><span>Products</span><span class="menu-arrow"></span></a>
-                    <ul>
-                        <li><a href="{{ route('product-list') }}">Product List</a></li>
-                        <li><a href="{{ route('add-products') }}">Add Product</a></li>
-                        <li><a href="{{ route('categories.index') }}">Categories</a></li>
-                        <li><a href="{{ route('units') }}">Units</a></li>
-                    </ul>
-                </li>
-
-                <li class="submenu {{ Request::is('customers*') ? 'active subdrop' : '' }}">
-                    <a href="#"><i class="fe fe-users"></i><span>Customers</span><span class="menu-arrow"></span></a>
-                    <ul>
-                        <li><a href="{{ route('customers.index') }}">All Customers</a></li>
-                    </ul>
-                </li>
-
-                <li class="submenu {{ Request::is('suppliers*') ? 'active subdrop' : '' }}">
-                    <a href="#"><i class="fe fe-briefcase"></i><span>Suppliers</span><span class="menu-arrow"></span></a>
-                    <ul>
-                        <li><a href="{{ route('suppliers.index') }}">All Suppliers</a></li>
-                        @if(Route::has('suppliers.create'))
-                            <li><a href="{{ route('suppliers.create') }}">Add Supplier</a></li>
-                        @endif
-                    </ul>
-                </li>
-
-                <li class="submenu {{ Request::is('inventory*') ? 'active subdrop' : '' }}">
-                    <a href="#"><i class="fe fe-archive"></i><span>Inventory</span><span class="menu-arrow"></span></a>
-                    <ul>
-                        <li><a href="{{ route('inventory.Products') }}">Stock Overview</a></li>
-                        <li><a href="{{ route('reports.stock') }}">Stock Report</a></li>
-                        <li><a href="{{ route('reports.low-stock') }}">Low Stock Alert</a></li>
-                        @if(Route::has('inventory.transfer-audit'))
-                            <li><a href="{{ route('inventory.transfer-audit') }}">Transfer Audit</a></li>
-                        @endif
-                        <li><a href="{{ route('inventory.stock-valuation') }}">Stock Valuation</a></li>
-                        <li><a href="{{ route('inventory.lots.index') }}">Lot Tracking</a></li>
-                        <li><a href="{{ route('inventory.serials.index') }}">Serial Numbers</a></li>
-                        <li><a href="{{ route('inventory.barcodes.index') }}">Barcode Management</a></li>
-                    </ul>
-                </li>
-
-                <li class="submenu {{ Request::is('price-lists*') ? 'active subdrop' : '' }}">
-                    <a href="#"><i class="fe fe-tag"></i><span>Price Lists</span><span class="menu-arrow"></span></a>
-                    <ul>
-                        <li><a href="{{ route('price-lists.index') }}">All Price Lists</a></li>
-                        <li><a href="{{ route('price-lists.create') }}">New Price List</a></li>
-                    </ul>
-                </li>
-
                 <li class="menu-title"><span>Sales &amp; Receivables</span></li>
 
                 <li class="submenu {{ Request::is('quotations*') ? 'active subdrop' : '' }}">
@@ -114,6 +61,21 @@
                     <ul>
                         <li><a href="{{ route('estimates.index') }}">All Estimates</a></li>
                         <li><a href="{{ route('estimates.create') }}">Create Estimate</a></li>
+                    </ul>
+                </li>
+
+                <li class="submenu {{ Request::is('price-lists*') ? 'active subdrop' : '' }}">
+                    <a href="#"><i class="fe fe-tag"></i><span>Price Lists</span><span class="menu-arrow"></span></a>
+                    <ul>
+                        <li><a href="{{ route('price-lists.index') }}">All Price Lists</a></li>
+                        <li><a href="{{ route('price-lists.create') }}">New Price List</a></li>
+                    </ul>
+                </li>
+
+                <li class="submenu {{ Request::is('customers*') ? 'active subdrop' : '' }}">
+                    <a href="#"><i class="fe fe-users"></i><span>Customers</span><span class="menu-arrow"></span></a>
+                    <ul>
+                        <li><a href="{{ route('customers.index') }}">All Customers</a></li>
                     </ul>
                 </li>
 
@@ -155,16 +117,45 @@
 
                 <li><a href="{{ route('landed-costs.index') }}"><i class="fe fe-anchor"></i><span>Landed Costs</span></a></li>
 
-                <li class="submenu {{ Request::is('chat*', 'calendar*', 'messages*') ? 'active subdrop' : '' }}">
-                    <a href="#"><i class="fe fe-grid"></i><span>Applications</span><span class="menu-arrow"></span></a>
+                <li class="submenu {{ Request::is('suppliers*') ? 'active subdrop' : '' }}">
+                    <a href="#"><i class="fe fe-briefcase"></i><span>Suppliers</span><span class="menu-arrow"></span></a>
                     <ul>
-                        <li><a href="{{ route('chat.index', $routeParams) }}">Chat</a></li>
-                        <li><a href="{{ route('calendar', $routeParams) }}">Calendar</a></li>
-                        <li><a href="{{ route('messages.index', $routeParams) }}">Messages</a></li>
+                        <li><a href="{{ route('suppliers.index') }}">All Suppliers</a></li>
+                        @if(Route::has('suppliers.create'))
+                            <li><a href="{{ route('suppliers.create') }}">Add Supplier</a></li>
+                        @endif
                     </ul>
                 </li>
 
-                <li class="menu-title"><span>Finance &amp; Accounting</span></li>
+                <li class="menu-title"><span>Inventory &amp; Operations</span></li>
+
+                <li class="submenu {{ Request::is('product-list*', 'categories*', 'units*') ? 'active subdrop' : '' }}">
+                    <a href="#"><i class="fe fe-package"></i><span>Products</span><span class="menu-arrow"></span></a>
+                    <ul>
+                        <li><a href="{{ route('product-list') }}">Product List</a></li>
+                        <li><a href="{{ route('add-products') }}">Add Product</a></li>
+                        <li><a href="{{ route('categories.index') }}">Categories</a></li>
+                        <li><a href="{{ route('units') }}">Units</a></li>
+                    </ul>
+                </li>
+
+                <li class="submenu {{ Request::is('inventory*') ? 'active subdrop' : '' }}">
+                    <a href="#"><i class="fe fe-archive"></i><span>Inventory</span><span class="menu-arrow"></span></a>
+                    <ul>
+                        <li><a href="{{ route('inventory.Products') }}">Stock Overview</a></li>
+                        <li><a href="{{ route('reports.stock') }}">Stock Report</a></li>
+                        <li><a href="{{ route('reports.low-stock') }}">Low Stock Alert</a></li>
+                        @if(Route::has('inventory.transfer-audit'))
+                            <li><a href="{{ route('inventory.transfer-audit') }}">Transfer Audit</a></li>
+                        @endif
+                        <li><a href="{{ route('inventory.stock-valuation') }}">Stock Valuation</a></li>
+                        <li><a href="{{ route('inventory.lots.index') }}">Lot Tracking</a></li>
+                        <li><a href="{{ route('inventory.serials.index') }}">Serial Numbers</a></li>
+                        <li><a href="{{ route('inventory.barcodes.index') }}">Barcode Management</a></li>
+                    </ul>
+                </li>
+
+                <li class="menu-title"><span>Money &amp; Accounting</span></li>
 
                 <li><a href="{{ route('expenses.index') }}"><i class="fe fe-file-plus"></i><span>Expenses</span></a></li>
 
@@ -184,7 +175,7 @@
                 @if(Route::has('finance.follow-ups.index'))
                     <li><a href="{{ route('finance.follow-ups.index') }}"><i class="fe fe-calendar"></i><span>Follow-Ups</span></a></li>
                 @endif
-                <li class="menu-title"><span>Banking & Cash</span></li>
+                <li class="menu-title"><span>Banking &amp; Cash</span></li>
 
                 <li class="submenu {{ Request::is('cheques*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-credit-card"></i><span>Cheque Register</span><span class="menu-arrow"></span></a>
@@ -212,13 +203,7 @@
                     </ul>
                 </li>
 
-                <li class="menu-title"><span>Reports</span></li>
-
-                @include('layout.partials.sidebars.reports-menu', ['reportAccess' => 'pro'])
-                <li><a href="{{ route('report-schedules.index') }}"><i class="fe fe-clock"></i><span>Scheduled Reports</span></a></li>
-                <li><a href="{{ route('reports.financial-ratios') }}"><i class="fe fe-percent"></i><span>Financial Ratios</span></a></li>
-
-                <li class="menu-title"><span>Payroll & HR</span></li>
+                <li class="menu-title"><span>People &amp; Projects</span></li>
                 <li class="submenu {{ request()->routeIs('payroll.*', 'departments.*', 'hr.leave.*', 'hr.attendance.*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-users"></i><span>HR Workspace</span><span class="menu-arrow"></span></a>
                     <ul>
@@ -236,18 +221,34 @@
                     </ul>
                 </li>
 
-                <li class="menu-title"><span>Projects</span></li>
                 <li><a href="{{ route('projects.index') }}"><i class="fe fe-briefcase"></i><span>Project Management</span></a></li>
                 <li><a href="{{ route('projects.index') }}#profitability"><i class="fe fe-trending-up"></i><span>Project Profitability</span></a></li>
                 <li><a href="{{ route('timesheets.index') }}"><i class="fe fe-clock"></i><span>Timesheets</span></a></li>
                 <li><a href="{{ route('milestones.index') }}"><i class="fe fe-flag"></i><span>Milestone Billing</span></a></li>
 
-                <li class="menu-title"><span>Budgeting & Planning</span></li>
+                <li class="menu-title"><span>Planning</span></li>
                 <li class="submenu {{ Request::is('forecasting*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-trending-up"></i><span>Forecasting</span><span class="menu-arrow"></span></a>
                     <ul>
                         <li><a href="{{ route('forecasting.index') }}">All Forecasts</a></li>
                         <li><a href="{{ route('forecasting.create') }}">New Forecast</a></li>
+                    </ul>
+                </li>
+
+                <li class="menu-title"><span>Reports</span></li>
+
+                @include('layout.partials.sidebars.reports-menu', ['reportAccess' => 'pro'])
+                <li><a href="{{ route('report-schedules.index') }}"><i class="fe fe-clock"></i><span>Scheduled Reports</span></a></li>
+                <li><a href="{{ route('reports.financial-ratios') }}"><i class="fe fe-percent"></i><span>Financial Ratios</span></a></li>
+
+                <li class="menu-title"><span>Workspace</span></li>
+
+                <li class="submenu {{ Request::is('chat*', 'calendar*', 'messages*') ? 'active subdrop' : '' }}">
+                    <a href="#"><i class="fe fe-grid"></i><span>Applications</span><span class="menu-arrow"></span></a>
+                    <ul>
+                        <li><a href="{{ route('chat.index', $routeParams) }}">Chat</a></li>
+                        <li><a href="{{ route('calendar', $routeParams) }}">Calendar</a></li>
+                        <li><a href="{{ route('messages.index', $routeParams) }}">Messages</a></li>
                     </ul>
                 </li>
 
@@ -295,7 +296,7 @@
                         <span class="badge bg-warning">Enterprise</span>
                     </a>
                 </li>
-                <li class="menu-title"><span>Settings</span></li>
+                <li class="menu-title"><span>Settings &amp; Control</span></li>
                 <li class="{{ request()->routeIs('branches.index') ? 'active' : '' }}">
                     <a href="{{ route('branches.index') }}" class="{{ request()->routeIs('branches.index') ? 'active' : '' }}">
                         <i class="fe fe-git-branch"></i><span>Branches</span>

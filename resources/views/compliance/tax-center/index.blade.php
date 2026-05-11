@@ -68,6 +68,60 @@
         background: #ffffff !important;
         color: var(--compliance-text) !important;
     }
+    #tax-center-wrapper .tc-card {
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+    }
+    #tax-center-wrapper .tc-card .card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    #tax-center-wrapper .tc-card .card-header strong {
+        font-size: 1.05rem;
+        letter-spacing: -0.01em;
+    }
+    #tax-center-wrapper .tc-card .card-body {
+        padding: 1.2rem 1.25rem;
+    }
+    #tax-center-wrapper .tc-table-card {
+        height: 100%;
+    }
+    #tax-center-wrapper .tc-table-card .table-responsive {
+        min-height: 100%;
+    }
+    #tax-center-wrapper .tc-table-card .table {
+        margin-bottom: 0;
+    }
+    #tax-center-wrapper .tc-table-card thead th {
+        background: linear-gradient(135deg, #eef4ff 0%, #e9edff 100%);
+        border-bottom: 1px solid #dbe4ee;
+        font-size: 0.82rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+    #tax-center-wrapper .tc-table-card tbody td {
+        vertical-align: middle;
+    }
+    #tax-center-wrapper .tc-table-card tbody tr:last-child td {
+        border-bottom: 0;
+    }
+    #tax-center-wrapper .tc-secondary-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        height: 100%;
+    }
+    #tax-center-wrapper .tc-secondary-stack .card {
+        flex: 1 1 0;
+    }
+    #tax-center-wrapper .tc-mapping-card {
+        margin-top: 0.25rem;
+    }
 </style>
 
 <div id="tax-center-wrapper">
@@ -316,9 +370,9 @@
         </div>
     </div>
 
-    <div class="row g-3 mt-1">
-        <div class="col-lg-6">
-            <div class="card tc-card">
+    <div class="row g-3 mt-1 align-items-stretch">
+        <div class="col-xl-7 col-lg-12">
+            <div class="card tc-card tc-table-card">
                 <div class="card-header bg-white"><strong>Tax Codes</strong></div>
                 <div class="table-responsive">
                     <table class="table table-sm mb-0">
@@ -396,142 +450,144 @@
             </div>
         </div>
 
-        <div class="col-lg-6">
-            <div class="card tc-card mb-3">
-                <div class="card-header bg-white"><strong>Jurisdictions</strong></div>
-                <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Country</th>
-                                <th>Currency</th>
-                                <th>Status</th>
-                                <th class="text-end">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($jurisdictions as $jurisdiction)
+        <div class="col-xl-5 col-lg-12">
+            <div class="tc-secondary-stack">
+                <div class="card tc-card tc-table-card">
+                    <div class="card-header bg-white"><strong>Jurisdictions</strong></div>
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0">
+                            <thead>
                                 <tr>
-                                    <td>{{ $jurisdiction->name }}</td>
-                                    <td>{{ $jurisdiction->country_code ?? '-' }}</td>
-                                    <td>{{ $jurisdiction->currency_code ?? '-' }}</td>
-                                    <td><span class="badge {{ $jurisdiction->is_active ? 'bg-success' : 'bg-secondary' }}">{{ $jurisdiction->is_active ? 'Active' : 'Inactive' }}</span></td>
-                                    <td class="text-end">
-                                        <button class="btn btn-outline-primary btn-sm" data-bs-toggle="collapse" data-bs-target="#editJur{{ $jurisdiction->id }}">Edit</button>
-                                        <form method="POST" action="{{ route('compliance.tax-center.jurisdictions.destroy', $jurisdiction->id) }}" class="d-inline" onsubmit="return confirm('Delete this jurisdiction? This will remove related tax setup.');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button class="btn btn-outline-danger btn-sm">Delete</button>
-                                        </form>
-                                    </td>
+                                    <th>Name</th>
+                                    <th>Country</th>
+                                    <th>Currency</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Action</th>
                                 </tr>
-                                <tr class="collapse" id="editJur{{ $jurisdiction->id }}">
-                                    <td colspan="5" class="bg-light">
-                                        <form method="POST" action="{{ route('compliance.tax-center.jurisdictions.update', $jurisdiction->id) }}" class="row g-2">
-                                            @csrf
-                                            @method('PUT')
-                                            <div class="col-md-3"><input type="text" name="name" class="form-control form-control-sm" value="{{ $jurisdiction->name }}" required></div>
-                                            <div class="col-md-2">
-                                                <select name="country_code" class="form-select form-select-sm" required>
-                                                    @foreach($supportedCountries as $countryCode => $country)
-                                                        <option value="{{ $countryCode }}" @selected($jurisdiction->country_code === $countryCode)>{{ $countryCode }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                            <div class="col-md-3"><input type="text" name="region" class="form-control form-control-sm" value="{{ $jurisdiction->region }}"></div>
-                                            <div class="col-md-2"><input type="text" name="currency_code" maxlength="3" class="form-control form-control-sm" value="{{ $jurisdiction->currency_code }}"></div>
-                                            <div class="col-md-1 d-flex align-items-center">
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" name="is_active" value="1" id="jurActive{{ $jurisdiction->id }}" @checked($jurisdiction->is_active)>
-                                                    <label class="form-check-label" for="jurActive{{ $jurisdiction->id }}">A</label>
+                            </thead>
+                            <tbody>
+                                @forelse($jurisdictions as $jurisdiction)
+                                    <tr>
+                                        <td>{{ $jurisdiction->name }}</td>
+                                        <td>{{ $jurisdiction->country_code ?? '-' }}</td>
+                                        <td>{{ $jurisdiction->currency_code ?? '-' }}</td>
+                                        <td><span class="badge {{ $jurisdiction->is_active ? 'bg-success' : 'bg-secondary' }}">{{ $jurisdiction->is_active ? 'Active' : 'Inactive' }}</span></td>
+                                        <td class="text-end">
+                                            <button class="btn btn-outline-primary btn-sm" data-bs-toggle="collapse" data-bs-target="#editJur{{ $jurisdiction->id }}">Edit</button>
+                                            <form method="POST" action="{{ route('compliance.tax-center.jurisdictions.destroy', $jurisdiction->id) }}" class="d-inline" onsubmit="return confirm('Delete this jurisdiction? This will remove related tax setup.');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button class="btn btn-outline-danger btn-sm">Delete</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    <tr class="collapse" id="editJur{{ $jurisdiction->id }}">
+                                        <td colspan="5" class="bg-light">
+                                            <form method="POST" action="{{ route('compliance.tax-center.jurisdictions.update', $jurisdiction->id) }}" class="row g-2">
+                                                @csrf
+                                                @method('PUT')
+                                                <div class="col-md-3"><input type="text" name="name" class="form-control form-control-sm" value="{{ $jurisdiction->name }}" required></div>
+                                                <div class="col-md-2">
+                                                    <select name="country_code" class="form-select form-select-sm" required>
+                                                        @foreach($supportedCountries as $countryCode => $country)
+                                                            <option value="{{ $countryCode }}" @selected($jurisdiction->country_code === $countryCode)>{{ $countryCode }}</option>
+                                                        @endforeach
+                                                    </select>
                                                 </div>
-                                            </div>
-                                            <div class="col-md-1 text-end"><button class="btn btn-primary btn-sm text-white">Save</button></div>
-                                        </form>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr><td colspan="5" class="text-muted text-center py-3">No jurisdictions yet.</td></tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+                                                <div class="col-md-3"><input type="text" name="region" class="form-control form-control-sm" value="{{ $jurisdiction->region }}"></div>
+                                                <div class="col-md-2"><input type="text" name="currency_code" maxlength="3" class="form-control form-control-sm" value="{{ $jurisdiction->currency_code }}"></div>
+                                                <div class="col-md-1 d-flex align-items-center">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" name="is_active" value="1" id="jurActive{{ $jurisdiction->id }}" @checked($jurisdiction->is_active)>
+                                                        <label class="form-check-label" for="jurActive{{ $jurisdiction->id }}">A</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-1 text-end"><button class="btn btn-primary btn-sm text-white">Save</button></div>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr><td colspan="5" class="text-muted text-center py-3">No jurisdictions yet.</td></tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
 
-            <div class="card tc-card">
-                <div class="card-header bg-white"><strong>Withholding Rules</strong></div>
-                <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                        <thead>
-                            <tr>
-                                <th>Jurisdiction</th>
-                                <th>Name</th>
-                                <th>Counterparty</th>
-                                <th>Rate</th>
-                                <th class="text-end">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($withholdingRules as $rule)
+                <div class="card tc-card tc-table-card">
+                    <div class="card-header bg-white"><strong>Withholding Rules</strong></div>
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0">
+                            <thead>
                                 <tr>
-                                    <td>{{ $rule->jurisdiction?->name }}</td>
-                                    <td>{{ $rule->name }}</td>
-                                    <td>{{ ucfirst($rule->counterparty_type) }}</td>
-                                    <td>{{ number_format((float)$rule->rate, 4) }}%</td>
-                                    <td class="text-end">
-                                        <button class="btn btn-outline-primary btn-sm" data-bs-toggle="collapse" data-bs-target="#editRule{{ $rule->id }}">Edit</button>
-                                        <form method="POST" action="{{ route('compliance.tax-center.withholding.destroy', $rule->id) }}" class="d-inline" onsubmit="return confirm('Delete this withholding rule?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button class="btn btn-outline-danger btn-sm">Delete</button>
-                                        </form>
-                                    </td>
+                                    <th>Jurisdiction</th>
+                                    <th>Name</th>
+                                    <th>Counterparty</th>
+                                    <th>Rate</th>
+                                    <th class="text-end">Action</th>
                                 </tr>
-                                <tr class="collapse" id="editRule{{ $rule->id }}">
-                                    <td colspan="5" class="bg-light">
-                                        <form method="POST" action="{{ route('compliance.tax-center.withholding.update', $rule->id) }}" class="row g-2">
-                                            @csrf
-                                            @method('PUT')
-                                            <div class="col-md-3">
-                                                <select name="tax_jurisdiction_id" class="form-select form-select-sm" required>
-                                                    @foreach($jurisdictions as $jurisdiction)
-                                                        <option value="{{ $jurisdiction->id }}" @selected($rule->tax_jurisdiction_id == $jurisdiction->id)>{{ $jurisdiction->name }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                            <div class="col-md-2"><input type="text" name="name" class="form-control form-control-sm" value="{{ $rule->name }}" required></div>
-                                            <div class="col-md-2">
-                                                <select name="counterparty_type" class="form-select form-select-sm" required>
-                                                    <option value="vendor" @selected($rule->counterparty_type === 'vendor')>Supplier</option>
-                                                    <option value="customer" @selected($rule->counterparty_type === 'customer')>Customer</option>
-                                                    <option value="contractor" @selected($rule->counterparty_type === 'contractor')>Contractor</option>
-                                                </select>
-                                            </div>
-                                            <div class="col-md-2"><input type="number" step="0.0001" min="0" max="100" name="rate" class="form-control form-control-sm" value="{{ $rule->rate }}" required></div>
-                                            <div class="col-md-2"><input type="number" step="0.01" min="0" name="threshold_amount" class="form-control form-control-sm" value="{{ $rule->threshold_amount }}"></div>
-                                            <div class="col-md-1 d-flex align-items-center">
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" name="is_active" value="1" id="ruleActive{{ $rule->id }}" @checked($rule->is_active)>
-                                                    <label class="form-check-label" for="ruleActive{{ $rule->id }}">A</label>
+                            </thead>
+                            <tbody>
+                                @forelse($withholdingRules as $rule)
+                                    <tr>
+                                        <td>{{ $rule->jurisdiction?->name }}</td>
+                                        <td>{{ $rule->name }}</td>
+                                        <td>{{ ucfirst($rule->counterparty_type) }}</td>
+                                        <td>{{ number_format((float)$rule->rate, 4) }}%</td>
+                                        <td class="text-end">
+                                            <button class="btn btn-outline-primary btn-sm" data-bs-toggle="collapse" data-bs-target="#editRule{{ $rule->id }}">Edit</button>
+                                            <form method="POST" action="{{ route('compliance.tax-center.withholding.destroy', $rule->id) }}" class="d-inline" onsubmit="return confirm('Delete this withholding rule?');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button class="btn btn-outline-danger btn-sm">Delete</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    <tr class="collapse" id="editRule{{ $rule->id }}">
+                                        <td colspan="5" class="bg-light">
+                                            <form method="POST" action="{{ route('compliance.tax-center.withholding.update', $rule->id) }}" class="row g-2">
+                                                @csrf
+                                                @method('PUT')
+                                                <div class="col-md-3">
+                                                    <select name="tax_jurisdiction_id" class="form-select form-select-sm" required>
+                                                        @foreach($jurisdictions as $jurisdiction)
+                                                            <option value="{{ $jurisdiction->id }}" @selected($rule->tax_jurisdiction_id == $jurisdiction->id)>{{ $jurisdiction->name }}</option>
+                                                        @endforeach
+                                                    </select>
                                                 </div>
-                                            </div>
-                                            <div class="col-md-10"><input type="text" name="account_code" class="form-control form-control-sm" value="{{ $rule->account_code }}" placeholder="Account code"></div>
-                                            <div class="col-md-2 text-end"><button class="btn btn-primary btn-sm text-white">Update</button></div>
-                                        </form>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr><td colspan="5" class="text-muted text-center py-3">No withholding rules yet.</td></tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+                                                <div class="col-md-2"><input type="text" name="name" class="form-control form-control-sm" value="{{ $rule->name }}" required></div>
+                                                <div class="col-md-2">
+                                                    <select name="counterparty_type" class="form-select form-select-sm" required>
+                                                        <option value="vendor" @selected($rule->counterparty_type === 'vendor')>Supplier</option>
+                                                        <option value="customer" @selected($rule->counterparty_type === 'customer')>Customer</option>
+                                                        <option value="contractor" @selected($rule->counterparty_type === 'contractor')>Contractor</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-2"><input type="number" step="0.0001" min="0" max="100" name="rate" class="form-control form-control-sm" value="{{ $rule->rate }}" required></div>
+                                                <div class="col-md-2"><input type="number" step="0.01" min="0" name="threshold_amount" class="form-control form-control-sm" value="{{ $rule->threshold_amount }}"></div>
+                                                <div class="col-md-1 d-flex align-items-center">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" name="is_active" value="1" id="ruleActive{{ $rule->id }}" @checked($rule->is_active)>
+                                                        <label class="form-check-label" for="ruleActive{{ $rule->id }}">A</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-10"><input type="text" name="account_code" class="form-control form-control-sm" value="{{ $rule->account_code }}" placeholder="Account code"></div>
+                                                <div class="col-md-2 text-end"><button class="btn btn-primary btn-sm text-white">Update</button></div>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr><td colspan="5" class="text-muted text-center py-3">No withholding rules yet.</td></tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-lg-6">
-            <div class="card tc-card">
+        <div class="col-12">
+            <div class="card tc-card tc-table-card tc-mapping-card">
                 <div class="card-header bg-white"><strong>Account Mappings</strong></div>
                 <div class="table-responsive">
                     <table class="table table-sm mb-0">

@@ -9,6 +9,8 @@
         </a>
     </li>
 
+    <li class="menu-title"><span>Sales &amp; Customers</span></li>
+
     @if(Route::has('sales.showPos'))
     <li class="submenu {{ Request::is('pos*', 'sales*') ? 'active subdrop' : '' }}">
         <a href="#"><i class="fe fe-shopping-cart"></i><span>POS Terminal</span><span class="menu-arrow"></span></a>
@@ -24,15 +26,25 @@
     </li>
     @endif
 
-    <li class="menu-title"><span>Inventory</span></li>
-
-    @if(Route::has('product-list'))
-    <li class="submenu {{ Request::is('product-list*', 'add-products*') ? 'active subdrop' : '' }}">
-        <a href="#"><i class="fe fe-package"></i><span>Products</span><span class="menu-arrow"></span></a>
+    @if(Route::has('invoices.index'))
+    <li class="submenu {{ Request::is('invoices*', 'add-invoice*') ? 'active subdrop' : '' }}">
+        <a href="#"><i class="fe fe-file"></i><span>Invoices</span><span class="menu-arrow"></span></a>
         <ul>
-            <li><a href="{{ route('product-list') }}">Product List</a></li>
-            @if(Route::has('add-products'))
-                <li><a href="{{ route('add-products') }}">Add Product</a></li>
+            @if(Route::has('add-invoice'))
+                <li><a href="{{ route('add-invoice') }}">Create Invoice</a></li>
+            @endif
+            <li><a href="{{ route('invoices.index') }}">View Invoices</a></li>
+        </ul>
+    </li>
+    @endif
+
+    @if(Route::has('quotations'))
+    <li class="submenu {{ Request::is('quotations*') ? 'active subdrop' : '' }}">
+        <a href="#"><i class="fe fe-file-text"></i><span>Quotations</span><span class="menu-arrow"></span></a>
+        <ul>
+            <li><a href="{{ route('quotations') }}">All Quotations</a></li>
+            @if(Route::has('add-quotations'))
+                <li><a href="{{ route('add-quotations') }}">Add Quotation</a></li>
             @endif
         </ul>
     </li>
@@ -50,6 +62,8 @@
     </li>
     @endif
 
+    <li class="menu-title"><span>Purchases &amp; Suppliers</span></li>
+
     @if(Route::has('suppliers.index'))
     <li class="submenu {{ Request::is('suppliers*') ? 'active subdrop' : '' }}">
         <a href="#"><i class="fe fe-briefcase"></i><span>Suppliers</span><span class="menu-arrow"></span></a>
@@ -63,32 +77,49 @@
     @endif
 
     @if(Route::has('purchases.index'))
-    <li class="{{ request()->routeIs('purchases.index') ? 'active' : '' }}">
-        <a href="{{ route('purchases.index') }}"><i class="fe fe-shopping-bag"></i><span>Purchases</span></a>
-    </li>
-    @if(Route::has('purchases.create'))
-        <li class="{{ request()->routeIs('purchases.create') ? 'active' : '' }}">
-            <a href="{{ route('purchases.create') }}"><i class="fe fe-file-text"></i><span>Bills</span></a>
-        </li>
-    @endif
-    @if(Route::has('purchase-transaction'))
-        <li><a href="{{ route('purchase-transaction') }}"><i class="fe fe-book-open"></i><span>Purchase Ledger</span></a></li>
-    @endif
-    @endif
-
-    <li class="menu-title"><span>Sales</span></li>
-
-    @if(Route::has('invoices.index'))
-    <li class="submenu {{ Request::is('invoices*', 'add-invoice*') ? 'active subdrop' : '' }}">
-        <a href="#"><i class="fe fe-file"></i><span>Invoices</span><span class="menu-arrow"></span></a>
+    <li class="submenu {{ request()->routeIs('purchases.index', 'purchases.create') || Request::is('purchase-transaction') ? 'active subdrop' : '' }}">
+        <a href="#"><i class="fe fe-shopping-bag"></i><span>Purchases</span><span class="menu-arrow"></span></a>
         <ul>
-            @if(Route::has('add-invoice'))
-                <li><a href="{{ route('add-invoice') }}">Create Invoice</a></li>
+            <li><a href="{{ route('purchases.index') }}">All Purchases</a></li>
+            @if(Route::has('purchases.create'))
+                <li><a href="{{ route('purchases.create') }}">Bills</a></li>
             @endif
-            <li><a href="{{ route('invoices.index') }}">View Invoices</a></li>
+            @if(Route::has('purchase-transaction'))
+                <li><a href="{{ route('purchase-transaction') }}">Purchase Ledger</a></li>
+            @endif
         </ul>
     </li>
     @endif
+
+    <li class="menu-title"><span>Inventory &amp; Stock</span></li>
+
+    @if(Route::has('product-list'))
+    <li class="submenu {{ Request::is('product-list*', 'add-products*') ? 'active subdrop' : '' }}">
+        <a href="#"><i class="fe fe-package"></i><span>Products</span><span class="menu-arrow"></span></a>
+        <ul>
+            <li><a href="{{ route('product-list') }}">Product List</a></li>
+            @if(Route::has('add-products'))
+                <li><a href="{{ route('add-products') }}">Add Product</a></li>
+            @endif
+        </ul>
+    </li>
+    @endif
+
+    <li class="menu-title"><span>Finance &amp; Reports</span></li>
+
+    @if(Route::has('payments.index'))
+        <li><a href="{{ route('payments.index') }}"><i class="fe fe-credit-card"></i><span>Payments</span></a></li>
+    @endif
+
+    @if(Route::has('expenses.index'))
+        <li><a href="{{ route('expenses.index') }}"><i class="fe fe-file-plus"></i><span>Expenses</span></a></li>
+    @endif
+
+    <li class="menu-title"><span>Reports</span></li>
+
+    @include('layout.partials.sidebars.reports-menu', ['reportAccess' => 'basic'])
+
+    <li class="menu-title"><span>Workspace</span></li>
 
     @if(Route::has('chat.index'))
     <li class="submenu {{ Request::is('chat*', 'calendar*', 'messages*') ? 'active subdrop' : '' }}">
@@ -106,32 +137,6 @@
         </ul>
     </li>
     @endif
-
-    @if(Route::has('quotations'))
-    <li class="submenu {{ Request::is('quotations*') ? 'active subdrop' : '' }}">
-        <a href="#"><i class="fe fe-file-text"></i><span>Quotations</span><span class="menu-arrow"></span></a>
-        <ul>
-            <li><a href="{{ route('quotations') }}">All Quotations</a></li>
-            @if(Route::has('add-quotations'))
-                <li><a href="{{ route('add-quotations') }}">Add Quotation</a></li>
-            @endif
-        </ul>
-    </li>
-    @endif
-
-    <li class="menu-title"><span>Finance</span></li>
-
-    @if(Route::has('payments.index'))
-        <li><a href="{{ route('payments.index') }}"><i class="fe fe-credit-card"></i><span>Payments</span></a></li>
-    @endif
-
-    @if(Route::has('expenses.index'))
-        <li><a href="{{ route('expenses.index') }}"><i class="fe fe-file-plus"></i><span>Expenses</span></a></li>
-    @endif
-
-    <li class="menu-title"><span>Reports</span></li>
-
-    @include('layout.partials.sidebars.reports-menu', ['reportAccess' => 'basic'])
 
     <li class="menu-title"><span>Upgrade for More</span></li>
 
@@ -170,7 +175,7 @@
             <span class="badge bg-warning">Enterprise</span>
         </a>
     </li>
-    <li class="menu-title"><span>Settings</span></li>
+    <li class="menu-title"><span>Settings &amp; Control</span></li>
 
     @if(Route::has('settings.index'))
         <li><a href="{{ route('settings.index') }}"><i class="fe fe-settings"></i><span>Settings</span></a></li>

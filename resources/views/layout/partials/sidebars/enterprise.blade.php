@@ -24,7 +24,7 @@
                 </li>
 
                 {{-- ── SALES & RECEIVABLES ─────────────────────────────── --}}
-                <li class="menu-title"><span>Sales &amp; Receivables</span></li>
+                <li class="menu-title"><span>Sales &amp; Customers</span></li>
 
                 <li class="submenu {{ Request::is('pos*', 'sales*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-shopping-cart"></i><span>POS</span><span class="menu-arrow"></span></a>
@@ -91,7 +91,7 @@
                 </li>
 
                 {{-- ── PURCHASES & PAYABLES ────────────────────────────── --}}
-                <li class="menu-title"><span>Purchases &amp; Payables</span></li>
+                <li class="menu-title"><span>Purchases &amp; Suppliers</span></li>
 
                 <li class="{{ request()->routeIs('purchases.index') ? 'active' : '' }}">
                     <a href="{{ route('purchases.index') }}"><i class="fe fe-shopping-bag"></i><span>Purchases</span></a>
@@ -148,7 +148,7 @@
                 </li>
 
                 {{-- ── INVENTORY ───────────────────────────────────────── --}}
-                <li class="menu-title"><span>Inventory</span></li>
+                <li class="menu-title"><span>Inventory &amp; Operations</span></li>
 
                 <li class="submenu {{ Request::is('product-list*', 'add-product*', 'categories*', 'units*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-package"></i><span>Products</span><span class="menu-arrow"></span></a>
@@ -222,7 +222,7 @@
                 </li>
 
                 {{-- ── FINANCE ─────────────────────────────────────────── --}}
-                <li class="menu-title"><span>Finance</span></li>
+                <li class="menu-title"><span>Finance &amp; Expenses</span></li>
 
                 <li><a href="{{ route('expenses.index') }}"><i class="fe fe-file-plus"></i><span>Expenses</span></a></li>
                 <li><a href="{{ route('payments.index') }}"><i class="fe fe-credit-card"></i><span>Payments</span></a></li>
@@ -243,7 +243,7 @@
                 @endif
 
                 {{-- ── ACCOUNTING ───────────────────────────────────────── --}}
-                <li class="menu-title"><span>Accounting</span></li>
+                <li class="menu-title"><span>Accounting, Assets &amp; Tax</span></li>
 
                 <li class="submenu {{ request()->routeIs('chart-of-accounts', 'manual-journal') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-book-open"></i><span>Accounting</span><span class="menu-arrow"></span></a>
@@ -273,9 +273,6 @@
                 <li class="{{ request()->routeIs('cost-centers.*') ? 'active' : '' }}">
                     <a href="{{ route('cost-centers.index') }}"><i class="fe fe-sliders"></i><span>Cost Centers</span></a>
                 </li>
-
-                {{-- ── FIXED ASSETS ─────────────────────────────────────── --}}
-                <li class="menu-title"><span>Fixed Assets</span></li>
 
                 @if(Route::has('finance.fixed-assets.index'))
                     <li><a href="{{ route('finance.fixed-assets.index') }}"><i class="fe fe-archive"></i><span>Asset Register</span></a></li>
@@ -315,7 +312,7 @@
                 </li>
 
                 {{-- ── BUDGETING & PLANNING ─────────────────────────────── --}}
-                <li class="menu-title"><span>Budgeting &amp; Planning</span></li>
+                <li class="menu-title"><span>People, Projects &amp; Planning</span></li>
 
                 @if(Route::has('finance.budgets.index'))
                     <li><a href="{{ route('finance.budgets.index') }}"><i class="fe fe-target"></i><span>Budgets</span></a></li>
@@ -328,9 +325,6 @@
                 @if(Route::has('cash-flow-forecast.index'))
                     <li><a href="{{ route('cash-flow-forecast.index') }}"><i class="fe fe-trending-up"></i><span>Cash Flow Forecast</span></a></li>
                 @endif
-
-                {{-- ── PROJECTS ─────────────────────────────────────────── --}}
-                <li class="menu-title"><span>Projects</span></li>
 
                 <li class="{{ Request::is('projects*') ? 'active' : '' }}">
                     <a href="{{ route('projects.index') }}"><i class="fe fe-briefcase"></i><span>Project Management</span></a>
@@ -347,9 +341,6 @@
                 <li>
                     <a href="{{ route('projects.index') }}#profitability"><i class="fe fe-trending-up"></i><span>Project Profitability</span></a>
                 </li>
-
-                {{-- ── TAXATION ─────────────────────────────────────────── --}}
-                <li class="menu-title"><span>Taxation</span></li>
 
                 <li class="submenu {{ Request::is('compliance/tax*', 'reports/tax*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-percent"></i><span>Taxation</span><span class="menu-arrow"></span></a>
@@ -375,7 +366,7 @@
                 </li>
 
                 {{-- ── COMPLIANCE ───────────────────────────────────────── --}}
-                <li class="menu-title"><span>Compliance</span></li>
+                <li class="menu-title"><span>Reports &amp; Compliance</span></li>
 
                 @if(Route::has('audit.index'))
                     <li><a href="{{ route('audit.index') }}"><i class="fe fe-clipboard"></i><span>Audit Trail</span></a></li>
@@ -386,7 +377,7 @@
                 <li><a href="{{ route('activity-log.index') }}"><i class="fe fe-activity"></i><span>Activity Log</span></a></li>
 
                 {{-- ── APPLICATIONS ─────────────────────────────────────── --}}
-                <li class="menu-title"><span>Applications</span></li>
+                <li class="menu-title"><span>Workspace</span></li>
 
                 <li class="submenu {{ Request::is('chat*', 'calendar*', 'inbox*', 'messages*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-grid"></i><span>Applications</span><span class="menu-arrow"></span></a>
@@ -398,7 +389,7 @@
                 </li>
 
                 {{-- ── MANAGEMENT ───────────────────────────────────────── --}}
-                <li class="menu-title"><span>Management</span></li>
+                <li class="menu-title"><span>Settings &amp; Control</span></li>
 
                 <li><a href="{{ route('users.index') }}"><i class="fe fe-user"></i><span>Users</span></a></li>
                 <li><a href="{{ route('roles.index') }}"><i class="fe fe-shield"></i><span>Roles &amp; Permissions</span></a></li>
