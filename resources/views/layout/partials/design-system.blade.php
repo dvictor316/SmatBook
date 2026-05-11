@@ -335,4 +335,169 @@
     .sb-summary-row:last-child {
         border-bottom: 0;
     }
+
+    /* Global button contrast guard:
+       many pages mix shared .btn hover styles with helper classes like text-white.
+       When a hover flips a button to a light surface, force a readable foreground too. */
+    .btn:not(.btn-close):not(.btn-link) {
+        --spb-btn-hover-bg: initial;
+        --spb-btn-hover-border: initial;
+        --spb-btn-hover-color: inherit;
+    }
+
+    .btn:not(.btn-close):not(.btn-link):hover,
+    .btn:not(.btn-close):not(.btn-link):focus-visible,
+    .btn:not(.btn-close):not(.btn-link):active {
+        color: var(--spb-btn-hover-color) !important;
+    }
+
+    .btn:not(.btn-close):not(.btn-link):hover *,
+    .btn:not(.btn-close):not(.btn-link):focus-visible *,
+    .btn:not(.btn-close):not(.btn-link):active * {
+        color: inherit !important;
+    }
+
+    .btn-primary,
+    .btn-upload,
+    .btn-primary.tax.active,
+    .btn-primary.taxs,
+    .btn-primary.loss,
+    .btn-primary.profit-loss {
+        --spb-btn-hover-bg: #ffffff;
+        --spb-btn-hover-border: #1e40af;
+        --spb-btn-hover-color: #1e3a8a;
+    }
+
+    .btn-primary:hover,
+    .btn-primary:focus-visible,
+    .btn-primary:active,
+    .btn-upload:hover,
+    .btn-upload:focus-visible,
+    .btn-upload:active,
+    .btn-primary.tax.active:hover,
+    .btn-primary.taxs:hover,
+    .btn-primary.loss:hover,
+    .btn-primary.profit-loss:hover {
+        background: var(--spb-btn-hover-bg) !important;
+        background-color: var(--spb-btn-hover-bg) !important;
+        border-color: var(--spb-btn-hover-border) !important;
+        color: var(--spb-btn-hover-color) !important;
+        box-shadow: none !important;
+    }
+
+    .btn-outline-primary,
+    .btn-outline-secondary,
+    .btn-outline-success,
+    .btn-outline-danger,
+    .btn-outline-warning,
+    .btn-outline-dark {
+        --spb-btn-hover-color: #ffffff;
+    }
+
+    .btn-outline-primary:hover,
+    .btn-outline-primary:focus-visible,
+    .btn-outline-primary:active {
+        background: #1e40af !important;
+        background-color: #1e40af !important;
+        border-color: #1e40af !important;
+        color: #ffffff !important;
+    }
+
+    .btn-outline-secondary:hover,
+    .btn-outline-secondary:focus-visible,
+    .btn-outline-secondary:active {
+        background: #475569 !important;
+        background-color: #475569 !important;
+        border-color: #475569 !important;
+        color: #ffffff !important;
+    }
+
+    .btn-outline-success:hover,
+    .btn-outline-success:focus-visible,
+    .btn-outline-success:active {
+        background: #15803d !important;
+        background-color: #15803d !important;
+        border-color: #15803d !important;
+        color: #ffffff !important;
+    }
+
+    .btn-outline-danger:hover,
+    .btn-outline-danger:focus-visible,
+    .btn-outline-danger:active {
+        background: #b91c1c !important;
+        background-color: #b91c1c !important;
+        border-color: #b91c1c !important;
+        color: #ffffff !important;
+    }
+
+    .btn-outline-warning:hover,
+    .btn-outline-warning:focus-visible,
+    .btn-outline-warning:active {
+        background: #b45309 !important;
+        background-color: #b45309 !important;
+        border-color: #b45309 !important;
+        color: #ffffff !important;
+    }
+
+    .btn-outline-dark:hover,
+    .btn-outline-dark:focus-visible,
+    .btn-outline-dark:active {
+        background: #111827 !important;
+        background-color: #111827 !important;
+        border-color: #111827 !important;
+        color: #ffffff !important;
+    }
+
+    .btn-white,
+    .btn-white-outline,
+    .btn-light,
+    .btn.btn-light.border,
+    .btn.btn-white.border {
+        --spb-btn-hover-bg: #ffffff;
+        --spb-btn-hover-border: #cbd5e1;
+        --spb-btn-hover-color: #1f2937;
+    }
+
+    .btn-white:hover,
+    .btn-white:focus-visible,
+    .btn-white:active,
+    .btn-white-outline:hover,
+    .btn-white-outline:focus-visible,
+    .btn-white-outline:active,
+    .btn-light:hover,
+    .btn-light:focus-visible,
+    .btn-light:active,
+    .btn.btn-light.border:hover,
+    .btn.btn-white.border:hover {
+        background: var(--spb-btn-hover-bg) !important;
+        background-color: var(--spb-btn-hover-bg) !important;
+        border-color: var(--spb-btn-hover-border) !important;
+        color: var(--spb-btn-hover-color) !important;
+        box-shadow: none !important;
+    }
+
+    .btn-secondary {
+        --spb-btn-hover-bg: #334155;
+        --spb-btn-hover-border: #334155;
+        --spb-btn-hover-color: #ffffff;
+    }
+
+    .btn-secondary:hover,
+    .btn-secondary:focus-visible,
+    .btn-secondary:active {
+        background: var(--spb-btn-hover-bg) !important;
+        background-color: var(--spb-btn-hover-bg) !important;
+        border-color: var(--spb-btn-hover-border) !important;
+        color: var(--spb-btn-hover-color) !important;
+    }
+
+    [data-layout-mode=dark] .btn-primary,
+    [data-layout-mode=dark] .btn-upload,
+    [data-layout-mode=dark] .btn-white,
+    [data-layout-mode=dark] .btn-white-outline,
+    [data-layout-mode=dark] .btn-light {
+        --spb-btn-hover-bg: #f8fafc;
+        --spb-btn-hover-border: #cbd5e1;
+        --spb-btn-hover-color: #111827;
+    }
 </style>
