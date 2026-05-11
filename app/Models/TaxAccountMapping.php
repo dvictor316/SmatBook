@@ -6,43 +6,42 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class WithholdingRule extends Model
+class TaxAccountMapping extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'tax_jurisdiction_id',
         'company_id',
         'user_id',
         'branch_id',
         'branch_name',
+        'tax_jurisdiction_id',
+        'tax_code_id',
         'country_code',
-        'name',
-        'service_type',
-        'counterparty_type',
-        'rate',
-        'threshold_amount',
+        'tax_type',
+        'role',
         'account_code',
-        'certificate_prefix',
-        'payable_account_code',
-        'receivable_account_code',
+        'account_name',
+        'is_required',
         'effective_from',
         'effective_to',
         'metadata',
-        'is_active',
     ];
 
     protected $casts = [
-        'rate' => 'decimal:4',
-        'threshold_amount' => 'decimal:2',
+        'is_required' => 'boolean',
         'effective_from' => 'date',
         'effective_to' => 'date',
         'metadata' => 'array',
-        'is_active' => 'boolean',
     ];
 
     public function jurisdiction(): BelongsTo
     {
         return $this->belongsTo(TaxJurisdiction::class, 'tax_jurisdiction_id');
+    }
+
+    public function taxCode(): BelongsTo
+    {
+        return $this->belongsTo(TaxCode::class, 'tax_code_id');
     }
 }

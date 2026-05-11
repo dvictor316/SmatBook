@@ -34,6 +34,10 @@
             <p class="text-muted mb-0 small">Manage jurisdictions, tax codes, and withholding rules.</p>
         </div>
         <div class="d-flex gap-2">
+            <form method="POST" action="{{ route('compliance.tax-center.bootstrap') }}">
+                @csrf
+                <button class="btn btn-primary btn-sm text-white">Bootstrap Nigeria Defaults</button>
+            </form>
             <a href="{{ route('compliance.tax-filings.index') }}" class="btn btn-outline-primary btn-sm">Tax Filings</a>
             <a href="{{ route('reports.tax-sales') }}" class="btn btn-outline-secondary btn-sm">Sales Tax Report</a>
             <a href="{{ route('reports.tax-purchase') }}" class="btn btn-outline-secondary btn-sm">Purchase Tax Report</a>
@@ -42,6 +46,13 @@
 
     @if(session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>
+    @endif
+
+    @if(!empty($supportedCountries))
+        <div class="alert alert-info">
+            <strong>Supported countries:</strong>
+            {{ collect($supportedCountries)->map(fn ($country) => $country['name'])->implode(', ') }}
+        </div>
     @endif
 
     @if(session('error'))
@@ -87,6 +98,33 @@
                             <label class="form-label small">Currency</label>
                             <input type="text" name="currency_code" class="form-control" value="{{ old('currency_code') }}" maxlength="3">
                         </div>
+                        <div class="row g-2">
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label small">Filing Frequency</label>
+                                <select name="filing_frequency" class="form-select">
+                                    <option value="">Select</option>
+                                    <option value="monthly">Monthly</option>
+                                    <option value="quarterly">Quarterly</option>
+                                    <option value="annually">Annually</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label small">Deadline Days</label>
+                                <input type="number" min="0" name="filing_deadline_days" class="form-control" value="{{ old('filing_deadline_days') }}">
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small">Tax Authority</label>
+                            <input type="text" name="tax_authority_name" class="form-control" value="{{ old('tax_authority_name') }}">
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small">Portal URL</label>
+                            <input type="url" name="portal_url" class="form-control" value="{{ old('portal_url') }}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small">Registration Threshold</label>
+                            <input type="number" step="0.01" min="0" name="registration_threshold" class="form-control" value="{{ old('registration_threshold', 0) }}">
+                        </div>
                         <button class="btn btn-primary btn-sm text-white">Save Jurisdiction</button>
                     </form>
                 </div>
@@ -127,7 +165,49 @@
                                 <option value="gst" @selected(old('type') === 'gst')>GST</option>
                                 <option value="sales_tax" @selected(old('type') === 'sales_tax')>Sales Tax</option>
                                 <option value="withholding" @selected(old('type') === 'withholding')>Withholding</option>
+                                <option value="paye" @selected(old('type') === 'paye')>PAYE</option>
+                                <option value="corporate_income_tax" @selected(old('type') === 'corporate_income_tax')>Corporate Income Tax</option>
+                                <option value="stamp_duty" @selected(old('type') === 'stamp_duty')>Stamp Duty</option>
                             </select>
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label small">Method</label>
+                                <select name="calculation_method" class="form-select">
+                                    <option value="exclusive">Exclusive</option>
+                                    <option value="inclusive">Inclusive</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label small">Recoverability %</label>
+                                <input type="number" step="0.0001" min="0" max="100" name="recoverability_rate" class="form-control" value="{{ old('recoverability_rate', 100) }}">
+                            </div>
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label small">Output Account</label>
+                                <input type="text" name="ledger_output_account_code" class="form-control" value="{{ old('ledger_output_account_code') }}">
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label small">Input Account</label>
+                                <input type="text" name="ledger_input_account_code" class="form-control" value="{{ old('ledger_input_account_code') }}">
+                            </div>
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label small">Payable Account</label>
+                                <input type="text" name="ledger_payable_account_code" class="form-control" value="{{ old('ledger_payable_account_code') }}">
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label small">Receivable Account</label>
+                                <input type="text" name="ledger_receivable_account_code" class="form-control" value="{{ old('ledger_receivable_account_code') }}">
+                            </div>
+                        </div>
+                        <div class="d-flex flex-wrap gap-3 mb-3 small">
+                            <label class="form-check"><input class="form-check-input" type="checkbox" name="is_compound" value="1"> <span class="form-check-label">Compound</span></label>
+                            <label class="form-check"><input class="form-check-input" type="checkbox" name="is_zero_rated" value="1"> <span class="form-check-label">Zero-rated</span></label>
+                            <label class="form-check"><input class="form-check-input" type="checkbox" name="is_exempt" value="1"> <span class="form-check-label">Exempt</span></label>
+                            <label class="form-check"><input class="form-check-input" type="checkbox" name="supports_reverse_charge" value="1"> <span class="form-check-label">Reverse charge</span></label>
                         </div>
                         <button class="btn btn-primary btn-sm text-white">Save Tax Code</button>
                     </form>
@@ -155,6 +235,10 @@
                             <input type="text" name="name" class="form-control" value="{{ old('name') }}" required>
                         </div>
                         <div class="mb-2">
+                            <label class="form-label small">Service Type</label>
+                            <input type="text" name="service_type" class="form-control" value="{{ old('service_type') }}" placeholder="professional_services, contracts, rent">
+                        </div>
+                        <div class="mb-2">
                             <label class="form-label small">Counterparty Type</label>
                             <select name="counterparty_type" class="form-select" required>
                                 <option value="vendor" @selected(old('counterparty_type') === 'vendor')>Supplier</option>
@@ -173,6 +257,16 @@
                         <div class="mb-3">
                             <label class="form-label small">Account Code</label>
                             <input type="text" name="account_code" class="form-control" value="{{ old('account_code') }}">
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label small">Payable Account</label>
+                                <input type="text" name="payable_account_code" class="form-control" value="{{ old('payable_account_code') }}">
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label small">Receivable Account</label>
+                                <input type="text" name="receivable_account_code" class="form-control" value="{{ old('receivable_account_code') }}">
+                            </div>
                         </div>
                         <button class="btn btn-primary btn-sm text-white">Save Rule</button>
                     </form>
@@ -236,6 +330,9 @@
                                                     <option value="gst" @selected($taxCode->type === 'gst')>GST</option>
                                                     <option value="sales_tax" @selected($taxCode->type === 'sales_tax')>Sales Tax</option>
                                                     <option value="withholding" @selected($taxCode->type === 'withholding')>Withholding</option>
+                                                    <option value="paye" @selected($taxCode->type === 'paye')>PAYE</option>
+                                                    <option value="corporate_income_tax" @selected($taxCode->type === 'corporate_income_tax')>Corporate Tax</option>
+                                                    <option value="stamp_duty" @selected($taxCode->type === 'stamp_duty')>Stamp Duty</option>
                                                 </select>
                                             </div>
                                             <div class="col-md-2 d-flex align-items-center">
@@ -379,6 +476,38 @@
                                 </tr>
                             @empty
                                 <tr><td colspan="5" class="text-muted text-center py-3">No withholding rules yet.</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card tc-card">
+                <div class="card-header bg-white"><strong>Account Mappings</strong></div>
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th>Country</th>
+                                <th>Tax Type</th>
+                                <th>Role</th>
+                                <th>Account Code</th>
+                                <th>Account Name</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($accountMappings as $mapping)
+                                <tr>
+                                    <td>{{ $mapping->country_code ?? $mapping->jurisdiction?->country_code ?? '—' }}</td>
+                                    <td>{{ strtoupper($mapping->tax_type) }}</td>
+                                    <td>{{ str_replace('_', ' ', ucfirst($mapping->role)) }}</td>
+                                    <td>{{ $mapping->account_code }}</td>
+                                    <td>{{ $mapping->account_name ?? '—' }}</td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="5" class="text-muted text-center py-3">No account mappings yet. Use Bootstrap Nigeria Defaults to generate the standard chart mappings.</td></tr>
                             @endforelse
                         </tbody>
                     </table>

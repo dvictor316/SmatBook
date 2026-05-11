@@ -965,6 +965,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
     // Compliance & Global Tax
     Route::prefix('compliance')->name('compliance.')->middleware('plan.access:enterprise')->group(function () {
         Route::get('/tax-center', [TaxCenterController::class, 'index'])->name('tax-center.index');
+        Route::post('/tax-center/bootstrap-defaults', [TaxCenterController::class, 'bootstrapDefaults'])->name('tax-center.bootstrap');
         Route::post('/tax-center/jurisdictions', [TaxCenterController::class, 'storeJurisdiction'])->name('tax-center.jurisdictions.store');
         Route::put('/tax-center/jurisdictions/{id}', [TaxCenterController::class, 'updateJurisdiction'])->name('tax-center.jurisdictions.update');
         Route::delete('/tax-center/jurisdictions/{id}', [TaxCenterController::class, 'destroyJurisdiction'])->name('tax-center.jurisdictions.destroy');

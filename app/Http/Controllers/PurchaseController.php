@@ -23,6 +23,7 @@ use App\Exports\PurchaseExport;
 use App\Models\Transaction;
 use App\Support\BranchInventoryService;
 use App\Support\LedgerService;
+use App\Support\TaxComputationService;
 use App\Models\Transaction as LedgerTransaction;
 // -----------------------------
 
@@ -1247,7 +1248,12 @@ public function show($id)
             if (class_exists(TaxCode::class) && Schema::hasTable('tax_codes')) {
                 $tax = TaxCode::find($request->tax_id);
                 if ($tax && isset($tax->rate)) {
-                    $vatAmount = (($taxableAmount - $totalDiscount) * $tax->rate) / 100;
+                    $taxBreakdown = app(TaxComputationService::class)->computeBreakdown(
+                        max(0, $taxableAmount - $totalDiscount),
+                        [$tax],
+                        ['currency_code' => 'NGN']
+                    );
+                    $vatAmount = (float) ($taxBreakdown['total_tax'] ?? 0);
                 }
             }
         }

@@ -67,7 +67,7 @@ class Purchase extends Model
      */
     public function tax()
     {
-        return $this->belongsTo(Tax::class, 'tax_id');
+        return $this->belongsTo(TaxCode::class, 'tax_id');
     }
 
     /**

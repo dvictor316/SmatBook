@@ -1,0 +1,145 @@
+<?php
+
+namespace App\Support;
+
+class TaxCountryCatalog
+{
+    public static function supportedCountries(): array
+    {
+        return [
+            'NGA' => ['name' => 'Nigeria', 'currency' => 'NGN', 'filing_frequency' => 'monthly', 'filing_deadline_days' => 21],
+            'GHA' => ['name' => 'Ghana', 'currency' => 'GHS', 'filing_frequency' => 'monthly', 'filing_deadline_days' => 30],
+            'KEN' => ['name' => 'Kenya', 'currency' => 'KES', 'filing_frequency' => 'monthly', 'filing_deadline_days' => 20],
+            'ZAF' => ['name' => 'South Africa', 'currency' => 'ZAR', 'filing_frequency' => 'monthly', 'filing_deadline_days' => 25],
+            'CMR' => ['name' => 'Cameroon', 'currency' => 'XAF', 'filing_frequency' => 'monthly', 'filing_deadline_days' => 15],
+            'GBR' => ['name' => 'United Kingdom', 'currency' => 'GBP', 'filing_frequency' => 'quarterly', 'filing_deadline_days' => 30],
+            'USA' => ['name' => 'United States', 'currency' => 'USD', 'filing_frequency' => 'monthly', 'filing_deadline_days' => 30],
+            'ARE' => ['name' => 'United Arab Emirates', 'currency' => 'AED', 'filing_frequency' => 'quarterly', 'filing_deadline_days' => 28],
+        ];
+    }
+
+    public static function nigeriaPresets(): array
+    {
+        return [
+            'jurisdiction' => [
+                'name' => 'Nigeria Federal Tax',
+                'country_code' => 'NGA',
+                'region' => 'Federal',
+                'currency_code' => 'NGN',
+                'filing_frequency' => 'monthly',
+                'filing_deadline_days' => 21,
+                'tax_authority_name' => 'Nigeria Revenue Service',
+                'registration_threshold' => 25000000,
+                'portal_url' => 'https://taxpromax.firs.gov.ng/',
+                'metadata' => [
+                    'supports_atrs' => true,
+                    'default_reverse_charge' => false,
+                ],
+            ],
+            'tax_codes' => [
+                [
+                    'code' => 'NGA-VAT-STD',
+                    'name' => 'Nigeria VAT',
+                    'description' => 'Nigeria standard VAT',
+                    'type' => 'vat',
+                    'category' => 'indirect',
+                    'rate' => 7.5,
+                    'calculation_method' => 'exclusive',
+                    'filing_frequency' => 'monthly',
+                    'filing_deadline_days' => 21,
+                    'report_template' => 'nigeria-vat',
+                    'ledger_output_account_code' => 'OUTPUT-VAT',
+                    'ledger_input_account_code' => 'INPUT-VAT',
+                    'ledger_payable_account_code' => 'VAT-PAYABLE',
+                    'ledger_receivable_account_code' => 'VAT-RECEIVABLE',
+                    'registration_threshold' => 25000000,
+                    'applies_to' => ['sales', 'purchases', 'expenses', 'credit_notes', 'debit_notes'],
+                    'metadata' => ['firs_tag' => 'vat_standard'],
+                ],
+                [
+                    'code' => 'NGA-VAT-ZERO',
+                    'name' => 'Nigeria VAT Zero Rated',
+                    'description' => 'Nigeria zero-rated VAT supplies',
+                    'type' => 'vat',
+                    'category' => 'indirect',
+                    'rate' => 0,
+                    'calculation_method' => 'exclusive',
+                    'filing_frequency' => 'monthly',
+                    'filing_deadline_days' => 21,
+                    'report_template' => 'nigeria-vat',
+                    'ledger_output_account_code' => 'OUTPUT-VAT',
+                    'ledger_payable_account_code' => 'VAT-PAYABLE',
+                    'is_zero_rated' => true,
+                    'applies_to' => ['sales'],
+                    'metadata' => ['firs_tag' => 'vat_zero'],
+                ],
+                [
+                    'code' => 'NGA-VAT-EXEMPT',
+                    'name' => 'Nigeria VAT Exempt',
+                    'description' => 'Nigeria VAT exempt supplies',
+                    'type' => 'vat',
+                    'category' => 'indirect',
+                    'rate' => 0,
+                    'calculation_method' => 'exclusive',
+                    'filing_frequency' => 'monthly',
+                    'filing_deadline_days' => 21,
+                    'report_template' => 'nigeria-vat',
+                    'is_exempt' => true,
+                    'applies_to' => ['sales', 'purchases'],
+                    'metadata' => ['firs_tag' => 'vat_exempt'],
+                ],
+                [
+                    'code' => 'NGA-STAMP-DUTY',
+                    'name' => 'Nigeria Stamp Duty',
+                    'description' => 'Stamp duty on eligible transactions',
+                    'type' => 'stamp_duty',
+                    'category' => 'levy',
+                    'rate' => 0,
+                    'calculation_method' => 'exclusive',
+                    'ledger_payable_account_code' => 'STAMP-DUTY-PAYABLE',
+                    'ledger_expense_account_code' => 'STAMP-DUTY-EXPENSE',
+                    'applies_to' => ['sales', 'receipts'],
+                    'metadata' => ['threshold' => 10000],
+                ],
+                [
+                    'code' => 'NGA-CIT-PROVISION',
+                    'name' => 'Nigeria Corporate Income Tax Provision',
+                    'description' => 'Estimated corporate tax provision',
+                    'type' => 'corporate_income_tax',
+                    'category' => 'direct',
+                    'rate' => 30,
+                    'calculation_method' => 'exclusive',
+                    'filing_frequency' => 'annual',
+                    'filing_deadline_days' => 180,
+                    'ledger_payable_account_code' => 'CIT-PAYABLE',
+                    'ledger_expense_account_code' => 'TAX-EXPENSE',
+                    'applies_to' => ['manual_journal', 'period_close'],
+                    'metadata' => ['estimated_only' => true],
+                ],
+            ],
+            'withholding_rules' => [
+                ['name' => 'Professional Services WHT', 'service_type' => 'professional_services', 'counterparty_type' => 'vendor', 'rate' => 10, 'threshold_amount' => 0, 'account_code' => 'WHT-PAYABLE', 'payable_account_code' => 'WHT-PAYABLE', 'receivable_account_code' => 'WHT-RECEIVABLE', 'certificate_prefix' => 'WHT-PRO'],
+                ['name' => 'Consultancy WHT', 'service_type' => 'consultancy', 'counterparty_type' => 'vendor', 'rate' => 10, 'threshold_amount' => 0, 'account_code' => 'WHT-PAYABLE', 'payable_account_code' => 'WHT-PAYABLE', 'receivable_account_code' => 'WHT-RECEIVABLE', 'certificate_prefix' => 'WHT-CON'],
+                ['name' => 'Management Fees WHT', 'service_type' => 'management_services', 'counterparty_type' => 'vendor', 'rate' => 10, 'threshold_amount' => 0, 'account_code' => 'WHT-PAYABLE', 'payable_account_code' => 'WHT-PAYABLE', 'receivable_account_code' => 'WHT-RECEIVABLE', 'certificate_prefix' => 'WHT-MGT'],
+                ['name' => 'Commissions WHT', 'service_type' => 'commissions', 'counterparty_type' => 'vendor', 'rate' => 10, 'threshold_amount' => 0, 'account_code' => 'WHT-PAYABLE', 'payable_account_code' => 'WHT-PAYABLE', 'receivable_account_code' => 'WHT-RECEIVABLE', 'certificate_prefix' => 'WHT-COM'],
+                ['name' => 'Directors Fees WHT', 'service_type' => 'directors_fees', 'counterparty_type' => 'vendor', 'rate' => 10, 'threshold_amount' => 0, 'account_code' => 'WHT-PAYABLE', 'payable_account_code' => 'WHT-PAYABLE', 'receivable_account_code' => 'WHT-RECEIVABLE', 'certificate_prefix' => 'WHT-DIR'],
+                ['name' => 'Contracts WHT', 'service_type' => 'contracts', 'counterparty_type' => 'vendor', 'rate' => 5, 'threshold_amount' => 0, 'account_code' => 'WHT-PAYABLE', 'payable_account_code' => 'WHT-PAYABLE', 'receivable_account_code' => 'WHT-RECEIVABLE', 'certificate_prefix' => 'WHT-CONTRACT'],
+                ['name' => 'Construction WHT', 'service_type' => 'construction', 'counterparty_type' => 'vendor', 'rate' => 5, 'threshold_amount' => 0, 'account_code' => 'WHT-PAYABLE', 'payable_account_code' => 'WHT-PAYABLE', 'receivable_account_code' => 'WHT-RECEIVABLE', 'certificate_prefix' => 'WHT-BUILD'],
+                ['name' => 'Rent WHT', 'service_type' => 'rent', 'counterparty_type' => 'vendor', 'rate' => 10, 'threshold_amount' => 0, 'account_code' => 'WHT-PAYABLE', 'payable_account_code' => 'WHT-PAYABLE', 'receivable_account_code' => 'WHT-RECEIVABLE', 'certificate_prefix' => 'WHT-RENT'],
+            ],
+            'account_mappings' => [
+                ['tax_type' => 'vat', 'role' => 'output_vat', 'account_code' => 'OUTPUT-VAT', 'account_name' => 'Output VAT'],
+                ['tax_type' => 'vat', 'role' => 'input_vat', 'account_code' => 'INPUT-VAT', 'account_name' => 'Input VAT'],
+                ['tax_type' => 'vat', 'role' => 'vat_payable', 'account_code' => 'VAT-PAYABLE', 'account_name' => 'VAT Payable'],
+                ['tax_type' => 'vat', 'role' => 'vat_receivable', 'account_code' => 'VAT-RECEIVABLE', 'account_name' => 'VAT Receivable'],
+                ['tax_type' => 'withholding', 'role' => 'wht_payable', 'account_code' => 'WHT-PAYABLE', 'account_name' => 'Withholding Tax Payable'],
+                ['tax_type' => 'withholding', 'role' => 'wht_receivable', 'account_code' => 'WHT-RECEIVABLE', 'account_name' => 'Withholding Tax Receivable'],
+                ['tax_type' => 'paye', 'role' => 'paye_payable', 'account_code' => 'PAYE-PAYABLE', 'account_name' => 'PAYE Payable'],
+                ['tax_type' => 'corporate_income_tax', 'role' => 'tax_payable', 'account_code' => 'CIT-PAYABLE', 'account_name' => 'Corporate Income Tax Payable'],
+                ['tax_type' => 'corporate_income_tax', 'role' => 'tax_expense', 'account_code' => 'TAX-EXPENSE', 'account_name' => 'Tax Expense'],
+                ['tax_type' => 'deferred_tax', 'role' => 'deferred_tax', 'account_code' => 'DEFERRED-TAX', 'account_name' => 'Deferred Tax'],
+                ['tax_type' => 'stamp_duty', 'role' => 'stamp_duty_payable', 'account_code' => 'STAMP-DUTY-PAYABLE', 'account_name' => 'Stamp Duty Payable'],
+            ],
+        ];
+    }
+}
