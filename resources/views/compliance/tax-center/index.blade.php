@@ -88,7 +88,12 @@
                         </div>
                         <div class="mb-2">
                             <label class="form-label small">Country Code</label>
-                            <input type="text" name="country_code" class="form-control" value="{{ old('country_code') }}" maxlength="3">
+                            <select name="country_code" class="form-select" required>
+                                <option value="">Select country</option>
+                                @foreach($supportedCountries as $countryCode => $country)
+                                    <option value="{{ $countryCode }}" @selected(old('country_code') === $countryCode)>{{ $country['name'] }} ({{ $countryCode }})</option>
+                                @endforeach
+                            </select>
                         </div>
                         <div class="mb-2">
                             <label class="form-label small">Region</label>
@@ -391,7 +396,13 @@
                                             @csrf
                                             @method('PUT')
                                             <div class="col-md-3"><input type="text" name="name" class="form-control form-control-sm" value="{{ $jurisdiction->name }}" required></div>
-                                            <div class="col-md-2"><input type="text" name="country_code" maxlength="3" class="form-control form-control-sm" value="{{ $jurisdiction->country_code }}"></div>
+                                            <div class="col-md-2">
+                                                <select name="country_code" class="form-select form-select-sm" required>
+                                                    @foreach($supportedCountries as $countryCode => $country)
+                                                        <option value="{{ $countryCode }}" @selected($jurisdiction->country_code === $countryCode)>{{ $countryCode }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
                                             <div class="col-md-3"><input type="text" name="region" class="form-control form-control-sm" value="{{ $jurisdiction->region }}"></div>
                                             <div class="col-md-2"><input type="text" name="currency_code" maxlength="3" class="form-control form-control-sm" value="{{ $jurisdiction->currency_code }}"></div>
                                             <div class="col-md-1 d-flex align-items-center">
