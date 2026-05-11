@@ -7,13 +7,21 @@
     :root {
         --sidebar-w: 270px;
         --sidebar-collapsed: 80px;
+        --compliance-page-bg: #f8fafc;
+        --compliance-card-bg: #ffffff;
+        --compliance-card-border: #dbe4ee;
+        --compliance-text: #0f172a;
+        --compliance-muted: #475569;
+        --compliance-input-bg: #ffffff;
+        --compliance-input-border: #cbd5e1;
     }
     #tax-center-wrapper {
         margin-left: var(--sidebar-w);
         width: calc(100% - var(--sidebar-w));
         padding: 100px 1.5rem 2rem;
         min-height: 100vh;
-        background: #f8fafc;
+        background: var(--compliance-page-bg);
+        color: var(--compliance-text);
         transition: margin-left .3s, width .3s;
     }
     body.sidebar-icon-only #tax-center-wrapper,
@@ -24,7 +32,42 @@
     @media (max-width: 991.98px) {
         #tax-center-wrapper { margin-left: 0; width: 100%; }
     }
-    .tc-card { border: 1px solid #e2e8f0; border-radius: 12px; }
+    #tax-center-wrapper .text-muted { color: var(--compliance-muted) !important; }
+    #tax-center-wrapper .tc-card,
+    #tax-center-wrapper .card {
+        border: 1px solid var(--compliance-card-border);
+        border-radius: 12px;
+        background: var(--compliance-card-bg);
+        color: var(--compliance-text);
+    }
+    #tax-center-wrapper .card-header,
+    #tax-center-wrapper .card-body,
+    #tax-center-wrapper .card-footer,
+    #tax-center-wrapper .table,
+    #tax-center-wrapper .table th,
+    #tax-center-wrapper .table td,
+    #tax-center-wrapper .form-label,
+    #tax-center-wrapper .form-check-label,
+    #tax-center-wrapper h4,
+    #tax-center-wrapper p,
+    #tax-center-wrapper strong,
+    #tax-center-wrapper label {
+        color: var(--compliance-text);
+    }
+    #tax-center-wrapper .form-control,
+    #tax-center-wrapper .form-select {
+        background: var(--compliance-input-bg);
+        border-color: var(--compliance-input-border);
+        color: var(--compliance-text);
+    }
+    #tax-center-wrapper .form-control::placeholder {
+        color: #64748b;
+    }
+    #tax-center-wrapper .bg-light,
+    #tax-center-wrapper .bg-white {
+        background: #ffffff !important;
+        color: var(--compliance-text) !important;
+    }
 </style>
 
 <div id="tax-center-wrapper">
@@ -46,13 +89,6 @@
 
     @if(session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>
-    @endif
-
-    @if(!empty($supportedCountries))
-        <div class="alert alert-info">
-            <strong>Supported countries:</strong>
-            {{ collect($supportedCountries)->map(fn ($country) => $country['name'])->implode(', ') }}
-        </div>
     @endif
 
     @if(session('error'))

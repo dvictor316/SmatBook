@@ -7,13 +7,21 @@
     :root {
         --sidebar-w: 270px;
         --sidebar-collapsed: 80px;
+        --compliance-page-bg: #f8fafc;
+        --compliance-card-bg: #ffffff;
+        --compliance-card-border: #dbe4ee;
+        --compliance-text: #0f172a;
+        --compliance-muted: #475569;
+        --compliance-input-bg: #ffffff;
+        --compliance-input-border: #cbd5e1;
     }
     #tax-filings-wrapper {
         margin-left: var(--sidebar-w);
         width: calc(100% - var(--sidebar-w));
         padding: 100px 1.5rem 2rem;
         min-height: 100vh;
-        background: #f8fafc;
+        background: var(--compliance-page-bg);
+        color: var(--compliance-text);
         transition: margin-left .3s, width .3s;
     }
     body.sidebar-icon-only #tax-filings-wrapper,
@@ -23,6 +31,26 @@
     }
     @media (max-width: 991.98px) {
         #tax-filings-wrapper { margin-left: 0; width: 100%; }
+    }
+    #tax-filings-wrapper .text-muted { color: var(--compliance-muted) !important; }
+    #tax-filings-wrapper .card,
+    #tax-filings-wrapper .table,
+    #tax-filings-wrapper .table th,
+    #tax-filings-wrapper .table td,
+    #tax-filings-wrapper .card-header,
+    #tax-filings-wrapper .card-body,
+    #tax-filings-wrapper .card-footer,
+    #tax-filings-wrapper h4,
+    #tax-filings-wrapper p {
+        color: var(--compliance-text);
+    }
+    #tax-filings-wrapper .card {
+        background: var(--compliance-card-bg);
+        border: 1px solid var(--compliance-card-border);
+    }
+    #tax-filings-wrapper .bg-white {
+        background: #ffffff !important;
+        color: var(--compliance-text) !important;
     }
 </style>
 

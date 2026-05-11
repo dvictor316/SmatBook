@@ -7,13 +7,21 @@
     :root {
         --sidebar-w: 270px;
         --sidebar-collapsed: 80px;
+        --compliance-page-bg: #f8fafc;
+        --compliance-card-bg: #ffffff;
+        --compliance-card-border: #dbe4ee;
+        --compliance-text: #0f172a;
+        --compliance-muted: #475569;
+        --compliance-input-bg: #ffffff;
+        --compliance-input-border: #cbd5e1;
     }
     #tax-filing-create-wrapper {
         margin-left: var(--sidebar-w);
         width: calc(100% - var(--sidebar-w));
         padding: 100px 1.5rem 2rem;
         min-height: 100vh;
-        background: #f8fafc;
+        background: var(--compliance-page-bg);
+        color: var(--compliance-text);
         transition: margin-left .3s, width .3s;
     }
     body.sidebar-icon-only #tax-filing-create-wrapper,
@@ -23,6 +31,30 @@
     }
     @media (max-width: 991.98px) {
         #tax-filing-create-wrapper { margin-left: 0; width: 100%; }
+    }
+    #tax-filing-create-wrapper .text-muted { color: var(--compliance-muted) !important; }
+    #tax-filing-create-wrapper .card,
+    #tax-filing-create-wrapper .card-body,
+    #tax-filing-create-wrapper .form-label,
+    #tax-filing-create-wrapper h4,
+    #tax-filing-create-wrapper p,
+    #tax-filing-create-wrapper .table,
+    #tax-filing-create-wrapper .table th,
+    #tax-filing-create-wrapper .table td {
+        color: var(--compliance-text);
+    }
+    #tax-filing-create-wrapper .card {
+        background: var(--compliance-card-bg);
+        border: 1px solid var(--compliance-card-border) !important;
+    }
+    #tax-filing-create-wrapper .form-control,
+    #tax-filing-create-wrapper .form-select {
+        background: var(--compliance-input-bg);
+        border-color: var(--compliance-input-border);
+        color: var(--compliance-text);
+    }
+    #tax-filing-create-wrapper .form-control::placeholder {
+        color: #64748b;
     }
 </style>
 
