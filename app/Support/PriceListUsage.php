@@ -36,7 +36,7 @@ class PriceListUsage
         $allBranches = session('active_branch_scope') === 'all'
             || strtolower((string) session('active_branch_id')) === 'all';
 
-        if (!$allBranches) {
+        if (!$allBranches && (Schema::hasColumn('price_lists', 'branch_id') || Schema::hasColumn('price_lists', 'branch_name'))) {
             $branchId = trim((string) (session('active_branch_id') ?? auth()->user()?->branch_id ?? ''));
             $branchName = trim((string) (session('active_branch_name') ?? ''));
 

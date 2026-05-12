@@ -10,13 +10,15 @@ class PriceListItem extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'price_list_id', 'product_id', 'price',
-        'min_quantity', 'currency',
+        'price_list_id', 'product_id', 'price', 'unit_price',
+        'min_quantity', 'max_quantity', 'currency', 'notes',
     ];
 
     protected $casts = [
         'price'        => 'decimal:2',
+        'unit_price'   => 'decimal:2',
         'min_quantity' => 'decimal:4',
+        'max_quantity' => 'decimal:4',
     ];
 
     public function priceList()
@@ -27,5 +29,10 @@ class PriceListItem extends Model
     public function product()
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function getPriceAttribute($value)
+    {
+        return $value ?? ($this->attributes['unit_price'] ?? null);
     }
 }

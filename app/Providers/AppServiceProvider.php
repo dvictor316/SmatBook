@@ -56,8 +56,12 @@ class AppServiceProvider extends ServiceProvider
         }
 
         // 4. Model Observers
-        if (Schema::hasTable('users')) {
-            User::observe(UserObserver::class);
+        try {
+            if (Schema::hasTable('users')) {
+                User::observe(UserObserver::class);
+            }
+        } catch (Throwable) {
+            // Artisan commands and tests should still boot when the DB is temporarily unavailable.
         }
 
         // 5. Global View Composers
