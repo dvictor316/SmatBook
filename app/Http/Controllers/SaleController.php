@@ -827,7 +827,7 @@ public function store(Request $request)
         'items.*.qty'    => 'required|numeric|gt:0',
         'items.*.unitType' => 'nullable|in:unit,roll,carton',
         'items.*.stockUnits' => 'nullable|numeric|gt:0',
-        'items.*.priceLevel' => 'nullable|in:retail,wholesale,special',
+        'items.*.priceLevel' => 'nullable|in:list,retail,wholesale,special',
         'deposit_account_id' => 'nullable|integer',
         'payment_account_id' => 'nullable|integer',
         'split_details.card_account_id' => 'nullable|integer',
@@ -1286,7 +1286,7 @@ public function create()
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.quantity' => 'required|numeric|min:1',
             'items.*.rate' => 'required|numeric',
-            'items.*.price_level' => 'nullable|in:retail,wholesale,special',
+            'items.*.price_level' => 'nullable|in:list,retail,wholesale,special',
         ]);
 
         DB::transaction(function () use ($request, $sale) {

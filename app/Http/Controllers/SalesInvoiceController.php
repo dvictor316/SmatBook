@@ -79,7 +79,8 @@ public function index()
             LedgerService::postSale($newSale);
         }
 
-        return back()->with('success', 'Invoice Cloned Successfully!');
+        return redirect()->route('invoices.edit', $newSaleId)
+                         ->with('success', 'Invoice cloned successfully. Review and update below.');
     }
 
     // Send Action

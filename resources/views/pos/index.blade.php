@@ -1609,6 +1609,8 @@ $(document).ready(function() {
     let lastSelectedProductId = null;
     let isSyncingProductSearch = false;
     const fmt = new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' });
+    const posPriceLists = @json($priceListData ?? []);
+    const posPriceListById = new Map(posPriceLists.map(list => [String(list.id), list]));
     const showAlert = (options) => {
         if (window.Swal && typeof Swal.fire === 'function') {
             return Swal.fire(options);
@@ -1774,11 +1776,35 @@ $(document).ready(function() {
         };
     }
 
+    function getPriceListProductPrice(listId, productId, quantity) {
+        const list = posPriceListById.get(String(listId || ''));
+        if (!list || !list.items || !list.items[String(productId)]) {
+            return null;
+        }
+
+        let match = null;
+        list.items[String(productId)].forEach(row => {
+            if (quantity >= (parseFloat(row.min_quantity) || 1)) {
+                match = row;
+            }
+        });
+
+        return match ? parseFloat(match.price) || 0 : null;
+    }
+
     function getSelectedBasePrice(selectedOption) {
         const tier = $('#price-tier').val() || 'retail';
+        const priceListId = $('#price-list-select').val() || '';
+        const quantity = parseFloat($('#quantity').val()) || 1;
+        const listPrice = getPriceListProductPrice(priceListId, selectedOption.val(), quantity);
         const retailPrice = parseFloat(selectedOption.data('retail')) || parseFloat(selectedOption.data('price')) || 0;
         const wholesalePrice = parseFloat(selectedOption.data('wholesale')) || 0;
         const specialPrice = parseFloat(selectedOption.data('special')) || 0;
+
+        if (tier === 'list' && listPrice !== null) {
+            const list = posPriceListById.get(String(priceListId));
+            return { value: listPrice, key: 'list', label: list ? list.name : 'Selected Price List' };
+        }
 
         if (tier === 'wholesale' && wholesalePrice > 0) {
             return { value: wholesalePrice, key: 'wholesale', label: 'Wholesale' };
@@ -2032,6 +2058,12 @@ $(document).ready(function() {
 
     $('input[name="unit_type"]').on('change', () => $('#product-select').trigger('change'));
     $('#price-tier').on('change', () => $('#product-select').trigger('change'));
+    $('#price-list-select').on('change', function () {
+        if ($(this).val()) {
+            $('#price-tier').val('list');
+        }
+        $('#product-select').trigger('change');
+    });
     $(document).on('input', '#quantity, #discount, #tax', calculate);
     $(document).on('change', '#discount-type', function() {
         const type = $('#discount-type').val();
@@ -2100,7 +2132,7 @@ $(document).ready(function() {
         $('#discount-type').val('percent');
         $('#discount-helper').text('Percent of item subtotal');
         $('#discount').attr('max', '100');
-        $('#price-tier').val('retail');
+        $('#price-tier').val($('#price-list-select').val() ? 'list' : 'retail');
         $('#barcode-input').val('').focus();
 
         showAlert({ icon: 'success', title: 'Added', timer: 1000, toast: true, position: 'top-end', showConfirmButton: false });
@@ -2267,7 +2299,7 @@ $(document).ready(function() {
         $('#discount-type').val('percent');
         $('#discount-helper').text('Percent of item subtotal');
         $('#discount').attr('max', '100');
-        $('#price-tier').val('retail');
+        $('#price-tier').val($('#price-list-select').val() ? 'list' : 'retail');
         $('#unit-type-unit').prop('checked', true).trigger('change');
 
         filterProductCards();
@@ -2375,6 +2407,7 @@ window.POS_ENABLE_FALLBACK = function () {
     const productSearch = document.getElementById('product-search');
     const unitTypeInputs = document.querySelectorAll('input[name="unit_type"]');
     const priceTierInput = document.getElementById('price-tier');
+    const priceListInput = document.getElementById('price-list-select');
     const priceInput = document.getElementById('unit-price-input');
     const qtyInput = document.getElementById('quantity');
     const discountInput = document.getElementById('discount');
@@ -2393,6 +2426,8 @@ window.POS_ENABLE_FALLBACK = function () {
     const hdrSelected = document.getElementById('hdr-selected-product');
     const qtyLabel = document.getElementById('qty-label');
     const unitHelperCopy = document.getElementById('unit-helper-copy');
+    const vanillaPriceLists = @json($priceListData ?? []);
+    const vanillaPriceListById = new Map(vanillaPriceLists.map(list => [String(list.id), list]));
     const hdrShelfCount = document.getElementById('hdr-shelf-count');
     const productCount = document.getElementById('product-count');
     const sumSubtotal = document.getElementById('sum-subtotal');
@@ -2511,11 +2546,36 @@ window.POS_ENABLE_FALLBACK = function () {
         return active ? active.value : 'unit';
     }
 
+    function getVanillaPriceListProductPrice(listId, productId, quantity) {
+        const list = vanillaPriceListById.get(String(listId || ''));
+        if (!list || !list.items || !list.items[String(productId)]) {
+            return null;
+        }
+
+        let match = null;
+        list.items[String(productId)].forEach(row => {
+            if (quantity >= (parseFloat(row.min_quantity) || 1)) {
+                match = row;
+            }
+        });
+
+        return match ? parseFloat(match.price) || 0 : null;
+    }
+
     function getBasePrice(data) {
         const tier = priceTierInput?.value || 'retail';
+        const productId = data.id || '';
+        const quantity = parseFloat(qtyInput?.value || '1') || 1;
+        const priceListId = priceListInput?.value || '';
+        const listPrice = getVanillaPriceListProductPrice(priceListId, productId, quantity);
         const retail = parseFloat(data.retail || data.price || '0') || 0;
         const wholesale = parseFloat(data.wholesale || '0') || 0;
         const special = parseFloat(data.special || '0') || 0;
+
+        if (tier === 'list' && listPrice !== null) {
+            const list = vanillaPriceListById.get(String(priceListId));
+            return { value: listPrice, key: 'list', label: list ? list.name : 'Selected Price List' };
+        }
 
         if (tier === 'wholesale' && wholesale > 0) {
             return { value: wholesale, key: 'wholesale', label: 'Wholesale' };
@@ -2820,7 +2880,7 @@ window.POS_ENABLE_FALLBACK = function () {
         if (discountInput) discountInput.value = '0';
         if (taxInput) taxInput.value = '0';
         if (discountTypeInput) discountTypeInput.value = 'percent';
-        if (priceTierInput) priceTierInput.value = 'retail';
+        if (priceTierInput) priceTierInput.value = priceListInput?.value ? 'list' : 'retail';
         if (priceInput) priceInput.value = '';
 
         const unitTypeUnit = document.getElementById('unit-type-unit');
@@ -3008,7 +3068,7 @@ window.POS_ENABLE_FALLBACK = function () {
             if (discountInput) discountInput.value = '0';
             if (taxInput) taxInput.value = '0';
             if (discountTypeInput) discountTypeInput.value = 'percent';
-            if (priceTierInput) priceTierInput.value = 'retail';
+            if (priceTierInput) priceTierInput.value = priceListInput?.value ? 'list' : 'retail';
             applyVanillaSelection({ dataset: {} });
             showAlert({
                 icon: 'success',
@@ -3070,6 +3130,15 @@ window.POS_ENABLE_FALLBACK = function () {
     });
 
     priceTierInput?.addEventListener('change', function () {
+        const option = findOptionById(currentProductId);
+        if (option) {
+            applyVanillaSelection({ dataset: { ...option.dataset, id: option.value }});
+        }
+    });
+    priceListInput?.addEventListener('change', function () {
+        if (priceTierInput && priceListInput.value) {
+            priceTierInput.value = 'list';
+        }
         const option = findOptionById(currentProductId);
         if (option) {
             applyVanillaSelection({ dataset: { ...option.dataset, id: option.value }});

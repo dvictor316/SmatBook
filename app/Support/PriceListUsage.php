@@ -21,22 +21,17 @@ class PriceListUsage
 
         $query = PriceList::query()
             ->with(['items' => fn ($items) => $items->orderBy('min_quantity')])
-            ->where('company_id', $companyId)
-            ->where(function ($q) {
-                if (Schema::hasColumn('price_lists', 'is_active')) {
-                    $q->where('is_active', true);
-                }
-            })
-            ->where(function ($q) {
-                if (Schema::hasColumn('price_lists', 'valid_from')) {
-                    $q->whereNull('valid_from')->orWhereDate('valid_from', '<=', now()->toDateString());
-                }
-            })
-            ->where(function ($q) {
-                if (Schema::hasColumn('price_lists', 'valid_to')) {
-                    $q->whereNull('valid_to')->orWhereDate('valid_to', '>=', now()->toDateString());
-                }
-            });
+            ->where('company_id', $companyId);
+
+        if (Schema::hasColumn('price_lists', 'is_active')) {
+            $query->where('is_active', true);
+        }
+        if (Schema::hasColumn('price_lists', 'valid_from')) {
+            $query->where(fn ($q) => $q->whereNull('valid_from')->orWhereDate('valid_from', '<=', now()->toDateString()));
+        }
+        if (Schema::hasColumn('price_lists', 'valid_to')) {
+            $query->where(fn ($q) => $q->whereNull('valid_to')->orWhereDate('valid_to', '>=', now()->toDateString()));
+        }
 
         $allBranches = session('active_branch_scope') === 'all'
             || strtolower((string) session('active_branch_id')) === 'all';

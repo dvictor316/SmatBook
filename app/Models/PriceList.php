@@ -39,22 +39,3 @@ class PriceList extends Model
         return $item ? (float) $item->price : null;
     }
 }
-
-class PriceListItem extends Model
-{
-    protected $table = 'price_list_items';
-
-    protected $fillable = [
-        'price_list_id', 'product_id', 'price', 'unit_price', 'min_quantity',
-        'max_quantity', 'currency', 'notes',
-    ];
-
-    protected $casts = [
-        'price'        => 'decimal:4',
-        'min_quantity' => 'decimal:4',
-        'max_quantity' => 'decimal:4',
-    ];
-
-    public function priceList(): BelongsTo { return $this->belongsTo(PriceList::class); }
-    public function product(): BelongsTo   { return $this->belongsTo(Product::class); }
-}
