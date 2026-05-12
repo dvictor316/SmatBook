@@ -20,10 +20,6 @@ class CheckRole
             return redirect()->route('login');
         }
 
-        if ((bool) env('TEMP_OPEN_ACCESS', false)) {
-            return $next($request);
-        }
-
         $user = Auth::user();
         $allowedRoles = collect($roles)
             ->map(fn ($role) => $this->normalizeRoleKey($role))
@@ -31,13 +27,8 @@ class CheckRole
             ->values()
             ->all();
 
-        // Master Access for specific email
-        if ($user->email === 'donvictorlive@gmail.com') {
-            return $next($request);
-        }
-
         // Super Admin bypass: They can go anywhere
-        if ($this->normalizeRoleKey($user->role ?? null) === 'super_admin') {
+        if (method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {
             return $next($request);
         }
 

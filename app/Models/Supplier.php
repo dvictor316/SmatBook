@@ -11,7 +11,24 @@ class Supplier extends Model
 {
     use HasFactory, TenantScoped;
 
-    protected $guarded = [];
+    protected $fillable = [
+        'name',
+        'supplier_name',
+        'company_name',
+        'email',
+        'phone',
+        'address',
+        'currency',
+        'website',
+        'notes',
+        'status',
+        'opening_balance',
+        'opening_balance_date',
+        'company_id',
+        'user_id',
+        'branch_id',
+        'branch_name',
+    ];
 
     public function purchases(): HasMany
     {

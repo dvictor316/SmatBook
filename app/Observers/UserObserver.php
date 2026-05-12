@@ -5,6 +5,8 @@ namespace App\Observers;
 use App\Models\User;
 use App\Models\Company;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Schema;
+use LogicException;
 
 class UserObserver
 {
@@ -14,6 +16,10 @@ class UserObserver
      */
     public function created(User $user)
     {
+        if (!Schema::hasTable('companies')) {
+            return;
+        }
+
         // 1. Safety Check: Only create a company if the user doesn't already have one
         if ($user->companies()->count() === 0) {
             
@@ -43,5 +49,12 @@ class UserObserver
     {
         // Optional: Delete companies if the user is deleted
         // $user->companies()->delete();
+    }
+
+    public function deleting(User $user): void
+    {
+        if ($user->isProtectedSuperAdmin()) {
+            throw new LogicException('The protected super admin account cannot be deleted.');
+        }
     }
 }

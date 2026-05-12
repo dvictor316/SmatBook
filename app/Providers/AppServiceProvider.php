@@ -11,6 +11,7 @@ use App\Livewire\InboxComponent;
 use Livewire\Livewire; 
 use Carbon\Carbon;
 use App\Support\GeoCurrency;
+use Throwable;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -31,11 +32,19 @@ class AppServiceProvider extends ServiceProvider
         // Prevents "index too long" errors on older MySQL versions
         Schema::defaultStringLength(191);
 
-        config([
-            'app.currency' => GeoCurrency::currentCurrency(),
-            'app.currency_symbol' => GeoCurrency::currentSymbol(),
-            'app.currency_locale' => GeoCurrency::currentLocale(),
-        ]);
+        try {
+            config([
+                'app.currency' => GeoCurrency::currentCurrency(),
+                'app.currency_symbol' => GeoCurrency::currentSymbol(),
+                'app.currency_locale' => GeoCurrency::currentLocale(),
+            ]);
+        } catch (Throwable) {
+            config([
+                'app.currency' => 'NGN',
+                'app.currency_symbol' => '₦',
+                'app.currency_locale' => 'en_NG',
+            ]);
+        }
 
         // 2. UI & Pagination
         Paginator::useBootstrapFive();
@@ -47,7 +56,9 @@ class AppServiceProvider extends ServiceProvider
         }
 
         // 4. Model Observers
-        User::observe(UserObserver::class);
+        if (Schema::hasTable('users')) {
+            User::observe(UserObserver::class);
+        }
 
         // 5. Global View Composers
         $this->registerViewComposers();
@@ -58,6 +69,10 @@ class AppServiceProvider extends ServiceProvider
      */
     private function registerViewComposers(): void
     {
+        if (!$this->databaseConnectionIsReady()) {
+            return;
+        }
+
         // COMPOSER 1: Global Categories (Only if table exists)
         View::composer('*', function ($view) {
             static $categoriesLoaded = [];
@@ -175,5 +190,15 @@ class AppServiceProvider extends ServiceProvider
             $view->with('geoCurrencySymbol', GeoCurrency::currentSymbol());
             $view->with('geoCurrencyLocale', GeoCurrency::currentLocale());
         });
+    }
+
+    private function databaseConnectionIsReady(): bool
+    {
+        try {
+            DB::connection()->getPdo();
+            return true;
+        } catch (Throwable) {
+            return false;
+        }
     }
 }

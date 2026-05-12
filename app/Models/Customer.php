@@ -24,6 +24,7 @@ class Customer extends Model
         'status', 
         'balance', 
         'credit_limit',
+        'price_list_id',
         'opening_balance_date',
         'image',
         'currency',

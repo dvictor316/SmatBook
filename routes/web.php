@@ -16,6 +16,7 @@ use App\Http\Controllers\{
     TaxCenterController, TaxFilingController, PeriodCloseController, ProjectManagementController
     , AiQuickAgentController, RecurringTransactionController, FinanceApprovalController, FixedAssetController, BudgetController
 };
+use App\Http\Controllers\RecurringInvoiceController;
 use App\Http\Controllers\SuperAdmin\DeploymentManagerController;
 use App\Http\Controllers\FinancialResetController;
 use App\Http\Controllers\DatabaseResetController;
@@ -760,8 +761,23 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::post('/invoices/{id}/status', 'updateStatus')->name('invoices.update-status');
     });
     
-    // Recurring Invoices
-    Route::get('/recurring-invoices', [SalesInvoiceController::class, 'index'])->name('sales.recurring');
+    // Recurring Invoices – full engine
+    Route::prefix('recurring-invoices')->name('sales.recurring-invoices.')->group(function () {
+        Route::get('/',                                    [RecurringInvoiceController::class, 'index'])->name('index');
+        Route::get('/create',                              [RecurringInvoiceController::class, 'create'])->name('create');
+        Route::post('/',                                   [RecurringInvoiceController::class, 'store'])->name('store');
+        Route::get('/{recurringInvoice}',                  [RecurringInvoiceController::class, 'show'])->name('show');
+        Route::get('/{recurringInvoice}/edit',             [RecurringInvoiceController::class, 'edit'])->name('edit');
+        Route::put('/{recurringInvoice}',                  [RecurringInvoiceController::class, 'update'])->name('update');
+        Route::post('/{recurringInvoice}/run',             [RecurringInvoiceController::class, 'run'])->name('run');
+        Route::post('/{recurringInvoice}/pause',           [RecurringInvoiceController::class, 'pause'])->name('pause');
+        Route::post('/{recurringInvoice}/resume',          [RecurringInvoiceController::class, 'resume'])->name('resume');
+        Route::post('/{recurringInvoice}/cancel',          [RecurringInvoiceController::class, 'cancel'])->name('cancel');
+        Route::post('/{recurringInvoice}/clone',           [RecurringInvoiceController::class, 'cloneTemplate'])->name('clone');
+        Route::post('/from-sale/{sale}',                   [RecurringInvoiceController::class, 'fromSale'])->name('from-sale');
+    });
+    // Legacy redirect (keep old URL working)
+    Route::get('/recurring-invoices', fn() => redirect()->route('sales.recurring-invoices.index'))->name('sales.recurring');
     Route::get('/clone-invoice/{id}', [SalesInvoiceController::class, 'clone'])->name('sales.clone');
     Route::get('/send-invoice/{id}', [SalesInvoiceController::class, 'send'])->name('sales.send');
     Route::get('/recuring-invoices', [SalesInvoiceController::class, 'index'])->name('recuring-invoices');

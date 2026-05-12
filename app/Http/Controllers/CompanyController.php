@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Company;
 use App\Models\User;
+use App\Support\InternalTestAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\RedirectResponse;
@@ -123,13 +124,15 @@ class CompanyController extends Controller
      */
     public function impersonate($id): RedirectResponse
     {
-        if (!(bool) env('TEMP_OPEN_ACCESS', false)) {
+        $internalTestAccess = app(InternalTestAccess::class);
+
+        if (!$internalTestAccess->isEnabled()) {
             return redirect()->route('super_admin.dashboard')
-                ->with('error', 'Temporary impersonation mode is disabled.');
+                ->with('error', 'Internal test impersonation mode is disabled.');
         }
 
         $actor = Auth::user();
-        if (!$actor || !in_array(strtolower((string) $actor->role), ['super_admin', 'superadmin'], true)) {
+        if (!$actor || !$internalTestAccess->canImpersonate($actor)) {
             abort(403, 'Unauthorized impersonation request.');
         }
 
@@ -148,6 +151,10 @@ class CompanyController extends Controller
         session()->put('impersonator_user_id', $actor->id);
 
         Auth::login($user, true);
+        $internalTestAccess->logUsage($actor, 'company_impersonation_started', [
+            'target_user_id' => $user->id,
+            'target_company_id' => $company->id,
+        ]);
         request()->session()->regenerate();
         session()->put('is_impersonating', true);
 

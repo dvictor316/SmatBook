@@ -26,10 +26,6 @@ class RoleMiddleware
                 ->with('error', 'Please login to continue.');
         }
 
-        if ((bool) env('TEMP_OPEN_ACCESS', false)) {
-            return $next($request);
-        }
-
         $allowedRoles = array_map(fn ($role) => strtolower(trim((string) $role)), $roles);
         $userRole = strtolower((string) ($user->role ?? ''));
         $roleMatch = in_array($userRole, $allowedRoles, true);

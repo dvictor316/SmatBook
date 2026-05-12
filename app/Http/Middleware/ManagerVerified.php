@@ -17,10 +17,6 @@ class ManagerVerified
      */
     public function handle(Request $request, Closure $next)
     {
-        if ((bool) env('TEMP_OPEN_ACCESS', false)) {
-            return $next($request);
-        }
-
         $user = Auth::user();
 
         // 1. Ensure user is logged in

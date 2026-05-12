@@ -15,14 +15,10 @@ class CheckPermission
             return redirect()->route('login');
         }
 
-        if ((bool) env('TEMP_OPEN_ACCESS', false)) {
-            return $next($request);
-        }
-
         $user = Auth::user();
 
-        if (strtolower((string) $user->email) === 'donvictorlive@gmail.com'
-            || in_array(strtolower((string) ($user->role ?? '')), ['super_admin', 'superadmin'], true)) {
+        if ((method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin())
+            || (method_exists($user, 'hasRole') && $user->hasRole('administrator'))) {
             return $next($request);
         }
 

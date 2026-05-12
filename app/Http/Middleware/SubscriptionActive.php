@@ -3,12 +3,18 @@
 namespace App\Http\Middleware;
 
 use App\Models\Subscription;
+use App\Support\InternalTestAccess;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class SubscriptionActive
 {
+    public function __construct(
+        private readonly InternalTestAccess $internalTestAccess
+    ) {
+    }
+
     public function handle(Request $request, Closure $next)
     {
         if (!Auth::check()) {
@@ -19,7 +25,10 @@ class SubscriptionActive
             return redirect()->route('login');
         }
 
-        if ((bool) env('TEMP_OPEN_ACCESS', false)) {
+        if ($this->internalTestAccess->canBypassSubscriptionOrPlan(Auth::user())) {
+            $this->internalTestAccess->logUsage(Auth::user(), 'subscription_bypass', [
+                'route' => optional($request->route())->getName(),
+            ]);
             return $next($request);
         }
 
@@ -41,10 +50,7 @@ class SubscriptionActive
             return $next($request);
         }
 
-        if (
-            in_array(strtolower((string) ($user->role ?? '')), ['super_admin', 'superadmin'], true) ||
-            strtolower((string) ($user->email ?? '')) === 'donvictorlive@gmail.com'
-        ) {
+        if ($user && method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {
             return $next($request);
         }
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\InternalTestAccess;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -9,9 +10,18 @@ use App\Support\PlanAccess;
 
 class CheckPlanAccess
 {
+    public function __construct(
+        private readonly InternalTestAccess $internalTestAccess
+    ) {
+    }
+
     public function handle(Request $request, Closure $next, ...$requiredPlans)
     {
-        if ((bool) env('TEMP_OPEN_ACCESS', false)) {
+        if ($this->internalTestAccess->canBypassSubscriptionOrPlan(Auth::user())) {
+            $this->internalTestAccess->logUsage(Auth::user(), 'plan_bypass', [
+                'route' => optional($request->route())->getName(),
+                'required_plans' => $requiredPlans,
+            ]);
             return $next($request);
         }
 

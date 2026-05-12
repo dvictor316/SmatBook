@@ -14,6 +14,12 @@ class Kernel extends ConsoleKernel
     {
         $schedule->command('subscriptions:expire-due')->hourly();
 
+        // Recurring invoice engine – runs every morning at 07:00
+        $schedule->job(new \App\Jobs\ProcessRecurringInvoicesJob)
+                 ->dailyAt('07:00')
+                 ->withoutOverlapping()
+                 ->onOneServer();
+
         $schedule->call(function () {
             $today = date('Y-m-d');
             $thisMonth = date('Y-m');

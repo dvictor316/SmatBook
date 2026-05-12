@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\InternalTestAccess;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -9,16 +10,24 @@ use Carbon\Carbon;
 
 class EnsureSubscriptionActive
 {
+    public function __construct(
+        private readonly InternalTestAccess $internalTestAccess
+    ) {
+    }
+
     public function handle(Request $request, Closure $next)
     {
-        if ((bool) env('TEMP_OPEN_ACCESS', false)) {
+        if ($this->internalTestAccess->canBypassSubscriptionOrPlan(Auth::user())) {
+            $this->internalTestAccess->logUsage(Auth::user(), 'legacy_subscription_bypass', [
+                'route' => optional($request->route())->getName(),
+            ]);
             return $next($request);
         }
 
         $user = Auth::user();
 
         // 1. Bypass for Admin
-        if ($user && $user->email === 'donvictorlive@gmail.com') {
+        if ($user && method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {
             return $next($request);
         }
 

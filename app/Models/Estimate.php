@@ -13,6 +13,7 @@ class Estimate extends Model
     protected $fillable = [
         'estimate_number',
         'customer_id',
+        'price_list_id',
         'issue_date',
         'expiry_date',
         'subtotal',
@@ -21,6 +22,7 @@ class Estimate extends Model
         'total_amount',
         'status',
         'notes',
+        'items',
         'company_id',
         'user_id',
     ];
@@ -32,6 +34,7 @@ class Estimate extends Model
         'tax' => 'decimal:2',
         'discount' => 'decimal:2',
         'total_amount' => 'decimal:2',
+        'items' => 'array',
     ];
 
     protected static function booted(): void

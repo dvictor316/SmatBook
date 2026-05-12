@@ -6,6 +6,7 @@ use App\Models\{User, Company, Subscription, Plan, DeploymentManager, Setting};
 use App\Support\ActiveBranchResolver;
 use App\Support\AppMailer;
 use App\Support\DeviceSessionManager;
+use App\Support\InternalTestAccess;
 use App\Support\SystemEventMailer;
 use Illuminate\Cookie\CookieJar;
 use Illuminate\Http\Request;
@@ -486,20 +487,20 @@ class AuthController extends Controller
     }
 
     /**
-     * TEMP: Superadmin-only impersonation for UI/dashboard editing.
-     * Controlled by TEMP_OPEN_ACCESS.
+     * Controlled internal impersonation for final QA only.
      */
     public function impersonateUser(Request $request, int $id): RedirectResponse
     {
         $actor = Auth::user();
+        $internalTestAccess = app(InternalTestAccess::class);
 
-        if (!$actor || strtolower((string) $actor->email) !== 'donvictorlive@gmail.com') {
+        if (!$actor || !$internalTestAccess->canImpersonate($actor)) {
             abort(403, 'Unauthorized impersonation request.');
         }
 
-        if (!(bool) env('TEMP_OPEN_ACCESS', false)) {
+        if (!$internalTestAccess->isEnabled()) {
             return redirect()->route('super_admin.dashboard')
-                ->with('error', 'Temporary impersonation mode is disabled.');
+                ->with('error', 'Internal test impersonation mode is disabled.');
         }
 
         $target = User::findOrFail($id);
@@ -520,6 +521,10 @@ class AuthController extends Controller
             'impersonator_id' => $actor->id,
             'impersonator_email' => $actor->email,
             'target_id' => $target->id,
+            'target_email' => $target->email,
+        ]);
+        $internalTestAccess->logUsage($actor, 'impersonation_started', [
+            'target_user_id' => $target->id,
             'target_email' => $target->email,
         ]);
 
@@ -551,6 +556,7 @@ class AuthController extends Controller
             'restored_admin_id' => $admin->id,
             'restored_admin_email' => $admin->email,
         ]);
+        app(InternalTestAccess::class)->logUsage($admin, 'impersonation_ended');
 
         return redirect()->route('super_admin.dashboard')
             ->with('success', 'Returned to superadmin account.');

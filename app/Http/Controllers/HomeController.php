@@ -581,16 +581,14 @@ class HomeController extends Controller
     */
     private function isSuperAdmin($user): bool
     {
-        if ($user->email === 'donvictorlive@gmail.com') {
-            return true;
-        }
-
-        return in_array(strtolower($user->role ?? ''), ['super_admin', 'superadmin']);
+        return $user && method_exists($user, 'isSuperAdmin')
+            ? $user->isSuperAdmin()
+            : in_array(strtolower((string) ($user->role ?? '')), ['super_admin', 'superadmin'], true);
     }
 
     private function isTempOpenAccess(): bool
     {
-        return (bool) env('TEMP_OPEN_ACCESS', false);
+        return (bool) config('internal.test_mode', false);
     }
 
     /*

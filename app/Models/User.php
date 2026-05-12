@@ -31,6 +31,9 @@ class User extends Authenticatable
         'password',
         'role_id',
         'role', // Consider deprecating this if 'role_id' exists to normalize data
+        'is_protected_super_admin',
+        'internal_test_access_enabled',
+        'internal_test_access_expires_at',
         'allow_login',
         
         // Profile & Media
@@ -83,6 +86,9 @@ class User extends Authenticatable
         'role_id'              => 'integer',
         'company_id'           => 'integer',
         'permissions_override' => 'array',
+        'is_protected_super_admin' => 'boolean',
+        'internal_test_access_enabled' => 'boolean',
+        'internal_test_access_expires_at' => 'datetime',
     ];
 
     /* =========================================================================
@@ -235,6 +241,16 @@ class User extends Authenticatable
         }
 
         return $this->normalizeRoleKey((string) ($this->attributes['role'] ?? '')) === $target;
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->hasRole('super_admin');
+    }
+
+    public function isProtectedSuperAdmin(): bool
+    {
+        return $this->isSuperAdmin() && (bool) ($this->is_protected_super_admin ?? false);
     }
 
     public function hasPermissionTo(string $permissionName): bool
