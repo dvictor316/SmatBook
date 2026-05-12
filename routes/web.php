@@ -773,6 +773,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::post('/{recurringInvoice}/pause',           [RecurringInvoiceController::class, 'pause'])->name('pause');
         Route::post('/{recurringInvoice}/resume',          [RecurringInvoiceController::class, 'resume'])->name('resume');
         Route::post('/{recurringInvoice}/cancel',          [RecurringInvoiceController::class, 'cancel'])->name('cancel');
+        Route::post('/{recurringInvoice}/archive',         [RecurringInvoiceController::class, 'archive'])->name('archive');
         Route::post('/{recurringInvoice}/clone',           [RecurringInvoiceController::class, 'cloneTemplate'])->name('clone');
         Route::post('/from-sale/{sale}',                   [RecurringInvoiceController::class, 'fromSale'])->name('from-sale');
     });

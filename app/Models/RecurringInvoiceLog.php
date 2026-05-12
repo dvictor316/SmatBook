@@ -15,14 +15,21 @@ class RecurringInvoiceLog extends Model
     protected $fillable = [
         'template_id',
         'sale_id',
+        'event_type',
         'scheduled_date',
         'status',
         'generated_by',
+        'started_at',
+        'finished_at',
         'message',
+        'payload',
     ];
 
     protected $casts = [
         'scheduled_date' => 'date',
+        'started_at' => 'datetime',
+        'finished_at' => 'datetime',
+        'payload' => 'array',
     ];
 
     // ─── Relationships ────────────────────────────────────────────────────────
@@ -44,6 +51,7 @@ class RecurringInvoiceLog extends Model
         return match ($this->status) {
             'success' => 'bg-success-light',
             'failed'  => 'bg-danger-light',
+            'processing' => 'bg-info-light',
             'skipped' => 'bg-warning-light',
             default   => 'bg-secondary',
         };

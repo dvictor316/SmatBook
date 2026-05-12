@@ -26,11 +26,12 @@ class RecurringInvoiceController extends Controller
         $companyId  = $this->companyId();
         $branchId   = session('active_branch_id');
         $branchName = session('active_branch_name');
+        $allBranches = session('active_branch_scope') === 'all' || strtolower((string) $branchId) === 'all';
 
         $base = RecurringInvoiceTemplate::with('customer')
             ->when($companyId > 0, fn($q) => $q->where('company_id', $companyId))
-            ->when($companyId > 0 && $branchId,   fn($q) => $q->where('branch_id', $branchId))
-            ->when($companyId > 0 && $branchName && !$branchId, fn($q) => $q->where('branch_name', $branchName));
+            ->when(!$allBranches && $companyId > 0 && $branchId, fn($q) => $q->where('branch_id', $branchId))
+            ->when(!$allBranches && $companyId > 0 && $branchName && !$branchId, fn($q) => $q->where('branch_name', $branchName));
 
         // Filters
         if ($status = $request->query('status')) {
@@ -53,6 +54,8 @@ class RecurringInvoiceController extends Controller
             'active'    => (clone $base)->where('status', 'active')->count(),
             'paused'    => (clone $base)->where('status', 'paused')->count(),
             'completed' => (clone $base)->where('status', 'completed')->count(),
+            'overdue'   => (clone $base)->where('status', 'active')->whereDate('next_run_on', '<', today())->count(),
+            'forecast'  => (clone $base)->where('status', 'active')->sum('total'),
             'failed'    => RecurringInvoiceLog::whereIn(
                                 'template_id',
                                 RecurringInvoiceTemplate::where('company_id', $companyId)->pluck('id')
@@ -105,8 +108,11 @@ class RecurringInvoiceController extends Controller
             'notes'                => 'nullable|string|max:1000',
             'internal_memo'        => 'nullable|string|max:1000',
             'payment_instructions' => 'nullable|string|max:1000',
+            'payment_link_enabled' => 'nullable|boolean',
+            'auto_payment_enabled' => 'nullable|boolean',
             'email_subject'        => 'nullable|string|max:255',
             'send_email'           => 'nullable|boolean',
+            'timezone'             => 'nullable|timezone',
 
             // Recurrence
             'frequency'    => 'required|in:daily,weekly,biweekly,monthly,quarterly,semi_annual,annual,custom',
@@ -144,6 +150,11 @@ class RecurringInvoiceController extends Controller
         $companyId  = $this->companyId();
         $branchId   = session('active_branch_id');
         $branchName = session('active_branch_name');
+        $allBranches = session('active_branch_scope') === 'all' || strtolower((string) $branchId) === 'all';
+        if ($allBranches) {
+            $branchId = null;
+            $branchName = null;
+        }
 
         // Resolve customer name
         $customerName = null;
@@ -194,11 +205,14 @@ class RecurringInvoiceController extends Controller
             'notes'                => $validated['notes'] ?? null,
             'internal_memo'        => $validated['internal_memo'] ?? null,
             'payment_instructions' => $validated['payment_instructions'] ?? null,
+            'payment_link_enabled' => (bool) ($validated['payment_link_enabled'] ?? true),
+            'auto_payment_enabled' => (bool) ($validated['auto_payment_enabled'] ?? false),
             'email_subject'        => $validated['email_subject'] ?? null,
             'send_email'           => (bool) ($validated['send_email'] ?? true),
             'currency'             => $validated['currency'] ?? 'NGN',
             'terms'                => $validated['terms'] ?? null,
             'due_days'             => (int) ($validated['due_days'] ?? 30),
+            'timezone'             => $validated['timezone'] ?? config('app.timezone', 'Africa/Lagos'),
             'frequency'            => $validated['frequency'],
             'interval_value'       => (int) ($validated['interval_value'] ?? 1),
             'interval_unit'        => $validated['interval_unit'] ?? 'months',
@@ -231,6 +245,7 @@ class RecurringInvoiceController extends Controller
 
     public function show(RecurringInvoiceTemplate $recurringInvoice)
     {
+        $this->authorizeTemplate($recurringInvoice);
         $recurringInvoice->load('customer', 'logs.sale', 'creator');
 
         return view('Sales.recurring-invoices.show', [
@@ -270,8 +285,11 @@ class RecurringInvoiceController extends Controller
             'notes'                => 'nullable|string|max:1000',
             'internal_memo'        => 'nullable|string|max:1000',
             'payment_instructions' => 'nullable|string|max:1000',
+            'payment_link_enabled' => 'nullable|boolean',
+            'auto_payment_enabled' => 'nullable|boolean',
             'email_subject'        => 'nullable|string|max:255',
             'send_email'           => 'nullable|boolean',
+            'timezone'             => 'nullable|timezone',
             'frequency'            => 'required|in:daily,weekly,biweekly,monthly,quarterly,semi_annual,annual,custom',
             'interval_value'       => 'nullable|integer|min:1|max:365',
             'interval_unit'        => 'nullable|in:days,weeks,months,years',
@@ -327,11 +345,14 @@ class RecurringInvoiceController extends Controller
             'notes'                => $validated['notes'] ?? null,
             'internal_memo'        => $validated['internal_memo'] ?? null,
             'payment_instructions' => $validated['payment_instructions'] ?? null,
+            'payment_link_enabled' => (bool) ($validated['payment_link_enabled'] ?? true),
+            'auto_payment_enabled' => (bool) ($validated['auto_payment_enabled'] ?? false),
             'email_subject'        => $validated['email_subject'] ?? null,
             'send_email'           => (bool) ($validated['send_email'] ?? true),
             'currency'             => $validated['currency'] ?? 'NGN',
             'terms'                => $validated['terms'] ?? null,
             'due_days'             => (int) ($validated['due_days'] ?? 30),
+            'timezone'             => $validated['timezone'] ?? config('app.timezone', 'Africa/Lagos'),
             'frequency'            => $validated['frequency'],
             'interval_value'       => (int) ($validated['interval_value'] ?? 1),
             'interval_unit'        => $validated['interval_unit'] ?? 'months',
@@ -403,6 +424,19 @@ class RecurringInvoiceController extends Controller
             ->with('success', 'Recurring template cancelled.');
     }
 
+    public function archive(RecurringInvoiceTemplate $recurringInvoice)
+    {
+        $this->authorizeTemplate($recurringInvoice);
+        $recurringInvoice->update([
+            'status' => 'archived',
+            'updated_by' => Auth::id(),
+        ]);
+
+        return redirect()
+            ->route('sales.recurring-invoices.index')
+            ->with('success', 'Recurring template archived.');
+    }
+
     /** Clone a template */
     public function cloneTemplate(RecurringInvoiceTemplate $recurringInvoice)
     {
@@ -417,6 +451,9 @@ class RecurringInvoiceController extends Controller
         $clone->starts_on         = today();
         $clone->created_by        = Auth::id();
         $clone->updated_by        = Auth::id();
+        $clone->failure_count     = 0;
+        $clone->last_failure_at   = null;
+        $clone->last_failure_message = null;
         $clone->save();
 
         return redirect()

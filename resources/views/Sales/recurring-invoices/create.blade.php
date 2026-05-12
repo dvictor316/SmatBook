@@ -2,6 +2,15 @@
 @extends('layout.mainlayout')
 
 @section('content')
+<style>
+    .ri-wizard-shell { border: 1px solid #e5edf7; border-radius: 14px; background: #fff; box-shadow: 0 14px 32px rgba(15, 23, 42, .06); overflow: hidden; }
+    .ri-wizard-tabs { border-bottom: 1px solid #edf2f7; background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%); padding: 12px 14px 0; }
+    .ri-wizard-tabs .nav-link { border: 0; border-bottom: 3px solid transparent; color: #64748b; font-weight: 700; font-size: 13px; }
+    .ri-wizard-tabs .nav-link.active { color: #1d4ed8; border-bottom-color: #2563eb; background: transparent; }
+    .ri-step-panel { padding: 18px; }
+    .automation-card { min-height: 154px; transition: border-color .15s, box-shadow .15s, transform .15s; }
+    .automation-card:hover { border-color: #93c5fd; box-shadow: 0 10px 24px rgba(37, 99, 235, .08); transform: translateY(-1px); }
+</style>
 <div class="page-wrapper">
 <div class="content container-fluid">
 
@@ -19,14 +28,16 @@
         @csrf
 
         {{-- ── Wizard nav ─────────────────────────────────────────── --}}
-        <ul class="nav nav-tabs nav-tabs-solid mb-4" id="wizardTabs" role="tablist">
+        <div class="ri-wizard-shell">
+        <ul class="nav nav-tabs nav-tabs-solid ri-wizard-tabs mb-0" id="wizardTabs" role="tablist">
             <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#step1">1. Invoice Details</a></li>
             <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#step2">2. Recurrence</a></li>
             <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#step3">3. Reminders</a></li>
             <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#step4">4. Automation</a></li>
+            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#step5">5. Review</a></li>
         </ul>
 
-        <div class="tab-content">
+        <div class="tab-content ri-step-panel">
 
             {{-- ────────────────────────────────────────────────────── --}}
             {{-- STEP 1 – Invoice Details                              --}}
@@ -70,6 +81,14 @@
                                 <div class="col-md-6">
                                     <label class="form-label">Due Days After Invoice Date</label>
                                     <input type="number" name="due_days" class="form-control" value="{{ old('due_days', 30) }}" min="0" max="365">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Timezone</label>
+                                    <select name="timezone" class="form-select">
+                                        @foreach(['Africa/Lagos','UTC','Europe/London','America/New_York','America/Toronto','Africa/Accra','Africa/Nairobi','Africa/Johannesburg','Asia/Dubai'] as $tz)
+                                            <option value="{{ $tz }}" @selected(old('timezone', config('app.timezone', 'Africa/Lagos')) === $tz)>{{ $tz }}</option>
+                                        @endforeach
+                                    </select>
                                 </div>
                                 <div class="col-12">
                                     <label class="form-label">Payment Instructions</label>
@@ -317,19 +336,46 @@
                             @endforeach
                         </div>
                         <input type="hidden" name="automation_mode" id="automationModeInput" value="{{ old('automation_mode', 'draft') }}">
-                    </div>
-                </div>
-
-                {{-- Summary review --}}
-                <div class="card border-0 shadow-sm mb-3">
-                    <div class="card-header"><strong>Review Summary</strong></div>
-                    <div class="card-body">
-                        <p class="text-muted mb-0">Review your selections on the previous tabs, then click <strong>Create Template</strong> to save.</p>
+                        <div class="row g-3 mt-2">
+                            <div class="col-md-6">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" name="payment_link_enabled" value="1" id="paymentLinkEnabled" @checked(old('payment_link_enabled', true))>
+                                    <label class="form-check-label" for="paymentLinkEnabled">Include payment link when available</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" name="auto_payment_enabled" value="1" id="autoPaymentEnabled" @checked(old('auto_payment_enabled'))>
+                                    <label class="form-check-label" for="autoPaymentEnabled">Mark as subscription-ready for saved payment methods</label>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 <div class="mt-3 d-flex justify-content-between">
                     <button type="button" class="btn btn-secondary prev-tab" data-target="step3">← Back</button>
+                    <button type="button" class="btn btn-primary next-tab" data-target="step5">Next: Review →</button>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="step5">
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-header"><strong>Review & Save</strong></div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-4"><div class="text-muted small">Template</div><div class="fw-semibold" id="reviewTemplate">-</div></div>
+                            <div class="col-md-4"><div class="text-muted small">Frequency</div><div class="fw-semibold" id="reviewFrequency">-</div></div>
+                            <div class="col-md-4"><div class="text-muted small">Automation</div><div class="fw-semibold" id="reviewAutomation">-</div></div>
+                            <div class="col-md-4"><div class="text-muted small">Start Date</div><div class="fw-semibold" id="reviewStart">-</div></div>
+                            <div class="col-md-4"><div class="text-muted small">End Rule</div><div class="fw-semibold" id="reviewEnd">-</div></div>
+                            <div class="col-md-4"><div class="text-muted small">Estimated Total</div><div class="fw-semibold" id="reviewTotal">0.00</div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-3 d-flex justify-content-between">
+                    <button type="button" class="btn btn-secondary prev-tab" data-target="step4">← Back</button>
                     <button type="submit" class="btn btn-success px-5">
                         <i class="fe fe-check me-2"></i> Create Recurring Template
                     </button>
@@ -337,6 +383,7 @@
             </div>
 
         </div>{{-- /tab-content --}}
+        </div>
     </form>
 </div>
 </div>
@@ -346,6 +393,7 @@
 // ── Wizard tab navigation ──────────────────────────────────────────────────
 document.querySelectorAll('.next-tab').forEach(btn => {
     btn.addEventListener('click', () => {
+        updateReview();
         const tab = document.querySelector(`[href="#${btn.dataset.target}"]`);
         if (tab) bootstrap.Tab.getOrCreateInstance(tab).show();
     });
@@ -423,6 +471,7 @@ function recalc() {
     document.getElementById('sumTax').textContent      = tax.toFixed(2);
     document.getElementById('sumDiscount').textContent = discount.toFixed(2);
     document.getElementById('sumTotal').textContent    = (subtotal + tax - discount).toFixed(2);
+    updateReview();
 }
 
 document.getElementById('addItemBtn').addEventListener('click', () => addRow());
@@ -432,6 +481,22 @@ function selectMode(val, card) {
     document.querySelectorAll('.automation-card').forEach(c => c.classList.remove('border-primary'));
     card.classList.add('border-primary');
     document.getElementById('automationModeInput').value = val;
+    updateReview();
+}
+
+function updateReview() {
+    const named = (name) => document.querySelector(`[name="${name}"]`);
+    const selectedText = (selector) => {
+        const el = document.querySelector(selector);
+        return el && el.selectedOptions && el.selectedOptions[0] ? el.selectedOptions[0].textContent.trim() : '-';
+    };
+    const set = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value || '-'; };
+    set('reviewTemplate', named('template_name')?.value || '-');
+    set('reviewFrequency', selectedText('[name="frequency"]'));
+    set('reviewAutomation', document.getElementById('automationModeInput')?.value || '-');
+    set('reviewStart', named('starts_on')?.value || '-');
+    set('reviewEnd', selectedText('[name="end_type"]'));
+    set('reviewTotal', document.getElementById('sumTotal')?.textContent || '0.00');
 }
 
 // ── Pre-fill from sale if present ─────────────────────────────────────────
@@ -450,6 +515,11 @@ addRow({
 // Start with one blank row
 addRow();
 @endif
+document.querySelectorAll('#recurringForm input, #recurringForm select, #recurringForm textarea').forEach((field) => {
+    field.addEventListener('input', updateReview);
+    field.addEventListener('change', updateReview);
+});
+updateReview();
 </script>
 @endpush
 @endsection

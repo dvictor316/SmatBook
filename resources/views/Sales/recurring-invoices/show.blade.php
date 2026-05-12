@@ -66,6 +66,15 @@
             </button>
         </form>
         @endif
+        @if($template->status !== 'archived')
+        <form method="POST" action="{{ route('sales.recurring-invoices.archive', $template) }}" class="d-inline"
+              onsubmit="return confirm('Archive this recurring template?')">
+            @csrf
+            <button type="submit" class="btn btn-outline-secondary btn-sm">
+                <i class="fe fe-archive me-1"></i> Archive
+            </button>
+        </form>
+        @endif
 
         <a href="{{ route('sales.recurring-invoices.index') }}" class="btn btn-outline-secondary btn-sm ms-auto">
             ← Back to list
@@ -98,6 +107,9 @@
                         <dt class="col-5">Automation</dt>
                         <dd class="col-7"><span class="badge bg-secondary">{{ $template->automation_label }}</span></dd>
 
+                        <dt class="col-5">Timezone</dt>
+                        <dd class="col-7">{{ $template->timezone ?? config('app.timezone') }}</dd>
+
                         <dt class="col-5">Starts On</dt>
                         <dd class="col-7">{{ optional($template->starts_on)->format('d M Y') ?? '—' }}</dd>
 
@@ -125,6 +137,17 @@
 
                         <dt class="col-5">Due Days</dt>
                         <dd class="col-7">{{ $template->due_days }}</dd>
+
+                        <dt class="col-5">Payment Link</dt>
+                        <dd class="col-7">{{ $template->payment_link_enabled ? 'Enabled' : 'Disabled' }}</dd>
+
+                        <dt class="col-5">Failures</dt>
+                        <dd class="col-7">
+                            {{ (int) ($template->failure_count ?? 0) }}
+                            @if($template->last_failure_at)
+                                <div class="text-danger small">{{ $template->last_failure_at->format('d M Y H:i') }} - {{ Str::limit($template->last_failure_message, 80) }}</div>
+                            @endif
+                        </dd>
 
                         @if($template->notes)
                         <dt class="col-5">Notes</dt>
@@ -227,6 +250,7 @@
                                 <tr>
                                     <th>Scheduled Date</th>
                                     <th>Status</th>
+                                    <th>Type</th>
                                     <th>Invoice</th>
                                     <th>By</th>
                                     <th>Note</th>
@@ -238,6 +262,7 @@
                                 <tr>
                                     <td>{{ optional($log->scheduled_date)->format('d M Y') }}</td>
                                     <td><span class="badge {{ $log->status_badge }}">{{ ucfirst($log->status) }}</span></td>
+                                    <td class="text-capitalize">{{ str_replace('_', ' ', $log->event_type ?? 'generation') }}</td>
                                     <td>
                                         @if($log->sale)
                                             <a href="#" class="text-primary">{{ $log->sale->invoice_no }}</a>
@@ -246,12 +271,17 @@
                                         @endif
                                     </td>
                                     <td class="text-capitalize">{{ $log->generated_by }}</td>
-                                    <td class="text-muted small">{{ Str::limit($log->message, 60) }}</td>
-                                    <td class="text-muted small">{{ $log->created_at->format('d M H:i') }}</td>
+                                    <td class="text-muted small">
+                                        {{ Str::limit($log->message, 60) }}
+                                        @if(!empty($log->payload['posted_to_ledger']))
+                                            <div class="text-success">Ledger posted</div>
+                                        @endif
+                                    </td>
+                                    <td class="text-muted small">{{ optional($log->finished_at ?? $log->created_at)->format('d M H:i') }}</td>
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="6" class="text-center text-muted py-4">
+                                    <td colspan="7" class="text-center text-muted py-4">
                                         <i class="fe fe-inbox d-block fs-2 mb-1"></i>
                                         No invoices generated yet.
                                     </td>

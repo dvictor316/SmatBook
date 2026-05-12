@@ -2,6 +2,12 @@
 @extends('layout.mainlayout')
 
 @section('content')
+<style>
+    .ri-hero { border: 1px solid #dbeafe; border-radius: 14px; padding: 18px 20px; background: linear-gradient(135deg, #f8fbff 0%, #eef8f6 100%); box-shadow: 0 12px 30px rgba(15, 23, 42, .06); }
+    .ri-stat { border: 1px solid #e5edf7; border-radius: 12px; background: #fff; box-shadow: 0 8px 20px rgba(15, 23, 42, .04); }
+    .ri-stat .icon { width: 42px; height: 42px; display: inline-flex; align-items: center; justify-content: center; border-radius: 10px; }
+    .ri-table thead th { font-size: 12px; color: #475569; text-transform: uppercase; letter-spacing: .03em; white-space: nowrap; }
+</style>
 <div class="page-wrapper">
 <div class="content container-fluid">
 
@@ -16,12 +22,22 @@
         <div class="alert alert-danger alert-dismissible fade show"><button type="button" class="btn-close" data-bs-dismiss="alert"></button>{{ session('error') }}</div>
     @endif
 
+    <div class="ri-hero d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h4 class="mb-1">Recurring Invoice Automation</h4>
+            <div class="text-muted">Schedule drafts, auto-send invoices, reminders, and subscription-ready billing without bypassing normal accounting.</div>
+        </div>
+        <a href="{{ route('sales.recurring-invoices.create') }}" class="btn btn-primary">
+            <i class="fe fe-plus me-1"></i> New Template
+        </a>
+    </div>
+
     {{-- ── Stats cards ──────────────────────────────────────────────── --}}
     <div class="row g-3 mb-4">
-        <div class="col-6 col-md-3">
-            <div class="card border-0 shadow-sm h-100">
+        <div class="col-6 col-md-2">
+            <div class="ri-stat h-100">
                 <div class="card-body d-flex align-items-center gap-3">
-                    <div class="flex-shrink-0 bg-success-light rounded-circle p-3">
+                    <div class="icon flex-shrink-0 bg-success-light">
                         <i class="fe fe-repeat fs-4 text-success"></i>
                     </div>
                     <div>
@@ -31,10 +47,10 @@
                 </div>
             </div>
         </div>
-        <div class="col-6 col-md-3">
-            <div class="card border-0 shadow-sm h-100">
+        <div class="col-6 col-md-2">
+            <div class="ri-stat h-100">
                 <div class="card-body d-flex align-items-center gap-3">
-                    <div class="flex-shrink-0 bg-warning-light rounded-circle p-3">
+                    <div class="icon flex-shrink-0 bg-warning-light">
                         <i class="fe fe-pause-circle fs-4 text-warning"></i>
                     </div>
                     <div>
@@ -44,10 +60,10 @@
                 </div>
             </div>
         </div>
-        <div class="col-6 col-md-3">
-            <div class="card border-0 shadow-sm h-100">
+        <div class="col-6 col-md-2">
+            <div class="ri-stat h-100">
                 <div class="card-body d-flex align-items-center gap-3">
-                    <div class="flex-shrink-0 bg-info-light rounded-circle p-3">
+                    <div class="icon flex-shrink-0 bg-info-light">
                         <i class="fe fe-check-circle fs-4 text-info"></i>
                     </div>
                     <div>
@@ -57,10 +73,36 @@
                 </div>
             </div>
         </div>
-        <div class="col-6 col-md-3">
-            <div class="card border-0 shadow-sm h-100">
+        <div class="col-6 col-md-2">
+            <div class="ri-stat h-100">
                 <div class="card-body d-flex align-items-center gap-3">
-                    <div class="flex-shrink-0 bg-danger-light rounded-circle p-3">
+                    <div class="icon flex-shrink-0 bg-danger-light">
+                        <i class="fe fe-clock fs-4 text-danger"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small">Overdue Runs</div>
+                        <div class="fs-4 fw-bold">{{ $stats['overdue'] ?? 0 }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="ri-stat h-100">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="icon flex-shrink-0 bg-primary-light">
+                        <i class="fe fe-trending-up fs-4 text-primary"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small">Active Forecast</div>
+                        <div class="fs-6 fw-bold">{{ number_format($stats['forecast'] ?? 0, 2) }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="ri-stat h-100">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="icon flex-shrink-0 bg-danger-light">
                         <i class="fe fe-alert-triangle fs-4 text-danger"></i>
                     </div>
                     <div>
@@ -111,7 +153,7 @@
     <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table table-hover align-middle mb-0 ri-table">
                     <thead class="thead-light">
                         <tr>
                             <th>Template</th>
@@ -120,6 +162,7 @@
                             <th>Next Run</th>
                             <th>Last Run</th>
                             <th>Amount</th>
+                            <th>Branch</th>
                             <th>Mode</th>
                             <th>Status</th>
                             <th class="text-end">Actions</th>
@@ -147,6 +190,7 @@
                             </td>
                             <td>{{ $t->last_run_on ? $t->last_run_on->format('d M Y') : '—' }}</td>
                             <td>{{ $t->currency }} {{ number_format($t->total, 2) }}</td>
+                            <td>{{ $t->branch_name ?: ($t->branch_id ?: 'All') }}</td>
                             <td><span class="badge bg-secondary">{{ $t->automation_label }}</span></td>
                             <td><span class="badge {{ $t->status_badge }}">{{ ucfirst($t->status) }}</span></td>
                             <td class="text-end">
@@ -212,13 +256,24 @@
                                             </form>
                                         </li>
                                         @endif
+                                        @if($t->status !== 'archived')
+                                        <li>
+                                            <form method="POST" action="{{ route('sales.recurring-invoices.archive', $t) }}"
+                                                  onsubmit="return confirm('Archive this recurring template?')">
+                                                @csrf
+                                                <button type="submit" class="dropdown-item">
+                                                    <i class="fe fe-archive me-2"></i>Archive
+                                                </button>
+                                            </form>
+                                        </li>
+                                        @endif
                                     </ul>
                                 </div>
                             </td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="9" class="text-center py-5 text-muted">
+                            <td colspan="10" class="text-center py-5 text-muted">
                                 <i class="fe fe-inbox fs-1 d-block mb-2"></i>
                                 No recurring templates yet.
                                 <a href="{{ route('sales.recurring-invoices.create') }}">Create your first one</a>.
