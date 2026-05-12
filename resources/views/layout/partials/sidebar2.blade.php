@@ -94,7 +94,7 @@
 
                     <ul class="hidden-links hidden">
                         <li>
-                            <a href="{{ url('recurring-invoices') }}" class="{{ Request::is('recurring-invoices') ? 'active' : '' }}"><i class="fe fe-clipboard"></i> <span>Recurring Invoices</span></a>
+                            <a href="{{ route('sales.recurring-invoices.index') }}" class="{{ Request::is('recurring-invoices*') ? 'active' : '' }}"><i class="fe fe-clipboard"></i> <span>Recurring Invoices</span></a>
                         </li>
                         <li>
                             <a href="{{ url('credit-notes') }}" class="{{ Request::is('credit-notes', 'add-credit-notes', 'edit-credit-notes') ? 'active' : '' }}"><i class="fe fe-edit"></i> <span>Credit Notes</span></a>
@@ -347,7 +347,7 @@
                         </ul>
                     </li>
                     <li>
-                        <a href="{{ url('recurring-invoices') }}" class="{{ Request::is('recurring-invoices') ? 'active' : '' }}"><i class="fe fe-clipboard"></i> <span>Recurring Invoices</span></a>
+                        <a href="{{ route('sales.recurring-invoices.index') }}" class="{{ Request::is('recurring-invoices*') ? 'active' : '' }}"><i class="fe fe-clipboard"></i> <span>Recurring Invoices</span></a>
                     </li>
                     <li>
                         <a href="{{ url('credit-notes') }}" class="{{ Request::is('credit-notes', 'add-credit-notes', 'edit-credit-notes') ? 'active' : '' }}"><i class="fe fe-edit"></i> <span>Credit Notes</span></a>

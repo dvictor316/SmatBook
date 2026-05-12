@@ -28,9 +28,9 @@ class RecurringInvoiceController extends Controller
         $branchName = session('active_branch_name');
 
         $base = RecurringInvoiceTemplate::with('customer')
-            ->where('company_id', $companyId)
-            ->when($branchId,   fn($q) => $q->where('branch_id', $branchId))
-            ->when($branchName && !$branchId, fn($q) => $q->where('branch_name', $branchName));
+            ->when($companyId > 0, fn($q) => $q->where('company_id', $companyId))
+            ->when($companyId > 0 && $branchId,   fn($q) => $q->where('branch_id', $branchId))
+            ->when($companyId > 0 && $branchName && !$branchId, fn($q) => $q->where('branch_name', $branchName));
 
         // Filters
         if ($status = $request->query('status')) {
@@ -63,7 +63,7 @@ class RecurringInvoiceController extends Controller
                             )->where('status', 'success')->whereMonth('created_at', now()->month)->count(),
         ];
 
-        $customers = Customer::where('company_id', $companyId)
+        $customers = Customer::when($companyId > 0, fn($q) => $q->where('company_id', $companyId))
             ->orderBy('customer_name')
             ->get(['id', 'customer_name', 'email']);
 
@@ -454,6 +454,12 @@ class RecurringInvoiceController extends Controller
 
     // ─── Private helpers ──────────────────────────────────────────────────────
 
+    private function isSuperAdmin(): bool
+    {
+        $user = Auth::user();
+        return $user && method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin();
+    }
+
     private function companyId(): int
     {
         return (int) (Auth::user()?->company_id ?? session('current_tenant_id') ?? 0);
@@ -461,6 +467,9 @@ class RecurringInvoiceController extends Controller
 
     private function authorizeTemplate(RecurringInvoiceTemplate $template): void
     {
+        if ($this->isSuperAdmin()) {
+            return; // super admin can access any company's template
+        }
         if ((int) $template->company_id !== $this->companyId()) {
             abort(403);
         }

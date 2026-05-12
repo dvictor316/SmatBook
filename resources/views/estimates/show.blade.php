@@ -23,6 +23,7 @@
     $totalAmount = abs($storedTotalAmount - $calculatedTotalAmount) > 0.009
         ? $calculatedTotalAmount
         : $storedTotalAmount;
+    $items = collect($estimate->items ?? []);
 @endphp
 
 <div class="page-wrapper">
@@ -88,10 +89,38 @@
 
                 <div class="card border-0 shadow-sm">
                     <div class="card-header bg-white border-0">
-                        <h6 class="mb-1">Totals</h6>
+                        <h6 class="mb-1">Items & Totals</h6>
                         <div class="text-muted small">Breakdown of estimate values.</div>
                     </div>
                     <div class="card-body">
+                        @if($items->isNotEmpty())
+                            <div class="table-responsive mb-4">
+                                <table class="table table-sm table-bordered align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Item</th>
+                                            <th class="text-end">Qty</th>
+                                            <th class="text-end">Rate</th>
+                                            <th class="text-end">Discount</th>
+                                            <th class="text-end">Tax</th>
+                                            <th class="text-end">Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($items as $item)
+                                            <tr>
+                                                <td>{{ $item['name'] ?? 'Item' }}</td>
+                                                <td class="text-end">{{ number_format((float) ($item['quantity'] ?? 0), 2) }}</td>
+                                                <td class="text-end">{{ $currencySymbol }}{{ number_format((float) ($item['rate'] ?? 0), 2) }}</td>
+                                                <td class="text-end">{{ $currencySymbol }}{{ number_format((float) ($item['discount'] ?? 0), 2) }}</td>
+                                                <td class="text-end">{{ $currencySymbol }}{{ number_format((float) ($item['tax'] ?? 0), 2) }}</td>
+                                                <td class="text-end fw-semibold">{{ $currencySymbol }}{{ number_format((float) ($item['amount'] ?? 0), 2) }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @endif
                         <div class="d-flex justify-content-between mb-2">
                             <span class="text-muted">Subtotal</span>
                             <span class="fw-semibold">{{ $currencySymbol }}{{ number_format($subtotal, 2) }}</span>

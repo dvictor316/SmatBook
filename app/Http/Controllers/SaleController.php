@@ -27,6 +27,7 @@ use App\Support\BranchInventoryService;
 use App\Support\GeoCurrency;
 use App\Support\InventoryQuantity;
 use App\Support\LedgerService;
+use App\Support\PriceListUsage;
 use Maatwebsite\Excel\Facades\Excel;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -35,7 +36,10 @@ class SaleController extends Controller
 {
     use HasUniqueReceiptNumber;
 
-    public function __construct(private readonly BranchInventoryService $branchInventory)
+    public function __construct(
+        private readonly BranchInventoryService $branchInventory,
+        private readonly PriceListUsage $priceListUsage
+    )
     {
     }
 
@@ -704,7 +708,10 @@ public function customerDetails($id = null)
                 ? $this->scopedDepositAccounts()->get()
                 : collect();
 
-            return view('pos.index', compact('products', 'customers', 'sales', 'activeBranch', 'bankAccounts', 'depositAccounts'));
+            $priceLists = $this->priceListUsage->activeForCurrentContext($this->tenantCompanyId());
+            $priceListData = $this->priceListUsage->toFrontend($priceLists);
+
+            return view('pos.index', compact('products', 'customers', 'sales', 'activeBranch', 'bankAccounts', 'depositAccounts', 'priceLists', 'priceListData'));
         } catch (\Throwable $e) {
             Log::error('POS page failed', [
                 'error' => $e->getMessage(),

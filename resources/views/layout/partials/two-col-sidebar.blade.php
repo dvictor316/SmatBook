@@ -149,8 +149,8 @@
                             </ul>
                         </li>
                         <li>
-                            <a class="{{ Request::is('recurring-invoices') ? 'active' : '' }}"
-                                href="{{ url('recurring-invoices') }}"><i class="fe fe-clipboard"></i>
+                            <a class="{{ Request::is('recurring-invoices*') ? 'active' : '' }}"
+                                href="{{ route('sales.recurring-invoices.index') }}"><i class="fe fe-clipboard"></i>
                                 <span>Recurring
                                     Invoices</span></a>
                         </li>

@@ -1362,8 +1362,20 @@ label {
 
                 <div class="row g-2 mb-2">
                     <div class="col-12">
+                        <label>Price List</label>
+                        <select id="price-list-select" class="form-select">
+                            <option value="">No price list</option>
+                            @foreach($priceLists ?? [] as $priceList)
+                                <option value="{{ $priceList->id }}" @selected((bool) ($priceList->is_default ?? false))>
+                                    {{ $priceList->name }}{{ $priceList->currency ? ' - ' . $priceList->currency : '' }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-12">
                         <label>Price Level</label>
                         <select id="price-tier" class="form-select">
+                            <option value="list">Selected Price List</option>
                             <option value="retail">Retail / Default</option>
                             <option value="wholesale">Wholesale</option>
                             <option value="special">Special Discount</option>
