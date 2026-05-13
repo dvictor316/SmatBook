@@ -570,7 +570,7 @@
 
         @media print and (orientation: landscape) {
             @page {
-                size: landscape;
+                size: auto;
                 margin: 5mm;
             }
 

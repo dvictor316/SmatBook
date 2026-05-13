@@ -1251,6 +1251,13 @@ label {
                 $minStockLevel = (int) ($p->min_stock_level ?? 15);
                 $availableStock = (float) ($p->available_stock ?? $p->stock ?? 0);
                 $isOutOfStock = $availableStock <= 0;
+                $barcodeList = collect($p->barcodes ?? [])
+                    ->pluck('barcode')
+                    ->push($p->barcode ?? null)
+                    ->filter(fn ($barcode) => filled($barcode))
+                    ->map(fn ($barcode) => strtolower(trim((string) $barcode)))
+                    ->unique()
+                    ->implode('|');
             @endphp
             <div class="product-card"
                 title="{{ $p->name }}"
@@ -1259,6 +1266,7 @@ label {
                 data-search-name="{{ strtolower($p->name) }}"
                 data-sku="{{ strtolower($p->sku ?? '') }}"
                 data-barcode="{{ strtolower($p->barcode ?? '') }}"
+                data-barcodes="{{ $barcodeList }}"
                 data-category="{{ strtolower($categoryName) }}"
                 data-category-name="{{ $categoryName }}"
                 data-price="{{ $retailPrice }}"
@@ -1325,10 +1333,18 @@ label {
                         $unitsPerRoll = max((int) ($p->units_per_roll ?? 0), 0);
                         $categoryName = $p->category->name ?? 'Uncategorized';
                         $minStockLevel = (int) ($p->min_stock_level ?? 15);
+                        $barcodeList = collect($p->barcodes ?? [])
+                            ->pluck('barcode')
+                            ->push($p->barcode ?? null)
+                            ->filter(fn ($barcode) => filled($barcode))
+                            ->map(fn ($barcode) => strtolower(trim((string) $barcode)))
+                            ->unique()
+                            ->implode('|');
                     @endphp
                     <option value="{{ $p->id }}" 
                         data-sku="{{ $p->sku }}" 
                         data-barcode="{{ $p->barcode }}" 
+                        data-barcodes="{{ $barcodeList }}"
                         data-name="{{ $p->name }}" 
                         data-price="{{ $retailPrice }}" 
                         data-retail="{{ $retailPrice }}"
@@ -1684,10 +1700,12 @@ $(document).ready(function() {
         $('.product-card').each(function() {
             const card = $(this);
             const name = card.data('search-name') || (card.data('name') || '').toString().toLowerCase();
-            const sku = card.data('sku') || '';
-            const category = card.data('category') || '';
+            const sku = String(card.data('sku') || '').toLowerCase();
+            const barcode = String(card.data('barcode') || '').toLowerCase();
+            const barcodes = String(card.data('barcodes') || '').toLowerCase();
+            const category = String(card.data('category') || '').toLowerCase();
 
-            const matchesKeyword = !keyword || name.includes(keyword) || sku.includes(keyword) || category.includes(keyword);
+            const matchesKeyword = !keyword || name.includes(keyword) || sku.includes(keyword) || barcode.includes(keyword) || barcodes.includes(keyword) || category.includes(keyword);
             const matchesCategory = activeCategory === 'all' || category === activeCategory;
             const show = matchesKeyword && matchesCategory;
 
@@ -1876,6 +1894,19 @@ $(document).ready(function() {
     let barcodeBuffer = '';
     let barcodeTimeout;
 
+    function optionMatchesBarcodeScan(option, normalizedCode) {
+        const barcode = String(option.data('barcode') || '').trim().toLowerCase();
+        const sku = String(option.data('sku') || '').trim().toLowerCase();
+        const barcodeList = String(option.data('barcodes') || '')
+            .split('|')
+            .map(code => code.trim().toLowerCase())
+            .filter(Boolean);
+
+        return (barcode && barcode === normalizedCode)
+            || barcodeList.includes(normalizedCode)
+            || (sku && sku === normalizedCode);
+    }
+
     function commitBarcodeScan(rawCode) {
         const normalizedCode = String(rawCode || '').trim().toLowerCase();
         if (!normalizedCode) {
@@ -1885,16 +1916,9 @@ $(document).ready(function() {
         let matchedOption = null;
         $('#product-select option').each(function() {
             const option = $(this);
-            const barcode = String(option.data('barcode') || '').trim().toLowerCase();
-            const sku = String(option.data('sku') || '').trim().toLowerCase();
-
-            if (barcode && barcode === normalizedCode) {
+            if (option.val() && optionMatchesBarcodeScan(option, normalizedCode)) {
                 matchedOption = option;
                 return false;
-            }
-
-            if (!matchedOption && sku && sku === normalizedCode) {
-                matchedOption = option;
             }
         });
 
@@ -2632,6 +2656,51 @@ window.POS_ENABLE_FALLBACK = function () {
         return option ? option.dataset || {} : {};
     }
 
+    function datasetMatchesBarcodeScan(data, normalizedCode) {
+        const barcode = String(data?.barcode || '').trim().toLowerCase();
+        const sku = String(data?.sku || '').trim().toLowerCase();
+        const barcodeList = String(data?.barcodes || '')
+            .split('|')
+            .map(code => code.trim().toLowerCase())
+            .filter(Boolean);
+
+        return (barcode && barcode === normalizedCode)
+            || barcodeList.includes(normalizedCode)
+            || (sku && sku === normalizedCode);
+    }
+
+    let vanillaBarcodeBuffer = '';
+    let vanillaBarcodeTimer = null;
+
+    function commitVanillaBarcodeScan(rawCode) {
+        const normalizedCode = String(rawCode || '').trim().toLowerCase();
+        if (!normalizedCode || !productSelect) {
+            return false;
+        }
+
+        const matchedOption = Array.from(productSelect.options)
+            .find((option) => option.value && datasetMatchesBarcodeScan(option.dataset || {}, normalizedCode));
+
+        if (matchedOption) {
+            applyVanillaSelection({ dataset: { ...matchedOption.dataset, id: matchedOption.value }});
+            if (barcodeInput) barcodeInput.value = '';
+            vanillaBarcodeBuffer = '';
+            return true;
+        }
+
+        showAlert({
+            icon: 'error',
+            title: 'Product Not Found',
+            text: `No product matched "${rawCode}"`,
+            timer: 1800,
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+        });
+        barcodeInput?.select();
+        return false;
+    }
+
     function applyVanillaSelection(source) {
         const data = source?.dataset || {};
         const productId = data.id || '';
@@ -2745,6 +2814,28 @@ window.POS_ENABLE_FALLBACK = function () {
             applyVanillaSelection({ dataset: { ...option.dataset, id: option.value }});
         });
     }
+
+    barcodeInput?.addEventListener('input', function () {
+        window.clearTimeout(vanillaBarcodeTimer);
+        vanillaBarcodeBuffer = barcodeInput.value;
+
+        vanillaBarcodeTimer = window.setTimeout(() => {
+            if (vanillaBarcodeBuffer && vanillaBarcodeBuffer.trim().length >= 3) {
+                commitVanillaBarcodeScan(vanillaBarcodeBuffer);
+            }
+        }, 220);
+    });
+
+    barcodeInput?.addEventListener('keydown', function (event) {
+        if (event.key !== 'Enter') {
+            return;
+        }
+
+        event.preventDefault();
+        window.clearTimeout(vanillaBarcodeTimer);
+        vanillaBarcodeBuffer = barcodeInput.value;
+        commitVanillaBarcodeScan(vanillaBarcodeBuffer);
+    });
 
     function updateItemTotal() {
         const price = parseFloat(priceInput?.value || '0') || 0;
@@ -3092,8 +3183,10 @@ window.POS_ENABLE_FALLBACK = function () {
         productCards.forEach((card) => {
             const name = (card.dataset.searchName || card.dataset.name || '').toLowerCase();
             const sku = (card.dataset.sku || '').toLowerCase();
+            const barcode = (card.dataset.barcode || '').toLowerCase();
+            const barcodes = (card.dataset.barcodes || '').toLowerCase();
             const category = (card.dataset.category || '').toLowerCase();
-            const matchesKeyword = !keyword || name.includes(keyword) || sku.includes(keyword) || category.includes(keyword);
+            const matchesKeyword = !keyword || name.includes(keyword) || sku.includes(keyword) || barcode.includes(keyword) || barcodes.includes(keyword) || category.includes(keyword);
             const matchesCategory = activeCategory === 'all' || category === activeCategory;
             const show = matchesKeyword && matchesCategory;
             card.style.display = show ? '' : 'none';

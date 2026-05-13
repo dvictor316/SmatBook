@@ -35,36 +35,3 @@ class ProductLot extends Model
         return $this->expiry_date && $this->expiry_date->between(now(), now()->addDays($days));
     }
 }
-
-class SerialNumber extends Model
-{
-    use SoftDeletes;
-
-    protected $fillable = [
-        'company_id', 'branch_id', 'product_id', 'serial_number', 'status',
-        'lot_id', 'grn_id', 'sale_id', 'customer_id', 'sold_date',
-        'warranty_expiry', 'notes',
-    ];
-
-    protected $casts = [
-        'sold_date'       => 'date',
-        'warranty_expiry' => 'date',
-    ];
-
-    public function product(): BelongsTo  { return $this->belongsTo(Product::class); }
-    public function lot(): BelongsTo      { return $this->belongsTo(ProductLot::class, 'lot_id'); }
-    public function customer(): BelongsTo { return $this->belongsTo(Customer::class); }
-}
-
-class ProductBarcode extends Model
-{
-    protected $table = 'product_barcodes';
-
-    protected $fillable = [
-        'company_id', 'product_id', 'barcode', 'barcode_type', 'is_primary',
-    ];
-
-    protected $casts = ['is_primary' => 'boolean'];
-
-    public function product(): BelongsTo { return $this->belongsTo(Product::class); }
-}

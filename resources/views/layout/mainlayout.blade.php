@@ -113,6 +113,7 @@
         @endif
 
         @media print {
+            @page { size: auto; margin: 10mm; }
             .header,
             .sidebar,
             .two-col-bar,
@@ -1604,6 +1605,7 @@
 
         /* ── PRINT OVERRIDE (must be last to win over sidebar margin rules) ── */
         @media print {
+            @page { size: auto; margin: 10mm; }
             :root { --sb-sidebar-w: 0px !important; }
             .sidebar, .header, .two-col-bar, .footer,
             .page-header, .list-btn, .btn, .d-print-none,

@@ -635,6 +635,9 @@ public function customerDetails($id = null)
                 if ($hasCategories) {
                     $productsQuery->with('category');
                 }
+                if (Schema::hasTable('product_barcodes')) {
+                    $productsQuery->with('barcodes');
+                }
 
                 $orderColumn = Schema::hasColumn('products', 'name')
                     ? 'name'

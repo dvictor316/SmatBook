@@ -288,7 +288,7 @@
 
         @media print {
             @page {
-                size: portrait;
+                size: auto;
                 margin: 8mm;
             }
 

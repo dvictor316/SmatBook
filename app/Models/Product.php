@@ -113,6 +113,11 @@ class Product extends Model
         return $this->hasMany(ProductBranchStock::class);
     }
 
+    public function barcodes(): HasMany
+    {
+        return $this->hasMany(ProductBarcode::class);
+    }
+
     /**
      * Automated Stock History Tracking
      */

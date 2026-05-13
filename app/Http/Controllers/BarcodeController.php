@@ -63,16 +63,29 @@ class BarcodeController extends Controller
             'is_primary'   => 'boolean',
         ]);
 
+        $product = Product::where('company_id', $companyId)->findOrFail($data['product_id']);
+        $isPrimary = $request->boolean('is_primary', false);
+
+        if ($isPrimary) {
+            ProductBarcode::where('company_id', $companyId)
+                ->where('product_id', $product->id)
+                ->update(['is_primary' => false]);
+        }
+
         $branch = $this->getActiveBranchContext();
         ProductBarcode::create([
             'company_id'   => $companyId,
             'branch_id'    => $branch['id'],
             'branch_name'  => $branch['name'],
-            'product_id'   => $data['product_id'],
+            'product_id'   => $product->id,
             'barcode'      => $data['barcode'],
             'barcode_type' => $data['barcode_type'] ?? 'EAN13',
-            'is_primary'   => $request->boolean('is_primary', false),
+            'is_primary'   => $isPrimary,
         ]);
+
+        if ($isPrimary && \Schema::hasColumn('products', 'barcode')) {
+            $product->forceFill(['barcode' => $data['barcode']])->save();
+        }
 
         return back()->with('success', 'Barcode added.');
     }
@@ -87,14 +100,26 @@ class BarcodeController extends Controller
             ->with('product')
             ->first();
 
-        if (! $record) {
+        if ($record && $record->product) {
+            return response()->json([
+                'found'      => true,
+                'product_id' => $record->product_id,
+                'product'    => $record->product?->only(['id', 'name', 'selling_price', 'sku']),
+            ]);
+        }
+
+        $product = Product::where('company_id', $companyId)
+            ->where('barcode', $barcode)
+            ->first();
+
+        if (! $product) {
             return response()->json(['found' => false], 404);
         }
 
         return response()->json([
             'found'      => true,
-            'product_id' => $record->product_id,
-            'product'    => $record->product?->only(['id', 'name', 'selling_price', 'sku']),
+            'product_id' => $product->id,
+            'product'    => $product->only(['id', 'name', 'selling_price', 'sku']),
         ]);
     }
 
