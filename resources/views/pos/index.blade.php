@@ -2540,6 +2540,7 @@ window.POS_ENABLE_FALLBACK = function () {
     const saleStoreUrl = @json(route('sales.store'));
     const invoicePrintBaseUrl = @json(url('/sales/invoice'));
     const csrfToken = @json(csrf_token());
+    const salesOrderPrefill = @json(session('pos_prefill'));
     let splitAutoSync = false;
     const customerOptionsSnapshot = customerSelect
         ? Array.from(customerSelect.options).map((option) => ({
@@ -3100,6 +3101,78 @@ window.POS_ENABLE_FALLBACK = function () {
         updateChange();
     }
 
+    function applySalesOrderPrefill(prefill) {
+        if (!prefill || !Array.isArray(prefill.items) || !prefill.items.length) {
+            return;
+        }
+
+        const skippedItems = [];
+        cart.length = 0;
+
+        if (customerSelect && prefill.customer_id) {
+            customerSelect.value = String(prefill.customer_id);
+            customerSelect.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        if (customerSearchInput && prefill.customer_name) {
+            customerSearchInput.value = prefill.customer_name;
+        }
+
+        prefill.items.forEach((sourceItem) => {
+            const productId = sourceItem.product_id ? String(sourceItem.product_id) : '';
+            const option = findOptionById(productId);
+            if (!option) {
+                skippedItems.push(sourceItem.name || `Product #${productId || 'unknown'}`);
+                return;
+            }
+
+            const data = option.dataset || {};
+            const qty = Math.max(0.01, parseFloat(sourceItem.qty || '1') || 1);
+            const price = Math.max(0, parseFloat(sourceItem.rate || data.retail || data.price || '0') || 0);
+            const discountValue = Math.max(0, parseFloat(sourceItem.discount || '0') || 0);
+            const taxValue = Math.max(0, parseFloat(sourceItem.tax || '0') || 0);
+            const sub = price * qty;
+            const discVal = Math.min(discountValue, sub);
+            const afterDisc = Math.max(0, sub - discVal);
+            const taxPercent = afterDisc > 0 ? (taxValue / afterDisc) * 100 : 0;
+            const total = afterDisc + taxValue;
+
+            cart.push({
+                id: productId,
+                name: data.name || sourceItem.name || option.textContent || 'Product',
+                qty,
+                unitType: 'unit',
+                unitLabel: data.baseUnit || 'unit',
+                stockUnits: qty,
+                priceLevel: 'retail',
+                priceLevelLabel: 'Retail / Default',
+                price,
+                discountType: 'fixed',
+                discountValue,
+                tax: taxPercent,
+                sub,
+                discVal,
+                taxVal: taxValue,
+                total,
+            });
+        });
+
+        renderCart();
+
+        if (prefill.reference) {
+            showAlert({
+                icon: cart.length ? 'success' : 'warning',
+                title: cart.length ? 'Sales order loaded' : 'Sales order needs review',
+                text: skippedItems.length
+                    ? `Loaded ${cart.length} item(s) from ${prefill.reference}. ${skippedItems.length} custom/unavailable item(s) were skipped because POS cash sales require catalog products.`
+                    : `Loaded ${cart.length} item(s) from ${prefill.reference}.`,
+                timer: 3500,
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+            });
+        }
+    }
+
     if (cartBody) {
         const commitCartQtyInput = function (target) {
             if (!target || !target.classList.contains('cart-qty-input')) return;
@@ -3396,6 +3469,7 @@ window.POS_ENABLE_FALLBACK = function () {
     filterProductCards();
     toggleSplitFields();
     updateItemTotal();
+    applySalesOrderPrefill(salesOrderPrefill);
 };
 
 document.addEventListener('DOMContentLoaded', function () {

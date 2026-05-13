@@ -145,6 +145,12 @@
                                                     <a class="dropdown-item" href="{{ route('estimates.edit', $estimate->id) }}">
                                                         <i class="fa-solid fa-pen-to-square me-2"></i>Edit
                                                     </a>
+                                                    <a class="dropdown-item" href="{{ route('estimates.convert-invoice', $estimate->id) }}">
+                                                        <i class="fa-solid fa-file-invoice me-2"></i>Convert to Invoice
+                                                    </a>
+                                                    <a class="dropdown-item" href="{{ route('estimates.convert-cash-sale', $estimate->id) }}">
+                                                        <i class="fa-solid fa-cash-register me-2"></i>Convert to Cash Sale
+                                                    </a>
                                                     <form action="{{ route('estimates.destroy', $estimate->id) }}" method="POST" onsubmit="return confirm('Delete this estimate?');">
                                                         @csrf
                                                         @method('DELETE')

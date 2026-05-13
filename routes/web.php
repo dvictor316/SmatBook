@@ -826,6 +826,8 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
     });
     
     // Estimates
+    Route::get('estimates/{estimate}/convert-invoice', [EstimateController::class, 'convertToInvoice'])->name('estimates.convert-invoice');
+    Route::get('estimates/{estimate}/convert-cash-sale', [EstimateController::class, 'convertToCashSale'])->name('estimates.convert-cash-sale');
     Route::resource('estimates', EstimateController::class);
     Route::get('/api/estimates', [EstimateController::class, 'getEstimates'])->name('api.estimates');
     Route::controller(HomeController::class)->group(function () {

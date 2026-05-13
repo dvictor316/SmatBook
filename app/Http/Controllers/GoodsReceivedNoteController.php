@@ -281,12 +281,16 @@ class GoodsReceivedNoteController extends Controller
 
     private function nextGrnNumber(int $companyId, $branchId = null): string
     {
-        $query = GoodsReceivedNote::withTrashed()->where('company_id', $companyId);
-        if ($branchId !== null && \Illuminate\Support\Facades\Schema::hasColumn('goods_received_notes', 'branch_id')) {
-            $query->where('branch_id', $branchId);
-        }
-        $count = $query->count() + 1;
-        return 'GRN-' . str_pad($count, 5, '0', STR_PAD_LEFT);
+        // grn_number has a global unique index, so the sequence must be checked globally
+        // even though the records themselves remain tenant/branch scoped.
+        $next = GoodsReceivedNote::withTrashed()->count() + 1;
+
+        do {
+            $grnNumber = 'GRN-' . str_pad($next, 5, '0', STR_PAD_LEFT);
+            $next++;
+        } while (GoodsReceivedNote::withTrashed()->where('grn_number', $grnNumber)->exists());
+
+        return $grnNumber;
     }
 
     private function authorizeGrnAccess(GoodsReceivedNote $grn): void

@@ -7,6 +7,7 @@ use App\Models\Estimate;
 use App\Models\Customer;
 use App\Models\Product;
 use App\Support\PriceListUsage;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Schema;
 
 class EstimateController extends Controller
@@ -124,6 +125,80 @@ class EstimateController extends Controller
         }
 
         return $query;
+    }
+
+    private function conversionItems(Estimate $estimate, string $target): array
+    {
+        return collect($estimate->items ?? [])
+            ->map(function ($item) use ($target) {
+                $quantity = max(0.01, (float) ($item['quantity'] ?? $item['qty'] ?? 1));
+                $rate = round((float) ($item['rate'] ?? $item['price'] ?? 0), 2);
+                $lineSubtotal = round($quantity * $rate, 2);
+                $discount = round((float) ($item['discount'] ?? 0), 2);
+                $tax = round((float) ($item['tax'] ?? 0), 2);
+                $amount = round(max(0, $lineSubtotal - $discount + $tax), 2);
+
+                if ($target === 'pos') {
+                    return [
+                        'product_id' => !empty($item['product_id']) ? (int) $item['product_id'] : null,
+                        'name' => $item['name'] ?? '',
+                        'qty' => $quantity,
+                        'rate' => $rate,
+                        'discount' => $discount,
+                        'tax' => $tax,
+                    ];
+                }
+
+                return [
+                    'product_id' => !empty($item['product_id']) ? (int) $item['product_id'] : '',
+                    'name' => $item['name'] ?? '',
+                    'price_level' => $item['price_source'] ?? 'retail',
+                    'qty' => $quantity,
+                    'rate' => number_format($rate, 2, '.', ''),
+                    'discount' => $discount,
+                    'tax' => $tax,
+                    'amount' => $amount,
+                ];
+            })
+            ->filter(fn ($item) => !empty($item['product_id']) || trim((string) ($item['name'] ?? '')) !== '')
+            ->values()
+            ->all();
+    }
+
+    public function convertToInvoice($id)
+    {
+        $estimate = $this->applyTenantScope(Estimate::with('customer'))->findOrFail($id);
+        $invoiceDate = Carbon::parse($estimate->issue_date ?? now())->format('d-m-Y');
+        $dueDate = Carbon::parse($estimate->expiry_date ?? now()->addDays(30))->format('d-m-Y');
+
+        session()->flash('quotation_prefill', [
+            'customer_id' => $estimate->customer_id,
+            'invoice_date' => $invoiceDate,
+            'due_date' => $dueDate,
+            'description' => trim("Converted from Sales Order {$estimate->estimate_number}.\n\n" . (string) ($estimate->notes ?? '')),
+            'items' => $this->conversionItems($estimate, 'invoice'),
+        ]);
+
+        return redirect()
+            ->route('add-invoice')
+            ->with('info', 'Sales order loaded into the invoice form. Review, choose customer if needed, then save/send.');
+    }
+
+    public function convertToCashSale($id)
+    {
+        $estimate = $this->applyTenantScope(Estimate::with('customer'))->findOrFail($id);
+
+        session()->flash('pos_prefill', [
+            'source' => 'sales_order',
+            'reference' => $estimate->estimate_number ?? ('SO-' . $estimate->id),
+            'customer_id' => $estimate->customer_id,
+            'customer_name' => $estimate->customer?->name ?? $estimate->customer?->customer_name ?? null,
+            'items' => $this->conversionItems($estimate, 'pos'),
+        ]);
+
+        return redirect()
+            ->route('sales.showPos')
+            ->with('success', 'Sales order loaded into POS. Review stock, payment account, and collect payment to complete the cash sale.');
     }
 
     public function index()
