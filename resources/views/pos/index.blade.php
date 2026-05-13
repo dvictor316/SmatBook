@@ -630,46 +630,73 @@ body.mini-sidebar .pos-full-page-wrapper {
 .unit-grid { 
     display: grid; 
     grid-template-columns: repeat(2, 1fr); 
-    gap: 8px; 
+    gap: 10px; 
     margin-bottom: 18px; 
 }
 
 .unit-btn {
-    border: 2px solid var(--border);
-    color: var(--text-secondary);
-    font-weight: 700;
-    font-size: 0.6875rem;
-    padding: 10px;
-    border-radius: var(--radius-sm);
+    position: relative;
+    overflow: hidden;
+    min-height: 82px;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #dbe3ef;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    color: #334155;
+    -webkit-text-fill-color: #334155;
+    font-weight: 800;
+    font-size: 0.75rem;
+    padding: 13px 12px;
+    border-radius: 999px;
     transition: var(--transition);
     letter-spacing: 0.5px;
     text-transform: uppercase;
+    box-shadow: 0 10px 24px rgba(15, 58, 138, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.90);
 }
 
 .unit-btn:hover {
-    border-color: var(--primary-600);
-    background: var(--gray-50);
-    transform: translateY(-1px);
+    border-color: #d7a928;
+    background: #ffffff;
+    color: #0f3a8a;
+    -webkit-text-fill-color: #0f3a8a;
+    transform: translateY(-2px);
+    box-shadow: 0 14px 28px rgba(15, 58, 138, 0.12), inset 0 0 0 1px rgba(215, 169, 40, 0.24);
 }
 
 .unit-btn.disabled {
-    opacity: 0.45;
+    background: #f8fafc;
+    border-color: #e2e8f0;
+    color: #94a3b8;
+    -webkit-text-fill-color: #94a3b8;
+    opacity: 0.72;
     pointer-events: none;
+    box-shadow: none;
 }
 
 .btn-check:checked + .unit-btn {
-    background: var(--primary-600);
-    border-color: var(--primary-600);
+    background: linear-gradient(135deg, #0f3a8a 0%, #2563eb 100%);
+    border-color: #d7a928;
     color: #ffffff;
-    box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
+    -webkit-text-fill-color: #ffffff;
+    box-shadow: 0 16px 30px rgba(15, 58, 138, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.24);
+}
+
+.btn-check:focus + .unit-btn,
+.btn-check:checked:focus + .unit-btn {
+    border-color: #d7a928;
+    box-shadow: 0 0 0 0.22rem rgba(215, 169, 40, 0.22), 0 16px 30px rgba(15, 58, 138, 0.18);
 }
 
 .unit-btn small {
     display: block;
-    margin-top: 2px;
-    font-size: 0.58rem;
+    margin-top: 5px;
+    color: inherit;
+    -webkit-text-fill-color: inherit;
+    font-size: 0.64rem;
     font-weight: 700;
-    opacity: 0.86;
+    opacity: 0.9;
     letter-spacing: 0.3px;
     text-transform: none;
 }
