@@ -20,6 +20,12 @@ class Kernel extends ConsoleKernel
                  ->withoutOverlapping()
                  ->onOneServer();
 
+        // Check for product lots expiring within 5 months — notifies admins daily at 08:00
+        $schedule->job(new \App\Jobs\CheckExpiringProductsJob)
+                 ->dailyAt('08:00')
+                 ->withoutOverlapping()
+                 ->onOneServer();
+
         $schedule->call(function () {
             $today = date('Y-m-d');
             $thisMonth = date('Y-m');

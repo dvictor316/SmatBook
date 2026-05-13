@@ -680,6 +680,24 @@ public function customerDetails($id = null)
                     })
                     ->sortByDesc(fn ($product) => (float) ($product->available_stock ?? 0) > 0 ? 1 : 0)
                     ->values();
+
+                // Attach earliest upcoming expiry date per product (from product_lots)
+                if (Schema::hasTable('product_lots')) {
+                    $companyId = $this->tenantCompanyId();
+                    $expiryByProduct = \App\Models\ProductLot::query()
+                        ->where('company_id', $companyId)
+                        ->whereNotNull('expiry_date')
+                        ->where('quantity_available', '>', 0)
+                        ->orderBy('expiry_date', 'asc')
+                        ->get(['product_id', 'expiry_date'])
+                        ->groupBy('product_id')
+                        ->map(fn ($lots) => $lots->first()->expiry_date?->toDateString());
+
+                    $products = $products->map(function ($product) use ($expiryByProduct) {
+                        $product->setAttribute('earliest_expiry', $expiryByProduct->get($product->id) ?? null);
+                        return $product;
+                    });
+                }
             }
 
             $customers = collect();

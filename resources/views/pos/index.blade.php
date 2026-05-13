@@ -1327,6 +1327,7 @@ label {
                 data-min-stock="{{ $minStockLevel }}"
                 data-img="{{ $p->image_url }}"
                 data-out-of-stock="{{ $isOutOfStock ? '1' : '0' }}"
+                data-expiry="{{ $p->earliest_expiry ?? '' }}"
                 @if($isOutOfStock) aria-disabled="true" style="opacity:.55; filter:grayscale(.15);" @endif>
                 <div class="product-card-img">
                     @if($p->image_url)
@@ -1404,7 +1405,8 @@ label {
                         data-category="{{ strtolower($categoryName) }}"
                         data-category-name="{{ $categoryName }}"
                         data-min-stock="{{ $minStockLevel }}"
-                        data-img="{{ $p->image_url }}">
+                        data-img="{{ $p->image_url }}"
+                        data-expiry="{{ $p->earliest_expiry ?? '' }}">
                         {{ $p->sku }} | {{ $p->name }}
                     </option>
                     @endforeach
@@ -1841,28 +1843,52 @@ $(document).ready(function() {
         };
     }
 
-    function getPriceListProductPrice(listId, productId, quantity) {
+    function getPriceListProductPrice(listId, productId, quantity, retailPrice) {
         const list = posPriceListById.get(String(listId || ''));
-        if (!list || !list.items || !list.items[String(productId)]) {
-            return null;
+        if (!list) return null;
+
+        const productItems = list.items && list.items[String(productId)];
+        const hasAnyItems = list.items && Object.keys(list.items).length > 0;
+
+        if (hasAnyItems && !productItems) return null;
+
+        if (productItems) {
+            let match = null;
+            productItems.forEach(row => {
+                if (quantity >= (parseFloat(row.min_quantity) || 1)) match = row;
+            });
+            const itemPrice = match ? parseFloat(match.price) || 0 : 0;
+            if (itemPrice > 0) return itemPrice;
         }
 
-        let match = null;
-        list.items[String(productId)].forEach(row => {
-            if (quantity >= (parseFloat(row.min_quantity) || 1)) {
-                match = row;
+        const discountValue = parseFloat(list.discount_value) || 0;
+        const baseRetail = parseFloat(retailPrice) || 0;
+        if (discountValue > 0 && baseRetail > 0) {
+            if (list.discount_type === 'fixed') {
+                return Math.max(0, baseRetail - discountValue);
             }
-        });
+            if (list.discount_type === 'percentage') {
+                return Math.max(0, baseRetail - (baseRetail * discountValue / 100));
+            }
+        }
 
-        return match ? parseFloat(match.price) || 0 : null;
+        if (productItems) {
+            let match = null;
+            productItems.forEach(row => {
+                if (quantity >= (parseFloat(row.min_quantity) || 1)) match = row;
+            });
+            return match ? parseFloat(match.price) || 0 : null;
+        }
+
+        return null;
     }
 
     function getSelectedBasePrice(selectedOption) {
         const tier = $('#price-tier').val() || 'retail';
         const priceListId = $('#price-list-select').val() || '';
         const quantity = parseFloat($('#quantity').val()) || 1;
-        const listPrice = getPriceListProductPrice(priceListId, selectedOption.val(), quantity);
         const retailPrice = parseFloat(selectedOption.data('retail')) || parseFloat(selectedOption.data('price')) || 0;
+        const listPrice = getPriceListProductPrice(priceListId, selectedOption.val(), quantity, retailPrice);
         const wholesalePrice = parseFloat(selectedOption.data('wholesale')) || 0;
         const specialPrice = parseFloat(selectedOption.data('special')) || 0;
 
@@ -2618,20 +2644,48 @@ window.POS_ENABLE_FALLBACK = function () {
         return active ? active.value : 'unit';
     }
 
-    function getVanillaPriceListProductPrice(listId, productId, quantity) {
+    function getVanillaPriceListProductPrice(listId, productId, quantity, retailPrice) {
         const list = vanillaPriceListById.get(String(listId || ''));
-        if (!list || !list.items || !list.items[String(productId)]) {
-            return null;
+        if (!list) return null;
+
+        const productItems = list.items && list.items[String(productId)];
+        const hasAnyItems = list.items && Object.keys(list.items).length > 0;
+
+        // If price list has specific items but this product is not among them, skip
+        if (hasAnyItems && !productItems) return null;
+
+        // Use item-specific price if set to a positive value
+        if (productItems) {
+            let match = null;
+            productItems.forEach(row => {
+                if (quantity >= (parseFloat(row.min_quantity) || 1)) match = row;
+            });
+            const itemPrice = match ? parseFloat(match.price) || 0 : 0;
+            if (itemPrice > 0) return itemPrice;
         }
 
-        let match = null;
-        list.items[String(productId)].forEach(row => {
-            if (quantity >= (parseFloat(row.min_quantity) || 1)) {
-                match = row;
+        // Apply global discount_type / discount_value to the retail price
+        const discountValue = parseFloat(list.discount_value) || 0;
+        const baseRetail = parseFloat(retailPrice) || 0;
+        if (discountValue > 0 && baseRetail > 0) {
+            if (list.discount_type === 'fixed') {
+                return Math.max(0, baseRetail - discountValue);
             }
-        });
+            if (list.discount_type === 'percentage') {
+                return Math.max(0, baseRetail - (baseRetail * discountValue / 100));
+            }
+        }
 
-        return match ? parseFloat(match.price) || 0 : null;
+        // Product is in items but has no price and no global discount — return 0
+        if (productItems) {
+            let match = null;
+            productItems.forEach(row => {
+                if (quantity >= (parseFloat(row.min_quantity) || 1)) match = row;
+            });
+            return match ? parseFloat(match.price) || 0 : null;
+        }
+
+        return null;
     }
 
     function getBasePrice(data) {
@@ -2639,8 +2693,8 @@ window.POS_ENABLE_FALLBACK = function () {
         const productId = data.id || '';
         const quantity = parseFloat(qtyInput?.value || '1') || 1;
         const priceListId = priceListInput?.value || '';
-        const listPrice = getVanillaPriceListProductPrice(priceListId, productId, quantity);
         const retail = parseFloat(data.retail || data.price || '0') || 0;
+        const listPrice = getVanillaPriceListProductPrice(priceListId, productId, quantity, retail);
         const wholesale = parseFloat(data.wholesale || '0') || 0;
         const special = parseFloat(data.special || '0') || 0;
 
@@ -2835,6 +2889,35 @@ window.POS_ENABLE_FALLBACK = function () {
         }
         if (hdrSelected) hdrSelected.textContent = data.name || 'Product';
         productCards.forEach((card) => card.classList.toggle('active', card.dataset.id === String(productId)));
+
+        // Expiry date alert
+        const expiry = String(data.expiry || '').trim();
+        if (expiry) {
+            const expiryDate = new Date(expiry + 'T00:00:00');
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const diffMs = expiryDate - today;
+            const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+            if (diffDays <= 0) {
+                showAlert({
+                    icon: 'error',
+                    title: 'Product Expired!',
+                    html: `<b>${data.name || 'This product'}</b> expired on <b>${expiry}</b>.<br>Please check your inventory before selling.`,
+                    confirmButtonText: 'Understood',
+                });
+            } else if (diffDays <= 30) {
+                showAlert({
+                    icon: 'warning',
+                    title: 'Near Expiry!',
+                    html: `<b>${data.name || 'This product'}</b> expires on <b>${expiry}</b> (<b>${diffDays}</b> day${diffDays === 1 ? '' : 's'} left).`,
+                    timer: 5000,
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                });
+            }
+        }
+
         updateItemTotal();
     }
 
