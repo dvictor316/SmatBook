@@ -13,7 +13,10 @@
         align-items: center;
         justify-content: center;
         min-height: 100vh;
-        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        background:
+            radial-gradient(circle at top left, rgba(215, 169, 40, 0.18), transparent 28%),
+            radial-gradient(circle at bottom right, rgba(37, 99, 235, 0.18), transparent 30%),
+            linear-gradient(135deg, #f8fbff 0%, #eef4ff 100%);
         padding: 20px;
     }
 
@@ -31,7 +34,9 @@
     /* Left Branding Panel */
     .login-left-panel {
         flex: 1;
-        background: #9c76feff; 
+        background:
+            radial-gradient(circle at 20% 18%, rgba(255, 232, 163, 0.28), transparent 30%),
+            linear-gradient(145deg, #061a44 0%, #0f3a8a 58%, #2563eb 100%);
         color: white;
         display: flex;
         flex-direction: column;
@@ -52,8 +57,8 @@
 
     /* Component Styling */
     .form-control { border-radius: 8px; padding: 12px; border: 1px solid #e0e0e0; }
-    .btn-primary { background-color: #3d5ee1; border: none; border-radius: 8px; padding: 12px; font-weight: 600; transition: all 0.3s ease; }
-    .btn-primary:hover { background-color: #2a49c9; transform: translateY(-1px); }
+    .btn-primary { background: linear-gradient(135deg, #0f3a8a 0%, #2563eb 100%); border: 1px solid #0f3a8a; border-radius: 8px; color: #ffffff; padding: 12px; font-weight: 600; transition: all 0.3s ease; }
+    .btn-primary:hover { background: #ffffff; border-color: #d7a928; color: #0f3a8a; transform: translateY(-1px); }
     .btn-google { background-color: #ffffff; color: #444; border: 1px solid #ddd; }
     .btn-facebook { background-color: #3b5998; color: white; border: none; }
     .btn-google:hover { background-color: #f8f9fa; }

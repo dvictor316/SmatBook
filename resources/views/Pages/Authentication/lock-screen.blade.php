@@ -23,7 +23,7 @@
                         <img class="rounded-circle img-thumbnail shadow-sm" 
                              src="{{ session('lock_user_image') ?? URL::asset('/assets/img/profiles/avatar-02.jpg') }}" 
                              alt="User Image" 
-                             style="width: 100px; height: 100px; object-fit: cover; border: 3px solid #3d5ee1;">
+                             style="width: 100px; height: 100px; object-fit: cover; border: 3px solid #d7a928;">
                         <span class="position-absolute bottom-0 end-0 bg-primary border border-light rounded-circle p-2" title="Locked">
                             <i class="fas fa-lock text-white" style="font-size: 10px;"></i>
                         </span>

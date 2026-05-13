@@ -38,13 +38,13 @@
     :root {
         --spa-bg: #eff5ff;
         --spa-surface: rgba(255, 255, 255, 0.95);
-        --spa-aside: linear-gradient(145deg, #2348c7 0%, #1b2fb5 38%, #0a148a 100%);
+        --spa-aside: linear-gradient(145deg, #061a44 0%, #0f3a8a 58%, #2563eb 100%);
         --spa-border: #e2e8f0;
-        --spa-primary: #2563eb;
-        --spa-primary-dark: #1d4ed8;
+        --spa-primary: #0f3a8a;
+        --spa-primary-dark: #061a44;
         --spa-text: #0f172a;
         --spa-muted: #64748b;
-        --spa-gold: #ffe08a;
+        --spa-gold: #d7a928;
     }
 
     html, body {
@@ -82,8 +82,8 @@
         min-height: 100%;
         padding: 16px 12px 40px;
         background:
-            radial-gradient(circle at top left, rgba(40, 195, 243, 0.28), transparent 24%),
-            radial-gradient(circle at bottom right, rgba(29, 109, 255, 0.2), transparent 28%),
+            radial-gradient(circle at top left, rgba(215, 169, 40, 0.20), transparent 24%),
+            radial-gradient(circle at bottom right, rgba(37, 99, 235, 0.18), transparent 28%),
             linear-gradient(180deg, #f4f9ff 0%, #e8f2ff 100%);
         z-index: 9999;
         display: grid !important;
@@ -113,8 +113,8 @@
         border-radius: 50%;
         background:
             radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0) 38%),
-            radial-gradient(circle at 70% 65%, rgba(29, 109, 255, 0.16) 0%, rgba(29, 109, 255, 0) 44%),
-            radial-gradient(circle, rgba(40, 195, 243, 0.22) 0%, rgba(40, 195, 243, 0) 72%);
+            radial-gradient(circle at 70% 65%, rgba(37, 99, 235, 0.16) 0%, rgba(37, 99, 235, 0) 44%),
+            radial-gradient(circle, rgba(215, 169, 40, 0.18) 0%, rgba(215, 169, 40, 0) 72%);
         animation: floatBubble 25s infinite ease-in-out;
     }
 

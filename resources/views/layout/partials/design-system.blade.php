@@ -13,6 +13,14 @@
         --sb-muted: #64748b;
         --sb-primary: #1e40af;
         --sb-primary-2: #3b82f6;
+        --spb-theme-navy: #061a44;
+        --spb-theme-blue: #0f3a8a;
+        --spb-theme-blue-bright: #2563eb;
+        --spb-theme-gold: #d7a928;
+        --spb-theme-gold-soft: #ffe8a3;
+        --spb-theme-ink: #10264f;
+        --spb-theme-muted: #64748b;
+        --spb-theme-surface: #f7faff;
         --sb-success: #10b981;
         --sb-warning: #f59e0b;
         --sb-danger: #ef4444;
@@ -644,5 +652,180 @@
     .sb-btn-primary:active * {
         color: inherit !important;
         -webkit-text-fill-color: currentColor !important;
+    }
+
+    /* SmartProbook global blue/gold application theme for all tenant plans. */
+    body:not(.landing-page-body):not(.login-body) .page-wrapper,
+    body:not(.landing-page-body):not(.login-body) .sb-shell,
+    body:not(.landing-page-body):not(.login-body) #main-content-wrapper,
+    body:not(.landing-page-body):not(.login-body) .page-content-wrapper {
+        background:
+            radial-gradient(circle at top right, rgba(215, 169, 40, 0.10), transparent 28%),
+            linear-gradient(180deg, #f8fbff 0%, #f3f7ff 100%) !important;
+    }
+
+    body:not(.landing-page-body) .header {
+        background: rgba(255, 255, 255, 0.96) !important;
+        border-bottom: 1px solid rgba(15, 58, 138, 0.12) !important;
+        box-shadow: 0 12px 28px rgba(6, 26, 68, 0.08) !important;
+    }
+
+    body:not(.landing-page-body) .workspace-switcher {
+        background: linear-gradient(135deg, #fff8e1 0%, #eef4ff 100%) !important;
+        border-color: rgba(215, 169, 40, 0.38) !important;
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.72), 0 10px 22px rgba(6, 26, 68, 0.08) !important;
+    }
+
+    body:not(.landing-page-body) .workspace-switcher a {
+        color: var(--spb-theme-blue) !important;
+        -webkit-text-fill-color: var(--spb-theme-blue) !important;
+    }
+
+    body:not(.landing-page-body) .workspace-switcher a.is-active {
+        background: linear-gradient(135deg, var(--spb-theme-blue) 0%, var(--spb-theme-blue-bright) 100%) !important;
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
+    }
+
+    body:not(.landing-page-body) .branch-pill {
+        background: #ffffff !important;
+        border-color: rgba(15, 58, 138, 0.18) !important;
+        color: var(--spb-theme-ink) !important;
+        -webkit-text-fill-color: var(--spb-theme-ink) !important;
+    }
+
+    body:not(.landing-page-body) .branch-pill i,
+    body:not(.landing-page-body) .branch-pill .branch-active-label {
+        color: var(--spb-theme-blue) !important;
+        -webkit-text-fill-color: var(--spb-theme-blue) !important;
+    }
+
+    .sidebar:not(.spb-super-admin-sidebar),
+    .deployment-sidebar {
+        background:
+            radial-gradient(circle at 18% 18%, rgba(215, 169, 40, 0.14), transparent 26%),
+            linear-gradient(180deg, var(--spb-theme-navy) 0%, var(--spb-theme-blue) 100%) !important;
+        border-right: 1px solid rgba(215, 169, 40, 0.24) !important;
+        box-shadow: 18px 0 36px rgba(6, 26, 68, 0.12) !important;
+    }
+
+    .sidebar:not(.spb-super-admin-sidebar) .sidebar-inner,
+    .sidebar:not(.spb-super-admin-sidebar) .sidebar-menu,
+    .deployment-sidebar .sidebar-content,
+    .deployment-sidebar .sidebar-menu {
+        background: transparent !important;
+    }
+
+    .sidebar:not(.spb-super-admin-sidebar) .sidebar-menu .menu-title,
+    .deployment-sidebar .menu-title {
+        color: var(--spb-theme-gold-soft) !important;
+        -webkit-text-fill-color: var(--spb-theme-gold-soft) !important;
+        font-weight: 800 !important;
+        letter-spacing: 0.08em !important;
+    }
+
+    .sidebar:not(.spb-super-admin-sidebar) .sidebar-menu ul li > a,
+    .deployment-sidebar a {
+        color: #eaf2ff !important;
+        -webkit-text-fill-color: #eaf2ff !important;
+        border: 1px solid transparent !important;
+        border-radius: 14px !important;
+    }
+
+    .sidebar:not(.spb-super-admin-sidebar) .sidebar-menu ul li > a span,
+    .sidebar:not(.spb-super-admin-sidebar) .sidebar-menu ul li > a i,
+    .sidebar:not(.spb-super-admin-sidebar) .sidebar-menu ul li > a .menu-arrow,
+    .deployment-sidebar a span,
+    .deployment-sidebar a i {
+        color: inherit !important;
+        -webkit-text-fill-color: currentColor !important;
+    }
+
+    .sidebar:not(.spb-super-admin-sidebar) .sidebar-menu ul li > a:hover,
+    .sidebar:not(.spb-super-admin-sidebar) .sidebar-menu ul li > a.subdrop,
+    .sidebar:not(.spb-super-admin-sidebar) .sidebar-menu ul li.active > a,
+    .sidebar:not(.spb-super-admin-sidebar) .sidebar-menu ul li > a.active,
+    .deployment-sidebar a:hover,
+    .deployment-sidebar a.active {
+        background: rgba(255, 255, 255, 0.12) !important;
+        border-color: rgba(215, 169, 40, 0.38) !important;
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
+        box-shadow: inset 4px 0 0 var(--spb-theme-gold) !important;
+    }
+
+    .sidebar:not(.spb-super-admin-sidebar) .sidebar-menu ul li.submenu ul {
+        background: rgba(3, 18, 51, 0.44) !important;
+        border: 1px solid rgba(215, 169, 40, 0.16) !important;
+        border-radius: 16px !important;
+        margin: 6px auto 10px !important;
+        width: calc(100% - 24px) !important;
+        padding: 8px !important;
+    }
+
+    .sidebar:not(.spb-super-admin-sidebar) .sidebar-menu ul li.submenu ul li a {
+        color: #dce9ff !important;
+        -webkit-text-fill-color: #dce9ff !important;
+        border-radius: 12px !important;
+    }
+
+    .sidebar:not(.spb-super-admin-sidebar) .sidebar-menu ul li.submenu ul li a:hover,
+    .sidebar:not(.spb-super-admin-sidebar) .sidebar-menu ul li.submenu ul li a.active,
+    .sidebar:not(.spb-super-admin-sidebar) .sidebar-menu ul li.submenu ul li.active > a {
+        background: linear-gradient(135deg, rgba(215, 169, 40, 0.92) 0%, rgba(255, 232, 163, 0.92) 100%) !important;
+        color: #061a44 !important;
+        -webkit-text-fill-color: #061a44 !important;
+        box-shadow: none !important;
+    }
+
+    body:not(.landing-page-body) .card,
+    body:not(.landing-page-body) .card-table,
+    body:not(.landing-page-body) .modal-content,
+    body:not(.landing-page-body) .dropdown-menu {
+        border-color: rgba(15, 58, 138, 0.14) !important;
+        box-shadow: 0 14px 34px rgba(6, 26, 68, 0.07) !important;
+    }
+
+    body:not(.landing-page-body) .card-header,
+    body:not(.landing-page-body) .table thead th {
+        background: linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%) !important;
+        color: var(--spb-theme-ink) !important;
+        border-bottom-color: rgba(15, 58, 138, 0.14) !important;
+    }
+
+    body:not(.landing-page-body) .btn-primary,
+    body:not(.landing-page-body) .btn-info,
+    body:not(.landing-page-body) .btn-success,
+    body:not(.landing-page-body) .btn-upload,
+    body:not(.landing-page-body) .sb-btn-primary {
+        background: linear-gradient(135deg, var(--spb-theme-blue) 0%, var(--spb-theme-blue-bright) 100%) !important;
+        border-color: var(--spb-theme-blue) !important;
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
+        box-shadow: 0 10px 22px rgba(15, 58, 138, 0.18) !important;
+    }
+
+    body:not(.landing-page-body) .btn-primary:hover,
+    body:not(.landing-page-body) .btn-primary:focus-visible,
+    body:not(.landing-page-body) .btn-info:hover,
+    body:not(.landing-page-body) .btn-info:focus-visible,
+    body:not(.landing-page-body) .btn-success:hover,
+    body:not(.landing-page-body) .btn-success:focus-visible,
+    body:not(.landing-page-body) .btn-upload:hover,
+    body:not(.landing-page-body) .btn-upload:focus-visible,
+    body:not(.landing-page-body) .sb-btn-primary:hover,
+    body:not(.landing-page-body) .sb-btn-primary:focus-visible {
+        background: #ffffff !important;
+        border-color: var(--spb-theme-gold) !important;
+        color: var(--spb-theme-blue) !important;
+        -webkit-text-fill-color: var(--spb-theme-blue) !important;
+    }
+
+    body:not(.landing-page-body) .form-control:focus,
+    body:not(.landing-page-body) .form-select:focus,
+    body:not(.landing-page-body) .select2-container--default .select2-selection--single:focus,
+    body:not(.landing-page-body) .select2-container--default.select2-container--focus .select2-selection--single {
+        border-color: var(--spb-theme-gold) !important;
+        box-shadow: 0 0 0 0.2rem rgba(215, 169, 40, 0.16) !important;
     }
 </style>

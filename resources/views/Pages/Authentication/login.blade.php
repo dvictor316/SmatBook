@@ -121,7 +121,7 @@
             <div class="row g-0">
 
                 <div class="col-lg-6 d-none d-lg-block">
-                    <div class="authentication-wrapper h-100" style="background: #3d5ee1; display: flex; align-items: center; justify-content: center; padding: 20px;">
+                    <div class="authentication-wrapper h-100" style="background: radial-gradient(circle at 20% 18%, rgba(255, 232, 163, 0.28), transparent 30%), linear-gradient(145deg, #061a44 0%, #0f3a8a 58%, #2563eb 100%); display: flex; align-items: center; justify-content: center; padding: 20px;">
                         <img src="{{ URL::asset('/assets/img/logos.png') }}" class="img-fluid" alt="SmartProbook Login Visual">
                     </div>
                 </div>

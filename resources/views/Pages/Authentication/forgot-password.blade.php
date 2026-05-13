@@ -7,11 +7,11 @@
 
     :root {
         --spa-surface: rgba(255, 255, 255, 0.95);
-        --spa-aside: linear-gradient(145deg, #2348c7 0%, #1b2fb5 38%, #0a148a 100%);
-        --spa-primary: #2563eb;
+        --spa-aside: linear-gradient(145deg, #061a44 0%, #0f3a8a 58%, #2563eb 100%);
+        --spa-primary: #0f3a8a;
         --spa-text: #0f172a;
         --spa-muted: #64748b;
-        --spa-gold: #ffe08a;
+        --spa-gold: #d7a928;
     }
 
     html, body {
@@ -55,8 +55,8 @@
         min-height: 100vh;
         padding: 20px 15px 40px;
         background:
-            radial-gradient(circle at top left, rgba(40, 195, 243, 0.28), transparent 24%),
-            radial-gradient(circle at bottom right, rgba(29, 109, 255, 0.2), transparent 28%),
+            radial-gradient(circle at top left, rgba(215, 169, 40, 0.20), transparent 24%),
+            radial-gradient(circle at bottom right, rgba(37, 99, 235, 0.18), transparent 28%),
             linear-gradient(180deg, #f4f9ff 0%, #e8f2ff 100%);
         z-index: 900;
         display: grid !important;
