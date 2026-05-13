@@ -14,7 +14,7 @@
 
 <li class="submenu {{ $isReports ? 'active subdrop' : '' }}">
     <a href="#">
-        <i class="fe fe-bar-chart-2"></i>
+        <i class="fas fa-chart-simple"></i>
         <span>Reports</span>
         <span class="menu-arrow"></span>
     </a>
