@@ -154,7 +154,162 @@
         background: rgba(215, 169, 40, 0.42) !important;
         border-radius: 999px !important;
     }
+
+    body.spb-super-admin-theme {
+        --spb-theme-navy: #061a44;
+        --spb-theme-blue: #0f3a8a;
+        --spb-theme-blue-bright: #2563eb;
+        --spb-theme-gold: #d7a928;
+        --spb-theme-gold-soft: #ffe8a3;
+        --spb-theme-ink: #10264f;
+        --spb-theme-muted: #64748b;
+        --spb-theme-surface: #f7faff;
+    }
+
+    body.spb-super-admin-theme:not(.login-body):not(.landing-page-body) .page-wrapper {
+        background:
+            radial-gradient(circle at top right, rgba(215, 169, 40, 0.08), transparent 32%),
+            linear-gradient(180deg, #f8fbff 0%, #f3f7ff 100%) !important;
+    }
+
+    body.spb-super-admin-theme .header {
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%) !important;
+        border-bottom: 1px solid rgba(15, 58, 138, 0.12) !important;
+        box-shadow: 0 12px 28px rgba(6, 26, 68, 0.08) !important;
+    }
+
+    body.spb-super-admin-theme .page-title,
+    body.spb-super-admin-theme .content-page-header h5,
+    body.spb-super-admin-theme .card-title,
+    body.spb-super-admin-theme h1,
+    body.spb-super-admin-theme h2,
+    body.spb-super-admin-theme h3,
+    body.spb-super-admin-theme h4,
+    body.spb-super-admin-theme h5 {
+        color: var(--spb-theme-ink) !important;
+    }
+
+    body.spb-super-admin-theme .breadcrumb a,
+    body.spb-super-admin-theme .breadcrumb-item a {
+        color: var(--spb-theme-blue) !important;
+        font-weight: 700;
+    }
+
+    body.spb-super-admin-theme .breadcrumb-item.active,
+    body.spb-super-admin-theme .text-muted {
+        color: var(--spb-theme-muted) !important;
+    }
+
+    body.spb-super-admin-theme .card,
+    body.spb-super-admin-theme .estimate-panel,
+    body.spb-super-admin-theme .ri-wizard-shell {
+        border-color: rgba(15, 58, 138, 0.12) !important;
+        box-shadow: 0 14px 34px rgba(6, 26, 68, 0.07) !important;
+    }
+
+    body.spb-super-admin-theme .card-header,
+    body.spb-super-admin-theme .estimate-panel-head,
+    body.spb-super-admin-theme .ri-wizard-tabs {
+        background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%) !important;
+        border-color: rgba(15, 58, 138, 0.10) !important;
+    }
+
+    body.spb-super-admin-theme .btn-primary,
+    body.spb-super-admin-theme .btn-success,
+    body.spb-super-admin-theme .btn-info,
+    body.spb-super-admin-theme .btn-upload {
+        background: linear-gradient(135deg, var(--spb-theme-blue) 0%, var(--spb-theme-blue-bright) 100%) !important;
+        border-color: var(--spb-theme-blue) !important;
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
+        box-shadow: 0 10px 24px rgba(15, 58, 138, 0.18) !important;
+    }
+
+    body.spb-super-admin-theme .btn-primary:hover,
+    body.spb-super-admin-theme .btn-primary:focus-visible,
+    body.spb-super-admin-theme .btn-success:hover,
+    body.spb-super-admin-theme .btn-success:focus-visible,
+    body.spb-super-admin-theme .btn-info:hover,
+    body.spb-super-admin-theme .btn-info:focus-visible,
+    body.spb-super-admin-theme .btn-upload:hover,
+    body.spb-super-admin-theme .btn-upload:focus-visible {
+        background: #ffffff !important;
+        border-color: var(--spb-theme-gold) !important;
+        color: var(--spb-theme-blue) !important;
+        -webkit-text-fill-color: var(--spb-theme-blue) !important;
+        box-shadow: 0 0 0 1px rgba(215, 169, 40, 0.42) inset, 0 12px 26px rgba(6, 26, 68, 0.12) !important;
+    }
+
+    body.spb-super-admin-theme .btn-primary:hover *,
+    body.spb-super-admin-theme .btn-primary:focus-visible *,
+    body.spb-super-admin-theme .btn-success:hover *,
+    body.spb-super-admin-theme .btn-success:focus-visible *,
+    body.spb-super-admin-theme .btn-info:hover *,
+    body.spb-super-admin-theme .btn-info:focus-visible *,
+    body.spb-super-admin-theme .btn-upload:hover *,
+    body.spb-super-admin-theme .btn-upload:focus-visible * {
+        color: inherit !important;
+        -webkit-text-fill-color: currentColor !important;
+    }
+
+    body.spb-super-admin-theme .btn-outline-primary,
+    body.spb-super-admin-theme .btn-outline-secondary {
+        border-color: rgba(15, 58, 138, 0.28) !important;
+        color: var(--spb-theme-blue) !important;
+        -webkit-text-fill-color: var(--spb-theme-blue) !important;
+        background: #ffffff !important;
+    }
+
+    body.spb-super-admin-theme .btn-outline-primary:hover,
+    body.spb-super-admin-theme .btn-outline-primary:focus-visible,
+    body.spb-super-admin-theme .btn-outline-secondary:hover,
+    body.spb-super-admin-theme .btn-outline-secondary:focus-visible {
+        background: var(--spb-theme-blue) !important;
+        border-color: var(--spb-theme-blue) !important;
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
+    }
+
+    body.spb-super-admin-theme .btn-secondary,
+    body.spb-super-admin-theme .btn-dark {
+        background: #334155 !important;
+        border-color: #334155 !important;
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
+    }
+
+    body.spb-super-admin-theme .btn-secondary:hover,
+    body.spb-super-admin-theme .btn-dark:hover {
+        background: #ffffff !important;
+        border-color: var(--spb-theme-gold) !important;
+        color: #1f2937 !important;
+        -webkit-text-fill-color: #1f2937 !important;
+    }
+
+    body.spb-super-admin-theme .nav-tabs .nav-link.active,
+    body.spb-super-admin-theme .nav-pills .nav-link.active {
+        background: linear-gradient(135deg, var(--spb-theme-blue) 0%, var(--spb-theme-blue-bright) 100%) !important;
+        border-color: var(--spb-theme-gold) !important;
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
+    }
+
+    body.spb-super-admin-theme .badge.bg-primary,
+    body.spb-super-admin-theme .bg-primary {
+        background-color: var(--spb-theme-blue) !important;
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
+    }
+
+    body.spb-super-admin-theme .text-primary {
+        color: var(--spb-theme-blue) !important;
+        -webkit-text-fill-color: var(--spb-theme-blue) !important;
+    }
 </style>
+
+<script>
+    document.body?.classList.add('spb-super-admin-theme');
+</script>
 
 <div class="sidebar spb-super-admin-sidebar" id="sidebar">
     <div class="sidebar-inner slimscroll">
