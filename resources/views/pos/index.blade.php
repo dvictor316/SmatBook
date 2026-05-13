@@ -1201,6 +1201,139 @@ label {
         align-self: flex-end;
     }
 }
+
+/* Super-admin theme parity for POS across every subscription plan. */
+.pos-full-page-wrapper {
+    --sa-navy: #061a44;
+    --sa-blue: #0f3a8a;
+    --sa-blue-bright: #2563eb;
+    --sa-gold: #d7a928;
+    --sa-gold-soft: #ffe8a3;
+    --sa-line: rgba(215, 169, 40, 0.26);
+    background:
+        radial-gradient(circle at top right, rgba(215, 169, 40, 0.08), transparent 32%),
+        linear-gradient(180deg, #f8fbff 0%, #f3f7ff 100%) !important;
+}
+
+.pos-full-page-wrapper .header-stage,
+.pos-full-page-wrapper .header-stage.plan-basic,
+.pos-full-page-wrapper .header-stage.plan-pro,
+.pos-full-page-wrapper .header-stage.plan-enterprise,
+.pos-full-page-wrapper .header-stage.plan-super {
+    background:
+        radial-gradient(circle at 16% 8%, rgba(215, 169, 40, 0.22), transparent 28%),
+        radial-gradient(circle at 84% 22%, rgba(37, 99, 235, 0.24), transparent 34%),
+        linear-gradient(180deg, var(--sa-navy) 0%, var(--sa-blue) 52%, #071635 100%) !important;
+    border: 1px solid rgba(215, 169, 40, 0.22) !important;
+    box-shadow: 0 18px 42px rgba(6, 26, 68, 0.22) !important;
+}
+
+.pos-full-page-wrapper .header-stage::after {
+    box-shadow: inset 0 0 0 1px rgba(215, 169, 40, 0.26) !important;
+}
+
+.pos-full-page-wrapper .header-util-bar {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(215, 169, 40, 0.26) !important;
+    box-shadow: inset 3px 0 0 var(--sa-gold), 0 10px 22px rgba(0, 0, 0, 0.14) !important;
+}
+
+.pos-full-page-wrapper .util-pill,
+.pos-full-page-wrapper .clock-badge {
+    background: linear-gradient(135deg, var(--sa-gold-soft) 0%, var(--sa-gold) 100%) !important;
+    color: var(--sa-navy) !important;
+    border-color: rgba(255, 255, 255, 0.24) !important;
+    -webkit-text-fill-color: var(--sa-navy) !important;
+}
+
+.pos-full-page-wrapper .header-util-note,
+.pos-full-page-wrapper .header-util-note .accent {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+}
+
+.pos-full-page-wrapper .pos-header-bar,
+.pos-full-page-wrapper .pos-card,
+.pos-full-page-wrapper .controls-card,
+.pos-full-page-wrapper .summary-panel {
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%) !important;
+    border: 1px solid rgba(15, 58, 138, 0.12) !important;
+    box-shadow: 0 12px 28px rgba(6, 26, 68, 0.08) !important;
+}
+
+.pos-full-page-wrapper .pos-header-bar::after,
+.pos-full-page-wrapper .cart-table thead th {
+    background: linear-gradient(135deg, var(--sa-blue) 0%, var(--sa-blue-bright) 100%) !important;
+    border-bottom-color: var(--sa-gold) !important;
+}
+
+.pos-full-page-wrapper .scanner-section,
+.pos-full-page-wrapper .quick-fill-panel,
+.pos-full-page-wrapper .subtotal-box {
+    background: linear-gradient(135deg, #fff8e1 0%, #eef4ff 100%) !important;
+    border-color: rgba(215, 169, 40, 0.38) !important;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.72), 0 10px 22px rgba(6, 26, 68, 0.08) !important;
+}
+
+.pos-full-page-wrapper .category-pill:hover,
+.pos-full-page-wrapper .category-pill.active,
+.pos-full-page-wrapper .category-toggle-btn:hover,
+.pos-full-page-wrapper .product-card.active,
+.pos-full-page-wrapper .product-card.last-picked,
+.pos-full-page-wrapper .btn-cart-edit,
+.pos-full-page-wrapper .cart-empty-shell {
+    color: var(--sa-blue) !important;
+    background: rgba(215, 169, 40, 0.12) !important;
+    border-color: rgba(215, 169, 40, 0.45) !important;
+    box-shadow: inset 2px 0 0 var(--sa-gold), 0 10px 22px rgba(6, 26, 68, 0.08) !important;
+}
+
+.pos-full-page-wrapper .unit-btn {
+    background: #ffffff !important;
+    border-color: rgba(15, 58, 138, 0.18) !important;
+    color: #10264f !important;
+    -webkit-text-fill-color: #10264f !important;
+}
+
+.pos-full-page-wrapper .unit-btn:hover,
+.pos-full-page-wrapper .btn-check:checked + .unit-btn {
+    background: linear-gradient(135deg, rgba(215, 169, 40, 0.24), rgba(37, 99, 235, 0.2)) !important;
+    border-color: rgba(215, 169, 40, 0.45) !important;
+    color: #061a44 !important;
+    -webkit-text-fill-color: #061a44 !important;
+    box-shadow: inset 3px 0 0 var(--sa-gold), 0 12px 26px rgba(0, 0, 0, 0.10) !important;
+}
+
+.pos-full-page-wrapper .btn-add-cart,
+.pos-full-page-wrapper .btn-process {
+    background: linear-gradient(135deg, var(--sa-blue) 0%, var(--sa-blue-bright) 100%) !important;
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    border: 1px solid transparent !important;
+    box-shadow: 0 10px 22px rgba(15, 58, 138, 0.22) !important;
+}
+
+.pos-full-page-wrapper .btn-add-cart:hover,
+.pos-full-page-wrapper .btn-process:hover {
+    background: #ffffff !important;
+    color: var(--sa-blue) !important;
+    -webkit-text-fill-color: var(--sa-blue) !important;
+    border-color: var(--sa-gold) !important;
+}
+
+.pos-full-page-wrapper .btn-add-cart:hover *,
+.pos-full-page-wrapper .btn-process:hover * {
+    color: var(--sa-blue) !important;
+    -webkit-text-fill-color: var(--sa-blue) !important;
+}
+
+.pos-full-page-wrapper .form-control:focus,
+.pos-full-page-wrapper .form-select:focus,
+.pos-full-page-wrapper .search-input:focus,
+.pos-full-page-wrapper .cart-qty-input:focus {
+    border-color: var(--sa-gold) !important;
+    box-shadow: 0 0 0 0.2rem rgba(215, 169, 40, 0.22) !important;
+}
 </style>
 
 <div class="pos-full-page-wrapper">
