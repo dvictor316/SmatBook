@@ -390,6 +390,8 @@
 
 @push('scripts')
 <script>
+const recurringForm = document.getElementById('recurringForm');
+
 // ── Wizard tab navigation ──────────────────────────────────────────────────
 document.querySelectorAll('.next-tab').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -518,6 +520,35 @@ addRow();
 document.querySelectorAll('#recurringForm input, #recurringForm select, #recurringForm textarea').forEach((field) => {
     field.addEventListener('input', updateReview);
     field.addEventListener('change', updateReview);
+});
+
+recurringForm?.addEventListener('submit', function (event) {
+    if (!recurringForm.checkValidity()) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        const firstInvalid = recurringForm.querySelector(':invalid');
+        const pane = firstInvalid?.closest('.tab-pane');
+        if (pane?.id) {
+            const tab = document.querySelector(`[href="#${pane.id}"]`);
+            if (tab) {
+                bootstrap.Tab.getOrCreateInstance(tab).show();
+            }
+        }
+
+        window.setTimeout(() => {
+            firstInvalid?.focus({ preventScroll: false });
+            firstInvalid?.reportValidity();
+        }, 180);
+
+        return;
+    }
+
+    const submitButton = recurringForm.querySelector('button[type="submit"]');
+    if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<i class="fe fe-loader me-2"></i> Creating Template...';
+    }
 });
 updateReview();
 </script>
