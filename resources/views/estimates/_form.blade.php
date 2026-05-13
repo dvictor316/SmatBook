@@ -52,7 +52,14 @@
                         @error('estimate_number') <div class="text-danger small">{{ $message }}</div> @enderror
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">Customer</label>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label mb-0">Customer</label>
+                            @if(Route::has('customers.create'))
+                                <a href="{{ route('customers.create') }}" class="small fw-semibold text-decoration-none" target="_blank" rel="noopener">
+                                    <i class="fas fa-plus-circle me-1"></i>Add Customer
+                                </a>
+                            @endif
+                        </div>
                         <select name="customer_id" id="estimate-customer" class="form-select" required>
                             <option value="">Select customer</option>
                             @foreach($customers ?? [] as $customer)
@@ -63,6 +70,7 @@
                                 </option>
                             @endforeach
                         </select>
+                        <div class="text-muted small mt-1">If the customer is missing, add one first, then refresh this page to select them.</div>
                         @error('customer_id') <div class="text-danger small">{{ $message }}</div> @enderror
                     </div>
                     <div class="col-md-4">
