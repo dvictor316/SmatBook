@@ -1,6 +1,55 @@
 <?php $page = 'membership-addons'; ?>
 @extends('layout.mainlayout')
 @section('content')
+    <style>
+        .page-wrapper {
+            background:
+                radial-gradient(circle at 8% 0%, rgba(215, 169, 40, 0.11), transparent 28%),
+                radial-gradient(circle at 92% 12%, rgba(37, 99, 235, 0.10), transparent 30%),
+                #f7faff;
+        }
+
+        .page-wrapper .card {
+            border: 1px solid #d8e3f5;
+            box-shadow: 0 18px 38px -30px rgba(6, 26, 68, 0.45);
+        }
+
+        .content-page-header h5,
+        .form-title {
+            color: #061a44;
+            font-weight: 800;
+        }
+
+        .form-title {
+            border-left: 4px solid #d7a928;
+            padding-left: 10px;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: #d7a928;
+            box-shadow: 0 0 0 .2rem rgba(215, 169, 40, .18);
+        }
+
+        .text-end .btn-primary {
+            background: linear-gradient(135deg, #061a44, #0f3a8a);
+            border-color: #0f3a8a;
+            color: #fff;
+            font-weight: 700;
+        }
+
+        .text-end .btn-primary:hover {
+            background: #fff;
+            color: #0f3a8a;
+            border-color: #d7a928;
+        }
+
+        .text-end .btn-primary.cancel {
+            background: #fff;
+            color: #0f3a8a;
+            border-color: #0f3a8a;
+        }
+    </style>
     
     <div class="page-wrapper">
         <div class="content container-fluid">

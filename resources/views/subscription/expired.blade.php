@@ -79,6 +79,54 @@
 </div>
 
 <style>
+    .account-content {
+        background:
+            radial-gradient(circle at 0 0, rgba(215, 169, 40, 0.16) 0%, transparent 34%),
+            radial-gradient(circle at 100% 100%, rgba(37, 99, 235, 0.12) 0%, transparent 35%),
+            #f7faff;
+    }
+
+    .account-box {
+        border: 1px solid #d8e3f5 !important;
+        box-shadow: 0 24px 54px -34px rgba(6, 26, 68, 0.55) !important;
+    }
+
+    .account-title {
+        color: #061a44;
+    }
+
+    .renewal-actions {
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%) !important;
+        border-color: rgba(215, 169, 40, .42) !important;
+    }
+
+    .renewal-actions h5 {
+        color: #061a44;
+        font-weight: 800;
+    }
+
+    .renewal-actions .btn-primary {
+        background: linear-gradient(135deg, #061a44, #0f3a8a);
+        border-color: #0f3a8a;
+        color: #fff;
+    }
+
+    .renewal-actions .btn-primary:hover,
+    .support-context .btn-outline-info:hover,
+    .btn-outline-secondary:hover {
+        background: #fff;
+        border-color: #d7a928;
+        color: #0f3a8a;
+    }
+
+    .btn-outline-secondary,
+    .support-context .btn-outline-info {
+        border-color: #0f3a8a;
+        color: #0f3a8a;
+        background: #fff;
+        font-weight: 700;
+    }
+
     @media print {
         .btn, .account-logo, .support-context, hr {
             display: none !important;

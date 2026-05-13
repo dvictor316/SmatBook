@@ -6,19 +6,24 @@
 <style>
 /* 1. INSTITUTIONAL COLOR ARCHITECTURE & OVERRIDE */
 :root {
-    --brand-navy: #0f172a;
-    --brand-blue: #2563eb;
+    --brand-navy: #061a44;
+    --brand-blue: #0f3a8a;
+    --brand-gold: #d7a928;
+    --brand-gold-soft: #fff1bf;
     --brand-slate: #64748b;
-    --brand-bg: #f4f7fa !important;  /* Sanatized Grey Background */
+    --brand-bg: #f7faff !important;
     --brand-card: #ffffff !important; /* Pure White Nodes */
     --brand-success: #059669;
     --brand-danger: #dc2626;
-    --border-light: #e2e8f0;
+    --border-light: #d8e3f5;
 }
 
 /* Force global background parity */
 body, .page-wrapper, .main-wrapper, .report-page-wrapper { 
-    background-color: var(--brand-bg) !important; 
+    background:
+        radial-gradient(circle at 8% 0%, rgba(215, 169, 40, 0.11), transparent 28%),
+        radial-gradient(circle at 92% 12%, rgba(37, 99, 235, 0.10), transparent 30%),
+        var(--brand-bg) !important; 
 }
 
 .report-page-wrapper { 
@@ -38,7 +43,7 @@ body.mini-sidebar .report-page-wrapper { margin-left: 80px; }
     padding: 0 25px;
     border-radius: 12px;
     border: 1px solid var(--border-light);
-    border-bottom: 4px solid var(--brand-navy);
+    border-bottom: 4px solid var(--brand-gold);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -55,17 +60,18 @@ body.mini-sidebar .report-page-wrapper { margin-left: 80px; }
     text-decoration: none;
     border-bottom: 3px solid transparent;
 }
-.inst-nav-link.active { color: var(--brand-blue); border-bottom-color: var(--brand-blue); }
+.inst-nav-link.active,
+.inst-nav-link:hover { color: var(--brand-blue); border-bottom-color: var(--brand-gold); }
 
 /* 3. METRICS (EXECUTIVE MONEY FONT) */
 .metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 30px; }
 .metric-node {
     background: var(--brand-card);
     border: 1px solid var(--border-light);
-    border-left: 5px solid var(--brand-navy);
+    border-left: 5px solid var(--brand-gold);
     padding: 20px;
     border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    box-shadow: 0 18px 38px -30px rgba(6, 26, 68, 0.45);
 }
 .metric-label { font-size: 10px; font-weight: 800; color: var(--brand-slate); text-transform: uppercase; letter-spacing: 1px; }
 .metric-value-money { font-size: 1.2rem; font-weight: 800; color: var(--brand-navy); margin-top: 5px; }
@@ -73,28 +79,28 @@ body.mini-sidebar .report-page-wrapper { margin-left: 80px; }
 
 /* 4. PLAN NODE VISIBILITY */
 .plan-node-badge {
-    background: #f1f5f9;
+    background: #fff8db;
     color: var(--brand-navy);
     padding: 6px 12px;
     border-radius: 6px;
     font-weight: 800;
     font-size: 10px;
     text-transform: uppercase;
-    border: 1px solid var(--brand-navy);
+    border: 1px solid rgba(215, 169, 40, 0.55);
     letter-spacing: 0.5px;
     display: inline-block;
 }
 
 /* 5. REGISTRY TABLE */
-.report-card { background: var(--brand-card); border-radius: 16px; border: 1px solid var(--border-light); overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.03); }
+.report-card { background: var(--brand-card); border-radius: 16px; border: 1px solid var(--border-light); overflow: hidden; box-shadow: 0 22px 44px -34px rgba(6, 26, 68, 0.48); }
 .table thead th {
-    background: #f8fafc !important;
+    background: linear-gradient(135deg, #eaf2ff 0%, #fff1bf 100%) !important;
     color: var(--brand-navy) !important;
     font-weight: 800 !important;
     text-transform: uppercase;
     font-size: 10px;
     padding: 18px 15px;
-    border-bottom: 2px solid var(--brand-navy) !important;
+    border-bottom: 2px solid var(--brand-gold) !important;
 }
 .table tbody td { padding: 15px; vertical-align: middle; color: var(--brand-navy); font-weight: 600; font-size: 13px; }
 .table-money { font-size: 13px; font-weight: 700; color: var(--brand-navy); }
@@ -107,6 +113,13 @@ body.mini-sidebar .report-page-wrapper { margin-left: 80px; }
 
 /* 7. PAGINATION & PRINT LOGIC */
 .pagination-container { padding: 20px; background: #fff; border-top: 1px solid var(--border-light); }
+
+.btn-navy:hover,
+.report-header-bar .btn-white:hover {
+    background: #fff !important;
+    color: var(--brand-blue) !important;
+    border-color: var(--brand-gold) !important;
+}
 
 @media print {
     .header, .sidebar, .inst-nav-tabs, .dropdown, .btn, .no-print, .pagination-container {
@@ -137,10 +150,10 @@ body.mini-sidebar .report-page-wrapper { margin-left: 80px; }
             </span>
         </div>
         <div class="d-flex gap-2 no-print">
-            <button onclick="window.print()" class="btn btn-sm btn-white border shadow-sm fw-bold px-3">
+            <button onclick="window.print()" class="btn btn-sm btn-white border shadow-sm fw-bold px-3" style="color: var(--brand-blue); border-color: var(--brand-gold) !important;">
                 <i class="fas fa-print me-2 text-primary"></i> PRINT AUDIT
             </button>
-            <a href="{{ route('super_admin.dashboard') }}" class="btn btn-sm btn-navy text-white fw-bold px-3" style="background: var(--brand-navy);">COMMAND DASH</a>
+            <a href="{{ route('super_admin.dashboard') }}" class="btn btn-sm btn-navy text-white fw-bold px-3" style="background: var(--brand-navy); border-color: var(--brand-navy);">COMMAND DASH</a>
         </div>
     </div>
 

@@ -6,10 +6,13 @@
 
 <style>
     :root {
-        --inst-navy: #0f172a; 
-        --inst-blue: #2563eb;
-        --inst-bg: #f8fafc; 
-        --inst-border: #e2e8f0;
+        --inst-navy: #061a44; 
+        --inst-blue: #0f3a8a;
+        --inst-blue-bright: #2563eb;
+        --inst-gold: #d7a928;
+        --inst-gold-soft: #fff1bf;
+        --inst-bg: #f7faff; 
+        --inst-border: #d8e3f5;
         --inst-text-main: #1e293b;
         --inst-text-muted: #64748b;
     }
@@ -17,7 +20,10 @@
     /* Page Setup */
     .page-wrapper { 
         margin-left: 250px; 
-        background-color: var(--inst-bg) !important; 
+        background:
+            radial-gradient(circle at 8% 0%, rgba(215, 169, 40, 0.11), transparent 28%),
+            radial-gradient(circle at 92% 12%, rgba(37, 99, 235, 0.10), transparent 30%),
+            var(--inst-bg) !important; 
         min-height: 100vh;
         font-family: 'Inter', sans-serif;
     }
@@ -31,12 +37,12 @@
         padding: 20px 25px;
         border-radius: 12px;
         border: 1px solid var(--inst-border);
-        border-bottom: 3px solid var(--inst-navy);
+        border-bottom: 3px solid var(--inst-gold);
         display: flex;
         justify-content: space-between;
         align-items: center;
         margin-bottom: 30px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 18px 38px -30px rgba(6, 26, 68, 0.45);
     }
 
     .inst-header-bar h1 { 
@@ -52,10 +58,10 @@
     .metric-node {
         background: #ffffff;
         border: 1px solid var(--inst-border);
-        border-left: 4px solid var(--inst-navy);
+        border-left: 4px solid var(--inst-gold);
         padding: 20px;
         border-radius: 12px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        box-shadow: 0 16px 30px -28px rgba(6, 26, 68, 0.42);
     }
     .metric-label { font-size: 10px; font-weight: 800; color: var(--inst-text-muted); text-transform: uppercase; letter-spacing: 1px; }
     .metric-value { font-size: 1.5rem; font-weight: 800; color: var(--inst-navy); margin-top: 4px; }
@@ -85,15 +91,15 @@
         height: 100%;
         box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
-    .plan-card:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.05); border-color: var(--inst-blue); }
+    .plan-card:hover { transform: translateY(-5px); box-shadow: 0 24px 42px -28px rgba(6, 26, 68, 0.38); border-color: var(--inst-gold); }
 
-    .plan-header { padding: 30px; border-bottom: 1px solid var(--inst-bg); text-align: center; }
+    .plan-header { padding: 30px; border-bottom: 1px solid var(--inst-bg); text-align: center; background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%); }
     .plan-badge { 
         font-size: 10px; font-weight: 800; text-transform: uppercase; 
         padding: 4px 12px; border-radius: 20px; margin-bottom: 15px; display: inline-block;
     }
-    .badge-monthly { background: #eff6ff; color: var(--inst-blue); border: 1px solid #dbeafe; }
-    .badge-yearly { background: #f0fdf4; color: #15803d; border: 1px solid #dcfce7; }
+    .badge-monthly { background: #eff6ff; color: var(--inst-blue); border: 1px solid #bfdbfe; }
+    .badge-yearly { background: #fff8db; color: #7a5600; border: 1px solid #f4d76b; }
 
     .plan-name { font-size: 1.5rem; font-weight: 700; color: var(--inst-navy); }
     .plan-price { font-size: 2rem; font-weight: 800; color: var(--inst-navy); letter-spacing: -1px; margin-top: 10px; }
@@ -110,26 +116,26 @@
         text-transform: uppercase; text-decoration: none; display: flex; align-items: center; justify-content: center; flex: 1;
         transition: 0.2s;
     }
-    .btn-edit { background: var(--inst-navy); color: #fff; border: none; }
-    .btn-edit:hover { background: var(--inst-blue); color: #fff; }
+    .btn-edit { background: linear-gradient(135deg, var(--inst-navy), var(--inst-blue)); color: #fff; border: 1px solid transparent; }
+    .btn-edit:hover { background: #fff; color: var(--inst-blue); border-color: var(--inst-gold); }
     .btn-delete { background: #fff; color: #ef4444; border: 1px solid #fee2e2; }
     .btn-delete:hover { background: #fef2f2; }
 
     /* Tier accent colours */
-    .plan-card.tier-basic  { border-top: 4px solid #3b82f6; }
-    .plan-card.tier-pro    { border-top: 4px solid #8b5cf6; position: relative; }
-    .plan-card.tier-enterprise { border-top: 4px solid #f59e0b; }
-    .plan-card.tier-pro .plan-header { background: linear-gradient(135deg,#faf5ff 0,#ede9fe 100%); }
-    .plan-card.tier-pro .plan-price  { color: #6d28d9; }
+    .plan-card.tier-basic  { border-top: 4px solid var(--inst-blue-bright); }
+    .plan-card.tier-pro    { border-top: 4px solid var(--inst-gold); position: relative; }
+    .plan-card.tier-enterprise { border-top: 4px solid var(--inst-navy); }
+    .plan-card.tier-pro .plan-header { background: linear-gradient(135deg,#fff8db 0,#eff6ff 100%); }
+    .plan-card.tier-pro .plan-price  { color: var(--inst-blue); }
 
     /* Most Popular ribbon */
     .popular-ribbon {
         position: absolute; top: -1px; right: 18px;
-        background: #8b5cf6; color: #fff;
+        background: linear-gradient(135deg, var(--inst-gold), #f5d36b); color: var(--inst-navy);
         font-size: 9px; font-weight: 800; text-transform: uppercase;
         letter-spacing: .08em; padding: 4px 10px;
         border-radius: 0 0 8px 8px;
-        box-shadow: 0 4px 10px rgba(139,92,246,.35);
+        box-shadow: 0 4px 10px rgba(215,169,40,.35);
     }
 
     @media (max-width: 991.98px) { .page-wrapper { margin-left: 0 !important; } }
@@ -151,7 +157,7 @@
                 <button onclick="window.print()" class="btn btn-light border btn-sm fw-bold px-3">
                     <i class="fas fa-print me-2"></i> PRINT
                 </button>
-                <button data-bs-toggle="modal" data-bs-target="#add_plan" class="btn btn-primary btn-sm fw-bold px-3 shadow-sm" style="background: var(--inst-blue);">
+                <button data-bs-toggle="modal" data-bs-target="#add_plan" class="btn btn-primary btn-sm fw-bold px-3 shadow-sm" style="background: var(--inst-blue); border-color: var(--inst-blue); color: #fff;">
                     <i class="fas fa-plus-circle me-2"></i> NEW NODE PLAN
                 </button>
             </div>
@@ -170,9 +176,9 @@
                 <div class="metric-label">Deactivated Nodes</div>
                 <div class="metric-value" style="color: #d97706;">{{ $pendingPlans }}</div>
             </div>
-            <div class="metric-node" style="border-left-color: #8b5cf6;">
+            <div class="metric-node" style="border-left-color: var(--inst-blue);">
                 <div class="metric-label">Billing Cycles</div>
-                <div class="metric-value" style="color: #7c3aed;">{{ $planTypesCount }}</div>
+                <div class="metric-value" style="color: var(--inst-blue);">{{ $planTypesCount }}</div>
             </div>
         </div>
 
@@ -320,7 +326,7 @@
 
                     <div class="d-flex gap-3">
                         <button type="button" data-bs-dismiss="modal" class="btn btn-light fw-bold py-3 flex-grow-1 border">Abort</button>
-                        <button type="submit" class="btn btn-primary fw-bold py-3 flex-grow-1 shadow-sm" style="background: var(--inst-blue);">Commit Node</button>
+                        <button type="submit" class="btn btn-primary fw-bold py-3 flex-grow-1 shadow-sm" style="background: var(--inst-blue); border-color: var(--inst-blue); color: #fff;">Commit Node</button>
                     </div>
                 </div>
             </form>

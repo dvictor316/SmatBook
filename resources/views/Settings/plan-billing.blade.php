@@ -7,7 +7,10 @@
     .page-wrapper {
         margin-left: 270px;
         transition: all 0.3s ease-in-out;
-        background-color: #f8fafc;
+        background:
+            radial-gradient(circle at 8% 0%, rgba(215, 169, 40, 0.11), transparent 28%),
+            radial-gradient(circle at 92% 12%, rgba(37, 99, 235, 0.10), transparent 30%),
+            #f7faff;
     }
     body.mini-sidebar .page-wrapper { margin-left: 80px; }
 
@@ -17,19 +20,21 @@
 
     /* Plan Card Enhancements */
     .packages.card {
-        border: 2px solid transparent;
+        border: 1px solid #d8e3f5;
         transition: all 0.3s;
         border-radius: 15px;
         overflow: hidden;
+        box-shadow: 0 18px 38px -30px rgba(6, 26, 68, 0.45);
     }
     .packages.card.active {
-        border-color: #007bff;
-        background: #f0f7ff;
+        border-color: #d7a928;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
     }
     .icon-frame {
         width: 50px;
         height: 50px;
-        background: #fff;
+        background: #fff8db;
+        border: 1px solid rgba(215, 169, 40, .45);
         border-radius: 10px;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         margin-right: 15px;
@@ -38,6 +43,35 @@
         color: #dc3545;
         font-size: 0.85rem;
         text-decoration: underline;
+    }
+
+    .content-page-header h5,
+    .packages h5 {
+        color: #061a44;
+    }
+
+    .packages .badge.bg-primary,
+    .btn-outline-secondary:hover {
+        background: #0f3a8a !important;
+        border-color: #0f3a8a !important;
+        color: #fff !important;
+    }
+
+    .packages h4.text-primary,
+    .content-page-header .text-primary {
+        color: #0f3a8a !important;
+    }
+
+    .btn-outline-secondary {
+        border-color: #0f3a8a;
+        color: #0f3a8a;
+        background: #fff;
+        font-weight: 700;
+    }
+
+    .table-plan-billing thead th {
+        background: linear-gradient(135deg, #eaf2ff 0%, #fff1bf 100%) !important;
+        color: #061a44 !important;
     }
 
     /* Print Optimization */

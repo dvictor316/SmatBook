@@ -7,26 +7,26 @@
     tailwind.config = {
         theme: {
             extend: {
-                colors: { 'primary': '#4f46e5' },
+                colors: { 'primary': '#0f3a8a', 'brand-gold': '#d7a928', 'brand-navy': '#061a44' },
                 fontFamily: { sans: ['Inter', 'sans-serif'] },
             }
         }
     }
 </script>
 
-<div class="page-wrapper bg-gray-50 min-h-screen">
+<div class="page-wrapper min-h-screen">
     <div class="p-4 sm:p-6 lg:p-8 w-full max-w-2xl mx-auto">
 
         <div class="mb-6">
-            <a href="{{ route('super_admin.packages.index') }}" class="inline-flex items-center text-sm font-medium text-gray-500 hover:text-primary transition">
+            <a href="{{ route('super_admin.packages.index') }}" class="inline-flex items-center text-sm font-bold text-gray-500 hover:text-primary transition">
                 <i class="fe fe-arrow-left mr-2"></i> Back to All Plans
             </a>
         </div>
 
-        <div class="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
-            <div class="bg-primary p-6">
+        <div class="bg-white rounded-3xl shadow-xl border overflow-hidden" style="border-color: #d8e3f5;">
+            <div class="p-6" style="background: linear-gradient(135deg, #061a44, #0f3a8a);">
                 <h3 class="text-xl font-black text-white">Edit Subscription Plan</h3>
-                <p class="text-indigo-100 text-sm">Update pricing, features, and billing cycles for <b>{{ $plan->name }}</b></p>
+                <p class="text-sm" style="color: #fff1bf;">Update pricing, features, and billing cycles for <b>{{ $plan->name }}</b></p>
             </div>
 
             <form action="{{ route('super_admin.packages.update', $plan->id) }}" method="POST" class="p-8">
@@ -81,7 +81,7 @@
                 </div>
 
                 <div class="mt-10 flex space-x-3">
-                    <button type="submit" class="flex-1 py-4 bg-primary text-white font-black rounded-2xl shadow-lg shadow-indigo-100 hover:opacity-90 transition transform active:scale-95">
+                    <button type="submit" class="flex-1 py-4 bg-primary text-white font-black rounded-2xl shadow-lg transition transform active:scale-95 plan-save-btn">
                         Update Plan Details
                     </button>
                 </div>
@@ -91,8 +91,27 @@
 </div>
 
 <style>
-    .page-wrapper { margin-left: 250px; }
+    .page-wrapper {
+        margin-left: 250px;
+        background:
+            radial-gradient(circle at 8% 0%, rgba(215, 169, 40, 0.11), transparent 28%),
+            radial-gradient(circle at 92% 12%, rgba(37, 99, 235, 0.10), transparent 30%),
+            #f7faff;
+    }
     body.mini-sidebar .page-wrapper { margin-left: 80px; }
+    .focus\:ring-primary:focus {
+        --tw-ring-color: rgba(215, 169, 40, .42) !important;
+        border-color: #d7a928 !important;
+    }
+    .plan-save-btn {
+        border: 1px solid transparent;
+        box-shadow: 0 14px 28px -20px rgba(15, 58, 138, .65);
+    }
+    .plan-save-btn:hover {
+        background: #fff !important;
+        color: #0f3a8a !important;
+        border-color: #d7a928 !important;
+    }
     @media (max-width: 991.98px) { .page-wrapper { margin-left: 0 !important; } }
 </style>
 @endsection

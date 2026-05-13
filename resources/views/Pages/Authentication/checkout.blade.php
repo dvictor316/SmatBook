@@ -4,9 +4,10 @@
 <style>
     /* Institutional Command Framework */
     :root {
-        --muji-blue-deep: #002347; 
-        --muji-blue-light: #f4f8ff; 
-        --muji-gold: #c5a059; 
+        --muji-blue-deep: #061a44; 
+        --muji-blue-light: #f7faff; 
+        --muji-gold: #d7a928; 
+        --muji-gold-soft: #fff1bf;
         --muji-red: #bc002d; 
         --muji-text: #1d1d1f;
     }
@@ -21,7 +22,10 @@
         display: flex; 
         align-items: center; 
         justify-content: center; 
-        background: radial-gradient(circle at top right, #fff, var(--muji-blue-light));
+        background:
+            radial-gradient(circle at 0 0, rgba(215, 169, 40, 0.18) 0%, transparent 34%),
+            radial-gradient(circle at 100% 100%, rgba(37, 99, 235, 0.14) 0%, transparent 35%),
+            var(--muji-blue-light);
     }
 
     .landscape-card {
@@ -30,7 +34,7 @@
         background: #fff;
         border-radius: 4px;
         overflow: hidden;
-        box-shadow: 0 40px 100px rgba(0,35,71,0.15);
+        box-shadow: 0 40px 100px rgba(6, 26, 68, 0.18);
         border: 1px solid rgba(197, 160, 89, 0.3);
         display: flex;
     }
@@ -68,8 +72,8 @@
 
     .payment-tile {
         transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
-        border: 1px solid #eef0f2;
-        border-left: 4px solid #eef0f2;
+        border: 1px solid #d8e3f5;
+        border-left: 4px solid #d8e3f5;
         border-radius: 4px;
         cursor: pointer;
         padding: 20px 25px;
@@ -82,7 +86,7 @@
     .payment-tile:hover {
         border-color: var(--muji-blue-deep);
         border-left-color: var(--muji-gold);
-        background: var(--muji-blue-light);
+        background: linear-gradient(180deg, #ffffff 0%, #fff8db 100%);
         transform: translateX(8px);
     }
 
@@ -181,7 +185,7 @@
 
         <div class="payment-tile" onclick="payWithStripe()">
             <div class="d-flex align-items-center">
-                <i class="fab fa-stripe-s me-3" style="font-size: 22px; color:#635bff;"></i>
+                <i class="fab fa-stripe-s me-3" style="font-size: 22px; color:var(--muji-blue-deep);"></i>
                 <div>
                     <span class="fw-bold d-block" style="color: var(--muji-blue-deep);">Stripe Checkout</span>
                     <small class="text-muted">Global cards (real-time confirmation)</small>

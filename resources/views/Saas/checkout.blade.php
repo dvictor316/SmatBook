@@ -22,10 +22,12 @@
         --spa-bg: #f7faff;
         --spa-surface: #ffffff;
         --spa-aside: #eef4ff;
-        --spa-border: #e2e8f0;
-        --spa-primary: #2563eb;
-        --spa-primary-dark: #1d4ed8;
-        --spa-text: #0f172a;
+        --spa-border: #d8e3f5;
+        --spa-primary: #0f3a8a;
+        --spa-primary-dark: #061a44;
+        --spa-gold: #d7a928;
+        --spa-gold-soft: #fff1bf;
+        --spa-text: #061a44;
         --spa-muted: #64748b;
     }
 
@@ -35,7 +37,10 @@
         align-items: center;
         justify-content: center;
         padding: 20px 14px;
-        background: radial-gradient(circle at 0 0, #dbeafe 0%, transparent 35%), radial-gradient(circle at 100% 100%, #e0e7ff 0%, transparent 35%), var(--spa-bg);
+        background:
+            radial-gradient(circle at 0 0, rgba(215, 169, 40, 0.18) 0%, transparent 34%),
+            radial-gradient(circle at 100% 100%, rgba(37, 99, 235, 0.16) 0%, transparent 35%),
+            var(--spa-bg);
         font-family: 'Plus Jakarta Sans', sans-serif;
     }
 
@@ -44,14 +49,15 @@
         border-radius: 20px;
         overflow: hidden;
         border: 1px solid var(--spa-border);
-        box-shadow: 0 20px 50px rgba(15, 23, 42, 0.1);
+        box-shadow: 0 24px 54px -34px rgba(6, 26, 68, 0.55);
         background: #fff;
         display: grid;
         grid-template-columns: 1fr;
     }
 
     .payment-summary {
-        background: var(--spa-aside);
+        background:
+            linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
         color: var(--spa-text);
         padding: 28px 24px;
         border-bottom: 1px solid var(--spa-border);
@@ -80,7 +86,7 @@
         font-weight: 800;
         letter-spacing: -0.03em;
         line-height: 1;
-        color: #0f172a;
+        color: var(--spa-text);
     }
 
     .payment-wordmark-title .brand-main {
@@ -114,7 +120,7 @@
 
     .summary-box {
         margin-top: 20px;
-        border: 1px solid #dbeafe;
+        border: 1px solid rgba(215, 169, 40, 0.42);
         border-radius: 14px;
         padding: 14px;
         background: #ffffff;
@@ -139,7 +145,7 @@
         padding-top: 12px;
         font-size: 24px;
         font-weight: 800;
-        color: var(--spa-primary-dark);
+        color: var(--spa-primary);
     }
 
     .payment-form {
@@ -185,7 +191,7 @@
         margin-top: 16px;
         background: #eff6ff;
         border: 1px solid #bfdbfe;
-        color: #1e3a8a;
+        color: var(--spa-primary);
         border-radius: 10px;
         padding: 11px 12px;
         font-size: 12px;
@@ -228,17 +234,17 @@
     .gateway-pill.gateway-stripe {
         font-family: 'Plus Jakarta Sans', sans-serif;
         letter-spacing: .2px;
-        color: #4338ca;
-        border-color: #c7d2fe;
-        background: linear-gradient(180deg, #eef2ff 0%, #ffffff 100%);
+        color: var(--spa-primary);
+        border-color: #bfdbfe;
+        background: linear-gradient(180deg, #eff6ff 0%, #ffffff 100%);
     }
 
     .gateway-pill.gateway-paystack {
         font-family: 'Plus Jakarta Sans', sans-serif;
         letter-spacing: .2px;
-        color: #0f766e;
-        border-color: #99f6e4;
-        background: linear-gradient(180deg, #ecfeff 0%, #ffffff 100%);
+        color: var(--spa-primary);
+        border-color: rgba(215, 169, 40, 0.48);
+        background: linear-gradient(180deg, #fff8db 0%, #ffffff 100%);
     }
 
     .gateway-pill.gateway-flutterwave {
@@ -250,10 +256,10 @@
     }
 
     .gateway-option input:checked + .gateway-pill {
-        border-color: var(--spa-primary);
-        color: #1d4ed8;
-        background: #eff6ff;
-        box-shadow: 0 0 0 2px rgba(37, 99, 235, .14);
+        border-color: var(--spa-gold);
+        color: var(--spa-primary);
+        background: #fff8db;
+        box-shadow: 0 0 0 2px rgba(215, 169, 40, .18);
     }
 
     .gateway-section {
@@ -275,9 +281,9 @@
         gap: 6px;
         padding: 6px 10px;
         border-radius: 999px;
-        background: #ecfeff;
-        border: 1px solid #99f6e4;
-        color: #0f766e;
+        background: #fff8db;
+        border: 1px solid rgba(215, 169, 40, 0.48);
+        color: var(--spa-primary);
         font-size: 11px;
         font-weight: 800;
         letter-spacing: .03em;
@@ -288,9 +294,9 @@
     }
 
     .gateway-single-wrap {
-        border: 1px solid #bfdbfe;
+        border: 1px solid rgba(215, 169, 40, 0.48);
         border-radius: 16px;
-        background: linear-gradient(135deg, #f8fbff 0%, #ecfeff 100%);
+        background: linear-gradient(135deg, #f8fbff 0%, #fff8db 100%);
         padding: 14px;
     }
 
@@ -339,9 +345,9 @@
         justify-content: center;
         padding: 6px 10px;
         border-radius: 999px;
-        background: rgba(15, 118, 110, 0.1);
-        color: #0f766e;
-        border: 1px solid rgba(15, 118, 110, 0.14);
+        background: rgba(215, 169, 40, 0.16);
+        color: var(--spa-primary);
+        border: 1px solid rgba(215, 169, 40, 0.34);
         font-size: 11px;
         font-weight: 800;
         white-space: nowrap;
@@ -358,11 +364,15 @@
         font-size: 14px;
         padding: 13px 16px;
         transition: transform .2s ease, box-shadow .2s ease;
-        box-shadow: 0 10px 24px rgba(37, 99, 235, 0.32);
+        border: 1px solid transparent;
+        box-shadow: 0 10px 24px rgba(15, 58, 138, 0.32);
     }
 
     .pay-btn:hover {
         transform: translateY(-2px);
+        background: #fff;
+        color: var(--spa-primary);
+        border-color: var(--spa-gold);
     }
 
     .pay-btn:disabled {

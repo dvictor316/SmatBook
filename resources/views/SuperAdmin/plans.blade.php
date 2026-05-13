@@ -2,6 +2,81 @@
 @extends('layout.mainlayout')
 
 @section('content')
+<style>
+    .subscription-plane-head a.active,
+    .subscription-plane-head a:hover {
+        color: #0f3a8a !important;
+        border-color: #d7a928 !important;
+    }
+
+    .super-admin-list-head .card,
+    .packages.card {
+        border: 1px solid #d8e3f5 !important;
+        box-shadow: 0 18px 38px -30px rgba(6, 26, 68, 0.45);
+    }
+
+    .grid-info-item .grid-info h4,
+    .packages .package-header h4,
+    .packages h2 {
+        color: #061a44;
+    }
+
+    .grid-head-icon {
+        background: linear-gradient(135deg, #fff1bf, #d7a928) !important;
+        color: #061a44 !important;
+    }
+
+    .packages.card {
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+        transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+    }
+
+    .packages.card:hover {
+        transform: translateY(-4px);
+        border-color: #d7a928 !important;
+        box-shadow: 0 24px 46px -30px rgba(6, 26, 68, 0.5);
+    }
+
+    .packages.card.active-pkg {
+        border: 2px solid #d7a928 !important;
+        box-shadow: 0 24px 52px -34px rgba(6, 26, 68, 0.55);
+    }
+
+    .packages .text-primary {
+        color: #0f3a8a !important;
+    }
+
+    .packages .icon-frame {
+        border: 1px solid rgba(215, 169, 40, .45);
+        background: #fff8db !important;
+    }
+
+    .features-list .text-success {
+        color: #0f3a8a !important;
+    }
+
+    .packages .btn-outline-primary {
+        border-color: #0f3a8a;
+        color: #0f3a8a;
+        background: #fff;
+        font-weight: 700;
+    }
+
+    .packages .btn-outline-primary:hover {
+        background: #0f3a8a;
+        color: #fff;
+        border-color: #0f3a8a;
+    }
+
+    .packages .btn-outline-danger {
+        font-weight: 700;
+    }
+
+    .packages .badge.bg-warning {
+        background: linear-gradient(135deg, #fff1bf, #d7a928) !important;
+        color: #061a44 !important;
+    }
+</style>
 <div class="page-wrapper">
     <div class="content container-fluid pb-0">
 
