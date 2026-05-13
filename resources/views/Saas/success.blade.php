@@ -67,13 +67,13 @@
     .success-icon {
         width: 80px;
         height: 80px;
-        background: linear-gradient(135deg, #10b981, #059669);
+        background: linear-gradient(135deg, #061a44, #0f3a8a);
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         margin: 0 auto 1.5rem;
-        box-shadow: 0 8px 24px rgba(16,185,129,0.35);
+        box-shadow: 0 8px 24px rgba(6, 26, 68, 0.28);
         animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
     }
 
@@ -83,8 +83,8 @@
     }
 
     .workspace-box {
-        background: linear-gradient(135deg, #eff6ff, #dbeafe);
-        border: 2px solid #93c5fd;
+        background: linear-gradient(135deg, #fff8db, #ffffff);
+        border: 2px solid rgba(215, 169, 40, .48);
         border-radius: 12px;
         padding: 1.25rem 1.5rem;
         margin: 1.5rem 0;
@@ -151,9 +151,9 @@
     }
 
     .btn-primary-solid {
-        background: linear-gradient(135deg, #1e40af, #3b82f6);
+        background: linear-gradient(135deg, #061a44, #0f3a8a);
         color: white;
-        border: none;
+        border: 1px solid transparent;
         padding: 12px 28px;
         border-radius: 10px;
         font-weight: 700;
@@ -163,18 +163,20 @@
         align-items: center;
         gap: 8px;
         transition: all 0.2s;
-        box-shadow: 0 4px 14px rgba(30,64,175,0.3);
+        box-shadow: 0 4px 14px rgba(6, 26, 68, 0.28);
     }
     .btn-primary-solid:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(30,64,175,0.4);
-        color: white;
+        background: #fff;
+        border-color: #d7a928;
+        box-shadow: 0 6px 20px rgba(215, 169, 40, 0.26);
+        color: #0f3a8a;
     }
 
     .btn-outline-soft {
         background: white;
-        color: #64748b;
-        border: 1.5px solid #e2e8f0;
+        color: #0f3a8a;
+        border: 1.5px solid #d8e3f5;
         padding: 12px 24px;
         border-radius: 10px;
         font-weight: 600;
@@ -186,9 +188,13 @@
         transition: all 0.2s;
     }
     .btn-outline-soft:hover {
-        background: #f8fafc;
-        border-color: #94a3b8;
-        color: #374151;
+        background: #fff8db;
+        border-color: #d7a928;
+        color: #061a44;
+    }
+
+    .spb-plan-accent {
+        color: #0f3a8a !important;
     }
 
     .steps-done {
@@ -210,7 +216,7 @@
     .step-done-item .dot {
         width: 22px;
         height: 22px;
-        background: #10b981;
+        background: #0f3a8a;
         border-radius: 50%;
         display: flex;
         align-items: center;
@@ -310,7 +316,7 @@
                         </div>
                         <div class="detail-item">
                             <div class="label">Amount Paid</div>
-                            <div class="value text-success">₦{{ number_format($subscription->amount, 0) }}</div>
+                            <div class="value spb-plan-accent">₦{{ number_format($subscription->amount, 0) }}</div>
                         </div>
                         <div class="detail-item">
                             <div class="label">Valid From</div>
@@ -332,12 +338,12 @@
                     <div class="commission-box">
                         <div>
                             <div class="text-muted small fw-semibold mb-1">Your Commission (35%)</div>
-                            <div class="fw-bold" style="font-size:22px;color:#059669">
+                            <div class="fw-bold" style="font-size:22px;color:#0f3a8a">
                                 ₦{{ number_format($commission, 0) }}
                             </div>
                             <div class="text-muted" style="font-size:12px">Credited automatically after successful payment</div>
                         </div>
-                        <i class="fas fa-coins fa-2x text-success opacity-50"></i>
+                        <i class="fas fa-coins fa-2x spb-plan-accent opacity-50"></i>
                     </div>
                     @endif
 
@@ -400,7 +406,7 @@
                         </div>
                         <div class="detail-item">
                             <div class="label">Amount Paid</div>
-                            <div class="value text-success">₦{{ number_format($subscription->amount, 0) }}</div>
+                            <div class="value spb-plan-accent">₦{{ number_format($subscription->amount, 0) }}</div>
                         </div>
                         <div class="detail-item">
                             <div class="label">Valid From</div>

@@ -83,8 +83,8 @@
                                 </td>
 
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="flex items-center text-xs font-medium text-green-700">
-                                        <span class="h-1.5 w-1.5 rounded-full bg-green-500 mr-1.5"></span> Active
+                                    <span class="flex items-center text-xs font-medium" style="color:#0f3a8a;">
+                                        <span class="h-1.5 w-1.5 rounded-full mr-1.5" style="background:#d7a928;"></span> Active
                                     </span>
                                 </td>
 

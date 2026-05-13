@@ -13,7 +13,7 @@
     --brand-slate: #64748b;
     --brand-bg: #f7faff !important;
     --brand-card: #ffffff !important; /* Pure White Nodes */
-    --brand-success: #059669;
+    --brand-success: #0f3a8a;
     --brand-danger: #dc2626;
     --border-light: #d8e3f5;
 }
@@ -107,7 +107,7 @@ body.mini-sidebar .report-page-wrapper { margin-left: 80px; }
 
 /* 6. STATUS PILLS */
 .status-pill { padding: 5px 12px; border-radius: 50px; font-size: 10px; font-weight: 800; text-transform: uppercase; border: 1px solid currentColor; }
-.status-active { background: #ecfdf5; color: var(--brand-success); }
+.status-active { background: #fff8db; color: var(--brand-success); border-color: rgba(215, 169, 40, .55); }
 .status-expired { background: #fef2f2; color: var(--brand-danger); }
 .status-pending { background: #fffbeb; color: #d97706; }
 
@@ -119,6 +119,10 @@ body.mini-sidebar .report-page-wrapper { margin-left: 80px; }
     background: #fff !important;
     color: var(--brand-blue) !important;
     border-color: var(--brand-gold) !important;
+}
+
+.spb-approve-action {
+    color: var(--brand-blue) !important;
 }
 
 @media print {
@@ -248,7 +252,7 @@ body.mini-sidebar .report-page-wrapper { margin-left: 80px; }
                                         @if(strtolower((string)($sub->payment_gateway ?? '')) === 'bank_transfer' && strtolower((string)($sub->payment_status ?? '')) === 'pending_verification')
                                             <form action="{{ route('super_admin.subscriptions.transfer.approve', $sub->id) }}" method="POST" class="px-2 py-1">
                                                 @csrf
-                                                <button type="submit" class="dropdown-item fw-bold text-success" onclick="return confirm('Approve this bank transfer and activate subscription?')">
+                                                <button type="submit" class="dropdown-item fw-bold spb-approve-action" onclick="return confirm('Approve this bank transfer and activate subscription?')">
                                                     <i class="fe fe-check-circle me-2"></i> Approve Transfer
                                                 </button>
                                             </form>

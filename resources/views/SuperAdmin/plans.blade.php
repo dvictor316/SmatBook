@@ -51,7 +51,7 @@
         background: #fff8db !important;
     }
 
-    .features-list .text-success {
+    .features-list .spb-feature-check {
         color: #0f3a8a !important;
     }
 
@@ -154,7 +154,7 @@
                             <ul class="list-unstyled">
                                 @foreach ($plan->features as $feature)
                                     <li class="mb-2 d-flex align-items-start">
-                                        <i class="fe fe-check-circle text-success me-2 mt-1"></i>
+                                        <i class="fe fe-check-circle spb-feature-check me-2 mt-1"></i>
                                         <span class="small">{{ $feature }}</span>
                                     </li>
                                 @endforeach

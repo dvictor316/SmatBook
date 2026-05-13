@@ -93,8 +93,8 @@
                 "Date": "01 Nov 2024",
                 "PaymentType": "Credit Card",
                 "Status": "Completed",
-                "ClassAmount": "text-green-600",
-                "Class": "bg-green-100 text-green-800"
+                "ClassAmount": "text-blue-800",
+                "Class": "bg-amber-100 text-blue-900"
             },
             {
                 "Id": 1002,
@@ -123,8 +123,8 @@
                 "Date": "10 Sep 2024",
                 "PaymentType": "Stripe",
                 "Status": "Completed",
-                "ClassAmount": "text-green-600",
-                "Class": "bg-green-100 text-green-800"
+                "ClassAmount": "text-blue-800",
+                "Class": "bg-amber-100 text-blue-900"
             },
             {
                 "Id": 1005,
@@ -133,8 +133,8 @@
                 "Date": "15 Jul 2024",
                 "PaymentType": "Credit Card",
                 "Status": "Completed",
-                "ClassAmount": "text-green-600",
-                "Class": "bg-green-100 text-green-800"
+                "ClassAmount": "text-blue-800",
+                "Class": "bg-amber-100 text-blue-900"
             }
         ];
 

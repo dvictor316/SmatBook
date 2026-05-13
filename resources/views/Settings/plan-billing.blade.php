@@ -74,6 +74,13 @@
         color: #061a44 !important;
     }
 
+    .spb-paid-badge {
+        background: #fff8db;
+        color: #061a44;
+        border: 1px solid rgba(215, 169, 40, .48);
+        font-weight: 800;
+    }
+
     /* Print Optimization */
     @media print {
         .page-wrapper { margin-left: 0 !important; padding: 0 !important; }
@@ -182,7 +189,7 @@
                                                             </td>
                                                             <td>
                                                                 @if(strtolower((string) ($plan->payment_status ?? '')) == 'paid')
-                                                                    <span class="badge bg-success-light text-success">Paid</span>
+                                                                    <span class="badge spb-paid-badge">Paid</span>
                                                                 @else
                                                                     <span class="badge bg-warning-light text-warning">{{ ucfirst((string) ($plan->payment_status ?? 'Unpaid')) }}</span>
                                                                 @endif

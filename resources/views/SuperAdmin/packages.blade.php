@@ -168,9 +168,9 @@
                 <div class="metric-label">Total Node Packages</div>
                 <div class="metric-value">{{ $totalPlans }}</div>
             </div>
-            <div class="metric-node" style="border-left-color: #10b981;">
+            <div class="metric-node" style="border-left-color: var(--inst-gold);">
                 <div class="metric-label">Active Deployments</div>
-                <div class="metric-value" style="color: #059669;">{{ $activePlans }}</div>
+                <div class="metric-value" style="color: var(--inst-blue);">{{ $activePlans }}</div>
             </div>
             <div class="metric-node" style="border-left-color: #f59e0b;">
                 <div class="metric-label">Deactivated Nodes</div>

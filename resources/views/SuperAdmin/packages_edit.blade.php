@@ -70,7 +70,7 @@
                         <div class="flex items-center space-x-4">
                             <label class="inline-flex items-center cursor-pointer">
                                 <input type="radio" name="status" value="1" {{ $plan->is_active == 1 ? 'checked' : '' }} class="hidden peer">
-                                <div class="px-4 py-2 rounded-xl border border-gray-200 peer-checked:bg-green-50 peer-checked:border-green-500 peer-checked:text-green-700 font-bold text-xs transition">Active</div>
+                                <div class="px-4 py-2 rounded-xl border border-gray-200 font-bold text-xs transition active-plan-pill">Active</div>
                             </label>
                             <label class="inline-flex items-center cursor-pointer">
                                 <input type="radio" name="status" value="0" {{ $plan->is_active == 0 ? 'checked' : '' }} class="hidden peer">
@@ -111,6 +111,11 @@
         background: #fff !important;
         color: #0f3a8a !important;
         border-color: #d7a928 !important;
+    }
+    input[name="status"]:checked + .active-plan-pill {
+        background: #fff8db !important;
+        border-color: #d7a928 !important;
+        color: #061a44 !important;
     }
     @media (max-width: 991.98px) { .page-wrapper { margin-left: 0 !important; } }
 </style>

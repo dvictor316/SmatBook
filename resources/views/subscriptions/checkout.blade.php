@@ -143,6 +143,10 @@
         border-top: 1px solid var(--border);
     }
 
+    .spb-checkout-accent {
+        color: var(--blue) !important;
+    }
+
     @media (max-width: 640px) {
         .checkout-card { margin: 1rem; }
         .checkout-header h1 { font-size: 1.4rem; }
@@ -213,7 +217,7 @@
                         <input type="radio" name="gateway" value="flutterwave" class="payment-radio">
                         <div class="payment-info">
                             <div class="payment-name">
-                                <i class="fas fa-university me-2 text-success"></i>Flutterwave
+                                <i class="fas fa-university me-2 spb-checkout-accent"></i>Flutterwave
                             </div>
                             <div class="payment-desc">Secure payment via Flutterwave</div>
                         </div>
