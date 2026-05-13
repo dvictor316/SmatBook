@@ -20,112 +20,143 @@
 
 @if(in_array($roleNormalized, ['super_admin', 'superadmin', 'administrator', 'admin']))
 
-{{-- Super Admin sidebar: tinted blue theme --}}
+{{-- Super Admin sidebar: blue and gold theme --}}
 <style>
-/* ── Super Admin Sidebar Blue Theme ────────────────────────────────────────── */
-#sidebar.sidebar {
-    background:
-        /* faint watermark logo — centred, large, very low opacity */
-        url('{{ asset('assets/img/logos.png') }}') center center / 180px auto no-repeat,
-        /* blue gradient behind it */
-        linear-gradient(180deg, #0d2a6e 0%, #1a3d8f 40%, #163479 100%) !important;
-    background-blend-mode: luminosity, normal !important;
-    /* keep logo faint: combine opacity trick via pseudo element below */
-    border-right: none !important;
-    box-shadow: 2px 0 12px rgba(13, 42, 110, 0.45) !important;
-    position: relative !important;
-}
-/* faint watermark overlay — sits behind all content */
-#sidebar.sidebar::before {
-    content: '' !important;
-    position: absolute !important;
-    inset: 0 !important;
-    background: url('{{ asset('assets/img/logos.png') }}') center center / 160px auto no-repeat !important;
-    opacity: 0.07 !important;
-    pointer-events: none !important;
-    z-index: 0 !important;
-}
-#sidebar .sidebar-inner {
-    background: transparent !important;
-    position: relative !important;
-    z-index: 1 !important;
-}
+    .spb-super-admin-sidebar {
+        --sa-navy: #061a44;
+        --sa-blue: #0f3a8a;
+        --sa-blue-bright: #2563eb;
+        --sa-gold: #d7a928;
+        --sa-gold-soft: #ffe8a3;
+        --sa-text: #f8fbff;
+        --sa-muted: #a9bce3;
+        --sa-panel: rgba(255, 255, 255, 0.08);
+        --sa-panel-strong: rgba(255, 255, 255, 0.14);
+        --sa-line: rgba(215, 169, 40, 0.26);
+        background:
+            radial-gradient(circle at 16% 8%, rgba(215, 169, 40, 0.22), transparent 28%),
+            radial-gradient(circle at 84% 22%, rgba(37, 99, 235, 0.24), transparent 34%),
+            linear-gradient(180deg, var(--sa-navy) 0%, var(--sa-blue) 52%, #071635 100%) !important;
+        border-right: 1px solid rgba(215, 169, 40, 0.22) !important;
+        box-shadow: 10px 0 32px rgba(6, 26, 68, 0.22) !important;
+        overflow: hidden;
+    }
 
-/* ── Top-level link text + icons: crystal white ── */
-#sidebar .sidebar-menu > ul > li > a,
-#sidebar .sidebar-menu > ul > li > a span,
-#sidebar .sidebar-menu > ul > li > a i {
-    color: #ffffff !important;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.35) !important;
-}
+    .spb-super-admin-sidebar::before {
+        content: "" !important;
+        position: absolute !important;
+        inset: 0 !important;
+        background: url('{{ asset('assets/img/logos.png') }}') center 54% / 150px auto no-repeat !important;
+        opacity: 0.035 !important;
+        pointer-events: none !important;
+    }
 
-/* menu-title labels */
-#sidebar .sidebar-menu .menu-title span {
-    color: #7eb3ff !important;
-    font-size: 10px !important;
-    letter-spacing: 1.2px !important;
-    text-transform: uppercase !important;
-    font-weight: 700 !important;
-}
+    .spb-super-admin-sidebar .sidebar-inner,
+    .spb-super-admin-sidebar .sidebar-menu {
+        background: transparent !important;
+        position: relative;
+        z-index: 1;
+    }
 
-/* ── Hover: gold ── */
-#sidebar .sidebar-menu li > a:hover,
-#sidebar .sidebar-menu li > a:hover span,
-#sidebar .sidebar-menu li > a:hover i {
-    color: #ffd700 !important;
-    background: rgba(255, 215, 0, 0.10) !important;
-    border-radius: 6px !important;
-    text-shadow: 0 0 8px rgba(255,215,0,0.45) !important;
-}
+    .spb-super-admin-sidebar .sidebar-menu {
+        padding: 14px 10px 22px !important;
+    }
 
-/* ── Active item ── */
-#sidebar .sidebar-menu li.active > a,
-#sidebar .sidebar-menu li.active > a span,
-#sidebar .sidebar-menu li.active > a i {
-    color: #ffffff !important;
-    background: rgba(255,255,255,0.15) !important;
-    border-radius: 6px !important;
-    font-weight: 600 !important;
-}
-#sidebar .sidebar-menu li.active > a {
-    border-left: 3px solid #60a5fa !important;
-}
+    .spb-super-admin-sidebar .sidebar-menu .menu-title {
+        margin: 18px 8px 7px !important;
+        padding: 0 !important;
+    }
 
-/* ── Dropdown / submenu background ── */
-#sidebar .sidebar-menu .submenu ul {
-    background: rgba(0, 0, 0, 0.22) !important;
-    border-radius: 0 0 6px 6px !important;
-}
-/* submenu items: crystal white */
-#sidebar .sidebar-menu .submenu ul li a,
-#sidebar .sidebar-menu .submenu ul li a span,
-#sidebar .sidebar-menu .submenu ul li a i {
-    color: #ffffff !important;
-    padding-left: 42px !important;
-}
-/* submenu hover: gold */
-#sidebar .sidebar-menu .submenu ul li a:hover,
-#sidebar .sidebar-menu .submenu ul li a:hover span,
-#sidebar .sidebar-menu .submenu ul li a:hover i {
-    color: #ffd700 !important;
-    background: rgba(255, 215, 0, 0.10) !important;
-    text-shadow: 0 0 8px rgba(255,215,0,0.40) !important;
-}
-/* submenu active */
-#sidebar .sidebar-menu .submenu ul li.active > a,
-#sidebar .sidebar-menu .submenu ul li.active > a span {
-    color: #ffd700 !important;
-    font-weight: 600 !important;
-}
+    .spb-super-admin-sidebar .sidebar-menu .menu-title span {
+        color: var(--sa-gold-soft) !important;
+        font-size: 0.68rem !important;
+        font-weight: 800 !important;
+        letter-spacing: 0.12em !important;
+        text-transform: uppercase !important;
+        opacity: 0.95;
+    }
 
-/* slimscroll bar */
-#sidebar .slimScrollBar { background: rgba(255,255,255,0.25) !important; }
-/* logo area in sidebar (if any) */
-#sidebar .sidebar-logo a span { color: #fff !important; }
-/* ─────────────────────────────────────────────────────────────────────────── */
+    .spb-super-admin-sidebar .sidebar-menu ul li > a {
+        color: var(--sa-text) !important;
+        background: transparent !important;
+        border: 1px solid transparent !important;
+        border-radius: 14px !important;
+        margin: 3px 4px !important;
+        padding: 10px 12px !important;
+        font-weight: 700 !important;
+        letter-spacing: -0.01em;
+        transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease !important;
+    }
+
+    .spb-super-admin-sidebar .sidebar-menu ul li > a span,
+    .spb-super-admin-sidebar .sidebar-menu ul li > a i,
+    .spb-super-admin-sidebar .sidebar-menu ul li > a .menu-arrow {
+        color: inherit !important;
+        -webkit-text-fill-color: currentColor !important;
+    }
+
+    .spb-super-admin-sidebar .sidebar-menu ul li > a i {
+        color: var(--sa-gold-soft) !important;
+        opacity: 0.98;
+    }
+
+    .spb-super-admin-sidebar .sidebar-menu ul li > a:hover,
+    .spb-super-admin-sidebar .sidebar-menu ul li > a.subdrop {
+        color: #ffffff !important;
+        background: var(--sa-panel) !important;
+        border-color: var(--sa-line) !important;
+        box-shadow: inset 3px 0 0 var(--sa-gold), 0 10px 22px rgba(0, 0, 0, 0.14) !important;
+        transform: translateX(2px);
+    }
+
+    .spb-super-admin-sidebar .sidebar-menu ul li.active > a,
+    .spb-super-admin-sidebar .sidebar-menu ul li > a.active {
+        color: #ffffff !important;
+        background: linear-gradient(135deg, rgba(215, 169, 40, 0.24), rgba(37, 99, 235, 0.2)) !important;
+        border-color: rgba(215, 169, 40, 0.45) !important;
+        box-shadow: inset 3px 0 0 var(--sa-gold), 0 12px 26px rgba(0, 0, 0, 0.18) !important;
+    }
+
+    .spb-super-admin-sidebar .sidebar-menu ul li.submenu ul {
+        background: rgba(3, 13, 33, 0.42) !important;
+        border: 1px solid rgba(215, 169, 40, 0.12);
+        border-radius: 16px !important;
+        margin: 4px 8px 8px 14px !important;
+        padding: 6px 0 !important;
+    }
+
+    .spb-super-admin-sidebar .sidebar-menu ul li.submenu ul li a {
+        color: #dbe8ff !important;
+        background: transparent !important;
+        border: 0 !important;
+        border-radius: 12px !important;
+        margin: 2px 6px !important;
+        padding: 8px 10px 8px 28px !important;
+        font-size: 0.86rem !important;
+        font-weight: 650 !important;
+        box-shadow: none !important;
+    }
+
+    .spb-super-admin-sidebar .sidebar-menu ul li.submenu ul li a:hover,
+    .spb-super-admin-sidebar .sidebar-menu ul li.submenu ul li a.active,
+    .spb-super-admin-sidebar .sidebar-menu ul li.submenu ul li.active > a {
+        color: var(--sa-gold-soft) !important;
+        background: rgba(215, 169, 40, 0.12) !important;
+        box-shadow: inset 2px 0 0 var(--sa-gold) !important;
+        transform: none;
+    }
+
+    .spb-super-admin-sidebar .badge {
+        border: 1px solid rgba(255, 255, 255, 0.22);
+    }
+
+    .spb-super-admin-sidebar .slimScrollBar {
+        background: rgba(215, 169, 40, 0.42) !important;
+        border-radius: 999px !important;
+    }
 </style>
 
-<div class="sidebar" id="sidebar">
+<div class="sidebar spb-super-admin-sidebar" id="sidebar">
     <div class="sidebar-inner slimscroll">
         <div id="sidebar-menu" class="sidebar-menu">
             <ul>
