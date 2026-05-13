@@ -142,8 +142,8 @@
     .spb-super-admin-sidebar .sidebar-menu ul li.submenu ul li a.active,
     .spb-super-admin-sidebar .sidebar-menu ul li.submenu ul li.active > a {
         color: var(--sa-gold-soft) !important;
-        background: rgba(215, 169, 40, 0.12) !important;
-        box-shadow: inset 2px 0 0 var(--sa-gold) !important;
+        background: transparent !important;
+        box-shadow: none !important;
         transform: none;
     }
 

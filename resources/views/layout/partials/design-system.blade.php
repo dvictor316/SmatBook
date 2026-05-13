@@ -766,15 +766,18 @@
     .sidebar:not(.spb-super-admin-sidebar) .sidebar-menu ul li.submenu ul li a {
         color: #dce9ff !important;
         -webkit-text-fill-color: #dce9ff !important;
+        background: transparent !important;
+        border: 0 !important;
         border-radius: 12px !important;
+        box-shadow: none !important;
     }
 
     .sidebar:not(.spb-super-admin-sidebar) .sidebar-menu ul li.submenu ul li a:hover,
     .sidebar:not(.spb-super-admin-sidebar) .sidebar-menu ul li.submenu ul li a.active,
     .sidebar:not(.spb-super-admin-sidebar) .sidebar-menu ul li.submenu ul li.active > a {
-        background: linear-gradient(135deg, rgba(215, 169, 40, 0.92) 0%, rgba(255, 232, 163, 0.92) 100%) !important;
-        color: #061a44 !important;
-        -webkit-text-fill-color: #061a44 !important;
+        background: transparent !important;
+        color: var(--spb-theme-gold-soft) !important;
+        -webkit-text-fill-color: var(--spb-theme-gold-soft) !important;
         box-shadow: none !important;
     }
 
