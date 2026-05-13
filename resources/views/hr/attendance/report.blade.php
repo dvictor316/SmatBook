@@ -3,7 +3,22 @@
 @section('title', 'Attendance Report')
 
 @section('content')
-<div class="page-wrapper">
+<style>
+    .attendance-page .btn:hover,
+    .attendance-page .btn:focus-visible,
+    .attendance-page .btn:active {
+        color: var(--spb-btn-hover-color, #ffffff) !important;
+        -webkit-text-fill-color: var(--spb-btn-hover-color, #ffffff) !important;
+    }
+
+    .attendance-page .btn:hover *,
+    .attendance-page .btn:focus-visible *,
+    .attendance-page .btn:active * {
+        color: inherit !important;
+        -webkit-text-fill-color: currentColor !important;
+    }
+</style>
+<div class="page-wrapper attendance-page">
 <div class="content container-fluid">
     <div class="page-header"><h3 class="page-title">Attendance Report</h3></div>
     <div class="card mb-4">

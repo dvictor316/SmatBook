@@ -402,6 +402,7 @@
         background-color: #1e40af !important;
         border-color: #1e40af !important;
         color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
     }
 
     .btn-outline-secondary:hover,
@@ -411,6 +412,7 @@
         background-color: #475569 !important;
         border-color: #475569 !important;
         color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
     }
 
     .btn-outline-success:hover,
@@ -420,6 +422,7 @@
         background-color: #15803d !important;
         border-color: #15803d !important;
         color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
     }
 
     .btn-outline-danger:hover,
@@ -429,6 +432,7 @@
         background-color: #b91c1c !important;
         border-color: #b91c1c !important;
         color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
     }
 
     .btn-outline-warning:hover,
@@ -438,6 +442,7 @@
         background-color: #b45309 !important;
         border-color: #b45309 !important;
         color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
     }
 
     .btn-outline-dark:hover,
@@ -447,6 +452,29 @@
         background-color: #111827 !important;
         border-color: #111827 !important;
         color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
+    }
+
+    .btn-outline-primary:hover *,
+    .btn-outline-primary:focus-visible *,
+    .btn-outline-primary:active *,
+    .btn-outline-secondary:hover *,
+    .btn-outline-secondary:focus-visible *,
+    .btn-outline-secondary:active *,
+    .btn-outline-success:hover *,
+    .btn-outline-success:focus-visible *,
+    .btn-outline-success:active *,
+    .btn-outline-danger:hover *,
+    .btn-outline-danger:focus-visible *,
+    .btn-outline-danger:active *,
+    .btn-outline-warning:hover *,
+    .btn-outline-warning:focus-visible *,
+    .btn-outline-warning:active *,
+    .btn-outline-dark:hover *,
+    .btn-outline-dark:focus-visible *,
+    .btn-outline-dark:active * {
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
     }
 
     .btn-white,

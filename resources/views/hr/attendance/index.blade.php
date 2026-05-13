@@ -3,7 +3,24 @@
 @section('title', 'Attendance')
 
 @section('content')
-<div class="page-wrapper">
+<style>
+    .attendance-page .btn-outline-secondary:hover,
+    .attendance-page .btn-outline-secondary:focus-visible,
+    .attendance-page .btn-outline-secondary:active {
+        background-color: #475569 !important;
+        border-color: #475569 !important;
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
+    }
+
+    .attendance-page .btn-outline-secondary:hover *,
+    .attendance-page .btn-outline-secondary:focus-visible *,
+    .attendance-page .btn-outline-secondary:active * {
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
+    }
+</style>
+<div class="page-wrapper attendance-page">
 <div class="content container-fluid">
     <div class="page-header">
         <div class="row align-items-center">
