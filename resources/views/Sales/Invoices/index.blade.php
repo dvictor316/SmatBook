@@ -60,6 +60,8 @@
             padding: 10px 20px; 
             border-radius: 8px;
             font-weight: 600;
+            color: #ffffff;
+            -webkit-text-fill-color: #ffffff;
             transition: all 0.3s;
             border: none;
             display: inline-flex;
@@ -70,8 +72,16 @@
         }
 
         .btn-action:hover {
+            color: #ffffff !important;
+            -webkit-text-fill-color: #ffffff !important;
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .btn-action:hover *,
+        .btn-action:focus-visible * {
+            color: #ffffff !important;
+            -webkit-text-fill-color: #ffffff !important;
         }
 
         .btn-action:active {

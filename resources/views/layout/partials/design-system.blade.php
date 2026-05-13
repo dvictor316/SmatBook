@@ -342,7 +342,7 @@
     .btn:not(.btn-close):not(.btn-link) {
         --spb-btn-hover-bg: initial;
         --spb-btn-hover-border: initial;
-        --spb-btn-hover-color: inherit;
+        --spb-btn-hover-color: currentColor;
     }
 
     .btn:not(.btn-close):not(.btn-link):hover,
@@ -355,6 +355,7 @@
     .btn:not(.btn-close):not(.btn-link):focus-visible *,
     .btn:not(.btn-close):not(.btn-link):active * {
         color: inherit !important;
+        -webkit-text-fill-color: currentColor !important;
     }
 
     .btn-primary,

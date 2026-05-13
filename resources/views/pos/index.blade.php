@@ -961,6 +961,7 @@ body.mini-sidebar .pos-full-page-wrapper {
 .btn-add-cart { 
     background: linear-gradient(135deg, var(--primary-600) 0%, var(--indigo-600) 100%);
     color: #ffffff;
+    --spb-btn-hover-color: #ffffff;
     border: none;
     font-weight: 700;
     font-size: 0.8125rem;
@@ -972,13 +973,22 @@ body.mini-sidebar .pos-full-page-wrapper {
 }
 
 .btn-add-cart:hover { 
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
     transform: translateY(-2px);
     box-shadow: 0 6px 14px rgba(37, 99, 235, 0.4);
+}
+
+.btn-add-cart:hover *,
+.btn-add-cart:focus-visible * {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
 }
 
 .btn-process { 
     background: linear-gradient(135deg, var(--success-500) 0%, var(--success-600) 100%);
     color: #ffffff;
+    --spb-btn-hover-color: #ffffff;
     border: none;
     font-weight: 700;
     padding: 16px;
@@ -990,8 +1000,16 @@ body.mini-sidebar .pos-full-page-wrapper {
 }
 
 .btn-process:hover { 
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
     transform: translateY(-2px);
     box-shadow: 0 8px 18px rgba(34, 197, 94, 0.4);
+}
+
+.btn-process:hover *,
+.btn-process:focus-visible * {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
 }
 
 .btn-process:disabled {
@@ -1012,6 +1030,8 @@ body.mini-sidebar .pos-full-page-wrapper {
 .btn-remove:hover { 
     background: #fef2f2;
     border-color: var(--danger-500);
+    color: var(--danger-600) !important;
+    -webkit-text-fill-color: var(--danger-600) !important;
 }
 
 /* Labels */
