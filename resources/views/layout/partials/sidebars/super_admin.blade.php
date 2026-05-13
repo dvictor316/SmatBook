@@ -121,7 +121,8 @@
         background: rgba(3, 13, 33, 0.42) !important;
         border: 1px solid rgba(215, 169, 40, 0.12);
         border-radius: 16px !important;
-        margin: 4px 8px 8px 14px !important;
+        margin: 6px auto 10px !important;
+        width: calc(100% - 24px) !important;
         padding: 6px 0 !important;
     }
 
