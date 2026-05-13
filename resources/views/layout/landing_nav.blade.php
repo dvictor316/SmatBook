@@ -274,7 +274,10 @@
         .btn-portal:hover {
             transform: translateY(-2px);
             box-shadow: 0 12px 30px rgba(0, 98, 255, 0.3);
-            color: white;
+            background: #ffffff !important;
+            color: var(--primary) !important;
+            -webkit-text-fill-color: var(--primary) !important;
+            box-shadow: 0 0 0 1px var(--primary) inset, 0 12px 30px rgba(0, 98, 255, 0.18);
         }
 
         /* ===== HAMBURGER MENU ===== */
@@ -387,8 +390,10 @@
 
         .btn-blue:hover { 
             transform: translateY(-3px); 
-            box-shadow: 0 20px 40px rgba(0, 98, 255, 0.4); 
-            color: white;
+            background: #ffffff !important;
+            color: var(--primary) !important;
+            -webkit-text-fill-color: var(--primary) !important;
+            box-shadow: 0 0 0 1px var(--primary) inset, 0 20px 40px rgba(0, 98, 255, 0.18); 
         }
 
         .btn-accent { 
@@ -399,8 +404,10 @@
 
         .btn-accent:hover { 
             transform: translateY(-3px); 
-            box-shadow: 0 20px 40px rgba(230, 57, 70, 0.3); 
-            color: white;
+            background: #ffffff !important;
+            color: var(--accent-red) !important;
+            -webkit-text-fill-color: var(--accent-red) !important;
+            box-shadow: 0 0 0 1px var(--accent-red) inset, 0 20px 40px rgba(230, 57, 70, 0.16); 
         }
 
         /* ===== CONTENT SECTIONS ===== */

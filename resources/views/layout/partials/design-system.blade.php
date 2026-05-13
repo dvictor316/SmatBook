@@ -500,4 +500,120 @@
         --spb-btn-hover-border: #cbd5e1;
         --spb-btn-hover-color: #111827;
     }
+
+    /* Filled button hover inversion:
+       blue -> white/blue, dark -> white/dark, green -> white/green, etc.
+       This keeps hover text readable across business, plan, and admin pages. */
+    .btn-primary,
+    .btn-upload,
+    .btn-primary.tax.active,
+    .btn-primary.taxs,
+    .btn-primary.loss,
+    .btn-primary.profit-loss,
+    .sb-btn-primary {
+        --spb-btn-hover-bg: #ffffff;
+        --spb-btn-hover-border: #1e40af;
+        --spb-btn-hover-color: #1e40af;
+    }
+
+    .btn-secondary,
+    .btn-dark {
+        --spb-btn-hover-bg: #ffffff;
+        --spb-btn-hover-border: #334155;
+        --spb-btn-hover-color: #1f2937;
+    }
+
+    .btn-success {
+        --spb-btn-hover-bg: #ffffff;
+        --spb-btn-hover-border: #16a34a;
+        --spb-btn-hover-color: #15803d;
+    }
+
+    .btn-danger {
+        --spb-btn-hover-bg: #ffffff;
+        --spb-btn-hover-border: #dc2626;
+        --spb-btn-hover-color: #b91c1c;
+    }
+
+    .btn-warning {
+        --spb-btn-hover-bg: #ffffff;
+        --spb-btn-hover-border: #d97706;
+        --spb-btn-hover-color: #92400e;
+    }
+
+    .btn-info {
+        --spb-btn-hover-bg: #ffffff;
+        --spb-btn-hover-border: #0284c7;
+        --spb-btn-hover-color: #0369a1;
+    }
+
+    .btn-primary:hover,
+    .btn-primary:focus-visible,
+    .btn-primary:active,
+    .btn-upload:hover,
+    .btn-upload:focus-visible,
+    .btn-upload:active,
+    .btn-primary.tax.active:hover,
+    .btn-primary.taxs:hover,
+    .btn-primary.loss:hover,
+    .btn-primary.profit-loss:hover,
+    .sb-btn-primary:hover,
+    .sb-btn-primary:focus-visible,
+    .sb-btn-primary:active,
+    .btn-secondary:hover,
+    .btn-secondary:focus-visible,
+    .btn-secondary:active,
+    .btn-dark:hover,
+    .btn-dark:focus-visible,
+    .btn-dark:active,
+    .btn-success:hover,
+    .btn-success:focus-visible,
+    .btn-success:active,
+    .btn-danger:hover,
+    .btn-danger:focus-visible,
+    .btn-danger:active,
+    .btn-warning:hover,
+    .btn-warning:focus-visible,
+    .btn-warning:active,
+    .btn-info:hover,
+    .btn-info:focus-visible,
+    .btn-info:active {
+        background: var(--spb-btn-hover-bg) !important;
+        background-color: var(--spb-btn-hover-bg) !important;
+        border-color: var(--spb-btn-hover-border) !important;
+        color: var(--spb-btn-hover-color) !important;
+        -webkit-text-fill-color: var(--spb-btn-hover-color) !important;
+        box-shadow: 0 0 0 1px var(--spb-btn-hover-border) inset !important;
+    }
+
+    .btn-primary:hover *,
+    .btn-primary:focus-visible *,
+    .btn-primary:active *,
+    .btn-upload:hover *,
+    .btn-upload:focus-visible *,
+    .btn-upload:active *,
+    .btn-secondary:hover *,
+    .btn-secondary:focus-visible *,
+    .btn-secondary:active *,
+    .btn-dark:hover *,
+    .btn-dark:focus-visible *,
+    .btn-dark:active *,
+    .btn-success:hover *,
+    .btn-success:focus-visible *,
+    .btn-success:active *,
+    .btn-danger:hover *,
+    .btn-danger:focus-visible *,
+    .btn-danger:active *,
+    .btn-warning:hover *,
+    .btn-warning:focus-visible *,
+    .btn-warning:active *,
+    .btn-info:hover *,
+    .btn-info:focus-visible *,
+    .btn-info:active *,
+    .sb-btn-primary:hover *,
+    .sb-btn-primary:focus-visible *,
+    .sb-btn-primary:active * {
+        color: inherit !important;
+        -webkit-text-fill-color: currentColor !important;
+    }
 </style>
