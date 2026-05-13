@@ -800,7 +800,11 @@
     body:not(.landing-page-body) .btn-info,
     body:not(.landing-page-body) .btn-success,
     body:not(.landing-page-body) .btn-upload,
-    body:not(.landing-page-body) .sb-btn-primary {
+    body:not(.landing-page-body) .sb-btn-primary,
+    body:not(.landing-page-body) .btn-action,
+    body:not(.landing-page-body) .btn-add-user,
+    body:not(.landing-page-body) .btn-permissions,
+    body:not(.landing-page-body) .product-action-trigger {
         background: linear-gradient(135deg, var(--spb-theme-blue) 0%, var(--spb-theme-blue-bright) 100%) !important;
         border-color: var(--spb-theme-blue) !important;
         color: #ffffff !important;
@@ -817,11 +821,86 @@
     body:not(.landing-page-body) .btn-upload:hover,
     body:not(.landing-page-body) .btn-upload:focus-visible,
     body:not(.landing-page-body) .sb-btn-primary:hover,
-    body:not(.landing-page-body) .sb-btn-primary:focus-visible {
+    body:not(.landing-page-body) .sb-btn-primary:focus-visible,
+    body:not(.landing-page-body) .btn-action:hover,
+    body:not(.landing-page-body) .btn-action:focus-visible,
+    body:not(.landing-page-body) .btn-add-user:hover,
+    body:not(.landing-page-body) .btn-add-user:focus-visible,
+    body:not(.landing-page-body) .btn-permissions:hover,
+    body:not(.landing-page-body) .btn-permissions:focus-visible,
+    body:not(.landing-page-body) .product-action-trigger:hover,
+    body:not(.landing-page-body) .product-action-trigger:focus-visible {
         background: #ffffff !important;
         border-color: var(--spb-theme-gold) !important;
         color: var(--spb-theme-blue) !important;
         -webkit-text-fill-color: var(--spb-theme-blue) !important;
+    }
+
+    body:not(.landing-page-body) .btn-outline-primary,
+    body:not(.landing-page-body) .btn-outline-secondary,
+    body:not(.landing-page-body) .btn-outline-dark,
+    body:not(.landing-page-body) .btn-light.border,
+    body:not(.landing-page-body) .btn-white,
+    body:not(.landing-page-body) .btn-greys,
+    body:not(.landing-page-body) .btn-action-icon {
+        background: #ffffff !important;
+        border-color: rgba(15, 58, 138, 0.28) !important;
+        color: var(--spb-theme-blue) !important;
+        -webkit-text-fill-color: var(--spb-theme-blue) !important;
+        box-shadow: 0 10px 22px rgba(6, 26, 68, 0.06) !important;
+    }
+
+    body:not(.landing-page-body) .btn-outline-primary:hover,
+    body:not(.landing-page-body) .btn-outline-primary:focus-visible,
+    body:not(.landing-page-body) .btn-outline-secondary:hover,
+    body:not(.landing-page-body) .btn-outline-secondary:focus-visible,
+    body:not(.landing-page-body) .btn-outline-dark:hover,
+    body:not(.landing-page-body) .btn-outline-dark:focus-visible,
+    body:not(.landing-page-body) .btn-light.border:hover,
+    body:not(.landing-page-body) .btn-light.border:focus-visible,
+    body:not(.landing-page-body) .btn-white:hover,
+    body:not(.landing-page-body) .btn-white:focus-visible,
+    body:not(.landing-page-body) .btn-greys:hover,
+    body:not(.landing-page-body) .btn-greys:focus-visible,
+    body:not(.landing-page-body) .btn-action-icon:hover,
+    body:not(.landing-page-body) .btn-action-icon:focus-visible {
+        background: linear-gradient(135deg, var(--spb-theme-blue) 0%, var(--spb-theme-blue-bright) 100%) !important;
+        border-color: var(--spb-theme-blue) !important;
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
+    }
+
+    body:not(.landing-page-body) .dropdown-menu .dropdown-item {
+        color: var(--spb-theme-ink) !important;
+        -webkit-text-fill-color: var(--spb-theme-ink) !important;
+        background: #ffffff !important;
+        font-weight: 650;
+    }
+
+    body:not(.landing-page-body) .dropdown-menu .dropdown-item:hover,
+    body:not(.landing-page-body) .dropdown-menu .dropdown-item:focus {
+        background: #fff8e1 !important;
+        color: var(--spb-theme-blue) !important;
+        -webkit-text-fill-color: var(--spb-theme-blue) !important;
+    }
+
+    body:not(.landing-page-body) .dropdown-menu .dropdown-item.text-danger,
+    body:not(.landing-page-body) .dropdown-menu .dropdown-item.text-danger i {
+        color: #dc2626 !important;
+        -webkit-text-fill-color: #dc2626 !important;
+    }
+
+    body:not(.landing-page-body) .dropdown-menu .dropdown-item.text-danger:hover,
+    body:not(.landing-page-body) .dropdown-menu .dropdown-item.text-danger:focus {
+        background: #fff1f2 !important;
+        color: #dc2626 !important;
+        -webkit-text-fill-color: #dc2626 !important;
+    }
+
+    body:not(.landing-page-body) .btn i,
+    body:not(.landing-page-body) .dropdown-item i {
+        color: inherit !important;
+        -webkit-text-fill-color: currentColor !important;
     }
 
     body:not(.landing-page-body) .form-control:focus,

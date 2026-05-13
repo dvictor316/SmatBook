@@ -23,29 +23,29 @@
         align-items: center;
         gap: 0.45rem;
         padding: 0.55rem 0.95rem;
-        border: 1px solid rgba(13, 110, 253, 0.25);
+        border: 1px solid #0f3a8a;
         border-radius: 999px;
-        background: #eef4ff;
-        color: #0d4fd6;
+        background: linear-gradient(135deg, #0f3a8a 0%, #2563eb 100%);
+        color: #ffffff;
         font-size: 0.875rem;
         font-weight: 700;
         text-decoration: none;
-        box-shadow: 0 8px 20px rgba(13, 110, 253, 0.12);
+        box-shadow: 0 10px 22px rgba(15, 58, 138, 0.18);
         transition: all 0.2s ease;
     }
 
     .product-action-trigger:hover,
     .product-action-trigger:focus {
-        background: #0d6efd;
-        color: #fff;
-        border-color: #0d6efd;
+        background: #ffffff;
+        color: #0f3a8a;
+        border-color: #d7a928;
     }
 
     .product-action-menu {
         min-width: 11rem;
-        border: 0;
+        border: 1px solid rgba(15, 58, 138, 0.14);
         border-radius: 1rem;
-        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.14);
+        box-shadow: 0 18px 40px rgba(6, 26, 68, 0.14);
         overflow: hidden;
     }
 
@@ -55,6 +55,14 @@
         gap: 0.65rem;
         padding: 0.8rem 1rem;
         font-weight: 600;
+        color: #061a44;
+        background: #ffffff;
+    }
+
+    .product-action-menu .dropdown-item:hover,
+    .product-action-menu .dropdown-item:focus {
+        background: #fff8e1;
+        color: #0f3a8a;
     }
 
     .product-action-menu .dropdown-item.text-danger {
@@ -177,8 +185,8 @@
     }
 
     .select2-container--open .select2-dropdown.quick-category-dropdown .select2-results__option--highlighted[aria-selected] {
-        background: #eef4ff;
-        color: #1d4ed8;
+        background: #fff8e1;
+        color: #0f3a8a;
     }
 
     .product-form-muted {
@@ -306,9 +314,9 @@
             padding: 0.9rem 1rem;
             border: 0;
             border-radius: 999px;
-            background: linear-gradient(135deg, #198754 0%, #0f9d58 100%);
+            background: linear-gradient(135deg, #0f3a8a 0%, #2563eb 100%);
             color: #fff;
-            box-shadow: 0 16px 36px rgba(15, 157, 88, 0.32);
+            box-shadow: 0 16px 36px rgba(15, 58, 138, 0.24);
             font-weight: 800;
         }
     }
