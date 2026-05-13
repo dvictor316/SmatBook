@@ -777,11 +777,10 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::post('/{recurringInvoice}/clone',           [RecurringInvoiceController::class, 'cloneTemplate'])->name('clone');
         Route::post('/from-sale/{sale}',                   [RecurringInvoiceController::class, 'fromSale'])->name('from-sale');
     });
-    // Legacy redirect (keep old URL working)
-    Route::get('/recurring-invoices', fn() => redirect()->route('sales.recurring-invoices.index'))->name('sales.recurring');
+    // Legacy misspelled redirect (keep old URL working without showing all invoices)
     Route::get('/clone-invoice/{id}', [SalesInvoiceController::class, 'clone'])->name('sales.clone');
     Route::get('/send-invoice/{id}', [SalesInvoiceController::class, 'send'])->name('sales.send');
-    Route::get('/recuring-invoices', [SalesInvoiceController::class, 'index'])->name('recuring-invoices');
+    Route::get('/recuring-invoices', fn() => redirect()->route('sales.recurring-invoices.index'))->name('recuring-invoices');
     Route::view('/invoice-one-a', 'Sales.Invoices.invoice-one-a')->name('invoice-one-a');
     Route::view('/invoice-two', 'Sales.Invoices.invoice-two')->name('invoice-two');
     Route::view('/invoice-three', 'Sales.Invoices.invoice-three')->name('invoice-three');

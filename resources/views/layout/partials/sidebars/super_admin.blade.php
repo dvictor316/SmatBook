@@ -134,7 +134,7 @@
                     </ul>
                 </li>
 
-                <li><a href="{{ route('recuring-invoices') }}"><i class="fe fe-clipboard"></i><span>Recurring Invoices</span></a></li>
+                <li><a href="{{ route('sales.recurring-invoices.index') }}"><i class="fe fe-clipboard"></i><span>Recurring Invoices</span></a></li>
 
                 <li class="menu-title"><span>Purchases &amp; Suppliers</span></li>
 
@@ -594,7 +594,7 @@
                     </ul>
                 </li>
 
-                <li><a href="{{ route('recuring-invoices') }}"><i class="fe fe-clipboard"></i><span>Recurring Invoices</span></a></li>
+                <li><a href="{{ route('sales.recurring-invoices.index') }}"><i class="fe fe-clipboard"></i><span>Recurring Invoices</span></a></li>
 
                 <li class="menu-title"><span>Purchases</span></li>
 
@@ -713,7 +713,7 @@
                     </ul>
                 </li>
 
-                <li><a href="{{ route('recuring-invoices') }}"><i class="fe fe-clipboard"></i><span>Recurring Invoices</span></a></li>
+                <li><a href="{{ route('sales.recurring-invoices.index') }}"><i class="fe fe-clipboard"></i><span>Recurring Invoices</span></a></li>
 
                 <li class="submenu {{ Request::is('pos*', 'sales*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-shopping-cart"></i><span>POS</span><span class="menu-arrow"></span></a>

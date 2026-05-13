@@ -30,7 +30,7 @@
                         <li><a href="{{ route('estimates.index') }}">Sales Orders</a></li>
                         <li><a href="{{ route('invoices.index') }}">Invoices</a></li>
                         <li><a href="{{ route('add-invoice') }}">Create Invoice</a></li>
-                        <li><a href="{{ route('recuring-invoices') }}">Recurring Invoices</a></li>
+                        <li><a href="{{ route('sales.recurring-invoices.index') }}">Recurring Invoices</a></li>
                         @if(Route::has('credit-notes.index'))
                             <li><a href="{{ route('credit-notes.index') }}">Credit Notes</a></li>
                         @endif

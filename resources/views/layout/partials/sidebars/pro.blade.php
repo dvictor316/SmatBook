@@ -32,7 +32,7 @@
                         <li><a href="{{ route('quotations') }}">Quotations</a></li>
                         <li><a href="{{ route('invoices.index') }}">Invoices</a></li>
                         <li><a href="{{ route('add-invoice') }}">Create Invoice</a></li>
-                        <li><a href="{{ route('recuring-invoices') }}">Recurring Invoices</a></li>
+                        <li><a href="{{ route('sales.recurring-invoices.index') }}">Recurring Invoices</a></li>
                         <li><a href="{{ route('estimates.index') }}">Estimates</a></li>
                         <li><a href="{{ route('price-lists.index') }}">Price Lists</a></li>
                         <li><a href="{{ route('customers.index') }}">Customers</a></li>
