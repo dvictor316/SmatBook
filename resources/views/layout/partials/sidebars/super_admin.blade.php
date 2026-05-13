@@ -305,6 +305,154 @@
         color: var(--spb-theme-blue) !important;
         -webkit-text-fill-color: var(--spb-theme-blue) !important;
     }
+
+    body.spb-super-admin-theme .pos-full-page-wrapper {
+        --primary-600: var(--spb-theme-blue-bright);
+        --primary-700: var(--spb-theme-blue);
+        --indigo-600: #174ea6;
+        --success-500: #1f9254;
+        --success-600: #167246;
+        --warning-500: var(--spb-theme-gold);
+        --text-primary: var(--spb-theme-ink);
+        --text-secondary: #536681;
+        --border: rgba(15, 58, 138, 0.14);
+        background:
+            radial-gradient(circle at top right, rgba(215, 169, 40, 0.12), transparent 32%),
+            radial-gradient(circle at 14% 0%, rgba(37, 99, 235, 0.12), transparent 34%),
+            linear-gradient(180deg, #f8fbff 0%, #f3f7ff 100%) !important;
+    }
+
+    body.spb-super-admin-theme .pos-full-page-wrapper .header-stage,
+    body.spb-super-admin-theme .pos-full-page-wrapper .pos-header-bar {
+        background:
+            radial-gradient(circle at 14% 0%, rgba(215, 169, 40, 0.24), transparent 30%),
+            linear-gradient(135deg, var(--spb-theme-navy) 0%, var(--spb-theme-blue) 58%, #174ea6 100%) !important;
+        border-color: rgba(215, 169, 40, 0.28) !important;
+        box-shadow: 0 18px 36px rgba(6, 26, 68, 0.18) !important;
+    }
+
+    body.spb-super-admin-theme .pos-full-page-wrapper .pos-header-title,
+    body.spb-super-admin-theme .pos-full-page-wrapper .pos-header-title *,
+    body.spb-super-admin-theme .pos-full-page-wrapper .header-stage .text-muted,
+    body.spb-super-admin-theme .pos-full-page-wrapper .header-stage span,
+    body.spb-super-admin-theme .pos-full-page-wrapper .header-stage small {
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
+    }
+
+    body.spb-super-admin-theme .pos-full-page-wrapper .gradient-text,
+    body.spb-super-admin-theme .pos-full-page-wrapper .header-stage i {
+        color: var(--spb-theme-gold-soft) !important;
+        -webkit-text-fill-color: var(--spb-theme-gold-soft) !important;
+    }
+
+    body.spb-super-admin-theme .pos-full-page-wrapper .header-util-bar,
+    body.spb-super-admin-theme .pos-full-page-wrapper .pos-card,
+    body.spb-super-admin-theme .pos-full-page-wrapper .controls-card,
+    body.spb-super-admin-theme .pos-full-page-wrapper .summary-panel {
+        background: #ffffff !important;
+        border-color: rgba(15, 58, 138, 0.14) !important;
+        box-shadow: 0 14px 34px rgba(6, 26, 68, 0.08) !important;
+    }
+
+    body.spb-super-admin-theme .pos-full-page-wrapper .category-pill {
+        background: #ffffff !important;
+        border-color: rgba(15, 58, 138, 0.18) !important;
+        color: var(--spb-theme-blue) !important;
+        -webkit-text-fill-color: var(--spb-theme-blue) !important;
+    }
+
+    body.spb-super-admin-theme .pos-full-page-wrapper .category-pill:hover,
+    body.spb-super-admin-theme .pos-full-page-wrapper .category-pill.active {
+        background: linear-gradient(135deg, var(--spb-theme-blue) 0%, var(--spb-theme-blue-bright) 100%) !important;
+        border-color: var(--spb-theme-gold) !important;
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
+    }
+
+    body.spb-super-admin-theme .pos-full-page-wrapper .product-card:hover,
+    body.spb-super-admin-theme .pos-full-page-wrapper .product-card.active,
+    body.spb-super-admin-theme .pos-full-page-wrapper .product-card.last-picked {
+        border-color: var(--spb-theme-gold) !important;
+        box-shadow: 0 14px 30px rgba(6, 26, 68, 0.14), inset 0 0 0 1px rgba(215, 169, 40, 0.34) !important;
+    }
+
+    body.spb-super-admin-theme .pos-full-page-wrapper .scanner-input:focus,
+    body.spb-super-admin-theme .pos-full-page-wrapper .form-control:focus,
+    body.spb-super-admin-theme .pos-full-page-wrapper .form-select:focus {
+        border-color: var(--spb-theme-gold) !important;
+        box-shadow: 0 0 0 0.2rem rgba(215, 169, 40, 0.16) !important;
+    }
+
+    body.spb-super-admin-theme .pos-full-page-wrapper .btn-add-cart,
+    body.spb-super-admin-theme .pos-full-page-wrapper .btn-process {
+        background: linear-gradient(135deg, var(--spb-theme-blue) 0%, var(--spb-theme-blue-bright) 100%) !important;
+        border: 1px solid rgba(215, 169, 40, 0.32) !important;
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
+    }
+
+    body.spb-super-admin-theme .pos-full-page-wrapper .btn-add-cart:hover,
+    body.spb-super-admin-theme .pos-full-page-wrapper .btn-process:hover {
+        background: #ffffff !important;
+        border-color: var(--spb-theme-gold) !important;
+        color: var(--spb-theme-blue) !important;
+        -webkit-text-fill-color: var(--spb-theme-blue) !important;
+    }
+
+    body.spb-super-admin-theme.report-workspace {
+        --report-primary: var(--spb-theme-blue);
+        --report-card-border: rgba(15, 58, 138, 0.14);
+        --report-card-bg: #ffffff;
+        --report-heading: var(--spb-theme-ink);
+        --report-muted: #64748b;
+    }
+
+    body.spb-super-admin-theme.report-workspace .page-wrapper {
+        background:
+            radial-gradient(circle at top right, rgba(215, 169, 40, 0.10), transparent 30%),
+            linear-gradient(180deg, #f8fbff 0%, #f3f7ff 100%) !important;
+    }
+
+    body.spb-super-admin-theme.report-workspace .page-header > .content-page-header,
+    body.spb-super-admin-theme.report-workspace .page-header > .row,
+    body.spb-super-admin-theme.report-workspace .card,
+    body.spb-super-admin-theme.report-workspace .card-table,
+    body.spb-super-admin-theme.report-workspace .report-container,
+    body.spb-super-admin-theme.report-workspace .filter-card,
+    body.spb-super-admin-theme.report-workspace .smart-filter-card,
+    body.spb-super-admin-theme.report-workspace .report-card {
+        border-color: rgba(15, 58, 138, 0.14) !important;
+        box-shadow: 0 14px 34px rgba(6, 26, 68, 0.07) !important;
+    }
+
+    body.spb-super-admin-theme.report-workspace .table thead th {
+        background: linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%) !important;
+        color: var(--spb-theme-ink) !important;
+        border-bottom-color: rgba(15, 58, 138, 0.16) !important;
+    }
+
+    body.spb-super-admin-theme.report-workspace .table tbody tr:hover {
+        background: rgba(215, 169, 40, 0.08) !important;
+    }
+
+    body.spb-super-admin-theme .rh-tab.active,
+    body.spb-super-admin-theme .rh-tab:hover,
+    body.spb-super-admin-theme .rl-run,
+    body.spb-super-admin-theme .report-btn.bg-blue-600,
+    body.spb-super-admin-theme .report-btn:hover {
+        background: linear-gradient(135deg, var(--spb-theme-blue) 0%, var(--spb-theme-blue-bright) 100%) !important;
+        border-color: var(--spb-theme-gold) !important;
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
+    }
+
+    body.spb-super-admin-theme .rl-name,
+    body.spb-super-admin-theme .rh-sec-title,
+    body.spb-super-admin-theme .report-workspace a:not(.btn):not(.dropdown-item) {
+        color: var(--spb-theme-blue) !important;
+        -webkit-text-fill-color: var(--spb-theme-blue) !important;
+    }
 </style>
 
 <script>
