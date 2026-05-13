@@ -122,6 +122,10 @@
                     </ul>
                 </li>
 
+                <li class="{{ Request::is('estimates*') ? 'active' : '' }}">
+                    <a href="{{ route('estimates.index') }}"><i class="fe fe-file-text"></i><span>Sales Orders</span></a>
+                </li>
+
                 <li class="submenu {{ Request::is('invoices*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-file"></i><span>Invoices</span><span class="menu-arrow"></span></a>
                     <ul>
@@ -578,6 +582,10 @@
 
                 <li class="menu-title"><span>Sales</span></li>
 
+                <li class="{{ Request::is('estimates*') ? 'active' : '' }}">
+                    <a href="{{ route('estimates.index') }}"><i class="fe fe-file-text"></i><span>Sales Orders</span></a>
+                </li>
+
                 <li class="submenu {{ Request::is('invoices*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-file"></i><span>Invoices</span><span class="menu-arrow"></span></a>
                     <ul>
@@ -692,6 +700,10 @@
                 <li><a href="{{ route('inventory.Products') }}"><i class="fe fe-archive"></i><span>Inventory</span></a></li>
 
                 <li class="menu-title"><span>Sales</span></li>
+
+                <li class="{{ Request::is('estimates*') ? 'active' : '' }}">
+                    <a href="{{ route('estimates.index') }}"><i class="fe fe-file-text"></i><span>Sales Orders</span></a>
+                </li>
 
                 <li class="submenu {{ Request::is('invoices*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-file"></i><span>Invoices</span><span class="menu-arrow"></span></a>
@@ -841,6 +853,10 @@ function showUpgradeModal(planName) {
                 <li><a href="{{ route('product-list') }}"><i class="fe fe-package"></i><span>Product List</span></a></li>
 
                 <li class="menu-title"><span>Sales</span></li>
+
+                <li class="{{ Request::is('estimates*') ? 'active' : '' }}">
+                    <a href="{{ route('estimates.index') }}"><i class="fe fe-file-text"></i><span>Sales Orders</span></a>
+                </li>
 
                 <li class="submenu {{ Request::is('invoices*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-file"></i><span>Invoices</span><span class="menu-arrow"></span></a>
