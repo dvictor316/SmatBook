@@ -19,6 +19,73 @@
 @endphp
 
 @if(in_array($roleNormalized, ['super_admin', 'superadmin', 'administrator', 'admin']))
+
+{{-- Super Admin sidebar: tinted blue theme --}}
+<style>
+/* ── Super Admin Sidebar Blue Theme ────────────────────────────────────────── */
+#sidebar.sidebar {
+    background: linear-gradient(180deg, #0d2a6e 0%, #1a3d8f 40%, #163479 100%) !important;
+    border-right: none !important;
+    box-shadow: 2px 0 12px rgba(13, 42, 110, 0.45) !important;
+}
+#sidebar .sidebar-inner { background: transparent !important; }
+
+/* all link text + icons white */
+#sidebar .sidebar-menu a,
+#sidebar .sidebar-menu a span,
+#sidebar .sidebar-menu a i {
+    color: #d6e4ff !important;
+}
+/* menu-title labels */
+#sidebar .sidebar-menu .menu-title span {
+    color: #7eb3ff !important;
+    font-size: 10px !important;
+    letter-spacing: 1.2px !important;
+    text-transform: uppercase !important;
+    font-weight: 700 !important;
+}
+/* hover state */
+#sidebar .sidebar-menu li > a:hover,
+#sidebar .sidebar-menu li > a:hover span,
+#sidebar .sidebar-menu li > a:hover i {
+    color: #ffffff !important;
+    background: rgba(255,255,255,0.10) !important;
+    border-radius: 6px !important;
+}
+/* active item */
+#sidebar .sidebar-menu li.active > a,
+#sidebar .sidebar-menu li.active > a span,
+#sidebar .sidebar-menu li.active > a i {
+    color: #ffffff !important;
+    background: rgba(255,255,255,0.15) !important;
+    border-radius: 6px !important;
+    font-weight: 600 !important;
+}
+/* active left-border accent */
+#sidebar .sidebar-menu li.active > a {
+    border-left: 3px solid #60a5fa !important;
+}
+/* submenu background */
+#sidebar .sidebar-menu .submenu ul {
+    background: rgba(0, 0, 0, 0.18) !important;
+    border-radius: 0 0 6px 6px !important;
+}
+#sidebar .sidebar-menu .submenu ul li a {
+    color: #b8d4ff !important;
+    padding-left: 42px !important;
+}
+#sidebar .sidebar-menu .submenu ul li a:hover,
+#sidebar .sidebar-menu .submenu ul li.active > a {
+    color: #ffffff !important;
+    background: rgba(255,255,255,0.12) !important;
+}
+/* slimscroll bar */
+#sidebar .slimScrollBar { background: rgba(255,255,255,0.25) !important; }
+/* logo area in sidebar (if any) */
+#sidebar .sidebar-logo a span { color: #fff !important; }
+/* ─────────────────────────────────────────────────────────────────────────── */
+</style>
+
 <div class="sidebar" id="sidebar">
     <div class="sidebar-inner slimscroll">
         <div id="sidebar-menu" class="sidebar-menu">
