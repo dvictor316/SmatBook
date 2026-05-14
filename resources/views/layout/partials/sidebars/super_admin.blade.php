@@ -594,6 +594,10 @@
 
                 <li class="menu-title"><span>Sales &amp; Customers</span></li>
 
+                <li class="{{ request()->routeIs('sales.index', 'sales.show', 'sales.create', 'sales.edit', 'sales.pdf', 'sales.invoice.show', 'sales.invoice.print') ? 'active' : '' }}">
+                    <a href="{{ route('sales.index') }}"><i class="fas fa-receipt"></i><span>Sales</span></a>
+                </li>
+
                 <li class="submenu {{ Request::is('pos*', 'sales*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fas fa-cash-register"></i><span>POS</span><span class="menu-arrow"></span></a>
                     <ul>
