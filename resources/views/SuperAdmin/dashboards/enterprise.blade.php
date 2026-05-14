@@ -48,6 +48,78 @@
         border-left: 6px solid var(--smat-gold);
         padding-left: 20px; margin-bottom: 40px;
         display: flex; justify-content: space-between; align-items: center;
+        gap: 18px;
+        overflow: hidden;
+    }
+
+    .enterprise-header-title {
+        flex: 0 1 310px;
+        min-width: 240px;
+    }
+
+    .enterprise-header-title h3 {
+        font-size: clamp(1.6rem, 2vw, 2.35rem);
+        line-height: 1.08;
+    }
+
+    .enterprise-dashboard-actions {
+        flex: 1 1 auto;
+        min-width: 0;
+        justify-content: flex-end;
+        gap: 0.75rem !important;
+    }
+
+    .enterprise-dashboard-actions .branch-chip,
+    .enterprise-dashboard-actions .btn {
+        min-height: 54px;
+        max-width: 170px;
+        padding: 0.58rem 0.85rem !important;
+        border-radius: 999px !important;
+        font-size: 0.78rem;
+        line-height: 1.18;
+        white-space: normal;
+        text-align: center;
+        flex: 0 1 auto;
+    }
+
+    .enterprise-dashboard-actions .branch-chip {
+        max-width: 190px;
+        justify-content: center;
+    }
+
+    .enterprise-dashboard-actions .btn i,
+    .enterprise-dashboard-actions .branch-chip i {
+        margin-right: 0.35rem !important;
+    }
+
+    .enterprise-dashboard-logo {
+        height: 58px;
+        max-width: 120px;
+        object-fit: contain;
+        flex: 0 0 auto;
+    }
+
+    @media (max-width: 1500px) {
+        .enterprise-header {
+            padding-left: 16px;
+        }
+
+        .enterprise-dashboard-actions .branch-chip,
+        .enterprise-dashboard-actions .btn {
+            max-width: 148px;
+            min-height: 48px;
+            padding: 0.48rem 0.72rem !important;
+            font-size: 0.72rem;
+        }
+
+        .enterprise-dashboard-actions .branch-chip {
+            max-width: 170px;
+        }
+
+        .enterprise-dashboard-logo {
+            height: 50px;
+            max-width: 100px;
+        }
     }
 
     /* Premium Card Design */
@@ -211,7 +283,7 @@
     @endphp
 
     <div class="enterprise-header"> 
-        <div> 
+        <div class="enterprise-header-title"> 
             <div class="d-flex align-items-center gap-2 mb-1"> 
                 <h3 class="fw-bold mb-0" style="color: var(--deep-sapphire);">Enterprise Node Control</h3> 
                 <span class="master-badge"><i class="fas fa-crown me-1 text-warning"></i> Master Access</span> 
@@ -241,7 +313,7 @@
             <button onclick="printReport()" class="btn btn-white shadow-sm border-0 px-4 py-2 btn-print-action" style="border-radius: 12px; font-weight: 800; color: var(--deep-sapphire);"> 
                 <i class="fas fa-file-pdf me-2 text-danger"></i> GENERATE MASTER REPORT 
             </button> 
-            <img src="{{ asset('assets/img/logos.png') }}" style="height: 80px;" alt="Smat Logo"> 
+            <img src="{{ asset('assets/img/logos.png') }}" class="enterprise-dashboard-logo" alt="Smat Logo"> 
         </div> 
     </div>
 
