@@ -742,6 +742,11 @@
         -webkit-text-fill-color: currentColor !important;
     }
 
+    .sidebar.spb-enterprise-sidebar .sidebar-menu ul li > a i {
+        color: var(--spb-theme-gold-soft) !important;
+        -webkit-text-fill-color: var(--spb-theme-gold-soft) !important;
+    }
+
     .sidebar:not(.spb-super-admin-sidebar) .sidebar-menu ul li > a:hover,
     .sidebar:not(.spb-super-admin-sidebar) .sidebar-menu ul li > a.subdrop,
     .sidebar:not(.spb-super-admin-sidebar) .sidebar-menu ul li.active > a,
