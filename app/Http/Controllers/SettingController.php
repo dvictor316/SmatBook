@@ -13,6 +13,7 @@ use App\Models\Transaction;
 use App\Models\Subscription;
 use App\Services\BankBalanceManagementService;
 use App\Support\ActiveBranchResolver;
+use App\Support\DeviceSessionManager;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -1676,6 +1677,7 @@ class SettingController extends Controller
             session(['active_branch_scope' => 'all']);
             $request->session()->forget(['active_branch_id', 'active_branch_name']);
             $request->session()->regenerate(false);
+            app(DeviceSessionManager::class)->ensureCurrentSession($request, Auth::user());
 
             $redirectUrl = $request->input('redirect_to') ?: url()->previous();
             if ($redirectUrl && $this->isSafeRedirectUrl($redirectUrl)) {
@@ -1703,6 +1705,7 @@ class SettingController extends Controller
 
         // Regenerate session ID after branch switch to prevent session fixation.
         $request->session()->regenerate(false);
+        app(DeviceSessionManager::class)->ensureCurrentSession($request, Auth::user());
 
         $redirectUrl = $request->input('redirect_to') ?: url()->previous();
         if ($redirectUrl && $this->isSafeRedirectUrl($redirectUrl)) {
