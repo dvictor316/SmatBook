@@ -23,6 +23,7 @@ class Sale extends Model
         'company_id', 'branch_id', 'branch_name',
         'order_number', 'invoice_no', 'receipt_no', 'order_date', 'delivery_date',
         'customer_id', 'customer_name', 'user_id', 'terminal_id', 
+        'price_list_id',
         'subtotal', 'discount', 'tax', 'shipping_cost', 'total', 
         'paid', 'amount_paid', 'change_amount', 'balance', 
         'currency', 'amount_in_words', 'payment_method', 

@@ -31,6 +31,7 @@
         ]];
     }
     $selectedCustomer = old('customer_id', $invoiceFormDefaults['customer_id'] ?? $quotationPrefill['customer_id'] ?? ($selected_customer ?? ''));
+    $selectedPriceListId = old('price_list_id', $invoiceFormDefaults['price_list_id'] ?? optional(($priceLists ?? collect())->firstWhere('is_default', true))->id);
     $invoiceDate = old('invoice_date', $invoiceFormDefaults['invoice_date'] ?? $quotationPrefill['invoice_date'] ?? date('d-m-Y'));
     $dueDate = old('due_date', $invoiceFormDefaults['due_date'] ?? $quotationPrefill['due_date'] ?? '');
     $selectedStatus = old('status', $invoiceFormDefaults['status'] ?? 'Unpaid');
@@ -85,9 +86,11 @@
                                                     <select class="form-control customer-select select2" name="customer_id" required>
                                                         <option value="">Choose Customer</option>
                                                         @foreach($customers as $customer)
-                                                            <option value="{{ $customer->id }}" {{ (string) $selectedCustomer === (string) $customer->id ? 'selected' : '' }}>
-                                                                {{ $customer->customer_name ?? $customer->name }}
-                                                            </option>
+                                                        <option value="{{ $customer->id }}"
+                                                            data-price-list-id="{{ $customer->price_list_id ?? '' }}"
+                                                            {{ (string) $selectedCustomer === (string) $customer->id ? 'selected' : '' }}>
+                                                            {{ $customer->customer_name ?? $customer->name }}
+                                                        </option>
                                                         @endforeach
                                                     </select>
                                                 </li>
@@ -128,6 +131,21 @@
                                                 <option value="Overdue" {{ $selectedStatus === 'Overdue' ? 'selected' : '' }}>Overdue</option>
                                                 <option value="Draft" {{ $selectedStatus === 'Draft' ? 'selected' : '' }}>Draft</option>
                                             </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-lg-4 col-md-6 col-sm-12">
+                                        <div class="input-block mb-3">
+                                            <label>Price List / Promotion</label>
+                                            <select class="form-control" name="price_list_id" id="invoice-price-list">
+                                                <option value="">Retail / Product prices</option>
+                                                @foreach($priceLists ?? [] as $priceList)
+                                                    <option value="{{ $priceList->id }}" {{ (string) $selectedPriceListId === (string) $priceList->id ? 'selected' : '' }}>
+                                                        {{ $priceList->name }}{{ $priceList->currency ? ' - ' . $priceList->currency : '' }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                            <div class="text-muted small mt-1">Use this for promotions, customer price lists, and campaign pricing.</div>
                                         </div>
                                     </div>
                                 </div>
@@ -173,9 +191,11 @@
                                                             @php $priceLevel = $item['price_level'] ?? 'retail'; @endphp
                                                             <select name="items[{{ $index }}][price_level]" class="form-control price-level-select" onchange="syncInvoiceProduct(this)">
                                                                 <option value="retail" {{ $priceLevel === 'retail' ? 'selected' : '' }}>Retail / Default</option>
+                                                                <option value="list" {{ $priceLevel === 'list' ? 'selected' : '' }}>Selected price list</option>
                                                                 <option value="wholesale" {{ $priceLevel === 'wholesale' ? 'selected' : '' }}>Wholesale</option>
                                                                 <option value="special" {{ $priceLevel === 'special' ? 'selected' : '' }}>Special Discount</option>
                                                             </select>
+                                                            <input type="hidden" name="items[{{ $index }}][price_list_id]" class="invoice-row-price-list-id" value="{{ $item['price_list_id'] ?? $selectedPriceListId }}">
                                                         </td>
                                                         <td><input type="number" name="items[{{ $index }}][qty]" class="form-control qty-input" value="{{ $item['qty'] ?? 1 }}" min="1" oninput="calculateRow(this)"></td>
                                                         <td><input type="number" name="items[{{ $index }}][rate]" class="form-control rate-input" value="{{ $item['rate'] ?? '0.00' }}" step="0.01" oninput="calculateRow(this)"></td>
@@ -236,6 +256,42 @@
 <script>
     let rowIndex = {{ count($invoiceItems) }};
     let customerOptionSnapshots = [];
+    const invoicePriceLists = @json($priceListData ?? []);
+    const invoicePriceListById = new Map(invoicePriceLists.map(list => [String(list.id), list]));
+
+    function toInvoiceNumber(value) {
+        const parsed = parseFloat(value);
+        return Number.isFinite(parsed) ? parsed : 0;
+    }
+
+    function getInvoicePriceListProductPrice(listId, productId, quantity, retailPrice) {
+        const list = invoicePriceListById.get(String(listId || ''));
+        if (!list) {
+            return null;
+        }
+
+        const rows = list.items && list.items[String(productId)] ? list.items[String(productId)] : null;
+        if (rows && rows.length) {
+            let match = rows[0];
+            rows.forEach(function(row) {
+                if (quantity >= toInvoiceNumber(row.min_quantity)) {
+                    match = row;
+                }
+            });
+            return toInvoiceNumber(match.price);
+        }
+
+        const discountValue = toInvoiceNumber(list.discount_value);
+        if (discountValue <= 0) {
+            return null;
+        }
+
+        if (list.discount_type === 'fixed') {
+            return Math.max(0, retailPrice - discountValue);
+        }
+
+        return Math.max(0, retailPrice - ((discountValue / 100) * retailPrice));
+    }
 
     function initInvoiceSelect2(scope) {
         if (typeof window.jQuery === 'undefined' || typeof jQuery.fn.select2 === 'undefined') {
@@ -365,9 +421,11 @@
                 <td>
                     <select name="items[${rowIndex}][price_level]" class="form-control price-level-select" onchange="syncInvoiceProduct(this)">
                         <option value="retail">Retail / Default</option>
+                        <option value="list">Selected price list</option>
                         <option value="wholesale">Wholesale</option>
                         <option value="special">Special Discount</option>
                     </select>
+                    <input type="hidden" name="items[${rowIndex}][price_list_id]" class="invoice-row-price-list-id" value="${document.getElementById('invoice-price-list')?.value || ''}">
                 </td>
                 <td><input type="number" name="items[${rowIndex}][qty]" class="form-control qty-input" value="1" min="1" oninput="calculateRow(this)"></td>
                 <td><input type="number" name="items[${rowIndex}][rate]" class="form-control rate-input" value="0.00" step="0.01" oninput="calculateRow(this)"></td>
@@ -380,6 +438,15 @@
         const insertedRow = tableBody.lastElementChild;
         if (insertedRow) {
             initInvoiceSelect2(insertedRow);
+            const priceLevelSelect = insertedRow.querySelector('.price-level-select');
+            const selectedPriceListId = document.getElementById('invoice-price-list')?.value || '';
+            if (priceLevelSelect && selectedPriceListId) {
+                priceLevelSelect.value = 'list';
+            }
+            const rowPriceListInput = insertedRow.querySelector('.invoice-row-price-list-id');
+            if (rowPriceListInput) {
+                rowPriceListInput.value = selectedPriceListId;
+            }
         }
         rowIndex++;
     });
@@ -402,9 +469,21 @@
         const wholesalePrice = parseFloat(selectedOption.getAttribute('data-wholesale')) || 0;
         const specialPrice = parseFloat(selectedOption.getAttribute('data-special')) || 0;
         const level = priceLevelSelect.value || 'retail';
+        const quantity = parseFloat(row.querySelector('.qty-input')?.value || '1') || 1;
+        const selectedPriceListId = document.getElementById('invoice-price-list')?.value || '';
+        const rowPriceListInput = row.querySelector('.invoice-row-price-list-id');
+        if (rowPriceListInput) {
+            rowPriceListInput.value = selectedPriceListId;
+        }
 
         let rate = retailPrice;
-        if (level === 'wholesale' && wholesalePrice > 0) {
+        const listPrice = level === 'list'
+            ? getInvoicePriceListProductPrice(selectedPriceListId, selectedOption.value, quantity, retailPrice)
+            : null;
+
+        if (listPrice !== null) {
+            rate = listPrice;
+        } else if (level === 'wholesale' && wholesalePrice > 0) {
             rate = wholesalePrice;
         } else if (level === 'special' && specialPrice > 0) {
             rate = specialPrice;
@@ -419,6 +498,19 @@
         if (e.target.matches('.product-select, .price-level-select')) {
             syncInvoiceProduct(e.target);
         }
+    });
+
+    document.getElementById('invoice-price-list')?.addEventListener('change', function() {
+        document.querySelectorAll('.invoice-row').forEach(function(row) {
+            const priceLevelSelect = row.querySelector('.price-level-select');
+            const rowPriceListInput = row.querySelector('.invoice-row-price-list-id');
+            if (rowPriceListInput) {
+                rowPriceListInput.value = this.value || '';
+            }
+            if (priceLevelSelect && priceLevelSelect.value === 'list') {
+                syncInvoiceProduct(priceLevelSelect);
+            }
+        }, this);
     });
 
     // Delete Row Logic
@@ -453,6 +545,8 @@
 
             if (nameInput) nameInput.value = '';
             if (priceLevelSelect) priceLevelSelect.value = 'retail';
+            const rowPriceListInput = row.querySelector('.invoice-row-price-list-id');
+            if (rowPriceListInput) rowPriceListInput.value = document.getElementById('invoice-price-list')?.value || '';
             if (qtyInput) qtyInput.value = 1;
             if (rateInput) rateInput.value = '0.00';
             if (discountInput) discountInput.value = 0;
@@ -465,6 +559,10 @@
     // Calculate Individual Row
     function calculateRow(element) {
         const row = element.closest('.invoice-row');
+        if (element.classList?.contains('qty-input') && row.querySelector('.price-level-select')?.value === 'list') {
+            syncInvoiceProduct(element);
+            return;
+        }
         const qty = parseFloat(row.querySelector('.qty-input').value) || 0;
         const rate = parseFloat(row.querySelector('.rate-input').value) || 0;
         const disc = parseFloat(row.querySelector('.discount-input').value) || 0;
@@ -475,6 +573,16 @@
         row.querySelector('.row-amount-hidden').value = amount.toFixed(2);
         calculateGrandTotal();
     }
+
+    document.querySelector('.customer-select')?.addEventListener('change', function() {
+        const selected = this.options[this.selectedIndex];
+        const customerPriceListId = selected?.dataset?.priceListId || '';
+        const priceListSelect = document.getElementById('invoice-price-list');
+        if (customerPriceListId && invoicePriceListById.has(String(customerPriceListId)) && priceListSelect) {
+            priceListSelect.value = customerPriceListId;
+            priceListSelect.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+    });
 
     // Calculate Grand Total
     function calculateGrandTotal() {

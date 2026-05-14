@@ -23,13 +23,18 @@ class BranchInventoryService
     {
         $branch = $branch ?: $this->getActiveBranchContext();
         $savedStock = (float) ($product->stock ?? $product->stock_quantity ?? 0);
+        $transactionalStock = $this->calculateTransactionalStock($product, $branch);
+
+        if ($transactionalStock !== null && $this->hasTransactionalStockRecords($product, $branch)) {
+            return max(0, (float) $transactionalStock);
+        }
 
         if (!Schema::hasTable('product_branch_stocks') || empty($branch['id'])) {
             if ($savedStock !== 0.0) {
                 return $savedStock;
             }
 
-            return (float) ($this->calculateTransactionalStock($product, $branch) ?? 0);
+            return (float) ($transactionalStock ?? 0);
         }
 
         $branchStock = $product->relationLoaded('branchStocks')
@@ -50,13 +55,69 @@ class BranchInventoryService
             return $savedStock;
         }
 
-        $transactionalStock = $this->calculateTransactionalStock($product, $branch);
-
         if ($transactionalStock !== null) {
             return $transactionalStock;
         }
 
         return $savedStock;
+    }
+
+    private function hasTransactionalStockRecords(Product $product, array $branch): bool
+    {
+        if (Schema::hasTable('inventory_history')) {
+            $query = DB::table('inventory_history')->where('product_id', $product->id);
+
+            if (Schema::hasColumn('inventory_history', 'company_id') && !empty($product->company_id)) {
+                $query->where('company_id', $product->company_id);
+            }
+
+            $this->applySingleTableBranchScope($query, 'inventory_history', $branch);
+
+            if ($query->exists()) {
+                return true;
+            }
+        }
+
+        if (Schema::hasTable('purchase_items') && Schema::hasTable('purchases')) {
+            $query = DB::table('purchase_items')
+                ->join('purchases', 'purchase_items.purchase_id', '=', 'purchases.id')
+                ->where('purchase_items.product_id', $product->id);
+
+            if (Schema::hasColumn('purchases', 'purchase_no')) {
+                $query->where(function ($sub) {
+                    $sub->whereNull('purchases.purchase_no')
+                        ->orWhere('purchases.purchase_no', 'not like', 'AUTO-STK-%');
+                });
+            }
+
+            if (Schema::hasColumn('purchases', 'company_id') && !empty($product->company_id)) {
+                $query->where('purchases.company_id', $product->company_id);
+            }
+
+            $this->applyDualTableBranchScope($query, 'purchase_items', 'purchases', $branch);
+
+            if ($query->exists()) {
+                return true;
+            }
+        }
+
+        if (Schema::hasTable('sale_items') && Schema::hasTable('sales')) {
+            $query = DB::table('sale_items')
+                ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+                ->where('sale_items.product_id', $product->id);
+
+            if (Schema::hasColumn('sales', 'company_id') && !empty($product->company_id)) {
+                $query->where('sales.company_id', $product->company_id);
+            }
+
+            $this->applyDualTableBranchScope($query, 'sale_items', 'sales', $branch);
+
+            if ($query->exists()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function calculateTransactionalStock(Product $product, ?array $branch = null): ?float

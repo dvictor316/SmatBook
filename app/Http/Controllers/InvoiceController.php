@@ -13,6 +13,7 @@ use App\Services\JournalService;
 use App\Support\BranchInventoryService;
 use App\Support\GeoCurrency;
 use App\Support\InventoryQuantity;
+use App\Support\PriceListUsage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -24,6 +25,7 @@ class InvoiceController extends Controller
     public function __construct(
         private readonly BranchInventoryService $branchInventory,
         private readonly JournalService $journalService,
+        private readonly PriceListUsage $priceListUsage,
     ) {
     }
 
@@ -389,7 +391,11 @@ class InvoiceController extends Controller
         $customers = $this->applyTenantScope(Customer::query(), 'customers')->get();
         $products = $this->applyTenantScope(Product::query(), 'products')->get();
         $quotationPrefill = session('quotation_prefill');
-        return view('Sales.Invoices.create-invoices', compact('customers', 'products', 'quotationPrefill'));
+        $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $priceLists = $this->priceListUsage->activeForCurrentContext($companyId);
+        $priceListData = $this->priceListUsage->toFrontend($priceLists);
+
+        return view('Sales.Invoices.create-invoices', compact('customers', 'products', 'quotationPrefill', 'priceLists', 'priceListData'));
     }
 
     public function add_invoice()
@@ -409,6 +415,9 @@ class InvoiceController extends Controller
             'items' => 'required|array|min:1',
             'items.*.qty' => 'required|numeric|min:1',
             'items.*.rate' => 'required|numeric|min:0',
+            'price_list_id' => 'nullable|exists:price_lists,id',
+            'items.*.price_list_id' => 'nullable|exists:price_lists,id',
+            'items.*.price_level' => 'nullable|in:list,retail,wholesale,special',
             'total_amount' => 'required|numeric|min:0',
         ]);
 
@@ -517,6 +526,7 @@ class InvoiceController extends Controller
                     'description' => $request->description,
                     'action' => $action,
                     'source' => 'invoice-create',
+                    'price_list_id' => $request->input('price_list_id'),
                 ],
             ];
 
@@ -528,6 +538,9 @@ class InvoiceController extends Controller
             }
             if (Schema::hasColumn('sales', 'shipping_cost')) {
                 $salePayload['shipping_cost'] = (float) ($request->expenses ?? 0);
+            }
+            if (Schema::hasColumn('sales', 'price_list_id')) {
+                $salePayload['price_list_id'] = $request->filled('price_list_id') ? (int) $request->input('price_list_id') : null;
             }
 
             if ($companyId > 0 && Schema::hasColumn('sales', 'company_id')) {
@@ -580,6 +593,8 @@ class InvoiceController extends Controller
                 $saleItemPayload = [
                     'sale_id' => $sale->id,
                     'product_id' => $productId ?: null,
+                    'price_level' => $item['price_level'] ?? 'retail',
+                    'price_list_id' => !empty($item['price_list_id']) ? (int) $item['price_list_id'] : null,
                     'qty' => $qty,
                     'unit_price' => $rate,
                     'discount' => $lineDiscountPercent,
@@ -661,9 +676,13 @@ class InvoiceController extends Controller
         $invoice = $this->applyComputedInvoiceState($invoice);
         $customers = $this->applyTenantScope(Customer::query(), 'customers')->get();
         $products = $this->applyTenantScope(Product::query(), 'products')->get();
+        $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+        $priceLists = $this->priceListUsage->activeForCurrentContext($companyId);
+        $priceListData = $this->priceListUsage->toFrontend($priceLists);
 
         $invoiceFormDefaults = [
             'customer_id' => $invoice->customer_id,
+            'price_list_id' => $invoice->price_list_id ?? data_get($invoice->payment_details, 'price_list_id'),
             'invoice_date' => optional($invoice->order_date)->format('d-m-Y') ?: now()->format('d-m-Y'),
             'due_date' => optional($invoice->delivery_date)->format('d-m-Y')
                 ?: optional($invoice->order_date)?->copy()->addDays(30)->format('d-m-Y')
@@ -689,9 +708,10 @@ class InvoiceController extends Controller
                 return [
                     'product_id' => $item->product_id,
                     'name' => $item->product_name ?? $product?->name ?? ($item->product_id ? 'Product #'.$item->product_id : 'Custom Item'),
-                    'price_level' => 'retail',
+                    'price_level' => $item->price_level ?? 'retail',
                     'qty' => $qty,
                     'rate' => number_format($rate, 2, '.', ''),
+                    'price_list_id' => $item->price_list_id ?? data_get($invoice->payment_details, 'price_list_id'),
                     'discount' => $discountAmount,
                     'tax' => $taxAmount,
                     'amount' => (float) ($item->total_price ?? max(0, $lineBase - $discountAmount + $taxAmount)),
@@ -715,6 +735,8 @@ class InvoiceController extends Controller
         return view('Sales.Invoices.create-invoices', [
             'customers' => $customers,
             'products' => $products,
+            'priceLists' => $priceLists,
+            'priceListData' => $priceListData,
             'invoice' => $invoice,
             'formMode' => 'edit',
             'invoiceFormDefaults' => $invoiceFormDefaults,
@@ -776,6 +798,9 @@ class InvoiceController extends Controller
             'items' => 'required|array|min:1',
             'items.*.qty' => 'required|numeric|min:1',
             'items.*.rate' => 'required|numeric|min:0',
+            'price_list_id' => 'nullable|exists:price_lists,id',
+            'items.*.price_list_id' => 'nullable|exists:price_lists,id',
+            'items.*.price_level' => 'nullable|in:list,retail,wholesale,special',
             'total_amount' => 'required|numeric|min:0',
         ]);
 
@@ -916,6 +941,7 @@ class InvoiceController extends Controller
                     'description' => $request->description,
                     'action' => $action,
                     'source' => 'invoice-update',
+                    'price_list_id' => $request->input('price_list_id'),
                 ],
             ];
 
@@ -927,6 +953,9 @@ class InvoiceController extends Controller
             }
             if (Schema::hasColumn('sales', 'shipping_cost')) {
                 $salePayload['shipping_cost'] = (float) ($request->expenses ?? 0);
+            }
+            if (Schema::hasColumn('sales', 'price_list_id')) {
+                $salePayload['price_list_id'] = $request->filled('price_list_id') ? (int) $request->input('price_list_id') : null;
             }
             if ($branchId && Schema::hasColumn('sales', 'branch_id')) {
                 $salePayload['branch_id'] = $branchId;
@@ -976,6 +1005,8 @@ class InvoiceController extends Controller
                 $saleItemPayload = [
                     'sale_id' => $sale->id,
                     'product_id' => $productId ?: null,
+                    'price_level' => $item['price_level'] ?? 'retail',
+                    'price_list_id' => !empty($item['price_list_id']) ? (int) $item['price_list_id'] : null,
                     'qty' => $qty,
                     'unit_price' => $rate,
                     'discount' => $lineDiscountPercent,
