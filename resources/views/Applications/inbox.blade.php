@@ -75,7 +75,7 @@
     <div class="modal fade" id="compose_modal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0" style="border-radius: 20px; overflow: hidden;">
-                <div class="modal-header bg-primary text-white">
+                <div class="modal-header compose-modal-header text-white">
                     <h5 class="modal-title fw-bold text-white">New Message</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
@@ -112,10 +112,23 @@
     </div>
 
     <style>
-        .folder-link { transition: all 0.3s ease; color: #555; cursor: pointer; }
-        .active-folder { background-color: rgba(0, 123, 255, 0.12) !important; color: #007bff !important; font-weight: bold; }
-        .hover-menu:hover { background-color: #f4f7fe; color: #007bff !important; padding-left: 1.8rem !important; }
+        .folder-link { transition: all 0.3s ease; color: var(--spb-theme-ink, #10264f); cursor: pointer; }
+        .active-folder {
+            background: linear-gradient(135deg, rgba(15, 58, 138, 0.12), rgba(215, 169, 40, 0.18)) !important;
+            color: var(--spb-theme-blue, #0f3a8a) !important;
+            font-weight: bold;
+            box-shadow: inset 4px 0 0 var(--spb-theme-gold, #d7a928);
+        }
+        .hover-menu:hover {
+            background-color: #eef4ff;
+            color: var(--spb-theme-blue, #0f3a8a) !important;
+            padding-left: 1.8rem !important;
+        }
         .form-control { border-radius: 10px; border: 1px solid #e0e0e0; padding: 12px; }
+        .compose-modal-header {
+            background: linear-gradient(135deg, var(--spb-theme-blue, #0f3a8a) 0%, var(--spb-theme-blue-bright, #2563eb) 100%) !important;
+            border-bottom: 3px solid var(--spb-theme-gold, #d7a928);
+        }
 
         /* Expandable Content Styling */
         .message-content-row { 
@@ -139,7 +152,7 @@
         #compose_modal .select2-container .select2-selection--single {
             height: 56px;
             border-radius: 10px;
-            border: 1px solid #e0e0e0;
+            border: 1px solid rgba(15, 58, 138, 0.2);
             display: flex;
             align-items: center;
             padding: 0 12px;
@@ -154,6 +167,13 @@
         #compose_modal .select2-container .select2-selection__arrow {
             height: 54px;
             right: 10px;
+        }
+
+        #compose_modal .select2-container--default .select2-results__option--highlighted[aria-selected] {
+            background: linear-gradient(135deg, var(--spb-theme-blue, #0f3a8a) 0%, var(--spb-theme-blue-bright, #2563eb) 100%) !important;
+            color: #ffffff !important;
+            -webkit-text-fill-color: #ffffff !important;
+            box-shadow: inset 4px 0 0 var(--spb-theme-gold, #d7a928);
         }
 
         @media print {

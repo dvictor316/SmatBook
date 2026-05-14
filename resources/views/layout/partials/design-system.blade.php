@@ -916,4 +916,46 @@
         border-color: var(--spb-theme-blue-bright) !important;
         box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.14) !important;
     }
+
+    body:not(.landing-page-body) .select2-container--default .select2-dropdown,
+    body:not(.landing-page-body) .select2-dropdown {
+        border-color: rgba(15, 58, 138, 0.24) !important;
+        border-radius: 14px !important;
+        box-shadow: 0 18px 38px rgba(6, 26, 68, 0.16) !important;
+        overflow: hidden;
+    }
+
+    body:not(.landing-page-body) .select2-container--default .select2-search--dropdown .select2-search__field {
+        border-color: rgba(15, 58, 138, 0.22) !important;
+        border-radius: 10px !important;
+        color: var(--spb-theme-ink) !important;
+        outline: none !important;
+    }
+
+    body:not(.landing-page-body) .select2-container--default .select2-search--dropdown .select2-search__field:focus {
+        border-color: var(--spb-theme-blue-bright) !important;
+        box-shadow: 0 0 0 0.18rem rgba(37, 99, 235, 0.13) !important;
+    }
+
+    body:not(.landing-page-body) .select2-container--default .select2-results__option {
+        color: var(--spb-theme-muted) !important;
+        -webkit-text-fill-color: var(--spb-theme-muted) !important;
+    }
+
+    body:not(.landing-page-body) .select2-container--default .select2-results__option[aria-selected=true] {
+        background: #eef4ff !important;
+        color: var(--spb-theme-blue) !important;
+        -webkit-text-fill-color: var(--spb-theme-blue) !important;
+        font-weight: 700;
+    }
+
+    body:not(.landing-page-body) .select2-container--default .select2-results__option--highlighted[aria-selected],
+    body:not(.landing-page-body) .select2-container--default .select2-results__option--highlighted[aria-selected=true],
+    body:not(.landing-page-body) .select2-container--default .select2-results__option--highlighted[aria-selected=false] {
+        background: linear-gradient(135deg, var(--spb-theme-blue) 0%, var(--spb-theme-blue-bright) 100%) !important;
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
+        box-shadow: inset 4px 0 0 var(--spb-theme-gold);
+        font-weight: 750;
+    }
 </style>
