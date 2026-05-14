@@ -9,9 +9,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class DeviceSessionManager
 {
+    private const DEVICE_COOKIE = 'spb_device_id';
+
     public function ensureCurrentSession(Request $request, User $user): array
     {
         if (!Schema::hasTable('active_user_sessions')) {
@@ -27,6 +30,7 @@ class DeviceSessionManager
         $fingerprint = $this->fingerprint($request);
         $this->pruneExpired($user->id, $companyId);
         $this->pruneMissingBackedSessions($user->id, $companyId);
+        $this->pruneLegacySameBrowserSessions($request, $user->id, $sessionId);
 
         ActiveUserSession::query()
             ->where('user_id', $user->id)
@@ -180,6 +184,23 @@ class DeviceSessionManager
         return true;
     }
 
+    private function pruneLegacySameBrowserSessions(Request $request, int $userId, string $sessionId): void
+    {
+        $userAgent = substr((string) $request->userAgent(), 0, 1000);
+        if ($userAgent === '') {
+            return;
+        }
+
+        // Older fingerprints included the IP address. Store/branch switching can
+        // regenerate sessions or move between host contexts, leaving a stale
+        // active-session row that blocks the same browser from logging back in.
+        ActiveUserSession::query()
+            ->where('user_id', $userId)
+            ->where('session_id', '!=', $sessionId)
+            ->where('user_agent', $userAgent)
+            ->delete();
+    }
+
     private function allowedUserSessions(User $user): ?int
     {
         return $this->isSuperAdmin($user) ? 2 : 1;
@@ -233,9 +254,22 @@ class DeviceSessionManager
 
     private function fingerprint(Request $request): string
     {
+        $deviceId = (string) $request->cookies->get(self::DEVICE_COOKIE, '');
+
+        if ($deviceId === '') {
+            $deviceId = (string) $request->session()->get(self::DEVICE_COOKIE, '');
+        }
+
+        if ($deviceId === '') {
+            $deviceId = (string) Str::uuid();
+        }
+
+        $request->session()->put(self::DEVICE_COOKIE, $deviceId);
+        cookie()->queue(cookie(self::DEVICE_COOKIE, $deviceId, 60 * 24 * 365 * 2, null, null, $request->isSecure(), true, false, 'Lax'));
+
         return sha1(implode('|', [
             (string) $request->userAgent(),
-            (string) $request->ip(),
+            $deviceId,
         ]));
     }
 }

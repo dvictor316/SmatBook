@@ -1074,13 +1074,29 @@ public function inventory(Request $request)
         $this->applyBranchScope($productsQuery, 'products', $activeBranch);
     }
 
-    $products = $productsQuery->get()->map(function ($product) use ($sellExpr, $buyExpr) {
-        $stock = max(0, (float) ($product->branch_stock_on_hand ?? $product->stock ?? $product->stock_quantity ?? 0));
+    $products = $productsQuery->get()->map(function ($product) use ($activeBranch) {
+        // Always derive stock from actual transaction history (inventory_history +
+        // purchase_items - sale_items) so the inventory list stays in sync with
+        // the Inventory History page and cannot drift when product_branch_stocks
+        // gets stale. getAvailableStock() falls back to branch-stock / products.stock
+        // for products that have no transactional records yet.
+        $stock = max(0, $this->branchInventory->getAvailableStock($product, $activeBranch));
         $product->stock = $stock;
         $product->stock_quantity = $stock;
         $product->price = (float) ($product->price ?? $product->retail_price ?? 0);
         $product->purchase_price = (float) ($product->purchase_price ?? 0);
         $product->unit_type = $product->unit_type ?: ($product->base_unit_name ?: 'unit');
+
+        // Keep product_branch_stocks in sync so every other page that reads it
+        // directly (e.g. POS available-stock check) is always accurate.
+        if (!empty($activeBranch['id'])) {
+            $this->branchInventory->setBranchStock(
+                $product,
+                $stock,
+                $activeBranch,
+                (int) ($product->company_id ?? $this->tenantCompanyId())
+            );
+        }
 
         return $product;
     })->filter(fn ($product) => trim((string) ($product->name ?? '')) !== '')->values();
