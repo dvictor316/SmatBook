@@ -17,6 +17,9 @@
                     <a href="{{ route('quotations.download', $quotation->id) }}" class="btn btn-white border">
                         <i class="fe fe-download me-1"></i> Download
                     </a>
+                    <a href="{{ route('quotations.convert-cash-sale', $quotation->id) }}" class="btn btn-white border">
+                        <i class="fe fe-shopping-cart me-1"></i> Convert to Cash Sale
+                    </a>
                     <a href="{{ route('quotations.convert-invoice', $quotation->id) }}" class="btn btn-primary">
                         <i class="fe fe-file-text me-1"></i> Convert to Invoice
                     </a>

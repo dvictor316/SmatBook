@@ -31,7 +31,7 @@
         ]];
     }
     $selectedCustomer = old('customer_id', $invoiceFormDefaults['customer_id'] ?? $quotationPrefill['customer_id'] ?? ($selected_customer ?? ''));
-    $selectedPriceListId = old('price_list_id', $invoiceFormDefaults['price_list_id'] ?? optional(($priceLists ?? collect())->firstWhere('is_default', true))->id);
+    $selectedPriceListId = old('price_list_id', $invoiceFormDefaults['price_list_id'] ?? $quotationPrefill['price_list_id'] ?? optional(($priceLists ?? collect())->firstWhere('is_default', true))->id);
     $invoiceDate = old('invoice_date', $invoiceFormDefaults['invoice_date'] ?? $quotationPrefill['invoice_date'] ?? date('d-m-Y'));
     $dueDate = old('due_date', $invoiceFormDefaults['due_date'] ?? $quotationPrefill['due_date'] ?? '');
     $selectedStatus = old('status', $invoiceFormDefaults['status'] ?? 'Unpaid');

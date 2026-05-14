@@ -3327,6 +3327,7 @@ window.POS_ENABLE_FALLBACK = function () {
             return;
         }
 
+        const sourceLabel = prefill.source === 'quotation' ? 'Quotation' : 'Sales order';
         const skippedItems = [];
         cart.length = 0;
 
@@ -3357,6 +3358,11 @@ window.POS_ENABLE_FALLBACK = function () {
             const taxPercent = afterDisc > 0 ? (taxValue / afterDisc) * 100 : 0;
             const total = afterDisc + taxValue;
 
+            const priceLevel = sourceItem.price_level || 'retail';
+            const priceLevelLabel = priceLevel === 'wholesale'
+                ? 'Wholesale'
+                : (priceLevel === 'special' ? 'Special Discount' : (priceLevel === 'list' ? 'Selected price list' : 'Retail / Default'));
+
             cart.push({
                 id: productId,
                 name: data.name || sourceItem.name || option.textContent || 'Product',
@@ -3364,8 +3370,8 @@ window.POS_ENABLE_FALLBACK = function () {
                 unitType: 'unit',
                 unitLabel: data.baseUnit || 'unit',
                 stockUnits: qty,
-                priceLevel: 'retail',
-                priceLevelLabel: 'Retail / Default',
+                priceLevel,
+                priceLevelLabel,
                 price,
                 discountType: 'fixed',
                 discountValue,
@@ -3382,7 +3388,7 @@ window.POS_ENABLE_FALLBACK = function () {
         if (prefill.reference) {
             showAlert({
                 icon: cart.length ? 'success' : 'warning',
-                title: cart.length ? 'Sales order loaded' : 'Sales order needs review',
+                title: cart.length ? `${sourceLabel} loaded` : `${sourceLabel} needs review`,
                 text: skippedItems.length
                     ? `Loaded ${cart.length} item(s) from ${prefill.reference}. ${skippedItems.length} custom/unavailable item(s) were skipped because POS cash sales require catalog products.`
                     : `Loaded ${cart.length} item(s) from ${prefill.reference}.`,

@@ -100,6 +100,12 @@
                                                                         Invoice</a>
                                                                 </li>
                                                                 <li>
+                                                                    <a class="dropdown-item"
+                                                                        href="{{ route('quotations.convert-cash-sale', $quotation->id) }}"><i
+                                                                            class="fe fe-shopping-cart me-2"></i>Convert to
+                                                                        Cash Sale</a>
+                                                                </li>
+                                                                <li>
                                                                     <form action="{{ route('quotations.mark-sent', $quotation->id) }}" method="POST" class="d-inline">
                                                                         @csrf
                                                                         <button class="dropdown-item" onclick="return confirm('Mark this quotation as sent?')"><i

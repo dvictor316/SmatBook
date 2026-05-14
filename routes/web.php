@@ -838,6 +838,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::post('/quotations/{id}/send', 'sendQuotation')->name('quotations.send');
         Route::get('/quotations/{id}/download', 'downloadQuotation')->name('quotations.download');
         Route::get('/quotations/{id}/convert-invoice', 'convertQuotationToInvoice')->name('quotations.convert-invoice');
+        Route::get('/quotations/{id}/convert-cash-sale', 'convertQuotationToCashSale')->name('quotations.convert-cash-sale');
         Route::get('/quotations/{id}/clone-invoice', 'cloneQuotationAsInvoice')->name('quotations.clone-invoice');
         Route::get('/edit-quotations/{id?}', 'edit_quotations')->name('edit-quotations');
         Route::post('/quotations', 'storeQuotation')->name('quotations.store');

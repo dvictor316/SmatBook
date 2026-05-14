@@ -107,6 +107,33 @@ class HomeController extends Controller
         return is_array($items) ? array_values($items) : [];
     }
 
+    private function normalizedQuotationConversionItems(Quotation $quotation): array
+    {
+        return collect($this->quotationItems($quotation))
+            ->map(function ($item) {
+                $qty = (float) ($item['qty'] ?? $item['quantity'] ?? 1);
+                $rate = (float) ($item['rate'] ?? $item['unit_price'] ?? 0);
+                $discount = (float) ($item['discount'] ?? 0);
+                $tax = (float) ($item['tax'] ?? 0);
+                $amount = (float) ($item['amount'] ?? max(0, ($qty * $rate) - $discount + $tax));
+
+                return [
+                    'product_id' => !empty($item['product_id']) ? (int) $item['product_id'] : '',
+                    'name' => $item['name'] ?? $item['product_name'] ?? '',
+                    'price_level' => $item['price_level'] ?? $item['price_source'] ?? 'retail',
+                    'price_list_id' => $item['price_list_id'] ?? null,
+                    'qty' => max(1, $qty),
+                    'rate' => number_format($rate, 2, '.', ''),
+                    'discount' => $discount,
+                    'tax' => $tax,
+                    'amount' => $amount,
+                ];
+            })
+            ->filter(fn ($item) => !empty($item['product_id']) || trim((string) ($item['name'] ?? '')) !== '')
+            ->values()
+            ->all();
+    }
+
     private function quotationInvoicePrefill(Quotation $quotation): array
     {
         $issueDate = $quotation->issue_date ? Carbon::parse($quotation->issue_date)->format('d-m-Y') : now()->format('d-m-Y');
@@ -116,8 +143,9 @@ class HomeController extends Controller
             'customer_id' => $quotation->customer_id,
             'invoice_date' => $issueDate,
             'due_date' => $expiryDate,
-            'description' => $quotation->description ?? $quotation->note,
-            'items' => $this->quotationItems($quotation),
+            'price_list_id' => $quotation->price_list_id ?? null,
+            'description' => trim("Converted from Quotation " . ($quotation->quotation_id ?? ('#' . $quotation->id)) . ".\n\n" . (string) ($quotation->description ?? $quotation->note ?? '')),
+            'items' => $this->normalizedQuotationConversionItems($quotation),
         ];
     }
 
@@ -1060,7 +1088,24 @@ class HomeController extends Controller
 
         return redirect()->route('add-invoice')
             ->with('quotation_prefill', $this->quotationInvoicePrefill($quotation))
-            ->with('info', 'Quotation loaded into invoice form.');
+            ->with('info', 'Quotation loaded into the invoice form with customer and item details ready.');
+    }
+
+    public function convertQuotationToCashSale($id)
+    {
+        $quotation = $this->findScopedQuotation($id);
+
+        session()->flash('pos_prefill', [
+            'source' => 'quotation',
+            'reference' => $quotation->quotation_id ?? ('Quotation #' . $quotation->id),
+            'customer_id' => $quotation->customer_id,
+            'customer_name' => $quotation->customer_name ?? $quotation->customer?->customer_name ?? $quotation->customer?->name ?? null,
+            'items' => $this->normalizedQuotationConversionItems($quotation),
+        ]);
+
+        return redirect()
+            ->route('sales.showPos')
+            ->with('success', 'Quotation loaded into POS with customer and cart details ready for payment.');
     }
 
     public function cloneQuotationAsInvoice($id)
