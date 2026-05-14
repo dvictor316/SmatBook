@@ -84,7 +84,7 @@
     <li class="submenu {{ Request::is('reports*', 'trial-balance', 'balance-sheet', 'cash-flow') ? 'active subdrop' : '' }}">
         <a href="#"><i class="fe fe-bar-chart"></i><span>Reports</span><span class="menu-arrow"></span></a>
         <ul>
-            @include('layout.partials.sidebars.reports-menu', ['reportAccess' => 'basic'])
+            @include('layout.partials.sidebars.reports-menu', ['reportAccess' => 'basic', 'nested' => true])
         </ul>
     </li>
 

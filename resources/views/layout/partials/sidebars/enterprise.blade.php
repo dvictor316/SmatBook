@@ -185,7 +185,7 @@
                 <li class="submenu {{ Request::is('reports*', 'trial-balance', 'balance-sheet', 'cash-flow', 'activity-log*', 'close*', 'audit*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-bar-chart"></i><span>Reports</span><span class="menu-arrow"></span></a>
                     <ul>
-                        @include('layout.partials.sidebars.reports-menu', ['reportAccess' => 'enterprise'])
+                        @include('layout.partials.sidebars.reports-menu', ['reportAccess' => 'enterprise', 'nested' => true])
                         <li><a href="{{ route('report-schedules.index') }}">Scheduled Reports</a></li>
                         <li><a href="{{ route('reports.financial-ratios') }}">Financial Ratios</a></li>
                         <li><a href="{{ route('activity-log.index') }}">Activity Log</a></li>
