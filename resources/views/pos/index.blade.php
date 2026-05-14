@@ -55,8 +55,8 @@
     margin-left: var(--sb-sidebar-w, 270px); 
     padding: 20px; 
     background:
-        radial-gradient(1200px 320px at 10% 0%, rgba(215, 169, 40, 0.12) 0%, rgba(215, 169, 40, 0) 55%),
-        radial-gradient(900px 260px at 92% 6%, rgba(15, 58, 138, 0.10) 0%, rgba(15, 58, 138, 0) 58%),
+        radial-gradient(1200px 320px at 10% 0%, rgba(37, 99, 235, 0.12) 0%, rgba(37, 99, 235, 0) 55%),
+        radial-gradient(900px 260px at 92% 6%, rgba(15, 58, 138, 0.12) 0%, rgba(15, 58, 138, 0) 58%),
         linear-gradient(to bottom, #f7faff 0%, #ffffff 62%, #ffffff 100%);
     min-height: 100vh; 
     transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -81,14 +81,14 @@ body.mini-sidebar .pos-full-page-wrapper {
     justify-content: space-between;
     gap: 10px;
     padding: 10px 14px;
-    border: 1px solid rgba(215, 169, 40, 0.38);
+    border: 1px solid rgba(37, 99, 235, 0.24);
     border-radius: var(--radius-md);
     background:
-        linear-gradient(90deg, rgba(255, 248, 219, 0.96) 0%, rgba(255, 255, 255, 0.98) 52%, rgba(248, 251, 255, 0.98) 100%);
+        linear-gradient(90deg, rgba(238, 244, 255, 0.96) 0%, rgba(255, 255, 255, 0.98) 52%, rgba(248, 251, 255, 0.98) 100%);
     margin-bottom: 10px;
     box-shadow:
         inset 0 1px 0 rgba(255,255,255,0.92),
-        0 0 0 1px rgba(215, 169, 40, 0.10);
+        0 0 0 1px rgba(37, 99, 235, 0.10);
 }
 
 .header-stage {
@@ -98,8 +98,8 @@ body.mini-sidebar .pos-full-page-wrapper {
     background:
         radial-gradient(1200px 220px at 10% 0%, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0) 60%),
         radial-gradient(900px 220px at 100% 0%, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0) 62%),
-        linear-gradient(135deg, rgba(6, 26, 68, 0.95) 0%, rgba(15, 58, 138, 0.96) 68%, rgba(215, 169, 40, 0.88) 100%);
-    border: 1px solid rgba(215, 169, 40, 0.36);
+        linear-gradient(135deg, rgba(6, 26, 68, 0.96) 0%, rgba(15, 58, 138, 0.98) 72%, rgba(37, 99, 235, 0.92) 100%);
+    border: 1px solid rgba(37, 99, 235, 0.30);
     margin-bottom: 14px;
     box-shadow: 0 14px 30px rgba(6, 26, 68, 0.18);
 }
@@ -110,39 +110,39 @@ body.mini-sidebar .pos-full-page-wrapper {
     inset: 0;
     border-radius: 18px;
     pointer-events: none;
-    box-shadow: inset 0 0 0 1px rgba(215, 169, 40, 0.42);
+    box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.34);
 }
 
 .header-stage.plan-basic {
     background:
         radial-gradient(1200px 220px at 10% 0%, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0) 60%),
         radial-gradient(900px 220px at 100% 0%, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0) 62%),
-        linear-gradient(135deg, rgba(6, 26, 68, 0.95) 0%, rgba(15, 58, 138, 0.96) 68%, rgba(215, 169, 40, 0.88) 100%);
-    border-color: rgba(215, 169, 40, 0.36);
+        linear-gradient(135deg, rgba(6, 26, 68, 0.96) 0%, rgba(15, 58, 138, 0.98) 72%, rgba(37, 99, 235, 0.92) 100%);
+    border-color: rgba(37, 99, 235, 0.30);
 }
 
 .header-stage.plan-pro {
     background:
-        radial-gradient(1200px 220px at 10% 0%, rgba(215, 169, 40, 0.16) 0%, rgba(215, 169, 40, 0) 60%),
-        radial-gradient(900px 220px at 100% 0%, rgba(15, 58, 138, 0.13) 0%, rgba(15, 58, 138, 0) 62%),
-        linear-gradient(135deg, #061a44 0%, #0f3a8a 72%, #d7a928 100%);
-    border-color: rgba(215, 169, 40, 0.42);
+        radial-gradient(1200px 220px at 10% 0%, rgba(37, 99, 235, 0.22) 0%, rgba(37, 99, 235, 0) 60%),
+        radial-gradient(900px 220px at 100% 0%, rgba(215, 169, 40, 0.08) 0%, rgba(215, 169, 40, 0) 62%),
+        linear-gradient(135deg, #061a44 0%, #0f3a8a 72%, #2563eb 100%);
+    border-color: rgba(37, 99, 235, 0.38);
 }
 
 .header-stage.plan-enterprise {
     background:
-        radial-gradient(1200px 220px at 10% 0%, rgba(215, 169, 40, 0.16) 0%, rgba(215, 169, 40, 0) 60%),
-        radial-gradient(900px 220px at 100% 0%, rgba(15, 58, 138, 0.13) 0%, rgba(15, 58, 138, 0) 62%),
-        linear-gradient(135deg, #061a44 0%, #0f3a8a 72%, #d7a928 100%);
-    border-color: rgba(215, 169, 40, 0.42);
+        radial-gradient(1200px 220px at 10% 0%, rgba(37, 99, 235, 0.22) 0%, rgba(37, 99, 235, 0) 60%),
+        radial-gradient(900px 220px at 100% 0%, rgba(215, 169, 40, 0.08) 0%, rgba(215, 169, 40, 0) 62%),
+        linear-gradient(135deg, #061a44 0%, #0f3a8a 72%, #2563eb 100%);
+    border-color: rgba(37, 99, 235, 0.38);
 }
 
 .header-stage.plan-super {
     background:
         radial-gradient(1200px 220px at 10% 0%, rgba(15, 23, 42, 0.14) 0%, rgba(15, 23, 42, 0) 62%),
         radial-gradient(900px 220px at 100% 0%, rgba(51, 65, 85, 0.14) 0%, rgba(51, 65, 85, 0) 62%),
-        linear-gradient(135deg, #061a44 0%, #0f3a8a 72%, #d7a928 100%);
-    border-color: rgba(215, 169, 40, 0.42);
+        linear-gradient(135deg, #061a44 0%, #0f3a8a 72%, #2563eb 100%);
+    border-color: rgba(37, 99, 235, 0.38);
 }
 
 .util-pills {
@@ -155,8 +155,8 @@ body.mini-sidebar .pos-full-page-wrapper {
     font-size: 0.7rem;
     font-weight: 700;
     color: #ffffff;
-    background: linear-gradient(135deg, #fff1bf 0%, #d7a928 100%);
-    color: #061a44;
+    background: linear-gradient(135deg, #eaf2ff 0%, #ffffff 100%);
+    color: #0f3a8a;
     border: 1px solid rgba(255, 255, 255, 0.38);
     border-radius: 999px;
     padding: 4px 10px;
@@ -183,7 +183,7 @@ body.mini-sidebar .pos-full-page-wrapper {
     min-height: 72px; 
     padding: 10px 28px;
     border-radius: var(--radius-lg);
-    border: 1px solid rgba(215, 169, 40, 0.34);
+    border: 1px solid rgba(37, 99, 235, 0.20);
     box-shadow: 0 8px 20px rgba(6, 26, 68, 0.12);
     margin-bottom: 0;
     display: flex;
@@ -200,7 +200,7 @@ body.mini-sidebar .pos-full-page-wrapper {
     left: 0;
     right: 0;
     height: 2px;
-    background: linear-gradient(90deg, var(--spb-gold) 0%, var(--primary-600) 100%);
+    background: linear-gradient(90deg, var(--primary-700) 0%, var(--primary-600) 82%, var(--spb-gold) 100%);
 }
 
 .pos-header-title { 
@@ -282,7 +282,7 @@ body.mini-sidebar .pos-full-page-wrapper {
 .search-input:focus { 
     border-color: var(--primary-600);
     outline: none;
-    box-shadow: 0 0 0 3px rgba(215, 169, 40, 0.18);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
     background: #ffffff;
 }
 
@@ -366,8 +366,8 @@ body.mini-sidebar .pos-full-page-wrapper {
 
 /* Scanner Section */
 .scanner-section {
-    background: linear-gradient(135deg, #fff8db 0%, #ffffff 100%);
-    border: 2px solid var(--spb-gold);
+    background: linear-gradient(135deg, #eef4ff 0%, #ffffff 100%);
+    border: 2px solid rgba(37, 99, 235, 0.24);
     border-radius: var(--radius-lg);
     padding: 14px;
     margin-bottom: 18px;
@@ -465,7 +465,7 @@ body.mini-sidebar .pos-full-page-wrapper {
 .category-toggle-btn:hover {
     border-color: var(--primary-600);
     color: var(--primary-600);
-    background: #fff8db;
+    background: #eef4ff;
 }
 
 .category-pill {
@@ -481,9 +481,9 @@ body.mini-sidebar .pos-full-page-wrapper {
 
 .category-pill:hover,
 .category-pill.active {
-    border-color: var(--spb-gold);
+    border-color: var(--primary-600);
     color: var(--primary-600);
-    background: #fff8db;
+    background: #eef4ff;
 }
 
 .product-grid {
@@ -512,18 +512,18 @@ body.mini-sidebar .pos-full-page-wrapper {
 .product-card:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-md);
-    border-color: var(--spb-gold);
+    border-color: var(--primary-600);
 }
 
 .product-card.active {
-    border-color: var(--spb-gold);
-    box-shadow: 0 0 0 2px rgba(215, 169, 40, 0.16);
-    background: #fff8db;
+    border-color: var(--primary-600);
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.14);
+    background: #eef4ff;
 }
 
 .product-card.last-picked {
-    border-color: var(--spb-gold);
-    box-shadow: 0 0 0 2px rgba(215, 169, 40, 0.16);
+    border-color: var(--primary-600);
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.14);
 }
 
 .product-card-img {
@@ -563,8 +563,8 @@ body.mini-sidebar .pos-full-page-wrapper {
 }
 
 .quick-fill-panel {
-    border: 1px dashed rgba(215, 169, 40, 0.62);
-    background: linear-gradient(135deg, #fff8db 0%, #ffffff 100%);
+    border: 1px dashed rgba(37, 99, 235, 0.30);
+    background: linear-gradient(135deg, #eef4ff 0%, #ffffff 100%);
     border-radius: var(--radius-md);
     padding: 10px;
 }
@@ -614,7 +614,7 @@ body.mini-sidebar .pos-full-page-wrapper {
 
 /* Form Controls */
 .form-control, .form-select {
-    border: 1.5px solid rgba(215, 169, 40, 0.24);
+    border: 1.5px solid rgba(37, 99, 235, 0.18);
     border-radius: var(--radius-md);
     font-weight: 500;
     color: var(--text-primary);
@@ -625,7 +625,7 @@ body.mini-sidebar .pos-full-page-wrapper {
 
 .form-control:focus, .form-select:focus {
     border-color: var(--primary-600);
-    box-shadow: 0 0 0 3px rgba(215, 169, 40, 0.18);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
     outline: none;
 }
 
@@ -660,12 +660,12 @@ body.mini-sidebar .pos-full-page-wrapper {
 }
 
 .unit-btn:hover {
-    border-color: #d7a928;
+    border-color: #2563eb;
     background: #ffffff;
     color: #0f3a8a;
     -webkit-text-fill-color: #0f3a8a;
     transform: translateY(-2px);
-    box-shadow: 0 14px 28px rgba(15, 58, 138, 0.12), inset 0 0 0 1px rgba(215, 169, 40, 0.24);
+    box-shadow: 0 14px 28px rgba(15, 58, 138, 0.12), inset 0 0 0 1px rgba(37, 99, 235, 0.18);
 }
 
 .unit-btn.disabled {
@@ -680,7 +680,7 @@ body.mini-sidebar .pos-full-page-wrapper {
 
 .btn-check:checked + .unit-btn {
     background: linear-gradient(135deg, #0f3a8a 0%, #2563eb 100%);
-    border-color: #d7a928;
+    border-color: #bfdbfe;
     color: #ffffff;
     -webkit-text-fill-color: #ffffff;
     box-shadow: 0 16px 30px rgba(15, 58, 138, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.24);
@@ -688,8 +688,8 @@ body.mini-sidebar .pos-full-page-wrapper {
 
 .btn-check:focus + .unit-btn,
 .btn-check:checked:focus + .unit-btn {
-    border-color: #d7a928;
-    box-shadow: 0 0 0 0.22rem rgba(215, 169, 40, 0.22), 0 16px 30px rgba(15, 58, 138, 0.18);
+    border-color: #2563eb;
+    box-shadow: 0 0 0 0.22rem rgba(37, 99, 235, 0.18), 0 16px 30px rgba(15, 58, 138, 0.18);
 }
 
 .unit-btn small {
@@ -839,7 +839,7 @@ body.mini-sidebar .pos-full-page-wrapper {
 .cart-qty-input:focus {
     outline: none;
     border-color: var(--primary-600);
-    box-shadow: 0 0 0 3px rgba(215, 169, 40, 0.18);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
 }
 
 .cart-actions {
@@ -856,13 +856,13 @@ body.mini-sidebar .pos-full-page-wrapper {
     justify-content: center;
     border: none;
     border-radius: 999px;
-    background: linear-gradient(135deg, rgba(255, 241, 191, 0.92) 0%, rgba(215, 169, 40, 0.24) 100%);
+    background: linear-gradient(135deg, rgba(234, 242, 255, 0.96) 0%, rgba(37, 99, 235, 0.14) 100%);
     color: var(--primary-600);
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.9);
 }
 
 .btn-cart-edit:hover {
-    background: linear-gradient(135deg, rgba(255, 241, 191, 1) 0%, rgba(215, 169, 40, 0.34) 100%);
+    background: linear-gradient(135deg, rgba(234, 242, 255, 1) 0%, rgba(37, 99, 235, 0.16) 100%);
     color: var(--primary-700);
 }
 
@@ -893,7 +893,7 @@ body.mini-sidebar .pos-full-page-wrapper {
     width: min(100%, 320px);
     padding: 26px 22px;
     text-align: center;
-    border: 1px dashed #eddca2;
+    border: 1px dashed #bfdbfe;
     border-radius: 20px;
     background: linear-gradient(180deg, rgba(255, 253, 244, 0.98) 0%, rgba(255, 250, 236, 0.96) 100%);
     box-shadow: 0 14px 34px rgba(212, 175, 55, 0.10);
@@ -906,10 +906,10 @@ body.mini-sidebar .pos-full-page-wrapper {
     border-radius: 18px;
     display: grid;
     place-items: center;
-    background: linear-gradient(135deg, #fff8dc 0%, #fef3c7 100%);
-    color: #9a6f00;
+    background: linear-gradient(135deg, #eaf2ff 0%, #ffffff 100%);
+    color: #0f3a8a;
     font-size: 1.4rem;
-    border: 1px solid rgba(212, 175, 55, 0.24);
+    border: 1px solid rgba(37, 99, 235, 0.20);
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.95);
 }
 
@@ -979,7 +979,7 @@ body.mini-sidebar .pos-full-page-wrapper {
 .grand-total { 
     font-size: 1.5rem;
     font-weight: 900;
-    background: linear-gradient(135deg, var(--primary-600) 0%, var(--spb-gold) 100%);
+    background: linear-gradient(135deg, var(--primary-700) 0%, var(--primary-600) 86%, var(--spb-gold) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -1209,9 +1209,11 @@ label {
     --sa-blue-bright: #2563eb;
     --sa-gold: #d7a928;
     --sa-gold-soft: #ffe8a3;
-    --sa-line: rgba(215, 169, 40, 0.26);
+    --sa-blue-soft: #eaf2ff;
+    --sa-line: rgba(37, 99, 235, 0.24);
     background:
-        radial-gradient(circle at top right, rgba(215, 169, 40, 0.08), transparent 32%),
+        radial-gradient(circle at top right, rgba(37, 99, 235, 0.14), transparent 34%),
+        radial-gradient(circle at bottom left, rgba(215, 169, 40, 0.05), transparent 30%),
         linear-gradient(180deg, #f8fbff 0%, #f3f7ff 100%) !important;
 }
 
@@ -1221,29 +1223,29 @@ label {
 .pos-full-page-wrapper .header-stage.plan-enterprise,
 .pos-full-page-wrapper .header-stage.plan-super {
     background:
-        radial-gradient(circle at 16% 8%, rgba(215, 169, 40, 0.22), transparent 28%),
-        radial-gradient(circle at 84% 22%, rgba(37, 99, 235, 0.24), transparent 34%),
+        radial-gradient(circle at 16% 8%, rgba(37, 99, 235, 0.30), transparent 30%),
+        radial-gradient(circle at 84% 22%, rgba(215, 169, 40, 0.10), transparent 28%),
         linear-gradient(180deg, var(--sa-navy) 0%, var(--sa-blue) 52%, #071635 100%) !important;
-    border: 1px solid rgba(215, 169, 40, 0.22) !important;
+    border: 1px solid rgba(37, 99, 235, 0.28) !important;
     box-shadow: 0 18px 42px rgba(6, 26, 68, 0.22) !important;
 }
 
 .pos-full-page-wrapper .header-stage::after {
-    box-shadow: inset 0 0 0 1px rgba(215, 169, 40, 0.26) !important;
+    box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.34) !important;
 }
 
 .pos-full-page-wrapper .header-util-bar {
     background: rgba(255, 255, 255, 0.08) !important;
-    border: 1px solid rgba(215, 169, 40, 0.26) !important;
+    border: 1px solid rgba(191, 219, 254, 0.30) !important;
     box-shadow: inset 3px 0 0 var(--sa-gold), 0 10px 22px rgba(0, 0, 0, 0.14) !important;
 }
 
 .pos-full-page-wrapper .util-pill,
 .pos-full-page-wrapper .clock-badge {
-    background: linear-gradient(135deg, var(--sa-gold-soft) 0%, var(--sa-gold) 100%) !important;
-    color: var(--sa-navy) !important;
-    border-color: rgba(255, 255, 255, 0.24) !important;
-    -webkit-text-fill-color: var(--sa-navy) !important;
+    background: linear-gradient(135deg, var(--sa-blue-soft) 0%, #ffffff 100%) !important;
+    color: var(--sa-blue) !important;
+    border-color: rgba(191, 219, 254, 0.72) !important;
+    -webkit-text-fill-color: var(--sa-blue) !important;
 }
 
 .pos-full-page-wrapper .header-util-note,
@@ -1270,8 +1272,8 @@ label {
 .pos-full-page-wrapper .scanner-section,
 .pos-full-page-wrapper .quick-fill-panel,
 .pos-full-page-wrapper .subtotal-box {
-    background: linear-gradient(135deg, #fff8e1 0%, #eef4ff 100%) !important;
-    border-color: rgba(215, 169, 40, 0.38) !important;
+    background: linear-gradient(135deg, #eef4ff 0%, #ffffff 100%) !important;
+    border-color: rgba(37, 99, 235, 0.22) !important;
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.72), 0 10px 22px rgba(6, 26, 68, 0.08) !important;
 }
 
@@ -1283,8 +1285,8 @@ label {
 .pos-full-page-wrapper .btn-cart-edit,
 .pos-full-page-wrapper .cart-empty-shell {
     color: var(--sa-blue) !important;
-    background: rgba(215, 169, 40, 0.12) !important;
-    border-color: rgba(215, 169, 40, 0.45) !important;
+    background: rgba(37, 99, 235, 0.10) !important;
+    border-color: rgba(37, 99, 235, 0.32) !important;
     box-shadow: inset 2px 0 0 var(--sa-gold), 0 10px 22px rgba(6, 26, 68, 0.08) !important;
 }
 
@@ -1297,11 +1299,11 @@ label {
 
 .pos-full-page-wrapper .unit-btn:hover,
 .pos-full-page-wrapper .btn-check:checked + .unit-btn {
-    background: linear-gradient(135deg, rgba(215, 169, 40, 0.24), rgba(37, 99, 235, 0.2)) !important;
-    border-color: rgba(215, 169, 40, 0.45) !important;
-    color: #061a44 !important;
-    -webkit-text-fill-color: #061a44 !important;
-    box-shadow: inset 3px 0 0 var(--sa-gold), 0 12px 26px rgba(0, 0, 0, 0.10) !important;
+    background: linear-gradient(135deg, var(--sa-blue) 0%, var(--sa-blue-bright) 100%) !important;
+    border-color: rgba(37, 99, 235, 0.64) !important;
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    box-shadow: inset 3px 0 0 var(--sa-gold), 0 12px 26px rgba(15, 58, 138, 0.18) !important;
 }
 
 .pos-full-page-wrapper .btn-add-cart,
@@ -1332,7 +1334,7 @@ label {
 .pos-full-page-wrapper .search-input:focus,
 .pos-full-page-wrapper .cart-qty-input:focus {
     border-color: var(--sa-gold) !important;
-    box-shadow: 0 0 0 0.2rem rgba(215, 169, 40, 0.22) !important;
+    box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.16) !important;
 }
 </style>
 
@@ -1376,7 +1378,7 @@ label {
                     <div class="clock-badge">
                         <i class="far fa-clock me-1"></i><span id="live-clock" class="tabular-nums">00:00:00</span>
                     </div>
-                    <div class="clock-badge" style="background: linear-gradient(135deg, #fff1bf 0%, #d7a928 100%); color: #061a44; border-color: rgba(215, 169, 40, 0.36); box-shadow: 0 8px 18px rgba(6, 26, 68, 0.14);">
+                    <div class="clock-badge" style="background: linear-gradient(135deg, #eaf2ff 0%, #ffffff 100%); color: #0f3a8a; border-color: rgba(37, 99, 235, 0.28); box-shadow: 0 8px 18px rgba(6, 26, 68, 0.14);">
                         <i class="fas fa-code-branch me-1"></i>{{ $activeBranch['name'] ?? 'Main Workspace' }}
                     </div>
                 </div>

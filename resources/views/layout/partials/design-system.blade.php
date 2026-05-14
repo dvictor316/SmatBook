@@ -660,7 +660,8 @@
     body:not(.landing-page-body):not(.login-body) #main-content-wrapper,
     body:not(.landing-page-body):not(.login-body) .page-content-wrapper {
         background:
-            radial-gradient(circle at top right, rgba(215, 169, 40, 0.10), transparent 28%),
+            radial-gradient(circle at top right, rgba(37, 99, 235, 0.12), transparent 30%),
+            radial-gradient(circle at bottom left, rgba(215, 169, 40, 0.05), transparent 28%),
             linear-gradient(180deg, #f8fbff 0%, #f3f7ff 100%) !important;
     }
 
@@ -671,8 +672,8 @@
     }
 
     body:not(.landing-page-body) .workspace-switcher {
-        background: linear-gradient(135deg, #fff8e1 0%, #eef4ff 100%) !important;
-        border-color: rgba(215, 169, 40, 0.38) !important;
+        background: linear-gradient(135deg, #eef4ff 0%, #ffffff 100%) !important;
+        border-color: rgba(37, 99, 235, 0.24) !important;
         box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.72), 0 10px 22px rgba(6, 26, 68, 0.08) !important;
     }
 
@@ -879,7 +880,7 @@
 
     body:not(.landing-page-body) .dropdown-menu .dropdown-item:hover,
     body:not(.landing-page-body) .dropdown-menu .dropdown-item:focus {
-        background: #fff8e1 !important;
+        background: #eef4ff !important;
         color: var(--spb-theme-blue) !important;
         -webkit-text-fill-color: var(--spb-theme-blue) !important;
     }
@@ -907,7 +908,7 @@
     body:not(.landing-page-body) .form-select:focus,
     body:not(.landing-page-body) .select2-container--default .select2-selection--single:focus,
     body:not(.landing-page-body) .select2-container--default.select2-container--focus .select2-selection--single {
-        border-color: var(--spb-theme-gold) !important;
-        box-shadow: 0 0 0 0.2rem rgba(215, 169, 40, 0.16) !important;
+        border-color: var(--spb-theme-blue-bright) !important;
+        box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.14) !important;
     }
 </style>
