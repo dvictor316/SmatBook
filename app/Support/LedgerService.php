@@ -1070,11 +1070,25 @@ class LedgerService
         $branch = self::resolveRelatedBranchContext($relatedId, $relatedType);
 
         $salesRevenueAccount = self::resolveAccount('Sales Revenue', 'Revenue', ['sales', 'income'], 'AUTO-REV-SALES');
-        $receivableAccount = self::resolveAccount('Accounts Receivable', 'Asset', ['receivable', 'debtor'], 'AUTO-AST-AR');
+        $creditAccount = self::resolveAccount('Accounts Receivable', 'Asset', ['receivable', 'debtor'], 'AUTO-AST-AR');
+
+        if ($relatedType === 'credit_note' && Schema::hasTable('credit_notes') && Schema::hasTable('sales')) {
+            $sale = DB::table('credit_notes')
+                ->join('sales', 'credit_notes.sale_id', '=', 'sales.id')
+                ->where('credit_notes.id', $relatedId)
+                ->select('sales.payment_status', 'sales.balance')
+                ->first();
+
+            $paidStatus = strtolower((string) ($sale->payment_status ?? ''));
+            $saleBalance = round((float) ($sale->balance ?? 0), 2);
+            if ($paidStatus === 'paid' || $saleBalance <= 0) {
+                $creditAccount = self::resolveAccount('Customer Advances', 'Liability', ['customer advance', 'customer deposit', 'unearned revenue'], 'AUTO-LIB-CADV');
+            }
+        }
 
         self::postDoubleEntry(
             debitAccountId: $salesRevenueAccount->id,
-            creditAccountId: $receivableAccount->id,
+            creditAccountId: $creditAccount->id,
             amount: $amount,
             date: self::resolveDate($date),
             reference: $reference,

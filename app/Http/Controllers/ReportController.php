@@ -24,12 +24,14 @@ use App\Models\Account;
 use App\Models\PurchaseReturn;
 use App\Models\Customer;
 use App\Models\Sale;
+use App\Models\Product;
 use App\Models\Setting;
 use App\Models\Plan;
 use App\Models\Subscription;
 use App\Support\PlanAccess;
 use App\Support\LedgerService;
 use App\Support\AppMailer;
+use App\Support\BranchInventoryService;
 use App\Support\InventoryQuantity;
 
 
@@ -3075,8 +3077,8 @@ public function destroy($id)
     /**
      * Show form to create a Sales Return
      */
-    public function create_credit_note()
-    {
+	    public function create_credit_note(Request $request)
+	    {
         // Pointing to 'sales' where your 9 records actually are
         $invoices = $this->scopedTable('sales')
             ->leftJoin('customers', 'sales.customer_id', '=', 'customers.id')
@@ -3087,13 +3089,14 @@ public function destroy($id)
             )
             ->orderBy('sales.id', 'desc');
         $this->applySalesScope($invoices, 'sales');
-        $invoices = $invoices->get();
+	        $invoices = $invoices->get();
+	        $selectedInvoiceId = (int) $request->input('invoice_id', 0);
+	
+	        return view('Reports.Reports.create-sales-return', compact('invoices', 'selectedInvoiceId'));
+	    }
 
-        return view('Reports.Reports.create-sales-return', compact('invoices'));
-    }
-
-    /**
-     * Store the Sales Return (Credit Note) data
+	    /**
+	     * Store the Sales Return (Credit Note) data
      */
     public function store_credit_note(Request $request)
     {
@@ -3108,7 +3111,13 @@ public function destroy($id)
             $companyId = (int) (optional(Auth::user())->company_id ?? session('current_tenant_id') ?? 0);
             $userId    = (int) (Auth::id() ?? 0);
 
-            $invoice = DB::table('sales')->where('id', $request->invoice_id)->first();
+	            $invoiceQuery = DB::table('sales')->where('id', $request->invoice_id);
+	            $this->applySalesScope($invoiceQuery, 'sales');
+	            $invoice = $invoiceQuery->first();
+	            if (!$invoice) {
+	                throw new \RuntimeException('The selected sale could not be found for this tenant or branch.');
+	            }
+	            $activeBranch = $this->getActiveBranchContext();
 
             // 1. Create the Credit Note Header
             $cnInsert = [
@@ -3153,15 +3162,38 @@ public function destroy($id)
                     }
                     DB::table('credit_note_items')->insert($ciInsert);
 
-                    // 3. Update Inventory: Increment stock because goods are returned
-                    DB::table('products')->where('id', $productId)->increment('stock', $data['qty']);
-                }
-            }
+	                    // 3. Update Inventory: returned goods come back into sellable stock for the active branch.
+	                    $product = Product::query()->lockForUpdate()->find($productId);
+	                    if ($product) {
+	                        $stockUnits = InventoryQuantity::resolveSaleStockUnits(
+	                            $product,
+	                            (float) $data['qty'],
+	                            $data['unit_type'] ?? null,
+	                            isset($data['stock_units']) ? (float) $data['stock_units'] : null
+	                        );
+	                        $product->increment('stock', $stockUnits);
+	                        app(BranchInventoryService::class)->adjustBranchStock(
+	                            $product,
+	                            $stockUnits,
+	                            $activeBranch,
+	                            $companyId > 0 ? $companyId : (int) ($product->company_id ?? 0)
+	                        );
+	                    }
+	                }
+	            }
 
-            // 4. Finalize the total amount
-            DB::table('credit_notes')->where('id', $creditNoteId)->update(['total_amount' => $totalAmount]);
+	            // 4. Finalize the total amount
+	            DB::table('credit_notes')->where('id', $creditNoteId)->update(['total_amount' => $totalAmount]);
 
-            if ($totalAmount > 0) {
+	            $invoiceStatus = strtolower((string) ($invoice->payment_status ?? ''));
+	            $invoiceBalance = round((float) ($invoice->balance ?? 0), 2);
+	            if ($totalAmount > 0 && !empty($invoice->customer_id) && Schema::hasColumn('customers', 'wallet_balance') && ($invoiceStatus === 'paid' || $invoiceBalance <= 0)) {
+	                Customer::query()
+	                    ->whereKey((int) $invoice->customer_id)
+	                    ->increment('wallet_balance', $totalAmount);
+	            }
+	
+	            if ($totalAmount > 0) {
                 LedgerService::postSalesReturn(
                     (int) $creditNoteId,
                     (float) $totalAmount,
@@ -3199,23 +3231,39 @@ public function destroy($id)
             return response()->json($items);
         }
 
-    public function get_invoice_items($id)
-    {
-        // Fetch items linked to the sale_id
-        $items = $this->scopedTable('sale_items')
-            ->join('products', 'sale_items.product_id', '=', 'products.id')
-            ->where('sale_items.sale_id', $id)
-            ->select(
-                'products.id as product_id',
-                'products.name',
-                'sale_items.quantity as qty', // Aliasing 'quantity' to 'qty' for the JS
-                'sale_items.unit_price'
-            )
-            ->get();
+	    public function get_invoice_items($id)
+	    {
+	        $saleQuery = DB::table('sales')->where('sales.id', $id);
+	        $this->applySalesScope($saleQuery, 'sales');
+	        abort_unless($saleQuery->exists(), 404);
 
-        // This returns a JSON array that the JavaScript will "pour" into the table
-        return response()->json($items);
-    }
+	        $qtyColumn = Schema::hasColumn('sale_items', 'qty') ? 'qty' : 'quantity';
+	        $nameExpression = Schema::hasColumn('sale_items', 'product_name')
+	            ? 'COALESCE(products.name, sale_items.product_name, "Returned item")'
+	            : 'COALESCE(products.name, "Returned item")';
+
+	        $selects = [
+	            'sale_items.product_id',
+	            DB::raw($nameExpression . ' as name'),
+	            "sale_items.{$qtyColumn} as qty",
+	            'sale_items.unit_price',
+	        ];
+
+	        if (Schema::hasColumn('sale_items', 'unit_type')) {
+	            $selects[] = 'sale_items.unit_type';
+	        }
+	        if (Schema::hasColumn('sale_items', 'stock_units')) {
+	            $selects[] = 'sale_items.stock_units';
+	        }
+
+	        $items = DB::table('sale_items')
+	            ->leftJoin('products', 'sale_items.product_id', '=', 'products.id')
+	            ->where('sale_items.sale_id', $id)
+	            ->select($selects)
+	            ->get();
+
+	        return response()->json($items);
+	    }
     /**
      * Private helper to keep the Database Query logic in one place
      */

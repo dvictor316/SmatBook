@@ -3200,7 +3200,8 @@ window.POS_ENABLE_FALLBACK = function () {
 	        const transferPaid = parseFloat(transferAmount?.value || '0') || 0;
 	        const cardPaid = parseFloat(cardAmount?.value || '0') || 0;
 	        const isSplit = paymentMethod?.value === 'Split';
-	        const paid = (isSplit ? (cashPaid + transferPaid + cardPaid) : cashPaid) + walletPaid;
+	        const externalPaid = isSplit ? (cashPaid + transferPaid + cardPaid) : cashPaid;
+	        const paid = externalPaid + walletPaid;
 	        const change = paid - total;
 
         if (changeAmount) {
@@ -3208,7 +3209,7 @@ window.POS_ENABLE_FALLBACK = function () {
             changeAmount.style.color = change < 0 ? 'var(--danger-500)' : 'var(--success-500)';
         }
 
-        return { total, paid, change };
+	        return { total, paid, change, externalPaid, walletPaid };
     }
 
     function syncSplitCounterpart(changedField) {
@@ -3680,7 +3681,7 @@ window.POS_ENABLE_FALLBACK = function () {
             return;
         }
 
-        const { total, paid } = updateChange();
+	        const { total, paid, externalPaid } = updateChange();
 	        const walletApplied = parseFloat(walletAmount?.value || '0') || 0;
 	        if (paid <= 0 && walletApplied <= 0) {
 	            alertFallback('Enter payment before processing the sale.');
@@ -3725,7 +3726,7 @@ window.POS_ENABLE_FALLBACK = function () {
                     tax: cart.reduce((sum, item) => sum + item.taxVal, 0),
                     discount: cart.reduce((sum, item) => sum + item.discVal, 0),
                     total,
-	                    paid,
+	                    paid: externalPaid,
 	                    wallet_amount: walletApplied,
 	                    split_details: {
                         cash: parseFloat(amountPaid?.value || '0') || 0,

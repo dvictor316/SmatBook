@@ -207,13 +207,16 @@
                     </ul>
                 </li>
 
-                <li class="submenu {{ Request::is('users*', 'roles*', 'branches*', 'settings*') ? 'active subdrop' : '' }}">
+                <li class="submenu {{ Request::is('users*', 'roles*', 'branches*', 'settings*', 'profile*') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-settings"></i><span>Settings</span><span class="menu-arrow"></span></a>
                     <ul>
                         <li><a href="{{ route('users.index') }}">Users</a></li>
                         <li><a href="{{ route('roles.index') }}">Roles & Permissions</a></li>
                         <li><a href="{{ route('branches.index') }}">Branches</a></li>
                         <li><a href="{{ route('settings.index') }}">Settings</a></li>
+                        @if(Route::has('profile'))
+                            <li><a href="{{ route('profile') }}">Profile</a></li>
+                        @endif
                     </ul>
                 </li>
             </ul>

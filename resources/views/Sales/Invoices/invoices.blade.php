@@ -143,13 +143,17 @@
                                                                 @php
                                                                     $payStatus = strtolower($invoice->effective_payment_status ?? $invoice->payment_status ?? $invoice->status);
                                                                 @endphp
-                                                                @if($payStatus !== 'paid')
-                                                                    <a class="dropdown-item text-success" href="{{ route('pay-online', ['id' => $invoice->id]) }}">
-                                                                        <i class="fas fa-money-bill-wave me-2"></i>Pay
-                                                                    </a>
-                                                                @endif
+	                                                                @if($payStatus !== 'paid')
+	                                                                    <a class="dropdown-item text-success" href="{{ route('pay-online', ['id' => $invoice->id]) }}">
+	                                                                        <i class="fas fa-money-bill-wave me-2"></i>Pay
+	                                                                    </a>
+	                                                                @endif
 
-                                                                <div class="dropdown-divider"></div>
+	                                                                <a class="dropdown-item" href="{{ route('reports.create-sales-return', ['invoice_id' => $invoice->id]) }}">
+	                                                                    <i class="fas fa-undo-alt me-2"></i>Return
+	                                                                </a>
+
+	                                                                <div class="dropdown-divider"></div>
                                                                 <form action="{{ route('invoices.destroy', $invoice->id) }}" method="POST">
                                                                     @csrf 
                                                                     @method('DELETE')

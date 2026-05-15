@@ -21,7 +21,7 @@
                             <select name="invoice_id" id="invoice_select" class="form-control select2">
                                 <option value="">-- Search Sale No --</option>
                                 @foreach($invoices as $inv)
-                                    <option value="{{ $inv->id }}">
+	                                    <option value="{{ $inv->id }}" {{ (int) ($selectedInvoiceId ?? 0) === (int) $inv->id ? 'selected' : '' }}>
                                         Sale #{{ $inv->display_name }} ({{ $inv->customer_name ?? 'Walk-in Customer' }})
                                     </option>
                                 @endforeach
@@ -85,7 +85,7 @@ $(document).ready(function() {
         $('#invoice_item_list').html('<tr><td colspan="5" class="text-center"><div class="spinner-border spinner-border-sm text-primary" role="status"></div> Loading items...</td></tr>');
 
         $.ajax({
-            url: "/get-invoice-items/" + id,
+	            url: "{{ url('/get-invoice-items') }}/" + id,
             method: 'GET',
             dataType: 'json',
             success: function(items) {
@@ -106,7 +106,8 @@ $(document).ready(function() {
                                        max="${item.qty}" min="0" value="0">
                             </td>
                             <td>
-                                <input type="hidden" name="items[${item.product_id}][unit_price]" value="${item.unit_price}">
+	                                <input type="hidden" name="items[${item.product_id}][unit_price]" value="${item.unit_price}">
+	                                <input type="hidden" name="items[${item.product_id}][unit_type]" value="${item.unit_type || 'unit'}">
                                 ${parseFloat(item.unit_price).toLocaleString(undefined, {minimumFractionDigits: 2})}
                             </td>
                             <td class="row-total fw-bold text-primary">0.00</td>
@@ -151,15 +152,19 @@ $(document).ready(function() {
     /**
      * 3. GRAND TOTAL HELPER
      */
-    function updateGrandTotal() {
+	    function updateGrandTotal() {
         let grandTotal = 0;
         $('.credit-qty').each(function() {
             let rowQty = parseFloat($(this).val()) || 0;
             let rowPrice = parseFloat($(this).data('price')) || 0;
             grandTotal += (rowQty * rowPrice);
         });
-        $('#credit_grand_total').text('₦' + grandTotal.toLocaleString(undefined, {minimumFractionDigits: 2}));
-    }
-});
+	        $('#credit_grand_total').text('₦' + grandTotal.toLocaleString(undefined, {minimumFractionDigits: 2}));
+	    }
+
+	    if ($('#invoice_select').val()) {
+	        $('#invoice_select').trigger('change');
+	    }
+	});
 </script>
 @endsection

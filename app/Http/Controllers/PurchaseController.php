@@ -1322,18 +1322,26 @@ public function show($id)
             return redirect()->back()->with('error', 'Unauthorized! Only authorized roles can process returns.');
         }
 
-        $purchases = Purchase::with('supplier')->orderBy('created_at', 'desc')->get();
-        return view('Reports.Reports.create-purchase-return', compact('purchases'));
-    }
+	        $purchasesQuery = Purchase::with('supplier')->orderBy('created_at', 'desc');
+	        $this->applyTenantScope($purchasesQuery, 'purchases');
+	        $this->applyBranchScopeWithFallback($purchasesQuery, 'purchases');
+	        $purchases = $purchasesQuery->get();
+	        return view('Reports.Reports.create-purchase-return', compact('purchases'));
+	    }
 
     /**
      * Get purchase items for a specific purchase (AJAX)
      */
     public function getPurchaseItems($id)
     {
-        $items = DB::table('purchase_items')
-            ->join('products', 'purchase_items.product_id', '=', 'products.id')
-            ->where('purchase_items.purchase_id', $id)
+	        $purchaseQuery = Purchase::query()->whereKey($id);
+	        $this->applyTenantScope($purchaseQuery, 'purchases');
+	        $this->applyBranchScopeWithFallback($purchaseQuery, 'purchases');
+	        abort_unless($purchaseQuery->exists(), 404);
+
+	        $items = DB::table('purchase_items')
+	            ->join('products', 'purchase_items.product_id', '=', 'products.id')
+	            ->where('purchase_items.purchase_id', $id)
             ->select(
                 'products.id as product_id', 
                 'products.name', 
@@ -1372,13 +1380,17 @@ public function show($id)
         }
 
         // Get the purchase and vendor
-        $purchase = Purchase::findOrFail($request->purchase_id);
+	        $purchaseQuery = Purchase::query()->whereKey($request->purchase_id);
+	        $this->applyTenantScope($purchaseQuery, 'purchases');
+	        $this->applyBranchScopeWithFallback($purchaseQuery, 'purchases');
+	        $purchase = $purchaseQuery->firstOrFail();
 
         DB::beginTransaction();
         try {
-            $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
-            $userId    = (int) (auth()->id() ?? 0);
-            $returnNo  = 'RTN-' . strtoupper(Str::random(8));
+	            $companyId = (int) (auth()->user()?->company_id ?? session('current_tenant_id') ?? 0);
+	            $userId    = (int) (auth()->id() ?? 0);
+	            $activeBranch = $this->getActiveBranchContext();
+	            $returnNo  = 'RTN-' . strtoupper(Str::random(8));
 
             $returnData = [
                 'purchase_id' => $purchase->id,
@@ -1418,10 +1430,20 @@ public function show($id)
                         }
                         DB::table('purchase_return_items')->insert($itemRow);
 
-                        // Decrement stock — goods sent back to supplier
-                        DB::table('products')->where('id', $productId)->decrement('stock', $data['qty']);
-                    }
-                }
+	                        // Decrement stock — goods sent back to supplier from the active branch.
+	                        $product = Product::query()->lockForUpdate()->find($productId);
+	                        if ($product) {
+	                            $quantity = (float) $data['qty'];
+	                            $product->decrement('stock', $quantity);
+	                            $this->branchInventory->adjustBranchStock(
+	                                $product,
+	                                -$quantity,
+	                                $activeBranch,
+	                                $companyId > 0 ? $companyId : (int) ($product->company_id ?? 0)
+	                            );
+	                        }
+	                    }
+	                }
             }
 
             LedgerService::postPurchaseReturn(

@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -22,6 +23,14 @@ return new class extends Migration
                 $table->decimal('wallet_amount', 15, 2)->default(0)->after('amount');
             }
         });
+
+        if (Schema::hasColumn('payments', 'sale_id')) {
+            try {
+                DB::statement('ALTER TABLE payments MODIFY sale_id BIGINT UNSIGNED NULL');
+            } catch (\Throwable $exception) {
+                // Keep migration-safe on engines that do not support MODIFY.
+            }
+        }
     }
 
     public function down(): void

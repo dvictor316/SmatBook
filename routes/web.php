@@ -912,10 +912,11 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::get('/sale/{saleId}', 'getBySale')->name('by-sale');
         Route::get('/{payment}/receipt', 'receipt')->name('receipt');
     });
-    Route::post('/payments/bulk-update', [ReportController::class, 'bulkUpdate'])->name('payments.bulk-update');
-    Route::delete('/payments/{id}', [ReportController::class, 'destroy'])->name('payments.report-destroy');
-    
-    // Reports
+	    Route::post('/payments/bulk-update', [ReportController::class, 'bulkUpdate'])->name('payments.bulk-update');
+	    Route::delete('/payments/{id}', [ReportController::class, 'destroy'])->name('payments.report-destroy');
+	    Route::get('/get-invoice-items/{id}', [ReportController::class, 'get_invoice_items'])->name('get-invoice-items');
+	    
+	    // Reports
     Route::controller(ReportController::class)->prefix('reports')->name('reports.')->group(function () {
         Route::get('/expense-report', 'expense_report')->name('expense');
         Route::get('/income-report', 'income_report')->name('income');
