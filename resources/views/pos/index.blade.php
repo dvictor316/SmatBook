@@ -613,7 +613,7 @@ body.mini-sidebar .pos-full-page-wrapper {
 #pos-product-dropdown-portal {
     display: none;
     position: fixed;
-    background: linear-gradient(160deg, #061a44 0%, #0f3a8a 100%);
+    background: linear-gradient(160deg, #0d3272 0%, #1a5cc8 100%);
     border: 1px solid rgba(37,99,235,.40);
     border-radius: 14px;
     box-shadow: 0 20px 50px rgba(6,26,68,.45), inset 0 1px 0 rgba(255,255,255,.08);
