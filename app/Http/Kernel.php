@@ -72,6 +72,8 @@ class Kernel extends HttpKernel
             \App\Http\Middleware\AutoSuccessFlash::class,
             \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            \App\Http\Middleware\BlockExpiredDemoUser::class,
+            \App\Http\Middleware\DemoRestrictions::class,
             // Add subdomain detection for local dev routing
             // \App\Http\Middleware\SubdomainRouting::class, // Uncomment if created
         ],
@@ -181,6 +183,8 @@ class Kernel extends HttpKernel
         'branch.required' => \App\Http\Middleware\RequireActiveBranch::class,
         'device.limit' => \App\Http\Middleware\EnforceDeviceSessionLimit::class,
         'tenant.branch.required' => \App\Http\Middleware\RequireTenantAndBranch::class,
+        'demo.expired'      => \App\Http\Middleware\BlockExpiredDemoUser::class,
+        'demo.restrictions' => \App\Http\Middleware\DemoRestrictions::class,
         // Add any other custom middleware aliases here
     ];
 

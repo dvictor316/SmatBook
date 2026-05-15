@@ -20,6 +20,8 @@ use App\Http\Controllers\RecurringInvoiceController;
 use App\Http\Controllers\SuperAdmin\DeploymentManagerController;
 use App\Http\Controllers\FinancialResetController;
 use App\Http\Controllers\DatabaseResetController;
+use App\Http\Controllers\DemoRequestController;
+use App\Http\Controllers\AdminDemoRequestController;
 
 /*
 |--------------------------------------------------------------------------
@@ -69,6 +71,11 @@ Route::get('/about-us', [LandingController::class, 'about'])->name('landing.abou
 Route::get('/contact-us', [LandingController::class, 'contact'])->name('landing.contact');
 Route::get('/demo', [LandingController::class, 'demo'])->name('landing.demo');
 Route::post('/contact-us', [LandingController::class, 'storeContact'])->name('contact.store');
+
+// Demo request (public — controlled access, NOT a free-for-all demo)
+Route::get('/request-demo', [DemoRequestController::class, 'create'])->name('demo.request.form');
+Route::post('/request-demo', [DemoRequestController::class, 'store'])->name('demo.request.store')->middleware('throttle:5,1');
+Route::get('/request-demo/thank-you', [DemoRequestController::class, 'success'])->name('demo.request.success');
 Route::get('/media/product-image/{path}', [ProductController::class, 'serveImage'])
     ->where('path', '.*')
     ->name('products.image');
@@ -544,6 +551,14 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('superadmin')->name('sup
     // Full Database Reset (super-admin only — wipes ALL business data, preserves super admin)
     Route::get('/database-reset',  [DatabaseResetController::class, 'index'])  ->name('database.reset');
     Route::post('/database-reset', [DatabaseResetController::class, 'execute'])->name('database.reset.execute');
+
+    // Demo Requests Management
+    Route::prefix('demo-requests')->name('demo_requests.')->group(function () {
+        Route::get('/', [AdminDemoRequestController::class, 'index'])->name('index');
+        Route::get('/{id}', [AdminDemoRequestController::class, 'show'])->name('show');
+        Route::post('/{id}/approve', [AdminDemoRequestController::class, 'approve'])->name('approve');
+        Route::post('/{id}/reject', [AdminDemoRequestController::class, 'reject'])->name('reject');
+    });
 });
 
 // TEMP: Exit impersonation and restore superadmin session

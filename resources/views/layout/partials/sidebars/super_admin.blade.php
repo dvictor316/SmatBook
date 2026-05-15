@@ -589,6 +589,15 @@
                         <li class="{{ Request::is('superadmin/users*') ? 'active' : '' }}">
                             <a href="{{ route('super_admin.users.index', $routeParams) }}">Registered Users</a>
                         </li>
+                        <li class="{{ Request::is('superadmin/demo-requests*') ? 'active' : '' }}">
+                            <a href="{{ route('super_admin.demo_requests.index') }}">
+                                Demo Requests
+                                @php $pendingDemoCount = \App\Models\DemoRequest::where('status','pending')->count(); @endphp
+                                @if($pendingDemoCount > 0)
+                                    <span class="badge badge-pill badge-warning ml-1">{{ $pendingDemoCount }}</span>
+                                @endif
+                            </a>
+                        </li>
                     </ul>
                 </li>
 

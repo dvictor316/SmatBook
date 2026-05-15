@@ -86,6 +86,9 @@ class Kernel extends ConsoleKernel
             AppMailer::sendMailable('support@smartprobook.com', new \App\Mail\DailyBusinessSummary($data));
             
         })->dailyAt('21:00');
+
+        // Expire demo accounts whose 48-hour window has passed
+        $schedule->command('demo:expire-accounts')->dailyAt('00:30')->withoutOverlapping();
     }
 
     protected function commands(): void
