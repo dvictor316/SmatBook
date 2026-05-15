@@ -67,8 +67,30 @@
                     </div>
                 @endif
 
+                @if(session('credit_limit_warning'))
+                    @php $creditWarning = session('credit_limit_warning'); @endphp
+                    <div class="alert border-0 shadow-sm" style="background:#fff8e1;border-left:5px solid var(--spb-theme-gold, #d7a928) !important;color:var(--spb-theme-ink, #10264f);">
+                        <h6 class="fw-bold mb-2">Customer credit limit warning</h6>
+                        <p class="mb-2">
+                            {{ $creditWarning['customer'] ?? 'This customer' }} will exceed the approved credit limit if this transaction continues.
+                        </p>
+                        <div class="small mb-3">
+                            Credit Limit: <strong>₦{{ number_format((float) ($creditWarning['credit_limit'] ?? 0), 2) }}</strong>
+                            · Current Outstanding: <strong>₦{{ number_format((float) ($creditWarning['current_outstanding'] ?? 0), 2) }}</strong>
+                            · This Invoice Credit: <strong>₦{{ number_format((float) ($creditWarning['new_credit'] ?? 0), 2) }}</strong>
+                            · Projected Outstanding: <strong>₦{{ number_format((float) ($creditWarning['projected_outstanding'] ?? 0), 2) }}</strong>
+                            · Excess: <strong>₦{{ number_format((float) ($creditWarning['excess'] ?? 0), 2) }}</strong>
+                        </div>
+                        <button type="submit" form="invoice-form" name="action" value="{{ old('action', 'send') }}" class="btn btn-primary me-2" id="credit-limit-continue-btn">
+                            Continue Transaction
+                        </button>
+                        <a href="{{ route('invoices.index') }}" class="btn btn-white border">Reject Transaction</a>
+                    </div>
+                @endif
+
                 <form action="{{ $formAction }}" method="POST" enctype="multipart/form-data" id="invoice-form">
                     @csrf
+                    <input type="hidden" name="credit_limit_override" id="credit-limit-override" value="{{ old('credit_limit_override', 0) }}">
                     @if($isEditMode)
                         @method('PUT')
                     @endif
@@ -362,8 +384,18 @@
         }
     }
 
+    function bindCreditLimitContinue() {
+        document.getElementById('credit-limit-continue-btn')?.addEventListener('click', function() {
+            const overrideInput = document.getElementById('credit-limit-override');
+            if (overrideInput) {
+                overrideInput.value = '1';
+            }
+        });
+    }
+
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function() {
+            bindCreditLimitContinue();
             snapshotCustomerOptions();
             initInvoiceSelect2(document);
             document.querySelectorAll('.invoice-row').forEach(function(row) {
@@ -381,6 +413,7 @@
             }
         });
     } else {
+        bindCreditLimitContinue();
         snapshotCustomerOptions();
         initInvoiceSelect2(document);
         document.querySelectorAll('.invoice-row').forEach(function(row) {

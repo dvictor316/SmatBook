@@ -29,6 +29,54 @@ class InvoiceController extends Controller
     ) {
     }
 
+    private function customerOutstandingBalance(int $customerId, ?int $excludeSaleId = null): float
+    {
+        if ($customerId <= 0 || !Schema::hasTable('sales') || !Schema::hasColumn('sales', 'balance')) {
+            return 0.0;
+        }
+
+        $query = Sale::query()->where('customer_id', $customerId);
+        $this->applyTenantScope($query, 'sales');
+
+        if ($excludeSaleId) {
+            $query->where('id', '!=', $excludeSaleId);
+        }
+
+        if (Schema::hasColumn('sales', 'order_status')) {
+            $query->where(function ($sub) {
+                $sub->whereNull('order_status')
+                    ->orWhere('order_status', '!=', 'draft');
+            });
+        }
+
+        return (float) $query->sum(DB::raw('GREATEST(COALESCE(balance, 0), 0)'));
+    }
+
+    private function creditLimitWarningResponse(Request $request, Customer $customer, float $newCreditAmount, ?int $excludeSaleId = null)
+    {
+        $creditLimit = (float) ($customer->credit_limit ?? 0);
+
+        if ($creditLimit <= 0 || $newCreditAmount <= 0 || $request->boolean('credit_limit_override')) {
+            return null;
+        }
+
+        $currentOutstanding = $this->customerOutstandingBalance((int) $customer->id, $excludeSaleId);
+        $projectedOutstanding = round($currentOutstanding + $newCreditAmount, 2);
+
+        if ($projectedOutstanding <= $creditLimit) {
+            return null;
+        }
+
+        return back()->withInput()->with('credit_limit_warning', [
+            'customer' => $customer->customer_name ?? $customer->name ?? 'Selected customer',
+            'credit_limit' => $creditLimit,
+            'current_outstanding' => $currentOutstanding,
+            'new_credit' => $newCreditAmount,
+            'projected_outstanding' => $projectedOutstanding,
+            'excess' => round($projectedOutstanding - $creditLimit, 2),
+        ]);
+    }
+
     private function syncGlobalStockFromBranches(Product $product): void
     {
         if (!Schema::hasTable('product_branch_stocks')) {
@@ -507,6 +555,11 @@ class InvoiceController extends Controller
                 : ($requestedStatus === 'partially paid' ? 'partial' : 'unpaid');
             $orderStatus = $isDraft ? 'draft' : ($action === 'send' ? 'sent' : 'pending');
 
+            if (!$isDraft && $creditLimitResponse = $this->creditLimitWarningResponse($request, $customer, $balanceAmount)) {
+                DB::rollBack();
+                return $creditLimitResponse;
+            }
+
             $salePayload = [
                 'invoice_no' => $invoiceNo,
                 'customer_id' => $customer->id,
@@ -923,6 +976,11 @@ class InvoiceController extends Controller
                 ? 'paid'
                 : ($requestedStatus === 'partially paid' ? 'partial' : 'unpaid');
             $orderStatus = $isDraft ? 'draft' : ($action === 'send' ? 'sent' : 'pending');
+
+            if (!$isDraft && $creditLimitResponse = $this->creditLimitWarningResponse($request, $customer, $balanceAmount, (int) $sale->id)) {
+                DB::rollBack();
+                return $creditLimitResponse;
+            }
 
             $salePayload = [
                 'customer_id' => $customer->id,
