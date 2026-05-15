@@ -17,12 +17,14 @@
                     <a href="{{ route('quotations.download', $quotation->id) }}" class="btn btn-white border">
                         <i class="fe fe-download me-1"></i> Download
                     </a>
-                    <a href="{{ route('quotations.convert-cash-sale', $quotation->id) }}" class="btn btn-white border">
-                        <i class="fe fe-shopping-cart me-1"></i> Convert to Cash Sale
-                    </a>
-                    <a href="{{ route('quotations.convert-invoice', $quotation->id) }}" class="btn btn-primary">
-                        <i class="fe fe-file-text me-1"></i> Convert to Invoice
-                    </a>
+                    @if(empty($quotation->converted_to_type))
+                        <a href="{{ route('quotations.convert-cash-sale', $quotation->id) }}" class="btn btn-white border">
+                            <i class="fe fe-shopping-cart me-1"></i> Convert to Cash Sale
+                        </a>
+                        <a href="{{ route('quotations.convert-invoice', $quotation->id) }}" class="btn btn-primary">
+                            <i class="fe fe-file-text me-1"></i> Convert to Invoice
+                        </a>
+                    @endif
                 </div>
             </div>
         </div>
@@ -44,6 +46,20 @@
                     <div class="col-md-4">
                         <div class="text-muted">Status</div>
                         <div class="fw-semibold">{{ $quotation->status ?? 'Pending' }}</div>
+                        @if(!empty($quotation->converted_to_type))
+                            <div class="alert alert-success mt-3 mb-0 py-2">
+                                Converted from quotation to cash receipt
+                                @if($quotation->converted_receipt_no)
+                                    <strong>{{ $quotation->converted_receipt_no }}</strong>
+                                @endif
+                                @if($quotation->converted_at)
+                                    on {{ $quotation->converted_at->format('d M Y H:i') }}
+                                @endif
+                                @if($quotation->converted_sale_id)
+                                    <div><a href="{{ route('sales.show', $quotation->converted_sale_id) }}">View POS sale history</a></div>
+                                @endif
+                            </div>
+                        @endif
                         <div class="text-muted mt-2">Total</div>
                         <div class="fw-bold">₦{{ number_format((float) ($quotation->total ?? 0), 2) }}</div>
                     </div>

@@ -2705,6 +2705,13 @@ window.POS_ENABLE_FALLBACK = function () {
     const invoicePrintBaseUrl = @json(url('/sales/invoice'));
     const csrfToken = @json(csrf_token());
     const salesOrderPrefill = @json(session('pos_prefill'));
+    const posSourceContext = salesOrderPrefill && salesOrderPrefill.source
+        ? {
+            source: salesOrderPrefill.source,
+            source_id: salesOrderPrefill.source_id || null,
+            reference: salesOrderPrefill.reference || null,
+        }
+        : null;
     let splitAutoSync = false;
     const customerOptionsSnapshot = customerSelect
         ? Array.from(customerSelect.options).map((option) => ({
@@ -3656,6 +3663,9 @@ window.POS_ENABLE_FALLBACK = function () {
                 body: JSON.stringify({
                     customer_id: customerSelect?.value || null,
                     payment_method: paymentMethod?.value || 'Cash',
+                    source: posSourceContext?.source || null,
+                    source_id: posSourceContext?.source_id || null,
+                    source_reference: posSourceContext?.reference || null,
                     items: cart,
                     subtotal: cart.reduce((sum, item) => sum + item.sub, 0),
                     tax: cart.reduce((sum, item) => sum + item.taxVal, 0),

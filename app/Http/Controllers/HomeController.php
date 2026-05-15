@@ -724,6 +724,12 @@ class HomeController extends Controller
                 });
             }
 
+            if (Schema::hasColumn('quotations', 'converted_to_type')) {
+                $query->whereNull('converted_to_type');
+            } else {
+                $query->whereNotIn('status', ['Converted to Cash Receipt', 'Converted to Invoice']);
+            }
+
             $quotations = $query->paginate(20);
         }
         return view('Quotations.quotations', compact('quotations'));
@@ -1097,6 +1103,7 @@ class HomeController extends Controller
 
         session()->flash('pos_prefill', [
             'source' => 'quotation',
+            'source_id' => $quotation->id,
             'reference' => $quotation->quotation_id ?? ('Quotation #' . $quotation->id),
             'customer_id' => $quotation->customer_id,
             'customer_name' => $quotation->customer_name ?? $quotation->customer?->customer_name ?? $quotation->customer?->name ?? null,

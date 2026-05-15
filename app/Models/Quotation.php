@@ -25,10 +25,18 @@ class Quotation extends Model
         'discount',
         'total',
         'status',
+        'converted_to_type',
+        'converted_sale_id',
+        'converted_receipt_no',
+        'converted_at',
         'description',
         'items_json',
         'note',
         'created_at'
+    ];
+
+    protected $casts = [
+        'converted_at' => 'datetime',
     ];
 
     /**

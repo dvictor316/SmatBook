@@ -9,6 +9,7 @@ use Illuminate\Support\Str;
 use App\Models\Customer;
 use App\Models\Company;
 use App\Models\Payment;
+use App\Models\Quotation;
 use App\Models\Account;
 use App\Models\Bank;
 use App\Models\Setting;
@@ -849,6 +850,9 @@ public function store(Request $request)
         'items.*.unitType' => 'nullable|in:unit,roll,carton',
         'items.*.stockUnits' => 'nullable|numeric|gt:0',
         'items.*.priceLevel' => 'nullable|in:list,retail,wholesale,special',
+        'source' => 'nullable|string|max:40',
+        'source_id' => 'nullable|integer',
+        'source_reference' => 'nullable|string|max:120',
         'deposit_account_id' => 'nullable|integer',
         'payment_account_id' => 'nullable|integer',
         'split_details.card_account_id' => 'nullable|integer',
@@ -950,6 +954,28 @@ public function store(Request $request)
 
         $activeBranch = $this->getActiveBranchContext();
         $splitDetails = $this->normalizeSplitDetails($request->input('split_details', []));
+        $sourceType = strtolower(trim((string) $request->input('source', '')));
+        $sourceId = (int) $request->input('source_id', 0);
+        $sourceReference = trim((string) $request->input('source_reference', ''));
+        $sourceQuotation = null;
+
+        if ($sourceType === 'quotation' && $sourceId > 0) {
+            $sourceQuotation = Quotation::query()
+                ->whereKey($sourceId)
+                ->when(Schema::hasColumn('quotations', 'company_id') && (auth()->user()?->company_id ?? session('current_tenant_id')), function ($query) {
+                    $query->where('company_id', auth()->user()?->company_id ?? session('current_tenant_id'));
+                })
+                ->lockForUpdate()
+                ->first();
+
+            if (!$sourceQuotation) {
+                throw new \RuntimeException('The source quotation could not be found for this tenant.');
+            }
+
+            $sourceReference = $sourceReference !== ''
+                ? $sourceReference
+                : (string) ($sourceQuotation->quotation_id ?? ('Quotation #' . $sourceQuotation->id));
+        }
         // Resolve deposit/collection accounts from Chart of Accounts
         $depositAccountId = (int) ($request->deposit_account_id ?? $request->payment_account_id ?? 0);
         $paymentAccount = $this->findScopedDepositAccount($depositAccountId);
@@ -972,6 +998,9 @@ $sale = Sale::create([
     'customer_name'  => $resolvedCustomerName,
     'user_id'        => auth()->id() ?? 1,
     'terminal_id'    => 'POS1',
+    'source_type'    => $sourceQuotation ? 'quotation' : null,
+    'source_id'      => $sourceQuotation?->id,
+    'source_reference' => $sourceQuotation ? $sourceReference : null,
     'subtotal'       => 0, 
     'discount'       => 0, 
     'tax'            => 0,
@@ -985,6 +1014,11 @@ $sale = Sale::create([
     'payment_status' => $paymentStatus,
         'payment_details' => [
         'source' => 'pos',
+        'converted_from' => $sourceQuotation ? [
+            'type' => 'quotation',
+            'id' => $sourceQuotation->id,
+            'reference' => $sourceReference,
+        ] : null,
         'cashier_id' => auth()->id(),
         'cashier_name' => auth()->user()?->name,
         'branch_id' => $activeBranch['id'],
@@ -1103,6 +1137,11 @@ $sale = Sale::create([
             'payment_status' => $finalPaymentStatus,
             'payment_details' => [
                 'source' => 'pos',
+                'converted_from' => $sourceQuotation ? [
+                    'type' => 'quotation',
+                    'id' => $sourceQuotation->id,
+                    'reference' => $sourceReference,
+                ] : null,
                 'cashier_id' => auth()->id(),
                 'cashier_name' => auth()->user()?->name,
                 'branch_id' => $activeBranch['id'],
@@ -1141,6 +1180,27 @@ $sale = Sale::create([
                 $paymentPayload['account_id'] = $paymentAccount?->id;
             }
             Payment::create($paymentPayload);
+        }
+
+        if ($sourceQuotation && $finalPaymentStatus === 'paid') {
+            $quotationUpdate = [
+                'status' => 'Converted to Cash Receipt',
+            ];
+
+            if (Schema::hasColumn('quotations', 'converted_to_type')) {
+                $quotationUpdate['converted_to_type'] = 'cash_receipt';
+            }
+            if (Schema::hasColumn('quotations', 'converted_sale_id')) {
+                $quotationUpdate['converted_sale_id'] = $sale->id;
+            }
+            if (Schema::hasColumn('quotations', 'converted_receipt_no')) {
+                $quotationUpdate['converted_receipt_no'] = $sale->receipt_no;
+            }
+            if (Schema::hasColumn('quotations', 'converted_at')) {
+                $quotationUpdate['converted_at'] = now();
+            }
+
+            $sourceQuotation->forceFill($quotationUpdate)->save();
         }
 
         // Use the explicitly selected deposit account for journal entries

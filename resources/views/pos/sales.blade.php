@@ -386,6 +386,19 @@
                             <td class="ps-4">
                                 <div class="fw-bold text-dark">#{{ $sale->invoice_no }}</div>
                                 <small class="text-muted" style="font-size: 10px;">ID: {{ $sale->id }}</small>
+                                @if(($sale->source_type ?? null) === 'quotation')
+                                    <div class="small mt-1">
+                                        <span class="badge bg-info-light text-info border">
+                                            From quotation {{ $sale->source_reference ?? ('#' . $sale->source_id) }}
+                                        </span>
+                                    </div>
+                                @elseif(data_get($sale->payment_details, 'converted_from.type') === 'quotation')
+                                    <div class="small mt-1">
+                                        <span class="badge bg-info-light text-info border">
+                                            From quotation {{ data_get($sale->payment_details, 'converted_from.reference') }}
+                                        </span>
+                                    </div>
+                                @endif
                             </td>
                             <td>
                                 <div class="d-flex align-items-center">
