@@ -3078,10 +3078,13 @@ window.POS_ENABLE_FALLBACK = function () {
 	    }
 
 	    function syncProductSearchDropdown(value = '') {
+	        // Sync the custom combo input whenever a product is selected externally
+	        if (typeof window._posComboSync === 'function') {
+	            window._posComboSync(value ? String(value) : '');
+	        }
 	        if (!productSearch) {
 	            return;
 	        }
-
 	        productSearch.value = value ? String(value) : '';
 	        if (hasProductSelect2) {
 	            window.jQuery(productSearch).val(value ? String(value) : null).trigger('change.select2');
@@ -4090,6 +4093,200 @@ window.POS_ENABLE_FALLBACK = function () {
     toggleSplitFields();
     updateItemTotal();
     applySalesOrderPrefill(salesOrderPrefill);
+
+    // ── Searchable product combo (vanilla JS – runs inside active fallback) ──
+    (function initPosCombo() {
+        const input  = document.getElementById('product-search-input');
+        const clear  = document.getElementById('product-search-clear');
+        const caret  = document.getElementById('product-combo-caret');
+        const sel    = document.getElementById('product-select');
+        if (!input || !sel) return;
+
+        // Re-use existing portal or create it
+        let portal = document.getElementById('pos-product-dropdown-portal');
+        if (!portal) {
+            portal = document.createElement('div');
+            portal.id = 'pos-product-dropdown-portal';
+            document.body.appendChild(portal);
+        }
+        portal.innerHTML = '<ul id="product-search-list"></ul>';
+        const list = portal.querySelector('ul');
+
+        let selId  = '';
+        let isOpen = false;
+
+        function buildCache() {
+            return Array.from(sel.options)
+                .filter(function(o) { return o.value !== ''; })
+                .map(function(o) {
+                    return {
+                        id  : String(o.value),
+                        name: String(o.dataset.name || o.text || '').trim(),
+                        sku : String(o.dataset.sku  || '').trim(),
+                    };
+                });
+        }
+        let cache = buildCache();
+
+        function esc(s) {
+            return String(s)
+                .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+                .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+        function hlite(text, kw) {
+            if (!kw) return esc(text);
+            const idx = text.toLowerCase().indexOf(kw);
+            if (idx === -1) return esc(text);
+            return esc(text.slice(0, idx))
+                 + '<strong>' + esc(text.slice(idx, idx + kw.length)) + '</strong>'
+                 + esc(text.slice(idx + kw.length));
+        }
+
+        function renderList(items, kw) {
+            list.innerHTML = '';
+            if (!items.length) {
+                list.innerHTML = '<li class="combo-no-results">No products found</li>';
+                return;
+            }
+            items.slice(0, 120).forEach(function(item) {
+                const li = document.createElement('li');
+                li.dataset.id = item.id;
+                li.innerHTML = hlite(item.name, kw);
+                if (item.sku) {
+                    const span = document.createElement('span');
+                    span.className = 'combo-sku';
+                    span.textContent = 'SKU: ' + item.sku;
+                    li.appendChild(span);
+                }
+                if (item.id === selId) li.classList.add('kb-focus');
+                list.appendChild(li);
+            });
+        }
+
+        function filterItems(kw) {
+            const k = (kw || '').toLowerCase().trim();
+            if (!k) return cache;
+            return cache.filter(function(item) {
+                return item.name.toLowerCase().includes(k) || item.sku.toLowerCase().includes(k);
+            });
+        }
+
+        function reposition() {
+            const r = input.getBoundingClientRect();
+            portal.style.top   = (r.bottom + 2) + 'px';
+            portal.style.left  = r.left + 'px';
+            portal.style.width = r.width + 'px';
+        }
+
+        function openWith(kw) {
+            if (!cache.length) cache = buildCache();
+            renderList(filterItems(kw), (kw || '').toLowerCase().trim());
+            reposition();
+            portal.style.display = 'block';
+            if (caret) caret.classList.add('open');
+            isOpen = true;
+        }
+
+        function close() {
+            portal.style.display = 'none';
+            if (caret) caret.classList.remove('open');
+            isOpen = false;
+        }
+
+        function pick(productId) {
+            const opt = Array.from(sel.options).find(function(o) { return String(o.value) === String(productId); });
+            if (!opt || !opt.value) return;
+            selId = String(productId);
+            input.value = (opt.dataset.name || opt.text || '').trim();
+            if (clear) clear.style.display = '';
+            sel.value = selId;
+            close();
+            applyVanillaSelection({ dataset: Object.assign({}, opt.dataset, { id: opt.value }) });
+        }
+
+        function clearCombo() {
+            selId = '';
+            input.value = '';
+            if (clear) clear.style.display = 'none';
+            sel.value = '';
+            close();
+        }
+
+        // Called by syncProductSearchDropdown (card clicks, barcode scans, etc.)
+        window._posComboSync = function(productId) {
+            if (!productId) { clearCombo(); return; }
+            const opt = Array.from(sel.options).find(function(o) { return String(o.value) === String(productId); });
+            if (opt) {
+                selId = String(productId);
+                input.value = (opt.dataset.name || opt.text || '').trim();
+                if (clear) clear.style.display = '';
+                close();
+            }
+        };
+
+        input.addEventListener('input', function() {
+            const kw = this.value.trim();
+            if (clear) clear.style.display = (kw.length > 0 || !!selId) ? '' : 'none';
+            openWith(kw);
+        });
+        input.addEventListener('focus', function() { openWith(this.value.trim()); });
+        input.addEventListener('click', function() { openWith(this.value.trim()); });
+
+        list.addEventListener('click', function(e) {
+            const li = e.target.closest('li[data-id]');
+            if (li) pick(li.dataset.id);
+        });
+
+        if (clear) {
+            clear.addEventListener('click', function(e) {
+                e.stopPropagation();
+                clearCombo();
+                input.focus();
+            });
+        }
+
+        document.addEventListener('click', function(e) {
+            const wrap = document.getElementById('product-combo-wrapper');
+            if (wrap && !wrap.contains(e.target) && !portal.contains(e.target)) close();
+        });
+
+        window.addEventListener('scroll', function() { if (isOpen) reposition(); }, true);
+        window.addEventListener('resize', function() { if (isOpen) reposition(); });
+
+        input.addEventListener('keydown', function(e) {
+            const items   = Array.from(list.querySelectorAll('li[data-id]'));
+            const focused = list.querySelector('li[data-id].kb-focus');
+
+            if (!isOpen) {
+                if (e.key === 'ArrowDown' || e.key === 'Enter') openWith(this.value.trim());
+                return;
+            }
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                const idx = focused ? items.indexOf(focused) : -1;
+                const next = items[idx + 1] || items[0];
+                if (next) { items.forEach(function(i){ i.classList.remove('kb-focus'); }); next.classList.add('kb-focus'); kbScroll(next); }
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                const idx = focused ? items.indexOf(focused) : items.length;
+                const prev = items[idx - 1] || items[items.length - 1];
+                if (prev) { items.forEach(function(i){ i.classList.remove('kb-focus'); }); prev.classList.add('kb-focus'); kbScroll(prev); }
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (focused) pick(focused.dataset.id);
+            } else if (e.key === 'Escape') {
+                close(); input.blur();
+            }
+        });
+
+        function kbScroll(item) {
+            const t = item.offsetTop, h = item.offsetHeight,
+                  dh = portal.clientHeight, st = portal.scrollTop;
+            if (t < st) portal.scrollTop = t;
+            else if (t + h > st + dh) portal.scrollTop = t + h - dh;
+        }
+    })();
+    // ────────────────────────────────────────────────────────────────────────
 };
 
 document.addEventListener('DOMContentLoaded', function () {
