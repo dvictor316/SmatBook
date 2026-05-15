@@ -613,40 +613,44 @@ body.mini-sidebar .pos-full-page-wrapper {
 #pos-product-dropdown-portal {
     display: none;
     position: fixed;
-    background: linear-gradient(160deg, #0d3272 0%, #1a5cc8 100%);
-    border: 1px solid rgba(37,99,235,.40);
+    background: rgba(218, 232, 252, 0.92);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(15,58,138,.18);
     border-radius: 14px;
-    box-shadow: 0 20px 50px rgba(6,26,68,.45), inset 0 1px 0 rgba(255,255,255,.08);
+    box-shadow: 0 20px 50px rgba(6,26,68,.22), inset 0 1px 0 rgba(255,255,255,.70);
     z-index: 99999;
     max-height: 260px;
     overflow-y: auto;
     scrollbar-width: thin;
-    scrollbar-color: rgba(255,255,255,.18) transparent;
+    scrollbar-color: rgba(15,58,138,.22) transparent;
 }
 #pos-product-dropdown-portal::-webkit-scrollbar { width: 6px; }
 #pos-product-dropdown-portal::-webkit-scrollbar-track { background: transparent; }
-#pos-product-dropdown-portal::-webkit-scrollbar-thumb { background: rgba(255,255,255,.18); border-radius: 99px; }
+#pos-product-dropdown-portal::-webkit-scrollbar-thumb { background: rgba(15,58,138,.22); border-radius: 99px; }
 #pos-product-dropdown-portal ul {
     list-style: none; margin: 0; padding: 6px 0;
 }
 #pos-product-dropdown-portal li {
     padding: 9px 16px; cursor: pointer; font-size: .875rem;
-    color: #ffffff;
+    color: #061a44;
+    font-weight: 600;
+    letter-spacing: .01em;
     display: flex; flex-direction: column;
     transition: background .12s;
     border-left: 3px solid transparent;
 }
 #pos-product-dropdown-portal li:hover,
 #pos-product-dropdown-portal li.kb-focus {
-    background: rgba(255,255,255,.10);
+    background: rgba(15,58,138,.12);
     border-left-color: #d7a928;
-    color: #ffffff;
+    color: #061a44;
 }
 #pos-product-dropdown-portal li .combo-sku {
-    font-size: .72rem; color: rgba(255,255,255,.55); margin-top: 1px;
+    font-size: .72rem; color: rgba(6,26,68,.55); font-weight: 400; margin-top: 1px;
 }
 #pos-product-dropdown-portal .combo-no-results {
-    padding: 12px 16px; color: rgba(255,255,255,.50); font-size: .875rem;
+    padding: 12px 16px; color: rgba(6,26,68,.50); font-size: .875rem;
     text-align: center; list-style: none;
 }
 
