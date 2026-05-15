@@ -9,10 +9,12 @@ use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\Signature;
 use App\Models\Product;
+use App\Models\Payment;
 use App\Services\JournalService;
 use App\Support\BranchInventoryService;
 use App\Support\GeoCurrency;
 use App\Support\InventoryQuantity;
+use App\Support\LedgerService as LedgerPostingService;
 use App\Support\PriceListUsage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -290,6 +292,74 @@ class InvoiceController extends Controller
         return collect($payload)
             ->filter(fn ($value, $column) => Schema::hasColumn($table, $column))
             ->all();
+    }
+
+    private function applyCustomerWalletToSale(Sale $sale, Customer $customer, array $activeBranch): float
+    {
+        if (!Schema::hasColumn('customers', 'wallet_balance') || !Schema::hasTable('payments')) {
+            return 0.0;
+        }
+
+        $customer = Customer::query()->lockForUpdate()->find($customer->id);
+        if (!$customer) {
+            return 0.0;
+        }
+
+        $walletBalance = round(max(0, (float) ($customer->wallet_balance ?? 0)), 2);
+        $saleBalance = round(max(0, (float) ($sale->balance ?? ((float) ($sale->total ?? 0) - (float) ($sale->amount_paid ?? 0)))), 2);
+        $amount = min($walletBalance, $saleBalance);
+
+        if ($amount <= 0) {
+            return 0.0;
+        }
+
+        $paymentPayload = [
+            'sale_id' => $sale->id,
+            'customer_id' => $customer->id,
+            'reference' => 'WALLET-' . ($sale->invoice_no ?: $sale->id),
+            'amount' => $amount,
+            'receipt_no' => 'WAL-' . strtoupper(Str::random(8)),
+            'method' => 'Customer Wallet',
+            'status' => $amount >= $saleBalance ? 'Completed' : 'Pending',
+            'note' => 'Customer wallet credit applied to invoice.',
+            'created_by' => auth()->id(),
+        ];
+
+        if (Schema::hasColumn('payments', 'wallet_amount')) {
+            $paymentPayload['wallet_amount'] = $amount;
+        }
+        if (Schema::hasColumn('payments', 'source')) {
+            $paymentPayload['source'] = 'customer_wallet_application';
+        }
+        if (Schema::hasColumn('payments', 'branch_id')) {
+            $paymentPayload['branch_id'] = $sale->branch_id ?? $activeBranch['id'];
+        }
+        if (Schema::hasColumn('payments', 'branch_name')) {
+            $paymentPayload['branch_name'] = $sale->branch_name ?? $activeBranch['name'];
+        }
+        if (Schema::hasColumn('payments', 'company_id')) {
+            $paymentPayload['company_id'] = $sale->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id');
+        }
+        if (Schema::hasColumn('payments', 'user_id')) {
+            $paymentPayload['user_id'] = auth()->id();
+        }
+
+        $payment = Payment::create($this->onlyExistingColumns('payments', $paymentPayload));
+
+        $newPaid = round(min((float) ($sale->total ?? 0), (float) ($sale->amount_paid ?? $sale->paid ?? 0) + $amount), 2);
+        $newBalance = round(max(0, (float) ($sale->total ?? 0) - $newPaid), 2);
+        $sale->update($this->onlyExistingColumns('sales', [
+            'paid' => $newPaid,
+            'amount_paid' => $newPaid,
+            'balance' => $newBalance,
+            'payment_status' => $newBalance <= 0 ? 'paid' : 'partial',
+            'payment_method' => trim(((string) ($sale->payment_method ?? 'manual')) . ' + Customer Wallet'),
+        ]));
+
+        $customer->decrement('wallet_balance', $amount);
+        LedgerPostingService::postCustomerWalletSettlement($sale->fresh(), $payment->fresh());
+
+        return $amount;
     }
 
     private function applyTenantScope($query, string $table)
@@ -691,11 +761,12 @@ class InvoiceController extends Controller
             }
 
             // Post double-entry journal entries (skip draft invoices)
-            if ($isDraft) {
-                $this->journalService->removeInvoiceJournals($sale);
-            } else {
-                $this->journalService->postInvoiceCreated($sale->fresh('customer'));
-            }
+	            if ($isDraft) {
+	                $this->journalService->removeInvoiceJournals($sale);
+	            } else {
+	                $this->journalService->postInvoiceCreated($sale->fresh('customer'));
+	                $this->applyCustomerWalletToSale($sale->fresh(), $customer, $activeBranch);
+	            }
 
             DB::commit();
             $message = $action === 'send'
@@ -1105,11 +1176,12 @@ class InvoiceController extends Controller
                 }
             }
 
-            if ($isDraft) {
-                $this->journalService->removeInvoiceJournals($sale);
-            } else {
-                $this->journalService->postInvoiceCreated($sale->fresh('customer'));
-            }
+	            if ($isDraft) {
+	                $this->journalService->removeInvoiceJournals($sale);
+	            } else {
+	                $this->journalService->postInvoiceCreated($sale->fresh('customer'));
+	                $this->applyCustomerWalletToSale($sale->fresh(), $customer, $activeBranch);
+	            }
 
             DB::commit();
 

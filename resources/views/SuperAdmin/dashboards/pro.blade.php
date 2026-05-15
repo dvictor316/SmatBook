@@ -4,11 +4,11 @@
 
 <style>
     :root {
-        --deep-sapphire: #002347;
-        --crystal-blue: #f8fbff;
-        --bubble-accent: rgba(0, 35, 71, 0.04);
-        --pro-purple: #6366f1;
-        --pro-gradient: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
+        --deep-sapphire: #061a44;
+        --crystal-blue: #f7faff;
+        --bubble-accent: rgba(6, 26, 68, 0.04);
+        --pro-purple: #0f3a8a;
+        --pro-gradient: linear-gradient(135deg, #0f3a8a 0%, #061a44 100%);
     }
 
     .pos-content-area {
@@ -56,7 +56,7 @@
         border-radius: 25px;
         background: rgba(255, 255, 255, 0.9);
         backdrop-filter: blur(10px);
-        box-shadow: 0 10px 40px rgba(0, 35, 71, 0.04);
+        box-shadow: 0 10px 40px rgba(6, 26, 68, 0.04);
         transition: transform 0.3s ease;
         position: relative; 
         z-index: 1;
@@ -68,7 +68,7 @@
     }
 
     .glass-card-pro.metric-indigo {
-        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        background: linear-gradient(135deg, #0f3a8a 0%, #061a44 100%);
         color: #fff;
     }
     .glass-card-pro.metric-emerald {
@@ -106,7 +106,7 @@
         padding: 6px 16px; 
         border-radius: 50px;
         text-transform: uppercase;
-        box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3);
+        box-shadow: 0 4px 10px rgba(15, 58, 138, 0.3);
     }
 
     .stat-icon-circle {
@@ -129,12 +129,12 @@
         color: #198754;
     }
     .mini-metric {
-        border: 1px solid rgba(99, 102, 241, 0.12);
+        border: 1px solid rgba(15, 58, 138, 0.12);
         border-radius: 12px;
-        background: linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(244,242,255,0.94) 100%);
+        background: linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(240,246,255,0.94) 100%);
         padding: 10px 12px;
         height: 100%;
-        box-shadow: 0 10px 20px rgba(67, 56, 202, 0.06);
+        box-shadow: 0 10px 20px rgba(6, 26, 68, 0.06);
     }
     .mini-metric .label { font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 700; margin-bottom: 4px; }
     .mini-metric .value { font-size: 0.88rem; font-weight: 800; color: #0f172a; line-height: 1.1; }
@@ -189,9 +189,9 @@
         gap: 12px;
     }
     .spark-box {
-        border: 1px solid rgba(99, 102, 241, 0.14);
+        border: 1px solid rgba(15, 58, 138, 0.14);
         border-radius: 14px;
-        background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(242,238,255,0.92) 100%);
+        background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(240,246,255,0.92) 100%);
         padding: 12px;
     }
     .spark-box canvas {
@@ -253,11 +253,45 @@
         gap: 0.45rem;
         padding: 0.55rem 0.95rem;
         border-radius: 999px;
-        background: rgba(37, 99, 235, 0.08);
-        color: #1d4ed8;
+        background: rgba(15, 58, 138, 0.08);
+        color: #0f3a8a;
         font-size: 0.78rem;
         font-weight: 800;
         letter-spacing: 0.02em;
+    }
+
+    /* Override btn-white hover to use theme blue instead of purple */
+    .pos-content-area .btn-white {
+        color: #061a44;
+    }
+    .pos-content-area .btn-white:hover {
+        background-color: #0f3a8a !important;
+        border-color: #0f3a8a !important;
+        color: #fff !important;
+        box-shadow: none !important;
+    }
+    /* Override btn-outline-primary to use theme blue */
+    .pos-content-area .btn-outline-primary {
+        border-color: #0f3a8a;
+        color: #0f3a8a;
+    }
+    .pos-content-area .btn-outline-primary:hover {
+        background-color: #0f3a8a !important;
+        border-color: #0f3a8a !important;
+        color: #fff !important;
+        box-shadow: none !important;
+    }
+    /* Override btn-primary to use theme blue and prevent white-on-white hover */
+    .pos-content-area .btn-primary {
+        background-color: #0f3a8a !important;
+        border-color: #0f3a8a !important;
+        color: #fff !important;
+    }
+    .pos-content-area .btn-primary:hover {
+        background-color: #061a44 !important;
+        border-color: #061a44 !important;
+        color: #fff !important;
+        box-shadow: none !important;
     }
 </style>
 
@@ -636,8 +670,8 @@
         if (!proFinanceCtx) return;
 
         const proFinanceGradient = proFinanceCtx.getContext('2d').createLinearGradient(0, 0, 0, 320);
-        proFinanceGradient.addColorStop(0, 'rgba(99, 102, 241, 0.22)');
-        proFinanceGradient.addColorStop(1, 'rgba(99, 102, 241, 0.02)');
+        proFinanceGradient.addColorStop(0, 'rgba(15, 58, 138, 0.22)');
+        proFinanceGradient.addColorStop(1, 'rgba(15, 58, 138, 0.02)');
 
         new Chart(proFinanceCtx.getContext('2d'), {
             type: 'line',
@@ -667,7 +701,7 @@
                     {
                         label: 'Profit',
                         data: profitSeries,
-                        borderColor: '#4338ca',
+                        borderColor: '#0f3a8a',
                         backgroundColor: proFinanceGradient,
                         fill: false,
                         tension: 0.3,
@@ -675,7 +709,7 @@
                         pointRadius: 4,
                         pointHoverRadius: 6,
                         pointBackgroundColor: '#ffffff',
-                        pointBorderColor: '#4338ca',
+                        pointBorderColor: '#0f3a8a',
                         pointBorderWidth: 2
                     }
                 ]
@@ -763,8 +797,8 @@
                     labels,
                     datasets: [{
                         data: profitSeries,
-                        borderColor: '#4338ca',
-                        backgroundColor: 'rgba(67,56,202,0.12)',
+                        borderColor: '#0f3a8a',
+                        backgroundColor: 'rgba(15,58,138,0.12)',
                         fill: true,
                         tension: 0.3,
                         borderWidth: 2

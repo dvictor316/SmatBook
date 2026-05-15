@@ -1640,12 +1640,13 @@ label {
                     <label>Customer</label>
                     <input type="text" id="customer-search-input" class="form-control mb-2" placeholder="Search customer name...">
                     <select id="customer-select" class="form-select">
-                        <option value="">Walk-in Customer</option>
-                        @foreach($customers as $c)
-                        <option value="{{ $c->id }}">{{ $c->name ?? $c->customer_name ?? ('Customer #' . $c->id) }}</option>
-                        @endforeach
-                    </select>
-                </div>
+	                        <option value="">Walk-in Customer</option>
+	                        @foreach($customers as $c)
+	                        <option value="{{ $c->id }}" data-wallet="{{ (float) ($c->wallet_balance ?? 0) }}">{{ $c->name ?? $c->customer_name ?? ('Customer #' . $c->id) }}</option>
+	                        @endforeach
+	                    </select>
+	                    <small id="customer-wallet-hint" class="text-muted d-block mt-2">Select a customer to apply available wallet credit automatically.</small>
+	                </div>
 
                 
                 <div class="cart-wrapper">
@@ -1749,7 +1750,7 @@ label {
                             <label>POS Amount</label>
                             <input type="number" id="card-amount" class="form-control form-control-lg fw-bold text-end tabular-nums" style="font-size: 1rem; color: var(--primary-600);">
                         </div>
-                        <div class="col-md-6 d-none" id="split-card-account-wrap">
+	                        <div class="col-md-6 d-none" id="split-card-account-wrap">
                             <label>POS Account (COA)</label>
                             <select id="card-account" class="form-select">
                                 <option value="">-- Select Account --</option>
@@ -1762,9 +1763,14 @@ label {
                                     No asset accounts yet.
                                     <a href="{{ route('chart-of-accounts') }}" class="fw-bold text-primary">Add in Chart of Accounts</a>
                                 </small>
-                            @endif
-                        </div>
-                    </div>
+	                            @endif
+	                        </div>
+	                        <div class="col-md-6 d-none" id="wallet-payment-wrap">
+	                            <label>Wallet Credit Applied</label>
+	                            <input type="number" id="wallet-amount" class="form-control form-control-lg fw-bold text-end tabular-nums" value="0.00" readonly style="font-size: 1rem; color: var(--primary-700);">
+	                            <small id="wallet-balance-hint" class="text-muted">Customer advance balance available for this sale.</small>
+	                        </div>
+	                    </div>
 
                     
                     <div class="d-flex justify-content-between align-items-center mt-3">
@@ -2675,8 +2681,12 @@ window.POS_ENABLE_FALLBACK = function () {
     const transferAmount = document.getElementById('transfer-amount');
     const transferAccount = document.getElementById('transfer-account');
     const cardAmount = document.getElementById('card-amount');
-    const cardAccount = document.getElementById('card-account');
-    const splitTransferWrap = document.getElementById('split-transfer-wrap');
+	    const cardAccount = document.getElementById('card-account');
+	    const walletAmount = document.getElementById('wallet-amount');
+	    const walletPaymentWrap = document.getElementById('wallet-payment-wrap');
+	    const walletBalanceHint = document.getElementById('wallet-balance-hint');
+	    const customerWalletHint = document.getElementById('customer-wallet-hint');
+	    const splitTransferWrap = document.getElementById('split-transfer-wrap');
     const splitTransferAccountWrap = document.getElementById('split-transfer-account-wrap');
     const splitCardWrap = document.getElementById('split-card-wrap');
     const splitCardAccountWrap = document.getElementById('split-card-account-wrap');
@@ -2692,7 +2702,7 @@ window.POS_ENABLE_FALLBACK = function () {
     let currentProductId = '';
 
     const alertFallback = (message) => window.alert(message);
-    const showAlert = (options) => {
+	    const showAlert = (options) => {
         if (window.Swal && typeof Swal.fire === 'function') {
             return Swal.fire(options);
         }
@@ -2701,8 +2711,43 @@ window.POS_ENABLE_FALLBACK = function () {
         }
         return alertFallback(options?.text || options?.title || 'Action required');
     };
-    const saleStoreUrl = @json(route('sales.store'));
-    const invoicePrintBaseUrl = @json(url('/sales/invoice'));
+	    const saleStoreUrl = @json(route('sales.store'));
+	    const invoicePrintBaseUrl = @json(url('/sales/invoice'));
+
+	    function selectedCustomerWalletBalance() {
+	        const option = customerSelect?.options[customerSelect.selectedIndex];
+	        return Math.max(0, parseFloat(option?.dataset?.wallet || '0') || 0);
+	    }
+
+	    function cartGrandTotalValue() {
+	        const totalText = grandTotal?.textContent || '0';
+	        return parseFloat(totalText.replace(/[^\d.]/g, '')) || 0;
+	    }
+
+	    function refreshWalletApplication() {
+	        const total = cartGrandTotalValue();
+	        const walletBalance = selectedCustomerWalletBalance();
+	        const applied = Math.min(walletBalance, total);
+
+	        if (walletAmount) {
+	            walletAmount.value = applied.toFixed(2);
+	        }
+	        walletPaymentWrap?.classList.toggle('d-none', applied <= 0);
+	        if (walletBalanceHint) {
+	            walletBalanceHint.textContent = `Available wallet balance: ${fmt.format(walletBalance)}. Applying: ${fmt.format(applied)}.`;
+	        }
+	        if (customerWalletHint) {
+	            customerWalletHint.textContent = walletBalance > 0
+	                ? `Wallet credit available: ${fmt.format(walletBalance)}. It will apply before collecting cash/transfer.`
+	                : 'Select a customer to apply available wallet credit automatically.';
+	        }
+
+	        if (paymentMethod?.value !== 'Split' && amountPaid) {
+	            amountPaid.value = Math.max(0, total - applied).toFixed(2);
+	        }
+
+	        return applied;
+	    }
     const csrfToken = @json(csrf_token());
     const salesOrderPrefill = @json(session('pos_prefill'));
     const posSourceContext = salesOrderPrefill && salesOrderPrefill.source
@@ -3148,15 +3193,15 @@ window.POS_ENABLE_FALLBACK = function () {
         selectCustomerMatch(customerSearchInput.value, true);
     });
 
-    function updateChange() {
-        const totalText = grandTotal?.textContent || '0';
-        const total = parseFloat(totalText.replace(/[^\d.]/g, '')) || 0;
-        const cashPaid = parseFloat(amountPaid?.value || '0') || 0;
-        const transferPaid = parseFloat(transferAmount?.value || '0') || 0;
-        const cardPaid = parseFloat(cardAmount?.value || '0') || 0;
-        const isSplit = paymentMethod?.value === 'Split';
-        const paid = isSplit ? (cashPaid + transferPaid + cardPaid) : cashPaid;
-        const change = paid - total;
+	    function updateChange() {
+	        const total = cartGrandTotalValue();
+	        const walletPaid = parseFloat(walletAmount?.value || '0') || 0;
+	        const cashPaid = parseFloat(amountPaid?.value || '0') || 0;
+	        const transferPaid = parseFloat(transferAmount?.value || '0') || 0;
+	        const cardPaid = parseFloat(cardAmount?.value || '0') || 0;
+	        const isSplit = paymentMethod?.value === 'Split';
+	        const paid = (isSplit ? (cashPaid + transferPaid + cardPaid) : cashPaid) + walletPaid;
+	        const change = paid - total;
 
         if (changeAmount) {
             changeAmount.textContent = fmt.format(change);
@@ -3235,8 +3280,10 @@ window.POS_ENABLE_FALLBACK = function () {
         if (amountPaid) amountPaid.value = '0.00';
         if (transferAmount) transferAmount.value = '0.00';
         if (transferAccount) transferAccount.value = '';
-        if (cardAmount) cardAmount.value = '0.00';
-        if (cardAccount) cardAccount.value = '';
+	        if (cardAmount) cardAmount.value = '0.00';
+	        if (cardAccount) cardAccount.value = '';
+	        if (walletAmount) walletAmount.value = '0.00';
+	        walletPaymentWrap?.classList.add('d-none');
 
         if (productSelect) productSelect.value = '';
         if (productSearch) productSearch.value = '';
@@ -3319,15 +3366,17 @@ window.POS_ENABLE_FALLBACK = function () {
         if (sumTax) sumTax.textContent = totTax > 0 ? '+ ' + fmt.format(totTax) : fmt.format(0);
         if (grandTotal) grandTotal.textContent = fmt.format(totGrand);
         if (hdrCartCount) hdrCartCount.textContent = String(cart.length);
-        if (paymentMethod?.value === 'Split') {
-            if (amountPaid && !amountPaid.value) {
-                amountPaid.value = '0.00';
-            }
-        } else if (amountPaid) {
-            amountPaid.value = totGrand.toFixed(2);
-        }
-        updateChange();
-    }
+	        if (paymentMethod?.value === 'Split') {
+	            if (amountPaid && !amountPaid.value) {
+	                amountPaid.value = '0.00';
+	            }
+	        } else if (amountPaid) {
+	            const walletApplied = refreshWalletApplication();
+	            amountPaid.value = Math.max(0, totGrand - walletApplied).toFixed(2);
+	        }
+	        refreshWalletApplication();
+	        updateChange();
+	    }
 
     function applySalesOrderPrefill(prefill) {
         if (!prefill || !Array.isArray(prefill.items) || !prefill.items.length) {
@@ -3612,7 +3661,11 @@ window.POS_ENABLE_FALLBACK = function () {
     cardAmount?.addEventListener('input', function () {
         syncSplitCounterpart('card');
     });
-    paymentMethod?.addEventListener('change', toggleSplitFields);
+	    paymentMethod?.addEventListener('change', toggleSplitFields);
+	    customerSelect?.addEventListener('change', function () {
+	        refreshWalletApplication();
+	        updateChange();
+	    });
 
     processBtn?.addEventListener('click', async function (e) {
         e.preventDefault();
@@ -3628,10 +3681,11 @@ window.POS_ENABLE_FALLBACK = function () {
         }
 
         const { total, paid } = updateChange();
-        if (paid <= 0) {
-            alertFallback('Enter payment before processing the sale.');
-            return;
-        }
+	        const walletApplied = parseFloat(walletAmount?.value || '0') || 0;
+	        if (paid <= 0 && walletApplied <= 0) {
+	            alertFallback('Enter payment before processing the sale.');
+	            return;
+	        }
 
         if (paymentMethod?.value === 'Split') {
             const transferValue = parseFloat(transferAmount?.value || '0') || 0;
@@ -3671,8 +3725,9 @@ window.POS_ENABLE_FALLBACK = function () {
                     tax: cart.reduce((sum, item) => sum + item.taxVal, 0),
                     discount: cart.reduce((sum, item) => sum + item.discVal, 0),
                     total,
-                    paid,
-                    split_details: {
+	                    paid,
+	                    wallet_amount: walletApplied,
+	                    split_details: {
                         cash: parseFloat(amountPaid?.value || '0') || 0,
                         transfer: parseFloat(transferAmount?.value || '0') || 0,
                         transfer_account_id: transferAccount?.value || null,

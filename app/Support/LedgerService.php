@@ -860,6 +860,99 @@ class LedgerService
         );
     }
 
+    public static function postCustomerAdvanceDeposit(Payment $payment): void
+    {
+        if (!self::isReady()) {
+            return;
+        }
+
+        $amount = (float) ($payment->wallet_amount ?? $payment->amount ?? 0);
+        if ($amount <= 0) {
+            return;
+        }
+
+        Transaction::query()
+            ->where('related_id', $payment->id)
+            ->where('related_type', Payment::class)
+            ->where('transaction_type', Transaction::TYPE_RECEIPT)
+            ->delete();
+
+        self::$currentCompanyId = (int) ($payment->company_id
+            ?? Auth::user()?->company_id
+            ?? session('current_tenant_id')
+            ?? 0) ?: null;
+
+        $cashAccount = null;
+        $paymentAccountId = (int) ($payment->payment_account_id ?? $payment->account_id ?? 0);
+        if ($paymentAccountId > 0) {
+            $cashAccount = Account::withoutGlobalScopes()->find($paymentAccountId);
+        }
+        if (!$cashAccount) {
+            $cashAccount = self::resolveCashAccount($payment->method ?? null);
+        }
+
+        $advanceAccount = self::resolveAccount('Customer Advances', 'Liability', ['customer advance', 'customer deposit', 'unearned revenue'], 'AUTO-LIB-CADV');
+        $reference = $payment->reference ?: ($payment->payment_id ?: ('PAY-' . $payment->id));
+
+        self::postDoubleEntry(
+            debitAccountId: $cashAccount->id,
+            creditAccountId: $advanceAccount->id,
+            amount: $amount,
+            date: self::resolveDate($payment->created_at),
+            reference: $reference,
+            description: 'Customer advance deposit received: ' . $reference,
+            transactionType: Transaction::TYPE_RECEIPT,
+            relatedId: (int) $payment->id,
+            relatedType: Payment::class,
+            userId: $payment->created_by ?? auth()->id(),
+            branchId: $payment->branch_id ?? null,
+            branchName: $payment->branch_name ?? null
+        );
+    }
+
+    public static function postCustomerWalletSettlement(Sale $sale, Payment $payment): void
+    {
+        if (!self::isReady()) {
+            return;
+        }
+
+        $amount = (float) ($payment->wallet_amount ?? $payment->amount ?? 0);
+        if ($amount <= 0) {
+            return;
+        }
+
+        Transaction::query()
+            ->where('related_id', $payment->id)
+            ->where('related_type', Payment::class)
+            ->where('transaction_type', Transaction::TYPE_RECEIPT)
+            ->delete();
+
+        self::$currentCompanyId = (int) ($payment->company_id
+            ?? $sale->company_id
+            ?? Auth::user()?->company_id
+            ?? session('current_tenant_id')
+            ?? 0) ?: null;
+
+        $advanceAccount = self::resolveAccount('Customer Advances', 'Liability', ['customer advance', 'customer deposit', 'unearned revenue'], 'AUTO-LIB-CADV');
+        $receivableAccount = self::resolveAccount('Accounts Receivable', 'Asset', ['receivable', 'debtor'], 'AUTO-AST-AR');
+        $reference = $payment->reference ?: ($payment->payment_id ?: ('PAY-' . $payment->id));
+
+        self::postDoubleEntry(
+            debitAccountId: $advanceAccount->id,
+            creditAccountId: $receivableAccount->id,
+            amount: $amount,
+            date: self::resolveDate($payment->created_at),
+            reference: $reference,
+            description: 'Customer wallet applied to sale: ' . ($sale->invoice_no ?: ('SALE-' . $sale->id)),
+            transactionType: Transaction::TYPE_RECEIPT,
+            relatedId: (int) $payment->id,
+            relatedType: Payment::class,
+            userId: $payment->created_by ?? $sale->user_id ?? auth()->id(),
+            branchId: $payment->branch_id ?? $sale->branch_id ?? null,
+            branchName: $payment->branch_name ?? $sale->branch_name ?? $sale->branch_label ?? null
+        );
+    }
+
     public static function postExpense(Expense $expense): void
     {
         if (!self::isReady()) {

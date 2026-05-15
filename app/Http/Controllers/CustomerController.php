@@ -995,7 +995,7 @@ class CustomerController extends Controller
                 }
 
                 $openingOutstanding = round((float) ($customer->balance ?? 0), 2);
-                if ($remainingAmount > 0 && $openingOutstanding > 0) {
+	                if ($remainingAmount > 0 && $openingOutstanding > 0) {
                     $openingPaymentAmount = min($openingOutstanding, $remainingAmount);
                     $openingSale = $this->createOrRefreshOpeningBalanceSale(
                         $customer,
@@ -1058,10 +1058,61 @@ class CustomerController extends Controller
 
                     LedgerService::postCustomerPayment($openingPayment->fresh());
 
-                    $remainingAmount -= $openingPaymentAmount;
-                }
+	                    $remainingAmount -= $openingPaymentAmount;
+	                }
 
-            });
+	                $walletAmount = round(max(0, $remainingAmount), 2);
+	                if ($walletAmount > 0) {
+	                    $walletPayload = [
+	                        'customer_id' => $customer->id,
+	                        'reference' => $referenceBase !== '' ? $referenceBase : ('ADV-' . $customer->id . '-' . now()->format('YmdHis')),
+	                        'amount' => $walletAmount,
+	                        'receipt_no' => $this->generatePaymentReceiptNo(),
+	                        'method' => $request->input('method') ?: 'Bank Transfer',
+	                        'status' => 'Completed',
+	                        'note' => $request->input('note') ?: 'Customer advance deposit stored in wallet.',
+	                        'created_by' => auth()->id(),
+	                    ];
+
+	                    if (Schema::hasColumn('payments', 'wallet_amount')) {
+	                        $walletPayload['wallet_amount'] = $walletAmount;
+	                    }
+	                    if (Schema::hasColumn('payments', 'source')) {
+	                        $walletPayload['source'] = 'customer_wallet_deposit';
+	                    }
+	                    if (Schema::hasColumn('payments', 'branch_id')) {
+	                        $walletPayload['branch_id'] = $activeBranch['id'];
+	                    }
+	                    if (Schema::hasColumn('payments', 'branch_name')) {
+	                        $walletPayload['branch_name'] = $activeBranch['name'];
+	                    }
+	                    if (Schema::hasColumn('payments', 'payment_account_id')) {
+	                        $walletPayload['payment_account_id'] = $resolvedAccountId;
+	                    } elseif (Schema::hasColumn('payments', 'account_id')) {
+	                        $walletPayload['account_id'] = $resolvedAccountId;
+	                    }
+	                    if (Schema::hasColumn('payments', 'company_id')) {
+	                        $walletPayload['company_id'] = auth()->user()?->company_id ?? session('current_tenant_id');
+	                    }
+	                    if (Schema::hasColumn('payments', 'user_id')) {
+	                        $walletPayload['user_id'] = auth()->id();
+	                    }
+
+	                    $walletPayment = Payment::create($walletPayload);
+	                    $walletPayment->forceFill([
+	                        'created_at' => $paymentDate,
+	                        'updated_at' => $paymentDate,
+	                    ])->saveQuietly();
+
+	                    if (Schema::hasColumn('customers', 'wallet_balance')) {
+	                        $customer->increment('wallet_balance', $walletAmount);
+	                    }
+
+	                    LedgerService::postCustomerAdvanceDeposit($walletPayment->fresh());
+	                    $remainingAmount = 0;
+	                }
+
+	            });
         } catch (\Throwable $exception) {
             return back()->withInput()->with('error', 'Customer payment could not be saved. ' . $exception->getMessage());
         }

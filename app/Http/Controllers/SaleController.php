@@ -843,8 +843,9 @@ public function store(Request $request)
         'customer_id'    => 'nullable|integer',
         'payment_method' => 'required|string|in:Cash,cash,Split,split',
         'total'          => 'required|numeric|min:0',
-        'paid'           => 'required|numeric|min:0',
-        'items'          => 'required|array|min:1',
+	        'paid'           => 'required|numeric|min:0',
+	        'wallet_amount'  => 'nullable|numeric|min:0',
+	        'items'          => 'required|array|min:1',
         'items.*.id'     => 'required|integer',
         'items.*.qty'    => 'required|numeric|gt:0',
         'items.*.unitType' => 'nullable|in:unit,roll,carton',
@@ -905,29 +906,36 @@ public function store(Request $request)
         ], 422);
     }
 
-    $paidAmount = (float) $request->paid;
-    $totalAmount = (float) $request->total;
-    $paymentMethod = strtolower((string) $request->payment_method);
-    $splitDetails = $this->normalizeSplitDetails($request->input('split_details', []));
+	    $paidAmount = (float) $request->paid;
+	    $totalAmount = (float) $request->total;
+	    $requestedWalletAmount = round(max(0, (float) $request->input('wallet_amount', 0)), 2);
+	    $paymentMethod = strtolower((string) $request->payment_method);
+	    $splitDetails = $this->normalizeSplitDetails($request->input('split_details', []));
+	    $availableWalletAmount = 0.0;
+	    $customerIdForWallet = (int) ($request->input('customer_id') ?? 0);
+	    if ($customerIdForWallet > 0 && Schema::hasColumn('customers', 'wallet_balance')) {
+	        $availableWalletAmount = round(max(0, (float) $this->scopedCustomers()->whereKey($customerIdForWallet)->value('wallet_balance')), 2);
+	    }
+	    $walletAmount = min($requestedWalletAmount, $availableWalletAmount, $totalAmount);
 
     if (!in_array($paymentMethod, ['cash', 'split'], true)) {
         return response()->json(['success' => false, 'message' => 'POS only accepts cash or split (cash + transfer) sales. Use Invoices for credit sales.'], 422);
     }
 
-    if ($paymentMethod === 'split') {
-        $splitPaid = round(((float) $splitDetails['cash']) + ((float) $splitDetails['transfer']) + ((float) $splitDetails['card']), 2);
-        if ($splitPaid <= 0) {
-            return response()->json(['success' => false, 'message' => 'Enter split payment amounts before processing this sale.'], 422);
-        }
-        if ($splitPaid < $totalAmount) {
-            return response()->json(['success' => false, 'message' => 'POS split sales must be fully paid. Use Invoices for credit sales.'], 422);
-        }
-        $paidAmount = $splitPaid;
-    } else {
-        if ($paidAmount < $totalAmount) {
-            return response()->json(['success' => false, 'message' => 'POS cash sales must be fully paid. Use Invoices for credit sales.'], 422);
-        }
-    }
+	    if ($paymentMethod === 'split') {
+	        $splitPaid = round(((float) $splitDetails['cash']) + ((float) $splitDetails['transfer']) + ((float) $splitDetails['card']), 2);
+	        if ($splitPaid <= 0 && $walletAmount <= 0) {
+	            return response()->json(['success' => false, 'message' => 'Enter split payment amounts before processing this sale.'], 422);
+	        }
+	        if (($splitPaid + $walletAmount) < $totalAmount) {
+	            return response()->json(['success' => false, 'message' => 'POS split sales must be fully paid. Use Invoices for credit sales.'], 422);
+	        }
+	        $paidAmount = $splitPaid;
+	    } else {
+	        if (($paidAmount + $walletAmount) < $totalAmount) {
+	            return response()->json(['success' => false, 'message' => 'POS cash sales must be fully paid. Use Invoices for credit sales.'], 422);
+	        }
+	    }
 
     DB::beginTransaction();
 
@@ -1025,9 +1033,10 @@ $sale = Sale::create([
         'branch_name' => $activeBranch['name'],
         'payment_account_id' => $paymentAccount?->id,
         'payment_account_name' => $paymentAccount?->name,
-        'split' => $splitDetails,
-    ],
-]);
+	        'split' => $splitDetails,
+	        'wallet_requested' => $walletAmount,
+	    ],
+	]);
 
         $runningSubtotal = 0;
         $runningTax = 0;
@@ -1146,8 +1155,9 @@ $sale = Sale::create([
                 'cashier_name' => auth()->user()?->name,
                 'branch_id' => $activeBranch['id'],
                 'branch_name' => $activeBranch['name'],
-                'split' => $splitDetails,
-                'payment_account_id' => $paymentAccount?->id,
+	                'split' => $splitDetails,
+	                'wallet_requested' => $walletAmount,
+	                'payment_account_id' => $paymentAccount?->id,
                 'payment_account_name' => $paymentAccount?->name,
                 'card_account_id' => $cardSplitAccount?->id,
                 'card_account_name' => $cardSplitAccount?->name,
@@ -1203,9 +1213,13 @@ $sale = Sale::create([
             $sourceQuotation->forceFill($quotationUpdate)->save();
         }
 
-        // Use the explicitly selected deposit account for journal entries
-        $primaryDepositAccount = $paymentAccount ?? $transferSplitAccount ?? $cardSplitAccount;
-        LedgerService::postSale($sale->fresh(), $primaryDepositAccount?->id);
+	        // Use the explicitly selected deposit account for journal entries
+	        $primaryDepositAccount = $paymentAccount ?? $transferSplitAccount ?? $cardSplitAccount;
+	        LedgerService::postSale($sale->fresh(), $primaryDepositAccount?->id);
+
+	        if ($walletAmount > 0 && $selectedCustomer) {
+	            $this->applyCustomerWalletToPosSale($sale->fresh(), $selectedCustomer, $activeBranch, $walletAmount);
+	        }
 
         // Broadcast Real-time event
         broadcast(new NewSaleRegistered($sale))->toOthers();
@@ -1246,6 +1260,73 @@ $sale = Sale::create([
             'sale' => $sale,
             'backUrl' => route('sales.invoice.show', $sale->id),
         ]);
+    }
+
+    private function applyCustomerWalletToPosSale(Sale $sale, Customer $customer, array $activeBranch, float $requestedAmount): float
+    {
+        if ($requestedAmount <= 0 || !Schema::hasColumn('customers', 'wallet_balance') || !Schema::hasTable('payments')) {
+            return 0.0;
+        }
+
+        $customer = Customer::query()->lockForUpdate()->find($customer->id);
+        if (!$customer) {
+            return 0.0;
+        }
+
+        $walletBalance = round(max(0, (float) ($customer->wallet_balance ?? 0)), 2);
+        $saleBalance = round(max(0, (float) ($sale->balance ?? ((float) ($sale->total ?? 0) - (float) ($sale->amount_paid ?? 0)))), 2);
+        $amount = min(round($requestedAmount, 2), $walletBalance, $saleBalance);
+        if ($amount <= 0) {
+            return 0.0;
+        }
+
+        $paymentPayload = [
+            'sale_id' => $sale->id,
+            'customer_id' => $customer->id,
+            'reference' => 'WALLET-' . ($sale->receipt_no ?: $sale->id),
+            'amount' => $amount,
+            'method' => 'Customer Wallet',
+            'status' => $amount >= $saleBalance ? 'Completed' : 'Pending',
+            'note' => 'Customer wallet credit applied to POS sale.',
+            'receipt_no' => $this->generatePaymentReceiptNo(),
+            'created_by' => auth()->id(),
+        ];
+
+        if (Schema::hasColumn('payments', 'wallet_amount')) {
+            $paymentPayload['wallet_amount'] = $amount;
+        }
+        if (Schema::hasColumn('payments', 'source')) {
+            $paymentPayload['source'] = 'customer_wallet_application';
+        }
+        if (Schema::hasColumn('payments', 'branch_id')) {
+            $paymentPayload['branch_id'] = $sale->branch_id ?? $activeBranch['id'];
+        }
+        if (Schema::hasColumn('payments', 'branch_name')) {
+            $paymentPayload['branch_name'] = $sale->branch_name ?? $activeBranch['name'];
+        }
+        if (Schema::hasColumn('payments', 'company_id')) {
+            $paymentPayload['company_id'] = $sale->company_id ?? auth()->user()?->company_id ?? session('current_tenant_id');
+        }
+        if (Schema::hasColumn('payments', 'user_id')) {
+            $paymentPayload['user_id'] = auth()->id();
+        }
+
+        $payment = Payment::create($paymentPayload);
+        $newPaid = round(min((float) ($sale->total ?? 0), (float) ($sale->amount_paid ?? $sale->paid ?? 0) + $amount), 2);
+        $newBalance = round(max(0, (float) ($sale->total ?? 0) - $newPaid), 2);
+
+        $sale->update([
+            'paid' => $newPaid,
+            'amount_paid' => $newPaid,
+            'balance' => $newBalance,
+            'payment_status' => $newBalance <= 0 ? 'paid' : 'partial',
+            'payment_method' => trim(((string) ($sale->payment_method ?? 'Cash')) . ' + Customer Wallet'),
+        ]);
+
+        $customer->decrement('wallet_balance', $amount);
+        LedgerService::postCustomerWalletSettlement($sale->fresh(), $payment->fresh());
+
+        return $amount;
     }
 
     private function resolveStockUnitsForSale(Product $product, array $itemData, float $qty): float

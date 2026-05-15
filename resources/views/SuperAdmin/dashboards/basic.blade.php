@@ -3,10 +3,10 @@
 @section('content')
 <style>
     :root {
-        --deep-sapphire: #002347;
-        --crystal-blue: #f8fbff;
-        --bubble-color: rgba(0, 35, 71, 0.04);
-        --accent-orange: #ff8c00;
+        --deep-sapphire: #061a44;
+        --crystal-blue: #f7faff;
+        --bubble-color: rgba(6, 26, 68, 0.04);
+        --accent-orange: #d7a928;
     }
 
     .pos-content-area {
@@ -63,19 +63,19 @@
     }
 
     .metric-card-basic.metric-sky {
-        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        background: linear-gradient(135deg, #0f3a8a 0%, #061a44 100%);
         color: #fff;
     }
     .metric-card-basic.metric-violet {
-        background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+        background: linear-gradient(135deg, #061a44 0%, #0a2550 100%);
         color: #fff;
     }
     .metric-card-basic.metric-cyan {
-        background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
+        background: linear-gradient(135deg, #0f3a8a 0%, #1e50a8 100%);
         color: #fff;
     }
     .metric-card-basic.metric-amber {
-        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        background: linear-gradient(135deg, #d7a928 0%, #b58a1a 100%);
         color: #fff;
     }
     .metric-card-basic.metric-sky .text-muted,
@@ -126,7 +126,7 @@
         color: #198754;
     }
     .mini-metric {
-        border: 1px solid rgba(37, 99, 235, 0.1);
+        border: 1px solid rgba(15, 58, 138, 0.1);
         border-radius: 12px;
         background: linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(237,244,255,0.94) 100%);
         padding: 10px 12px;
@@ -160,7 +160,7 @@
         padding: 6px 10px;
         border-radius: 999px;
         background: #eef6ff;
-        color: #1d4ed8;
+        color: #0f3a8a;
     }
     .insight-band {
         border: 1px solid #e5edf8;
@@ -198,7 +198,7 @@
         gap: 12px;
     }
     .spark-box {
-        border: 1px solid rgba(37, 99, 235, 0.12);
+        border: 1px solid rgba(15, 58, 138, 0.12);
         border-radius: 14px;
         background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(238,245,255,0.92) 100%);
         padding: 12px;
@@ -259,11 +259,23 @@
         gap: 0.45rem;
         padding: 0.55rem 0.95rem;
         border-radius: 999px;
-        background: rgba(37, 99, 235, 0.08);
-        color: #1d4ed8;
+        background: rgba(15, 58, 138, 0.08);
+        color: #0f3a8a;
         font-size: 0.78rem;
         font-weight: 800;
         letter-spacing: 0.02em;
+    }
+
+    /* Override btn-outline-primary to use theme blue */
+    .pos-content-area .btn-outline-primary {
+        border-color: #0f3a8a;
+        color: #0f3a8a;
+    }
+    .pos-content-area .btn-outline-primary:hover {
+        background-color: #0f3a8a !important;
+        border-color: #0f3a8a !important;
+        color: #fff !important;
+        box-shadow: none !important;
     }
 
     /* Working Domain Reference: env('SESSION_DOMAIN', null) */
@@ -636,9 +648,9 @@
         const revenueCtx = document.getElementById('basicRevenueChart');
         if (revenueCtx) {
             const revenueGradient = revenueCtx.getContext('2d').createLinearGradient(0, 0, 0, 280);
-            revenueGradient.addColorStop(0, 'rgba(37, 99, 235, 0.32)');
-            revenueGradient.addColorStop(0.55, 'rgba(14, 165, 233, 0.18)');
-            revenueGradient.addColorStop(1, 'rgba(14, 165, 233, 0.03)');
+            revenueGradient.addColorStop(0, 'rgba(15, 58, 138, 0.32)');
+            revenueGradient.addColorStop(0.55, 'rgba(15, 58, 138, 0.18)');
+            revenueGradient.addColorStop(1, 'rgba(15, 58, 138, 0.03)');
 
             new Chart(revenueCtx.getContext('2d'), {
                 type: 'line',
@@ -647,7 +659,7 @@
                     datasets: [{
                         label: 'Revenue',
                         data: totals,
-                        borderColor: '#2563eb',
+                        borderColor: '#0f3a8a',
                         backgroundColor: revenueGradient,
                         fill: true,
                         tension: 0.35,
@@ -655,7 +667,7 @@
                         pointRadius: 4,
                         pointHoverRadius: 6,
                         pointBackgroundColor: '#ffffff',
-                        pointBorderColor: '#2563eb',
+                        pointBorderColor: '#0f3a8a',
                         pointBorderWidth: 2
                     }]
                 },
@@ -708,7 +720,7 @@
                     datasets: [{
                         data: totals,
                         borderColor: '#0d6efd',
-                        backgroundColor: 'rgba(13,110,253,0.12)',
+                        backgroundColor: 'rgba(15,58,138,0.12)',
                         fill: true,
                         tension: 0.35,
                         borderWidth: 2
@@ -725,8 +737,8 @@
                     labels,
                     datasets: [{
                         data: totals.map(value => Math.max(1, Math.round(value / 5000))),
-                        borderColor: '#ff8c00',
-                        backgroundColor: 'rgba(255,140,0,0.12)',
+                        borderColor: '#d7a928',
+                        backgroundColor: 'rgba(215,169,40,0.12)',
                         fill: true,
                         tension: 0.35,
                         borderWidth: 2
@@ -763,10 +775,10 @@
                         label: 'Qty Sold',
                         data: topProducts.map(p => Number(p.total_qty || 0)),
                         backgroundColor: [
-                            '#2563eb',
-                            '#7c3aed',
-                            '#06b6d4',
-                            '#f59e0b',
+                            '#0f3a8a',
+                            '#061a44',
+                            '#1e50a8',
+                            '#d7a928',
                             '#10b981',
                             '#ef4444'
                         ],

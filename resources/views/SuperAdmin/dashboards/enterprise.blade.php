@@ -4,11 +4,11 @@
 
 <style> 
     :root { 
-        --deep-sapphire: #002347; 
-        --smat-gold: #d4af37; 
-        --crystal-blue: #f0f7ff; 
+        --deep-sapphire: #061a44; 
+        --smat-gold: #d7a928; 
+        --crystal-blue: #f7faff; 
         --glass-bg: rgba(255, 255, 255, 0.9); 
-        --bubble-accent: rgba(0, 35, 71, 0.05); 
+        --bubble-accent: rgba(6, 26, 68, 0.05); 
     }
 
     /* Page Container with Bubble Background */
@@ -127,7 +127,7 @@
         border: none; border-radius: 25px;
         background: var(--glass-bg);
         backdrop-filter: blur(10px);
-        box-shadow: 0 15px 35px rgba(0, 35, 71, 0.05);
+        box-shadow: 0 15px 35px rgba(6, 26, 68, 0.05);
         transition: transform 0.3s ease;
         z-index: 1; position: relative;
         height: 100%;
@@ -140,7 +140,7 @@
         letter-spacing: 1px; font-weight: 800;
         padding: 6px 15px; border-radius: 50px;
         text-transform: uppercase;
-        box-shadow: 0 4px 15px rgba(0, 35, 71, 0.2);
+        box-shadow: 0 4px 15px rgba(6, 26, 68, 0.2);
     }
     .live-chip {
         font-size: 10px;
@@ -245,11 +245,33 @@
         gap: 0.45rem;
         padding: 0.55rem 0.95rem;
         border-radius: 999px;
-        background: rgba(37, 99, 235, 0.08);
-        color: #1d4ed8;
+        background: rgba(15, 58, 138, 0.08);
+        color: #0f3a8a;
         font-size: 0.78rem;
         font-weight: 800;
         letter-spacing: 0.02em;
+    }
+
+    /* Override btn-white hover to use theme blue instead of purple */
+    .pos-content-area .btn-white {
+        color: #061a44;
+    }
+    .pos-content-area .btn-white:hover {
+        background-color: #0f3a8a !important;
+        border-color: #0f3a8a !important;
+        color: #fff !important;
+        box-shadow: none !important;
+    }
+    /* Override btn-outline-primary to use theme blue */
+    .pos-content-area .btn-outline-primary {
+        border-color: #0f3a8a;
+        color: #0f3a8a;
+    }
+    .pos-content-area .btn-outline-primary:hover {
+        background-color: #0f3a8a !important;
+        border-color: #0f3a8a !important;
+        color: #fff !important;
+        box-shadow: none !important;
     }
 
     /* Print Logic */
@@ -590,7 +612,7 @@
 
         const enterpriseBarGradient = canvas.getContext('2d').createLinearGradient(0, 0, 0, 300);
         enterpriseBarGradient.addColorStop(0, '#f8d66d');
-        enterpriseBarGradient.addColorStop(0.5, '#d4af37');
+        enterpriseBarGradient.addColorStop(0.5, '#d7a928');
         enterpriseBarGradient.addColorStop(1, '#8b5e18');
 
         new Chart(canvas.getContext('2d'), {

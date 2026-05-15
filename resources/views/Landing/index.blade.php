@@ -173,9 +173,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 .hero-wrap {
     position: relative; width: 100%;
     padding-top: calc(var(--nav-h) + var(--announce-h) - 22px);
-    background:
-        linear-gradient(135deg, rgba(0,12,30,0.88) 0%, rgba(0,18,64,0.83) 30%, rgba(6,29,107,0.76) 60%, rgba(10,47,168,0.68) 100%),
-        url('https://images.pexels.com/photos/5905867/pexels-photo-5905867.jpeg?auto=compress&cs=tinysrgb&w=1920') center/cover no-repeat;
+    background: linear-gradient(135deg, #000c1e 0%, #001240 30%, #061d6b 60%, #0a2fa8 100%);
     overflow: hidden;
     min-height: calc(100vh - var(--nav-h) - var(--announce-h));
     display: flex; flex-direction: column;

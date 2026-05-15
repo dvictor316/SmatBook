@@ -141,6 +141,19 @@
     @media (max-width: 991.98px) { .page-wrapper { margin-left: 0 !important; } }
     @media (max-width: 768px)    { .inst-header-bar { flex-direction: column; align-items: flex-start; gap: .75rem; } }
     @media (max-width: 576px)    { .content-container { padding: 16px; } .plan-header { padding: 20px; } .feature-list { padding: 20px; } .card-actions { padding: 14px 20px; } }
+
+    /* Fix btn-primary: prevent white-on-white on hover (global style.css applies white inset shadow) */
+    .btn-primary {
+        background-color: var(--inst-blue) !important;
+        border-color: var(--inst-blue) !important;
+        color: #fff !important;
+    }
+    .btn-primary:hover {
+        background-color: var(--inst-navy) !important;
+        border-color: var(--inst-navy) !important;
+        color: #fff !important;
+        box-shadow: 0 0 0 3px rgba(15, 58, 138, 0.2) !important;
+    }
 </style>
 
 <div class="page-wrapper">

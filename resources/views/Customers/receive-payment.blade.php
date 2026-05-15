@@ -81,19 +81,24 @@
                     <div class="card-body">
                         <p class="mb-1 text-white-50">Total Amount Due</p>
                         <h3 class="mb-0">{{ \App\Support\GeoCurrency::format(($outstandingInvoicesTotal + $outstandingOpeningBalance), 'NGN', $currencyCode, $currencyLocale) }}</h3>
-                        <small class="text-white-50">
-                            Invoices: {{ \App\Support\GeoCurrency::format($outstandingInvoicesTotal, 'NGN', $currencyCode, $currencyLocale) }}
-                            · Opening Balance Due: {{ \App\Support\GeoCurrency::format($outstandingOpeningBalance, 'NGN', $currencyCode, $currencyLocale) }}
-                        </small>
+                            <small class="text-white-50">
+                                Invoices: {{ \App\Support\GeoCurrency::format($outstandingInvoicesTotal, 'NGN', $currencyCode, $currencyLocale) }}
+                                · Opening Balance Due: {{ \App\Support\GeoCurrency::format($outstandingOpeningBalance, 'NGN', $currencyCode, $currencyLocale) }}
+                            </small>
+                            @if(\Illuminate\Support\Facades\Schema::hasColumn('customers', 'wallet_balance'))
+                                <div class="mt-2 badge bg-warning text-dark">
+                                    Wallet credit: {{ \App\Support\GeoCurrency::format((float) ($customer->wallet_balance ?? 0), 'NGN', $currencyCode, $currencyLocale) }}
+                                </div>
+                            @endif
+                        </div>
                     </div>
                 </div>
-            </div>
         </div>
 
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-white">
                 <h5 class="card-title mb-1">Receive Payment for {{ $customer->customer_name }}</h5>
-                <p class="text-muted mb-0">Enter the amount received and save. The system will allocate the payment automatically to outstanding invoices first, then to any opening balance due.</p>
+                <p class="text-muted mb-0">Enter the amount received and save. The system will allocate it to outstanding invoices first, then opening balance, and keep any excess as customer wallet/advance credit.</p>
             </div>
             <div class="card-body">
                 @php $paymentHistory = $paymentHistory ?? collect(); @endphp
@@ -140,7 +145,7 @@
                                     data-received-amount
                                 >
                             </div>
-                            <small class="text-muted">This will be automatically allocated to outstanding invoices and then any opening balance.</small>
+                            <small class="text-muted">Any amount above current dues is stored as wallet credit for the customer's next purchase.</small>
                         </div>
                         <div class="col-12">
                             <label class="form-label">Note</label>
