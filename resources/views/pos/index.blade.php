@@ -613,21 +613,22 @@ body.mini-sidebar .pos-full-page-wrapper {
 #pos-product-dropdown-portal {
     display: none;
     position: fixed;
-    background: rgba(218, 232, 252, 0.92);
+    background: linear-gradient(160deg, rgba(220,234,252,0.94) 0%, rgba(245,236,210,0.91) 100%);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
     border: 1px solid rgba(15,58,138,.18);
+    border-top: 2px solid rgba(215,169,40,.60);
     border-radius: 14px;
-    box-shadow: 0 20px 50px rgba(6,26,68,.22), inset 0 1px 0 rgba(255,255,255,.70);
+    box-shadow: 0 20px 50px rgba(6,26,68,.22), 0 0 0 1px rgba(215,169,40,.08), inset 0 1px 0 rgba(255,255,255,.70);
     z-index: 99999;
     max-height: 260px;
     overflow-y: auto;
     scrollbar-width: thin;
-    scrollbar-color: rgba(15,58,138,.22) transparent;
+    scrollbar-color: rgba(215,169,40,.40) transparent;
 }
 #pos-product-dropdown-portal::-webkit-scrollbar { width: 6px; }
 #pos-product-dropdown-portal::-webkit-scrollbar-track { background: transparent; }
-#pos-product-dropdown-portal::-webkit-scrollbar-thumb { background: rgba(15,58,138,.22); border-radius: 99px; }
+#pos-product-dropdown-portal::-webkit-scrollbar-thumb { background: rgba(215,169,40,.40); border-radius: 99px; }
 #pos-product-dropdown-portal ul {
     list-style: none; margin: 0; padding: 6px 0;
 }
@@ -638,11 +639,11 @@ body.mini-sidebar .pos-full-page-wrapper {
     letter-spacing: .01em;
     display: flex; flex-direction: column;
     transition: background .12s;
-    border-left: 3px solid transparent;
+    border-left: 3px solid rgba(215,169,40,.20);
 }
 #pos-product-dropdown-portal li:hover,
 #pos-product-dropdown-portal li.kb-focus {
-    background: rgba(15,58,138,.12);
+    background: rgba(215,169,40,.10);
     border-left-color: #d7a928;
     color: #061a44;
 }
