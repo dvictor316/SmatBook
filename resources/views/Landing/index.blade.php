@@ -1566,7 +1566,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                     <div class="hero-cta-stack">
                         <a href="#licensing" class="hero-btn-red"><i class="fas fa-shopping-cart" style="font-size:.75rem;"></i> Start Today</a>
                         <a href="{{ route('saas-register', ['type'=>'manager']) }}" class="hero-btn-ghost"><i class="fas fa-handshake" style="font-size:.75rem;"></i> Become a Manager</a>
-                        <a href="{{ route('landing.demo') }}" class="hero-btn-ghost"><i class="fas fa-play-circle" style="font-size:.75rem;"></i> Try Demo</a>
+                        <a href="{{ route('demo.request.form') }}" class="hero-btn-ghost"><i class="fas fa-envelope-open-text" style="font-size:.75rem;"></i> Request Demo</a>
                     </div>
                     <div class="hero-trust">
                         <div class="trust-dot"></div>
@@ -1856,7 +1856,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                         </div>
                     </div>
                     <div class="impact-story-actions">
-                        <a href="{{ route('landing.demo') }}" class="btn-red">Launch Demo</a>
+                        <a href="{{ route('demo.request.form') }}" class="btn-red">Request Demo Access</a>
                         <a href="{{ route('login', ['portal' => 1]) }}" class="btn-outline-navy">Open Portal</a>
                     </div>
                 </div>
@@ -2109,7 +2109,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
             <div class="impact-story-grid">
                 <div class="impact-story-media">
                     <div class="impact-story-image-wrap">
-                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1200&auto=format&fit=crop" alt="Young business professional supporting a smooth SmartProbook sales workflow" loading="lazy">
+                        <img src="https://images.pexels.com/photos/7688374/pexels-photo-7688374.jpeg?auto=compress&cs=tinysrgb&w=1200" alt="Nigerian business professional reviewing financial records on laptop" loading="lazy">
                         <div class="impact-story-note-card">
                             <strong>Sell easily</strong>
                             <span>Manage your business with SmartProbook.</span>
@@ -2143,7 +2143,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                     </div>
                     <div class="impact-story-actions">
                         <a href="{{ url('/membership-plans') }}" class="btn-red">View Plans</a>
-                        <a href="{{ route('landing.demo') }}" class="btn-outline-navy">Try Live Demo</a>
+                        <a href="{{ route('demo.request.form') }}" class="btn-outline-navy">Request Demo Access</a>
                     </div>
                 </div>
             </div>
@@ -2185,7 +2185,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 <section class="sb-section" id="capabilities">
     <div class="container">
         <div class="row align-items-center g-5 mb-5 pb-5">
-            <div class="col-lg-6"><div class="cap-img"><img src="https://images.pexels.com/photos/3183150/pexels-photo-3183150.jpeg?auto=compress&cs=tinysrgb&w=800" alt="Analytics" class="img-fluid"></div></div>
+            <div class="col-lg-6"><div class="cap-img"><img src="https://images.pexels.com/photos/8867434/pexels-photo-8867434.jpeg?auto=compress&cs=tinysrgb&w=800" alt="African business team analysing live financial data and analytics" class="img-fluid"></div></div>
             <div class="col-lg-6">
                 <span class="sb-eyebrow">01 — Engine Depth</span>
                 <h2 class="sb-h1">Strategic <span class="accent">Liquidity</span> Ecosystem</h2>
@@ -2194,7 +2194,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
             </div>
         </div>
         <div class="row align-items-center g-5 pt-5">
-            <div class="col-lg-6 order-lg-2"><div class="cap-img"><img src="https://images.pexels.com/photos/669619/pexels-photo-669619.jpeg?auto=compress&cs=tinysrgb&w=800" alt="Governance" class="img-fluid"></div></div>
+            <div class="col-lg-6 order-lg-2"><div class="cap-img"><img src="https://images.pexels.com/photos/3184465/pexels-photo-3184465.jpeg?auto=compress&cs=tinysrgb&w=800" alt="Professional Nigerian business leaders in a governance and strategy meeting" class="img-fluid"></div></div>
             <div class="col-lg-6 order-lg-1">
                 <span class="sb-eyebrow">02 — Governance</span>
                 <h2 class="sb-h1">Institutional <span class="accent">Sovereignty</span> Protocols</h2>
@@ -2239,7 +2239,14 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     </div>
     <div class="testi-track-wrap">
         <div class="testi-track">
-            @php $tests=[['name'=>'Chinedu Okafor','role'=>'CFO, Lagos Holdings','img'=>'https://images.unsplash.com/photo-1507591064344-4c6ce005b128?q=80&w=300&auto=format&fit=crop'],['name'=>'Amina Bello','role'=>'Finance Director, Abuja Group','img'=>'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?q=80&w=300&auto=format&fit=crop'],['name'=>'Michael Carter','role'=>'VP Finance, New York Capital','img'=>'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=300&auto=format&fit=crop'],['name'=>'Emily Johnson','role'=>'Controller, Austin Ventures','img'=>'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=300&auto=format&fit=crop'],['name'=>'Li Wei','role'=>'Treasury Lead, Shanghai Trade','img'=>'https://images.unsplash.com/photo-1521119989659-a83eee488004?q=80&w=300&auto=format&fit=crop'],['name'=>'Chen Ming','role'=>'Payments Director, Beijing Commerce','img'=>'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=300&auto=format&fit=crop']]; $repeat=array_merge($tests,$tests,$tests); @endphp
+            @php $tests=[
+  ['name'=>'Chinedu Okafor','role'=>'CFO, Lagos Holdings','img'=>'https://images.pexels.com/photos/5490235/pexels-photo-5490235.jpeg?auto=compress&cs=tinysrgb&w=300'],
+  ['name'=>'Amina Bello','role'=>'Finance Director, Abuja Group','img'=>'https://images.pexels.com/photos/7789851/pexels-photo-7789851.jpeg?auto=compress&cs=tinysrgb&w=300'],
+  ['name'=>'Michael Carter','role'=>'VP Finance, New York Capital','img'=>'https://images.pexels.com/photos/1516680/pexels-photo-1516680.jpeg?auto=compress&cs=tinysrgb&w=300'],
+  ['name'=>'Emily Johnson','role'=>'Controller, Austin Ventures','img'=>'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=300&auto=format&fit=crop'],
+  ['name'=>'Li Wei','role'=>'Treasury Lead, Shanghai Trade','img'=>'https://images.unsplash.com/photo-1521119989659-a83eee488004?q=80&w=300&auto=format&fit=crop'],
+  ['name'=>'Chen Ming','role'=>'Payments Director, Beijing Commerce','img'=>'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=300&auto=format&fit=crop']
+]; $repeat=array_merge($tests,$tests,$tests); @endphp
             @foreach($repeat as $t)
             <div class="testi-card">
                 <p style="font-size:0.88rem;color:rgba(255,255,255,0.88);font-style:italic;line-height:1.7;margin-bottom:22px;">"SmartProbook's neural-ledgers have fundamentally changed how we manage our global hubs. Unmatched precision."</p>

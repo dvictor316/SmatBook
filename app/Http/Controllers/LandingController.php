@@ -93,6 +93,15 @@ class LandingController extends Controller
 
     public function demo(Request $request)
     {
+        // Free-access demo has been replaced by a controlled request-and-approval
+        // flow. Redirect all visitors to the official demo request form.
+        return redirect()->route('demo.request.form')
+            ->with('info', 'Demo access is granted by application only. Please fill in your details and our team will set up a personalised demo environment for you.');
+    }
+
+    /** @deprecated  Kept only so old bookmarks to /demo redirect gracefully. */
+    private function _deprecatedOpenDemo(Request $request)
+    {
         $demoEmail = 'demo@smartprobook.local';
         $demoCompanyName = 'SmartProbook Demo Company';
         $demoPrefix = 'demo-hq';
