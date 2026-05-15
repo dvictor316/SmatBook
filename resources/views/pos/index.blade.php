@@ -547,6 +547,86 @@ body.mini-sidebar .pos-full-page-wrapper {
     display: none;
 }
 
+.pos-card .select2-container {
+    width: 100% !important;
+    margin-bottom: .5rem;
+}
+.pos-card .select2-container--default .select2-selection--single {
+    min-height: 46px;
+    border: 1px solid rgba(18, 52, 98, .18);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    background: #fff;
+}
+.pos-card .select2-container--default .select2-selection--single .select2-selection__rendered {
+    color: var(--text-primary);
+    line-height: 46px;
+    padding-left: 1rem;
+    padding-right: 2.25rem;
+}
+.pos-card .select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 46px;
+    right: .65rem;
+}
+.select2-dropdown.pos-product-dropdown {
+    border-color: rgba(18, 52, 98, .18);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 18px 45px rgba(15, 43, 85, .14);
+}
+
+/* ── POS searchable product combobox ── */
+.pos-product-combo { position: relative; }
+.pos-product-combo__input-wrap { position: relative; display: flex; align-items: center; }
+.pos-product-combo__icon {
+    position: absolute; left: 14px;
+    color: #7a90b3; font-size: .85rem; pointer-events: none; z-index: 2;
+}
+.pos-product-combo__input {
+    width: 100%; min-height: 46px;
+    border: 1px solid rgba(18,52,98,.18); border-radius: 14px;
+    padding: 0 38px 0 38px;
+    font-size: .9rem; color: var(--text-primary, #1e3a5f);
+    background: #fff; outline: none;
+    transition: border-color .18s, box-shadow .18s;
+}
+.pos-product-combo__input:focus {
+    border-color: #0f3a8a;
+    box-shadow: 0 0 0 3px rgba(15,58,138,.10);
+}
+.pos-product-combo__input::placeholder { color: #9db1ce; }
+.pos-product-combo__clear {
+    position: absolute; right: 11px;
+    background: none; border: none; color: #9db1ce;
+    cursor: pointer; padding: 4px; line-height: 1; font-size: .8rem; z-index: 2;
+}
+.pos-product-combo__clear:hover { color: #0f3a8a; }
+.pos-product-combo__dropdown {
+    position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+    background: #fff; border: 1px solid rgba(18,52,98,.18);
+    border-radius: 14px; box-shadow: 0 18px 45px rgba(15,43,85,.14);
+    z-index: 9999; max-height: 260px; overflow-y: auto;
+}
+.pos-product-combo__dropdown ul { list-style: none; margin: 0; padding: 6px 0; }
+.pos-product-combo__dropdown li {
+    padding: 9px 16px; cursor: pointer; font-size: .875rem;
+    color: var(--text-primary, #1e3a5f);
+    display: flex; flex-direction: column;
+    transition: background .1s;
+}
+.pos-product-combo__dropdown li:hover,
+.pos-product-combo__dropdown li.kb-focus {
+    background: #eef4ff; color: #0f3a8a;
+}
+.pos-product-combo__dropdown li .combo-sku {
+    font-size: .72rem; color: #7a90b3; margin-top: 1px;
+}
+.pos-product-combo__no-results {
+    padding: 12px 16px; color: #9db1ce; font-size: .875rem;
+    text-align: center; list-style: none;
+}
+
 @media (max-width: 1199px) {
     .product-grid {
         grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -1501,12 +1581,20 @@ label {
                 </div>
 
                 <label>Select Product</label>
-                <select id="product-search" class="form-select mb-2">
-                    <option value="">Search product name...</option>
-                    @foreach($products as $p)
-                    <option value="{{ $p->id }}">{{ $p->name }}{{ $p->sku ? ' (' . $p->sku . ')' : '' }}</option>
-                    @endforeach
-                </select>
+                <div class="pos-product-combo mb-2" id="product-combo-wrapper">
+                    <div class="pos-product-combo__input-wrap">
+                        <i class="fas fa-search pos-product-combo__icon"></i>
+                        <input type="text" id="product-search-input" class="pos-product-combo__input"
+                               placeholder="Type to search products..." autocomplete="off">
+                        <button type="button" id="product-search-clear" class="pos-product-combo__clear"
+                                style="display:none" aria-label="Clear selection">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="pos-product-combo__dropdown" id="product-search-dropdown" style="display:none">
+                        <ul id="product-search-list"></ul>
+                    </div>
+                </div>
 
                 <select id="product-select" class="form-select hidden-product-select">
                     <option value="">-- Choose Product --</option>
@@ -1841,11 +1929,6 @@ $(document).ready(function() {
             placeholder: 'Search customer name...',
             allowClear: true
         });
-        $('#product-search').select2({
-            width: '100%',
-            placeholder: 'Search product name...',
-            allowClear: true
-        });
     }
     $(document).on('keydown', function(e) {
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
@@ -1855,17 +1938,10 @@ $(document).ready(function() {
     });
 
     function syncProductSearchValue(value) {
-        isSyncingProductSearch = true;
-        if (value === null || value === undefined || value === '') {
-            $('#product-search').val(null);
-        } else {
-            $('#product-search').val(String(value));
+        // Sync the custom product combobox from external triggers (card clicks, barcode, etc.)
+        if (typeof window._posComboSync === 'function') {
+            window._posComboSync(value);
         }
-        $('#product-search').trigger('change');
-        if (hasSelect2) {
-            $('#product-search').trigger('change.select2');
-        }
-        isSyncingProductSearch = false;
     }
 
     function syncActiveProductCard(productId) {
@@ -2106,6 +2182,174 @@ $(document).ready(function() {
         $('#product-select').val(String(productId));
         applyProductSelection(option);
     });
+
+    // ── Searchable product combobox ──────────────────────────────────────────
+    (function () {
+        const $input    = $('#product-search-input');
+        const $dropdown = $('#product-search-dropdown');
+        const $list     = $('#product-search-list');
+        const $clear    = $('#product-search-clear');
+        let   selId     = null; // currently selected product id
+
+        // Build a lightweight option cache from the hidden data-rich select
+        function buildCache() {
+            return $('#product-select option[value!=""]').map(function () {
+                const $o = $(this);
+                return {
+                    id  : String($o.val()),
+                    name: String($o.data('name') || $o.text() || '').trim(),
+                    sku : String($o.data('sku')  || '').trim(),
+                };
+            }).get();
+        }
+        let cache = buildCache();
+
+        function esc(s) {
+            return String(s)
+                .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+                .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        function highlight(text, kw) {
+            if (!kw) return esc(text);
+            const idx = text.toLowerCase().indexOf(kw);
+            if (idx === -1) return esc(text);
+            return esc(text.slice(0, idx))
+                 + '<strong>' + esc(text.slice(idx, idx + kw.length)) + '</strong>'
+                 + esc(text.slice(idx + kw.length));
+        }
+
+        function renderDropdown(items, kw) {
+            $list.empty();
+            if (!items.length) {
+                $list.append('<li class="pos-product-combo__no-results">No products found</li>');
+            } else {
+                items.slice(0, 100).forEach(function (item) {
+                    const $li = $('<li>').attr('data-id', item.id);
+                    $li.html(highlight(item.name, kw));
+                    if (item.sku) {
+                        $li.append($('<span class="combo-sku">').text('SKU: ' + item.sku));
+                    }
+                    if (item.id === selId) $li.addClass('kb-focus');
+                    $list.append($li);
+                });
+            }
+        }
+
+        function filter(kw) {
+            const k = (kw || '').toLowerCase().trim();
+            if (!k) return cache;
+            return cache.filter(function (item) {
+                return item.name.toLowerCase().includes(k) || item.sku.toLowerCase().includes(k);
+            });
+        }
+
+        function openWith(kw) {
+            renderDropdown(filter(kw), (kw || '').toLowerCase().trim());
+            $dropdown.show();
+        }
+
+        function close() { $dropdown.hide(); }
+
+        function pick(productId) {
+            const $opt = $('#product-select option[value="' + productId + '"]');
+            if (!$opt.length || !$opt.val()) return;
+            selId = String(productId);
+            $input.val(($opt.data('name') || $opt.text() || '').trim());
+            $clear.show();
+            $('#product-select').val(selId);
+            close();
+            applyProductSelection($opt);
+            syncActiveProductCard(selId);
+        }
+
+        function clearCombo() {
+            selId = null;
+            $input.val('');
+            $clear.hide();
+            $('#product-select').val('');
+            close();
+        }
+
+        // External sync hook — called by syncProductSearchValue / card clicks
+        window._posComboSync = function (productId) {
+            if (!productId) {
+                clearCombo();
+                return;
+            }
+            const $opt = $('#product-select option[value="' + productId + '"]');
+            if ($opt.length) {
+                selId = String(productId);
+                $input.val(($opt.data('name') || $opt.text() || '').trim());
+                $clear.show();
+            }
+        };
+
+        // Input events
+        $input.on('input', function () {
+            const kw = $(this).val().trim();
+            $clear.toggle(kw.length > 0 || !!selId);
+            if (!kw && !selId) { close(); return; }
+            openWith(kw);
+        });
+
+        $input.on('focus', function () {
+            openWith($(this).val().trim());
+        });
+
+        // Click on list item
+        $list.on('click', 'li[data-id]', function () {
+            pick($(this).data('id'));
+        });
+
+        // Clear button
+        $clear.on('click', function () {
+            clearCombo();
+            $input.focus();
+        });
+
+        // Close on outside click
+        $(document).on('click.posCombo', function (e) {
+            if (!$(e.target).closest('#product-combo-wrapper').length) close();
+        });
+
+        // Keyboard navigation
+        $input.on('keydown', function (e) {
+            const $items = $list.find('li[data-id]');
+            const $focused = $items.filter('.kb-focus');
+
+            if (!$dropdown.is(':visible')) {
+                if (e.key === 'ArrowDown' || e.key === 'Enter') { openWith($(this).val().trim()); }
+                return;
+            }
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                const $next = $focused.length ? $focused.next('li[data-id]') : $items.first();
+                $items.removeClass('kb-focus'); $next.addClass('kb-focus');
+                scrollTo($next);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                const $prev = $focused.length ? $focused.prev('li[data-id]') : $items.last();
+                $items.removeClass('kb-focus'); $prev.addClass('kb-focus');
+                scrollTo($prev);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if ($focused.length) pick($focused.data('id'));
+            } else if (e.key === 'Escape') {
+                close();
+            }
+        });
+
+        function scrollTo($item) {
+            if (!$item.length) return;
+            const t = $item[0].offsetTop, h = $item[0].offsetHeight,
+                  dh = $dropdown[0].clientHeight, st = $dropdown[0].scrollTop;
+            if (t < st) $dropdown[0].scrollTop = t;
+            else if (t + h > st + dh) $dropdown[0].scrollTop = t + h - dh;
+        }
+    })();
+    // ─────────────────────────────────────────────────────────────────────────
 
     // Barcode
     let barcodeBuffer = '';
@@ -2749,16 +2993,55 @@ window.POS_ENABLE_FALLBACK = function () {
 	        return applied;
 	    }
     const csrfToken = @json(csrf_token());
-    const salesOrderPrefill = @json(session('pos_prefill'));
-    const posSourceContext = salesOrderPrefill && salesOrderPrefill.source
-        ? {
+	    const salesOrderPrefill = @json(session('pos_prefill'));
+	    const posSourceContext = salesOrderPrefill && salesOrderPrefill.source
+	        ? {
             source: salesOrderPrefill.source,
             source_id: salesOrderPrefill.source_id || null,
             reference: salesOrderPrefill.reference || null,
-        }
-        : null;
-    let splitAutoSync = false;
-    const customerOptionsSnapshot = customerSelect
+	        }
+	        : null;
+	    let splitAutoSync = false;
+	    const hasProductSelect2 = Boolean(window.jQuery && window.jQuery.fn && window.jQuery.fn.select2 && productSearch);
+	    if (hasProductSelect2) {
+	        window.jQuery(productSearch).select2({
+	            width: '100%',
+	            placeholder: 'Search product by name, SKU or barcode...',
+	            allowClear: true,
+	            dropdownCssClass: 'pos-product-dropdown',
+	            matcher: function (params, data) {
+	                const term = String(params.term || '').toLowerCase().trim();
+	                if (!term || !data.id) {
+	                    return data;
+	                }
+
+	                const option = findOptionById(data.id);
+	                const meta = option?.dataset || {};
+	                const haystack = [
+	                    data.text,
+	                    meta.name,
+	                    meta.sku,
+	                    meta.barcode,
+	                    meta.barcodes,
+	                    meta.categoryName,
+	                ].join(' ').toLowerCase();
+
+	                return haystack.includes(term) ? data : null;
+	            },
+	        });
+	    }
+
+	    function syncProductSearchDropdown(value = '') {
+	        if (!productSearch) {
+	            return;
+	        }
+
+	        productSearch.value = value ? String(value) : '';
+	        if (hasProductSelect2) {
+	            window.jQuery(productSearch).val(value ? String(value) : null).trigger('change.select2');
+	        }
+	    }
+	    const customerOptionsSnapshot = customerSelect
         ? Array.from(customerSelect.options).map((option) => ({
             value: option.value,
             label: option.textContent || '',
@@ -3017,9 +3300,7 @@ window.POS_ENABLE_FALLBACK = function () {
             if (productSelect) {
                 productSelect.value = '';
             }
-            if (productSearch) {
-                productSearch.value = '';
-            }
+	            syncProductSearchDropdown('');
             currentProductId = '';
             return;
         }
@@ -3028,7 +3309,7 @@ window.POS_ENABLE_FALLBACK = function () {
         if (productSelect) {
             productSelect.value = productId;
         }
-        if (productSearch) productSearch.value = productId;
+	        syncProductSearchDropdown(productId);
 
         const unitMeta = getUnitMetrics(data);
         const basePrice = getBasePrice(data);
@@ -3287,7 +3568,7 @@ window.POS_ENABLE_FALLBACK = function () {
 	        walletPaymentWrap?.classList.add('d-none');
 
         if (productSelect) productSelect.value = '';
-        if (productSearch) productSearch.value = '';
+	        syncProductSearchDropdown('');
         if (quickSearch) quickSearch.value = '';
         if (barcodeInput) barcodeInput.value = '';
 
@@ -3557,7 +3838,7 @@ window.POS_ENABLE_FALLBACK = function () {
             });
             renderCart();
             if (productSelect) productSelect.value = '';
-            if (productSearch) productSearch.value = '';
+	            syncProductSearchDropdown('');
             currentProductId = '';
             if (qtyInput) qtyInput.value = '1';
             if (discountInput) discountInput.value = '0';
