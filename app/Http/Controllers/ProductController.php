@@ -21,6 +21,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\Support\Str;
 use App\Support\BranchInventoryService;
 use App\Support\InventoryQuantity;
+use App\Support\LedgerService;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class ProductController extends Controller
@@ -952,6 +953,17 @@ class ProductController extends Controller
                 $selectedBranch,
                 $product->company_id ?: ($resolvedCompanyId ?: null)
             );
+
+            // Post opening-stock journal: DR Inventory / CR Opening Balance Equity
+            LedgerService::postProductOpeningStock(
+                $product,
+                (float) $validated['stock'],
+                $selectedBranch['id'] ?? null,
+                $selectedBranch['name'] ?? null,
+                $product->company_id ?: ($resolvedCompanyId ?: null),
+                auth()->id()
+            );
+
             $this->clearDashboardMetricsCache($selectedBranch['id'] ?? null);
 
             return redirect()->route('product-list')
