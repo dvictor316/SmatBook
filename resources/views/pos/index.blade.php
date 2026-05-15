@@ -613,32 +613,40 @@ body.mini-sidebar .pos-full-page-wrapper {
 #pos-product-dropdown-portal {
     display: none;
     position: fixed;
-    background: #fff;
-    border: 1px solid rgba(18,52,98,.18);
+    background: linear-gradient(160deg, #061a44 0%, #0f3a8a 100%);
+    border: 1px solid rgba(37,99,235,.40);
     border-radius: 14px;
-    box-shadow: 0 18px 45px rgba(15,43,85,.18);
+    box-shadow: 0 20px 50px rgba(6,26,68,.45), inset 0 1px 0 rgba(255,255,255,.08);
     z-index: 99999;
     max-height: 260px;
     overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,.18) transparent;
 }
+#pos-product-dropdown-portal::-webkit-scrollbar { width: 6px; }
+#pos-product-dropdown-portal::-webkit-scrollbar-track { background: transparent; }
+#pos-product-dropdown-portal::-webkit-scrollbar-thumb { background: rgba(255,255,255,.18); border-radius: 99px; }
 #pos-product-dropdown-portal ul {
     list-style: none; margin: 0; padding: 6px 0;
 }
 #pos-product-dropdown-portal li {
     padding: 9px 16px; cursor: pointer; font-size: .875rem;
-    color: var(--text-primary, #1e3a5f);
+    color: #ffffff;
     display: flex; flex-direction: column;
-    transition: background .1s;
+    transition: background .12s;
+    border-left: 3px solid transparent;
 }
 #pos-product-dropdown-portal li:hover,
 #pos-product-dropdown-portal li.kb-focus {
-    background: #eef4ff; color: #0f3a8a;
+    background: rgba(255,255,255,.10);
+    border-left-color: #d7a928;
+    color: #ffffff;
 }
 #pos-product-dropdown-portal li .combo-sku {
-    font-size: .72rem; color: #7a90b3; margin-top: 1px;
+    font-size: .72rem; color: rgba(255,255,255,.55); margin-top: 1px;
 }
 #pos-product-dropdown-portal .combo-no-results {
-    padding: 12px 16px; color: #9db1ce; font-size: .875rem;
+    padding: 12px 16px; color: rgba(255,255,255,.50); font-size: .875rem;
     text-align: center; list-style: none;
 }
 
