@@ -583,17 +583,24 @@ body.mini-sidebar .pos-full-page-wrapper {
     position: absolute; left: 14px;
     color: #7a90b3; font-size: .85rem; pointer-events: none; z-index: 2;
 }
+.pos-product-combo__caret {
+    position: absolute; right: 32px;
+    color: #7a90b3; font-size: .72rem; pointer-events: none; z-index: 2;
+    transition: transform .18s;
+}
+.pos-product-combo__caret.open { transform: rotate(180deg); }
 .pos-product-combo__input {
     width: 100%; min-height: 46px;
     border: 1px solid rgba(18,52,98,.18); border-radius: 14px;
-    padding: 0 38px 0 38px;
+    padding: 0 58px 0 38px;
     font-size: .9rem; color: var(--text-primary, #1e3a5f);
-    background: #fff; outline: none;
+    background: #fff; outline: none; cursor: pointer;
     transition: border-color .18s, box-shadow .18s;
 }
 .pos-product-combo__input:focus {
     border-color: #0f3a8a;
     box-shadow: 0 0 0 3px rgba(15,58,138,.10);
+    cursor: text;
 }
 .pos-product-combo__input::placeholder { color: #9db1ce; }
 .pos-product-combo__clear {
@@ -602,27 +609,35 @@ body.mini-sidebar .pos-full-page-wrapper {
     cursor: pointer; padding: 4px; line-height: 1; font-size: .8rem; z-index: 2;
 }
 .pos-product-combo__clear:hover { color: #0f3a8a; }
-.pos-product-combo__dropdown {
-    position: absolute; top: calc(100% + 4px); left: 0; right: 0;
-    background: #fff; border: 1px solid rgba(18,52,98,.18);
-    border-radius: 14px; box-shadow: 0 18px 45px rgba(15,43,85,.14);
-    z-index: 9999; max-height: 260px; overflow-y: auto;
+/* Dropdown is appended to body and positioned via JS */
+#pos-product-dropdown-portal {
+    display: none;
+    position: fixed;
+    background: #fff;
+    border: 1px solid rgba(18,52,98,.18);
+    border-radius: 14px;
+    box-shadow: 0 18px 45px rgba(15,43,85,.18);
+    z-index: 99999;
+    max-height: 260px;
+    overflow-y: auto;
 }
-.pos-product-combo__dropdown ul { list-style: none; margin: 0; padding: 6px 0; }
-.pos-product-combo__dropdown li {
+#pos-product-dropdown-portal ul {
+    list-style: none; margin: 0; padding: 6px 0;
+}
+#pos-product-dropdown-portal li {
     padding: 9px 16px; cursor: pointer; font-size: .875rem;
     color: var(--text-primary, #1e3a5f);
     display: flex; flex-direction: column;
     transition: background .1s;
 }
-.pos-product-combo__dropdown li:hover,
-.pos-product-combo__dropdown li.kb-focus {
+#pos-product-dropdown-portal li:hover,
+#pos-product-dropdown-portal li.kb-focus {
     background: #eef4ff; color: #0f3a8a;
 }
-.pos-product-combo__dropdown li .combo-sku {
+#pos-product-dropdown-portal li .combo-sku {
     font-size: .72rem; color: #7a90b3; margin-top: 1px;
 }
-.pos-product-combo__no-results {
+#pos-product-dropdown-portal .combo-no-results {
     padding: 12px 16px; color: #9db1ce; font-size: .875rem;
     text-align: center; list-style: none;
 }
@@ -1585,14 +1600,12 @@ label {
                     <div class="pos-product-combo__input-wrap">
                         <i class="fas fa-search pos-product-combo__icon"></i>
                         <input type="text" id="product-search-input" class="pos-product-combo__input"
-                               placeholder="Type to search products..." autocomplete="off">
+                               placeholder="Click or type to search products..." autocomplete="off">
+                        <i class="fas fa-chevron-down pos-product-combo__caret" id="product-combo-caret"></i>
                         <button type="button" id="product-search-clear" class="pos-product-combo__clear"
                                 style="display:none" aria-label="Clear selection">
                             <i class="fas fa-times"></i>
                         </button>
-                    </div>
-                    <div class="pos-product-combo__dropdown" id="product-search-dropdown" style="display:none">
-                        <ul id="product-search-list"></ul>
                     </div>
                 </div>
 
@@ -2183,15 +2196,21 @@ $(document).ready(function() {
         applyProductSelection(option);
     });
 
-    // ── Searchable product combobox ──────────────────────────────────────────
+    // ── Searchable product combobox (body-portal – never clipped) ─────────────
     (function () {
-        const $input    = $('#product-search-input');
-        const $dropdown = $('#product-search-dropdown');
-        const $list     = $('#product-search-list');
-        const $clear    = $('#product-search-clear');
-        let   selId     = null; // currently selected product id
+        const $input = $('#product-search-input');
+        const $clear = $('#product-search-clear');
+        const $caret = $('#product-combo-caret');
 
-        // Build a lightweight option cache from the hidden data-rich select
+        // Append dropdown portal directly to body so it is never clipped
+        const $portal = $('<div id="pos-product-dropdown-portal"></div>');
+        const $list   = $('<ul id="product-search-list"></ul>');
+        $portal.append($list);
+        $('body').append($portal);
+
+        let selId  = null;
+        let isOpen = false;
+
         function buildCache() {
             return $('#product-select option[value!=""]').map(function () {
                 const $o = $(this);
@@ -2219,12 +2238,12 @@ $(document).ready(function() {
                  + esc(text.slice(idx + kw.length));
         }
 
-        function renderDropdown(items, kw) {
+        function renderList(items, kw) {
             $list.empty();
             if (!items.length) {
-                $list.append('<li class="pos-product-combo__no-results">No products found</li>');
+                $list.append('<li class="combo-no-results">No products found</li>');
             } else {
-                items.slice(0, 100).forEach(function (item) {
+                items.slice(0, 120).forEach(function (item) {
                     const $li = $('<li>').attr('data-id', item.id);
                     $li.html(highlight(item.name, kw));
                     if (item.sku) {
@@ -2244,12 +2263,30 @@ $(document).ready(function() {
             });
         }
 
-        function openWith(kw) {
-            renderDropdown(filter(kw), (kw || '').toLowerCase().trim());
-            $dropdown.show();
+        function positionPortal() {
+            const rect = $input[0].getBoundingClientRect();
+            $portal.css({
+                top   : rect.bottom + 2,
+                left  : rect.left,
+                width : rect.width,
+            });
         }
 
-        function close() { $dropdown.hide(); }
+        function openWith(kw) {
+            // Re-build cache lazily in case products were late-loaded
+            if (!cache.length) cache = buildCache();
+            renderList(filter(kw), (kw || '').toLowerCase().trim());
+            positionPortal();
+            $portal.show();
+            $caret.addClass('open');
+            isOpen = true;
+        }
+
+        function close() {
+            $portal.hide();
+            $caret.removeClass('open');
+            isOpen = false;
+        }
 
         function pick(productId) {
             const $opt = $('#product-select option[value="' + productId + '"]');
@@ -2273,53 +2310,62 @@ $(document).ready(function() {
 
         // External sync hook — called by syncProductSearchValue / card clicks
         window._posComboSync = function (productId) {
-            if (!productId) {
-                clearCombo();
-                return;
-            }
+            if (!productId) { clearCombo(); return; }
             const $opt = $('#product-select option[value="' + productId + '"]');
             if ($opt.length) {
                 selId = String(productId);
                 $input.val(($opt.data('name') || $opt.text() || '').trim());
                 $clear.show();
+                close();
             }
         };
 
-        // Input events
+        // Typing → filter in real time
         $input.on('input', function () {
             const kw = $(this).val().trim();
             $clear.toggle(kw.length > 0 || !!selId);
-            if (!kw && !selId) { close(); return; }
             openWith(kw);
         });
 
-        $input.on('focus', function () {
+        // Click / focus → open with current filter
+        $input.on('focus click', function () {
             openWith($(this).val().trim());
         });
 
-        // Click on list item
+        // Click on a portal list item
         $list.on('click', 'li[data-id]', function () {
             pick($(this).data('id'));
         });
 
         // Clear button
-        $clear.on('click', function () {
+        $clear.on('click', function (e) {
+            e.stopPropagation();
             clearCombo();
             $input.focus();
         });
 
-        // Close on outside click
+        // Close when clicking outside combo or portal
         $(document).on('click.posCombo', function (e) {
-            if (!$(e.target).closest('#product-combo-wrapper').length) close();
+            if (!$(e.target).closest('#product-combo-wrapper').length &&
+                !$(e.target).closest('#pos-product-dropdown-portal').length) {
+                close();
+            }
+        });
+
+        // Re-position on scroll / resize
+        $(window).on('scroll.posCombo resize.posCombo', function () {
+            if (isOpen) positionPortal();
         });
 
         // Keyboard navigation
         $input.on('keydown', function (e) {
-            const $items = $list.find('li[data-id]');
+            const $items   = $list.find('li[data-id]');
             const $focused = $items.filter('.kb-focus');
 
-            if (!$dropdown.is(':visible')) {
-                if (e.key === 'ArrowDown' || e.key === 'Enter') { openWith($(this).val().trim()); }
+            if (!isOpen) {
+                if (e.key === 'ArrowDown' || e.key === 'Enter') {
+                    openWith($(this).val().trim());
+                }
                 return;
             }
 
@@ -2327,26 +2373,26 @@ $(document).ready(function() {
                 e.preventDefault();
                 const $next = $focused.length ? $focused.next('li[data-id]') : $items.first();
                 $items.removeClass('kb-focus'); $next.addClass('kb-focus');
-                scrollTo($next);
+                kbScrollTo($next);
             } else if (e.key === 'ArrowUp') {
                 e.preventDefault();
                 const $prev = $focused.length ? $focused.prev('li[data-id]') : $items.last();
                 $items.removeClass('kb-focus'); $prev.addClass('kb-focus');
-                scrollTo($prev);
+                kbScrollTo($prev);
             } else if (e.key === 'Enter') {
                 e.preventDefault();
                 if ($focused.length) pick($focused.data('id'));
             } else if (e.key === 'Escape') {
-                close();
+                close(); $input.blur();
             }
         });
 
-        function scrollTo($item) {
+        function kbScrollTo($item) {
             if (!$item.length) return;
             const t = $item[0].offsetTop, h = $item[0].offsetHeight,
-                  dh = $dropdown[0].clientHeight, st = $dropdown[0].scrollTop;
-            if (t < st) $dropdown[0].scrollTop = t;
-            else if (t + h > st + dh) $dropdown[0].scrollTop = t + h - dh;
+                  dh = $portal[0].clientHeight, st = $portal[0].scrollTop;
+            if (t < st) $portal[0].scrollTop = t;
+            else if (t + h > st + dh) $portal[0].scrollTop = t + h - dh;
         }
     })();
     // ─────────────────────────────────────────────────────────────────────────
