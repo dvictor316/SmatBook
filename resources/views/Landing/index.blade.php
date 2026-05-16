@@ -2174,6 +2174,34 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
     </div>
 </section>
 
+<section class="sb-section sb-section--alt" id="team">
+    <div class="container">
+        <div class="text-center mb-5">
+            <span class="sb-eyebrow" style="justify-content:center;display:inline-flex;">Portfolio</span>
+            <h2 class="sb-h1 text-center">Our <span class="accent">Other Projects</span></h2>
+        </div>
+        <div class="row g-4">
+            @php $team=[['name'=>'Property234.com','role'=>'Real Estate Platform','img'=>'https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg?auto=compress&cs=tinysrgb&w=1200','bio'=>'A global real estate listing ecosystem for owners, surveyors, legal advisers, agents, and every key stakeholder in the property market.','link'=>route('landing.projects.lahome')],['name'=>'Master JAMB','role'=>'CBT Examination Platform','img'=>'https://images.pexels.com/photos/5212345/pexels-photo-5212345.jpeg?auto=compress&cs=tinysrgb&w=1200','bio'=>'An online CBT platform for schools and institutions, built for exam readiness, timed assessments, and performance tracking.','link'=>route('landing.projects.master-jamb')],['name'=>'PayPlus','role'=>'Payment Gateway','img'=>'https://images.pexels.com/photos/4968634/pexels-photo-4968634.jpeg?auto=compress&cs=tinysrgb&w=1200','bio'=>'A global payment gateway designed for secure processing of everyday transactions across web, mobile, and enterprise channels.','link'=>route('landing.projects.payplus')]]; @endphp
+            @foreach($team as $m)
+            <div class="col-lg-4 col-md-6">
+                <div class="project-card">
+                    <div class="project-img"><img src="{{ $m['img'] }}" alt="{{ $m['name'] }}"></div>
+                    <div class="p-4 text-center">
+                        <h5 class="fw-bold mb-1" style="font-family:var(--font-display);color:var(--navy);">{{ $m['name'] }}</h5>
+                        <p style="color:var(--gold);font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">{{ $m['role'] }}</p>
+                        <p class="mb-4" style="font-size:13px;color:var(--muted);line-height:1.7;padding:0 6px;">{{ $m['bio'] }}</p>
+                        <div class="d-flex justify-content-center gap-2">
+                            <a href="{{ $m['link'] }}" class="btn-outline-navy">Learn More</a>
+                            <a href="{{ route('landing.contact') }}" class="btn-outline-navy">Request Demo</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endforeach
+        </div>
+    </div>
+</section>
+
 <section class="strip-section">
     <div class="container">
         <div class="text-center mb-5">
@@ -2223,34 +2251,6 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                 <h2 class="sb-h1">Institutional <span class="accent">Sovereignty</span> Protocols</h2>
                 <p class="sb-lead">Designed for organizations with complex hierarchical needs, SmartProbook implements a "Cellular Governance" model that guarantees total transparency without compromising individual business unit security. Each subsidiary operates within a fortified node, feeding into a master dashboard while maintaining SOC2 Type II compliance.</p>
             </div>
-        </div>
-    </div>
-</section>
-
-<section class="sb-section sb-section--alt" id="team">
-    <div class="container">
-        <div class="text-center mb-5">
-            <span class="sb-eyebrow" style="justify-content:center;display:inline-flex;">Portfolio</span>
-            <h2 class="sb-h1 text-center">Our <span class="accent">Other Projects</span></h2>
-        </div>
-        <div class="row g-4">
-            @php $team=[['name'=>'Lahome Properties','role'=>'Real Estate Platform','img'=>'https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg?auto=compress&cs=tinysrgb&w=1200','bio'=>'A global real estate listing ecosystem for owners, surveyors, legal advisers, agents, and every key stakeholder in the property market.','link'=>route('landing.projects.lahome')],['name'=>'Master JAMB','role'=>'CBT Examination Platform','img'=>'https://images.unsplash.com/photo-1588072432836-e10032774350?q=80&w=1200&auto=format&fit=crop','bio'=>'An online CBT platform for schools and institutions, built for exam readiness, timed assessments, and performance tracking.','link'=>route('landing.projects.master-jamb')],['name'=>'PayPlus','role'=>'Payment Gateway','img'=>'https://images.pexels.com/photos/4968634/pexels-photo-4968634.jpeg?auto=compress&cs=tinysrgb&w=1200','bio'=>'A global payment gateway designed for secure processing of everyday transactions across web, mobile, and enterprise channels.','link'=>route('landing.projects.payplus')]]; @endphp
-            @foreach($team as $m)
-            <div class="col-lg-4 col-md-6">
-                <div class="project-card">
-                    <div class="project-img"><img src="{{ $m['img'] }}" alt="{{ $m['name'] }}"></div>
-                    <div class="p-4 text-center">
-                        <h5 class="fw-bold mb-1" style="font-family:var(--font-display);color:var(--navy);">{{ $m['name'] }}</h5>
-                        <p style="color:var(--gold);font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">{{ $m['role'] }}</p>
-                        <p class="mb-4" style="font-size:13px;color:var(--muted);line-height:1.7;padding:0 6px;">{{ $m['bio'] }}</p>
-                        <div class="d-flex justify-content-center gap-2">
-                            <a href="{{ $m['link'] }}" class="btn-outline-navy">Learn More</a>
-                            <a href="{{ route('landing.contact') }}" class="btn-outline-navy">Request Demo</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            @endforeach
         </div>
     </div>
 </section>
