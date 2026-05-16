@@ -1392,13 +1392,32 @@
         GH: { currency: 'GHS', locale: 'en-GH' }
     };
 
+    const readTimezoneRegion = () => {
+        try {
+            const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+            if (tz.includes('Lagos')) return 'NG';
+            if (tz.includes('Nairobi')) return 'KE';
+            if (tz.includes('Accra')) return 'GH';
+            if (tz.includes('Johannesburg')) return 'ZA';
+            if (tz.includes('Dubai')) return 'AE';
+            if (tz.includes('Kolkata')) return 'IN';
+            if (tz.includes('London')) return 'GB';
+            if (tz.includes('Toronto') || tz.includes('Vancouver')) return 'CA';
+            if (tz.includes('New_York') || tz.includes('Chicago') || tz.includes('Los_Angeles')) return 'US';
+            if (tz.includes('Shanghai') || tz.includes('Hong_Kong')) return 'CN';
+            if (tz.includes('Paris') || tz.includes('Berlin') || tz.includes('Rome') || tz.includes('Madrid')) return 'EU';
+        } catch (e) {}
+
+        return '';
+    };
+
     const readLocaleRegion = () => {
         try {
             const locale = Intl.DateTimeFormat().resolvedOptions().locale || navigator.language || 'en-NG';
             const region = locale.split('-').pop().toUpperCase();
-            return region.length === 2 ? region : 'NG';
+            return region.length === 2 ? region : '';
         } catch (e) {
-            return 'NG';
+            return '';
         }
     };
 
@@ -1429,12 +1448,8 @@
         const cookieCountry = cookieMatch ? decodeURIComponent(cookieMatch[1]) : '';
         const saved = localStorage.getItem('smat_country');
         const serverDefault = @json($geoCountry ?? 'NG');
-        if (saved || cookieCountry) {
-            applyGlobalCountry(saved || cookieCountry);
-            return;
-        }
-
-        applyGlobalCountry(serverDefault || 'NG');
+        const detectedCountry = readTimezoneRegion() || readLocaleRegion();
+        applyGlobalCountry(detectedCountry || saved || cookieCountry || serverDefault || 'NG');
     };
 
     if (globalCountrySelector) {

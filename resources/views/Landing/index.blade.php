@@ -1863,6 +1863,29 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
             </div>
         </div>
 
+        <section class="sb-section pt-4" id="licensing">
+            <div class="container px-0">
+                <div class="text-center mb-5">
+                    <span class="sb-eyebrow" style="justify-content:center;display:inline-flex;">Service Access</span>
+                    <h2 class="sb-h1 text-center">Plans & <span class="accent">Licensing</span></h2>
+                </div>
+                <div class="row g-4 justify-content-center">
+                    @php $plans=['Starter'=>['ngn'=>2700,'feat'=>false,'benefits'=>['POS & Sales Workflow','Inventory Monitoring','Customer Management','Sales & Stock Reports','Supports 1 to 2 Users']],'Basic'=>['ngn'=>3000,'feat'=>false,'benefits'=>['Centralized Ledgers','5 Core User Access','Daily Cloud Backups','Standard Email Support','Unified Reporting']],'Pro'=>['ngn'=>7000,'feat'=>true,'benefits'=>['Neural Engine Core','25 Premium User Access','Dedicated Priority Node','Real-time Analytics','Predictive Forecasting']],'Enterprise'=>['ngn'=>15000,'feat'=>false,'benefits'=>['Full Neural Automation','Unlimited Access Nodes','Advanced API Gateway','Custom Fiscal Reports','IFRS Compliance Mapping']],'Institution'=>['ngn'=>null,'feat'=>false,'benefits'=>['Private Hybrid Core','SLA Performance Guarantee','On-site Technical Support','Bespoke Integrations','Governance Training']]]; @endphp
+                    @foreach($plans as $name => $p)
+                    <div class="col-xl col-lg-4 col-md-6">
+                        <div class="plan-card {{ $p['feat'] ? 'plan-featured' : '' }}">
+                            @if($p['feat'])<div style="text-align:center;margin-bottom:12px;"><span style="background:var(--gold);color:var(--navy);font-size:0.62rem;font-weight:900;letter-spacing:2px;text-transform:uppercase;padding:4px 14px;border-radius:20px;">MOST POPULAR</span></div>@endif
+                            <div class="plan-name">{{ $name }}</div>
+                            <div class="plan-price">@if($p['ngn'])<span class="geo-price" data-ngn="{{ $p['ngn'] }}">₦{{ number_format($p['ngn']) }}</span>@else<span>Bespoke</span>@endif</div>
+                            <div class="flex-grow-1">@foreach($p['benefits'] as $b)<div class="plan-feature"><i class="fas fa-check-circle"></i><span>{{ $b }}</span></div>@endforeach</div>
+                            <div class="mt-4"><a href="{{ url('/membership-plans') }}" class="{{ $p['feat'] ? 'btn-red' : 'btn-outline-navy' }} w-100 justify-content-center">ACQUIRE SYSTEM</a></div>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+        </section>
+
         <div class="row align-items-center g-5 pt-4">
             <div class="col-lg-5">
                 <span class="sb-eyebrow">02 — Inventory Control</span>
@@ -2256,29 +2279,6 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
                         <div style="font-weight:700;color:#fff;font-size:0.83rem;font-family:var(--font-display);">{{ $t['name'] }}</div>
                         <div style="color:var(--gold);font-size:0.68rem;font-weight:800;letter-spacing:1px;text-transform:uppercase;">{{ $t['role'] }}</div>
                     </div>
-                </div>
-            </div>
-            @endforeach
-        </div>
-    </div>
-</section>
-
-<section class="sb-section" id="licensing">
-    <div class="container">
-        <div class="text-center mb-5">
-            <span class="sb-eyebrow" style="justify-content:center;display:inline-flex;">Service Access</span>
-            <h2 class="sb-h1 text-center">Enterprise <span class="accent">Licensing</span></h2>
-        </div>
-        <div class="row g-4">
-            @php $plans=['Basic'=>['ngn'=>3000,'feat'=>false,'benefits'=>['Centralized Ledgers','5 Core User Access','Daily Cloud Backups','Standard Email Support','Unified Reporting']],'Pro'=>['ngn'=>7000,'feat'=>true,'benefits'=>['Neural Engine Core','25 Premium User Access','Dedicated Priority Node','Real-time Analytics','Predictive Forecasting']],'Enterprise'=>['ngn'=>15000,'feat'=>false,'benefits'=>['Full Neural Automation','Unlimited Access Nodes','Advanced API Gateway','Custom Fiscal Reports','IFRS Compliance Mapping']],'Institution'=>['ngn'=>null,'feat'=>false,'benefits'=>['Private Hybrid Core','SLA Performance Guarantee','On-site Technical Support','Bespoke Integrations','Governance Training']]]; @endphp
-            @foreach($plans as $name => $p)
-            <div class="col-lg-3 col-md-6">
-                <div class="plan-card {{ $p['feat'] ? 'plan-featured' : '' }}">
-                    @if($p['feat'])<div style="text-align:center;margin-bottom:12px;"><span style="background:var(--gold);color:var(--navy);font-size:0.62rem;font-weight:900;letter-spacing:2px;text-transform:uppercase;padding:4px 14px;border-radius:20px;">MOST POPULAR</span></div>@endif
-                    <div class="plan-name">{{ $name }}</div>
-                    <div class="plan-price">@if($p['ngn'])<span class="geo-price" data-ngn="{{ $p['ngn'] }}">₦{{ number_format($p['ngn']) }}</span>@else<span>Bespoke</span>@endif</div>
-                    <div class="flex-grow-1">@foreach($p['benefits'] as $b)<div class="plan-feature"><i class="fas fa-check-circle"></i><span>{{ $b }}</span></div>@endforeach</div>
-                    <div class="mt-4"><a href="{{ url('/membership-plans') }}" class="{{ $p['feat'] ? 'btn-red' : 'btn-outline-navy' }} w-100 justify-content-center">ACQUIRE SYSTEM</a></div>
                 </div>
             </div>
             @endforeach

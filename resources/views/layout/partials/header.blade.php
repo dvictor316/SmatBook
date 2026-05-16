@@ -1395,15 +1395,7 @@ document.addEventListener('DOMContentLoaded', function () {
         return geoFlags[code] ? code : 'NG';
     };
 
-    const localeCountry = () => {
-        try {
-            const locale = Intl.DateTimeFormat().resolvedOptions().locale || navigator.language || 'en-NG';
-            const region = locale.split('-').pop();
-            if (region && region.length >= 2) {
-                return normalizeGeoCountry(region);
-            }
-        } catch (e) {}
-
+    const timezoneCountry = () => {
         try {
             const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
             if (tz.includes('Lagos')) return 'NG';
@@ -1417,11 +1409,21 @@ document.addEventListener('DOMContentLoaded', function () {
             if (tz.includes('New_York') || tz.includes('Chicago') || tz.includes('Los_Angeles')) return 'US';
             if (tz.includes('Shanghai') || tz.includes('Hong_Kong')) return 'CN';
             if (tz.includes('Paris') || tz.includes('Berlin') || tz.includes('Rome') || tz.includes('Madrid')) return 'EU';
-        } catch (e) {
-            return 'NG';
-        }
+        } catch (e) {}
 
-        return 'NG';
+        return '';
+    };
+
+    const localeCountry = () => {
+        try {
+            const locale = Intl.DateTimeFormat().resolvedOptions().locale || navigator.language || 'en-NG';
+            const region = locale.split('-').pop();
+            if (region && region.length >= 2) {
+                return normalizeGeoCountry(region);
+            }
+        } catch (e) {}
+
+        return '';
     };
 
     const setGeoCookie = (country) => {
@@ -1448,7 +1450,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const cookieCountry = cookieMatch ? decodeURIComponent(cookieMatch[1]) : '';
     const geoSaved = localStorage.getItem('smat_country');
     const serverDefault = @json($geoCountry ?? 'NG');
-    applyGeoCountryUi(geoSaved || cookieCountry || localeCountry() || serverDefault || 'NG');
+    const detectedCountry = timezoneCountry() || localeCountry();
+    const persistedCountry = geoSaved || cookieCountry || '';
+    const initialCountry = detectedCountry || persistedCountry || serverDefault || 'NG';
+    applyGeoCountryUi(initialCountry);
 
     geoItems.forEach((item) => {
         item.addEventListener('click', function () {

@@ -39,21 +39,6 @@
         </ul>
     </li>
 
-    <li class="submenu {{ Request::is('reports*') ? 'active subdrop' : '' }}">
-        <a href="#"><i class="fe fe-bar-chart"></i><span>Reports</span><span class="menu-arrow"></span></a>
-        <ul>
-            <li><a href="{{ route('reports.hub') }}">Reports Hub</a></li>
-            <li><a href="{{ route('reports.sales') }}">Sales Report</a></li>
-            <li><a href="{{ route('reports.sales-summary') }}">Sales Summary</a></li>
-            <li><a href="{{ route('reports.sales-by-product') }}">Sales by Product</a></li>
-            <li><a href="{{ route('reports.sales-by-customer') }}">Sales by Customer</a></li>
-            <li><a href="{{ route('reports.stock') }}">Stock Report</a></li>
-            <li><a href="{{ route('reports.low-stock') }}">Low Stock</a></li>
-            <li><a href="{{ route('reports.stock-valuation') }}">Stock Valuation</a></li>
-            <li><a href="{{ route('reports.expiry-report') }}">Expiry Report</a></li>
-        </ul>
-    </li>
-
     @if(auth()->user()?->role === 'super_admin' || auth()->user()?->role === 'administrator')
         <li class="submenu {{ Request::is('users*', 'roles*') ? 'active subdrop' : '' }}">
             <a href="#"><i class="fe fe-user-plus"></i><span>Team</span><span class="menu-arrow"></span></a>
