@@ -21,7 +21,7 @@
                 </div>
             </div>
             <div class="col-lg-6">
-                <img src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=1200&auto=format&fit=crop" alt="Master JAMB CBT" class="img-fluid rounded-4 shadow">
+                <img src="https://images.unsplash.com/photo-1588072432836-e10032774350?q=80&w=1200&auto=format&fit=crop" alt="Master JAMB CBT" class="img-fluid rounded-4 shadow" onerror="this.onerror=null;this.src='{{ asset('assets/img/demo-two.png') }}';">
             </div>
         </div>
     </div>
