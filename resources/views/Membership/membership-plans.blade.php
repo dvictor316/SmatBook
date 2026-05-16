@@ -7,11 +7,15 @@
         $currentPlanTier = $currentPlanTier ?? null;
         $suggestedUpgradePlan = $suggestedUpgradePlan ?? null;
         $tierBenefits = [
+            'starter' => \App\Models\Plan::marketingBenefitsForTier('starter', 2),
             'basic' => \App\Models\Plan::marketingBenefitsForTier('basic', 3),
             'pro' => \App\Models\Plan::marketingBenefitsForTier('professional', 5),
             'enterprise' => \App\Models\Plan::marketingBenefitsForTier('enterprise', 8),
         ];
         $planActions = [
+            'starter' => $currentPlanTier === 'starter'
+                ? ['secondary' => 'Current Plan', 'primary' => 'Upgrade to Basic']
+                : ['secondary' => 'Start 1 User', 'primary' => 'Start 2 Users'],
             'basic' => $currentPlanTier === 'basic'
                 ? ['secondary' => 'Current Plan', 'primary' => 'Upgrade to Pro']
                 : ['secondary' => 'Start 1 User', 'primary' => 'Start 3 Users'],
@@ -131,7 +135,7 @@
         .pricing-section { margin-top: -60px; padding-bottom: 80px; }
         .pricing-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             gap: 24px;
             align-items: stretch;
         }
@@ -231,7 +235,7 @@
         }
 
         /* Responsive */
-        @media (max-width: 1100px) { .pricing-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 1100px) { .pricing-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         @media (max-width: 650px) {
             .pricing-grid { grid-template-columns: 1fr; }
             .hero-title { font-size: 2.5rem; }
@@ -416,6 +420,25 @@
     <section class="pricing-section">
         <div class="container">
             <div class="pricing-grid">
+                <div class="plan-card">
+                    <h3 class="plan-name">Starter POS</h3>
+                    <p class="plan-desc">For businesses that only need POS, inventory, customers, and sales operations.</p>
+                    <div class="price-display">
+                        <span id="price-starter-solo">₦2,700</span><small id="period-starter-solo">/mo</small>
+                    </div>
+                    <p class="price-secondary">2 users: <strong id="price-starter">₦3,300</strong><span id="period-starter">/mo</span></p>
+                    <ul class="feature-list">
+                        @foreach($tierBenefits['starter'] as $benefit)
+                            <li><i class="fas fa-check-circle"></i> {{ $benefit }}</li>
+                        @endforeach
+                        <li class="unavailable"><i class="fas fa-times-circle"></i> Accounting reports and ledgers</li>
+                        <li class="unavailable"><i class="fas fa-times-circle"></i> Payroll, tax, and bank reconciliation</li>
+                    </ul>
+                    <div style="display:grid; gap:10px;">
+                        <button onclick="{{ $currentPlanTier === 'starter' ? '' : "handleSubscription('starter-solo')" }}" class="btn-uplink btn-outline" {{ $currentPlanTier === 'starter' ? 'disabled' : '' }}>{{ $planActions['starter']['secondary'] }}</button>
+                        <button onclick="handleSubscription('{{ $currentPlanTier === 'starter' ? 'basic' : 'starter' }}')" class="btn-uplink btn-gold">{{ $planActions['starter']['primary'] }}</button>
+                    </div>
+                </div>
                 
                 <div class="plan-card">
                     <h3 class="plan-name">Basic Core</h3>
@@ -573,6 +596,8 @@
 
     const prices = {
         monthly: {
+            starter: '₦3,300',
+            starterSolo: '₦2,700',
             basic: '₦5,500',
             basicSolo: '₦3,000',
             pro: '₦19,500',
@@ -581,6 +606,8 @@
             enterpriseSolo: '₦15,000'
         },
         annual: {
+            starter: '₦33,000',
+            starterSolo: '₦27,000',
             basic: '₦55,000',
             basicSolo: '₦30,000',
             pro: '₦195,000',
@@ -600,6 +627,8 @@
         document.getElementById('annualLabel').style.color = isAnnual ? 'var(--muji-blue-accent)' : '#64748b';
 
         // Update Text
+        document.getElementById('price-starter').innerText = prices[period].starter;
+        document.getElementById('price-starter-solo').innerText = prices[period].starterSolo;
         document.getElementById('price-basic').innerText = prices[period].basic;
         document.getElementById('price-basic-solo').innerText = prices[period].basicSolo;
         document.getElementById('price-pro').innerText = prices[period].pro;
@@ -607,6 +636,8 @@
         document.getElementById('price-enterprise').innerText = prices[period].enterprise;
         document.getElementById('price-enterprise-solo').innerText = prices[period].enterpriseSolo;
 
+        document.getElementById('period-starter').innerText = smallText;
+        document.getElementById('period-starter-solo').innerText = smallText;
         document.getElementById('period-basic').innerText = smallText;
         document.getElementById('period-basic-solo').innerText = smallText;
         document.getElementById('period-pro').innerText = smallText;
@@ -623,7 +654,7 @@
             return;
         }
 
-        if (userIsAuthenticated && suggestedUpgradePlan && ['basic', 'pro'].includes(plan) && plan !== suggestedUpgradePlan) {
+        if (userIsAuthenticated && suggestedUpgradePlan && ['starter', 'basic', 'pro'].includes(plan) && plan !== suggestedUpgradePlan) {
             plan = suggestedUpgradePlan;
         }
 

@@ -251,6 +251,7 @@ class DashboardController extends Controller
         }
 
         return match($plan) {
+            'starter' => view('SuperAdmin.dashboards.starter', $data),
             'professional' => view('SuperAdmin.dashboards.pro', $data),
             'enterprise' => view('SuperAdmin.dashboards.enterprise', $data),
             default      => view('SuperAdmin.dashboards.basic', $data),

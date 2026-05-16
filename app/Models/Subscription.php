@@ -40,6 +40,7 @@ class Subscription extends Model
         'employee_size',
         'amount',
         'billing_cycle',
+        'user_limit',
         'start_date',
         'end_date',
         'status',              // Active, Pending, Expired, Suspended, Awaiting Payment, trial
@@ -72,7 +73,8 @@ class Subscription extends Model
         'payment_date' => 'datetime',
         'transfer_submitted_at' => 'datetime',
         'transfer_validated_at' => 'datetime',
-        'amount'       => 'decimal:2'
+        'amount'       => 'decimal:2',
+        'user_limit'   => 'integer',
     ];
 
     // =========================================================================
@@ -218,6 +220,10 @@ class Subscription extends Model
 
     public function resolvedUserLimit(): ?int
     {
+        if ($this->user_limit !== null) {
+            return (int) $this->user_limit;
+        }
+
         if ($this->relationLoaded('plan_relationship') && $this->plan_relationship) {
             return $this->plan_relationship->resolvedUserLimit();
         }

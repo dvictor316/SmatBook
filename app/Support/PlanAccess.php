@@ -45,6 +45,10 @@ class PlanAccess
             return 'full';
         }
 
+        if (str_contains($value, 'starter')) {
+            return 'starter';
+        }
+
         if (str_contains($value, 'enterprise')) {
             return 'enterprise';
         }
@@ -54,8 +58,8 @@ class PlanAccess
         }
 
         if (str_contains($value, 'basic')) {
-            return 'basic';
-        }
+        return 'basic';
+    }
 
         return null;
     }

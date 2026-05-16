@@ -10,18 +10,21 @@ class Plan extends Model
     use HasFactory;
 
     public const DEFAULT_USER_LIMITS = [
+        'starter' => 2,
         'basic' => 3,
         'professional' => 5,
         'enterprise' => 8,
     ];
 
     public const SOLO_USER_LIMITS = [
+        'starter' => 1,
         'basic' => 1,
         'professional' => 2,
         'enterprise' => 3,
     ];
 
     public const DEFAULT_BRANCH_LIMITS = [
+        'starter' => 1,
         'basic' => 2,
         'professional' => 5,
         'enterprise' => 8,
@@ -58,6 +61,10 @@ class Plan extends Model
     public static function normalizeTier(?string $planName): string
     {
         $value = strtolower(trim((string) $planName));
+
+        if (str_contains($value, 'starter')) {
+            return 'starter';
+        }
 
         if (str_contains($value, 'enterprise')) {
             return 'enterprise';
@@ -107,6 +114,13 @@ class Plan extends Model
                 'Priority implementation support',
                 'Multi-team operational controls',
             ],
+            'starter' => [
+                $seatLabel,
+                'POS sales and receipts',
+                'Products, customers, and inventory',
+                'Sales and stock reporting',
+                'Low stock alerts and movement tracking',
+            ],
             'professional' => [
                 $seatLabel,
                 'Inventory and purchase workflows',
@@ -127,6 +141,7 @@ class Plan extends Model
     public static function suggestedUpgradeForTier(?string $tier): ?string
     {
         return match (strtolower((string) $tier)) {
+            'starter' => 'basic',
             'basic' => 'pro',
             'professional' => 'enterprise',
             default => null,

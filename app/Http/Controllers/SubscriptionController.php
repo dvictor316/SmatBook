@@ -151,6 +151,7 @@ class SubscriptionController extends Controller
             'plan_name' => $plan->name,
             'billing_cycle' => ucfirst($requestedCycle),
             'amount' => (float) $plan->price,
+            'user_limit' => $plan->resolvedUserLimit(),
             'status' => 'Pending',
             'payment_status' => 'unpaid',
             'domain_prefix' => $domainPrefix !== '' ? $domainPrefix : null,
@@ -219,6 +220,8 @@ class SubscriptionController extends Controller
     private function upgradePlanCatalog(): array
     {
         return [
+            'starter-solo' => ['label' => 'Starter Solo'],
+            'starter' => ['label' => 'Starter'],
             'basic-solo' => ['label' => 'Basic Solo'],
             'basic' => ['label' => 'Basic'],
             'pro-solo' => ['label' => 'Professional Solo'],
@@ -233,6 +236,8 @@ class SubscriptionController extends Controller
         $value = strtolower(trim($plan));
 
         return match (true) {
+            in_array($value, ['starter-solo', 'startersolo'], true) => 'starter-solo',
+            $value === 'starter' => 'starter',
             $value === 'basic-solo',
             $value === 'basicsolo' => 'basic-solo',
             $value === 'basic' => 'basic',
@@ -249,6 +254,7 @@ class SubscriptionController extends Controller
         return match (strtolower((string) $tier)) {
             'enterprise' => 3,
             'professional' => 2,
+            'starter' => 0,
             default => 1,
         };
     }

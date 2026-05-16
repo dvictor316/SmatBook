@@ -8,16 +8,16 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 :root {
-    /* Premium Color System */
+    /* Streamlined SmartProbook POS palette */
     --primary-600: #0f3a8a;
     --primary-700: #061a44;
     --success-500: #0f3a8a;
     --success-600: #061a44;
     --spb-gold: #d7a928;
-    --spb-gold-soft: #fff1bf;
-    --danger-500: #ef4444;
-    --warning-500: #f59e0b;
-    --indigo-600: #0f3a8a;
+    --spb-gold-soft: #fff7dc;
+    --danger-500: #dc2626;
+    --warning-500: #b45309;
+    --indigo-600: #1d4ed8;
 
     /* Neutral Palette */
     --gray-50: #f9fafb;
@@ -113,27 +113,28 @@ body.mini-sidebar .pos-full-page-wrapper {
     box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.34);
 }
 
+.header-stage.plan-starter,
 .header-stage.plan-basic {
     background:
-        radial-gradient(1200px 220px at 10% 0%, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0) 60%),
-        radial-gradient(900px 220px at 100% 0%, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0) 62%),
-        linear-gradient(135deg, rgba(6, 26, 68, 0.96) 0%, rgba(15, 58, 138, 0.98) 72%, rgba(37, 99, 235, 0.92) 100%);
+        radial-gradient(1200px 220px at 10% 0%, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 60%),
+        radial-gradient(900px 220px at 100% 0%, rgba(215, 169, 40, 0.08) 0%, rgba(215, 169, 40, 0) 62%),
+        linear-gradient(135deg, rgba(6, 26, 68, 0.98) 0%, rgba(15, 58, 138, 0.96) 100%);
     border-color: rgba(37, 99, 235, 0.30);
 }
 
 .header-stage.plan-pro {
     background:
-        radial-gradient(1200px 220px at 10% 0%, rgba(37, 99, 235, 0.22) 0%, rgba(37, 99, 235, 0) 60%),
+        radial-gradient(1200px 220px at 10% 0%, rgba(37, 99, 235, 0.16) 0%, rgba(37, 99, 235, 0) 60%),
         radial-gradient(900px 220px at 100% 0%, rgba(215, 169, 40, 0.08) 0%, rgba(215, 169, 40, 0) 62%),
-        linear-gradient(135deg, #061a44 0%, #0f3a8a 72%, #2563eb 100%);
+        linear-gradient(135deg, #061a44 0%, #0f3a8a 100%);
     border-color: rgba(37, 99, 235, 0.38);
 }
 
 .header-stage.plan-enterprise {
     background:
-        radial-gradient(1200px 220px at 10% 0%, rgba(37, 99, 235, 0.22) 0%, rgba(37, 99, 235, 0) 60%),
+        radial-gradient(1200px 220px at 10% 0%, rgba(37, 99, 235, 0.16) 0%, rgba(37, 99, 235, 0) 60%),
         radial-gradient(900px 220px at 100% 0%, rgba(215, 169, 40, 0.08) 0%, rgba(215, 169, 40, 0) 62%),
-        linear-gradient(135deg, #061a44 0%, #0f3a8a 72%, #2563eb 100%);
+        linear-gradient(135deg, #061a44 0%, #0f3a8a 100%);
     border-color: rgba(37, 99, 235, 0.38);
 }
 
@@ -1326,6 +1327,7 @@ label {
 }
 
 .pos-full-page-wrapper .header-stage,
+.pos-full-page-wrapper .header-stage.plan-starter,
 .pos-full-page-wrapper .header-stage.plan-basic,
 .pos-full-page-wrapper .header-stage.plan-pro,
 .pos-full-page-wrapper .header-stage.plan-enterprise,
@@ -1459,6 +1461,7 @@ label {
         $role = strtolower((string) (auth()->user()->role ?? ''));
         $headerStagePlanClass = match (true) {
             in_array($role, ['super_admin', 'administrator'], true) => 'plan-super',
+            str_contains($rawPlan, 'starter') => 'plan-starter',
             str_contains($rawPlan, 'enterprise') => 'plan-enterprise',
             str_contains($rawPlan, 'pro') || str_contains($rawPlan, 'professional') => 'plan-pro',
             default => 'plan-basic',

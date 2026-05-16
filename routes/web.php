@@ -645,15 +645,15 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
     Route::get('/add-customer', [CustomerController::class, 'create'])->name('customers.add');
     Route::get('/customers/import/template', [CustomerController::class, 'downloadImportTemplate'])->name('customers.import.template');
     Route::post('/customers/import', [CustomerController::class, 'import'])->name('customers.import');
-    Route::get('/customers/{id}/receive-payment', [CustomerController::class, 'receivePayment'])->name('customers.receive-payment');
-    Route::post('/customers/{id}/receive-payment', [CustomerController::class, 'storeReceivedPayment'])->name('customers.store-receive-payment');
+    Route::get('/customers/{id}/receive-payment', [CustomerController::class, 'receivePayment'])->middleware('plan.access:basic,professional,enterprise')->name('customers.receive-payment');
+    Route::post('/customers/{id}/receive-payment', [CustomerController::class, 'storeReceivedPayment'])->middleware('plan.access:basic,professional,enterprise')->name('customers.store-receive-payment');
     Route::get('/active-customers', [CustomerController::class, 'activeView'])->name('active-customers');
     Route::get('/deactive-customers', [CustomerController::class, 'deactiveView'])->name('deactive-customers');
     Route::post('/customers/{id}/export', [CustomerController::class, 'export'])->name('customers.export');
     Route::get('/api/customers', [CustomerController::class, 'apiIndex'])->name('api.customers');
     
     // Vendors
-    Route::controller(VendorController::class)->prefix('vendors')->name('vendors.')->group(function () {
+    Route::controller(VendorController::class)->prefix('vendors')->name('vendors.')->middleware('plan.access:basic,professional,enterprise')->group(function () {
         Route::get('/', 'index')->name('index');
         Route::get('/create', 'create')->name('create');
         Route::get('/import/template', 'downloadImportTemplate')->name('import.template');
@@ -670,11 +670,11 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::post('/{id}/profile', 'updateLedgerProfile')->name('profile.update');
         Route::get('/{id}/ledger', 'vendorLedger')->name('ledger');
     });
-    Route::get('/Customers/ledger/{id}', [VendorController::class, 'ledger'])->name('ledger');
-    Route::get('/ledger', [VendorController::class, 'ledger_general'])->name('ledger.general');
+    Route::get('/Customers/ledger/{id}', [VendorController::class, 'ledger'])->middleware('plan.access:basic,professional,enterprise')->name('ledger');
+    Route::get('/ledger', [VendorController::class, 'ledger_general'])->middleware('plan.access:basic,professional,enterprise')->name('ledger.general');
 
     // Suppliers
-    Route::controller(SupplierController::class)->prefix('suppliers')->name('suppliers.')->group(function () {
+    Route::controller(SupplierController::class)->prefix('suppliers')->name('suppliers.')->middleware('plan.access:basic,professional,enterprise')->group(function () {
         Route::get('/', 'index')->name('index');
         Route::get('/create', 'create')->name('create');
         Route::get('/import/template', 'downloadImportTemplate')->name('import.template');
@@ -747,7 +747,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
     Route::get('/sales/items/{item}/delete', [SaleItemController::class, 'destroy'])->name('sales.items.delete');
     
     // Invoices
-    Route::controller(InvoiceController::class)->group(function () {
+    Route::controller(InvoiceController::class)->middleware('plan.access:basic,professional,enterprise')->group(function () {
         Route::get('/invoices', 'invoices')->name('invoices');
         Route::get('/invoices-list', 'index')->name('invoices.index');
         Route::get('/add-invoice', 'add_invoice')->name('add-invoice');
@@ -777,7 +777,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
     });
     
     // Recurring Invoices – full engine
-    Route::prefix('recurring-invoices')->name('sales.recurring-invoices.')->group(function () {
+    Route::prefix('recurring-invoices')->name('sales.recurring-invoices.')->middleware('plan.access:basic,professional,enterprise')->group(function () {
         Route::get('/',                                    [RecurringInvoiceController::class, 'index'])->name('index');
         Route::get('/create',                              [RecurringInvoiceController::class, 'create'])->name('create');
         Route::post('/',                                   [RecurringInvoiceController::class, 'store'])->name('store');
@@ -793,9 +793,9 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::post('/from-sale/{sale}',                   [RecurringInvoiceController::class, 'fromSale'])->name('from-sale');
     });
     // Legacy misspelled redirect (keep old URL working without showing all invoices)
-    Route::get('/clone-invoice/{id}', [SalesInvoiceController::class, 'clone'])->name('sales.clone');
-    Route::get('/send-invoice/{id}', [SalesInvoiceController::class, 'send'])->name('sales.send');
-    Route::get('/recuring-invoices', fn() => redirect()->route('sales.recurring-invoices.index'))->name('recuring-invoices');
+    Route::get('/clone-invoice/{id}', [SalesInvoiceController::class, 'clone'])->middleware('plan.access:basic,professional,enterprise')->name('sales.clone');
+    Route::get('/send-invoice/{id}', [SalesInvoiceController::class, 'send'])->middleware('plan.access:basic,professional,enterprise')->name('sales.send');
+    Route::get('/recuring-invoices', fn() => redirect()->route('sales.recurring-invoices.index'))->middleware('plan.access:basic,professional,enterprise')->name('recuring-invoices');
     Route::view('/invoice-one-a', 'Sales.Invoices.invoice-one-a')->name('invoice-one-a');
     Route::view('/invoice-two', 'Sales.Invoices.invoice-two')->name('invoice-two');
     Route::view('/invoice-three', 'Sales.Invoices.invoice-three')->name('invoice-three');
@@ -841,11 +841,11 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
     });
     
     // Estimates
-    Route::get('estimates/{estimate}/convert-invoice', [EstimateController::class, 'convertToInvoice'])->name('estimates.convert-invoice');
-    Route::get('estimates/{estimate}/convert-cash-sale', [EstimateController::class, 'convertToCashSale'])->name('estimates.convert-cash-sale');
-    Route::resource('estimates', EstimateController::class);
+    Route::get('estimates/{estimate}/convert-invoice', [EstimateController::class, 'convertToInvoice'])->middleware('plan.access:basic,professional,enterprise')->name('estimates.convert-invoice');
+    Route::get('estimates/{estimate}/convert-cash-sale', [EstimateController::class, 'convertToCashSale'])->middleware('plan.access:basic,professional,enterprise')->name('estimates.convert-cash-sale');
+    Route::resource('estimates', EstimateController::class)->middleware('plan.access:basic,professional,enterprise');
     Route::get('/api/estimates', [EstimateController::class, 'getEstimates'])->name('api.estimates');
-    Route::controller(HomeController::class)->group(function () {
+    Route::controller(HomeController::class)->middleware('plan.access:basic,professional,enterprise')->group(function () {
         Route::get('/quotations', 'quotations')->name('quotations');
         Route::get('/add-quotations', 'add_quotations')->name('add-quotations');
         Route::get('/quotations/{id}/view', 'showQuotation')->name('quotations.show');
@@ -865,7 +865,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
     });
 
     // Purchases
-    Route::resource('purchases', PurchaseController::class);
+    Route::resource('purchases', PurchaseController::class)->middleware('plan.access:basic,professional,enterprise');
     Route::get('/purchase-add', function (\Illuminate\Http\Request $request) {
         $params = array_filter([
             'product_id' => $request->query('product_id'),
@@ -873,11 +873,11 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         ], fn ($value) => filled($value));
 
         return redirect()->route('purchases.create', $params);
-    })->name('purchase-add.legacy');
-    Route::post('/purchases/{id}/mark-paid', [PurchaseController::class, 'markPaid'])->name('purchases.mark-paid');
-    Route::post('/purchases/{id}/payments', [PurchaseController::class, 'recordPayment'])->name('purchases.record-payment');
-    Route::delete('/purchases/{purchaseId}/payments/{paymentId}', [PurchaseController::class, 'destroyPayment'])->name('purchases.destroy-payment');
-    Route::controller(PurchaseController::class)->group(function () {
+    })->middleware('plan.access:basic,professional,enterprise')->name('purchase-add.legacy');
+    Route::post('/purchases/{id}/mark-paid', [PurchaseController::class, 'markPaid'])->middleware('plan.access:basic,professional,enterprise')->name('purchases.mark-paid');
+    Route::post('/purchases/{id}/payments', [PurchaseController::class, 'recordPayment'])->middleware('plan.access:basic,professional,enterprise')->name('purchases.record-payment');
+    Route::delete('/purchases/{purchaseId}/payments/{paymentId}', [PurchaseController::class, 'destroyPayment'])->middleware('plan.access:basic,professional,enterprise')->name('purchases.destroy-payment');
+    Route::controller(PurchaseController::class)->middleware('plan.access:basic,professional,enterprise')->group(function () {
         Route::get('/add-purchase-return', 'createReturn')->name('add-purchase-return');
         Route::get('/purchase-returns/create', 'createReturn')->name('purchase-returns.create');
         Route::post('/purchase-returns/store', 'storeReturn')->name('purchase-returns.store');
@@ -897,37 +897,37 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
     Route::get('/admin/purchase-orders', [PurchaseOrderViewController::class, 'showOrdersTable'])->name('admin.purchase.orders');
     
     // Expenses
-    Route::resource('expenses', ExpenseController::class);
-    Route::post('/expenses/{id}/mark-paid', [ExpenseController::class, 'markPaid'])->name('expenses.mark-paid');
-    Route::get('/expenses/download/{filename}', [ExpenseController::class, 'download'])->name('expenses.download');
-    Route::post('/expenses/quick-add-bank', [ExpenseController::class, 'quickAddBank'])->name('expenses.quick-add-bank');
-    Route::post('/expenses/quick-add-category', [ExpenseController::class, 'quickAddCategory'])->name('expenses.quick-add-category');
-    Route::post('/expenses/quick-add-supplier', [ExpenseController::class, 'quickAddSupplier'])->name('expenses.quick-add-supplier');
+    Route::resource('expenses', ExpenseController::class)->middleware('plan.access:basic,professional,enterprise');
+    Route::post('/expenses/{id}/mark-paid', [ExpenseController::class, 'markPaid'])->middleware('plan.access:basic,professional,enterprise')->name('expenses.mark-paid');
+    Route::get('/expenses/download/{filename}', [ExpenseController::class, 'download'])->middleware('plan.access:basic,professional,enterprise')->name('expenses.download');
+    Route::post('/expenses/quick-add-bank', [ExpenseController::class, 'quickAddBank'])->middleware('plan.access:basic,professional,enterprise')->name('expenses.quick-add-bank');
+    Route::post('/expenses/quick-add-category', [ExpenseController::class, 'quickAddCategory'])->middleware('plan.access:basic,professional,enterprise')->name('expenses.quick-add-category');
+    Route::post('/expenses/quick-add-supplier', [ExpenseController::class, 'quickAddSupplier'])->middleware('plan.access:basic,professional,enterprise')->name('expenses.quick-add-supplier');
     
     // Payments
-    Route::resource('payments', PaymentController::class);
-    Route::controller(PaymentController::class)->prefix('payments')->name('payments.')->group(function () {
+    Route::resource('payments', PaymentController::class)->middleware('plan.access:basic,professional,enterprise');
+    Route::controller(PaymentController::class)->prefix('payments')->name('payments.')->middleware('plan.access:basic,professional,enterprise')->group(function () {
         Route::get('/download/{filename}', 'download')->name('download');
         Route::get('/statistics', 'statistics')->name('statistics');
         Route::get('/sale/{saleId}', 'getBySale')->name('by-sale');
         Route::get('/{payment}/receipt', 'receipt')->name('receipt');
     });
-	    Route::post('/payments/bulk-update', [ReportController::class, 'bulkUpdate'])->name('payments.bulk-update');
-	    Route::delete('/payments/{id}', [ReportController::class, 'destroy'])->name('payments.report-destroy');
-	    Route::get('/get-invoice-items/{id}', [ReportController::class, 'get_invoice_items'])->name('get-invoice-items');
+	    Route::post('/payments/bulk-update', [ReportController::class, 'bulkUpdate'])->middleware('plan.access:basic,professional,enterprise')->name('payments.bulk-update');
+	    Route::delete('/payments/{id}', [ReportController::class, 'destroy'])->middleware('plan.access:basic,professional,enterprise')->name('payments.report-destroy');
+	    Route::get('/get-invoice-items/{id}', [ReportController::class, 'get_invoice_items'])->middleware('plan.access:basic,professional,enterprise')->name('get-invoice-items');
 	    
-	    // Reports
+    // Reports
     Route::controller(ReportController::class)->prefix('reports')->name('reports.')->group(function () {
-        Route::get('/expense-report', 'expense_report')->name('expense');
-        Route::get('/income-report', 'income_report')->name('income');
-        Route::get('/payment-report', 'payment_report')->name('payment');
-        Route::get('/purchase-report', 'purchase_report')->name('purchase');
+        Route::get('/expense-report', 'expense_report')->middleware('plan.access:basic,professional,enterprise')->name('expense');
+        Route::get('/income-report', 'income_report')->middleware('plan.access:basic,professional,enterprise')->name('income');
+        Route::get('/payment-report', 'payment_report')->middleware('plan.access:basic,professional,enterprise')->name('payment');
+        Route::get('/purchase-report', 'purchase_report')->middleware('plan.access:basic,professional,enterprise')->name('purchase');
         Route::get('/sales-report', 'sales_report')->name('sales');
         Route::get('/stock-report', 'stock_report')->name('stock');
         Route::get('/low-stock-report', 'low_stock_report')->name('low-stock');
-        Route::get('/accounts-receivable', 'accountsReceivable')->name('accounts-receivable');
-        Route::get('/customer-statement/{id}', 'customerStatement')->name('customer-statement');
-        Route::get('/quotation-report', 'quotation_report')->name('quotation');
+        Route::get('/accounts-receivable', 'accountsReceivable')->middleware('plan.access:basic,professional,enterprise')->name('accounts-receivable');
+        Route::get('/customer-statement/{id}', 'customerStatement')->middleware('plan.access:basic,professional,enterprise')->name('customer-statement');
+        Route::get('/quotation-report', 'quotation_report')->middleware('plan.access:basic,professional,enterprise')->name('quotation');
         Route::get('/profit-loss-list', 'profit_loss_list')
             ->middleware('plan.access:pro,enterprise')
             ->name('profit-loss');
@@ -937,14 +937,14 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::get('/tax-sales', 'tax_sales')
             ->middleware('plan.access:enterprise')
             ->name('tax-sales');
-        Route::get('/sales-return-report', 'credit_notes')->name('sales-return');
-        Route::get('/create-sales-return', 'create_credit_note')->name('create-sales-return');
-        Route::post('/sales-return/store', 'store_credit_note')->name('credit-notes-store');
-        Route::get('/purchase-return-report', 'purchase_return_report')->name('purchase-return');
+        Route::get('/sales-return-report', 'credit_notes')->middleware('plan.access:basic,professional,enterprise')->name('sales-return');
+        Route::get('/create-sales-return', 'create_credit_note')->middleware('plan.access:basic,professional,enterprise')->name('create-sales-return');
+        Route::post('/sales-return/store', 'store_credit_note')->middleware('plan.access:basic,professional,enterprise')->name('credit-notes-store');
+        Route::get('/purchase-return-report', 'purchase_return_report')->middleware('plan.access:basic,professional,enterprise')->name('purchase-return');
         Route::get('/expiry-report', 'expiry_report')->name('expiry-report');
-        Route::post('/email-report', 'email_report')->name('email-report');
+        Route::post('/email-report', 'email_report')->middleware('plan.access:basic,professional,enterprise')->name('email-report');
         Route::post('/email-low-stock', 'email_low_stock_report')->name('email-low-stock');
-        Route::get('/payment-summary', 'paymentSummary')->name('payment-summary');
+        Route::get('/payment-summary', 'paymentSummary')->middleware('plan.access:basic,professional,enterprise')->name('payment-summary');
 
         // Sub-report family — P&L
         Route::get('/profit-loss-comparison', 'profitLossComparison')->middleware('plan.access:pro,enterprise')->name('profit-loss-comparison');
@@ -952,8 +952,8 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::get('/profit-loss-detail', 'profitLossDetail')->middleware('plan.access:pro,enterprise')->name('profit-loss-detail');
 
         // Sub-report family — Who Owes You / AR
-        Route::get('/ar-ageing-detail', 'accountsReceivableAgeingDetail')->name('ar-ageing-detail');
-        Route::get('/open-invoices', 'openInvoicesReport')->name('open-invoices');
+        Route::get('/ar-ageing-detail', 'accountsReceivableAgeingDetail')->middleware('plan.access:basic,professional,enterprise')->name('ar-ageing-detail');
+        Route::get('/open-invoices', 'openInvoicesReport')->middleware('plan.access:basic,professional,enterprise')->name('open-invoices');
 
         // Sub-report family — Sales
         Route::get('/sales-by-customer', 'salesByCustomer')->name('sales-by-customer');
@@ -961,12 +961,12 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::get('/sales-summary', 'salesSummary')->name('sales-summary');
 
         // Sub-report family — Purchases
-        Route::get('/purchase-by-supplier', 'purchaseBySupplier')->name('purchase-by-supplier');
-        Route::get('/purchase-summary', 'purchaseSummary')->name('purchase-summary');
+        Route::get('/purchase-by-supplier', 'purchaseBySupplier')->middleware('plan.access:basic,professional,enterprise')->name('purchase-by-supplier');
+        Route::get('/purchase-summary', 'purchaseSummary')->middleware('plan.access:basic,professional,enterprise')->name('purchase-summary');
 
         // Sub-report family — Expenses
-        Route::get('/expense-by-category', 'expenseByCategory')->name('expense-by-category');
-        Route::get('/expense-trend', 'expenseTrend')->name('expense-trend');
+        Route::get('/expense-by-category', 'expenseByCategory')->middleware('plan.access:basic,professional,enterprise')->name('expense-by-category');
+        Route::get('/expense-trend', 'expenseTrend')->middleware('plan.access:basic,professional,enterprise')->name('expense-trend');
 
         // Sub-report family — Stock
         Route::get('/stock-valuation', 'stockValuation')->name('stock-valuation');
@@ -1038,12 +1038,12 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::post('/settings', 'update')->name('settings.update');
         Route::post('/settings/ledger-backfill', 'ledger_backfill')->name('settings.ledger-backfill');
         Route::post('/settings/opening-balance-backfill', 'openingBalanceBackfill')->name('settings.opening-balance-backfill');
-        Route::post('/settings/bank-account', 'storeBankAccount')->name('settings.bank-account.store');
-        Route::put('/settings/bank-account/{bank}', 'updateBankAccount')->name('settings.bank-account.update');
-        Route::delete('/settings/bank-account/{bank}', 'destroyBankAccount')->name('settings.bank-account.destroy');
-        Route::post('/settings/tax-rates', 'storeTaxRate')->name('settings.tax-rates.store');
-        Route::put('/settings/tax-rates/{id}', 'updateTaxRate')->name('settings.tax-rates.update');
-        Route::delete('/settings/tax-rates/{id}', 'destroyTaxRate')->name('settings.tax-rates.destroy');
+        Route::post('/settings/bank-account', 'storeBankAccount')->middleware('plan.access:basic,professional,enterprise')->name('settings.bank-account.store');
+        Route::put('/settings/bank-account/{bank}', 'updateBankAccount')->middleware('plan.access:basic,professional,enterprise')->name('settings.bank-account.update');
+        Route::delete('/settings/bank-account/{bank}', 'destroyBankAccount')->middleware('plan.access:basic,professional,enterprise')->name('settings.bank-account.destroy');
+        Route::post('/settings/tax-rates', 'storeTaxRate')->middleware('plan.access:basic,professional,enterprise')->name('settings.tax-rates.store');
+        Route::put('/settings/tax-rates/{id}', 'updateTaxRate')->middleware('plan.access:basic,professional,enterprise')->name('settings.tax-rates.update');
+        Route::delete('/settings/tax-rates/{id}', 'destroyTaxRate')->middleware('plan.access:basic,professional,enterprise')->name('settings.tax-rates.destroy');
         Route::post('/settings/custom-fields', 'storeCustomField')->name('settings.custom-fields.store');
         Route::put('/settings/custom-fields/{id}', 'updateCustomField')->name('settings.custom-fields.update');
         Route::delete('/settings/custom-fields/{id}', 'destroyCustomField')->name('settings.custom-fields.destroy');
@@ -1054,30 +1054,30 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::put('/settings/branches/{branchId}', 'updateBranch')->name('settings.branches.update');
         Route::delete('/settings/branches/{branchId}', 'destroyBranch')->name('settings.branches.destroy');
         Route::post('/settings/branches/activate', 'activateBranch')->name('settings.branches.activate');
-        Route::post('/settings/chart-of-accounts', 'storeChartAccount')->name('settings.chart-of-accounts.store');
-        Route::put('/settings/chart-of-accounts/{id}', 'updateChartAccount')->name('settings.chart-of-accounts.update');
-        Route::delete('/settings/chart-of-accounts/{id}', 'destroyChartAccount')->name('settings.chart-of-accounts.destroy');
-        Route::post('/settings/chart-of-accounts/{id}/deactivate', 'deactivateChartAccount')->name('settings.chart-of-accounts.deactivate');
-        Route::post('/settings/chart-of-accounts/{id}/bank-balance', 'zeroChartAccountBankBalance')->name('settings.chart-of-accounts.bank-balance');
-        Route::post('/settings/bank-reconciliation/import', 'storeBankStatementImport')->name('settings.bank-reconciliation.import');
-        Route::post('/settings/bank-statement-lines/{line}/match', 'matchBankStatementLine')->name('settings.bank-statement-lines.match');
-        Route::post('/settings/bank-statement-lines/{line}/unmatch', 'unmatchBankStatementLine')->name('settings.bank-statement-lines.unmatch');
-        Route::post('/settings/bank-reconciliation/adjustment', 'storeBankReconciliationAdjustment')->name('settings.bank-reconciliation.adjustment');
-        Route::post('/settings/manual-journal', 'storeManualJournal')->name('settings.manual-journal.store');
+        Route::post('/settings/chart-of-accounts', 'storeChartAccount')->middleware('plan.access:basic,professional,enterprise')->name('settings.chart-of-accounts.store');
+        Route::put('/settings/chart-of-accounts/{id}', 'updateChartAccount')->middleware('plan.access:basic,professional,enterprise')->name('settings.chart-of-accounts.update');
+        Route::delete('/settings/chart-of-accounts/{id}', 'destroyChartAccount')->middleware('plan.access:basic,professional,enterprise')->name('settings.chart-of-accounts.destroy');
+        Route::post('/settings/chart-of-accounts/{id}/deactivate', 'deactivateChartAccount')->middleware('plan.access:basic,professional,enterprise')->name('settings.chart-of-accounts.deactivate');
+        Route::post('/settings/chart-of-accounts/{id}/bank-balance', 'zeroChartAccountBankBalance')->middleware('plan.access:basic,professional,enterprise')->name('settings.chart-of-accounts.bank-balance');
+        Route::post('/settings/bank-reconciliation/import', 'storeBankStatementImport')->middleware('plan.access:basic,professional,enterprise')->name('settings.bank-reconciliation.import');
+        Route::post('/settings/bank-statement-lines/{line}/match', 'matchBankStatementLine')->middleware('plan.access:basic,professional,enterprise')->name('settings.bank-statement-lines.match');
+        Route::post('/settings/bank-statement-lines/{line}/unmatch', 'unmatchBankStatementLine')->middleware('plan.access:basic,professional,enterprise')->name('settings.bank-statement-lines.unmatch');
+        Route::post('/settings/bank-reconciliation/adjustment', 'storeBankReconciliationAdjustment')->middleware('plan.access:basic,professional,enterprise')->name('settings.bank-reconciliation.adjustment');
+        Route::post('/settings/manual-journal', 'storeManualJournal')->middleware('plan.access:basic,professional,enterprise')->name('settings.manual-journal.store');
         Route::prefix('settings')->group(function () {
-            Route::get('/bank-account', 'bank_account')->name('bank-account');
+            Route::get('/bank-account', 'bank_account')->middleware('plan.access:basic,professional,enterprise')->name('bank-account');
             Route::get('/branches', 'branches')->name('branches.index');
-            Route::get('/chart-of-accounts', 'chart_of_accounts')->name('chart-of-accounts');
-            Route::get('/bank-reconciliation', 'bank_reconciliation')->name('bank-reconciliation');
-            Route::get('/bank-statement-imports', 'bankStatementImports')->name('bank-statement-imports');
-            Route::get('/manual-journal', 'manual_journal')->name('manual-journal');
+            Route::get('/chart-of-accounts', 'chart_of_accounts')->middleware('plan.access:basic,professional,enterprise')->name('chart-of-accounts');
+            Route::get('/bank-reconciliation', 'bank_reconciliation')->middleware('plan.access:basic,professional,enterprise')->name('bank-reconciliation');
+            Route::get('/bank-statement-imports', 'bankStatementImports')->middleware('plan.access:basic,professional,enterprise')->name('bank-statement-imports');
+            Route::get('/manual-journal', 'manual_journal')->middleware('plan.access:basic,professional,enterprise')->name('manual-journal');
             Route::get('/company-settings', 'company_settings')->name('company-settings');
             Route::get('/email-settings', 'email_settings')->name('email-settings');
             Route::get('/invoice-settings', 'invoice_settings')->name('invoice-settings');
             Route::get('/payment-settings', 'payment_settings')->name('payment-settings');
             Route::get('/plan-billing', 'plan_billing')->name('plan-billing');
             Route::get('/preferences', 'preferences')->name('preferences');
-            Route::get('/tax-rates', 'tax_rates')->name('tax-rates');
+            Route::get('/tax-rates', 'tax_rates')->middleware('plan.access:basic,professional,enterprise')->name('tax-rates');
             Route::get('/template-invoice', 'template_invoice')->name('template-invoice');
             Route::get('/two-factor', 'two_factor')->name('two-factor');
             Route::get('/custom-filed', 'custom_filed')->name('custom-filed');
@@ -1091,12 +1091,12 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::get('/invoice-settings', 'invoice_settings');
         Route::get('/template-invoice', 'template_invoice');
         Route::get('/payment-settings', 'payment_settings');
-        Route::get('/bank-account', 'bank_account');
+        Route::get('/bank-account', 'bank_account')->middleware('plan.access:basic,professional,enterprise');
         Route::get('/branches', 'branches');
-        Route::get('/chart-of-accounts', 'chart_of_accounts');
-        Route::get('/bank-reconciliation', 'bank_reconciliation');
-        Route::get('/manual-journal', 'manual_journal');
-        Route::get('/tax-rates', 'tax_rates');
+        Route::get('/chart-of-accounts', 'chart_of_accounts')->middleware('plan.access:basic,professional,enterprise');
+        Route::get('/bank-reconciliation', 'bank_reconciliation')->middleware('plan.access:basic,professional,enterprise');
+        Route::get('/manual-journal', 'manual_journal')->middleware('plan.access:basic,professional,enterprise');
+        Route::get('/tax-rates', 'tax_rates')->middleware('plan.access:basic,professional,enterprise');
         Route::get('/plan-billing', 'plan_billing');
         Route::get('/two-factor', 'two_factor');
         Route::get('/custom-filed', 'custom_filed');
@@ -1197,7 +1197,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
     });
 
     // Purchase Requisitions
-    Route::prefix('purchase-requisitions')->name('purchase-requisitions.')->group(function () {
+    Route::prefix('purchase-requisitions')->name('purchase-requisitions.')->middleware('plan.access:basic,professional,enterprise')->group(function () {
         Route::get('/', [\App\Http\Controllers\PurchaseRequisitionController::class, 'index'])->name('index');
         Route::get('/create', [\App\Http\Controllers\PurchaseRequisitionController::class, 'create'])->name('create');
         Route::post('/', [\App\Http\Controllers\PurchaseRequisitionController::class, 'store'])->name('store');
@@ -1208,7 +1208,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
     });
 
     // Goods Received Notes
-    Route::prefix('grn')->name('grn.')->group(function () {
+    Route::prefix('grn')->name('grn.')->middleware('plan.access:basic,professional,enterprise')->group(function () {
         Route::get('/', [\App\Http\Controllers\GoodsReceivedNoteController::class, 'index'])->name('index');
         Route::get('/create', [\App\Http\Controllers\GoodsReceivedNoteController::class, 'create'])->name('create');
         Route::post('/', [\App\Http\Controllers\GoodsReceivedNoteController::class, 'store'])->name('store');
@@ -1217,7 +1217,7 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
     });
 
     // Price Lists
-    Route::prefix('price-lists')->name('price-lists.')->group(function () {
+    Route::prefix('price-lists')->name('price-lists.')->middleware('plan.access:basic,professional,enterprise')->group(function () {
         Route::get('/', [\App\Http\Controllers\PriceListController::class, 'index'])->name('index');
         Route::get('/create', [\App\Http\Controllers\PriceListController::class, 'create'])->name('create');
         Route::post('/', [\App\Http\Controllers\PriceListController::class, 'store'])->name('store');

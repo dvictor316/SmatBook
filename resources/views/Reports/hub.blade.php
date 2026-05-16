@@ -12,6 +12,8 @@
     $canUseProfitLossReports = $canUseProReports;
     $canUseMidTierFinancialReports = $canUseProReports;
     $canUseCoreStatements = $canUseEnterpriseReports;
+    $visibleSections = collect($tabSections)->flatten()->unique()->values()->all();
+    $isStarterReportAccess = $reportAccess === 'starter';
 @endphp
 <style>
 /* ══════════════════════════════════════════════════════════
@@ -197,6 +199,7 @@
             </div>
 
             {{-- ══ 1. BUSINESS OVERVIEW ════════════════════════════════════ --}}
+            @if(in_array('overview', $visibleSections, true))
             <div class="rh-section" data-section="overview">
                 <div class="rh-sec-head" onclick="toggleSection(this)">
                     <span class="rh-sec-icon pal-blue"><i class="fas fa-tachometer-alt"></i></span>
@@ -282,8 +285,10 @@
 
                 </div>
             </div>
+            @endif
 
             {{-- ══ 2. WHO OWES YOU ════════════════════════════════════════ --}}
+            @if(in_array('owes', $visibleSections, true))
             <div class="rh-section" data-section="owes">
                 <div class="rh-sec-head" onclick="toggleSection(this)">
                     <span class="rh-sec-icon pal-amber"><i class="fas fa-user-clock"></i></span>
@@ -331,8 +336,10 @@
 
                 </div>
             </div>
+            @endif
 
             {{-- ══ 3. SALES & PURCHASES ══════════════════════════════════ --}}
+            @if(in_array('sales', $visibleSections, true))
             <div class="rh-section" data-section="sales">
                 <div class="rh-sec-head" onclick="toggleSection(this)">
                     <span class="rh-sec-icon pal-teal"><i class="fas fa-shopping-bag"></i></span>
@@ -348,24 +355,31 @@
                         <a href="{{ route('reports.sales') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
                     </div>
 
+                    @unless($isStarterReportAccess)
                     <div class="rl-row" data-section="sales" data-tab="sales" data-id="purchase-report" data-url="{{ route('reports.purchase') }}" data-keywords="purchase report suppliers buying orders">
                         <button class="rl-star" data-id="purchase-report" title="Favourite"><i class="far fa-star"></i></button>
                         <a href="{{ route('reports.purchase') }}" class="rl-name">Purchase Report</a>
                         <a href="{{ route('reports.purchase') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
                     </div>
+                    @endunless
 
+                    @unless($isStarterReportAccess)
                     <div class="rl-row" data-section="sales" data-tab="sales" data-id="quotation-report" data-url="{{ route('reports.quotation') }}" data-keywords="quotation estimates quotes conversion">
                         <button class="rl-star" data-id="quotation-report" title="Favourite"><i class="far fa-star"></i></button>
                         <a href="{{ route('reports.quotation') }}" class="rl-name">Quotation Report</a>
                         <a href="{{ route('reports.quotation') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
                     </div>
+                    @endunless
 
+                    @unless($isStarterReportAccess)
                     <div class="rl-row" data-section="sales" data-tab="sales" data-id="sales-return" data-url="{{ route('reports.sales-return') }}" data-keywords="sales return credit notes refund returned items">
                         <button class="rl-star" data-id="sales-return" title="Favourite"><i class="far fa-star"></i></button>
                         <a href="{{ route('reports.sales-return') }}" class="rl-name">Sales Return Report</a>
                         <a href="{{ route('reports.sales-return') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
                     </div>
+                    @endunless
 
+                    @unless($isStarterReportAccess)
                     @if(Route::has('reports.purchase-return'))
                     <div class="rl-row" data-section="sales" data-tab="sales" data-id="purchase-return" data-url="{{ route('reports.purchase-return') }}" data-keywords="purchase return debit notes supplier refund returned goods">
                         <button class="rl-star" data-id="purchase-return" title="Favourite"><i class="far fa-star"></i></button>
@@ -373,6 +387,7 @@
                         <a href="{{ route('reports.purchase-return') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
                     </div>
                     @endif
+                    @endunless
 
                     <div class="rl-row" data-section="sales" data-tab="sales" data-id="pos-sales" data-url="{{ route('pos.reports') }}" data-keywords="pos point of sale sold units gross value">
                         <button class="rl-star" data-id="pos-sales" title="Favourite"><i class="far fa-star"></i></button>
@@ -414,22 +429,28 @@
                         <a href="{{ route('reports.sales-summary') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
                     </div>
 
+                    @unless($isStarterReportAccess)
                     <div class="rl-row" data-section="sales" data-tab="sales" data-id="purchase-by-supplier" data-url="{{ route('reports.purchase-by-supplier') }}" data-keywords="purchases by supplier vendor breakdown orders">
                         <button class="rl-star" data-id="purchase-by-supplier" title="Favourite"><i class="far fa-star"></i></button>
                         <a href="{{ route('reports.purchase-by-supplier') }}" class="rl-name">Purchases by Supplier</a>
                         <a href="{{ route('reports.purchase-by-supplier') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
                     </div>
+                    @endunless
 
+                    @unless($isStarterReportAccess)
                     <div class="rl-row" data-section="sales" data-tab="sales" data-id="purchase-summary" data-url="{{ route('reports.purchase-summary') }}" data-keywords="purchase summary total orders average cost kpi">
                         <button class="rl-star" data-id="purchase-summary" title="Favourite"><i class="far fa-star"></i></button>
                         <a href="{{ route('reports.purchase-summary') }}" class="rl-name">Purchase Summary</a>
                         <a href="{{ route('reports.purchase-summary') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
                     </div>
+                    @endunless
 
                 </div>
             </div>
+            @endif
 
             {{-- ══ 4. INVENTORY ══════════════════════════════════════════ --}}
+            @if(in_array('inventory', $visibleSections, true))
             <div class="rh-section" data-section="inventory">
                 <div class="rh-sec-head" onclick="toggleSection(this)">
                     <span class="rh-sec-icon pal-green"><i class="fas fa-boxes"></i></span>
@@ -471,8 +492,10 @@
 
                 </div>
             </div>
+            @endif
 
             {{-- ══ 5. FINANCIAL STATEMENTS ════════════════════════════════ --}}
+            @if(in_array('financial', $visibleSections, true))
             <div class="rh-section" data-section="financial">
                 <div class="rh-sec-head" onclick="toggleSection(this)">
                     <span class="rh-sec-icon pal-purple"><i class="fas fa-university"></i></span>
@@ -557,6 +580,7 @@
 
                 </div>
             </div>
+            @endif
 
             {{-- ══ 6. CUSTOM REPORTS ════════════════════════════════════ --}}
             @if($canUseCustomReports)

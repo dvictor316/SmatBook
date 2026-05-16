@@ -56,6 +56,8 @@ class ReportController extends Controller
                     return ['standard', 'management', 'custom'];
                 case 'pro':
                     return ['standard', 'management'];
+                case 'starter':
+                    return ['standard'];
                 default:
                     return ['standard'];
             }
@@ -63,6 +65,12 @@ class ReportController extends Controller
 
         private function reportTabSections(array $allowedTabs): array
         {
+            if ($this->resolveReportAccess() === 'starter') {
+                return [
+                    'standard' => ['sales', 'inventory'],
+                ];
+            }
+
             $map = [
                 'standard' => ['overview', 'owes', 'sales', 'inventory'],
                 'management' => ['financial'],

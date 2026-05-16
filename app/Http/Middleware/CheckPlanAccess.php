@@ -40,7 +40,9 @@ class CheckPlanAccess
 
         if (!in_array($normalizedUserPlan, $allowed, true)) {
             return redirect()->route('user.dashboard')
-            ->with('error', 'Your current subscription plan does not include this feature.');
+            ->with('error', $normalizedUserPlan === 'starter'
+                ? 'Your current STARTER plan does not include this module.'
+                : 'Your current subscription plan does not include this feature.');
         }
 
         return $next($request);
@@ -49,6 +51,7 @@ class CheckPlanAccess
     private function normalizePlan(string $plan): string
     {
         return match (PlanAccess::normalizeTier($plan)) {
+            'starter' => 'starter',
             'pro' => 'pro',
             'enterprise' => 'enterprise',
             'basic' => 'basic',

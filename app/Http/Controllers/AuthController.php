@@ -193,6 +193,7 @@ class AuthController extends Controller
                     'plan_name' => $planName,
                     'billing_cycle' => $billingCycle,
                     'amount' => $planAmount,
+                    'user_limit' => $plan?->resolvedUserLimit(),
                     'status' => 'Pending',
                     'payment_status' => 'unpaid',
                 ]));
@@ -894,6 +895,7 @@ class AuthController extends Controller
             'plan_name' => $planName,
             'billing_cycle' => $billingCycle,
             'amount' => $amount,
+            'user_limit' => $plan?->resolvedUserLimit(),
             'status' => 'Pending',
             'payment_status' => 'unpaid',
         ]));
@@ -1188,6 +1190,14 @@ class AuthController extends Controller
     private function registrationPlanCatalog(): array
     {
         return [
+            'starter-solo' => [
+                'label' => 'Starter Solo',
+                'prices' => ['monthly' => 2700, 'yearly' => 27000],
+            ],
+            'starter' => [
+                'label' => 'Starter',
+                'prices' => ['monthly' => 3300, 'yearly' => 33000],
+            ],
             'basic-solo' => [
                 'label' => 'Basic Solo',
                 'prices' => ['monthly' => 3000, 'yearly' => 30000],
@@ -1229,6 +1239,11 @@ class AuthController extends Controller
         }
 
         $aliases = [
+            'starter solo' => 'starter-solo',
+            'starter-solo-monthly' => 'starter-solo',
+            'starter-solo-yearly' => 'starter-solo',
+            'starter-monthly' => 'starter',
+            'starter-yearly' => 'starter',
             'basic solo' => 'basic-solo',
             'basic-solo-monthly' => 'basic-solo',
             'basic-solo-yearly' => 'basic-solo',

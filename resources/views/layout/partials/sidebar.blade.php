@@ -53,7 +53,9 @@
                 ?? (optional($user->company)->plan ?? '')
             );
 
-            if (str_contains($planName, 'enterprise')) {
+            if (str_contains($planName, 'starter')) {
+                $plan = 'starter';
+            } elseif (str_contains($planName, 'enterprise')) {
                 $plan = 'enterprise';
             } elseif (str_contains($planName, 'prof') || str_contains($planName, 'pro')) {
                 $plan = 'pro';
@@ -63,7 +65,9 @@
         } elseif (!empty(optional($user->company)->plan)) {
             // Fallback when subscription row is missing but company plan exists.
             $companyPlan = strtolower((string) optional($user->company)->plan);
-            if (str_contains($companyPlan, 'enterprise')) {
+            if (str_contains($companyPlan, 'starter')) {
+                $plan = 'starter';
+            } elseif (str_contains($companyPlan, 'enterprise')) {
                 $plan = 'enterprise';
             } elseif (str_contains($companyPlan, 'prof') || str_contains($companyPlan, 'pro') || str_contains($companyPlan, 'premium')) {
                 $plan = 'pro';
@@ -81,6 +85,14 @@
             @include('layout.partials.sidebars.enterprise')
         @elseif($plan === 'pro')
             @include('layout.partials.sidebars.pro')
+        @elseif($plan === 'starter')
+            <div class="sidebar" id="sidebar">
+                <div class="sidebar-inner slimscroll">
+                    <div id="sidebar-menu" class="sidebar-menu">
+                        @include('layout.partials.sidebars.starter')
+                    </div>
+                </div>
+            </div>
         @else
             <div class="sidebar" id="sidebar">
                 <div class="sidebar-inner slimscroll">
@@ -96,6 +108,14 @@
         @include('layout.partials.sidebars.enterprise')
     @elseif($plan === 'pro')
         @include('layout.partials.sidebars.pro')
+    @elseif($plan === 'starter')
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-inner slimscroll">
+                <div id="sidebar-menu" class="sidebar-menu">
+                    @include('layout.partials.sidebars.starter')
+                </div>
+            </div>
+        </div>
     @else
 
         <div class="sidebar" id="sidebar">
