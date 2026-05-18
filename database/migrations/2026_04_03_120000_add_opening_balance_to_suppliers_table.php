@@ -13,7 +13,11 @@ return new class extends Migration {
 
         Schema::table('suppliers', function (Blueprint $table) {
             if (!Schema::hasColumn('suppliers', 'opening_balance')) {
-                $table->decimal('opening_balance', 15, 2)->nullable()->after('address');
+                $column = $table->decimal('opening_balance', 15, 2)->nullable();
+
+                if (Schema::hasColumn('suppliers', 'address')) {
+                    $column->after('address');
+                }
             }
             if (!Schema::hasColumn('suppliers', 'opening_balance_date')) {
                 $table->date('opening_balance_date')->nullable()->after('opening_balance');

@@ -160,7 +160,13 @@ return new class extends Migration
         if (Schema::hasTable('inventory_history')) {
             Schema::table('inventory_history', function (Blueprint $table) {
                 if (!Schema::hasColumn('inventory_history', 'company_id')) {
-                    $table->unsignedBigInteger('company_id')->nullable()->after('user_id')->index();
+                    $column = $table->unsignedBigInteger('company_id')->nullable()->index();
+
+                    if (Schema::hasColumn('inventory_history', 'user_id')) {
+                        $column->after('user_id');
+                    } elseif (Schema::hasColumn('inventory_history', 'id')) {
+                        $column->after('id');
+                    }
                 }
             });
         }
