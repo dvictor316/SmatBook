@@ -926,17 +926,34 @@ class BalanceSheetController extends Controller
         }
 
         $postedQuery = Transaction::withoutGlobalScopes()
-            ->where('related_type', \App\Models\FixedAsset::class)
-            ->where('transaction_type', Transaction::TYPE_JOURNAL)
-            ->where('reference', 'like', 'FA-ACQ-%')
-            ->whereDate('transaction_date', '<=', $reportDate->toDateString());
+            ->join('accounts', 'transactions.account_id', '=', 'accounts.id')
+            ->whereNull('accounts.deleted_at')
+            ->where('transactions.related_type', \App\Models\FixedAsset::class)
+            ->where('transactions.transaction_type', Transaction::TYPE_JOURNAL)
+            ->where('transactions.reference', 'like', 'FA-ACQ-%')
+            ->where('transactions.debit', '>', 0)
+            ->whereDate('transactions.transaction_date', '<=', $reportDate->toDateString())
+            ->where(function ($query) {
+                $query->whereRaw('LOWER(accounts.sub_type) like ?', ['%fixed%'])
+                    ->orWhereRaw('LOWER(accounts.sub_type) like ?', ['%non-current%'])
+                    ->orWhereRaw('LOWER(accounts.sub_type) like ?', ['%non current%'])
+                    ->orWhereRaw('LOWER(accounts.sub_type) like ?', ['%intangible%'])
+                    ->orWhereRaw('LOWER(accounts.name) like ?', ['%fixed asset%'])
+                    ->orWhereRaw('LOWER(accounts.name) like ?', ['%equipment%'])
+                    ->orWhereRaw('LOWER(accounts.name) like ?', ['%generator%'])
+                    ->orWhereRaw('LOWER(accounts.name) like ?', ['%vehicle%'])
+                    ->orWhereRaw('LOWER(accounts.name) like ?', ['%furniture%'])
+                    ->orWhereRaw('LOWER(accounts.name) like ?', ['%property%'])
+                    ->orWhereRaw('LOWER(accounts.name) like ?', ['%plant%'])
+                    ->orWhereRaw('LOWER(accounts.name) like ?', ['%building%']);
+            });
 
         $this->applyTransactionScope($postedQuery, $request);
         if (($activeBranch['scope'] ?? 'branch') !== 'all') {
             $this->applyLegacyOpeningBalanceBranchScope($postedQuery, $activeBranch, 'transactions');
         }
 
-        $postedCost = round((float) ($postedQuery->sum('debit') ?? 0), 2);
+        $postedCost = round((float) ($postedQuery->sum('transactions.debit') ?? 0), 2);
 
         return round(max(0, $registeredCost - $postedCost), 2);
     }
