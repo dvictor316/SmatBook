@@ -43,6 +43,18 @@
         background: #fff;
     }
 
+    .journal-line-helper {
+        margin-top: 8px;
+        font-size: 0.78rem;
+        color: #64748b;
+    }
+
+    .journal-side-locked {
+        background: #f8fafc !important;
+        color: #94a3b8 !important;
+        cursor: not-allowed;
+    }
+
     .journal-totals {
         display: flex;
         justify-content: flex-end;
@@ -200,6 +212,10 @@
                                     </div>
                                 </div>
 
+                                <div class="journal-line-helper">
+                                    Enter only one side per row. Use one row for the debit account and another row for the credit account.
+                                </div>
+
                                 <div class="text-end mt-4">
                                     <button type="submit" class="btn btn-primary px-4">Post Journal Entry</button>
                                 </div>
@@ -309,15 +325,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const row = this.closest('.journal-line');
                 if (!row) return;
 
-                if (this.classList.contains('journal-debit') && parseFloat(this.value || 0) > 0) {
-                    const creditInput = row.querySelector('.journal-credit');
-                    if (creditInput) creditInput.value = '';
-                }
-
-                if (this.classList.contains('journal-credit') && parseFloat(this.value || 0) > 0) {
-                    const debitInput = row.querySelector('.journal-debit');
-                    if (debitInput) debitInput.value = '';
-                }
+                syncRowInputs(row);
 
                 recalcTotals();
             });
@@ -340,6 +348,37 @@ document.addEventListener('DOMContentLoaded', function () {
                 field.name = field.name.replace(/lines\[\d+\]/, `lines[${index}]`);
             });
         });
+    }
+
+    function syncRowInputs(row) {
+        const debitInput = row.querySelector('.journal-debit');
+        const creditInput = row.querySelector('.journal-credit');
+        if (!debitInput || !creditInput) return;
+
+        const debitValue = parseFloat(debitInput.value || 0);
+        const creditValue = parseFloat(creditInput.value || 0);
+
+        if (debitValue > 0) {
+            creditInput.value = '';
+            creditInput.disabled = true;
+            creditInput.classList.add('journal-side-locked');
+            creditInput.placeholder = 'Use another row';
+        } else {
+            creditInput.disabled = false;
+            creditInput.classList.remove('journal-side-locked');
+            creditInput.placeholder = '0.00';
+        }
+
+        if (creditValue > 0) {
+            debitInput.value = '';
+            debitInput.disabled = true;
+            debitInput.classList.add('journal-side-locked');
+            debitInput.placeholder = 'Use another row';
+        } else {
+            debitInput.disabled = false;
+            debitInput.classList.remove('journal-side-locked');
+            debitInput.placeholder = '0.00';
+        }
     }
 
     addLineBtn?.addEventListener('click', function () {
@@ -367,10 +406,12 @@ document.addEventListener('DOMContentLoaded', function () {
         `;
         journalLines.appendChild(wrapper);
         bindLineEvents(wrapper);
+        syncRowInputs(wrapper);
         recalcTotals();
     });
 
     bindLineEvents(document);
+    document.querySelectorAll('.journal-line').forEach(syncRowInputs);
     recalcTotals();
 });
 </script>
