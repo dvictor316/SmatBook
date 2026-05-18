@@ -55,6 +55,19 @@
         cursor: not-allowed;
     }
 
+    .journal-debit::-webkit-outer-spin-button,
+    .journal-debit::-webkit-inner-spin-button,
+    .journal-credit::-webkit-outer-spin-button,
+    .journal-credit::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    .journal-debit,
+    .journal-credit {
+        -moz-appearance: textfield;
+    }
+
     .journal-totals {
         display: flex;
         justify-content: flex-end;
@@ -83,6 +96,10 @@
     .journal-total-chip strong {
         font-size: 1rem;
         color: #0f172a;
+    }
+
+    .journal-diff-chip strong {
+        color: #0f3a8a;
     }
 
     .journal-status-ok {
@@ -179,10 +196,10 @@
                                                 </select>
                                             </div>
                                             <div>
-                                                <input type="number" step="0.01" min="0" name="lines[{{ $index }}][debit]" class="form-control journal-debit" value="{{ $line['debit'] ?? '' }}" placeholder="0.00">
+                                                <input type="number" step="0.01" min="0" inputmode="decimal" autocomplete="off" name="lines[{{ $index }}][debit]" class="form-control journal-debit" value="{{ $line['debit'] ?? '' }}" placeholder="0.00">
                                             </div>
                                             <div>
-                                                <input type="number" step="0.01" min="0" name="lines[{{ $index }}][credit]" class="form-control journal-credit" value="{{ $line['credit'] ?? '' }}" placeholder="0.00">
+                                                <input type="number" step="0.01" min="0" inputmode="decimal" autocomplete="off" name="lines[{{ $index }}][credit]" class="form-control journal-credit" value="{{ $line['credit'] ?? '' }}" placeholder="0.00">
                                             </div>
                                             <div>
                                                 <input type="text" name="lines[{{ $index }}][memo]" class="form-control" value="{{ $line['memo'] ?? '' }}" placeholder="Optional line note">
@@ -195,7 +212,10 @@
                                 </div>
 
                                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-3">
-                                    <button type="button" class="btn btn-outline-primary" id="addJournalLine">Add Line</button>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <button type="button" class="btn btn-outline-primary" id="addJournalLine">Add Line</button>
+                                        <button type="button" class="btn btn-outline-secondary" id="autoBalanceJournal">Auto Balance</button>
+                                    </div>
                                     <div class="journal-totals">
                                         <div class="journal-total-chip">
                                             <small>Total Debit</small>
@@ -204,6 +224,10 @@
                                         <div class="journal-total-chip">
                                             <small>Total Credit</small>
                                             <strong id="journalCreditTotal">0.00</strong>
+                                        </div>
+                                        <div class="journal-total-chip journal-diff-chip">
+                                            <small>Difference</small>
+                                            <strong id="journalDifferenceTotal">0.00</strong>
                                         </div>
                                         <div class="journal-total-chip">
                                             <small>Status</small>
@@ -281,8 +305,11 @@
 document.addEventListener('DOMContentLoaded', function () {
     const journalLines = document.getElementById('journalLines');
     const addLineBtn = document.getElementById('addJournalLine');
+    const autoBalanceBtn = document.getElementById('autoBalanceJournal');
+    const manualJournalForm = document.getElementById('manualJournalForm');
     const debitTotal = document.getElementById('journalDebitTotal');
     const creditTotal = document.getElementById('journalCreditTotal');
+    const differenceTotal = document.getElementById('journalDifferenceTotal');
     const balanceStatus = document.getElementById('journalBalanceStatus');
 
     const accountOptions = @json(
@@ -301,14 +328,93 @@ document.addEventListener('DOMContentLoaded', function () {
         return options.join('');
     }
 
+    function amountToCents(value) {
+        const normalized = String(value ?? '').replace(/,/g, '').trim();
+        if (normalized === '') {
+            return 0;
+        }
+
+        const parsed = Number(normalized);
+        if (!Number.isFinite(parsed) || parsed <= 0) {
+            return 0;
+        }
+
+        return Math.round(parsed * 100);
+    }
+
+    function centsToAmount(cents) {
+        return (Math.max(0, cents) / 100).toFixed(2);
+    }
+
+    function normalizeAmountInput(input) {
+        if (!input) return 0;
+
+        const cents = amountToCents(input.value);
+        input.value = cents > 0 ? centsToAmount(cents) : '';
+
+        return cents;
+    }
+
+    function getRowAmountCents(row, selector) {
+        const input = row?.querySelector(selector);
+        return amountToCents(input?.value);
+    }
+
+    function getTotalsInCents() {
+        const debit = Array.from(document.querySelectorAll('.journal-debit')).reduce((sum, input) => sum + amountToCents(input.value), 0);
+        const credit = Array.from(document.querySelectorAll('.journal-credit')).reduce((sum, input) => sum + amountToCents(input.value), 0);
+
+        return {
+            debit,
+            credit,
+            difference: debit - credit,
+        };
+    }
+
+    function findLastPopulatedInput(selector) {
+        return Array.from(document.querySelectorAll(selector))
+            .reverse()
+            .find((input) => !input.disabled && amountToCents(input.value) > 0);
+    }
+
+    function softlyFixMinorDifference(maxDifferenceCents = 5) {
+        const totals = getTotalsInCents();
+        const difference = totals.difference;
+        const absoluteDifference = Math.abs(difference);
+
+        if (absoluteDifference === 0 || absoluteDifference > maxDifferenceCents) {
+            return false;
+        }
+
+        const targetSelector = difference > 0 ? '.journal-credit' : '.journal-debit';
+        const targetInput = findLastPopulatedInput(targetSelector);
+        if (!targetInput) {
+            return false;
+        }
+
+        const currentCents = amountToCents(targetInput.value);
+        const correctedCents = currentCents + absoluteDifference;
+        targetInput.value = centsToAmount(correctedCents);
+
+        const row = targetInput.closest('.journal-line');
+        if (row) {
+            syncRowInputs(row);
+        }
+
+        return true;
+    }
+
     function recalcTotals() {
-        const debit = Array.from(document.querySelectorAll('.journal-debit')).reduce((sum, input) => sum + (parseFloat(input.value) || 0), 0);
-        const credit = Array.from(document.querySelectorAll('.journal-credit')).reduce((sum, input) => sum + (parseFloat(input.value) || 0), 0);
+        const totals = getTotalsInCents();
+        const debit = totals.debit;
+        const credit = totals.credit;
+        const difference = totals.difference;
 
-        debitTotal.textContent = debit.toFixed(2);
-        creditTotal.textContent = credit.toFixed(2);
+        debitTotal.textContent = centsToAmount(debit);
+        creditTotal.textContent = centsToAmount(credit);
+        differenceTotal.textContent = centsToAmount(Math.abs(difference));
 
-        if (Math.abs(debit - credit) < 0.01 && debit > 0 && credit > 0) {
+        if (difference === 0 && debit > 0 && credit > 0) {
             balanceStatus.textContent = 'Balanced';
             balanceStatus.classList.remove('journal-status-bad');
             balanceStatus.classList.add('journal-status-ok');
@@ -321,12 +427,33 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function bindLineEvents(container) {
         container.querySelectorAll('.journal-debit, .journal-credit').forEach((input) => {
+            input.addEventListener('wheel', function (event) {
+                event.preventDefault();
+                this.blur();
+            }, { passive: false });
+
+            input.addEventListener('keydown', function (event) {
+                if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+                    event.preventDefault();
+                }
+            });
+
             input.addEventListener('input', function () {
                 const row = this.closest('.journal-line');
                 if (!row) return;
 
                 syncRowInputs(row);
 
+                recalcTotals();
+            });
+
+            input.addEventListener('blur', function () {
+                normalizeAmountInput(this);
+
+                const row = this.closest('.journal-line');
+                if (row) {
+                    syncRowInputs(row);
+                }
                 recalcTotals();
             });
         });
@@ -350,13 +477,38 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    function createLine(index) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'journal-line journal-line-grid';
+        wrapper.innerHTML = `
+            <div>
+                <select name="lines[${index}][account_id]" class="form-select">
+                    ${buildAccountOptions()}
+                </select>
+            </div>
+            <div>
+                <input type="number" step="0.01" min="0" inputmode="decimal" autocomplete="off" name="lines[${index}][debit]" class="form-control journal-debit" placeholder="0.00">
+            </div>
+            <div>
+                <input type="number" step="0.01" min="0" inputmode="decimal" autocomplete="off" name="lines[${index}][credit]" class="form-control journal-credit" placeholder="0.00">
+            </div>
+            <div>
+                <input type="text" name="lines[${index}][memo]" class="form-control" placeholder="Optional line note">
+            </div>
+            <div class="text-end">
+                <button type="button" class="btn btn-light border journal-remove-line">Remove</button>
+            </div>
+        `;
+        return wrapper;
+    }
+
     function syncRowInputs(row) {
         const debitInput = row.querySelector('.journal-debit');
         const creditInput = row.querySelector('.journal-credit');
         if (!debitInput || !creditInput) return;
 
-        const debitValue = parseFloat(debitInput.value || 0);
-        const creditValue = parseFloat(creditInput.value || 0);
+        const debitValue = getRowAmountCents(row, '.journal-debit');
+        const creditValue = getRowAmountCents(row, '.journal-credit');
 
         if (debitValue > 0) {
             creditInput.value = '';
@@ -383,30 +535,63 @@ document.addEventListener('DOMContentLoaded', function () {
 
     addLineBtn?.addEventListener('click', function () {
         const index = journalLines.querySelectorAll('.journal-line').length;
-        const wrapper = document.createElement('div');
-        wrapper.className = 'journal-line journal-line-grid';
-        wrapper.innerHTML = `
-            <div>
-                <select name="lines[${index}][account_id]" class="form-select">
-                    ${buildAccountOptions()}
-                </select>
-            </div>
-            <div>
-                <input type="number" step="0.01" min="0" name="lines[${index}][debit]" class="form-control journal-debit" placeholder="0.00">
-            </div>
-            <div>
-                <input type="number" step="0.01" min="0" name="lines[${index}][credit]" class="form-control journal-credit" placeholder="0.00">
-            </div>
-            <div>
-                <input type="text" name="lines[${index}][memo]" class="form-control" placeholder="Optional line note">
-            </div>
-            <div class="text-end">
-                <button type="button" class="btn btn-light border journal-remove-line">Remove</button>
-            </div>
-        `;
+        const wrapper = createLine(index);
         journalLines.appendChild(wrapper);
         bindLineEvents(wrapper);
         syncRowInputs(wrapper);
+        recalcTotals();
+    });
+
+    autoBalanceBtn?.addEventListener('click', function () {
+        const totals = getTotalsInCents();
+        const difference = totals.difference;
+
+        if (difference === 0) {
+            recalcTotals();
+            return;
+        }
+
+        const targetClass = difference > 0 ? '.journal-credit' : '.journal-debit';
+        const amount = centsToAmount(Math.abs(difference));
+        let targetInput = Array.from(document.querySelectorAll(targetClass)).find((input) => {
+            const row = input.closest('.journal-line');
+            const debitValue = getRowAmountCents(row, '.journal-debit');
+            const creditValue = getRowAmountCents(row, '.journal-credit');
+            return input && !input.disabled
+                && debitValue === 0
+                && creditValue === 0;
+        });
+
+        if (!targetInput) {
+            const index = journalLines.querySelectorAll('.journal-line').length;
+            const wrapper = createLine(index);
+            journalLines.appendChild(wrapper);
+            bindLineEvents(wrapper);
+            targetInput = wrapper.querySelector(targetClass);
+        }
+
+        if (targetInput) {
+            targetInput.value = amount;
+            const row = targetInput.closest('.journal-line');
+            if (row) {
+                syncRowInputs(row);
+            }
+        }
+
+        recalcTotals();
+    });
+
+    manualJournalForm?.addEventListener('submit', function () {
+        document.querySelectorAll('.journal-debit, .journal-credit').forEach((input) => {
+            normalizeAmountInput(input);
+
+            const row = input.closest('.journal-line');
+            if (row) {
+                syncRowInputs(row);
+            }
+        });
+
+        softlyFixMinorDifference();
         recalcTotals();
     });
 
