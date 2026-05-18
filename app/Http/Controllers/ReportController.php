@@ -3332,7 +3332,11 @@ public function destroy($id)
         $isAllBranches = ($activeBranch['scope'] ?? 'branch') === 'all';
         $companyId     = (int) (optional(Auth::user())->company_id ?? session('current_tenant_id') ?? 0);
         $salesHasDeletedAt = Schema::hasColumn('sales', 'deleted_at');
-        $salesTotalColumn = Schema::hasColumn('sales', 'total_amount') ? 'total_amount' : 'total';
+        $salesAmountExpr = Schema::hasColumn('sales', 'total_amount')
+            ? 'COALESCE(NULLIF(sales.total_amount, 0), sales.total, sales.amount_paid, 0)'
+            : (Schema::hasColumn('sales', 'total')
+                ? 'COALESCE(sales.total, sales.amount_paid, 0)'
+                : 'COALESCE(sales.amount_paid, 0)');
         $expensesHasStatus = Schema::hasTable('expenses') && Schema::hasColumn('expenses', 'status');
         $expenseStatusExpr = $expensesHasStatus
             ? "LOWER(COALESCE(expenses.status, 'pending'))"
@@ -3408,7 +3412,7 @@ public function destroy($id)
         $applyBranch($salesQuery, 'sales');
 
         $salesByDate = $salesQuery
-            ->selectRaw("{$salesDateExpr} as txn_date, SUM(COALESCE(sales.{$salesTotalColumn}, 0)) as total")
+            ->selectRaw("{$salesDateExpr} as txn_date, SUM({$salesAmountExpr}) as total")
             ->groupByRaw($salesDateExpr)
             ->get()->keyBy('txn_date');
 
