@@ -304,9 +304,9 @@
 
             <div class="row g-4 align-items-center">
                 <div class="col-lg-8">
-                    <div class="summary-label">Total Sales Amount</div>
+                    <div class="summary-label">Gross POS Sales Amount</div>
                     <div class="summary-value">₦{{ number_format((float) ($totalRevenue ?? 0), 2) }}</div>
-                    <div class="summary-subtle mt-2">{{ $filterDateLabel }}</div>
+                    <div class="summary-subtle mt-2">{{ $filterDateLabel }} • Gross sales before Balance Sheet profit adjustments</div>
                 </div>
                 <div class="col-lg-4 text-lg-end">
                     <div class="summary-label">Sales Count</div>
